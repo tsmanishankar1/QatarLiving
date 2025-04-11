@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
-namespace QLN.Common.Infrastructure.Models;
+namespace QLN.Backend.API.Models;
 
 public partial class QatarlivingContext : DbContext
 {
@@ -15,9 +15,9 @@ public partial class QatarlivingContext : DbContext
     {
     }
 
-    public virtual DbSet<Otplogin> Otplogins { get; set; }
+    public virtual DbSet<User> Users { get; set; }
 
-    public virtual DbSet<Userprofile> Userprofiles { get; set; }
+    public virtual DbSet<Usertransaction> Usertransactions { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
@@ -25,44 +25,16 @@ public partial class QatarlivingContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Otplogin>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("otplogins_pkey");
-
-            entity.ToTable("otplogins");
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Createdby).HasColumnName("createdby");
-            entity.Property(e => e.Createdutc).HasColumnName("createdutc");
-            entity.Property(e => e.Email)
-                .HasMaxLength(255)
-                .HasColumnName("email");
-            entity.Property(e => e.Otp)
-                .HasMaxLength(10)
-                .HasColumnName("otp");
-            entity.Property(e => e.Updatedby).HasColumnName("updatedby");
-            entity.Property(e => e.Updatedutc).HasColumnName("updatedutc");
-
-            entity.HasOne(d => d.CreatedbyNavigation).WithMany(p => p.OtploginCreatedbyNavigations)
-                .HasForeignKey(d => d.Createdby)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("fk_createdby");
-
-            entity.HasOne(d => d.UpdatedbyNavigation).WithMany(p => p.OtploginUpdatedbyNavigations)
-                .HasForeignKey(d => d.Updatedby)
-                .HasConstraintName("fk_updatedby");
-        });
-
-        modelBuilder.Entity<Userprofile>(entity =>
+        modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("userprofile_pkey");
 
-            entity.ToTable("userprofile");
+            entity.ToTable("user");
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("nextval('userprofile_id_seq'::regclass)")
+                .HasColumnName("id");
             entity.Property(e => e.Confirmpassword).HasColumnName("confirmpassword");
-            entity.Property(e => e.Createdby).HasColumnName("createdby");
-            entity.Property(e => e.Createdutc).HasColumnName("createdutc");
             entity.Property(e => e.Dateofbirth).HasColumnName("dateofbirth");
             entity.Property(e => e.Emailaddress)
                 .HasMaxLength(255)
@@ -73,6 +45,7 @@ public partial class QatarlivingContext : DbContext
             entity.Property(e => e.Gender)
                 .HasMaxLength(10)
                 .HasColumnName("gender");
+            entity.Property(e => e.Isactive).HasColumnName("isactive");
             entity.Property(e => e.Languagepreferences)
                 .HasMaxLength(50)
                 .HasColumnName("languagepreferences");
@@ -89,8 +62,37 @@ public partial class QatarlivingContext : DbContext
                 .HasMaxLength(100)
                 .HasColumnName("nationality");
             entity.Property(e => e.Password).HasColumnName("password");
+        });
+
+        modelBuilder.Entity<Usertransaction>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("otplogins_pkey");
+
+            entity.ToTable("usertransaction");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("nextval('otplogins_id_seq'::regclass)")
+                .HasColumnName("id");
+            entity.Property(e => e.Createdby).HasColumnName("createdby");
+            entity.Property(e => e.Createdutc).HasColumnName("createdutc");
+            entity.Property(e => e.Email)
+                .HasMaxLength(255)
+                .HasColumnName("email");
+            entity.Property(e => e.Isactive).HasColumnName("isactive");
+            entity.Property(e => e.Otp)
+                .HasMaxLength(10)
+                .HasColumnName("otp");
             entity.Property(e => e.Updatedby).HasColumnName("updatedby");
             entity.Property(e => e.Updatedutc).HasColumnName("updatedutc");
+
+            entity.HasOne(d => d.CreatedbyNavigation).WithMany(p => p.UsertransactionCreatedbyNavigations)
+                .HasForeignKey(d => d.Createdby)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_createdby");
+
+            entity.HasOne(d => d.UpdatedbyNavigation).WithMany(p => p.UsertransactionUpdatedbyNavigations)
+                .HasForeignKey(d => d.Updatedby)
+                .HasConstraintName("fk_updatedby");
         });
 
         OnModelCreatingPartial(modelBuilder);

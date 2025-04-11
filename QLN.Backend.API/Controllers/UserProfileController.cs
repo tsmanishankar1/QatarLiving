@@ -15,7 +15,7 @@ namespace QLN.Backend.API.Controllers
             _service = service;
         }
 
-        [HttpPost]
+        [HttpPost("SignUp")]
         public async Task<IActionResult> CreateUser(UserProfileCreateRequest request)
         {
             try

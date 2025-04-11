@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace QLN.Common.Infrastructure.Models;
+namespace QLN.Backend.API.Models;
 
-public partial class Userprofile
+public partial class User
 {
     public int Id { get; set; }
 
@@ -29,15 +29,9 @@ public partial class Userprofile
 
     public string? Location { get; set; }
 
-    public int Createdby { get; set; }
+    public bool Isactive { get; set; }
 
-    public int? Updatedby { get; set; }
+    public virtual ICollection<Usertransaction> UsertransactionCreatedbyNavigations { get; set; } = new List<Usertransaction>();
 
-    public DateTime Createdutc { get; set; }
-
-    public DateTime? Updatedutc { get; set; }
-
-    public virtual ICollection<Otplogin> OtploginCreatedbyNavigations { get; set; } = new List<Otplogin>();
-
-    public virtual ICollection<Otplogin> OtploginUpdatedbyNavigations { get; set; } = new List<Otplogin>();
+    public virtual ICollection<Usertransaction> UsertransactionUpdatedbyNavigations { get; set; } = new List<Usertransaction>();
 }

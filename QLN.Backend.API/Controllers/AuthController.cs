@@ -17,26 +17,49 @@ namespace QLN.Backend.API.Controllers
             _authService = authService;
         }
 
-        [HttpPost("request-otp")]
-        public async Task<IActionResult> RequestOtp( EmailRequest request)
+        [HttpPost("GenerateEmailOtp")]
+        public async Task<IActionResult> RequestOtp(EmailRequest request)
         {
-            var result = await _authService.RequestOtpAsync(request.Email);
-            return Ok(new { message = result });
+            try
+            {
+                var requestotp = await _authService.RequestOtp(request.Email);
+                var response = new
+                {
+                    Success = true,
+                    Message = requestotp
+                };
+                return Ok(response);
+            }
+            catch (MessageNotFoundException ex)
+            {
+                return ErrorClass.NotFoundResponse(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return ErrorClass.ErrorResponse(ex.Message);
+            }
         }
-
-
-        [HttpPost("verify-otp")]
+        [HttpPost("VerifyOtpWithToken")]
         public async Task<IActionResult> VerifyOtp(OtpVerificationRequest request)
         {
-            var token = await _authService.VerifyOtpAsync(request.Otp);
-            return Ok(new { token });
+            try
+            {
+                var VerifyOtpWithToken = await _authService.VerifyOtpWithToken(request.Otp);
+                var response = new
+                {
+                    Success = true,
+                    Message = VerifyOtpWithToken
+                };
+                return Ok(response);
+            }
+            catch (MessageNotFoundException ex)
+            {
+                return ErrorClass.NotFoundResponse(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return ErrorClass.ErrorResponse(ex.Message);
+            }
         }
-
-
-
-
     }
-
-
-
 }

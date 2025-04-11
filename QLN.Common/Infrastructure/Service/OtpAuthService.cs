@@ -16,16 +16,13 @@ namespace QLN.Common.Infrastructure.Service
         {
             _otpRepository = otpRepository;
         }
-
-        public Task<string> RequestOtpAsync(string email)
+        public Task<string> RequestOtp(string email)
         {
-            return _otpRepository.RequestOtpAsync(email);
+            return _otpRepository.RequestOtp(email);
         }
-
-        public Task<string> VerifyOtpAsync(string otp)
+        public Task<string> VerifyOtpWithToken(string otp)
         {
-            return _otpRepository.VerifyOtpAsync(otp);
+            return _otpRepository.VerifyOtpWithToken(otp);
         }
     }
-
 }

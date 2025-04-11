@@ -8,9 +8,7 @@ namespace QLN.Common.Infrastructure.ServiceInterface
 {
     public interface IOtpAuthService
     {
-        Task<string> RequestOtpAsync(string email);
-        Task<string> VerifyOtpAsync(string otp);
-
+        Task<string> RequestOtp(string email);
+        Task<string> VerifyOtpWithToken(string otp);
     }
-
 }

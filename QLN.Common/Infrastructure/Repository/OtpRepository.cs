@@ -10,8 +10,8 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
-using QLN.Common.Infrastructure.Models;
 using QLN.Common.Infrastructure.RepositoryInterface;
+using QLN.Backend.API.Models;
 
 namespace QLN.Common.Infrastructure.Repository
 {
@@ -25,35 +25,31 @@ namespace QLN.Common.Infrastructure.Repository
             _context = context;
             _config = config;
         }
-
-        public async Task<string> RequestOtpAsync(string email)
+        public async Task<string> RequestOtp(string email)
         {
-            var user = await _context.Userprofiles.FirstOrDefaultAsync(u => u.Emailaddress == email);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Emailaddress == email);
             if (user == null)
                 throw new Exception("Email not registered.");
 
             string otp = new Random().Next(100000, 999999).ToString();
 
-            var otpEntry = new Otplogin
+            var otpEntry = new Usertransaction
             {
                 Email = email,
                 Otp = otp,
+                Isactive = true,
                 Createdby = user.Id,
                 Createdutc = DateTime.UtcNow
             };
-
-            _context.Otplogins.Add(otpEntry);
+            _context.Usertransactions.Add(otpEntry);
             await _context.SaveChangesAsync();
-
-
             await SendEmailAsync(email, "Your OTP Code", $"Your OTP is: {otp}");
-
             return "OTP sent to your email.";
         }
 
-        public async Task<string> VerifyOtpAsync(string otp)
+        public async Task<string> VerifyOtpWithToken(string otp)
         {
-            var otpRecord = await _context.Otplogins
+            var otpRecord = await _context.Usertransactions
                 .Where(x => x.Otp == otp && x.Createdutc.AddMinutes(10) >= DateTime.UtcNow)
                 .OrderByDescending(x => x.Createdutc)
                 .FirstOrDefaultAsync();
@@ -63,8 +59,6 @@ namespace QLN.Common.Infrastructure.Repository
 
             return GenerateJwtToken(otpRecord.Email);
         }
-
-
         private async Task SendEmailAsync(string toEmail, string subject, string body)
         {
             using var client = new SmtpClient(_config["Smtp:Host"], int.Parse(_config["Smtp:Port"]!))
@@ -84,7 +78,6 @@ namespace QLN.Common.Infrastructure.Repository
             mailMessage.To.Add(toEmail);
             await client.SendMailAsync(mailMessage);
         }
-
         private string GenerateJwtToken(string email)
         {
             var claims = new[]
@@ -105,5 +98,4 @@ namespace QLN.Common.Infrastructure.Repository
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
-
 }

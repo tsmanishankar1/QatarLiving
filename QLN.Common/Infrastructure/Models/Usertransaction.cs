@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace QLN.Common.Infrastructure.Models;
+namespace QLN.Backend.API.Models;
 
-public partial class Otplogin
+public partial class Usertransaction
 {
     public int Id { get; set; }
 
@@ -19,7 +19,9 @@ public partial class Otplogin
 
     public DateTime? Updatedutc { get; set; }
 
-    public virtual Userprofile CreatedbyNavigation { get; set; } = null!;
+    public bool Isactive { get; set; }
 
-    public virtual Userprofile? UpdatedbyNavigation { get; set; }
+    public virtual User CreatedbyNavigation { get; set; } = null!;
+
+    public virtual User? UpdatedbyNavigation { get; set; }
 }
