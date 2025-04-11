@@ -1,23 +1,37 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+<header class="site-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem;">
+    <h1>🏠 Qatar living</h1>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+    <!-- Navigation Links -->
+    <nav style="display: flex; gap: 1.5rem;">
+        <NavLink href="/" class="nav-link">Home</NavLink>
+        <NavLink href="/about" class="nav-link">About</NavLink>
+        <NavLink href="/contact" class="nav-link">Contact</NavLink>
+        <NavLink href="/register" class="nav-link">Register</NavLink>
+    </nav>
+    <button @onclick="HandleClick">Click Me</button>
+</header>
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+<main class="main-content">
+    @* @if (showRegister) *@
+    @* { *@
+        <QLN.Blazor.Base.Components.Account.Pages.Register/>
+    @* } *@
+    @* else
+    {
+        @Body
+    } *@
+</main>
 
-<div id="blazor-error-ui">
-    An unhandled error has occurred.
-    <a href="" class="reload">Reload</a>
-    <a class="dismiss">🗙</a>
-</div>
+@code {
+    private bool showRegister = false;
+
+    private void ShowRegisterForm()
+    {
+        showRegister = true;
+    }
+    private void HandleClick(){
+
+    }
+}

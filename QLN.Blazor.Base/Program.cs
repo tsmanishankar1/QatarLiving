@@ -4,13 +4,14 @@ using Microsoft.EntityFrameworkCore;
 using QLN.Blazor.Base.Components;
 using QLN.Blazor.Base.Components.Account;
 using QLN.Blazor.Base.Data;
+using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-
+builder.Services.AddMudServices();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
