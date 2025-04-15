@@ -6,12 +6,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace QLN.Common.Infrastructure.ServiceInterface
+namespace QLN.Common.Infrastructure.RepositoryInterface
 {
-    public interface IAuthService
+    public interface IAuthRepository
     {
         Task<string> AddUserProfileAsync(UserProfileCreateRequest request);
         Task<string> RequestOtp(string email);
-        Task<string> VerifyOtpWithToken(string otp);
+        Task<string> VerifyOtpWithToken(string email, string otp);
     }
+
 }

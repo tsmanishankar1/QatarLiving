@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
-namespace QLN.Backend.API.Models;
+namespace QLN.Common.Infrastructure.Models;
 
 public partial class QatarlivingDevContext : DbContext
 {
@@ -17,16 +17,17 @@ public partial class QatarlivingDevContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.HasPostgresExtension("pgcrypto");
+
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("users_pkey");
 
             entity.ToTable("users");
 
-            entity.HasIndex(e => e.Emailaddress, "users_emailaddress_key").IsUnique();
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Confirmpassword).HasColumnName("confirmpassword");
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("gen_random_uuid()")
+                .HasColumnName("id");
             entity.Property(e => e.Dateofbirth).HasColumnName("dateofbirth");
             entity.Property(e => e.Emailaddress)
                 .HasMaxLength(255)
@@ -37,9 +38,7 @@ public partial class QatarlivingDevContext : DbContext
             entity.Property(e => e.Gender)
                 .HasMaxLength(10)
                 .HasColumnName("gender");
-            entity.Property(e => e.Isactive)
-                .HasDefaultValue(true)
-                .HasColumnName("isactive");
+            entity.Property(e => e.Isactive).HasColumnName("isactive");
             entity.Property(e => e.Languagepreferences)
                 .HasMaxLength(50)
                 .HasColumnName("languagepreferences");
@@ -64,7 +63,9 @@ public partial class QatarlivingDevContext : DbContext
 
             entity.ToTable("usertransaction");
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("gen_random_uuid()")
+                .HasColumnName("id");
             entity.Property(e => e.Createdby).HasColumnName("createdby");
             entity.Property(e => e.Createdutc)
                 .HasDefaultValueSql("now()")
@@ -72,9 +73,7 @@ public partial class QatarlivingDevContext : DbContext
             entity.Property(e => e.Email)
                 .HasMaxLength(255)
                 .HasColumnName("email");
-            entity.Property(e => e.Isactive)
-                .HasDefaultValue(true)
-                .HasColumnName("isactive");
+            entity.Property(e => e.Isactive).HasColumnName("isactive");
             entity.Property(e => e.Otp)
                 .HasMaxLength(10)
                 .HasColumnName("otp");

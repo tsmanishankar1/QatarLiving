@@ -15,6 +15,7 @@ namespace QLN.Common.Infrastructure.RepositoryConfiguration
         public static IServiceCollection RepositoryConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddScoped<IAuthRepository, AuthRepository>();
+           services.AddScoped<IEventlogger,Eventlogger>();
 
 
 

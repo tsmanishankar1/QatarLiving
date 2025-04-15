@@ -21,15 +21,36 @@ namespace QLN.Common.Infrastructure.Service
 
         public async Task<string> AddUserProfileAsync(UserProfileCreateRequest request)
         {
-            return await _repository.AddUserProfileAsync(request);
+            try
+            {
+                return await _repository.AddUserProfileAsync(request);
+            }
+            catch
+            {
+                throw;
+            }
         }
         public Task<string> RequestOtp(string email)
         {
-            return _repository.RequestOtp(email);
+            try
+            {
+                return _repository.RequestOtp(email);
+            }
+            catch
+            {
+                throw;
+            }
         }
-        public Task<string> VerifyOtpWithToken(string otp)
+        public Task<string> VerifyOtpWithToken(string email, string otp)
         {
-            return _repository.VerifyOtpWithToken(otp);
+            try
+            {
+                return _repository.VerifyOtpWithToken(email,otp);
+            }
+            catch
+            {
+                throw;
+            }
         }
     }
 

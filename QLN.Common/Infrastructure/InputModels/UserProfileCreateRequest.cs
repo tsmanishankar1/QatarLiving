@@ -25,8 +25,7 @@ namespace QLN.Common.Infrastructure.InputModels
         public string Nationality { get; set; } = null!;
         [Required]
         public string Password { get; set; } = null!;
-        [Required]
-        public string Confirmpassword { get; set; } = null!;
+       
         public string? Languagepreferences { get; set; }
         public string? Location { get; set; }
     }
@@ -38,7 +37,10 @@ namespace QLN.Common.Infrastructure.InputModels
     public class OtpVerificationRequest
     {
         [Required]
+        public string Email { get; set; } = null!;
+        [Required]
         public string Otp { get; set; } = null!;
+      
     }
 
 }

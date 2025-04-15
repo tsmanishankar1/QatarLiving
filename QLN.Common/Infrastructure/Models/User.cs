@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace QLN.Backend.API.Models;
+namespace QLN.Common.Infrastructure.Models;
 
 public partial class User
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
     public string Firstname { get; set; } = null!;
 
@@ -22,8 +22,6 @@ public partial class User
     public string Nationality { get; set; } = null!;
 
     public string Password { get; set; } = null!;
-
-    public string Confirmpassword { get; set; } = null!;
 
     public string? Languagepreferences { get; set; }
 
