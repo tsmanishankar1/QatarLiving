@@ -12,6 +12,7 @@ namespace QLN.Backend.API.Controller.AuthController
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _service;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="AuthController"/> class.
         /// </summary>
@@ -20,6 +21,7 @@ namespace QLN.Backend.API.Controller.AuthController
         {
             _service = service;
         }
+
         /// <summary>
         /// Creates a new user account.
         /// </summary>
@@ -28,10 +30,6 @@ namespace QLN.Backend.API.Controller.AuthController
         /// <response code="200">User successfully created.</response>
         /// <response code="404">If the message is not found.</response>
         /// <response code="500">If there is an internal server error.</response>
-        /// <remarks>
-        /// This endpoint registers a new user into the system.
-        /// Use this to create user profile records.
-        /// </remarks>
         [HttpPost("SignUp")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -41,32 +39,48 @@ namespace QLN.Backend.API.Controller.AuthController
             try
             {
                 var createdUser = await _service.AddUserProfileAsync(request);
-                var response = new
-                {
-                    Success = true,
-                    Message = createdUser
-                };
-                return Ok(response);
+                return Ok(new { Success = true, Message = createdUser });
             }
             catch (Exception ex)
             {
                 return NotFound(ex.Message);
             }
-           
         }
+
         /// <summary>
-        /// Generates an OTP and sends it to the provided email address.
+        /// Verifies the OTP during account verification.
         /// </summary>
-        /// <param name="request">Contains the email to which the OTP should be sent.</param>
-        /// <returns>Returns the result of the OTP generation process.</returns>
-        /// <response code="200">OTP successfully generated and sent.</response>
-        /// <response code="404">If the email is not found.</response>
-        /// <response code="500">If there is an internal server error.</response>
-        /// <remarks>
-        /// This endpoint sends an OTP to the given email.
-        /// It is typically used for email verification.
-        /// </remarks>
-        [HttpPost("GenerateEmailOtp")]
+        /// <param name="request">The account verification request containing OTP.</param>
+        /// <returns>Returns the verification status.</returns>
+        /// <response code="200">OTP successfully verified.</response>
+        /// <response code="404">OTP invalid or expired.</response>
+        /// <response code="500">Server error.</response>
+        [HttpPost("AccountVerification")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> VerifyOtp(AccountVerification request)
+        {
+            try
+            {
+                var result = await _service.VerifyOtpAsync(request);
+                return Ok(new { Success = true, Message = result });
+            }
+            catch (Exception ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Generates and sends an OTP to the provided email or phone number.
+        /// </summary>
+        /// <param name="request">The email or phone number for OTP.</param>
+        /// <returns>Returns OTP send status.</returns>
+        /// <response code="200">OTP sent successfully.</response>
+        /// <response code="404">Email or phone not found.</response>
+        /// <response code="500">Internal error.</response>
+        [HttpPost("LoginVerification")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -74,33 +88,24 @@ namespace QLN.Backend.API.Controller.AuthController
         {
             try
             {
-                var requestotp = await _service.RequestOtp(request.Email);
-                var response = new
-                {
-                    Success = true,
-                    Message = requestotp
-                };
-                return Ok(response);
+                var result = await _service.RequestOtp(request.EmailOrPhone);
+                return Ok(new { Success = true, Message = result });
             }
-            catch (Exception ex )
+            catch (Exception ex)
             {
                 return NotFound(ex.Message);
             }
-           
         }
+
         /// <summary>
-        /// Verifies the OTP sent to the user's email address.
+        /// Verifies the OTP or password during login.
         /// </summary>
-        /// <param name="request">Contains the OTP to verify.</param>
-        /// <returns>Returns the result of the OTP verification.</returns>
-        /// <response code="200">OTP successfully verified.</response>
-        /// <response code="404">If the OTP is invalid or expired.</response>
-        /// <response code="500">If there is an internal server error.</response>
-        /// <remarks>
-        /// This endpoint is used to verify the OTP token entered by the user.
-        /// A valid token confirms identity verification.
-        /// </remarks>
-        [HttpPost("VerifyOtpWithToken")]
+        /// <param name="request">The login credentials including name and password or OTP.</param>
+        /// <returns>Returns login verification result.</returns>
+        /// <response code="200">Login successful.</response>
+        /// <response code="404">Invalid credentials.</response>
+        /// <response code="500">Internal server error.</response>
+        [HttpPost("Login")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -108,19 +113,38 @@ namespace QLN.Backend.API.Controller.AuthController
         {
             try
             {
-                var VerifyOtpWithToken = await _service.VerifyOtpWithToken(request.Email, request.Otp);
-                var response = new
-                {
-                    Success = true,
-                    Message = VerifyOtpWithToken
-                };
-                return Ok(response);
+                var result = await _service.VerifyUserLogin(request.Name, request.PasswordOrOtp);
+                return Ok(new { Success = true, Message = result });
             }
             catch (Exception ex)
             {
                 return NotFound(ex.Message);
             }
-            
+        }
+
+        /// <summary>
+        /// Refreshes the access token using an old refresh token.
+        /// </summary>
+        /// <param name="oldRefreshToken">The expired or used refresh token.</param>
+        /// <returns>Returns a new access token.</returns>
+        /// <response code="200">Token refreshed successfully.</response>
+        /// <response code="404">Invalid or expired refresh token.</response>
+        /// <response code="500">Internal server error.</response>
+        [HttpPost("RefreshToken")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> RefreshToken(string oldRefreshToken)
+        {
+            try
+            {
+                var result = await _service.RefreshTokenAsync(oldRefreshToken);
+                return Ok(new { Success = true, Message = result });
+            }
+            catch (Exception ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
     }
 }

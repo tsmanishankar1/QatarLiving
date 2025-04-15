@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace QLN.Common.Infrastructure.InputModels
 {
@@ -29,18 +24,28 @@ namespace QLN.Common.Infrastructure.InputModels
         public string? Languagepreferences { get; set; }
         public string? Location { get; set; }
     }
-    public class EmailRequest
-    {
-        [Required]
-        public string Email { get; set; } = null!;
-    }
-    public class OtpVerificationRequest
+    public class AccountVerification
     {
         [Required]
         public string Email { get; set; } = null!;
         [Required]
         public string Otp { get; set; } = null!;
+    }
+    public class EmailRequest
+    {
+        [Required]
+        public string EmailOrPhone { get; set; } = null!;
+    }
+    public class OtpVerificationRequest
+    {
+        [Required]
+        public string Name { get; set; } = null!;
+        public string? PasswordOrOtp { get; set; }
       
     }
-
+    public class LoginResponse
+    {
+        public string JwtToken { get; set; } = null!;
+        public string RefreshToken { get; set; } = null!;
+    }
 }

@@ -55,6 +55,8 @@ public partial class QatarlivingDevContext : DbContext
                 .HasMaxLength(100)
                 .HasColumnName("nationality");
             entity.Property(e => e.Password).HasColumnName("password");
+            entity.Property(e => e.RefreshToken).HasColumnName("refresh_token");
+            entity.Property(e => e.RefreshTokenExpiry).HasColumnName("refresh_token_expiry");
         });
 
         modelBuilder.Entity<Usertransaction>(entity =>

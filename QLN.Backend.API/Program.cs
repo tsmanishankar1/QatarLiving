@@ -38,8 +38,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/swagger/v1.1.1/swagger.json", "v1.1.1");
-        options.InjectStylesheet("/css/swagger-custom-styles.css");
-        options.InjectJavascript("/js/swagger-custom-script.js");
         options.RoutePrefix = "Swagger";
         options.DocumentTitle = "Qatar Management API";
     });

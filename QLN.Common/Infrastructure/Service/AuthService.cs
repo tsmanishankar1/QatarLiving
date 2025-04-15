@@ -1,12 +1,6 @@
-﻿
-using QLN.Common.Infrastructure.InputModels;
+﻿using QLN.Common.Infrastructure.InputModels;
 using QLN.Common.Infrastructure.RepositoryInterface;
 using QLN.Common.Infrastructure.ServiceInterface;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.Service
 {
@@ -30,6 +24,17 @@ namespace QLN.Common.Infrastructure.Service
                 throw;
             }
         }
+        public async Task<string> VerifyOtpAsync(AccountVerification request)
+        {
+            try
+            {
+                return await _repository.VerifyOtpAsync(request);
+            }
+            catch
+            {
+                throw;
+            }
+        }
         public Task<string> RequestOtp(string email)
         {
             try
@@ -41,11 +46,22 @@ namespace QLN.Common.Infrastructure.Service
                 throw;
             }
         }
-        public Task<string> VerifyOtpWithToken(string email, string otp)
+        public Task<LoginResponse> VerifyUserLogin(string name, string passwordOrOtp)
         {
             try
             {
-                return _repository.VerifyOtpWithToken(email,otp);
+                return _repository.VerifyUserLogin(name,passwordOrOtp);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+        public async Task<string> RefreshTokenAsync(string oldRefreshToken)
+        {
+            try
+            {
+                return await _repository.RefreshTokenAsync(oldRefreshToken);
             }
             catch
             {
@@ -53,5 +69,4 @@ namespace QLN.Common.Infrastructure.Service
             }
         }
     }
-
 }

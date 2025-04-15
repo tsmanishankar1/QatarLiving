@@ -1,18 +1,13 @@
-﻿
-using QLN.Common.Infrastructure.InputModels;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using QLN.Common.Infrastructure.InputModels;
 
 namespace QLN.Common.Infrastructure.RepositoryInterface
 {
     public interface IAuthRepository
     {
         Task<string> AddUserProfileAsync(UserProfileCreateRequest request);
+        Task<string> VerifyOtpAsync(AccountVerification request);
         Task<string> RequestOtp(string email);
-        Task<string> VerifyOtpWithToken(string email, string otp);
+        Task<LoginResponse> VerifyUserLogin(string name, string passwordOrOtp);
+        Task<string> RefreshTokenAsync(string oldRefreshToken);
     }
-
 }

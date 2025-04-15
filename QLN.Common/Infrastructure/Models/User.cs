@@ -29,6 +29,10 @@ public partial class User
 
     public bool Isactive { get; set; }
 
+    public string? RefreshToken { get; set; }
+
+    public DateTime? RefreshTokenExpiry { get; set; }
+
     public virtual ICollection<Usertransaction> UsertransactionCreatedbyNavigations { get; set; } = new List<Usertransaction>();
 
     public virtual ICollection<Usertransaction> UsertransactionUpdatedbyNavigations { get; set; } = new List<Usertransaction>();

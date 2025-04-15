@@ -10,14 +10,8 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using QLN.Common.Infrastructure.Models;
 using System.Security.Cryptography;
-
-
-
 
 namespace QLN.Common.Infrastructure.Repository
 {
@@ -41,17 +35,20 @@ namespace QLN.Common.Infrastructure.Repository
                 {
                     throw new ArgumentException("Invalid email address format.");
                 }
+
                 if (!Regex.IsMatch(request.Mobilenumber, @"^\+?[0-9]{7,15}$"))
                 {
                     throw new ArgumentException("Invalid mobile number format. It should be between 7 to 15 digits.");
                 }
+
                 bool isExistingUser = await _context.Users
-                .AnyAsync(u => u.Emailaddress == request.Emailaddress || u.Mobilenumber == request.Mobilenumber);
+                    .AnyAsync(u => u.Emailaddress == request.Emailaddress || u.Mobilenumber == request.Mobilenumber);
+
                 if (isExistingUser)
                 {
                     throw new ArgumentException("A user with this email or mobile number already exists.");
                 }
-                var message = "Profile Created Successfully";
+
                 var hashedPassword = HashPassword(request.Password);
                 var user = new User
                 {
@@ -70,7 +67,23 @@ namespace QLN.Common.Infrastructure.Repository
 
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
-                return message;
+
+                string otp = new Random().Next(100000, 999999).ToString();
+
+                var otpEntry = new Usertransaction
+                {
+                    Email = request.Emailaddress,
+                    Otp = otp,
+                    Isactive = true,
+                    Createdby = user.Id,
+                    Createdutc = DateTime.UtcNow
+                };
+
+                _context.Usertransactions.Add(otpEntry);
+                await _context.SaveChangesAsync();
+                await SendEmailAsync(request.Emailaddress, "Your OTP Code", $"Your OTP is: {otp}");
+
+                return "Profile created successfully. OTP has been sent to your email.";
             }
             catch (Exception ex)
             {
@@ -78,21 +91,45 @@ namespace QLN.Common.Infrastructure.Repository
                 throw;
             }
         }
-
-
-        public async Task<string> RequestOtp(string email)
+        public async Task<string> VerifyOtpAsync(AccountVerification request)
         {
             try
             {
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.Emailaddress == email);
+                var otpRecord = await _context.Usertransactions
+                    .Where(x => x.Email == request.Email && x.Otp == request.Otp && x.Isactive && x.Createdutc.AddMinutes(10) >= DateTime.UtcNow)
+                    .OrderByDescending(x => x.Createdutc)
+                    .FirstOrDefaultAsync();
+
+                if (otpRecord == null)
+                    throw new Exception("Invalid or expired OTP.");
+
+                otpRecord.Isactive = false;
+                _context.Usertransactions.Update(otpRecord);
+                await _context.SaveChangesAsync();
+
+                return "Signed in successfully";
+            }
+            catch (Exception ex)
+            {
+                _eventLogger.LogException(ex);
+                throw;
+            }
+        }
+        public async Task<string> RequestOtp(string emailOrPhone)
+        {
+            try
+            {
+                var user = await _context.Users 
+                    .FirstOrDefaultAsync(u =>u.Emailaddress.ToLower().Trim() == emailOrPhone.ToLower().Trim() || u.Mobilenumber.Trim() == emailOrPhone.Trim());
+
                 if (user == null)
-                    throw new Exception("Email not registered.");
+                    throw new Exception("Email or phone number not registered.");
 
                 string otp = new Random().Next(100000, 999999).ToString();
 
                 var otpEntry = new Usertransaction
                 {
-                    Email = email,
+                    Email = user.Emailaddress,
                     Otp = otp,
                     Isactive = true,
                     Createdby = user.Id,
@@ -102,7 +139,7 @@ namespace QLN.Common.Infrastructure.Repository
                 _context.Usertransactions.Add(otpEntry);
                 await _context.SaveChangesAsync();
 
-                await SendEmailAsync(email, "Your OTP Code", $"Your OTP is: {otp}");
+                await SendEmailAsync(emailOrPhone, "Your OTP Code", $"Your OTP is: {otp}");
                 return "OTP sent to your email.";
             }
             catch (Exception ex)
@@ -111,7 +148,6 @@ namespace QLN.Common.Infrastructure.Repository
                 throw; 
             }
         }
-
         private string HashPassword(string password)
         {
             using (var sha256 = SHA256.Create())
@@ -121,19 +157,89 @@ namespace QLN.Common.Infrastructure.Repository
                 return Convert.ToBase64String(hash);
             }
         }
-        public async Task<string> VerifyOtpWithToken(string email, string otp)
+        private string GenerateRefreshToken()
+        {
+            var randomBytes = new byte[64];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomBytes);
+                return Convert.ToBase64String(randomBytes);
+            }
+        }
+        public async Task<string> RefreshTokenAsync(string oldRefreshToken)
         {
             try
             {
-                var otpRecord = await _context.Usertransactions
-                    .Where(x => x.Email == email && x.Otp == otp && x.Createdutc.AddMinutes(10) >= DateTime.UtcNow)
-                    .OrderByDescending(x => x.Createdutc)
-                    .FirstOrDefaultAsync();
+                var user = await _context.Users
+                    .FirstOrDefaultAsync(u => u.RefreshToken == oldRefreshToken);
 
-                if (otpRecord == null)
-                    throw new Exception("Invalid or expired OTP");
+                if (user == null)
+                    throw new Exception("Invalid refresh token");
 
-                return GenerateJwtToken(email);
+                if (user.RefreshTokenExpiry == null || user.RefreshTokenExpiry < DateTime.UtcNow)
+                    throw new Exception("Refresh token has expired");
+
+                var newRefreshToken = GenerateRefreshToken();
+                var newExpiry = DateTime.UtcNow.AddDays(1); 
+
+                user.RefreshToken = newRefreshToken;
+                user.RefreshTokenExpiry = newExpiry;
+
+                _context.Users.Update(user);
+                await _context.SaveChangesAsync();
+
+                return newRefreshToken;
+            }
+            catch (Exception ex)
+            {
+                _eventLogger.LogException(ex);
+                throw;
+            }
+        }
+
+        public async Task<LoginResponse> VerifyUserLogin(string name, string passwordOrOtp)
+        {
+            try
+            {
+                var user = await _context.Users
+                    .FirstOrDefaultAsync(u =>
+                        u.Emailaddress == name ||
+                        u.Mobilenumber == name ||
+                        u.Firstname == name);
+
+                if (user == null)
+                    throw new Exception("User not found");
+
+                if (Regex.IsMatch(passwordOrOtp, @"^\d{6}$"))
+                {
+                    var otpRecord = await _context.Usertransactions
+                        .Where(x => x.Email == user.Emailaddress && x.Otp == passwordOrOtp && x.Createdutc.AddMinutes(10) >= DateTime.UtcNow)
+                        .OrderByDescending(x => x.Createdutc)
+                        .FirstOrDefaultAsync();
+
+                    if (otpRecord == null)
+                        throw new Exception("Invalid or expired OTP");
+                }
+                else
+                {
+                    var hashedInputPassword = HashPassword(passwordOrOtp);
+                    if (user.Password != hashedInputPassword)
+                        throw new Exception("Invalid password");
+                }
+                var jwtToken = GenerateJwtToken(user.Emailaddress);
+                var refreshToken = GenerateRefreshToken();
+                var refreshTokenExpiry = DateTime.UtcNow.AddDays(1); 
+                user.RefreshToken = refreshToken;
+                user.RefreshTokenExpiry = refreshTokenExpiry;
+
+                _context.Users.Update(user);
+                await _context.SaveChangesAsync();
+
+                return new LoginResponse
+                {
+                    JwtToken = jwtToken,
+                    RefreshToken = refreshToken,
+                };
             }
             catch (Exception ex)
             {
