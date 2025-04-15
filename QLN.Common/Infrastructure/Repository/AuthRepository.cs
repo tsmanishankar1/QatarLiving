@@ -12,6 +12,9 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 using QLN.Common.Infrastructure.Models;
 using System.Security.Cryptography;
+using QLN.Common.Indexing.IndexModels;
+using QLN.Common.Indexing.IService;
+using Azure.Search.Documents.Models;
 
 namespace QLN.Common.Infrastructure.Repository
 {
@@ -20,12 +23,14 @@ namespace QLN.Common.Infrastructure.Repository
         private readonly QatarlivingDevContext _context;
         private readonly IConfiguration _config;
         private readonly IEventlogger _eventLogger;
+        private readonly ISearchService<UserIndex> _searchService;
 
-        public AuthRepository(QatarlivingDevContext context, IConfiguration config, IEventlogger eventLogger)
+        public AuthRepository(QatarlivingDevContext context, IConfiguration config, IEventlogger eventLogger, ISearchService<UserIndex> searchService)
         {
             _context = context;
             _config = config;
             _eventLogger = eventLogger;
+            _searchService = searchService;
         }
         public async Task<string> AddUserProfileAsync(UserProfileCreateRequest request)
         {
@@ -67,6 +72,21 @@ namespace QLN.Common.Infrastructure.Repository
 
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
+                var userIndex = new UserIndex
+                {
+                    Id = user.Id.ToString(),
+                    Firstname = user.Firstname,
+                    Lastname = user.Lastname,
+                    Gender = user.Gender,
+                    Mobilenumber = user.Mobilenumber,
+                    Emailaddress = user.Emailaddress,
+                    Nationality = user.Nationality,
+                    Languagepreferences = user.Languagepreferences,
+                    Location = user.Location
+                };
+                var indexName = _config["AzureSearch:UserIndexName"];
+                await _searchService.CreateIndexIfNotExistsAsync(indexName);
+                await _searchService.UploadDocumentsAsync(indexName, new List<UserIndex> { userIndex });
 
                 string otp = new Random().Next(100000, 999999).ToString();
 
@@ -285,6 +305,24 @@ namespace QLN.Common.Infrastructure.Repository
                 signingCredentials: creds
             );
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+        public async Task<List<UserIndex>> SearchUsersFromIndexAsync(string query)
+        {
+            var indexName = _config["AzureSearch:UserIndexName"];
+
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                query = "*";
+            }
+
+            SearchResults<UserIndex> searchResults = await _searchService.SearchAsync(indexName, query);
+
+            var userList = new List<UserIndex>();
+            await foreach (var result in searchResults.GetResultsAsync())
+            {
+                userList.Add(result.Document);
+            }
+            return userList;
         }
     }
 }

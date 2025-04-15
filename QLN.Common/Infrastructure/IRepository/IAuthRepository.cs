@@ -1,4 +1,5 @@
-﻿using QLN.Common.Infrastructure.InputModels;
+﻿using QLN.Common.Indexing.IndexModels;
+using QLN.Common.Infrastructure.InputModels;
 
 namespace QLN.Common.Infrastructure.RepositoryInterface
 {
@@ -9,5 +10,6 @@ namespace QLN.Common.Infrastructure.RepositoryInterface
         Task<string> RequestOtp(string email);
         Task<LoginResponse> VerifyUserLogin(string name, string passwordOrOtp);
         Task<string> RefreshTokenAsync(string oldRefreshToken);
+        Task<List<UserIndex>> SearchUsersFromIndexAsync(string? query);
     }
 }

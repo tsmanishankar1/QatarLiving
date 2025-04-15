@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using QLN.Common.Indexing.IndexModels;
 using QLN.Common.Infrastructure.InputModels;
 using QLN.Common.Infrastructure.ServiceInterface;
 
@@ -140,6 +141,31 @@ namespace QLN.Backend.API.Controller.AuthController
             {
                 var result = await _service.RefreshTokenAsync(oldRefreshToken);
                 return Ok(new { Success = true, Message = result });
+            }
+            catch (Exception ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Searches for users in the Azure Search index based on the provided query. 
+        /// If no query is provided, all users will be returned.
+        /// </summary>
+        /// <param name="query">The search query. Use a wildcard "*" or leave empty to return all users.</param>
+        /// <returns>
+        /// A collection of <see cref="UserIndex"/> objects representing the matching user documents from the Azure Search index.
+        /// </returns>
+        /// <response code="200">Returns the list of matching user documents.</response>
+        /// <response code="404">Returns an error message if no matching users are found or an error occurs.</response>
+        /// <response code="500">Internal server error.</response>
+        [HttpGet("SearchUser")]
+        public async Task<ActionResult<IEnumerable<UserIndex>>> Search([FromQuery] string? query)
+        {
+            try
+            {
+                var users = await _service.SearchUsersFromIndexAsync(query);
+                return Ok(users);
             }
             catch (Exception ex)
             {
