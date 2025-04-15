@@ -1,27 +1,70 @@
 ﻿@inherits LayoutComponentBase
+@using MudBlazor
+@using QLN.Blazor.Base.Components.Account.Shared.FooterFolder
+@inject NavigationManager NavManager
 
-<header class="site-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem;">
-    <h1>🏠 Qatar living</h1>
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<MudPopoverProvider />
 
-    <!-- Navigation Links -->
-    <nav style="display: flex; gap: 1.5rem;">
-        <NavLink href="/" class="nav-link">Home</NavLink>
-        <NavLink href="/about" class="nav-link">About</NavLink>
-        <NavLink href="/contact" class="nav-link">Contact</NavLink>
-        <NavLink href="/register" class="nav-link">Register</NavLink>
+<header class="site-header mud-elevation-1">
+    <div class="header-left">
+         <NavLink href="/">
+        <MudImage Src="images/logo.png" Alt="Qatar Living" Height="30" />
+        </NavLink>
+    </div>
+
+    <nav class="nav-links">
+        <NavLink  href="/daily"  style="color: white;" class="nav-link">Daily</NavLink>
+        <NavLink href="/properties" style="color: white;" class="nav-link">Properties</NavLink>
+        <NavLink href="/vehicles"style="color: white;"  class="nav-link">Vehicles</NavLink>
+        <NavLink href="/classifieds" style="color: white;" class="nav-link active">Classifieds</NavLink>
+        <NavLink href="/services"style="color: white;" class="nav-link">Services</NavLink>
+        <NavLink href="/jobs" style="color: white;" class="nav-link">Jobs</NavLink>
+        <NavLink href="/rewards" style="color: white;" class="nav-link">Rewards</NavLink>
     </nav>
-    <button @onclick="HandleClick">Click Me</button>
+
+    <div class="header-right">
+        <MudButton Variant="Variant.Filled" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn">
+            Post
+        </MudButton>
+<MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+    <ActivatorContent>
+        <div style="display: flex; align-items: center; gap: 0.5rem;" class="cursor-pointer">
+            <MudAvatar Size="Size.Medium">
+                <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Farha" style="width: 100%; height: 100%; border-radius: 50%;" />
+            </MudAvatar>
+            <span class="user-name">Farha</span>
+        </div>
+    </ActivatorContent>
+
+    <ChildContent>
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Warning"
+                   StartIcon="@Icons.Material.Filled.Login"
+                   Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;"
+                   OnClick="@(() => NavManager.NavigateTo("/login"))">
+            Login
+        </MudButton>
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Warning"
+                   StartIcon="@Icons.Material.Filled.PersonAdd"
+                   Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;"
+                   OnClick="@(() => NavManager.NavigateTo("/signup"))">
+            Sign Up
+        </MudButton>
+    </ChildContent>
+</MudMenu>
+      
+    </div>
 </header>
 
+
 <main class="main-content">
-    @* @if (showRegister) *@
-    @* { *@
-        <QLN.Blazor.Base.Components.Account.Pages.Register/>
-    @* } *@
-    @* else
-    {
         @Body
-    } *@
+        <Footer />
 </main>
 
 @code {
