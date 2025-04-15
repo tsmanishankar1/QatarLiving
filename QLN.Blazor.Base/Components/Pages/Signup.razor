@@ -1,6 +1,81 @@
 @page "/signup"
 
+@using MudBlazor
+@rendermode InteractiveServer
 
-<PageTitle>signup</PageTitle>
+<div style="width: 100%; padding: 20px 30px;">
 
-<h1>signup</h1>
+   <MudPaper Class="p-8" Style="width: 100%; border-radius: 12px; padding: 20px;" Elevation="3">
+    <MudText Typo="Typo.h6" Class="mb-6" Style="font-weight: 600;">
+          Create New Account
+    </MudText>
+    <MudGrid>
+        <!-- Username & Email -->
+        <MudItem xs="12" md="6">
+            <MudTextField Label="Username" Required="true" @bind-Value="_model.Username" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudTextField Label="E-mail address" Required="true" @bind-Value="_model.Email" />
+        </MudItem>
+
+        <!-- Confirm Email & Mobile Operator -->
+        <MudItem xs="12" md="6">
+            <MudTextField Label="Confirm e-mail address" Required="true" @bind-Value="_model.ConfirmEmail" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudSelect T="string" Label="Mobile Operator" @bind-Value="_model.MobileOperator">
+
+            </MudSelect>
+        </MudItem>
+
+        <!-- Mobile Number & Nationality -->
+        <MudItem xs="12" md="6">
+            <MudTextField Label="Mobile phone number" @bind-Value="_model.MobileNumber" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudSelect T="string" Label="Nationality" Required="true" @bind-Value="_model.Nationality">
+
+            </MudSelect>
+        </MudItem>
+
+        <!-- Gender & DOB -->
+        <MudItem xs="12" md="6">
+            <MudSelect T="string" Label="Gender" Required="true" @bind-Value="_model.Gender">
+
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudDatePicker Label="Date of Birth" Required="true" @bind-Date="_model.DateOfBirth" />
+        </MudItem>
+
+        <!-- Newsletter Checkbox -->
+        <MudItem xs="12">
+            <MudCheckBox T="bool" @bind-Value="_model.SubscribeNewsletter" Label="Sign-up to receive our newsletter" />
+        </MudItem>
+
+        <!-- Submit Button -->
+       <MudItem xs="12">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4">
+                Create new account
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+     </MudPaper>
+</div>
+
+@code {
+    private SignupModel _model = new();
+
+    public class SignupModel
+    {
+        public string Username { get; set; }
+        public string Email { get; set; }
+        public string ConfirmEmail { get; set; }
+        public string MobileOperator { get; set; }
+        public string MobileNumber { get; set; }
+        public string Nationality { get; set; }
+        public string Gender { get; set; }
+        public DateTime? DateOfBirth { get; set; } = DateTime.Today;
+        public bool SubscribeNewsletter { get; set; } = true;
+    }
+}
