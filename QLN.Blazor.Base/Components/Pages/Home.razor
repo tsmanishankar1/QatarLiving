@@ -1,7 +1,38 @@
 ﻿@page "/"
+@using MudBlazor
 
-<PageTitle>Home</PageTitle>
+<div style="width: 100%;">
 
-<h1>Hello, world!</h1>
+    <MudCarousel Class="mud-width-full" Style="height: 230px;"
+                 ShowArrows="@arrows"
+                 EnableSwipeGesture="@enableSwipeGesture"
+                 AutoCycle="@autocycle"
+                 TData="object">
+                 
+        <MudCarouselItem Transition="transition">
+            <div style="width: 100%; height: 100%;">
+                <img src="images/image11.jpg" style="width: 100%; height: 100%; object-fit: cover;" />
+            </div>
+        </MudCarouselItem>
+        
+        <MudCarouselItem Transition="transition">
+            <div style="width: 100%; height: 100%;">
+                <img src="images/image22.jpg" style="width: 100%; height: 100%; object-fit: cover;" />
+            </div>
+        </MudCarouselItem>
+        
+        <MudCarouselItem Transition="transition">
+            <div style="width: 100%; height: 100%;">
+                <img src="images/image33.jpg" style="width: 100%; height: 100%; object-fit: cover;" />
+            </div>
+        </MudCarouselItem>
+        
+    </MudCarousel>
+</div>
 
-Welcome to your new app.
+@code {
+    private bool arrows = true;
+    private bool enableSwipeGesture = true;
+    private bool autocycle = true;
+    private Transition transition = Transition.Slide;
+}
