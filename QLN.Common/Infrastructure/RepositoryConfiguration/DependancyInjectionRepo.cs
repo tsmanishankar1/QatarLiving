@@ -14,8 +14,8 @@ namespace QLN.Common.Infrastructure.RepositoryConfiguration
     {
         public static IServiceCollection RepositoryConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddScoped<IUserProfileRepository, UserProfileRepository>();
-            services.AddScoped<IOtpRepository, OtpRepository>();
+            services.AddScoped<IAuthRepository, AuthRepository>();
+
 
 
 

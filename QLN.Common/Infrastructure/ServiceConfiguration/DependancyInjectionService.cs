@@ -15,8 +15,7 @@ namespace QLN.Common.Infrastructure.ServiceConfiguration
     {
         public static IServiceCollection ServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddScoped<IUserProfileService, UserProfileService>();
-            services.AddScoped<IOtpAuthService, OtpAuthService>();
+            services.AddScoped<IAuthService, AuthService>();
             services.RepositoryConfiguration(configuration);
             return services;
         }
