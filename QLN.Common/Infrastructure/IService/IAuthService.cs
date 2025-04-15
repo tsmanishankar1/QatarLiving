@@ -1,4 +1,5 @@
-﻿using QLN.Common.Infrastructure.InputModels;
+﻿using QLN.Common.Indexing.IndexModels;
+using QLN.Common.Infrastructure.InputModels;
 
 namespace QLN.Common.Infrastructure.ServiceInterface
 {
@@ -6,8 +7,9 @@ namespace QLN.Common.Infrastructure.ServiceInterface
     {
         Task<string> AddUserProfileAsync(UserProfileCreateRequest request);
         Task<string> VerifyOtpAsync(AccountVerification request);
-        Task<string> RequestOtp(string email);
+        Task<string> RequestOtp(string name);
         Task<LoginResponse> VerifyUserLogin(string name, string passwordOrOtp);
         Task<string> RefreshTokenAsync(string oldRefreshToken);
+        Task<List<UserIndex>> SearchUsersFromIndexAsync(string? query);
     }
 }

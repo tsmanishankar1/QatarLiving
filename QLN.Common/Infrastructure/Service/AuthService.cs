@@ -1,4 +1,5 @@
-﻿using QLN.Common.Infrastructure.InputModels;
+﻿using QLN.Common.Indexing.IndexModels;
+using QLN.Common.Infrastructure.InputModels;
 using QLN.Common.Infrastructure.RepositoryInterface;
 using QLN.Common.Infrastructure.ServiceInterface;
 
@@ -67,6 +68,18 @@ namespace QLN.Common.Infrastructure.Service
             {
                 throw;
             }
+        }
+        public async Task<List<UserIndex>> SearchUsersFromIndexAsync(string? query)
+        {
+            try
+            {
+                return await _repository.SearchUsersFromIndexAsync(query);
+            }
+            catch
+            {
+                throw;
+            }
+            
         }
     }
 }

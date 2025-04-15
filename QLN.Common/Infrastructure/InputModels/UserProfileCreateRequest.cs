@@ -34,7 +34,7 @@ namespace QLN.Common.Infrastructure.InputModels
     public class EmailRequest
     {
         [Required]
-        public string EmailOrPhone { get; set; } = null!;
+        public string Name { get; set; } = null!;
     }
     public class OtpVerificationRequest
     {
