@@ -89,7 +89,7 @@ namespace QLN.Backend.API.Controller.AuthController
         {
             try
             {
-                var result = await _service.RequestOtp(request.EmailOrPhone);
+                var result = await _service.RequestOtp(request.Name);
                 return Ok(new { Success = true, Message = result });
             }
             catch (Exception ex)

@@ -7,7 +7,7 @@ namespace QLN.Common.Infrastructure.RepositoryInterface
     {
         Task<string> AddUserProfileAsync(UserProfileCreateRequest request);
         Task<string> VerifyOtpAsync(AccountVerification request);
-        Task<string> RequestOtp(string email);
+        Task<string> RequestOtp(string name);
         Task<LoginResponse> VerifyUserLogin(string name, string passwordOrOtp);
         Task<string> RefreshTokenAsync(string oldRefreshToken);
         Task<List<UserIndex>> SearchUsersFromIndexAsync(string? query);

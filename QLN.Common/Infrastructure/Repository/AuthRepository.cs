@@ -135,12 +135,12 @@ namespace QLN.Common.Infrastructure.Repository
                 throw;
             }
         }
-        public async Task<string> RequestOtp(string emailOrPhone)
+        public async Task<string> RequestOtp(string name)
         {
             try
             {
                 var user = await _context.Users 
-                    .FirstOrDefaultAsync(u =>u.Emailaddress.ToLower().Trim() == emailOrPhone.ToLower().Trim() || u.Mobilenumber.Trim() == emailOrPhone.Trim());
+                    .FirstOrDefaultAsync(u =>u.Emailaddress.ToLower().Trim() == name.ToLower().Trim() || u.Mobilenumber.Trim() == name.Trim());
 
                 if (user == null)
                     throw new Exception("Email or phone number not registered.");
@@ -159,7 +159,7 @@ namespace QLN.Common.Infrastructure.Repository
                 _context.Usertransactions.Add(otpEntry);
                 await _context.SaveChangesAsync();
 
-                await SendEmailAsync(emailOrPhone, "Your OTP Code", $"Your OTP is: {otp}");
+                await SendEmailAsync(name, "Your OTP Code", $"Your OTP is: {otp}");
                 return "OTP sent to your email.";
             }
             catch (Exception ex)
