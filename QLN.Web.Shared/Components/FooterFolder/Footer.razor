@@ -1,62 +1,51 @@
-@using MudBlazor
-
 <div class="footer-main">
     <div class="footer-top">
         <div class="footer-column">
-            <MudText Typo="Typo.h6">Explore</MudText>
-            <MudLink Href="#">Properties</MudLink>
-            <MudLink Href="#">Vehicles</MudLink>
-            <MudLink Href="#">Classifieds</MudLink>
-            <MudLink Href="#">Services</MudLink>
-            <MudLink Href="#">Jobs</MudLink>
-            <MudLink Href="#" Class="premium">Premium subscriptions</MudLink>
+            <h4>Explore</h4>
+            <a href="#">Properties</a>
+            <a href="#">Vehicles</a>
+            <a href="#">Classifieds</a>
+            <a href="#">Services</a>
+            <a href="#">Jobs</a>
+            <a class="premium" href="#">Premium subscriptions</a>
         </div>
-
         <div class="footer-column">
-            <MudText Typo="Typo.h6">Other</MudText>
-            <MudLink Href="#">News</MudLink>
-            <MudLink Href="#">Events</MudLink>
-            <MudLink Href="#">Forums</MudLink>
-            <MudLink Href="#">Business pages</MudLink>
-            <MudLink Href="#">eShops</MudLink>
+            <h4>Other</h4>
+            <a href="#">News</a>
+            <a href="#">Events</a>
+            <a href="#">Forums</a>
+            <a href="#">Business pages</a>
+            <a href="#">eShops</a>
         </div>
-
         <div class="footer-column">
-            <MudText>Want to advertise on Qatar Living?</MudText>
-            <MudText><strong>Take a look at our <MudLink Href="#" Class="orange-link">Advertise page</MudLink></strong></MudText>
-            <MudText>Subscribe to our newsletter to get the latest updates</MudText>
-
+            <p>Want to advertise on Qatar Living?</p>
+            <p><strong>Take a look at our <a class="orange-link" href="#">Advertise page</a></strong></p>
+            <p>Subscribe to our newsletter to get the latest updates</p>
             <div class="newsletter">
-                <MudTextField T="string" Label="Email" Placeholder="Enter your email" @bind-Value="email" />
-                <MudButton Color="Color.Primary" Variant="Variant.Filled">Subscribe</MudButton>
+                <input type="email" placeholder="Email" />
+                <button>Subscribe</button>
             </div>
         </div>
-
         <div class="footer-column footer-apps">
             <img src="images/newQatarLogo.png" alt="Qatar Living" width="132.5" height="40.33" class="logo" />
-            <MudText>Our Mobile App</MudText>
+            <p>Our Mobile App</p>
             <img src="images/googlePlayLogo.svg" class="store-badge" />
             <img src="images/appStoreLogo.svg" class="store-badge" />
         </div>
     </div>
-
-    <div class="footer-divider"></div>
-
+    <hr />
     <div class="footer-bottom">
         <div class="footer-link">
             <div class="footer-links">
-                <MudLink Href="#">Advertising Terms</MudLink>
-                <MudLink Href="#">Website Terms</MudLink>
-                <MudLink Href="#">Rules for posting ads</MudLink>
-                <MudLink Href="#">Help</MudLink>
+                <a href="#">Advertising Terms</a>
+                <a href="#">Website Terms</a>
+                <a href="#">Rules for posting ads</a>
+                <a href="#">Help</a>
             </div>
-            <p class="footer-copyright">
-                &copy; 2024 Qatar Living. All rights reserved.
-            </p>
+            <p style="padding-top: 1rem;">Copyright © 2024 Qatar Living. All rights reserved.</p>
         </div>
-
         <div class="footer-social">
-            <MudText>Let's stay connected</MudText>
+            <p>Let's stay connected</p>
             <div class="social-icons">
                 <img src="images/FacebookLogo.svg" alt="Facebook" class="social-icon" />
                 <img src="images/Twitter.svg" alt="Twitter" class="social-icon" />
@@ -69,6 +58,159 @@
         </div>
     </div>
 </div>
-@code {
-    private string email;
-}
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+    }
+
+    .footer-main {
+        background-color: #003A63;
+        color: white;
+        padding: 40px 20px;
+        font-family: Arial, sans-serif;
+    }
+
+    .footer-top {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 30px;
+    }
+
+    .footer-column {
+        flex: 1 1 200px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .footer-column h4 {
+        margin-bottom: 10px;
+        color: white;
+    }
+
+    .footer-column a {
+        color: white;
+        text-decoration: none;
+        margin: 5px 0;
+        font-size: 14px;
+    }
+
+    .footer-column:nth-child(1) a,
+    .footer-column:nth-child(2) a {
+        text-decoration: underline;
+    }
+
+    .footer-column .premium {
+        color: orange;
+    }
+
+    .footer-column .orange-link {
+        color: orange;
+        text-decoration: underline;
+    }
+
+    .footer-apps {
+        padding-left: 50px;
+    }
+
+    .footer-apps .logo {
+        max-width: 120px;
+        margin-bottom: 10px;
+    }
+
+    .store-badge {
+        max-width: 130px;
+        margin: 5px 0;
+    }
+
+    .newsletter {
+        display: flex;
+        margin-top: 10px;
+    }
+
+    .newsletter input {
+        flex: 1;
+        padding: 10px;
+        border-radius: 4px 0 0 4px;
+        border: none;
+    }
+
+    .newsletter button {
+        padding: 10px 20px;
+        border: none;
+        background-color: #FF7B3D;
+        color: white;
+        border-radius: 0 4px 4px 0;
+        cursor: pointer;
+    }
+
+    hr {
+        border: none;
+        border-top: 1px solid #ccc;
+        margin: 30px -20px; 
+    }
+
+    .footer-bottom {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        font-size: 13px;
+    }
+
+    .footer-link {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .footer-links {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .footer-links a {
+        color: white;
+        text-decoration: underline;
+    }
+
+    .footer-social {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .social-icons {
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+    }
+
+    .social-icon {
+        width: 32px;
+        height: 32px;
+    }
+
+    .icon-circle {
+        border: 2px solid white;
+        border-radius: 50%;
+        padding: 10px;
+        width: 40px;
+        height: 40px;
+        text-align: center;
+        line-height: 20px;
+        font-size: 16px;
+        color: white;
+        margin-right: 10px;
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    .icon-circle:hover {
+        background-color: white;
+        color: #003A63;
+    }
+</style>
