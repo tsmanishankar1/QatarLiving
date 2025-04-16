@@ -5,6 +5,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>aspnet-QLN.Blazor.Base-1561b0f7-176a-44ee-b381-f8c42dc46f7f</UserSecretsId>
+	  <AutoAssignPort>false</AutoAssignPort>
+	  <DevelopmentServerPort>5047</DevelopmentServerPort>
+	  <DevelopmentServerV6Port>5048</DevelopmentServerV6Port>
   </PropertyGroup>
 
   <ItemGroup>
