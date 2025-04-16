@@ -7,6 +7,10 @@ public partial class User
 {
     public Guid Id { get; set; }
 
+    public string Username { get; set; } = null!;
+
+    public string? Mobileoperator { get; set; }
+
     public string Firstname { get; set; } = null!;
 
     public string Lastname { get; set; } = null!;

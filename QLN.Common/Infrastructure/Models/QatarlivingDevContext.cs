@@ -51,12 +51,18 @@ public partial class QatarlivingDevContext : DbContext
             entity.Property(e => e.Mobilenumber)
                 .HasMaxLength(15)
                 .HasColumnName("mobilenumber");
+            entity.Property(e => e.Mobileoperator)
+                .HasMaxLength(50)
+                .HasColumnName("mobileoperator");
             entity.Property(e => e.Nationality)
                 .HasMaxLength(100)
                 .HasColumnName("nationality");
             entity.Property(e => e.Password).HasColumnName("password");
             entity.Property(e => e.RefreshToken).HasColumnName("refresh_token");
             entity.Property(e => e.RefreshTokenExpiry).HasColumnName("refresh_token_expiry");
+            entity.Property(e => e.Username)
+                .HasMaxLength(50)
+                .HasColumnName("username");
         });
 
         modelBuilder.Entity<Usertransaction>(entity =>

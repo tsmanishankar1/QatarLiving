@@ -52,10 +52,12 @@ namespace QLN.Common.Infrastructure.Repository
                 var hashedPassword = HashPassword(request.Password);
                 var user = new User
                 {
+                    Username=request.Username ,
                     Firstname = request.Firstname,
                     Lastname = request.Lastname,
                     Dateofbirth = request.Dateofbirth,
                     Gender = request.Gender,
+                    Mobileoperator = request.MobileOperator,
                     Mobilenumber = request.Mobilenumber,
                     Emailaddress = request.Emailaddress,
                     Nationality = request.Nationality,
@@ -205,7 +207,7 @@ namespace QLN.Common.Infrastructure.Repository
                     .FirstOrDefaultAsync(u =>
                         u.Emailaddress == name ||
                         u.Mobilenumber == name ||
-                        u.Firstname == name);
+                        u.Username == name);
 
                 if (user == null)
                     throw new Exception("User not found");
@@ -258,7 +260,7 @@ namespace QLN.Common.Infrastructure.Repository
 
             var mailMessage = new MailMessage
             {
-                From = new MailAddress(_config["Smtp:From"]),
+                From = new MailAddress(_config["Smtp:From"], _config["Smtp:DisplayName"]),
                 Subject = subject,
                 Body = body,
                 IsBodyHtml = false

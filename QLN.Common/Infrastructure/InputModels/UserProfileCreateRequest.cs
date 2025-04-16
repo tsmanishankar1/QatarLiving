@@ -5,6 +5,9 @@ namespace QLN.Common.Infrastructure.InputModels
     public class UserProfileCreateRequest
     {
         [Required]
+        public string Username { get; set; } = null!;
+
+        [Required]
         public string Firstname { get; set; } = null!;
         [Required]
         public string Lastname { get; set; } = null!;
@@ -12,6 +15,7 @@ namespace QLN.Common.Infrastructure.InputModels
         public DateOnly Dateofbirth { get; set; }
         [Required]
         public string Gender { get; set; } = null!;
+        public string MobileOperator { get; set; } = null!;
         [Required]
         public string Mobilenumber { get; set; } = null!;
         [Required]
