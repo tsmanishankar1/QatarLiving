@@ -1,10 +1,15 @@
 @page "/login"
 @rendermode InteractiveServer
+@inject ApiService Api
+@using QLN.Blazor.Base.Services
 @using MudBlazor
+@using System.Text
+@using System.Text.Json
+@using System.Net.Http
+@inject HttpClient Http
+@inject NavigationManager Navigation
 
-<!-- Center vertically and horizontally -->
 <div style="min-height: 100vh;" class="d-flex justify-center align-center">
-    <!-- Card container with border, shadow, and padding on all sides -->
     <div class="d-flex flex-column"
          style="width: 100%; max-width: 400px;
                 padding: 32px;
@@ -12,19 +17,16 @@
                 border-radius: 12px;
                 box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
                 background-color: white;">
-        
-        <!-- Title -->
+
         <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-6" Style="font-weight: 600;">
             Log in
         </MudText>
 
-        <!-- Username -->
         <MudTextField Label="Username"
                       Required="true"
                       FullWidth="true"
                       @bind-Value="_username" />
 
-        <!-- Password -->
         <MudTextField Label="Password"
                       Required="true"
                       FullWidth="true"
@@ -32,7 +34,6 @@
                       InputType="InputType.Password"
                       @bind-Value="_password" />
 
-        <!-- Login Button -->
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    FullWidth="true"
@@ -41,62 +42,92 @@
                    OnClick="PerformLogin">
             Log in
         </MudButton>
+        <MudButton OnClick="@(() => Console.WriteLine("Button Clicked"))">
+    Log in c
+</MudButton>
 
-        <!-- Links -->
         <div class="d-flex justify-space-between mt-4" style="font-size: 0.9rem;">
             <MudLink Href="/signup" Class="text-primary">Create new account</MudLink>
             <MudLink Href="/reset-password" Class="text-primary">Request new password</MudLink>
         </div>
-        <!-- Divider text -->
-<MudText Align="Align.Center" Class="my-4" Style="color: gray;">
-    Or login with
-</MudText>
 
-<!-- Social login buttons -->
-<div class="d-flex justify-center gap-2">
+        <MudText Align="Align.Center" Class="my-4" Style="color: gray;">
+            Or login with
+        </MudText>
 
-<!-- Social login buttons with custom icons -->
-<div class="d-flex justify-center gap-2">
-    <!-- Facebook -->
-    <MudButton Variant="Variant.Outlined"
-               Color="Color.Default"
-               Style="text-transform: none; font-weight: 500; min-width: 140px;"
-               OnClick="LoginWithFacebook">
-        <img src="images/facebook.svg" alt="Facebook" style="width: 20px; height: 20px;" class="me-2" />
-        Facebook
-    </MudButton>
+        <div class="d-flex justify-center gap-2">
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Default"
+                       Style="text-transform: none; font-weight: 500; min-width: 140px;"
+                       OnClick="LoginWithFacebook">
+                <img src="images/facebook.svg" alt="Facebook" style="width: 20px; height: 20px;" class="me-2" />
+                Facebook
+            </MudButton>
 
-    <!-- Google -->
-    <MudButton Variant="Variant.Outlined"
-               Color="Color.Default"
-               Style="text-transform: none; font-weight: 500; min-width: 140px;"
-               OnClick="LoginWithGoogle">
-        <img src="images/google.svg" alt="Google" style="width: 20px; height: 20px;" class="me-2" />
-        Google
-    </MudButton>
-</div>
-
-</div>
-
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Default"
+                       Style="text-transform: none; font-weight: 500; min-width: 140px;"
+                       OnClick="LoginWithGoogle">
+                <img src="images/google.svg" alt="Google" style="width: 20px; height: 20px;" class="me-2" />
+                Google
+            </MudButton>
+        </div>
     </div>
 </div>
 
 @code {
-    private string _username;
-    private string _password;
+    private string _username = string.Empty;
+    private string _password = string.Empty;
 
-    private void PerformLogin()
+    private async Task PerformLogin()
     {
-        // Add your login logic here
+        Console.WriteLine("Login button clicked");
+
+        var payload = new { name = _username, passwordOrOtp = _password };
+
+        try
+        {
+            // Replace with your actual API URL if not set globally in ApiService
+            var result = await Api.PostAsync<object, LoginResult>("Auth/Login", payload);
+
+            if (result != null && result.Success)
+            {
+                Console.WriteLine($"JWT: {result.Message.JwtToken}");
+                Console.WriteLine($"Refresh Token: {result.Message.RefreshToken}");
+                // You can now store the token or redirect as needed
+            }
+            else
+            {
+                Console.WriteLine("Login failed or unsuccessful response");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Login error: {ex.Message}");
+        }
     }
-    private void LoginWithFacebook()
-{
-    // TODO: Add Facebook login logic
-}
 
-private void LoginWithGoogle()
-{
-    // TODO: Add Google login logic
-}
+    private async Task LoginWithFacebook()
+    {
+        Console.WriteLine("Facebook login clicked");
+        await Task.CompletedTask;
+    }
 
+    private async Task LoginWithGoogle()
+    {
+        Console.WriteLine("Google login clicked");
+        await Task.CompletedTask;
+    }
+
+    private class LoginResult
+    {
+        public bool Success { get; set; }
+        public MessageContent Message { get; set; }
+    }
+
+    private class MessageContent
+    {
+        public string JwtToken { get; set; }
+        public string RefreshToken { get; set; }
+    }
 }

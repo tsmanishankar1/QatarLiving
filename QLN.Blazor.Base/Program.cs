@@ -5,6 +5,7 @@ using QLN.Blazor.Base.Components;
 using QLN.Blazor.Base.Components.Account;
 using QLN.Blazor.Base.Data;
 using MudBlazor.Services;
+using QLN.Blazor.Base.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +13,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddMudServices();
+builder.Services.Configure<ApiSettings>(
+    builder.Configuration.GetSection("ApiSettings"));
+builder.Services.AddHttpClient<ApiService>();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
