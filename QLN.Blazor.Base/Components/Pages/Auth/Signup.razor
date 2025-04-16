@@ -5,16 +5,16 @@
 @using QLN.Blazor.Base.Services
 @inject UserState UserState
 @using MudBlazor
+@using MudBlazor.Components
 @rendermode InteractiveServer
 
 @if (!_showOtp)
 {
     <MudPaper Class="p-8" Style="width: 100%; border-radius: 12px; padding: 20px;">
         <MudText Typo="Typo.h6" Class="mb-6">Create New Account</MudText>
-
         <MudGrid>
-             <MudItem xs="12" md="6"></MudItem>
-                <MudTextField Label="User Name" Required="true" @bind-Value="_model.userName" />
+             <MudItem xs="12" md="6">
+                <MudTextField Label="User Name" Required="true" @bind-Value="_model.UserName" />
             </MudItem>
             <MudItem xs="12" md="6">
                 <MudTextField Label="First Name" Required="true" @bind-Value="_model.FirstName" />
@@ -22,7 +22,6 @@
             <MudItem xs="12" md="6">
                 <MudTextField Label="Last Name" Required="true" @bind-Value="_model.LastName" />
             </MudItem>
-
             <MudItem xs="12" md="6">
                 <MudTextField Label="Email Address" Required="true" @bind-Value="_model.EmailAddress" />
             </MudItem>
