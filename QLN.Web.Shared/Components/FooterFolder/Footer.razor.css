@@ -1,0 +1,110 @@
+.footer-main {
+    background-color: #003A63;
+    color: white;
+    padding: 40px 20px;
+    font-family: Arial, sans-serif;
+}
+
+.footer-top {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 30px;
+}
+
+.footer-column {
+    flex: 1 1 200px;
+    display: flex;
+    flex-direction: column;
+}
+
+.footer-column h6,
+.footer-column .mud-typography {
+    margin-bottom: 10px;
+    color: white;
+}
+
+.footer-column a,
+.footer-links a {
+    color: white;
+    text-decoration: underline;
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.footer-column .premium,
+.footer-column .orange-link {
+    color: orange;
+}
+
+.footer-apps {
+    padding-left: 50px;
+}
+
+.footer-apps .logo {
+    max-width: 120px;
+    margin-bottom: 10px;
+}
+
+.store-badge {
+    max-width: 130px;
+    margin: 5px 0;
+}
+
+.newsletter {
+    display: flex;
+    margin-top: 10px;
+}
+
+.newsletter-input {
+    flex: 1;
+    padding: 10px;
+    border-radius: 4px 0 0 4px;
+}
+
+.footer-divider {
+    margin: 30px -20px;
+    border-top: 1px solid #ccc;
+}
+
+.footer-bottom {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    font-size: 13px;
+}
+
+.footer-link {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.footer-links {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.footer-social {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.social-icons {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.social-icon {
+    width: 32px;
+    height: 32px;
+}
+
+.footer-copyright {
+    padding-top: 1rem;
+}

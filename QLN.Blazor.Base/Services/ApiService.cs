@@ -8,7 +8,6 @@ namespace QLN.Blazor.Base.Services
     {
         private readonly HttpClient _http;
         private readonly string _baseUrl;
-
         public ApiService(HttpClient http, IOptions<ApiSettings> options)
         {
             _http = http;
