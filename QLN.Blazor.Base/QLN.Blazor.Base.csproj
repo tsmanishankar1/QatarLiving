@@ -1,11 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>aspnet-QLN.Blazor.Base-1561b0f7-176a-44ee-b381-f8c42dc46f7f</UserSecretsId>
-    <RazorCssIsolation>true</RazorCssIsolation>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,6 +13,8 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.15" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.15" />
     <PackageReference Include="MudBlazor" Version="8.5.1" />
+	<ProjectReference Include="..\QLN.Web.Shared\QLN.Web.Shared.csproj" />
+
   </ItemGroup>
 
 </Project>
