@@ -9,10 +9,8 @@
 <div style="min-height: 100vh;" class="d-flex justify-center align-center">
     <div class="d-flex flex-column" style="max-width: 400px; padding: 32px; border: 1px solid #ccc; border-radius: 12px; box-shadow: 0px 4px 12px rgba(0,0,0,0.15); background: white;">
         <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-6" Style="font-weight: 600;">Log in</MudText>
-
         <MudTextField Label="Username" Required="true" FullWidth="true" @bind-Value="_username" />
         <MudTextField Label="Password" Required="true" FullWidth="true" Class="mt-4" InputType="InputType.Password" @bind-Value="_password" />
-
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    FullWidth="true"
@@ -23,9 +21,7 @@
                    Style="text-transform: none; font-weight: bold;">
             Log in
         </MudButton>
-
         <MudText Align="Align.Center" Class="my-4" Style="color: gray;">Or login with</MudText>
-
         <div class="d-flex justify-center gap-2">
             <MudButton Variant="Variant.Outlined" Color="Color.Default" Style="min-width: 140px;" OnClick="LoginWithFacebook">
                 <img src="images/facebook.svg" style="width: 20px; height: 20px;" class="me-2" /> Facebook
