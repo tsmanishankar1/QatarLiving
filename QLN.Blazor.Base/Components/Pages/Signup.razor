@@ -1,81 +1,188 @@
 @page "/signup"
-
+@inject ISnackbar Snackbar
+@inject NavigationManager NavManager
+@inject ApiService Api
+@using QLN.Blazor.Base.Services
+@inject UserState UserState
 @using MudBlazor
 @rendermode InteractiveServer
 
-<div style="width: 100%; padding: 20px 30px;">
+@if (!_showOtp)
+{
+    <MudPaper Class="p-8" Style="width: 100%; border-radius: 12px; padding: 20px;">
+        <MudText Typo="Typo.h6" Class="mb-6">Create New Account</MudText>
 
-   <MudPaper Class="p-8" Style="width: 100%; border-radius: 12px; padding: 20px;" Elevation="3">
-    <MudText Typo="Typo.h6" Class="mb-6" Style="font-weight: 600;">
-          Create New Account
-    </MudText>
-    <MudGrid>
-        <!-- Username & Email -->
-        <MudItem xs="12" md="6">
-            <MudTextField Label="Username" Required="true" @bind-Value="_model.Username" />
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <MudTextField Label="E-mail address" Required="true" @bind-Value="_model.Email" />
-        </MudItem>
+        <MudGrid>
+             <MudItem xs="12" md="6"></MudItem>
+                <MudTextField Label="User Name" Required="true" @bind-Value="_model.userName" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTextField Label="First Name" Required="true" @bind-Value="_model.FirstName" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTextField Label="Last Name" Required="true" @bind-Value="_model.LastName" />
+            </MudItem>
 
-        <!-- Confirm Email & Mobile Operator -->
-        <MudItem xs="12" md="6">
-            <MudTextField Label="Confirm e-mail address" Required="true" @bind-Value="_model.ConfirmEmail" />
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <MudSelect T="string" Label="Mobile Operator" @bind-Value="_model.MobileOperator">
+            <MudItem xs="12" md="6">
+                <MudTextField Label="Email Address" Required="true" @bind-Value="_model.EmailAddress" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTextField Label="Mobile Number" Required="true" @bind-Value="_model.MobileNumber" />
+            </MudItem>
 
+            <MudItem xs="12" md="6">
+                <MudSelect T="string" Label="Gender" Required="true" @bind-Value="_model.Gender">
+                    @foreach (var gender in genderOptions)
+                    {
+                        <MudSelectItem Value="@gender">@gender</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudSelect T="string" Label="Nationality" Required="true" @bind-Value="_model.Nationality">
+                    @foreach (var n in nationalityOptions)
+                    {
+                        <MudSelectItem Value="@n">@n</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudDatePicker Label="Date of Birth" Required="true" @bind-Date="_model.DateOfBirth" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTextField Label="Password" InputType="InputType.Password" Required="true" @bind-Value="_model.Password" />
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+             <MudSelect T="string" Label="Language Preference" Required="true" @bind-Value="_model.LanguagePreferences">
+                @foreach (var lang in languageOptions)
+                {
+                    <MudSelectItem Value="@lang">@lang</MudSelectItem>
+                }
             </MudSelect>
-        </MudItem>
 
-        <!-- Mobile Number & Nationality -->
-        <MudItem xs="12" md="6">
-            <MudTextField Label="Mobile phone number" @bind-Value="_model.MobileNumber" />
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <MudSelect T="string" Label="Nationality" Required="true" @bind-Value="_model.Nationality">
 
-            </MudSelect>
-        </MudItem>
+            </MudItem>
 
-        <!-- Gender & DOB -->
-        <MudItem xs="12" md="6">
-            <MudSelect T="string" Label="Gender" Required="true" @bind-Value="_model.Gender">
+            <MudItem xs="12" md="6">
+                <MudTextField Label="Location" Required="true" @bind-Value="_model.Location" />
+            </MudItem>
 
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <MudDatePicker Label="Date of Birth" Required="true" @bind-Date="_model.DateOfBirth" />
-        </MudItem>
-
-        <!-- Newsletter Checkbox -->
-        <MudItem xs="12">
-            <MudCheckBox T="bool" @bind-Value="_model.SubscribeNewsletter" Label="Sign-up to receive our newsletter" />
-        </MudItem>
-
-        <!-- Submit Button -->
-       <MudItem xs="12">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4">
-                Create new account
-            </MudButton>
-        </MudItem>
-    </MudGrid>
-     </MudPaper>
-</div>
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" Disabled="_loading" Loading="_loading" OnClick="SubmitSignup">
+                    Create new account
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+}
+else
+{
+    <MudPaper Class="p-6"  Style="max-width: 400px; border-radius: 12px; padding: 20px;">
+        <MudText Typo="Typo.h6">Verify OTP</MudText>
+        <MudTextField Label="OTP" @bind-Value="_otp" MaxLength="6" />
+        <MudButton Variant="Variant.Filled" Color="Color.Success" Class="mt-4" OnClick="VerifyOtp">Verify</MudButton>
+    </MudPaper>
+}
 
 @code {
     private SignupModel _model = new();
+    private bool _loading = false;
+    private bool _showOtp = false;
+    private string _otp = "";
+
+    private List<string> genderOptions = new() { "Male", "Female", "Other" };
+    private List<string> nationalityOptions = new() { "India", "Qatar", "UK", "USA" };
+    private List<string> languageOptions = new() { "english", "arabic", "hindi", "tamil" }; // add more if needed
+
+
+    private async Task SubmitSignup()
+    {
+        _loading = true;
+        var payload = new
+        {
+            username = _model.UserName,
+            firstname = _model.FirstName,
+            lastname = _model.LastName,
+            dateofbirth = _model.DateOfBirth?.ToString("yyyy-MM-dd"),
+            gender = _model.Gender?.ToLower(),
+            mobilenumber = _model.MobileNumber,
+            emailaddress = _model.EmailAddress,
+            nationality = _model.Nationality?.ToLower(),
+            password = _model.Password,
+            languagepreferences = _model.LanguagePreferences?.ToLower(),
+            location = _model.Location
+        };
+
+        try
+        {
+            var res = await Api.PostAsync<object, object>("Auth/SignUp", payload);
+
+            Snackbar.Add("Signup successful! Please enter OTP.", Severity.Success);
+            _showOtp = true;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Signup failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task VerifyOtp()
+    {
+        var verifyPayload = new
+        {
+            email = _model.EmailAddress,
+            otp = _otp
+        };
+
+        try
+        {
+            var res = await Api.PostAsync<object, TokenResponse>("Auth/AccountVerification", verifyPayload);
+            var jwt = res?.JwtToken;
+
+            if (!string.IsNullOrEmpty(jwt))
+            {
+                var email = JwtHelper.GetEmailFromJwt(jwt);
+                UserState.Token = jwt;
+                UserState.Email = email;
+
+                Snackbar.Add("Account verified!", Severity.Success);
+                NavManager.NavigateTo("/");
+            }
+            else
+            {
+                Snackbar.Add("Invalid OTP", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Verification failed: " + ex.Message, Severity.Error);
+        }
+    }
 
     public class SignupModel
     {
-        public string Username { get; set; }
-        public string Email { get; set; }
-        public string ConfirmEmail { get; set; }
-        public string MobileOperator { get; set; }
+        public string UserName { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string EmailAddress { get; set; }
         public string MobileNumber { get; set; }
-        public string Nationality { get; set; }
         public string Gender { get; set; }
         public DateTime? DateOfBirth { get; set; } = DateTime.Today;
-        public bool SubscribeNewsletter { get; set; } = true;
+        public string Password { get; set; }
+        public string Nationality { get; set; }
+        public string LanguagePreferences { get; set; } = "english";
+        public string Location { get; set; }
+    }
+
+    public class TokenResponse
+    {
+        public string JwtToken { get; set; }
+        public string RefreshToken { get; set; }
     }
 }

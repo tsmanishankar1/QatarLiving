@@ -1,75 +1,37 @@
 @page "/login"
-@rendermode InteractiveServer
 @inject ApiService Api
+@inject ISnackbar Snackbar
+@inject NavigationManager NavManager
+@inject UserState UserState
 @using QLN.Blazor.Base.Services
 @using MudBlazor
-@using System.Text
-@using System.Text.Json
-@using System.Net.Http
-@inject HttpClient Http
-@inject NavigationManager Navigation
 
 <div style="min-height: 100vh;" class="d-flex justify-center align-center">
-    <div class="d-flex flex-column"
-         style="width: 100%; max-width: 400px;
-                padding: 32px;
-                border: 1px solid rgba(0, 0, 0, 0.12);
-                border-radius: 12px;
-                box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
-                background-color: white;">
+    <div class="d-flex flex-column" style="max-width: 400px; padding: 32px; border: 1px solid #ccc; border-radius: 12px; box-shadow: 0px 4px 12px rgba(0,0,0,0.15); background: white;">
+        <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-6" Style="font-weight: 600;">Log in</MudText>
 
-        <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-6" Style="font-weight: 600;">
-            Log in
-        </MudText>
-
-        <MudTextField Label="Username"
-                      Required="true"
-                      FullWidth="true"
-                      @bind-Value="_username" />
-
-        <MudTextField Label="Password"
-                      Required="true"
-                      FullWidth="true"
-                      Class="mt-4"
-                      InputType="InputType.Password"
-                      @bind-Value="_password" />
+        <MudTextField Label="Username" Required="true" FullWidth="true" @bind-Value="_username" />
+        <MudTextField Label="Password" Required="true" FullWidth="true" Class="mt-4" InputType="InputType.Password" @bind-Value="_password" />
 
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    FullWidth="true"
                    Class="mt-6"
-                   Style="text-transform: none; font-weight: bold;"
-                   OnClick="PerformLogin">
+                   Disabled="_isLoading"
+                   Loading="_isLoading"
+                   OnClick="PerformLogin"
+                   Style="text-transform: none; font-weight: bold;">
             Log in
         </MudButton>
-        <MudButton OnClick="@(() => Console.WriteLine("Button Clicked"))">
-    Log in c
-</MudButton>
 
-        <div class="d-flex justify-space-between mt-4" style="font-size: 0.9rem;">
-            <MudLink Href="/signup" Class="text-primary">Create new account</MudLink>
-            <MudLink Href="/reset-password" Class="text-primary">Request new password</MudLink>
-        </div>
-
-        <MudText Align="Align.Center" Class="my-4" Style="color: gray;">
-            Or login with
-        </MudText>
+        <MudText Align="Align.Center" Class="my-4" Style="color: gray;">Or login with</MudText>
 
         <div class="d-flex justify-center gap-2">
-            <MudButton Variant="Variant.Outlined"
-                       Color="Color.Default"
-                       Style="text-transform: none; font-weight: 500; min-width: 140px;"
-                       OnClick="LoginWithFacebook">
-                <img src="images/facebook.svg" alt="Facebook" style="width: 20px; height: 20px;" class="me-2" />
-                Facebook
+            <MudButton Variant="Variant.Outlined" Color="Color.Default" Style="min-width: 140px;" OnClick="LoginWithFacebook">
+                <img src="images/facebook.svg" style="width: 20px; height: 20px;" class="me-2" /> Facebook
             </MudButton>
-
-            <MudButton Variant="Variant.Outlined"
-                       Color="Color.Default"
-                       Style="text-transform: none; font-weight: 500; min-width: 140px;"
-                       OnClick="LoginWithGoogle">
-                <img src="images/google.svg" alt="Google" style="width: 20px; height: 20px;" class="me-2" />
-                Google
+            <MudButton Variant="Variant.Outlined" Color="Color.Default" Style="min-width: 140px;" OnClick="LoginWithGoogle">
+                <img src="images/google.svg" style="width: 20px; height: 20px;" class="me-2" /> Google
             </MudButton>
         </div>
     </div>
@@ -78,46 +40,45 @@
 @code {
     private string _username = string.Empty;
     private string _password = string.Empty;
+    private bool _isLoading = false;
 
     private async Task PerformLogin()
     {
-        Console.WriteLine("Login button clicked");
-
+        _isLoading = true;
         var payload = new { name = _username, passwordOrOtp = _password };
 
         try
         {
-            // Replace with your actual API URL if not set globally in ApiService
             var result = await Api.PostAsync<object, LoginResult>("Auth/Login", payload);
 
-            if (result != null && result.Success)
+            if (result?.Success == true)
             {
-                Console.WriteLine($"JWT: {result.Message.JwtToken}");
-                Console.WriteLine($"Refresh Token: {result.Message.RefreshToken}");
-                // You can now store the token or redirect as needed
+                var jwt = result.Message.JwtToken;
+                var email = JwtHelper.GetEmailFromJwt(jwt);
+
+                UserState.Email = email;
+                UserState.Token = jwt;
+
+                Snackbar.Add($"Logged in as {email}", Severity.Success);
+                NavManager.NavigateTo("/");
             }
             else
             {
-                Console.WriteLine("Login failed or unsuccessful response");
+                Snackbar.Add("Login failed. Please check credentials.", Severity.Error);
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Login error: {ex.Message}");
+            Snackbar.Add("Error: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
         }
     }
 
-    private async Task LoginWithFacebook()
-    {
-        Console.WriteLine("Facebook login clicked");
-        await Task.CompletedTask;
-    }
-
-    private async Task LoginWithGoogle()
-    {
-        Console.WriteLine("Google login clicked");
-        await Task.CompletedTask;
-    }
+    private Task LoginWithFacebook() => Task.CompletedTask;
+    private Task LoginWithGoogle() => Task.CompletedTask;
 
     private class LoginResult
     {

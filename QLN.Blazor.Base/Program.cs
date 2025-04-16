@@ -13,6 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddMudServices();
+builder.Services.AddSingleton<UserState>();
 builder.Services.Configure<ApiSettings>(
     builder.Configuration.GetSection("ApiSettings"));
 builder.Services.AddHttpClient<ApiService>();
