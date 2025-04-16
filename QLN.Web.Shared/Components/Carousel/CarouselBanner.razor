@@ -1,37 +1,39 @@
 @using MudBlazor
+@using System.Collections.Generic
 
-<div style="width: 100%;">
+<MudCarousel Class="mud-width-full" Style="height: 230px;"
+             ShowArrows="@ShowArrows"
+             EnableSwipeGesture="@EnableSwipeGesture"
+             AutoCycle="@AutoCycle"
+             TData="string">
 
-    <MudCarousel Class="mud-width-full" Style="height: 230px;"
-                 ShowArrows="@arrows"
-                 EnableSwipeGesture="@enableSwipeGesture"
-                 AutoCycle="@autocycle"
-                 TData="object">
-                 
-        <MudCarouselItem Transition="transition">
-            <div style="width: 100%; height: 100%;">
-                <img src="images/image11.jpg" style="width: 100%; height: 100%; object-fit: cover;" />
-            </div>
-        </MudCarouselItem>
-        
-        <MudCarouselItem Transition="transition">
-            <div style="width: 100%; height: 100%;">
-                <img src="images/image22.jpg" style="width: 100%; height: 100%; object-fit: cover;" />
-            </div>
-        </MudCarouselItem>
-        
-        <MudCarouselItem Transition="transition">
-            <div style="width: 100%; height: 100%;">
-                <img src="images/image33.jpg" style="width: 100%; height: 100%; object-fit: cover;" />
-            </div>
-        </MudCarouselItem>
-        
-    </MudCarousel>
-</div>
+    @if (ImageUrls != null)
+    {
+        @foreach (var image in ImageUrls)
+        {
+            <MudCarouselItem Transition="@Transition">
+                <div style="width: 100%; height: 100%;">
+                    <img src="@image" style="width: 100%; height: 100%; object-fit: cover;" />
+                </div>
+            </MudCarouselItem>
+        }
+    }
+
+</MudCarousel>
 
 @code {
-    private bool arrows = true;
-    private bool enableSwipeGesture = true;
-    private bool autocycle = true;
-    private Transition transition = Transition.Slide;
+    [Parameter]
+    public List<string> ImageUrls { get; set; } = new();
+
+    [Parameter]
+    public bool ShowArrows { get; set; } = true;
+
+    [Parameter]
+    public bool EnableSwipeGesture { get; set; } = true;
+
+    [Parameter]
+    public bool AutoCycle { get; set; } = true;
+
+    [Parameter]
+    public Transition Transition { get; set; } = Transition.Slide;
 }
