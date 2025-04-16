@@ -3,6 +3,11 @@
 @inject ApiService Api
 @using QLN.Blazor.Base.Services
 @using MudBlazor
+@using System.Text
+@using System.Text.Json
+@using System.Net.Http
+@inject HttpClient Http
+@inject NavigationManager Navigation
 
 <div style="min-height: 100vh;" class="d-flex justify-center align-center">
     <div class="d-flex flex-column"
@@ -37,6 +42,9 @@
                    OnClick="PerformLogin">
             Log in
         </MudButton>
+        <MudButton OnClick="@(() => Console.WriteLine("Button Clicked"))">
+    Log in c
+</MudButton>
 
         <div class="d-flex justify-space-between mt-4" style="font-size: 0.9rem;">
             <MudLink Href="/signup" Class="text-primary">Create new account</MudLink>
