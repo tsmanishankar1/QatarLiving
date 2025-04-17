@@ -1,0 +1,88 @@
+@page "/user-profile"
+@using MudBlazor
+@using QLN.Blazor.Base.Components.Pages.UserProfile
+
+<MudContainer MaxWidth="MaxWidth.False">
+    <MudPaper Elevation="0" Class="pa-4 d-flex justify-space-between align-center" Style="border-bottom: 1px solid #e0e0e0;">
+        <div>
+            <MudText Typo="Typo.h5" Class="font-weight-bold">rewards_merchant1</MudText>
+            <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Member since: March 2025</MudText>
+        </div>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small">Send a Message</MudButton>
+    </MudPaper>
+
+    <MudGrid Class="mt-4">
+        <MudItem xs="12" md="3">
+            <MudNavMenu>
+                @foreach (var item in SidebarItems)
+            {
+                <MudPaper 
+        Elevation="0"
+        Class="pa-2 mb-1 d-flex justify-space-between align-center rounded cursor-pointer"
+        Style="@((item == SelectedItem) 
+            ? "background-color: #003A63; color: white;" 
+            : "background-color: transparent; color: black;")"
+        @onclick="() => SelectedItem = item">
+
+        <MudText Class="m-0">@item.Label</MudText>
+        <MudText Class="m-0 font-weight-bold">@item.Count</MudText>
+        
+    </MudPaper>
+   
+            }
+                <MudDivider Class="my-2" />
+                <MudNavLink Href="#">Messages</MudNavLink>
+                <MudNavLink Href="#">Profile & Settings</MudNavLink>
+                <MudNavLink Href="#">Verify Account</MudNavLink>
+                <MudDivider Class="my-2" />
+                <MudNavLink Href="#">Subscriptions</MudNavLink>
+            </MudNavMenu>
+        </MudItem>
+
+        <!-- Main Content -->
+        <MudItem xs="12" md="9">
+            @if (SelectedItem?.ComponentType != null)
+            {
+                <DynamicComponent Type="@SelectedItem.ComponentType" />
+            }
+            else
+            {
+                <MudText>Select a section to view its content.</MudText>
+            }
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    class SidebarItem
+    {
+        public string Label { get; set; }
+        public int Count { get; set; }
+        public Type ComponentType { get; set; }
+    }
+
+    SidebarItem SelectedItem { get; set; }
+
+    List<SidebarItem> SidebarItems = new()
+    {
+        new SidebarItem { Label = "Timeline", Count = 0, ComponentType = typeof(Timeline) },
+        new SidebarItem { Label = "Forum Posts", Count = 0, ComponentType = typeof(ForumPosts) },
+        new SidebarItem { Label = "Groups", Count = 0, ComponentType = typeof(Groups) },
+        new SidebarItem { Label = "Pages", Count = 0, ComponentType = typeof(PagesComponent) },
+        new SidebarItem { Label = "Comments", Count = 0, ComponentType = typeof(CommentsComponent) },
+        new SidebarItem { Label = "Ads Posted", Count = 0, ComponentType = typeof(AdsPostedComponent) },
+        new SidebarItem { Label = "Unpublished Ads", Count = 0, ComponentType = typeof(UnpublishedAdsComponent) },
+        new SidebarItem { Label = "Ads Sold", Count = 0, ComponentType = typeof(AdsSoldComponent) },
+        new SidebarItem { Label = "Posted Jobs", Count = 0, ComponentType = typeof(PostedJobsComponent) },
+        new SidebarItem { Label = "Unpublished Jobs", Count = 0, ComponentType = typeof(UnpublishedJobsComponent) },
+        new SidebarItem { Label = "Jobs Closed", Count = 0, ComponentType = typeof(JobsClosedComponent) },
+        new SidebarItem { Label = "Jobseeker profile", Count = 0, ComponentType = typeof(JobseekerProfileComponent) },
+        new SidebarItem { Label = "Freelancer profile", Count = 0, ComponentType = typeof(FreelancerProfileComponent) },
+        new SidebarItem { Label = "Favourite Items", Count = 0, ComponentType = typeof(FavouriteItemsComponent) } 
+    };
+
+    protected override void OnInitialized()
+    {
+        SelectedItem = SidebarItems.FirstOrDefault();
+    }
+}
