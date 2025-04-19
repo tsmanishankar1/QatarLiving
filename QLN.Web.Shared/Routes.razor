@@ -1,0 +1,13 @@
+﻿@using QLN.Web.Shared.Account.Shared
+
+<Router AppAssembly="typeof(Layout.MainLayout).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        @* <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)"> *@
+        @*     <NotAuthorized> *@
+        @*         <RedirectToLogin /> *@
+        @*     </NotAuthorized> *@
+        @* </AuthorizeRouteView> *@
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+</Router>
