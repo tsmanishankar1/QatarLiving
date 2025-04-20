@@ -1,6 +1,13 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using QLN.Common.Infrastructure.Models;
-using QLN.Common.Infrastructure.ServiceConfiguration;
+using Microsoft.IdentityModel.Tokens;
+using QLN.Common.AuthUser;
+using QLN.Common.DbContext;
+using QLN.Common.Model;
+using QLN.Common.ServiceConfiguration;
+using System.Text;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,7 +35,41 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddDbContext<QatarlivingDevContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Configure Identity
+builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
+{
+    options.SignIn.RequireConfirmedEmail = true;
+})
+.AddEntityFrameworkStores<QatarlivingDevContext>()
+.AddDefaultTokenProviders();
+
+// Add Token Auth Support (.NET 8)
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    var config = builder.Configuration;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = config["Jwt:Issuer"],
+        ValidAudience = config["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]!))
+    };
+});
+
+
+builder.Services.AddAuthorization();
+builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 builder.Services.ServicesConfiguration(builder.Configuration);
+
+//builder.Services.ServicesConfiguration(builder.Configuration);
 
 var app = builder.Build();
 
@@ -42,6 +83,10 @@ if (app.Environment.IsDevelopment())
         options.DocumentTitle = "Qatar Management API";
     });
 }
+
+// Group Auth Routes
+var authGroup = app.MapGroup("/auth");
+authGroup.MapAuthEndpoints();
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
