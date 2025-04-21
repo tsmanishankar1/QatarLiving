@@ -1,14 +1,9 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using QLN.Common.Model;
+using QLN.Common.Infrastructure.Model;
 
-namespace QLN.Common.DbContext
+namespace QLN.Common.Infrastructure.DbContext
 {
     public class QatarlivingDevContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>
     {

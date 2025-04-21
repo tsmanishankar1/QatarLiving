@@ -2,10 +2,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using QLN.Common.AuthUser;
-using QLN.Common.DbContext;
-using QLN.Common.Model;
-using QLN.Common.ServiceConfiguration;
+using QLN.Common.Infrastructure.AuthUser;
+using QLN.Common.Infrastructure.DbContext;
+using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.ServiceConfiguration;
 using System.Text;
 
 
@@ -31,6 +31,8 @@ builder.Services.AddSwaggerGen(options =>
         options.IncludeXmlComments(xmlPath);
     }
 });
+
+
 
 builder.Services.AddDbContext<QatarlivingDevContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));

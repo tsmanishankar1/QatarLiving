@@ -1,16 +1,12 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using QLN.Common.IService;
-using QLN.Common.Model;
-using QLN.Common.Service;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.Service;
 
-namespace QLN.Common.ServiceConfiguration
+
+namespace QLN.Common.Infrastructure.ServiceConfiguration
 {
     public static class DependencyInjectionService
     {

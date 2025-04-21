@@ -27,4 +27,10 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.8.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Infrastructure\IRepository\" />
+    <Folder Include="Infrastructure\RepositoryConfiguration\" />
+    <Folder Include="Infrastructure\Repository\" />
+  </ItemGroup>
+
 </Project>

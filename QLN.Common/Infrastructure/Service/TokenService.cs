@@ -1,17 +1,13 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using QLN.Common.IService;
-using QLN.Common.Model;
-using System;
-using System.Collections.Generic;
+using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.Model;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace QLN.Common.Service
+namespace QLN.Common.Infrastructure.Service
 {
     public class TokenService : ITokenService
     {

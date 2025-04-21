@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace QLN.Common.Model
+namespace QLN.Common.Infrastructure.Model
 {
     public class ApplicationUser : IdentityUser<Guid>
     {

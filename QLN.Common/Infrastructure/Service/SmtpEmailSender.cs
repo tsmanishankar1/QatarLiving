@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
-using QLN.Common.Model;
 using System.Net.Mail;
 using System.Net;
-namespace QLN.Common.Service
+using QLN.Common.Infrastructure.Model;
+namespace QLN.Common.Infrastructure.Service
 {
     public class SmtpEmailSender : IEmailSender<ApplicationUser>
     {

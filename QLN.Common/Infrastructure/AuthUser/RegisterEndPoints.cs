@@ -2,23 +2,18 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Routing;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
-using QLN.Common.Model;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.WebUtilities;
 using System.Text.Encodings.Web;
-using QLN.Common.IService;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
+using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.Model;
 
 
-namespace QLN.Common.AuthUser
+namespace QLN.Common.Infrastructure.AuthUser
 {
     public static class RegisterEndPoints
     {
@@ -46,7 +41,7 @@ namespace QLN.Common.AuthUser
                     Mobilenumber = request.Mobilenumber,
                     Emailaddress = request.Emailaddress,
                     Email = request.Emailaddress,
-                    Nationality = request.Nationality,                    
+                    Nationality = request.Nationality,
                     Languagepreferences = request.Languagepreferences,
                     Location = request.Location,
                     Isactive = true
@@ -78,7 +73,10 @@ namespace QLN.Common.AuthUser
 
                 var response = ApiResponse<string>.Success("User registered successfully. Please check your email to confirm your account.", null);
                 return TypedResults.Ok(response);
-            });
+            }).WithName("Register")
+            .WithTags("Authentication")
+            .WithSummary("Register a new user")
+            .WithDescription("Registers a new user and sends an email confirmation link.");
 
             return group;
         }
@@ -109,15 +107,17 @@ namespace QLN.Common.AuthUser
                 }
                 //return TypedResults.Ok();
                 return Results.Text("<h2>Email Confirmed Successfully</h2>", "text/html");
-            }).WithName("ConfirmEmail");
+            }).WithName("ConfirmEmail")
+            .WithTags("Authentication")
+            .WithSummary("Confirm email address")
+            .WithDescription("Verifies the email using confirmation link parameters.");
             return group;
         }
 
         // Resend Confirmation Email
         public static RouteGroupBuilder MapResendConfirmationEmailEndpoint(this RouteGroupBuilder group)
         {
-            group.MapPost("/resend-confirmation-email", async Task<IResult>
-            (
+            group.MapPost("/resend-confirmation-email", async Task<Results<Ok<ApiResponse<string>>, NotFound>> (
                 [FromBody] ResendConfirmationEmailRequest request,
                 HttpContext context,
                 [FromServices] UserManager<ApplicationUser> userManager,
@@ -126,10 +126,14 @@ namespace QLN.Common.AuthUser
             ) =>
             {
                 var user = await userManager.FindByEmailAsync(request.Email);
-                if (user == null) return TypedResults.NotFound("User not Found");
+                if (user == null)
+                {
+                    return TypedResults.NotFound();
+                }
 
                 var code = await userManager.GenerateEmailConfirmationTokenAsync(user);
                 var encodedCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+
                 var confirmUrl = linkGenerator.GetUriByName(context, "ConfirmEmail", new
                 {
                     userId = user.Id,
@@ -141,8 +145,13 @@ namespace QLN.Common.AuthUser
                     await emailSender.SendConfirmationLinkAsync(user, user.Email, HtmlEncoder.Default.Encode(confirmUrl));
                 }
 
-                return Results.Text("<h2>Email Confirmed Successfully</h2>", "text/html");
-            });
+                return TypedResults.Ok(ApiResponse<string>.Success("Confirmation link resent. Please check your email."));
+            })
+            .WithName("ResendConfirmationEmail")
+            .WithTags("Authentication")
+            .WithSummary("Resend email confirmation link")
+            .WithDescription("Sends a new confirmation link to the user’s email if the original confirmation email was not received or expired.");
+
             return group;
         }
 
@@ -165,7 +174,12 @@ namespace QLN.Common.AuthUser
                 }
 
                 return TypedResults.Ok(ApiResponse<string>.Success("If your email is registered and confirmed, a reset code has been sent."));
-            });
+            })
+                .WithName("ForgotPassword")
+                .WithTags("Authentication")
+                .WithSummary("Request password reset")
+                .WithDescription("Sends a password reset token to the user’s email if the email is registered and confirmed.");
+
             return group;
         }
 
@@ -179,7 +193,7 @@ namespace QLN.Common.AuthUser
             ) =>
             {
                 var user = await userManager.FindByEmailAsync(request.Email);
-                if (user == null || !(await userManager.IsEmailConfirmedAsync(user)))
+                if (user == null || !await userManager.IsEmailConfirmedAsync(user))
                 {
                     return TypedResults.Ok(ApiResponse<string>
                         .Success("If your email is registered, you will receive a password reset link"));
@@ -196,7 +210,10 @@ namespace QLN.Common.AuthUser
                 }
 
                 return TypedResults.Ok(ApiResponse<string>.Success("Password has been reset successfully"));
-            });
+            }).WithName("ResetPassword")
+            .WithTags("Authentication")
+            .WithSummary("Reset user password")
+            .WithDescription("Resets the password using the token provided via email.");
             return group;
         }
 
@@ -268,7 +285,10 @@ namespace QLN.Common.AuthUser
                     AccessToken = accessToken,
                     RefreshToken = refreshToken                    
                 }));
-            });
+            }).WithName("Login")
+            .WithTags("Authentication")
+            .WithSummary("Logs in a user")
+            .WithDescription("Logs in using username/email/phone and password. If 2FA is enabled, sends an OTP.");
 
             return group;
         }
@@ -331,11 +351,13 @@ namespace QLN.Common.AuthUser
                     AccessToken = accessToken,
                     RefreshToken = refreshToken
                 }));
-            });
+            }).WithName("VerifyTwoFactor")
+            .WithTags("Authentication")
+            .WithSummary("Verify Two-Factor Authentication")
+            .WithDescription("Verifies the OTP code sent to the user's email and completes login by issuing tokens.");
 
             return group;
         }
-
 
         // refresh
         public static RouteGroupBuilder MapRefreshTokenEndpoint(this RouteGroupBuilder group)
@@ -366,7 +388,9 @@ namespace QLN.Common.AuthUser
                     AccessToken = newAccessToken,
                     RefreshToken = newRefreshToken,                    
                 }));
-            });
+            }).WithName("RefreshToken")
+            .WithTags("Authentication")
+            .WithSummary("Refresh JWT access token").WithDescription("Uses a valid refresh token to generate a new access and refresh token.");
 
             return group;
         }
@@ -389,7 +413,11 @@ namespace QLN.Common.AuthUser
 
                 var status = request.Enable ? "enabled" : "disabled";
                 return TypedResults.Ok(ApiResponse<string>.Success($"Two-Factor Authentication has been {status}."));
-            });
+            })
+                .WithName("ToggleTwoFactor")
+                .WithTags("Manage Account")
+                .WithSummary("Enable or disable two-factor authentication")
+                .WithDescription("Allows user to enable or disable 2FA based on email or phone number.");
 
             return group;
         }
@@ -417,7 +445,10 @@ namespace QLN.Common.AuthUser
                     user.Isactive,
                     user.TwoFactorEnabled
                 }));
-            });
+            }).WithName("GetProfileInfo")
+            .WithTags("Manage Account")
+            .WithSummary("Get user profile information")
+            .WithDescription("Returns user profile details using their email as identity input.");
 
             return group;
         }
@@ -445,7 +476,11 @@ namespace QLN.Common.AuthUser
                 await userManager.UpdateAsync(user);
 
                 return TypedResults.Ok(ApiResponse<string>.Success("Profile updated successfully"));
-            });
+            })
+                .WithName("UpdateProfileInfo")
+                .WithTags("Manage Account")
+                .WithSummary("Update user profile")
+                .WithDescription("Allows user to update personal details like name, mobile number, and location.");
 
             return group;
         }
