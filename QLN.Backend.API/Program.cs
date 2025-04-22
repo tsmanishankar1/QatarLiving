@@ -33,9 +33,10 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 
-
+#region dbinject
 builder.Services.AddDbContext<QatarlivingDevContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+#endregion
 
 // Configure Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>

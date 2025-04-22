@@ -17,7 +17,6 @@ namespace QLN.Common.Infrastructure.AuthUser
                 .MapTwoFactorAuthEndpoint()
                 .MapGetProfileEndpoint()
                 .MapUpdateProfileEndpoint();
-
             return group;
         }
     }

@@ -9,6 +9,7 @@ namespace QLN.Common.DTO_s
         public string Emailaddress { get; set; } = null!;
         public string AccessToken { get; set; } = string.Empty;
         public string RefreshToken { get; set; } = string.Empty;     
+        public bool? IsTwoFactorEnabled { get; set; }
     }
 
     public class RefreshTokenRequest

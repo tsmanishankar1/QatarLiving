@@ -11,6 +11,10 @@ using System.Text.Encodings.Web;
 using Microsoft.EntityFrameworkCore;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.Model;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
 
 
 namespace QLN.Common.Infrastructure.AuthUser
@@ -73,7 +77,7 @@ namespace QLN.Common.Infrastructure.AuthUser
 
                 var response = ApiResponse<string>.Success("User registered successfully. Please check your email to confirm your account.", null);
                 return TypedResults.Ok(response);
-            }).WithName("Register")
+            }).WithName("Register")            
             .WithTags("Authentication")
             .WithSummary("Register a new user")
             .WithDescription("Registers a new user and sends an email confirmation link.");
@@ -84,7 +88,7 @@ namespace QLN.Common.Infrastructure.AuthUser
         // confirm email
         public static RouteGroupBuilder MapConfirmEmailEndpoint(this RouteGroupBuilder group)
         {
-            group.MapGet("/confirm-email", async Task<IResult>
+            group.MapGet("/confirm-email", async Task<Results<Ok<ApiResponse<string>>, NotFound<string>, ValidationProblem>>
             (
                 [FromQuery] Guid userId,
                 [FromQuery] string code,
@@ -106,7 +110,7 @@ namespace QLN.Common.Infrastructure.AuthUser
                     return TypedResults.ValidationProblem(errors);
                 }
                 //return TypedResults.Ok();
-                return Results.Text("<h2>Email Confirmed Successfully</h2>", "text/html");
+                return TypedResults.Ok(ApiResponse<string>.Success("Email confirmed successfully."));
             }).WithName("ConfirmEmail")
             .WithTags("Authentication")
             .WithSummary("Confirm email address")
@@ -127,7 +131,7 @@ namespace QLN.Common.Infrastructure.AuthUser
             {
                 var user = await userManager.FindByEmailAsync(request.Email);
                 if (user == null)
-                {
+                {                   
                     return TypedResults.NotFound();
                 }
 
@@ -265,7 +269,8 @@ namespace QLN.Common.Infrastructure.AuthUser
                         Emailaddress = user.Emailaddress,
                         Mobilenumber = user.Mobilenumber,
                         AccessToken = string.Empty, // Don't send token until verified
-                        RefreshToken = string.Empty
+                        RefreshToken = string.Empty,
+                        IsTwoFactorEnabled = user.TwoFactorEnabled
                     }));
                 }
 
@@ -485,6 +490,7 @@ namespace QLN.Common.Infrastructure.AuthUser
             return group;
         }
 
+       
 
     }
 }
