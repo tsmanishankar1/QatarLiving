@@ -20,7 +20,7 @@ steps:
   inputs:
     appSourcePath: '$(Build.SourcesDirectory)'
     azureSubscription: 'dev-qlnext'
-    acrName: $(variables.acrRegistry)
+    acrName: $(acrRegistry)
     acrUsername: 'qlnv2'
     acrPassword: 'jxmPri2GCql4OHO5Fl+3C0Bii3fmUbsrEZ1EHDbx/y+ACRDo/bQ0'
     imageToBuild: 'qlnv2-ezftf8ehejdadpfn.azurecr.io/qlnv2/blazorbase:$(Build.BuildId).$(Build.BuildNumber)'
