@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MockQueryable.Moq;
 using Moq;
+using QLN.Backend.UnitTest.IService;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.Model;
@@ -17,13 +18,13 @@ using System.Text.Encodings.Web;
 
 namespace QLN.Backend.UnitTest.AuthTest
 {
-
     public class AuthUnitTest
     {
         private readonly Mock<UserManager<ApplicationUser>> _mockUserManager;
         private readonly Mock<IEmailSender<ApplicationUser>> _mockEmailSender;
         private readonly Mock<LinkGenerator> _mockLinkGenerator;
         private readonly Mock<HttpContext> _mockHttpContext;
+        private readonly Mock<ILinkGeneratorWrapper> _mockLinkGeneratorWrapper = new();
 
         public AuthUnitTest()
         {
@@ -1101,6 +1102,222 @@ namespace QLN.Backend.UnitTest.AuthTest
                     return null!;
                 })(request, mockUserManager.Object, mockTokenService.Object);
             Assert.IsType<NotFound>(result);
+        }
+        //Resend Confirmation Email
+        [Fact]
+        public async Task ResendConfirmationEmailUserNotFoundReturnsNotFound()
+        {
+            var request = new ResendConfirmationEmailRequest { Email = "notfound@example.com" };
+
+            _mockUserManager.Setup(x => x.FindByEmailAsync(request.Email))
+                .ReturnsAsync((ApplicationUser)null);
+
+            var result = await InvokeResendConfirmationEmail(
+                request,
+                _mockHttpContext.Object,
+                _mockUserManager.Object,
+                _mockEmailSender.Object,
+                _mockLinkGeneratorWrapper.Object);
+
+            var notFound = Assert.IsType<NotFound<string>>(result);
+            Assert.Equal("User not Found", notFound.Value);
+        }
+
+        [Fact]
+        public async Task ResendConfirmationEmailValidRequestSendsEmail()
+        {
+            var user = new ApplicationUser { Id = Guid.NewGuid(), Email = "test@example.com" };
+            var request = new ResendConfirmationEmailRequest { Email = user.Email };
+            var token = "token123";
+            var expectedUrl = $"https://example.com/confirm-email?userId={user.Id}&code={token}";
+
+            _mockUserManager.Setup(x => x.FindByEmailAsync(user.Email)).ReturnsAsync(user);
+            _mockUserManager.Setup(x => x.GenerateEmailConfirmationTokenAsync(user)).ReturnsAsync(token);
+
+            _mockLinkGeneratorWrapper
+                .Setup(x => x.GetUriByName(
+                    It.IsAny<HttpContext>(),
+                    It.IsAny<string>(),
+                    It.IsAny<object>(),
+                    It.IsAny<string>(),
+                    It.IsAny<HostString?>(),
+                    It.IsAny<PathString?>(),
+                    It.IsAny<FragmentString>(),
+                    It.IsAny<LinkOptions>()))
+                .Returns(expectedUrl);
+
+            var result = await InvokeResendConfirmationEmail(
+                request,
+                _mockHttpContext.Object,
+                _mockUserManager.Object,
+                _mockEmailSender.Object,
+                _mockLinkGeneratorWrapper.Object
+            );
+            var textResult = Assert.IsType<ContentHttpResult>(result);
+            Assert.Equal("text/html", textResult.ContentType);
+            Assert.Contains("Email Confirmed", textResult.ResponseContent);
+
+            _mockEmailSender.Verify(
+                x => x.SendConfirmationLinkAsync(user, user.Email, HtmlEncoder.Default.Encode(expectedUrl)),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task ResendConfirmationEmailConfirmationUrlNullDoesNotSendEmail()
+        {
+            var user = new ApplicationUser { Id = Guid.NewGuid(), Email = "test@example.com" };
+            var request = new ResendConfirmationEmailRequest { Email = user.Email };
+            var token = "test-token";
+
+            _mockUserManager.Setup(x => x.FindByEmailAsync(user.Email)).ReturnsAsync(user);
+            _mockUserManager.Setup(x => x.GenerateEmailConfirmationTokenAsync(user)).ReturnsAsync("token123");
+
+            _mockLinkGeneratorWrapper
+                .Setup(x => x.GetUriByName(
+                    It.IsAny<HttpContext>(),
+                    It.IsAny<string>(),
+                    It.IsAny<object>(),
+                    It.IsAny<string>(),
+                    It.IsAny<HostString?>(),
+                    It.IsAny<PathString?>(),
+                    It.IsAny<FragmentString>(),
+                    It.IsAny<LinkOptions>()))
+                .Returns<string>(null);
+
+            var result = await InvokeResendConfirmationEmail(
+                request,
+                _mockHttpContext.Object,
+                _mockUserManager.Object,
+                _mockEmailSender.Object,
+                _mockLinkGeneratorWrapper.Object);
+
+            var textResult = Assert.IsType<ContentHttpResult>(result);
+            Assert.Equal("text/html", textResult.ContentType);
+            Assert.Contains("Email Confirmed", textResult.ResponseContent);
+
+            _mockEmailSender.Verify(x => x.SendConfirmationLinkAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+        //Helper method for Resend Confirmation Email
+        public static async Task<IResult> InvokeResendConfirmationEmail(
+            ResendConfirmationEmailRequest request,
+            HttpContext context,
+            UserManager<ApplicationUser> userManager,
+            IEmailSender<ApplicationUser> emailSender,
+            ILinkGeneratorWrapper linkGenerator)
+        {
+            var user = await userManager.FindByEmailAsync(request.Email);
+            if (user == null)
+                return TypedResults.NotFound("User not Found");
+
+            var code = await userManager.GenerateEmailConfirmationTokenAsync(user);
+            var encodedCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+
+            var confirmUrl = linkGenerator.GetUriByName(context, "ConfirmEmail", new
+            {
+                userId = user.Id,
+                code = encodedCode
+            }, scheme: null, host: null, pathBase: null, fragment: FragmentString.Empty, options: null);
+
+            if (confirmUrl != null)
+            {
+                await emailSender.SendConfirmationLinkAsync(user, user.Email, HtmlEncoder.Default.Encode(confirmUrl));
+            }
+
+            return Results.Text("<h2>Email Confirmed Successfully</h2>", "text/html");
+        }
+        //Reset password
+        [Fact]
+        public async Task ResetPasswordSuccessReturnsSuccessMessage()
+        {
+            var user = new ApplicationUser { Email = "test@example.com" };
+            var request = new ResetPasswordRequest
+            {
+                Email = user.Email,
+                ResetCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes("reset-token")),
+                NewPassword = "New@123"
+            };
+
+            _mockUserManager.Setup(x => x.FindByEmailAsync(request.Email)).ReturnsAsync(user);
+            _mockUserManager.Setup(x => x.IsEmailConfirmedAsync(user)).ReturnsAsync(true);
+            _mockUserManager.Setup(x => x.ResetPasswordAsync(user, "reset-token", request.NewPassword))
+                .ReturnsAsync(IdentityResult.Success);
+
+            var result = await AuthUnitTest.InvokeResetPasswordEndpoint(request, _mockUserManager.Object);
+
+            var okResult = Assert.IsType<Ok<ApiResponse<string>>>(result.Result);
+            Assert.Equal("Password has been reset successfully", okResult.Value.Message);
+        }
+        [Fact]
+        public async Task ResetPasswordUserNotFoundOrEmailNotConfirmedReturnsGenericMessage()
+        {
+            var request = new ResetPasswordRequest
+            {
+                Email = "notfound@example.com",
+                ResetCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes("dummy")),
+                NewPassword = "test"
+            };
+
+            _mockUserManager.Setup(x => x.FindByEmailAsync(request.Email)).ReturnsAsync((ApplicationUser)null);
+
+            var result = await AuthUnitTest.InvokeResetPasswordEndpoint(request, _mockUserManager.Object);
+
+            var okResult = Assert.IsType<Ok<ApiResponse<string>>>(result.Result);
+            Assert.Contains("you will receive a password reset link", okResult.Value.Message);
+        }
+        [Fact]
+        public async Task ResetPasswordResetFailsReturnsValidationErrors()
+        {
+            var user = new ApplicationUser { Email = "test@example.com" };
+            var request = new ResetPasswordRequest
+            {
+                Email = user.Email,
+                ResetCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes("reset-token")),
+                NewPassword = "weak"
+            };
+
+            _mockUserManager.Setup(x => x.FindByEmailAsync(user.Email)).ReturnsAsync(user);
+            _mockUserManager.Setup(x => x.IsEmailConfirmedAsync(user)).ReturnsAsync(true);
+            _mockUserManager.Setup(x => x.ResetPasswordAsync(user, "reset-token", request.NewPassword))
+                .ReturnsAsync(IdentityResult.Failed(new IdentityError { Code = "PasswordTooShort", Description = "Password too short." }));
+
+            var result = await AuthUnitTest.InvokeResetPasswordEndpoint(request, _mockUserManager.Object);
+
+            var validationResult = Assert.IsType<ValidationProblem>(result.Result);
+            Assert.True(validationResult.ProblemDetails.Errors.ContainsKey("PasswordTooShort"));
+        }
+        //Helper Method for Reset Password
+        public static async Task<Results<Ok<ApiResponse<string>>, ValidationProblem>> InvokeResetPasswordEndpoint(
+                ResetPasswordRequest request,
+                UserManager<ApplicationUser> userManager)
+        {
+            var user = await userManager.FindByEmailAsync(request.Email);
+
+            if (user == null || !(await userManager.IsEmailConfirmedAsync(user)))
+            {
+                return TypedResults.Ok(ApiResponse<string>.Success(
+                "If your email is registered, you will receive a password reset link shortly",
+                null));
+            }
+
+            var decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(request.ResetCode));
+            var resetResult = await userManager.ResetPasswordAsync(user, decodedToken, request.NewPassword);
+
+            if (resetResult.Succeeded)
+            {
+                return TypedResults.Ok(ApiResponse<string>.Success(
+                "Password has been reset successfully",
+                null));
+            }
+            else
+            {
+                var errors = new Dictionary<string, string[]>();
+                foreach (var error in resetResult.Errors)
+                {
+                    errors[error.Code] = new[] { error.Description };
+                }
+
+                return TypedResults.ValidationProblem(errors);
+            }
         }
     }
 }
