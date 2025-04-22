@@ -9,7 +9,7 @@ trigger:
     - './QLN.Web.Shared/**'
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: windows-latest
 
 steps:
 - task: AzureContainerApps@1
@@ -21,3 +21,4 @@ steps:
     acrPassword: 'jxmPri2GCql4OHO5Fl+3C0Bii3fmUbsrEZ1EHDbx/y+ACRDo/bQ0'
     containerAppName: 'capp-blazorbase'
     resourceGroup: 'rg-containerapps-dev'
+    runtimeStack: 'DOTNETCORE|8.0'
