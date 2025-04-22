@@ -2,6 +2,11 @@ trigger:
   branches:
     include:
     - qln-dev
+  paths:
+    include:
+    - './QLN.Blazor.Base/**'
+    - './QLN.Common/**'
+    - './QLN.Web.Shared/**'
 
 pool:
   vmImage: ubuntu-latest
@@ -9,7 +14,7 @@ pool:
 steps:
 - task: AzureContainerApps@1
   inputs:
-    appSourcePath: '$(Build.SourcesDirectory)/src'
+    appSourcePath: '$(Build.SourcesDirectory)/QLN.Blazor.Base'
     azureSubscription: 'dev-qlnext'
     acrName: 'qlnv2-ezftf8ehejdadpfn'
     acrUsername: 'qlnv2'
