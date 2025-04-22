@@ -1,0 +1,18 @@
+trigger:
+  branches:
+    include:
+    - qln-dev
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: AzureContainerApps@1
+  inputs:
+    appSourcePath: '$(Build.SourcesDirectory)/src'
+    azureSubscription: 'dev-qlnext'
+    acrName: 'qlnv2'
+    acrUsername: 'qlnv2'
+    acrPassword: 'jxmPri2GCql4OHO5Fl+3C0Bii3fmUbsrEZ1EHDbx/y+ACRDo/bQ0'
+    containerAppName: 'capp-blazorbase'
+    resourceGroup: 'rg-containerapps-dev'
