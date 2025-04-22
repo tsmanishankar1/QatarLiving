@@ -81,6 +81,7 @@
     private string _username = string.Empty;
     private string _password = string.Empty;
     private bool _isLoading = false;
+    private ModalData modalData = new();
 
     private async Task PerformLogin()
 {
@@ -94,13 +95,22 @@
     try
     {
         var result = await Api.PostAsync<object, ResponseModel<LoginResponseData>>("auth/login", payload);
-
+        @* var data = await ErrorHandler.ReadApiResponseAsync<LoginResponseData>(result); *@
         if (result?.Status == true)
         {
             UserState.Email = result.Data.Emailaddress;
             UserState.mobileNumber = result.Data.Mobilenumber;
-            Snackbar.Add($"Logged in as {result.Data.Emailaddress}", Severity.Success);
-            NavManager.NavigateTo("/");
+            modalData = ErrorHandler.HandleApiError(result);
+            StateHasChanged(); 
+            if (result.Data.IsTwoFactorEnabled){
+                Snackbar.Add($"Logged in as {result.Data.Emailaddress}", Severity.Success);
+                NavManager.NavigateTo("/select-verification");
+                return;
+            }
+            else{
+                Snackbar.Add($"Logged in as {result.Data.Emailaddress}", Severity.Success);
+                NavManager.NavigateTo("/");
+            }
         }
         else
         {
@@ -126,6 +136,7 @@
     public string Emailaddress { get; set; }
     public string AccessToken { get; set; }
     public string RefreshToken { get; set; }
+    public bool IsTwoFactorEnabled { get; set; }
 }
 
     private class LoginResult
