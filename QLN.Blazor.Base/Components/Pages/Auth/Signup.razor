@@ -7,88 +7,152 @@
 @using MudBlazor
 @using MudBlazor.Components
 @rendermode InteractiveServer
+@using QLN.Blazor.Base.Models
+@using QLN.Web.Shared.Components.CustomButton
 
-@if (!_showOtp)
-{
-    <MudPaper Class="p-8" Style="width: 100%; border-radius: 12px; padding: 20px;">
-        <MudText Typo="Typo.h6" Class="mb-6">Create New Account</MudText>
-        <MudGrid>
-             <MudItem xs="12" md="6">
-                <MudTextField Label="User Name" Required="true" @bind-Value="_model.UserName" />
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudTextField Label="First Name" Required="true" @bind-Value="_model.FirstName" />
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudTextField Label="Last Name" Required="true" @bind-Value="_model.LastName" />
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudTextField Label="Email Address" Required="true" @bind-Value="_model.EmailAddress" />
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudTextField Label="Mobile Number" Required="true" @bind-Value="_model.MobileNumber" />
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudSelect T="string" Label="Gender" Required="true" @bind-Value="_model.Gender">
-                    @foreach (var gender in genderOptions)
-                    {
-                        <MudSelectItem Value="@gender">@gender</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudSelect T="string" Label="Nationality" Required="true" @bind-Value="_model.Nationality">
-                    @foreach (var n in nationalityOptions)
-                    {
-                        <MudSelectItem Value="@n">@n</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudItem>
+<MudPaper Class="pa-6 mx-auto mt-10" Style="max-width: 550px; border-radius: 12px; margin-bottom: 30px;">
+    <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-6" Style="font-weight: 700;">
+        Create Account
+    </MudText>
 
-            <MudItem xs="12" md="6">
-                <MudDatePicker Label="Date of Birth" Required="true" @bind-Date="_model.DateOfBirth" />
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudTextField Label="Password" InputType="InputType.Password" Required="true" @bind-Value="_model.Password" />
-            </MudItem>
+    <MudGrid GutterSize="16px">
+        <MudItem xs="6">
+                 <MudTextField T="string" Label="First Name" Variant="Variant.Outlined" FullWidth="true" Class="mt-4" @bind-Value="_model.FirstName" />
+        </MudItem>
+        <MudItem xs="6">
+                 <MudTextField T="string" Label="Last Name" Variant="Variant.Outlined" FullWidth="true" Class="mt-4" @bind-Value="_model.LastName" />
+        </MudItem>
+    </MudGrid>
 
-            <MudItem xs="12" md="6">
-             <MudSelect T="string" Label="Language Preference" Required="true" @bind-Value="_model.LanguagePreferences">
-                @foreach (var lang in languageOptions)
-                {
-                    <MudSelectItem Value="@lang">@lang</MudSelectItem>
-                }
-            </MudSelect>
+    <MudTextField T="string"
+              Label="Email"
+              Variant="Variant.Outlined"
+              FullWidth="true"
+              Class="mt-4"
+              @bind-Value="_model.EmailAddress"
+              Required="true"
+              RequiredError="Email is required" />
+
+<MudTextField T="string"
+              Label="Phone Number"
+              Variant="Variant.Outlined"
+              FullWidth="true"
+              Class="mt-4"
+              @bind-Value="_model.MobileNumber"
+              Required="true"
+              RequiredError="Phone number is required" />
+
+<MudTextField T="string"
+              Label="Country"
+              Variant="Variant.Outlined"
+              FullWidth="true"
+              Class="mt-4"
+              @bind-Value="_model.Nationality"
+              Required="true"
+              RequiredError="Country is required" />
+
+<MudTextField T="string"
+              Label="Username"
+              Variant="Variant.Outlined"
+              FullWidth="true"
+              Class="mt-4"
+              @bind-Value="_model.UserName"
+              Required="true"
+              RequiredError="Username is required" />
+
+<MudTextField T="string"
+              Label="Password"
+              Variant="Variant.Outlined"
+              InputType="InputType.Password"
+              FullWidth="true"
+              Class="mt-4"
+              @bind-Value="_model.Password"
+              Required="true"
+              RequiredError="Password is required" />
+
+<MudTextField T="string"
+              Label="Confirm Password"
+              Variant="Variant.Outlined"
+              InputType="InputType.Password"
+              FullWidth="true"
+              Class="mt-4"
+              @bind-Value="_model.Password"
+              Required="true"
+              RequiredError="Please confirm your password" />
+    <MudProgressLinear Value="60" Color="Color.Warning" Height="12px" Style="margin-top: 16px;" />
+    <MudText Typo="Typo.caption" Class="mt-1" Style="color: #777777;">
+        Password strength: Medium (add special characters)
+    </MudText>
+
+    <MudCheckBox T="bool" Label="Enable Two-Factor Authentication" Class="mt-3" @bind-Checked="EnableTwoFactor" />
+    <MudCheckBox T="bool" Class="mt-2" @bind-Checked="AcceptedTerms">
+        <LabelContent>
+            I agree to the 
+            <MudText Link="true" Style="color: #FF7F38;" Class="ml-1 mr-1 d-inline">Terms and Conditions</MudText>
+            and 
+            <MudText Link="true" Style="color: #FF7F38;" Class="ml-1 d-inline">Privacy Policy</MudText>
+        </LabelContent>
+    </MudCheckBox>
+    <MudCheckBox T="bool" Label="I want to receive marketing emails and offers" Class="mt-2" @bind-Checked="MarketingOptIn" />
+
+    
+    <CustomButton 
+    BackgroundColor="#FF7F38"
+    TextColor="#FFFFFF"
+    Text="Sign In"
+    Disabled="_loading"
+    Loading="_loading"
+    OnClick="@SubmitSignup"
+    Class="mt-4" />
+
+    <!-- Divider -->
+    <div class="d-flex align-center my-4">
+        <div style="flex-grow: 1; height: 1px; background-color: #ccc;"></div>
+        <MudText Typo="Typo.caption" Class="mx-2">OR</MudText>
+        <div style="flex-grow: 1; height: 1px; background-color: #ccc;"></div>
+    </div>
+
+    <MudGrid GutterSize="12px">
+    <MudItem xs="4">
+        <MudButton Variant="Variant.Outlined" FullWidth="true"
+                   Style="color: #333333; border-color: #DDDDDD;">
+                   <img src="images/google.svg" alt="Microsoft" style="height: 20px; margin-right: 8px;" />
+            Google
+        </MudButton>
+    </MudItem>
+    <MudItem xs="4">
+        <MudButton Variant="Variant.Outlined" FullWidth="true"
+                   Style="color: #333333; border-color: #DDDDDD;">
+                   <img src="images/facebook.svg" alt="Microsoft" style="height: 20px; margin-right: 8px;" />
+            Facebook
+        </MudButton>
+    </MudItem>
+    <MudItem xs="4">
+        <MudButton Variant="Variant.Outlined" FullWidth="true"
+                   Style="color: #333333; border-color: #DDDDDD;">
+                   <img src="images/microsoft.svg" alt="Microsoft" style="height: 20px; margin-right: 8px;" />
+            Microsoft
+        </MudButton>
+    </MudItem>
+</MudGrid>
+
+    <MudText Align="Align.Center" Class="mt-4">
+        Already have an account? 
+        <MudText Link="true" Class="d-inline ml-1" Style="color: #FF7F38;">Sign In</MudText>
+    </MudText>
+</MudPaper>
 
 
-            </MudItem>
-
-            <MudItem xs="12" md="6">
-                <MudTextField Label="Location" Required="true" @bind-Value="_model.Location" />
-            </MudItem>
-
-            <MudItem xs="12">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" Disabled="_loading" Loading="_loading" OnClick="SubmitSignup">
-                    Create new account
-                </MudButton>
-            </MudItem>
-        </MudGrid>
-    </MudPaper>
-}
-else
-{
-    <MudPaper Class="p-6"  Style="max-width: 400px; border-radius: 12px; padding: 20px;">
-        <MudText Typo="Typo.h6">Verify OTP</MudText>
-        <MudTextField Label="OTP" @bind-Value="_otp" MaxLength="6" />
-        <MudButton Variant="Variant.Filled" Color="Color.Success" Class="mt-4" OnClick="VerifyOtp">Verify</MudButton>
-    </MudPaper>
-}
 
 @code {
     private SignupModel _model = new();
     private bool _loading = false;
     private bool _showOtp = false;
     private string _otp = "";
+    private bool EnableTwoFactor { get; set; } = true;
+    private bool AcceptedTerms { get; set; }
+    private bool MarketingOptIn { get; set; }
+
 
     private List<string> genderOptions = new() { "Male", "Female", "Other" };
     private List<string> nationalityOptions = new() { "India", "Qatar", "UK", "USA" };
@@ -98,27 +162,53 @@ else
     private async Task SubmitSignup()
     {
         _loading = true;
-        var payload = new
+         var payload = new
         {
             username = _model.UserName,
-            firstname = _model.FirstName,
+            firstName = _model.FirstName,
             lastname = _model.LastName,
-            dateofbirth = _model.DateOfBirth?.ToString("yyyy-MM-dd"),
-            gender = _model.Gender?.ToLower(),
+            dateofbirth = "1990-01-01", 
+            gender = "male",
+            mobileOperator = "vodofone",
             mobilenumber = _model.MobileNumber,
             emailaddress = _model.EmailAddress,
-            nationality = _model.Nationality?.ToLower(),
+            nationality = "Test",
             password = _model.Password,
-            languagepreferences = _model.LanguagePreferences?.ToLower(),
-            location = _model.Location
-        };
+            languagepreferences = "Test",
+            location = "India"
+        }; 
+
 
         try
         {
-            var res = await Api.PostAsync<object, object>("Auth/SignUp", payload);
+            Console.WriteLine(payload); 
+            var res = await Api.PostAsync<object, ResponseModel<object> >("auth/register", payload); 
+            if (res!.Status)
+            {
+                @* Snackbar.Add(res.Message, Severity.Success); *@
+                UserState.Email = _model.EmailAddress;
+                UserState.mobileNumber = _model.MobileNumber;
+                var body = new
+                {
+                    emailorPhoneNumber = _model.MobileNumber,
+                    enable = EnableTwoFactor
+                };
+                var response = await Api.PostAsync<object, ResponseModel<object> >("auth/manage/2fa", body); 
+                    Snackbar.Add(response.Message, Severity.Success);
+                    
+                if (EnableTwoFactor) {
+                NavManager.NavigateTo("/two-factor-authentication");
+                }
+                else {
+                NavManager.NavigateTo("/");
+                }
+            }
+            else
+            {
+                Snackbar.Add("Signup failed. Please check your details.", Severity.Error);
+            } 
 
-            Snackbar.Add("Signup successful! Please enter OTP.", Severity.Success);
-            _showOtp = true;
+             
         }
         catch (Exception ex)
         {
@@ -130,38 +220,7 @@ else
         }
     }
 
-    private async Task VerifyOtp()
-    {
-        var verifyPayload = new
-        {
-            email = _model.EmailAddress,
-            otp = _otp
-        };
 
-        try
-        {
-            var res = await Api.PostAsync<object, TokenResponse>("Auth/AccountVerification", verifyPayload);
-            var jwt = res?.JwtToken;
-
-            if (!string.IsNullOrEmpty(jwt))
-            {
-                var email = JwtHelper.GetEmailFromJwt(jwt);
-                UserState.Token = jwt;
-                UserState.Email = email;
-
-                Snackbar.Add("Account verified!", Severity.Success);
-                NavManager.NavigateTo("/");
-            }
-            else
-            {
-                Snackbar.Add("Invalid OTP", Severity.Error);
-            }
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add("Verification failed: " + ex.Message, Severity.Error);
-        }
-    }
 
     public class SignupModel
     {
@@ -184,3 +243,4 @@ else
         public string RefreshToken { get; set; }
     }
 }
+

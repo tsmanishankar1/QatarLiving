@@ -17,25 +17,65 @@
                 @foreach (var item in SidebarItems)
             {
                 <MudPaper 
-        Elevation="0"
-        Class="pa-2 mb-1 d-flex justify-space-between align-center rounded cursor-pointer"
-        Style="@((item == SelectedItem) 
-            ? "background-color: #003A63; color: white;" 
-            : "background-color: transparent; color: black;")"
-        @onclick="() => SelectedItem = item">
-
-        <MudText Class="m-0">@item.Label</MudText>
-        <MudText Class="m-0 font-weight-bold">@item.Count</MudText>
-        
-    </MudPaper>
+                    Elevation="0"
+                    Class="pa-2 mb-1 d-flex justify-space-between align-center rounded cursor-pointer"
+                    Style="@((item == SelectedItem) 
+                    ? "background-color: #003A63; color: white;" 
+                    : "background-color: transparent; color: black;")"
+                        @onclick="() => SelectedItem = item">
+                         <MudText Class="m-0" Typo="Typo.body2">@item.Label</MudText>
+                        <MudText Class="m-0 font-weight-bold" Typo="Typo.body2">@item.Count</MudText>
+                </MudPaper>
    
             }
                 <MudDivider Class="my-2" />
-                <MudNavLink Href="#">Messages</MudNavLink>
-                <MudNavLink Href="#">Profile & Settings</MudNavLink>
-                <MudNavLink Href="#">Verify Account</MudNavLink>
-                <MudDivider Class="my-2" />
-                <MudNavLink Href="#">Subscriptions</MudNavLink>
+
+
+
+                <MudPaper 
+    Elevation="0"
+    Class="pa-2 mb-1 d-flex justify-space-between align-center rounded cursor-pointer"
+    Style="@((SelectedItem == Messages) 
+        ? "background-color: #003A63; color: white;" 
+        : "background-color: transparent; color: black;")"
+    @onclick="@(() => SelectedItem = Messages)">
+    
+    <MudText Class="m-0" Typo="Typo.body2">@Messages.Label</MudText>
+    <MudText Class="m-0 font-weight-bold" Typo="Typo.body2">@Messages.Count</MudText>
+</MudPaper>
+
+<MudPaper 
+    Elevation="0"
+    Class="pa-2 mb-1 d-flex justify-space-between align-center rounded cursor-pointer"
+    Style="@((SelectedItem == ProfileSettings) 
+        ? "background-color: #003A63; color: white;" 
+        : "background-color: transparent; color: black;")"
+    @onclick="@(() => SelectedItem = ProfileSettings)">
+    
+    <MudText Class="m-0" Typo="Typo.body2">@ProfileSettings.Label</MudText>
+</MudPaper>
+<MudPaper 
+    Elevation="0"
+    Class="pa-2 mb-1 d-flex justify-space-between align-center rounded cursor-pointer"
+    Style="@((SelectedItem == VerifyAccount) 
+        ? "background-color: #003A63; color: white;" 
+        : "background-color: transparent; color: black;")"
+    @onclick="@(() => SelectedItem = VerifyAccount)">
+    
+    <MudText Class="m-0" Typo="Typo.body2">@VerifyAccount.Label</MudText>
+</MudPaper>
+
+ <MudDivider Class="my-2" />
+<MudPaper 
+    Elevation="0"
+    Class="pa-2 mb-1 d-flex justify-space-between align-center rounded cursor-pointer"
+    Style="@((SelectedItem == Subscriptions) 
+        ? "background-color: #003A63; color: white;" 
+        : "background-color: transparent; color: black;")"
+    @onclick="@(() => SelectedItem = Subscriptions)">
+    
+    <MudText Class="m-0" Typo="Typo.body2">@Subscriptions.Label</MudText>
+</MudPaper>
             </MudNavMenu>
         </MudItem>
 
@@ -57,11 +97,33 @@
     class SidebarItem
     {
         public string Label { get; set; }
-        public int Count { get; set; }
+        public int? Count { get; set; }
         public Type ComponentType { get; set; }
     }
 
     SidebarItem SelectedItem { get; set; }
+    SidebarItem Messages { get; set; } = new SidebarItem
+    {
+        Label = "Messages",
+        ComponentType = typeof(MessagesComponet) 
+    };
+    SidebarItem ProfileSettings { get; set; } = new SidebarItem
+    {
+        Label = "Profile & Settings",
+        ComponentType = typeof(ProfileSettingsComponet) 
+    };
+    SidebarItem VerifyAccount { get; set; } = new SidebarItem
+    {
+        Label = "Verify Account",
+        ComponentType = typeof(MessagesComponet) 
+    };
+    SidebarItem Subscriptions { get; set; } = new SidebarItem
+    {
+        Label = "Subscriptions",
+        ComponentType = typeof(MessagesComponet) 
+    };
+
+
 
     List<SidebarItem> SidebarItems = new()
     {

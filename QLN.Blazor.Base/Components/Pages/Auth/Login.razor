@@ -5,37 +5,77 @@
 @inject UserState UserState
 @using QLN.Blazor.Base.Services
 @using MudBlazor
+@using QLN.Blazor.Base.Models
+@using QLN.Web.Shared.Components.CustomButton
 
-<div style="min-height: 100vh;" class="d-flex justify-center align-center">
-    <div class="d-flex flex-column" style="max-width: 400px; padding: 32px; border: 1px solid #ccc; border-radius: 12px; box-shadow: 0px 4px 12px rgba(0,0,0,0.15); background: white;">
-        <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-6" Style="font-weight: 600;">Log in</MudText>
-        <MudTextField Label="Username" Required="true" FullWidth="true" @bind-Value="_username" />
-        <MudTextField Label="Password" Required="true" FullWidth="true" Class="mt-4" InputType="InputType.Password" @bind-Value="_password" />
-        <MudButton Variant="Variant.Filled"
-                   Color="Color.Primary"
-                   FullWidth="true"
-                   Class="mt-6"
-                   Disabled="_isLoading"
-                   Loading="_isLoading"
-                   OnClick="PerformLogin"
-                   Style="text-transform: none; font-weight: bold;">
-            Log in
-        </MudButton>
-        <div class="d-flex justify-space-between mt-4" style="font-size: 0.9rem; white-space: nowrap; gap: 16px;">
-    <MudLink Href="/signup" Class="text-primary" Style="font-size: 0.8rem; color: black;">CREATE NEW ACCOUNT</MudLink>
-    <MudLink Href="/reset-password" Class="text-primary" Style="font-size: 0.8rem; color: black;">REQUEST NEW PASSWORD</MudLink>
+<MudPaper Class="pa-6 mx-auto mt-10" Style="max-width: 450px; border-radius: 12px; margin-top: 20px; margin-bottom: 20px;">
+    <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-4">Sign In</MudText>
+
+    
+    <MudTextField T="string"
+              Label="Email or Username"
+              Variant="Variant.Outlined"
+              FullWidth="true"
+              InputType="InputType.Text"
+              @bind-Value="_username"
+              Required="true"
+               />
+    <MudTextField T="string"
+              Label="Password"
+              Variant="Variant.Outlined"
+              FullWidth="true"
+              InputType="InputType.Password"
+              @bind-Value="_password"
+              Required="true"
+               />
+
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
+    <MudCheckBox T="bool" Label="Remember me" DisableMargins="true" />
+
+    <MudLink Href="/forgot-password" Style="color: #FF7F38; text-decoration: none;">
+        Forgot Password?
+    </MudLink>
 </div>
-        <MudText Align="Align.Center" Class="my-4" Style="color: gray;">Or login with</MudText>
-        <div class="d-flex justify-center gap-2">
-            <MudButton Variant="Variant.Outlined" Color="Color.Default" Style="min-width: 140px;" OnClick="LoginWithFacebook">
-                <img src="images/facebook.svg" style="width: 20px; height: 20px;" class="me-2" /> Facebook
-            </MudButton>
-            <MudButton Variant="Variant.Outlined" Color="Color.Default" Style="min-width: 140px;" OnClick="LoginWithGoogle">
-                <img src="images/google.svg" style="width: 20px; height: 20px;" class="me-2" /> Google
-            </MudButton>
-        </div>
+   
+<CustomButton 
+    BackgroundColor="#FF7F38"
+    TextColor="#FFFFFF"
+    Text="Sign In"
+    Disabled="_isLoading"
+    Loading="_isLoading"
+    OnClick="@PerformLogin"
+    Class="mt-4" />
+
+
+     <div class="d-flex align-center my-4">
+        <div style="flex-grow: 1; height: 1px; background-color: #ccc;"></div>
+        <MudText Typo="Typo.caption" Class="mx-2">OR</MudText>
+        <div style="flex-grow: 1; height: 1px; background-color: #ccc;"></div>
     </div>
-</div>
+
+    <MudStack Spacing="3">
+    <MudButton Variant="Variant.Outlined"
+           Color="Color.Transparent"
+           FullWidth="true"
+           Style="border-color: #D0D5DD; color: #787878;">
+           <img src="images/google.svg" alt="Microsoft" style="height: 20px; margin-right: 8px;" />
+        Continue with Google
+    </MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" Style="border-color: #D0D5DD; color: #787878;">
+            <img src="images/microsoft.svg" alt="Microsoft" style="height: 20px; margin-right: 8px;" />
+            Continue with Microsoft
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" Style="border-color: #D0D5DD; color: #787878;">
+            <img src="images/facebook.svg" alt="Microsoft" style="height: 20px; margin-right: 8px;" />
+            Continue with Facebook
+        </MudButton> 
+    </MudStack>
+    <MudText Align="Align.Start" Class="mt-4">
+        Don't have an account? 
+        <MudLink Href="/signup" Class="ml-1" Style="color: #FF7F38;">Sign Up</MudLink>
+    </MudText>
+</MudPaper>
 
 @code {
     private string _username = string.Empty;
@@ -43,42 +83,50 @@
     private bool _isLoading = false;
 
     private async Task PerformLogin()
+{
+    if (string.IsNullOrWhiteSpace(_username) || string.IsNullOrWhiteSpace(_password))
     {
-        _isLoading = true;
-        var payload = new { name = _username, passwordOrOtp = _password };
+        Snackbar.Add("Please enter both email/username and password.", Severity.Warning);
+        return;
+    }
+    _isLoading = true;
+    var payload = new { usernameOrEmailOrPhone = _username, password = _password };
+    try
+    {
+        var result = await Api.PostAsync<object, ResponseModel<LoginResponseData>>("auth/login", payload);
 
-        try
+        if (result?.Status == true)
         {
-            var result = await Api.PostAsync<object, LoginResult>("Auth/Login", payload);
-
-            if (result?.Success == true)
-            {
-                var jwt = result.Message.JwtToken;
-                var email = JwtHelper.GetEmailFromJwt(jwt);
-
-                UserState.Email = email;
-                UserState.Token = jwt;
-
-                Snackbar.Add($"Logged in as {email}", Severity.Success);
-                NavManager.NavigateTo("/");
-            }
-            else
-            {
-                Snackbar.Add("Login failed. Please check credentials.", Severity.Error);
-            }
+            UserState.Email = result.Data.Emailaddress;
+            UserState.mobileNumber = result.Data.Mobilenumber;
+            Snackbar.Add($"Logged in as {result.Data.Emailaddress}", Severity.Success);
+            NavManager.NavigateTo("/");
         }
-        catch (Exception ex)
+        else
         {
-            Snackbar.Add("Error: " + ex.Message, Severity.Error);
-        }
-        finally
-        {
-            _isLoading = false;
+            Snackbar.Add("Login failed. Please check credentials.", Severity.Error);
         }
     }
+    catch (Exception ex)
+    {
+        Snackbar.Add("Error: " + ex.Message, Severity.Error);
+    }
+    finally
+    {
+        _isLoading = false;
+    }
+}
 
     private Task LoginWithFacebook() => Task.CompletedTask;
     private Task LoginWithGoogle() => Task.CompletedTask;
+    public class LoginResponseData
+{
+    public string Username { get; set; }
+    public string Mobilenumber { get; set; }
+    public string Emailaddress { get; set; }
+    public string AccessToken { get; set; }
+    public string RefreshToken { get; set; }
+}
 
     private class LoginResult
     {

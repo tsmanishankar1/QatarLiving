@@ -1,0 +1,120 @@
+@page "/two-factor-authentication"
+@inject NavigationManager NavManager
+@using MudBlazor
+@inject ISnackbar Snackbar
+@inject ApiService Api
+@using QLN.Blazor.Base.Services
+@inject UserState UserState
+@using MudBlazor.Components
+@rendermode InteractiveServer
+@using QLN.Blazor.Base.Models
+@using QLN.Web.Shared.Components.CustomButton
+
+
+<MudPaper Class="pa-6 mx-auto mt-10" 
+          Style="max-width: 450px; border-radius: 12px; margin-top: 30px; margin-bottom: 30px;">
+    
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h5" Align="Align.Center">Two-Factor Authentication</MudText>
+
+        <MudText Typo="Typo.caption" Align="Align.Center">
+            We've sent a verification code to your mail ending in @UserState.Email
+        </MudText>
+
+        <MudTextField T="string"
+              Label="Verification Code"
+              Variant="Variant.Outlined"
+              FullWidth="true"
+              InputType="InputType.Text"
+              MaxLength="6"
+              @bind-Value="_code"
+              Required="true"
+               />
+
+        
+         <CustomButton 
+    BackgroundColor="#FF7F38"
+    TextColor="#FFFFFF"
+    Text="Verify"
+    Disabled="_isLoading"
+    Loading="_isLoading"
+    OnClick="@VerifyCode"
+    Class="mt-4" />
+
+
+
+        <MudText Align="Align.Center" Class="mt-4">
+Didn't receive a code?
+<MudLink Href="/signup" Class="ml-1" Style="color: #FF7F38;">Resend</MudLink>
+    </MudText>
+        <MudText Align="Align.Center"
+                 Class="mud-clickable mt-2"
+                 Style="color: #FF7F38; cursor: pointer;" 
+                 @onclick="NavigateToForgotPassword">
+                 Use another verification method
+        </MudText>
+
+        <MudText Align="Align.Center"
+                 Class="mud-clickable mt-2"
+                 Style="color: #FF7F38; cursor: pointer;" 
+                 @onclick="NavigateToForgotPassword">
+            Back to Sign In
+        </MudText>
+    </MudStack>
+</MudPaper>
+
+@code {
+    private string _input = string.Empty;
+    private string _code = string.Empty;
+    private bool _isLoading = false;
+    private bool _checked;
+    
+
+    private void NavigateToForgotPassword()
+    {
+        NavManager.NavigateTo("/login");
+    }
+    private void RestrictToDigits(ChangeEventArgs e)
+{
+    string input = e.Value?.ToString() ?? "";
+    if (input.All(char.IsDigit) && input.Length <= 6)
+    {
+        _code = input;
+    }
+}
+
+    private async Task VerifyCode()
+{
+     _isLoading = true;
+    if (string.IsNullOrWhiteSpace(_code))
+    {
+        Snackbar.Add("Enter the verification code", Severity.Warning);
+        _isLoading = false;
+        return;
+    }
+    try
+    {
+        var payload = new { usernameOrEmailOrPhone = "9677484367", twoFactorCode = _code };
+        var res = await Api.PostAsync<object, ResponseModel<object>>("auth/verify-2fa", payload);
+            Console.WriteLine(payload);
+            Console.WriteLine(res?.Status);
+        if (res?.Status == true)
+        {
+            Snackbar.Add("Signup successful! Please enter OTP.", Severity.Success); 
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            Snackbar.Add(res?.Message ?? "Failed to verify email.", Severity.Warning);
+        }
+    }
+    catch (Exception ex)
+    {
+        Snackbar.Add($"Signup failed: {ex.Message}", Severity.Error);
+    }
+    finally
+    {
+            _isLoading = false;
+    }
+}
+}

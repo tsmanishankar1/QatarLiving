@@ -1,0 +1,108 @@
+@page "/select-verification"
+@inject UserState UserState
+@using MudBlazor
+@inject NavigationManager NavManager
+@inject ISnackbar Snackbar
+
+<MudPaper Elevation="3" Class="pa-6 my-10 mx-auto" MaxWidth="500px">
+     <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-6" Style="font-weight: 700;">
+        Select Verification Method
+    </MudText>
+    <MudText Typo="Typo.subtitle1" Align="Align.Center" GutterBottom="true">
+        Choose how you want to receive your verification code
+    </MudText>
+
+   <MudPaper Elevation="0" Class="d-flex flex-column gap-3 p-3">
+    <MudItem>
+        
+        <MudPaper Class="@GetPaperClass("sms")" Style="border: 1px solid #ccc; border-radius: 8px;" @onclick="SelectOption">
+            <div class="d-flex align-center p-3">
+        <input 
+            type="radio" 
+            name="method" 
+            value="sms" 
+            checked="@(_selectedMethod == "sms")" 
+            @onclick:stopPropagation 
+        />
+        <div class="ml-3">
+            <MudText Typo="Typo.subtitle1">Text Message (SMS)</MudText>
+            <MudText Typo="Typo.caption"  Style="color: #999999;">
+                Send code to @UserState.mobileNumber
+            </MudText>
+        </div>
+         </div>
+        </MudPaper>
+
+
+    </MudItem>
+
+    <MudItem>
+        <MudPaper Class="@GetPaperClass("sms")" Style="border: 1px solid #ccc; border-radius: 8px;" @onclick="SelectOption">
+    <div class="d-flex align-center p-3">
+        <input 
+            type="radio" 
+            name="method" 
+            value="sms" 
+            checked="@(_selectedMethod == "sms")" 
+            @onclick:stopPropagation 
+        />
+        <div class="ml-3">
+            <MudText Typo="Typo.subtitle1">Email</MudText>
+            <MudText Typo="Typo.caption"  Style="color: #999999;">
+                Send code to @UserState.Email
+            </MudText>
+        </div>
+    </div>
+</MudPaper>
+    </MudItem>
+     <MudItem>
+        <MudPaper Class="@GetPaperClass("sms")" Style="border: 1px solid #ccc; border-radius: 8px;" @onclick="SelectOption">
+    <div class="d-flex align-center p-3">
+        <input 
+            type="radio" 
+            name="method" 
+            value="sms" 
+            checked="@(_selectedMethod == "sms")" 
+            @onclick:stopPropagation 
+        />
+        <div class="ml-3">
+            <MudText Typo="Typo.subtitle1">Authenticator App</MudText>
+            <MudText Typo="Typo.caption"  Style="color: #999999;">
+                Use code from your authenticator app
+            </MudText>
+        </div>
+    </div>
+</MudPaper>
+    </MudItem>
+</MudPaper>
+   
+
+
+    <MudButton Variant="Variant.Filled" Color="Color.Warning" FullWidth="true" OnClick="NavigateTo" Style="margin-top: 24px; background-color: #FF7F38;">
+        Continue
+    </MudButton>
+</MudPaper>
+
+@code {
+   private string _selectedMethod = string.Empty;
+
+    private string GetPaperClass(string method)
+        => _selectedMethod == method ? "border-selected" : "";
+
+    private string GetIconClass(string method)
+        => _selectedMethod == method ? "text-primary" : "text-disabled";
+
+        private void SelectOption(){
+            _selectedMethod = "sma";
+        }
+
+    private void NavigateTo(){
+        @* if (string.IsNullOrWhiteSpace(_selectedMethod))
+        {
+        Snackbar.Add("Choose any method!", Severity.Warning);
+        }
+        else{ *@
+        NavManager.NavigateTo("/two-factor-authentication");
+        @* } *@
+    }
+}

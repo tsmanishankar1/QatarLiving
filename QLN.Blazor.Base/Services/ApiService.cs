@@ -29,6 +29,7 @@ namespace QLN.Blazor.Base.Services
 
         public async Task<TResponse?> PostAsync<TRequest, TResponse>(string endpoint, TRequest data)
         {
+            Console.WriteLine("button clicked");
             try
             {
                 var response = await _http.PostAsJsonAsync($"{_baseUrl}/{endpoint}", data);
@@ -45,6 +46,8 @@ namespace QLN.Blazor.Base.Services
                 return default;
             }
         }
+        
+
 
         public async Task<TResponse?> PatchAsync<TRequest, TResponse>(string endpoint, TRequest data)
         {

@@ -1,0 +1,85 @@
+@using MudBlazor
+
+@* <MudPaper Class="pa-6 mx-auto mt-6" MaxWidth="600px"> *@
+    <MudText Typo="Typo.h6" Class="mb-4">General</MudText>
+    <div class="d-flex align-center mb-4" style="width: 100%;">
+        <MudText Typo="Typo.subtitle2"
+             Style="color: gray; width: 220px; min-width: 200px; white-space: nowrap;">
+        Current password
+        </MudText>
+        <MudTextField T="string" InputType="InputType.Password"
+              Style="min-width: 200px; max-width: 350px; width: 100%;" />
+    </div>
+    <div class="d-flex align-center mb-4" style="width: 100%;">
+        <MudText Typo="Typo.subtitle2"
+             Style="color: gray; width: 220px; min-width: 200px; white-space: nowrap;">
+        E-mail address
+        </MudText>
+        <MudTextField T="string" InputType="InputType.Email"
+              Style="min-width: 200px; max-width: 350px; width: 100%;" />
+    </div>
+    <div class="d-flex align-center mb-4" style="width: 100%;">
+        <MudText Typo="Typo.subtitle2"
+             Style="color: gray; width: 220px; min-width: 200px; white-space: nowrap;">
+        Facebook connect
+        </MudText>
+        @* <MudButton Variant="Filled"
+           Color="Color.Primary"
+           Style="background-color: #3b5998; color: white; text-transform: none; border-radius: 6px;"
+           StartIcon="@Icons.Custom.Brands.Facebook"
+           Class="px-6 py-2">
+    Log in with Facebook
+</MudButton> *@
+    </div>
+
+
+    <MudTextField T="string" Label="First name" @bind-Value="UserProfile.FirstName" />
+    <MudTextField T="string" Label="Last name" @bind-Value="UserProfile.LastName" />
+    <MudSelect T="string" Label="Gender" @bind-Value="UserProfile.Gender">
+                    @foreach (var gender in genderOptions)
+                    {
+                        <MudSelectItem Value="@gender">@gender</MudSelectItem>
+                    }
+    </MudSelect>
+    <MudTextField T="string" Label="Phone number" @bind-Value="UserProfile.MobileNumber" />
+    <MudSelect T="string" Label="Mobile Operator" Required="true" @bind-Value="UserProfile.mobileOperator">
+                    @foreach (var gender in operatorList)
+                    {
+                        <MudSelectItem Value="@gender">@gender</MudSelectItem>
+                    }
+        </MudSelect>
+    <MudSelect T="string" Label="Nationality" @bind-Value="UserProfile.Nationality">
+                    @foreach (var nation in nationalityOptions)
+                    {
+                        <MudSelectItem Value="@nation">@nation</MudSelectItem>
+                    }
+    </MudSelect>
+@* </MudPaper> *@
+
+@code {
+    public class SignupModel
+    {
+        public string UserName { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string EmailAddress { get; set; }
+        public string MobileNumber { get; set; }
+        public string Gender { get; set; }
+        public DateTime? DateOfBirth { get; set; } = DateTime.Today;
+        public string Password { get; set; }
+        public string Nationality { get; set; }
+        public string LanguagePreferences { get; set; } = "english";
+        public string Location { get; set; }
+        public string mobileOperator { get; set; }
+    }
+    private List<string> operatorList = new() { "Vodafone", "Ooredoo" };
+    private List<string> genderOptions = new() { "Male", "Female", "Other" };
+    private List<string> nationalityOptions = new() { "India", "Qatar", "UK", "USA" };
+    private List<string> languageOptions = new() { "english", "arabic", "hindi", "tamil" };
+
+
+    private SignupModel UserProfile { get; set; } = new();
+
+    private string? CurrentPassword { get; set; }
+    private string? NewPassword { get; set; }
+}
