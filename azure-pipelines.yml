@@ -9,8 +9,8 @@ trigger:
     - './QLN.Web.Shared/**'
 
 variables:
-  name: acrRegistry
-  value: 'qlnv2-ezftf8ehejdadpfn'
+ - name: acrRegistry
+   value: qlnv2-ezftf8ehejdadpfn
 
 pool:
   vmImage: ubuntu-latest
