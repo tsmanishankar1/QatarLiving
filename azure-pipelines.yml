@@ -1,0 +1,23 @@
+trigger:
+  branches:
+    include:
+    - qln-dev
+  paths:
+    include:
+    - './QLN.Blazor.Base/**'
+    - './QLN.Common/**'
+    - './QLN.Web.Shared/**'
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: AzureContainerApps@1
+  inputs:
+    appSourcePath: '$(Build.SourcesDirectory)/QLN.Blazor.Base'
+    azureSubscription: 'dev-qlnext'
+    acrName: 'qlnv2-ezftf8ehejdadpfn'
+    acrUsername: 'qlnv2'
+    acrPassword: 'jxmPri2GCql4OHO5Fl+3C0Bii3fmUbsrEZ1EHDbx/y+ACRDo/bQ0'
+    containerAppName: 'capp-blazorbase'
+    resourceGroup: 'rg-containerapps-dev'
