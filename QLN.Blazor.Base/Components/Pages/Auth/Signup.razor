@@ -1,0 +1,246 @@
+@page "/signup"
+@inject ISnackbar Snackbar
+@inject NavigationManager NavManager
+@inject ApiService Api
+@using QLN.Blazor.Base.Services
+@inject UserState UserState
+@using MudBlazor
+@using MudBlazor.Components
+@rendermode InteractiveServer
+@using QLN.Blazor.Base.Models
+@using QLN.Web.Shared.Components.CustomButton
+
+<MudPaper Class="pa-6 mx-auto mt-10" Style="max-width: 550px; border-radius: 12px; margin-bottom: 30px;">
+    <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-6" Style="font-weight: 700;">
+        Create Account
+    </MudText>
+
+    <MudGrid GutterSize="16px">
+        <MudItem xs="6">
+                 <MudTextField T="string" Label="First Name" Variant="Variant.Outlined" FullWidth="true" Class="mt-4" @bind-Value="_model.FirstName" />
+        </MudItem>
+        <MudItem xs="6">
+                 <MudTextField T="string" Label="Last Name" Variant="Variant.Outlined" FullWidth="true" Class="mt-4" @bind-Value="_model.LastName" />
+        </MudItem>
+    </MudGrid>
+
+    <MudTextField T="string"
+              Label="Email"
+              Variant="Variant.Outlined"
+              FullWidth="true"
+              Class="mt-4"
+              @bind-Value="_model.EmailAddress"
+              Required="true"
+              RequiredError="Email is required" />
+
+<MudTextField T="string"
+              Label="Phone Number"
+              Variant="Variant.Outlined"
+              FullWidth="true"
+              Class="mt-4"
+              @bind-Value="_model.MobileNumber"
+              Required="true"
+              RequiredError="Phone number is required" />
+
+<MudTextField T="string"
+              Label="Country"
+              Variant="Variant.Outlined"
+              FullWidth="true"
+              Class="mt-4"
+              @bind-Value="_model.Nationality"
+              Required="true"
+              RequiredError="Country is required" />
+
+<MudTextField T="string"
+              Label="Username"
+              Variant="Variant.Outlined"
+              FullWidth="true"
+              Class="mt-4"
+              @bind-Value="_model.UserName"
+              Required="true"
+              RequiredError="Username is required" />
+
+<MudTextField T="string"
+              Label="Password"
+              Variant="Variant.Outlined"
+              InputType="InputType.Password"
+              FullWidth="true"
+              Class="mt-4"
+              @bind-Value="_model.Password"
+              Required="true"
+              RequiredError="Password is required" />
+
+<MudTextField T="string"
+              Label="Confirm Password"
+              Variant="Variant.Outlined"
+              InputType="InputType.Password"
+              FullWidth="true"
+              Class="mt-4"
+              @bind-Value="_model.Password"
+              Required="true"
+              RequiredError="Please confirm your password" />
+    <MudProgressLinear Value="60" Color="Color.Warning" Height="12px" Style="margin-top: 16px;" />
+    <MudText Typo="Typo.caption" Class="mt-1" Style="color: #777777;">
+        Password strength: Medium (add special characters)
+    </MudText>
+
+    <MudCheckBox T="bool" Label="Enable Two-Factor Authentication" Class="mt-3" @bind-Checked="EnableTwoFactor" />
+    <MudCheckBox T="bool" Class="mt-2" @bind-Checked="AcceptedTerms">
+        <LabelContent>
+            I agree to the 
+            <MudText Link="true" Style="color: #FF7F38;" Class="ml-1 mr-1 d-inline">Terms and Conditions</MudText>
+            and 
+            <MudText Link="true" Style="color: #FF7F38;" Class="ml-1 d-inline">Privacy Policy</MudText>
+        </LabelContent>
+    </MudCheckBox>
+    <MudCheckBox T="bool" Label="I want to receive marketing emails and offers" Class="mt-2" @bind-Checked="MarketingOptIn" />
+
+    
+    <CustomButton 
+    BackgroundColor="#FF7F38"
+    TextColor="#FFFFFF"
+    Text="Sign In"
+    Disabled="_loading"
+    Loading="_loading"
+    OnClick="@SubmitSignup"
+    Class="mt-4" />
+
+    <!-- Divider -->
+    <div class="d-flex align-center my-4">
+        <div style="flex-grow: 1; height: 1px; background-color: #ccc;"></div>
+        <MudText Typo="Typo.caption" Class="mx-2">OR</MudText>
+        <div style="flex-grow: 1; height: 1px; background-color: #ccc;"></div>
+    </div>
+
+    <MudGrid GutterSize="12px">
+    <MudItem xs="4">
+        <MudButton Variant="Variant.Outlined" FullWidth="true"
+                   Style="color: #333333; border-color: #DDDDDD;">
+                   <img src="images/google.svg" alt="Microsoft" style="height: 20px; margin-right: 8px;" />
+            Google
+        </MudButton>
+    </MudItem>
+    <MudItem xs="4">
+        <MudButton Variant="Variant.Outlined" FullWidth="true"
+                   Style="color: #333333; border-color: #DDDDDD;">
+                   <img src="images/facebook.svg" alt="Microsoft" style="height: 20px; margin-right: 8px;" />
+            Facebook
+        </MudButton>
+    </MudItem>
+    <MudItem xs="4">
+        <MudButton Variant="Variant.Outlined" FullWidth="true"
+                   Style="color: #333333; border-color: #DDDDDD;">
+                   <img src="images/microsoft.svg" alt="Microsoft" style="height: 20px; margin-right: 8px;" />
+            Microsoft
+        </MudButton>
+    </MudItem>
+</MudGrid>
+
+    <MudText Align="Align.Center" Class="mt-4">
+        Already have an account? 
+        <MudText Link="true" Class="d-inline ml-1" Style="color: #FF7F38;">Sign In</MudText>
+    </MudText>
+</MudPaper>
+
+
+
+@code {
+    private SignupModel _model = new();
+    private bool _loading = false;
+    private bool _showOtp = false;
+    private string _otp = "";
+    private bool EnableTwoFactor { get; set; } = true;
+    private bool AcceptedTerms { get; set; }
+    private bool MarketingOptIn { get; set; }
+
+
+    private List<string> genderOptions = new() { "Male", "Female", "Other" };
+    private List<string> nationalityOptions = new() { "India", "Qatar", "UK", "USA" };
+    private List<string> languageOptions = new() { "english", "arabic", "hindi", "tamil" }; // add more if needed
+
+
+    private async Task SubmitSignup()
+    {
+        _loading = true;
+         var payload = new
+        {
+            username = _model.UserName,
+            firstName = _model.FirstName,
+            lastname = _model.LastName,
+            dateofbirth = "1990-01-01", 
+            gender = "male",
+            mobileOperator = "vodofone",
+            mobilenumber = _model.MobileNumber,
+            emailaddress = _model.EmailAddress,
+            nationality = "Test",
+            password = _model.Password,
+            languagepreferences = "Test",
+            location = "India"
+        }; 
+
+
+        try
+        {
+            Console.WriteLine(payload); 
+            var res = await Api.PostAsync<object, ResponseModel<object> >("auth/register", payload); 
+            if (res!.Status)
+            {
+                @* Snackbar.Add(res.Message, Severity.Success); *@
+                UserState.Email = _model.EmailAddress;
+                UserState.mobileNumber = _model.MobileNumber;
+                var body = new
+                {
+                    emailorPhoneNumber = _model.MobileNumber,
+                    enable = EnableTwoFactor
+                };
+                var response = await Api.PostAsync<object, ResponseModel<object> >("auth/manage/2fa", body); 
+                    Snackbar.Add(response.Message, Severity.Success);
+                    
+                if (EnableTwoFactor) {
+                NavManager.NavigateTo("/two-factor-authentication");
+                }
+                else {
+                NavManager.NavigateTo("/");
+                }
+            }
+            else
+            {
+                Snackbar.Add("Signup failed. Please check your details.", Severity.Error);
+            } 
+
+             
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Signup failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+
+
+    public class SignupModel
+    {
+        public string UserName { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string EmailAddress { get; set; }
+        public string MobileNumber { get; set; }
+        public string Gender { get; set; }
+        public DateTime? DateOfBirth { get; set; } = DateTime.Today;
+        public string Password { get; set; }
+        public string Nationality { get; set; }
+        public string LanguagePreferences { get; set; } = "english";
+        public string Location { get; set; }
+    }
+
+    public class TokenResponse
+    {
+        public string JwtToken { get; set; }
+        public string RefreshToken { get; set; }
+    }
+}
+
