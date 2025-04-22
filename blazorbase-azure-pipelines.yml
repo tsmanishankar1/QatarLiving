@@ -19,11 +19,12 @@ steps:
 - task: AzureContainerApps@1
   inputs:
     workingDirectory: '$(Build.SourcesDirectory)'
-    appSourcePath: '$(Build.SourcesDirectory)/QLN.Blazor.Base'
+    appSourcePath: '$(Build.SourcesDirectory)'
     azureSubscription: 'dev-qlnext'
-    acrName: $(acrRegistry)
+    acrName: '$(acrRegistry)'
     acrUsername: 'qlnv2'
     acrPassword: 'jxmPri2GCql4OHO5Fl+3C0Bii3fmUbsrEZ1EHDbx/y+ACRDo/bQ0'
+    dockerfilePath: 'QLN.Blazor.Base/Dockerfile'
     imageToBuild: 'qlnv2-ezftf8ehejdadpfn.azurecr.io/qlnv2/blazorbase:$(Build.BuildId).$(Build.BuildNumber)'
     containerAppName: 'capp-blazorbase'
     resourceGroup: 'rg-containerapps-dev'
