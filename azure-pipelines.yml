@@ -18,7 +18,8 @@ pool:
 steps:
 - task: AzureContainerApps@1
   inputs:
-    appSourcePath: '$(Build.SourcesDirectory)'
+    workingDirectory: '$(Build.SourcesDirectory)'
+    appSourcePath: '$(Build.SourcesDirectory)/QLN.Blazor.Base'
     azureSubscription: 'dev-qlnext'
     acrName: $(acrRegistry)
     acrUsername: 'qlnv2'
