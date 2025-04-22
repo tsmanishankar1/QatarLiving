@@ -18,7 +18,6 @@ pool:
 steps:
 - task: AzureContainerApps@1
   inputs:
-    workingDirectory: '$(Build.SourcesDirectory)'
     appSourcePath: '$(Build.SourcesDirectory)/QLN.Blazor.Base'
     dockerfilePath: '$(Build.SourcesDirectory)/QLN.Blazor.Base/Dockerfile'
     azureSubscription: 'dev-qlnext'
