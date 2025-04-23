@@ -49,3 +49,34 @@ h1:focus {
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
 }
+.login-heading {
+    font-weight: 600;
+    font-size: 30px;
+    font-family: 'Poppins', sans-serif;
+    margin-bottom: 1.5rem; 
+    text-align: center;     
+}
+.style-heading {
+    font-weight: 600;
+    font-size: 30px;
+    font-family: 'Poppins', sans-serif;
+    margin-bottom: 1.5rem; 
+    text-align: center;  
+    color: var(--color-heading);   
+}
+.style-description {
+    font-weight: 400;
+    font-size: 16px;
+    font-family: 'Poppins', sans-serif;
+    margin-bottom: 1.5rem; 
+    text-align: center;  
+    color: var(--color-caption);   
+}
+.style-field-name {
+    font-weight: 400;
+    font-size: 14px;
+    font-family: 'Poppins', sans-serif;
+    margin-bottom: 1.5rem; 
+    text-align: start;  
+    color: var(--color-heading);   
+}
