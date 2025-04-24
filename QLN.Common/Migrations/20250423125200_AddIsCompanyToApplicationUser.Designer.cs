@@ -12,8 +12,8 @@ using QLN.Common.Infrastructure.DbContext;
 namespace QLN.Common.Migrations
 {
     [DbContext(typeof(QatarlivingDevContext))]
-    [Migration("20250418204804_AddRefreshTokenColumnsToUsers")]
-    partial class AddRefreshTokenColumnsToUsers
+    [Migration("20250423125200_AddIsCompanyToApplicationUser")]
+    partial class AddIsCompanyToApplicationUser
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -155,7 +155,7 @@ namespace QLN.Common.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("QLN.Common.Model.ApplicationUser", b =>
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.ApplicationUser", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -178,10 +178,6 @@ namespace QLN.Common.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("Emailaddress")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("Firstname")
                         .IsRequired()
                         .HasColumnType("text");
@@ -189,6 +185,9 @@ namespace QLN.Common.Migrations
                     b.Property<string>("Gender")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsCompany")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("Isactive")
                         .HasColumnType("boolean");
@@ -208,10 +207,6 @@ namespace QLN.Common.Migrations
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Mobilenumber")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<string>("Mobileoperator")
                         .HasColumnType("text");
@@ -237,12 +232,6 @@ namespace QLN.Common.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("RefreshToken")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("RefreshTokenExpiry")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
 
@@ -252,10 +241,6 @@ namespace QLN.Common.Migrations
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -280,7 +265,7 @@ namespace QLN.Common.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
                 {
-                    b.HasOne("QLN.Common.Model.ApplicationUser", null)
+                    b.HasOne("QLN.Common.Infrastructure.Model.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -289,7 +274,7 @@ namespace QLN.Common.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
                 {
-                    b.HasOne("QLN.Common.Model.ApplicationUser", null)
+                    b.HasOne("QLN.Common.Infrastructure.Model.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -304,7 +289,7 @@ namespace QLN.Common.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("QLN.Common.Model.ApplicationUser", null)
+                    b.HasOne("QLN.Common.Infrastructure.Model.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -313,7 +298,7 @@ namespace QLN.Common.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
                 {
-                    b.HasOne("QLN.Common.Model.ApplicationUser", null)
+                    b.HasOne("QLN.Common.Infrastructure.Model.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)

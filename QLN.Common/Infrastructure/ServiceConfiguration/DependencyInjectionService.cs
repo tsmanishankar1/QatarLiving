@@ -14,6 +14,8 @@ namespace QLN.Common.Infrastructure.ServiceConfiguration
         {
             services.AddTransient<IEmailSender<ApplicationUser>, SmtpEmailSender>();
             services.AddScoped<ITokenService, TokenService>();
+            services.AddScoped<IExtendedEmailSender<ApplicationUser>, SmtpEmailSender>();
+            services.AddScoped<IAuthService, AuthService>();
             return services;
         }
     }

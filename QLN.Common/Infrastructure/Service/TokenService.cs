@@ -23,7 +23,7 @@ namespace QLN.Common.Infrastructure.Service
                 new(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new(ClaimTypes.Name, user.UserName ?? string.Empty),
                 new(ClaimTypes.Email, user.Email ?? string.Empty),
-                new("MobileNumber", user.Mobilenumber ?? string.Empty)
+                new("MobileNumber", user.PhoneNumber ?? string.Empty)
             };
 
             var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
