@@ -11,6 +11,7 @@ using MockQueryable.Moq;
 using Moq;
 using QLN.Backend.UnitTest.IService;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.Model;
 using System.Text;
@@ -51,7 +52,7 @@ namespace QLN.Backend.UnitTest.AuthTest
             _mockLinkGenerator = new Mock<LinkGenerator>();
             _mockHttpContext = new Mock<HttpContext>();
         }
-        //Register TestCase
+        //Register
         [Fact]
         public async Task RegisterInvalidRequest()
         {
@@ -150,14 +151,12 @@ namespace QLN.Backend.UnitTest.AuthTest
             var user = new ApplicationUser
             {
                 UserName = request.Username,
-                Username = request.Username,
                 Firstname = request.FirstName,
                 Lastname = request.Lastname,
                 Dateofbirth = request.Dateofbirth,
                 Gender = request.Gender,
                 Mobileoperator = request.MobileOperator,
-                Mobilenumber = request.Mobilenumber,
-                Emailaddress = request.Emailaddress,
+                PhoneNumber = request.Mobilenumber,
                 Email = request.Emailaddress,
                 Nationality = request.Nationality,
                 Languagepreferences = request.Languagepreferences,
@@ -192,7 +191,7 @@ namespace QLN.Backend.UnitTest.AuthTest
             var response = ApiResponse<string>.Success("User registered successfully. Please check your email to confirm your account.", null);
             return TypedResults.Ok(response);
         }
-        //Confirm Email TestCase 
+        //Confirmation Email
         [Fact]
         public static async Task ConfirmEmailWithValidParametersReturnsHtmlResponse()
         {
@@ -279,7 +278,7 @@ namespace QLN.Backend.UnitTest.AuthTest
 
             return await endpoint(userId, code, userManager);
         }
-        //Forgot Password TestCase 
+        //Forgot Password
         [Fact]
         public static async Task ForgotPasswordWithRegisteredAndConfirmedEmailSendsResetCode()
         {
@@ -387,30 +386,52 @@ namespace QLN.Backend.UnitTest.AuthTest
             return userManager;
         }
 
-        //TestCase for RefreshToken
+        //RefreshToken
         [Fact]
         public static async Task RefreshTokenSuccessReturnsNewTokens()
         {
             var mockUserManager = MockUserManager<ApplicationUser>();
             var tokenService = new Mock<ITokenService>();
             var validRefreshToken = "valid-refresh-token";
+            var newAccessToken = "new-access-token";
+            var newRefreshToken = "new-refresh-token";
+
             var user = new ApplicationUser
             {
                 UserName = "testuser",
-                Email = "test@example.com",
-                RefreshToken = validRefreshToken,
-                RefreshTokenExpiry = DateTime.UtcNow.AddMinutes(30)
+                Email = "test@example.com"
             };
 
             var usersDbSet = new List<ApplicationUser> { user }.AsQueryable().BuildMockDbSet();
             mockUserManager.Setup(m => m.Users).Returns(usersDbSet.Object);
-            tokenService.Setup(t => t.GenerateAccessToken(user)).ReturnsAsync("new-access-token");
-            tokenService.Setup(t => t.GenerateRefreshToken()).Returns("new-refresh-token");
+
+            mockUserManager.Setup(m => m.GetAuthenticationTokenAsync(
+                user, QLNTokenConstants.RefreshToken, "refresh_token"))
+                .ReturnsAsync(validRefreshToken);
+
+            mockUserManager.Setup(m => m.GetAuthenticationTokenAsync(
+                user, QLNTokenConstants.RefreshTokenExpiry, "refresh_token_expiry"))
+                .ReturnsAsync(DateTime.UtcNow.AddMinutes(30).ToString("o"));
+
+            mockUserManager.Setup(m => m.SetAuthenticationTokenAsync(
+                user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshToken, newRefreshToken))
+                .ReturnsAsync(IdentityResult.Success);
+
+            mockUserManager.Setup(m => m.SetAuthenticationTokenAsync(
+                user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshTokenExpiry, It.IsAny<string>()))
+                .ReturnsAsync(IdentityResult.Success);
+
+            mockUserManager.Setup(m => m.UpdateAsync(user))
+                .ReturnsAsync(IdentityResult.Success);
+
+            tokenService.Setup(t => t.GenerateAccessToken(user)).ReturnsAsync(newAccessToken);
+            tokenService.Setup(t => t.GenerateRefreshToken()).Returns(newRefreshToken);
 
             var request = new RefreshTokenRequest
             {
                 RefreshToken = validRefreshToken
             };
+
             var result = await new Func<
                 RefreshTokenRequest,
                 UserManager<ApplicationUser>,
@@ -418,47 +439,71 @@ namespace QLN.Backend.UnitTest.AuthTest
                 Task<Results<Ok<ApiResponse<RefreshTokenResponse>>, UnauthorizedHttpResult>>
             >(async (req, userManager, tokenService) =>
             {
-                var matchedUser = await userManager.Users.FirstOrDefaultAsync(u =>
-                    u.RefreshToken == req.RefreshToken &&
-                    u.RefreshTokenExpiry > DateTime.UtcNow);
+                ApplicationUser? matchedUser = null;
+
+                foreach (var u in userManager.Users)
+                {
+                    var storedToken = await userManager.GetAuthenticationTokenAsync(u, QLNTokenConstants.RefreshToken, "refresh_token");
+                    var expiryStr = await userManager.GetAuthenticationTokenAsync(u, QLNTokenConstants.RefreshTokenExpiry, "refresh_token_expiry");
+
+                    if (storedToken == req.RefreshToken &&
+                        DateTime.TryParse(expiryStr, out var expiry) &&
+                        expiry > DateTime.UtcNow)
+                    {
+                        matchedUser = u;
+                        break;
+                    }
+                }
 
                 if (matchedUser == null)
                     return TypedResults.Unauthorized();
 
-                var newAccessToken = await tokenService.GenerateAccessToken(matchedUser);
-                var newRefreshToken = tokenService.GenerateRefreshToken();
+                var accessToken = await tokenService.GenerateAccessToken(matchedUser);
+                var refreshToken = tokenService.GenerateRefreshToken();
 
-                matchedUser.RefreshToken = newRefreshToken;
-                matchedUser.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
-                await userManager.UpdateAsync(matchedUser);
+                await userManager.SetAuthenticationTokenAsync(matchedUser, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshToken, refreshToken);
+                await userManager.SetAuthenticationTokenAsync(matchedUser, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
 
                 return TypedResults.Ok(ApiResponse<RefreshTokenResponse>.Success("Token refreshed", new RefreshTokenResponse
                 {
-                    AccessToken = newAccessToken,
-                    RefreshToken = newRefreshToken
+                    AccessToken = accessToken,
+                    RefreshToken = refreshToken
                 }));
             })(request, mockUserManager.Object, tokenService.Object);
+
             if (result.Result is Ok<ApiResponse<RefreshTokenResponse>> okResult)
             {
                 Assert.Equal("Token refreshed", okResult.Value.Message);
-                Assert.Equal("new-access-token", okResult.Value.Data.AccessToken);
-                Assert.Equal("new-refresh-token", okResult.Value.Data.RefreshToken);
+                Assert.Equal(newAccessToken, okResult.Value.Data.AccessToken);
+                Assert.Equal(newRefreshToken, okResult.Value.Data.RefreshToken);
             }
             else
             {
                 Assert.Fail("Expected Ok<ApiResponse<RefreshTokenResponse>>, but got something else.");
             }
         }
+
         [Fact]
         public static async Task RefreshTokenInvalidTokenReturnsUnauthorized()
         {
             var mockUserManager = MockUserManager<ApplicationUser>();
             var tokenService = new Mock<ITokenService>();
             var invalidToken = "invalid-token";
-            var usersDbSet = new List<ApplicationUser> { }.AsQueryable().BuildMockDbSet();
+
+            var user = new ApplicationUser { UserName = "fakeuser", Email = "fake@example.com" };
+
+            var usersDbSet = new List<ApplicationUser> { user }.AsQueryable().BuildMockDbSet();
             mockUserManager.Setup(m => m.Users).Returns(usersDbSet.Object);
+            mockUserManager.Setup(m => m.GetAuthenticationTokenAsync(
+                user, QLNTokenConstants.RefreshToken, "refresh_token"))
+                .ReturnsAsync("some-other-token");
+
+            mockUserManager.Setup(m => m.GetAuthenticationTokenAsync(
+                user, QLNTokenConstants.RefreshTokenExpiry, "refresh_token_expiry"))
+                .ReturnsAsync(DateTime.UtcNow.AddMinutes(30).ToString("o"));
 
             var request = new RefreshTokenRequest { RefreshToken = invalidToken };
+
             var result = await new Func<
                 RefreshTokenRequest,
                 UserManager<ApplicationUser>,
@@ -466,23 +511,38 @@ namespace QLN.Backend.UnitTest.AuthTest
                 Task<Results<Ok<ApiResponse<RefreshTokenResponse>>, UnauthorizedHttpResult>>
             >(async (req, userManager, tokenService) =>
             {
-                var matchedUser = await userManager.Users.FirstOrDefaultAsync(u =>
-                    u.RefreshToken == req.RefreshToken &&
-                    u.RefreshTokenExpiry > DateTime.UtcNow);
+                ApplicationUser? matchedUser = null;
+
+                foreach (var u in userManager.Users)
+                {
+                    var storedToken = await userManager.GetAuthenticationTokenAsync(u, QLNTokenConstants.RefreshToken, "refresh_token");
+                    var expiryStr = await userManager.GetAuthenticationTokenAsync(u, QLNTokenConstants.RefreshTokenExpiry, "refresh_token_expiry");
+
+                    if (storedToken == req.RefreshToken &&
+                        DateTime.TryParse(expiryStr, out var expiry) &&
+                        expiry > DateTime.UtcNow)
+                    {
+                        matchedUser = u;
+                        break;
+                    }
+                }
 
                 if (matchedUser == null)
                     return TypedResults.Unauthorized();
+
                 return TypedResults.Ok(ApiResponse<RefreshTokenResponse>.Success("Should not reach here", null));
             })(request, mockUserManager.Object, tokenService.Object);
+
             Assert.IsType<UnauthorizedHttpResult>(result.Result);
         }
+
         //Helper Method for RefreshToken
         public static Mock<UserManager<TUser>> MockUserManager<TUser>() where TUser : class
         {
             var store = new Mock<IUserStore<TUser>>();
             return new Mock<UserManager<TUser>>(store.Object, null, null, null, null, null, null, null, null);
         }
-        //manafe/info test case
+        //manage/info 
         [Fact]
         public static async Task UpdateProfileValidUserUpdatesAndReturnsOk()
         {
@@ -499,7 +559,7 @@ namespace QLN.Backend.UnitTest.AuthTest
             {
                 UserName = "testuser",
                 Email = "testuser@example.com",
-                Mobilenumber = "1234567890"
+                PhoneNumber = "1234567890"
             };
 
             var userList = new List<ApplicationUser> { user }.AsQueryable();
@@ -524,14 +584,14 @@ namespace QLN.Backend.UnitTest.AuthTest
                 var foundUser = um.Users.FirstOrDefault(u =>
                     u.UserName == req.UsernameOrEmailOrPhone ||
                     u.Email == req.UsernameOrEmailOrPhone ||
-                    u.Mobilenumber == req.UsernameOrEmailOrPhone);
+                    u.PhoneNumber == req.UsernameOrEmailOrPhone);
 
                 if (foundUser == null)
                     return TypedResults.Unauthorized();
 
                 foundUser.Firstname = req.FirstName;
                 foundUser.Lastname = req.LastName;
-                foundUser.Mobilenumber = req.MobileNumber;
+                foundUser.PhoneNumber = req.MobileNumber;
                 foundUser.Location = req.Location;
                 await um.UpdateAsync(foundUser);
 
@@ -574,14 +634,14 @@ namespace QLN.Backend.UnitTest.AuthTest
                 var foundUser = um.Users.FirstOrDefault(u =>
                     u.UserName == req.UsernameOrEmailOrPhone ||
                     u.Email == req.UsernameOrEmailOrPhone ||
-                    u.Mobilenumber == req.UsernameOrEmailOrPhone);
+                    u.PhoneNumber == req.UsernameOrEmailOrPhone);
 
                 if (foundUser == null)
                     return TypedResults.Unauthorized();
 
                 foundUser.Firstname = req.FirstName;
                 foundUser.Lastname = req.LastName;
-                foundUser.Mobilenumber = req.MobileNumber;
+                foundUser.PhoneNumber = req.MobileNumber;
                 foundUser.Location = req.Location;
                 await um.UpdateAsync(foundUser);
 
@@ -597,10 +657,9 @@ namespace QLN.Backend.UnitTest.AuthTest
 
             var user = new ApplicationUser
             {
-                Username = "jane.doe",
+                UserName = "jane.doe",
                 Email = "jane@example.com",
-                Emailaddress = "jane@example.com",
-                Mobilenumber = "1234567890",
+                PhoneNumber = "1234567890",
                 Gender = "Female",
                 Dateofbirth = DateOnly.FromDateTime(DateTime.Now.AddYears(-25)),
                 Location = "Doha",
@@ -630,9 +689,9 @@ namespace QLN.Backend.UnitTest.AuthTest
 
                 return TypedResults.Ok(ApiResponse<object>.Success("Profile data", new
                 {
-                    foundUser.Username,
-                    foundUser.Emailaddress,
-                    foundUser.Mobilenumber,
+                    foundUser.UserName,
+                    foundUser.Email,
+                    foundUser.PhoneNumber,
                     foundUser.Gender,
                     foundUser.Dateofbirth,
                     foundUser.Location,
@@ -683,7 +742,7 @@ namespace QLN.Backend.UnitTest.AuthTest
             var user = new ApplicationUser
             {
                 Email = "user@example.com",
-                Mobilenumber = "1234567890",
+                PhoneNumber = "1234567890",
                 TwoFactorEnabled = false
             };
 
@@ -704,7 +763,7 @@ namespace QLN.Backend.UnitTest.AuthTest
             var result = await new Func<TwoFactorToggleRequest, UserManager<ApplicationUser>, Task<IResult>>(async (req, um) =>
             {
                 var user = um.Users.FirstOrDefault(u =>
-                    u.Email == req.EmailorPhoneNumber || u.Mobilenumber == req.EmailorPhoneNumber);
+                    u.Email == req.EmailorPhoneNumber || u.PhoneNumber == req.EmailorPhoneNumber);
                 if (user == null)
                     return TypedResults.Unauthorized();
 
@@ -741,7 +800,7 @@ namespace QLN.Backend.UnitTest.AuthTest
             var result = await new Func<TwoFactorToggleRequest, UserManager<ApplicationUser>, Task<IResult>>(async (req, um) =>
             {
                 var user = um.Users.FirstOrDefault(u =>
-                    u.Email == req.EmailorPhoneNumber || u.Mobilenumber == req.EmailorPhoneNumber);
+                    u.Email == req.EmailorPhoneNumber || u.PhoneNumber == req.EmailorPhoneNumber);
                 if (user == null)
                     return TypedResults.Unauthorized();
 
@@ -767,8 +826,7 @@ namespace QLN.Backend.UnitTest.AuthTest
             {
                 UserName = "user1",
                 Email = "user@example.com",
-                Emailaddress = "user@example.com",
-                Mobilenumber = "1234567890",
+                PhoneNumber = "1234567890",
                 TwoFactorEnabled = false
             };
 
@@ -778,11 +836,19 @@ namespace QLN.Backend.UnitTest.AuthTest
             var mockTokenService = new Mock<ITokenService>();
             var mockEmailSender = new Mock<IEmailSender<ApplicationUser>>();
 
-            mockUserManager.Setup(x => x.Users).Returns(new List<ApplicationUser> { user }.AsQueryable().BuildMockDbSet().Object);
+            mockUserManager.Setup(x => x.Users)
+                .Returns(new List<ApplicationUser> { user }.AsQueryable().BuildMockDbSet().Object);
             mockUserManager.Setup(x => x.CheckPasswordAsync(user, request.Password)).ReturnsAsync(true);
             mockUserManager.Setup(x => x.IsEmailConfirmedAsync(user)).ReturnsAsync(true);
             mockTokenService.Setup(x => x.GenerateAccessToken(user)).ReturnsAsync("access-token");
             mockTokenService.Setup(x => x.GenerateRefreshToken()).Returns("refresh-token");
+            mockUserManager.Setup(x => x.SetAuthenticationTokenAsync(
+                user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshToken, It.IsAny<string>()))
+                .ReturnsAsync(IdentityResult.Success);
+            mockUserManager.Setup(x => x.SetAuthenticationTokenAsync(
+                user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshTokenExpiry, It.IsAny<string>()))
+                .ReturnsAsync(IdentityResult.Success);
+            mockUserManager.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
 
             var result = await new Func<LoginRequest, UserManager<ApplicationUser>, SignInManager<ApplicationUser>, ITokenService, IEmailSender<ApplicationUser>, Task<IResult>>(
                 async (req, userMgr, signInMgr, tokenSvc, emailSvc) =>
@@ -790,13 +856,15 @@ namespace QLN.Backend.UnitTest.AuthTest
                     var foundUser = userMgr.Users.FirstOrDefault(u =>
                         u.UserName == req.UsernameOrEmailOrPhone ||
                         u.Email == req.UsernameOrEmailOrPhone ||
-                        u.Mobilenumber == req.UsernameOrEmailOrPhone);
+                        u.PhoneNumber == req.UsernameOrEmailOrPhone);
 
                     if (foundUser == null || !await userMgr.CheckPasswordAsync(foundUser, req.Password))
                         return TypedResults.Unauthorized();
 
                     if (!await userMgr.IsEmailConfirmedAsync(foundUser))
-                        return TypedResults.ValidationProblem(new Dictionary<string, string[]> { { "Email", new[] { "Email not confirmed." } } });
+                        return TypedResults.ValidationProblem(new Dictionary<string, string[]> {
+                    { "Email", new[] { "Email not confirmed." } }
+                        });
 
                     if (foundUser.TwoFactorEnabled)
                     {
@@ -805,9 +873,9 @@ namespace QLN.Backend.UnitTest.AuthTest
 
                         return TypedResults.Ok(ApiResponse<LoginResponse>.Success("2FA code sent", new LoginResponse
                         {
-                            Username = foundUser.Username,
-                            Emailaddress = foundUser.Emailaddress,
-                            Mobilenumber = foundUser.Mobilenumber,
+                            Username = foundUser.UserName,
+                            Emailaddress = foundUser.Email,
+                            Mobilenumber = foundUser.PhoneNumber,
                             AccessToken = string.Empty,
                             RefreshToken = string.Empty
                         }));
@@ -816,15 +884,15 @@ namespace QLN.Backend.UnitTest.AuthTest
                     var accessToken = await tokenSvc.GenerateAccessToken(foundUser);
                     var refreshToken = tokenSvc.GenerateRefreshToken();
 
-                    foundUser.RefreshToken = refreshToken;
-                    foundUser.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+                    await userMgr.SetAuthenticationTokenAsync(foundUser, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshToken, refreshToken);
+                    await userMgr.SetAuthenticationTokenAsync(foundUser, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
                     await userMgr.UpdateAsync(foundUser);
 
                     return TypedResults.Ok(ApiResponse<LoginResponse>.Success("Login successful", new LoginResponse
                     {
-                        Username = foundUser.Username,
-                        Emailaddress = foundUser.Emailaddress,
-                        Mobilenumber = foundUser.Mobilenumber,
+                        Username = foundUser.UserName,
+                        Emailaddress = foundUser.Email,
+                        Mobilenumber = foundUser.PhoneNumber,
                         AccessToken = accessToken,
                         RefreshToken = refreshToken
                     }));
@@ -848,8 +916,7 @@ namespace QLN.Backend.UnitTest.AuthTest
             {
                 UserName = "user1",
                 Email = "user@example.com",
-                Emailaddress = "user@example.com",
-                Mobilenumber = "1234567890",
+                PhoneNumber = "1234567890",
                 TwoFactorEnabled = false
             };
 
@@ -867,7 +934,7 @@ namespace QLN.Backend.UnitTest.AuthTest
                     var foundUser = userMgr.Users.FirstOrDefault(u =>
                         u.UserName == req.UsernameOrEmailOrPhone ||
                         u.Email == req.UsernameOrEmailOrPhone ||
-                        u.Mobilenumber == req.UsernameOrEmailOrPhone);
+                        u.PhoneNumber == req.UsernameOrEmailOrPhone);
 
                     if (foundUser == null || !await userMgr.CheckPasswordAsync(foundUser, req.Password))
                         return TypedResults.Unauthorized();
@@ -913,11 +980,10 @@ namespace QLN.Backend.UnitTest.AuthTest
 
             return signInManager;
         }
-        //verigy 2fa Test fact
+        //verigy 2fa 
         [Fact]
         public static async Task Verify2FASuccessReturnsTokens()
         {
-            // Arrange
             var request = new Verify2FARequest
             {
                 UsernameOrEmailOrPhone = "user@example.com",
@@ -928,8 +994,7 @@ namespace QLN.Backend.UnitTest.AuthTest
             {
                 UserName = "user1",
                 Email = "user@example.com",
-                Emailaddress = "user@example.com",
-                Mobilenumber = "1234567890",
+                PhoneNumber = "1234567890",
                 TwoFactorEnabled = true
             };
 
@@ -938,17 +1003,25 @@ namespace QLN.Backend.UnitTest.AuthTest
             var mockTokenService = new Mock<ITokenService>();
 
             mockUserManager.Setup(x => x.Users).Returns(new List<ApplicationUser> { user }.AsQueryable().BuildMockDbSet().Object);
-            mockUserManager.Setup(x => x.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider, request.TwoFactorCode)).ReturnsAsync(true);
+            mockUserManager.Setup(x => x.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider, request.TwoFactorCode))
+                .ReturnsAsync(true);
+            mockUserManager.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
+
+            mockUserManager.Setup(x => x.SetAuthenticationTokenAsync(user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshToken, It.IsAny<string>()))
+                .ReturnsAsync(IdentityResult.Success);
+            mockUserManager.Setup(x => x.SetAuthenticationTokenAsync(user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshTokenExpiry, It.IsAny<string>()))
+                .ReturnsAsync(IdentityResult.Success);
+
             mockTokenService.Setup(x => x.GenerateAccessToken(user)).ReturnsAsync("access-token");
             mockTokenService.Setup(x => x.GenerateRefreshToken()).Returns("refresh-token");
-            mockUserManager.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
+
             var result = await new Func<Verify2FARequest, UserManager<ApplicationUser>, ITokenService, Task<IResult>>(
                 async (req, userMgr, tokenSvc) =>
                 {
-                    var foundUser = userMgr.Users.FirstOrDefault(u =>
+                    var foundUser = await userMgr.Users.FirstOrDefaultAsync(u =>
                         u.UserName == req.UsernameOrEmailOrPhone ||
                         u.Email == req.UsernameOrEmailOrPhone ||
-                        u.Mobilenumber == req.UsernameOrEmailOrPhone);
+                        u.PhoneNumber == req.UsernameOrEmailOrPhone);
 
                     if (foundUser == null)
                         return TypedResults.NotFound();
@@ -969,20 +1042,19 @@ namespace QLN.Backend.UnitTest.AuthTest
                     var accessToken = await tokenSvc.GenerateAccessToken(foundUser);
                     var refreshToken = tokenSvc.GenerateRefreshToken();
 
-                    foundUser.RefreshToken = refreshToken;
-                    foundUser.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+                    await userMgr.SetAuthenticationTokenAsync(foundUser, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshToken, refreshToken);
+                    await userMgr.SetAuthenticationTokenAsync(foundUser, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
                     await userMgr.UpdateAsync(foundUser);
 
                     return TypedResults.Ok(ApiResponse<LoginResponse>.Success("2FA verified. Login successful.", new LoginResponse
                     {
-                        Username = foundUser.Username,
-                        Emailaddress = foundUser.Emailaddress,
-                        Mobilenumber = foundUser.Mobilenumber,
+                        Username = foundUser.UserName,
+                        Emailaddress = foundUser.Email,
+                        Mobilenumber = foundUser.PhoneNumber,
                         AccessToken = accessToken,
                         RefreshToken = refreshToken
                     }));
                 })(request, mockUserManager.Object, mockTokenService.Object);
-
 
             var okResult = Assert.IsType<Ok<ApiResponse<LoginResponse>>>(result);
             Assert.Equal("2FA verified. Login successful.", okResult.Value.Message);
@@ -1002,8 +1074,7 @@ namespace QLN.Backend.UnitTest.AuthTest
             {
                 UserName = "user1",
                 Email = "user@example.com",
-                Emailaddress = "user@example.com",
-                Mobilenumber = "1234567890",
+                PhoneNumber = "1234567890",
                 TwoFactorEnabled = true
             };
 
@@ -1019,7 +1090,7 @@ namespace QLN.Backend.UnitTest.AuthTest
                     var foundUser = userMgr.Users.FirstOrDefault(u =>
                         u.UserName == req.UsernameOrEmailOrPhone ||
                         u.Email == req.UsernameOrEmailOrPhone ||
-                        u.Mobilenumber == req.UsernameOrEmailOrPhone);
+                        u.PhoneNumber == req.UsernameOrEmailOrPhone);
 
                     if (foundUser == null)
                         return TypedResults.NotFound();
@@ -1048,8 +1119,7 @@ namespace QLN.Backend.UnitTest.AuthTest
             {
                 UserName = "user1",
                 Email = "user@example.com",
-                Emailaddress = "user@example.com",
-                Mobilenumber = "1234567890",
+                PhoneNumber = "1234567890",
                 TwoFactorEnabled = false
             };
 
@@ -1062,7 +1132,7 @@ namespace QLN.Backend.UnitTest.AuthTest
                     var foundUser = userMgr.Users.FirstOrDefault(u =>
                         u.UserName == req.UsernameOrEmailOrPhone ||
                         u.Email == req.UsernameOrEmailOrPhone ||
-                        u.Mobilenumber == req.UsernameOrEmailOrPhone);
+                        u.PhoneNumber == req.UsernameOrEmailOrPhone);
 
                     if (foundUser == null)
                         return TypedResults.NotFound();
@@ -1094,7 +1164,7 @@ namespace QLN.Backend.UnitTest.AuthTest
                     var foundUser = userMgr.Users.FirstOrDefault(u =>
                         u.UserName == req.UsernameOrEmailOrPhone ||
                         u.Email == req.UsernameOrEmailOrPhone ||
-                        u.Mobilenumber == req.UsernameOrEmailOrPhone);
+                        u.PhoneNumber == req.UsernameOrEmailOrPhone);
 
                     if (foundUser == null)
                         return TypedResults.NotFound();

@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace QLN.Common.Migrations
 {
     /// <inheritdoc />
-    public partial class IdentityWithCustomUser : Migration
+    public partial class AuthModule : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -31,14 +31,11 @@ namespace QLN.Common.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Username = table.Column<string>(type: "text", nullable: false),
                     Mobileoperator = table.Column<string>(type: "text", nullable: true),
                     Firstname = table.Column<string>(type: "text", nullable: false),
                     Lastname = table.Column<string>(type: "text", nullable: false),
                     Dateofbirth = table.Column<DateOnly>(type: "date", nullable: false),
                     Gender = table.Column<string>(type: "text", nullable: false),
-                    Mobilenumber = table.Column<string>(type: "text", nullable: false),
-                    Emailaddress = table.Column<string>(type: "text", nullable: false),
                     Nationality = table.Column<string>(type: "text", nullable: false),
                     Languagepreferences = table.Column<string>(type: "text", nullable: true),
                     Location = table.Column<string>(type: "text", nullable: true),
