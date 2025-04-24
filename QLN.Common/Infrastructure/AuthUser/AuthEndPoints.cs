@@ -21,7 +21,7 @@ using QLN.Common.Infrastructure.Service;
 
 namespace QLN.Common.Infrastructure.AuthUser
 {
-    public static class RegisterEndPoints
+    public static class AuthEndPoints
     {
         // register
         public static RouteGroupBuilder MapRegisterEndpoints(this RouteGroupBuilder group)
@@ -30,10 +30,10 @@ namespace QLN.Common.Infrastructure.AuthUser
             (
                 [FromBody] RegisterRequest request,
                 HttpContext context,
-                [FromServices] IAuthService authService // 🟢 Inject only the service now
+                [FromServices] IAuthService authService // Inject only the service now
             ) =>
             {
-                // 🔁 Delegate to service method
+                // Delegate to service method
                 return await authService.RegisterAsync(request, context);
             })
             .WithName("Register")
