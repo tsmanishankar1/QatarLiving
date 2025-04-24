@@ -185,7 +185,6 @@
             var res = await Api.PostAsync<object, ResponseModel<object> >("auth/register", payload); 
             if (res!.Status)
             {
-                @* Snackbar.Add(res.Message, Severity.Success); *@
                 UserState.Email = _model.EmailAddress;
                 UserState.mobileNumber = _model.MobileNumber;
                 var body = new
@@ -197,7 +196,7 @@
                     Snackbar.Add(response.Message, Severity.Success);
                     
                 if (EnableTwoFactor) {
-                NavManager.NavigateTo("/two-factor-authentication");
+                NavManager.NavigateTo("/select-verification");
                 }
                 else {
                 NavManager.NavigateTo("/");

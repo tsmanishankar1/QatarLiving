@@ -7,26 +7,21 @@
 @using MudBlazor
 @using QLN.Blazor.Base.Models
 @using QLN.Web.Shared.Components.CustomButton
-@using QLN.Web.Shared.Components.ModalDialog
 
-<div style="width: 100vw; min-height: 100vh; background-color: var(--color-background); display: flex; justify-content: center; align-items: center;">
-    <div style="width: 100%; max-width: 450px; padding: 2rem;">
-        <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-6 style-heading" >
-        Log in to your account
-    </MudText>
-    <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-4 style-description" >Welcome back! Please enter your details.</MudText>
-    <MudText Typo="Typo.h5" Align="Align.Start" Class="mb-4">Email or Phone Number</MudText>
+<MudPaper Class="pa-6 mx-auto mt-10" Style="max-width: 450px; border-radius: 12px; margin-top: 20px; margin-bottom: 20px;">
+    <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-4">Sign In</MudText>
+
+    
     <MudTextField T="string"
-              Label="Enter your email"
+              Label="Email or Username"
               Variant="Variant.Outlined"
               FullWidth="true"
               InputType="InputType.Text"
               @bind-Value="_username"
               Required="true"
                />
-    <MudText Typo="Typo.h5" Align="Align.Start" Class="mb-4">Password</MudText>
     <MudTextField T="string"
-              Label="Enter your password"
+              Label="Password"
               Variant="Variant.Outlined"
               FullWidth="true"
               InputType="InputType.Password"
@@ -36,9 +31,7 @@
 
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
-    <MudCheckBox T="bool" @bind-Checked="_rememberMe" Color="Color.Warning" Class="my-checkbox">
-    Remember me
-   </MudCheckBox>
+    <MudCheckBox T="bool" Label="Remember me" DisableMargins="true" />
 
     <MudLink Href="/forgot-password" Style="color: #FF7F38; text-decoration: none;">
         Forgot Password?
@@ -56,38 +49,38 @@
 
 
      <div class="d-flex align-center my-4">
-        <div style="flex-grow: 1; height: 1px; background-color: #E3E3E3"></div>
-        <MudText Typo="Typo.caption" Class="mx-2">Or continue with</MudText>
+        <div style="flex-grow: 1; height: 1px; background-color: #ccc;"></div>
+        <MudText Typo="Typo.caption" Class="mx-2">OR</MudText>
         <div style="flex-grow: 1; height: 1px; background-color: #ccc;"></div>
     </div>
 
     <MudStack Spacing="3">
     <MudButton Variant="Variant.Outlined"
            Color="Color.Transparent"
+           FullWidth="true"
            Style="border-color: #D0D5DD; color: #787878;">
            <img src="images/google.svg" alt="Microsoft" style="height: 20px; margin-right: 8px;" />
+        Continue with Google
     </MudButton>
-        <MudButton Variant="Variant.Outlined" Color="Color.Default"  Style="border-color: #D0D5DD; color: #787878;">
+        <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" Style="border-color: #D0D5DD; color: #787878;">
             <img src="images/microsoft.svg" alt="Microsoft" style="height: 20px; margin-right: 8px;" />
             Continue with Microsoft
         </MudButton>
         <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" Style="border-color: #D0D5DD; color: #787878;">
             <img src="images/facebook.svg" alt="Microsoft" style="height: 20px; margin-right: 8px;" />
+            Continue with Facebook
         </MudButton> 
     </MudStack>
     <MudText Align="Align.Start" Class="mt-4">
         Don't have an account? 
         <MudLink Href="/signup" Class="ml-1" Style="color: #FF7F38;">Sign Up</MudLink>
     </MudText>
-</div>
-</div>
+</MudPaper>
 
 @code {
     private string _username = string.Empty;
     private string _password = string.Empty;
     private bool _isLoading = false;
-
-    private bool _rememberMe = false;
     private ModalData modalData = new();
 
     private async Task PerformLogin()
@@ -101,7 +94,9 @@
     var payload = new { usernameOrEmailOrPhone = _username, password = _password };
     try
     {
+        Console.WriteLine($"Payload: {payload}");
         var result = await Api.PostAsync<object, ResponseModel<LoginResponseData>>("auth/login", payload);
+            
         @* var data = await ErrorHandler.ReadApiResponseAsync<LoginResponseData>(result); *@
         if (result?.Status == true)
         {
@@ -159,17 +154,3 @@
     }
 }
 
-<style>
-    .my-checkbox .mud-checkbox {
-        border-radius: 6px;        
-        border: none;
-    }
-
-    .my-checkbox input:checked + .mud-checkbox {
-        background-color: #f97316;
-    }
-
-    .my-checkbox svg {
-        @* stroke: white; *@
-    }
-</style>
