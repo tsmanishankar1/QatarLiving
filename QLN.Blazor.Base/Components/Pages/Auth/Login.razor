@@ -21,13 +21,15 @@
               Required="true"
                />
     <MudTextField T="string"
-              Label="Password"
-              Variant="Variant.Outlined"
-              FullWidth="true"
-              InputType="InputType.Password"
-              @bind-Value="_password"
-              Required="true"
-               />
+                  Label="Password"
+                  Variant="Variant.Outlined"
+                  FullWidth="true"
+                  InputType="@passwordInputType"
+                  @bind-Value="_password"
+                  Required="true"
+                  Adornment="Adornment.End"
+                  AdornmentIcon="@passwordToggleIcon"
+                  OnAdornmentClick="@TogglePasswordVisibility" />
 
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
@@ -82,7 +84,16 @@
     private string _password = string.Empty;
     private bool _isLoading = false;
     private ModalData modalData = new();
+    private InputType passwordInputType = InputType.Password;
+    private string passwordToggleIcon =>
+           passwordInputType == InputType.Password ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff;
 
+    private void TogglePasswordVisibility()
+    {
+        passwordInputType = passwordInputType == InputType.Password
+            ? InputType.Text
+            : InputType.Password;
+    }
     private async Task PerformLogin()
 {
     if (string.IsNullOrWhiteSpace(_username) || string.IsNullOrWhiteSpace(_password))

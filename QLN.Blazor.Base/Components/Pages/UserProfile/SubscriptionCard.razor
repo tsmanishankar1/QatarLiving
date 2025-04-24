@@ -1,0 +1,31 @@
+﻿@using MudBlazor
+
+<MudPaper Class="subscription-card" Style="border: 2px solid #FFD700; padding: 16px; cursor: pointer;" @onclick="OnClick">
+    <div style="text-align: center;">
+        <MudImage Src="@ImageSrc" Alt="@AltText" MaxWidth="60px" />
+        <h3 style="margin-top: 12px;">Classifieds: Pro Seller<br />@DurationText</h3>
+    </div>
+
+    <div style="background-color: #FFD700; padding: 8px; margin: 12px 0; text-align: center;">
+        <div style="font-size: 14px;">from</div>
+        <div style="font-size: 28px; font-weight: bold;">@Price</div>
+        <div style="font-size: 14px;">QAR for @PriceText</div>
+    </div>
+
+    <div style="text-align: center;">
+        @foreach (var line in Features)
+        {
+            <div>@line</div>
+        }
+    </div>
+</MudPaper>
+
+@code {
+    [Parameter] public string ImageSrc { get; set; }
+    [Parameter] public string AltText { get; set; }
+    [Parameter] public string DurationText { get; set; }
+    [Parameter] public string Price { get; set; }
+    [Parameter] public string PriceText { get; set; }
+    [Parameter] public string[] Features { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+}
