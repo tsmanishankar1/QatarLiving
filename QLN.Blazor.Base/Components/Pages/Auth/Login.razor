@@ -39,7 +39,7 @@
 </div>
    
 <CustomButton 
-    BackgroundColor="#FF7F38"
+    BackgroundColor= "var(--color-secondary)"
     TextColor="#FFFFFF"
     Text="Sign In"
     Disabled="_isLoading"
@@ -94,7 +94,9 @@
     var payload = new { usernameOrEmailOrPhone = _username, password = _password };
     try
     {
+        Console.WriteLine($"Payload: {payload}");
         var result = await Api.PostAsync<object, ResponseModel<LoginResponseData>>("auth/login", payload);
+            
         @* var data = await ErrorHandler.ReadApiResponseAsync<LoginResponseData>(result); *@
         if (result?.Status == true)
         {
@@ -151,3 +153,4 @@
         public string RefreshToken { get; set; }
     }
 }
+

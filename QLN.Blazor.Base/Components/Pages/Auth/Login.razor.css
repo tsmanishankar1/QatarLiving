@@ -1,0 +1,31 @@
+/* Container for login card */
+.login-container {
+    max-width: 450px;
+    margin: 20px auto;
+    border-radius: 12px;
+}
+
+/* "Forgot Password?" link */
+.forgot-link {
+    color: red;
+    text-decoration: none;
+}
+
+/* Divider lines */
+.divider-line {
+    flex-grow: 1;
+    height: 1px;
+    background-color: #ccc;
+}
+
+/* Social buttons */
+.social-button {
+    border-color: #D0D5DD;
+    color: #787878;
+}
+
+/* Social button image */
+.social-icon {
+    height: 20px;
+    margin-right: 8px;
+}
