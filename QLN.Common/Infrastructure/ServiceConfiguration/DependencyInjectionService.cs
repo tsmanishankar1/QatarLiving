@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Service;
+using QLN.Common.Infrastructure.TokenProvider;
 
 
 namespace QLN.Common.Infrastructure.ServiceConfiguration
@@ -16,6 +17,9 @@ namespace QLN.Common.Infrastructure.ServiceConfiguration
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IExtendedEmailSender<ApplicationUser>, SmtpEmailSender>();
             services.AddScoped<IAuthService, AuthService>();
+            services.AddTransient<QLN.Common.Infrastructure.TokenProvider.EmailTokenProvider<ApplicationUser>>();
+            services.AddTransient<QLN.Common.Infrastructure.TokenProvider.PhoneTokenProvider<ApplicationUser>>();
+
             return services;
         }
     }

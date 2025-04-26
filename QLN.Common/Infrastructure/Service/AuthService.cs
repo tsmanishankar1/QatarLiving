@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Routing;
@@ -6,14 +7,19 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace QLN.Common.Infrastructure.Service
 {
@@ -26,12 +32,13 @@ namespace QLN.Common.Infrastructure.Service
         private readonly ITokenService _tokenService;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
+
         public AuthService(
             UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole<Guid>> roleManager,
             IExtendedEmailSender<ApplicationUser> emailSender,
             LinkGenerator linkGenerator,
-            ITokenService tokenService,
+            ITokenService tokenService,            
             IHttpContextAccessor httpContextAccessor)
         {
             _userManager = userManager;
@@ -42,39 +49,71 @@ namespace QLN.Common.Infrastructure.Service
             _httpContextAccessor = httpContextAccessor;
         }
 
+
         public async Task<Results<Ok<ApiResponse<string>>, ValidationProblem>> RegisterAsync(RegisterRequest request, HttpContext context)
         {
-            var existingUser = await _userManager.FindByEmailAsync(request.Emailaddress);
-            if (existingUser != null)
+            if (!TempVerificationStore.VerifiedEmails.Contains(request.Emailaddress) ||
+                !TempVerificationStore.VerifiedPhoneNumbers.Contains(request.Mobilenumber))
             {
-                var errors = new Dictionary<string, string[]>
-                {
-                    { "Email", new[] { "Email address is already in use." } }
-                };
-                return TypedResults.ValidationProblem(errors);
+                return TypedResults.Ok(ApiResponse<string>.Fail("Please verify your Email and Phone Number before registering."));
             }
 
-            var user = new ApplicationUser
+            var existingUser = await _userManager.FindByEmailAsync(request.Emailaddress);
+            if (existingUser == null)
             {
-                UserName = request.Username,
-                Firstname = request.FirstName,
-                Lastname = request.Lastname,
-                Dateofbirth = request.Dateofbirth,
-                Gender = request.Gender,
-                Mobileoperator = request.MobileOperator,
-                PhoneNumber = request.Mobilenumber,
-                Email = request.Emailaddress,
-                Nationality = request.Nationality,
-                Languagepreferences = request.Languagepreferences,
-                Location = request.Location,
-                IsCompany = false,
-                Isactive = true
-            };
+                return TypedResults.Ok(ApiResponse<string>.Fail("Email not verified. Please verify before registering."));
+            }
 
-            var result = await _userManager.CreateAsync(user, request.Password);
-            if (!result.Succeeded)
+            // Extra check
+            if (existingUser.Firstname != "Temp")
             {
-                var errors = result.Errors
+                return TypedResults.Ok(ApiResponse<string>.Fail("Email is already registered. Please login."));
+            }
+
+            // mobile no validation
+            var mobileRegex = new Regex(@"^(\+?\d{1,3})?[\s]?\d{10}$");
+            if (!mobileRegex.IsMatch(request.Mobilenumber))
+            {
+                return TypedResults.Ok(ApiResponse<string>.Fail("Invalid mobile number format. Please enter a valid 10-digit number."));
+            }
+
+            // Age validation
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var age = today.Year - request.Dateofbirth.Year;
+            if (request.Dateofbirth > today.AddYears(-age))
+            {
+                age--;
+            }
+
+            if (age < 18)
+            {
+                return TypedResults.Ok(ApiResponse<string>.Fail("You must be at least 18 years old to register."));
+            }
+
+            
+            existingUser.UserName = request.Username;
+            existingUser.Firstname = request.FirstName;
+            existingUser.Lastname = request.Lastname;
+            existingUser.Dateofbirth = request.Dateofbirth;
+            existingUser.Gender = request.Gender;
+            existingUser.Mobileoperator = request.MobileOperator;
+            existingUser.PhoneNumber = request.Mobilenumber;
+            existingUser.Nationality = request.Nationality;
+            existingUser.Languagepreferences = request.Languagepreferences;
+            existingUser.Location = request.Location;
+            existingUser.IsCompany = false;
+            existingUser.EmailConfirmed = true;
+            existingUser.PhoneNumberConfirmed = true;
+            existingUser.Isactive = true;
+
+            var passwordHash = _userManager.PasswordHasher.HashPassword(existingUser, request.Password);
+            existingUser.PasswordHash = passwordHash;
+
+            var updateResult = await _userManager.UpdateAsync(existingUser);
+
+            if (!updateResult.Succeeded)
+            {
+                var errors = updateResult.Errors
                     .GroupBy(e => e.Code)
                     .ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
                 return TypedResults.ValidationProblem(errors);
@@ -83,72 +122,170 @@ namespace QLN.Common.Infrastructure.Service
             if (!await _roleManager.RoleExistsAsync("User"))
                 await _roleManager.CreateAsync(new IdentityRole<Guid>("User"));
 
-            await _userManager.AddToRoleAsync(user, "User");
+            await _userManager.AddToRoleAsync(existingUser, "User");
 
-            var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-            var encodedCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-
-            var confirmUrl = _linkGenerator.GetUriByName(context, "ConfirmEmail", new
-            {
-                userId = user.Id,
-                code = encodedCode
-            });
-
-            if (confirmUrl != null)
-            {
-                await _emailSender.SendConfirmationLinkAsync(user, user.Email, HtmlEncoder.Default.Encode(confirmUrl));
-            }
-
-            var response = ApiResponse<string>.Success("User registered successfully. Please check your email to confirm your account.", null);
+            var response = ApiResponse<string>.Success("User registered successfully.", null);
             return TypedResults.Ok(response);
         }
 
-        public async Task<Results<Ok<ApiResponse<string>>, BadRequest<string>, NotFound<string>, ValidationProblem>> ConfirmEmailAsync(Guid userId, string code)
+
+        // Send OTP to Email (using Identity Token Provider)
+        public async Task<Ok<ApiResponse<string>>> SendEmailOtpAsync(string email)
         {
-            var user = await _userManager.FindByIdAsync(userId.ToString());
-            if (user == null)
-                return TypedResults.NotFound("User not Found");
+            //var otp = new Random().Next(100000, 999999).ToString();
+            //TempVerificationStore.EmailOtps[email] = otp; // Store in memory
 
-            if (await _userManager.IsEmailConfirmedAsync(user))
-                return TypedResults.BadRequest("Email is already confirmed");
+            //await _emailSender.SendOtpEmailAsync(email, otp);
 
-            var decodedCode = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(code));
-            var result = await _userManager.ConfirmEmailAsync(user, decodedCode);
+            //return TypedResults.Ok(ApiResponse<string>.Success("OTP sent to your email."));
 
-            if (!result.Succeeded)
+            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user != null)
             {
-                var errors = result.Errors
-                    .GroupBy(e => e.Code)
-                    .ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
-                return TypedResults.ValidationProblem(errors);
+                if (user.Firstname != "Temp")
+                {
+                    return TypedResults.Ok(ApiResponse<string>.Fail("Email already registered. Please login."));
+                }
+            }
+            else
+            {
+                // Check if any dummy user with only phone is there
+                user = await _userManager.Users
+            .FirstOrDefaultAsync(u => u.EmailConfirmed == false && u.Firstname == "Temp");
+
+                if (user == null)
+                {
+                    user = new ApplicationUser
+                    {
+                        UserName = Guid.NewGuid().ToString(),
+                        Email = email,
+                        PhoneNumber = "0000000000",
+                        EmailConfirmed = false,
+                        PhoneNumberConfirmed = false,
+                        IsCompany = false,
+                        Isactive = true,
+                        Firstname = "Temp",
+                        Lastname = "User",
+                        Gender = "Other",
+                        Nationality = "Unknown",
+                        Dateofbirth = DateOnly.FromDateTime(DateTime.UtcNow.AddYears(-20)),
+                        Languagepreferences = "English",
+                        Location = "Unknown",
+                        SecurityStamp = Guid.NewGuid().ToString()
+                    };
+
+                    var password = Guid.NewGuid().ToString("N") + "@1Aa";
+                    await _userManager.CreateAsync(user, password);
+                }
+                else
+                {
+                    // Update dummy user with correct email
+                    user.Email = email;
+                    await _userManager.UpdateAsync(user);
+                }
             }
 
-            return TypedResults.Ok(ApiResponse<string>.Success("Email confirmed successfully."));
+            var otp = await _userManager.GenerateUserTokenAsync(user, "EmailVerification", "EmailOTP");
+
+            await _emailSender.SendOtpEmailAsync(email, otp);
+
+            return TypedResults.Ok(ApiResponse<string>.Success("OTP sent to your email."));
         }
 
-        public async Task<Results<Ok<ApiResponse<string>>, NotFound>> ResendEmailAsync(ResendConfirmationEmailRequest request,HttpContext context)
-        {
-            var user = await _userManager.FindByEmailAsync(request.Email);
+        // Verify Email OTP
+        public async Task<Results<Ok<ApiResponse<string>>, BadRequest<string>>> VerifyEmailOtpAsync(string email, string otp)
+        {           
+            var user = await _userManager.FindByEmailAsync(email);
             if (user == null)
+                return TypedResults.BadRequest("Invalid email.");
+
+            var isValid = await _userManager.VerifyUserTokenAsync(user, "EmailVerification", "EmailOTP", otp);
+            if (!isValid)
+                return TypedResults.BadRequest("Invalid or expired OTP.");
+
+            TempVerificationStore.VerifiedEmails.Add(email);
+            return TypedResults.Ok(ApiResponse<string>.Success("Email verified successfully."));
+        }
+
+        // Send OTP to Phone (write to text file)
+        public async Task<Ok<ApiResponse<string>>> SendPhoneOtpAsync(string phoneNumber)
+        {
+           
+
+            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber);
+
+            if (user != null)
             {
-                return TypedResults.NotFound();
+                if (user.Firstname != "Temp")
+                {
+                    return TypedResults.Ok(ApiResponse<string>.Fail("Phone number already registered. Please login."));
+                }
+            }
+            else
+            {
+                // Check if any dummy user with only email is there
+                user = await _userManager.Users
+           .FirstOrDefaultAsync(u => u.PhoneNumber == "0000000000" && u.Firstname == "Temp");
+
+                if (user == null)
+                {
+                    user = new ApplicationUser
+                    {
+                        UserName = Guid.NewGuid().ToString(),
+                        Email = $"{Guid.NewGuid()}@temp.com",
+                        PhoneNumber = phoneNumber,
+                        EmailConfirmed = false,
+                        PhoneNumberConfirmed = false,
+                        IsCompany = false,
+                        Isactive = true,
+                        Firstname = "Temp",
+                        Lastname = "User",
+                        Gender = "Other",
+                        Nationality = "Unknown",
+                        Dateofbirth = DateOnly.FromDateTime(DateTime.UtcNow.AddYears(-20)),
+                        Languagepreferences = "English",
+                        Location = "Unknown",
+                        SecurityStamp = Guid.NewGuid().ToString()
+                    };
+
+                    var password = Guid.NewGuid().ToString("N") + "@1Aa";
+                    await _userManager.CreateAsync(user, password);
+                }
+                else
+                {
+                    // Update dummy user with correct phone number
+                    user.PhoneNumber = phoneNumber;
+                    await _userManager.UpdateAsync(user);
+                }
             }
 
-            var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-            var encodedCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+            var otp = await _userManager.GenerateUserTokenAsync(user, "PhoneVerification", "PhoneOTP");
 
-            var confirmUrl = _linkGenerator.GetUriByName(context, "ConfirmEmail", new
-            {
-                userId = user.Id,
-                code = encodedCode
-            });
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "OtpLogs");
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
 
-            if (confirmUrl != null)
-            {
-                await _emailSender.SendConfirmationLinkAsync(user, user.Email, HtmlEncoder.Default.Encode(confirmUrl));
-            }
+            await File.AppendAllTextAsync(Path.Combine(path, "phone_otps.txt"), $"{phoneNumber}|{otp}|{DateTime.UtcNow}\n");
 
-            return TypedResults.Ok(ApiResponse<string>.Success("Confirmation link resent. Please check your email."));
+            return TypedResults.Ok(ApiResponse<string>.Success("OTP generated for phone."));
+
+        }
+
+        // Verify Phone OTP
+        public async Task<Results<Ok<ApiResponse<string>>, BadRequest<string>>> VerifyPhoneOtpAsync(string phoneNumber, string otp)
+        {
+           
+            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber);
+            if (user == null)
+                return TypedResults.BadRequest("Invalid phone number.");
+
+            var isValid = await _userManager.VerifyUserTokenAsync(user, "PhoneVerification", "PhoneOTP", otp);
+            if (!isValid)
+                return TypedResults.BadRequest("Invalid or expired OTP.");
+
+            TempVerificationStore.VerifiedPhoneNumbers.Add(phoneNumber);
+            return TypedResults.Ok(ApiResponse<string>.Success("Phone number verified successfully."));
         }
 
         public async Task<Ok<ApiResponse<string>>> ForgotPasswordAsync(ForgotPasswordRequest request)
@@ -158,9 +295,13 @@ namespace QLN.Common.Infrastructure.Service
             {
                 var code = await _userManager.GeneratePasswordResetTokenAsync(user);
                 var encodedCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                await _emailSender.SendPasswordResetCodeAsync(user, user.Email, encodedCode);
+
+                var resetUrl = $"https://yourfrontend.com/reset-password?email={Uri.EscapeDataString(request.Email)}&code={encodedCode}";
+
+                await _emailSender.SendPasswordResetLinkAsync(user, user.Email, resetUrl);
             }
-            return TypedResults.Ok(ApiResponse<string>.Success("If your email is registered and confirmed, a reset code has been sent."));
+
+            return TypedResults.Ok(ApiResponse<string>.Success("If your email is registered and confirmed, a password reset link has been sent."));
         }
 
         public async Task<Results<Ok<ApiResponse<string>>, ValidationProblem>> ResetPasswordAsync(ResetPasswordRequest request)
@@ -360,6 +501,7 @@ namespace QLN.Common.Infrastructure.Service
             await _userManager.UpdateAsync(user);
 
             return TypedResults.Ok(ApiResponse<string>.Success("Profile updated successfully"));
-        }
+        }       
+
     }
 }
