@@ -1,31 +1,31 @@
-﻿@using MudBlazor
+﻿<MudPaper Elevation="1" Square Class="subscription-card" Style="@($"border: 2px solid {BorderColor};")" @onclick="OnClick">
+    <div class="card-content">
+        <div class="card-header">
+            <MudText Typo="Typo.h6" Class="card-title">@Title</MudText>
+            <MudText Typo="Typo.subtitle1" Class="card-duration">@Duration</MudText>
+        </div>
 
-<MudPaper Class="subscription-card" Style="border: 2px solid #FFD700; padding: 16px; cursor: pointer;" @onclick="OnClick">
-    <div style="text-align: center;">
-        <MudImage Src="@ImageSrc" Alt="@AltText" MaxWidth="60px" />
-        <h3 style="margin-top: 12px;">Classifieds: Pro Seller<br />@DurationText</h3>
-    </div>
+        <div class="price-box" style="@($"background-color: {BorderColor};")">
+            <MudText Typo="Typo.caption" Class="price-label">from</MudText>
+            <MudText Typo="Typo.h4" Class="price-amount">@Price QAR</MudText>
+            <MudText Typo="Typo.caption" Class="price-duration">for @PriceDuration</MudText>
+        </div>
 
-    <div style="background-color: #FFD700; padding: 8px; margin: 12px 0; text-align: center;">
-        <div style="font-size: 14px;">from</div>
-        <div style="font-size: 28px; font-weight: bold;">@Price</div>
-        <div style="font-size: 14px;">QAR for @PriceText</div>
-    </div>
-
-    <div style="text-align: center;">
-        @foreach (var line in Features)
-        {
-            <div>@line</div>
-        }
+        <div class="features-list">
+            @foreach (var feature in Features)
+            {
+                <MudText Typo="Typo.body2" Class="feature-item">@feature</MudText>
+            }
+        </div>
     </div>
 </MudPaper>
 
 @code {
-    [Parameter] public string ImageSrc { get; set; }
-    [Parameter] public string AltText { get; set; }
-    [Parameter] public string DurationText { get; set; }
+    [Parameter] public string Title { get; set; }
+    [Parameter] public string Duration { get; set; }
     [Parameter] public string Price { get; set; }
-    [Parameter] public string PriceText { get; set; }
+    [Parameter] public string PriceDuration { get; set; }
     [Parameter] public string[] Features { get; set; }
+    [Parameter] public string BorderColor { get; set; } = "#FBE7C6";
     [Parameter] public EventCallback OnClick { get; set; }
 }
