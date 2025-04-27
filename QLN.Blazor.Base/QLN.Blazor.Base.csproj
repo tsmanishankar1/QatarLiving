@@ -10,6 +10,8 @@
     <ScopedCssEnabled>true</ScopedCssEnabled>
 	  <DevelopmentServerPort>5047</DevelopmentServerPort>
 	  <DevelopmentServerV6Port>5048</DevelopmentServerV6Port>
+	  <EnableDefaultContentItems>false</EnableDefaultContentItems>
+
   </PropertyGroup>
 
   <ItemGroup>
