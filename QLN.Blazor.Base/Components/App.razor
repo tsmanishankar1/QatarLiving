@@ -23,27 +23,6 @@
      <script src="_content/MudBlazor/MudBlazor.min.js?v=8.5.1"></script>
      <script src="_framework/blazor.web.js"></script>
      <script src="_content/Extensions.MudBlazor.StaticInput/NavigationObserver.js?v=3.2.0"></script>
-     <script>
-    window.setVideoFirstFrame = function(videoElement) {
-        videoElement.addEventListener('loadedmetadata', function() {
-            videoElement.currentTime = 0.1;
-        });
-        videoElement.load();
-    };
-
-    window.playVideo = function(videoElement) {
-        if (videoElement) {
-            videoElement.play();
-        }
-    };
-
-    window.pauseVideo = function(videoElement) {
-        if (videoElement) {
-            videoElement.pause();
-            videoElement.currentTime = 0;
-        }
-    };
-</script>
 </body>
 
 </html>

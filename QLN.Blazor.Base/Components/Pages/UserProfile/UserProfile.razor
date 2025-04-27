@@ -140,9 +140,11 @@
         new SidebarItem { Label = "Jobs Closed", Count = 0, ComponentType = typeof(JobsClosedComponent) },
         new SidebarItem { Label = "Jobseeker profile", Count = 0, ComponentType = typeof(JobseekerProfileComponent) },
         new SidebarItem { Label = "Freelancer profile", Count = 0, ComponentType = typeof(FreelancerProfileComponent) },
-        new SidebarItem { Label = "Favourite Items", Count = 0, ComponentType = typeof(FavouriteItemsComponent) }, 
-        new SidebarItem { Label = "Subscription", Count = 0, ComponentType = typeof(Supscriptions) }
-
+        new SidebarItem { Label = "Favourite Items", Count = 0, ComponentType = typeof(FavouriteItemsComponent) } 
     };
 
+    protected override void OnInitialized()
+    {
+        SelectedItem = SidebarItems.FirstOrDefault();
+    }
 }

@@ -3,261 +3,89 @@
 @inject NavigationManager NavManager
 @inject ApiService Api
 @using QLN.Blazor.Base.Services
-@using QLN.Blazor.Base.Components
 @inject UserState UserState
 @using MudBlazor
 @using MudBlazor.Components
 @rendermode InteractiveServer
 @using QLN.Blazor.Base.Models
 @using QLN.Web.Shared.Components.CustomButton
-@using QLN.Web.Shared.Components.ModalDialog
-@using System.Text.RegularExpressions;
-@inject IDialogService DialogService
 
-@if (_showVerificationPopup)
-{
-     <div class="popup-overlay">
-        <VerificationPopup ShowSuccess="@showVerificationSuccess" isEmail="@isEmail" email="@email" OnClose="CloseVerificationPopup" /> 
-    </div> 
-}
-@if (signUpSucesss){
-    <div class="popup-overlay">
-       <ModalDialog
-        Title="Account Created!" 
-        Description="Account created successfully"
-        ButtonName="Continue"
-        StatusType="Success"
-        OnClick="CloseVerificationPopup" />
-    </div> 
-}
-<div style="width: 100%; background-color: #F5F6FA; padding: 32px 16px;">
-    <div style="max-width: 400px; margin: 0 auto;">
+<MudPaper Class="pa-6 mx-auto mt-10" Style="max-width: 550px; border-radius: 12px; margin-bottom: 30px;">
     <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-6" Style="font-weight: 700;">
         Create Account
     </MudText>
 
-@if (_validationErrors?.Any() == true)
-{
-    <MudPaper Class="p-2 mb-4" Style="background-color: #d32f2f; color: white;">
-        @foreach (var error in _validationErrors)
-        {
-            <MudGrid Class="align-center mb-2" Style="border-bottom: 1px solid white; padding-bottom: 4px;">
-                <MudItem xs="1">
-                    <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Medium" />
-                </MudItem>
-                <MudItem xs="10">
-                    <MudText Typo="Typo.body2">@error</MudText>
-                </MudItem>
-                <MudItem xs="1" Class="d-flex justify-end">
-                    <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Inherit" Size="Size.Small" OnClick="@(() => RemoveError(error))" />
-                </MudItem>
-            </MudGrid>
-        }
-    </MudPaper>
-}
+    <MudGrid GutterSize="16px">
+        <MudItem xs="6">
+                 <MudTextField T="string" Label="First Name" Variant="Variant.Outlined" FullWidth="true" Class="mt-4" @bind-Value="_model.FirstName" />
+        </MudItem>
+        <MudItem xs="6">
+                 <MudTextField T="string" Label="Last Name" Variant="Variant.Outlined" FullWidth="true" Class="mt-4" @bind-Value="_model.LastName" />
+        </MudItem>
+    </MudGrid>
 
-
-
-        <MudText Typo="Typo.body1"  Style="font-weight: 400;">
-        First Name
-        </MudText>
-         <MudTextField T="string"
-              Label="First Name"
+    <MudTextField T="string"
+              Label="Email"
               Variant="Variant.Outlined"
               FullWidth="true"
               Class="mt-4"
-              @bind-Value="_model.FirstName"
-              Style="background-color: #FFFFFF;"
+              @bind-Value="_model.EmailAddress"
               Required="true"
-              MaxLength="64"/>
-        <MudText Typo="Typo.body1"  Style="font-weight: 400;">
-        Last Name
-        </MudText>
-         <MudTextField T="string"
-              Label="Last Name"
+              RequiredError="Email is required" />
+
+<MudTextField T="string"
+              Label="Phone Number"
               Variant="Variant.Outlined"
               FullWidth="true"
               Class="mt-4"
-              @bind-Value="_model.LastName"
-              Style="background-color: #FFFFFF;"
+              @bind-Value="_model.MobileNumber"
               Required="true"
-              RequiredError="Last Name is required" />
-        <MudText Typo="Typo.body1"  Style="font-weight: 400;">
-        Username
-        </MudText>
-        <MudTextField T="string"
+              RequiredError="Phone number is required" />
+
+<MudTextField T="string"
+              Label="Country"
+              Variant="Variant.Outlined"
+              FullWidth="true"
+              Class="mt-4"
+              @bind-Value="_model.Nationality"
+              Required="true"
+              RequiredError="Country is required" />
+
+<MudTextField T="string"
               Label="Username"
               Variant="Variant.Outlined"
               FullWidth="true"
               Class="mt-4"
               @bind-Value="_model.UserName"
-              Style="background-color: #FFFFFF;"
               Required="true"
               RequiredError="Username is required" />
-              
-    <MudText Typo="Typo.body1"  Style="font-weight: 400;">
-        Email
-     </MudText>
-   
-<MudPaper Class="phone-container pa-4" Elevation="0" Style="border: 1px solid #ccc; border-radius: 8px;">
-    <div class="phone-flex">
 
-        <MudTextField @bind-Value="_model.EmailAddress" Placeholder="Email Address" Class="phone-input" />
-
-        @if (showVerificationSuccess)
-        {
-            <MudText Typo="Typo.body1" Style="font-weight: 400; color: #079455;">
-            Verified
-            </MudText>
-        }
-        else
-        {
-            <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="OnVerifyEmailClicked" Class="verify-button" Style="background-color: #FF7F38; color: white;">
-                Verify
-            </MudButton>
-        }
-
-    </div>
-</MudPaper>
-
-              <MudText Typo="Typo.body1"  Style="font-weight: 400;">
-        Phone Number
-        </MudText>
-
-        <MudPaper Class="phone-container pa-4" Elevation="0" Style="border: 1px solid #ccc; border-radius: 8px;">
-    <div class="phone-flex">
-        <MudSelect T="Country" @bind-Value="SelectedCountry" Class="country-select" DisableUnderline="true" Style="width: 120px;">
-            @foreach (var country in countries)
-            {
-                <MudSelectItem Value="@country">
-                    <img src="@country.FlagUrl" style="width:24px; height:16px; margin-right:5px;" />
-                    @country.CountryCode
-                </MudSelectItem>
-            }
-        </MudSelect>
-        <MudTextField @bind-Value="_model.MobileNumber" 
-                      Placeholder="Phone number" 
-                      Class="phone-input" 
-                      StartAdornment="@SelectedCountry.CountryCode" 
-                      Style="flex-grow: 1;" />
-
-         @if (showMobileVerificationSuccess)
-        {
-            <MudText Typo="Typo.body1" Style="font-weight: 400; color: #079455;">
-            Verified
-            </MudText>
-        }
-        else
-        {              
-
-        <MudButton Variant="Variant.Filled" 
-                   Color="Color.Warning" 
-                   OnClick="OnVerifyPhoneClicked" 
-                   Class="verify-button" 
-                   Style="background-color: #FF7F38; color: white;">
-            Verify
-        </MudButton> 
-        }
-    </div>
-</MudPaper>
-
-               <MudText Typo="Typo.body1"  Style="font-weight: 400;">
-        Date of Birth
-        </MudText>
-              <MudDatePicker @bind-Date="_dateOfBirth"
-               T="DateTime?"
-               Label="Date of Birth"
-               Variant="Variant.Outlined"
-               Required="true"
-               Style="background-color: #FFFFFF;"
-               RequiredError="Date of Birth is required"
-               PickerVariant="PickerVariant.Inline"
-               Class="mt-4" />
-        <MudText Typo="Typo.body1"  Style="font-weight: 400;">
-        Nationality
-        </MudText>
-        <MudSelect T="string"
-           Label="Nationality"
-           Variant="Variant.Outlined"
-           Dense="false"
-           FullWidth="true"
-           @bind-Value="_model.Nationality"
-           Style="background-color: #FFFFFF;"
-           DisableUnderline="true"
-           Class="mt-4">
-    @foreach (var country in _countries)
-    {
-        <MudSelectItem T="string" Value="@country">@country</MudSelectItem>
-    }
-</MudSelect>
-<MudText Typo="Typo.body1"  Style="font-weight: 400;">
-        Language
-        </MudText>
-<MudSelect T="string"
-           Label="Language"
-           Variant="Variant.Outlined"
-           Dense="false"
-           FullWidth="true"
-           @bind-Value="_model.LanguagePreferences"
-           Style="background-color: #FFFFFF;"
-           DisableUnderline="true"
-           Class="mt-4">
-    @foreach (var country in languageOptions)
-    {
-        <MudSelectItem T="string" Value="@country">@country</MudSelectItem>
-    }
-</MudSelect>
-
-
-<MudText Typo="Typo.body1"  Style="font-weight: 400;">
-        Password
-</MudText>
 <MudTextField T="string"
               Label="Password"
               Variant="Variant.Outlined"
-              InputType="@(_showPassword ? InputType.Text : InputType.Password)"
+              InputType="InputType.Password"
               FullWidth="true"
               Class="mt-4"
               @bind-Value="_model.Password"
-              Style="background-color: #FFFFFF;"
               Required="true"
-              For="@(() => _model.Password)"
-              Error="@(_model.Password != null && PasswordStrengthCategory == "Weak")"
-              ErrorText="Password is too weak"
-              Adornment="Adornment.End"
-              AdornmentIcon="@(_showPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
-              OnAdornmentClick="TogglePasswordVisibility"
-              AdornmentColor="Color.Default" />
+              RequiredError="Password is required" />
 
-@if (!string.IsNullOrEmpty(_model.Password))
-{
-    <div class="d-flex align-center mt-2">
-        <span>Password strength:</span>
-        @for (int i = 0; i < 4; i++)
-        {
-            <MudProgressLinear Class="mx-1"
-                               Color="@GetStrengthBlockColor(i)"
-                               Value="100"
-                               Style="width: 50px; height: 8px; border-radius: 8px;" />
-        }
-    </div>
-}
-
-<MudText Typo="Typo.body1"  Style="font-weight: 400;">
-        Comnfirm Password
-</MudText>
 <MudTextField T="string"
               Label="Confirm Password"
               Variant="Variant.Outlined"
               InputType="InputType.Password"
               FullWidth="true"
               Class="mt-4"
-              @bind-Value="_confirmPassword"
-              Style="background-color: #FFFFFF;"
+              @bind-Value="_model.Password"
               Required="true"
               RequiredError="Please confirm your password" />
+    <MudProgressLinear Value="60" Color="Color.Warning" Height="12px" Style="margin-top: 16px;" />
+    <MudText Typo="Typo.caption" Class="mt-1" Style="color: #777777;">
+        Password strength: Medium (add special characters)
+    </MudText>
 
-        <MudCheckBox @bind-Value="AcceptedTerms" Label="">
+    <MudCheckBox T="bool" Label="Enable Two-Factor Authentication" Class="mt-3" @bind-Checked="EnableTwoFactor" />
+    <MudCheckBox T="bool" Class="mt-2" @bind-Checked="AcceptedTerms">
         <LabelContent>
             I agree to the 
             <MudText Link="true" Style="color: #FF7F38;" Class="ml-1 mr-1 d-inline">Terms and Conditions</MudText>
@@ -265,7 +93,6 @@
             <MudText Link="true" Style="color: #FF7F38;" Class="ml-1 d-inline">Privacy Policy</MudText>
         </LabelContent>
     </MudCheckBox>
-    <MudCheckBox T="bool" Label="Enable Two-Factor Authentication" Class="mt-3" @bind-Checked="EnableTwoFactor" />
     <MudCheckBox T="bool" Label="I want to receive marketing emails and offers" Class="mt-2" @bind-Checked="MarketingOptIn" />
 
     
@@ -281,251 +108,74 @@
     <!-- Divider -->
     <div class="d-flex align-center my-4">
         <div style="flex-grow: 1; height: 1px; background-color: #ccc;"></div>
-        <MudText Typo="Typo.caption" Class="mx-2">Or continue with</MudText>
+        <MudText Typo="Typo.caption" Class="mx-2">OR</MudText>
         <div style="flex-grow: 1; height: 1px; background-color: #ccc;"></div>
     </div>
 
-
-
-<MudGrid Justify="Justify.SpaceEvenly" GutterSize="12px" Class="mt-4">
-    <MudItem xs="2">
-        <MudButton Variant="Variant.Outlined" Style="background-color: #FFFFFF; border-color: #DDDDDD; height: 44px; width: 78px; border-radius: 8px; min-width: 50px; padding: 0;">
-            <img src="images/google.svg" alt="Google" style="height: 24px;" />
+    <MudGrid GutterSize="12px">
+    <MudItem xs="4">
+        <MudButton Variant="Variant.Outlined" FullWidth="true"
+                   Style="color: #333333; border-color: #DDDDDD;">
+                   <img src="images/google.svg" alt="Microsoft" style="height: 20px; margin-right: 8px;" />
+            Google
         </MudButton>
     </MudItem>
-    <MudItem xs="2">
-        <MudButton Variant="Variant.Outlined" Style="background-color: #FFFFFF; border-color: #DDDDDD; height: 44px; width: 78px; min-width: 50px; padding: 0; border-radius: 8px;">
-            <img src="images/apple.svg" alt="Apple" style="height: 24px;" />
+    <MudItem xs="4">
+        <MudButton Variant="Variant.Outlined" FullWidth="true"
+                   Style="color: #333333; border-color: #DDDDDD;">
+                   <img src="images/facebook.svg" alt="Microsoft" style="height: 20px; margin-right: 8px;" />
+            Facebook
         </MudButton>
     </MudItem>
-    <MudItem xs="2">
-        <MudButton Variant="Variant.Outlined" Style="background-color: #FFFFFF; border-color: #DDDDDD; height: 44px; width: 78px; min-width: 50px; padding: 0; border-radius: 8px;">
-            <img src="images/microsoft.svg" alt="Microsoft" style="height: 24px;" />
-        </MudButton>
-    </MudItem>
-    <MudItem xs="2">
-        <MudButton Variant="Variant.Outlined" Style="background-color: #FFFFFF; border-color: #DDDDDD; height: 44px; width: 78px; min-width: 50px; padding: 0; border-radius: 8px;">
-            <img src="images/facebook.svg" alt="Facebook" style="height: 24px;" />
+    <MudItem xs="4">
+        <MudButton Variant="Variant.Outlined" FullWidth="true"
+                   Style="color: #333333; border-color: #DDDDDD;">
+                   <img src="images/microsoft.svg" alt="Microsoft" style="height: 20px; margin-right: 8px;" />
+            Microsoft
         </MudButton>
     </MudItem>
 </MudGrid>
 
-
-
-
-
     <MudText Align="Align.Center" Class="mt-4">
         Already have an account? 
-         <MudText Link="true" Style="color: #FF7F38;" Class="ml-1 d-inline">Sign In</MudText>
+        <MudText Link="true" Class="d-inline ml-1" Style="color: #FF7F38;">Sign In</MudText>
     </MudText>
- </div>
-</div>
+</MudPaper>
+
 
 
 @code {
     private SignupModel _model = new();
     private bool _loading = false;
     private bool _showOtp = false;
-    public bool isEmail { get; set; } = false;
-    public string email  { get; set; } = string.Empty;
-    private string _confirmPassword = "";
     private string _otp = "";
-    private string _firstName_error = "";
-    private string _lastName_error = "";
-    private string _username_error = "";
-    private string _email_error = "";
-    private string _phone_error = "";
-    private string _password_error = "";
-    private string _confirmPassword_error = "";
     private bool EnableTwoFactor { get; set; } = true;
     private bool AcceptedTerms { get; set; }
     private bool MarketingOptIn { get; set; }
-    private DateTime? _dateOfBirth;
-    private List<string> _validationErrors = new();
-    private bool _showPassword = false;
-    private bool _showVerificationPopup = false;
-    private bool showVerificationSuccess = false;
-    private bool showMobileVerificationSuccess = false;
-    private bool signUpSucesss = false;
-    private Country SelectedCountry { get; set; } = new Country 
-{ 
-    Value = "Qatar", 
-    FlagUrl = "https://flagcdn.com/w40/qa.png", 
-    CountryCode = "+974" 
-};
-
-
-    private List<Country> countries = new List<Country>
-    {
-        new Country { Value = "Qatar", FlagUrl = "https://flagcdn.com/w40/qa.png", CountryCode = "+974" },
-        new Country { Value = "UAS", FlagUrl = "https://flagcdn.com/w40/us.png", CountryCode = "+1" },
-        new Country { Value = "India", FlagUrl = "https://flagcdn.com/w40/in.png", CountryCode = "+91" }
-    };
-
-    public class Country
-    {
-        public string Value { get; set; }
-        public string FlagUrl { get; set; }
-        public string CountryCode { get; set; }
-    }
-    private void TogglePasswordVisibility()
-    {
-        _showPassword = !_showPassword;
-    }
-    private void RemoveError(string error)
-{
-    _validationErrors.Remove(error);
-}
-
-    private int PasswordScore => CalculatePasswordScore(_model.Password);
-
-    private string PasswordStrengthCategory
-    {
-        get
-        {
-            if (PasswordScore <= 1) return "Weak";
-            if (PasswordScore == 2) return "Medium";
-            return "Strong";
-        }
-    }
-
-    private int CalculatePasswordScore(string password)
-    {
-        if (string.IsNullOrEmpty(password))
-            return 0;
-
-        int score = 0;
-
-        if (password.Length >= 8) score++;
-        if (password.Any(char.IsUpper)) score++;
-        if (password.Any(char.IsDigit)) score++;
-        if (password.Any(c => !char.IsLetterOrDigit(c))) score++;
-
-        return score;
-    }
-
-    private Color GetStrengthBlockColor(int index)
-    {
-        if (PasswordScore == 0)
-            return Color.Default;
-
-        if (index < PasswordScore)
-        {
-            return PasswordStrengthCategory switch
-            {
-                "Weak" => Color.Error,
-                "Medium" => Color.Warning,
-                "Strong" => Color.Success,
-                _ => Color.Default
-            };
-        }
-        else
-        {
-            return Color.Default;
-        }
-    }
-
-    
 
 
     private List<string> genderOptions = new() { "Male", "Female", "Other" };
-        private List<string> _countries = new()
-    {
-        "Algeria",
-        "India",
-        "United States",
-        "Canada",
-        "Germany",
-        "Australia",
-        "Japan",
-        "France"
-    };
-    private List<string> languageOptions = new() { "English", "Arabic", "French", "German" }; 
+    private List<string> nationalityOptions = new() { "India", "Qatar", "UK", "USA" };
+    private List<string> languageOptions = new() { "english", "arabic", "hindi", "tamil" }; // add more if needed
 
 
     private async Task SubmitSignup()
     {
         _loading = true;
-        _validationErrors.Clear();
-
-    _validationErrors.Clear();
-
-if (string.IsNullOrWhiteSpace(_model.FirstName))
-    _validationErrors.Add("First Name is required.");
-else if (!Regex.IsMatch(_model.FirstName, @"^[a-zA-Z]+$"))
-    _validationErrors.Add("First Name must contain only letters.");
-
-if (string.IsNullOrWhiteSpace(_model.LastName))
-    _validationErrors.Add("Last Name is required.");
-else if (!Regex.IsMatch(_model.LastName, @"^[a-zA-Z]+$"))
-    _validationErrors.Add("Last Name must contain only letters.");
-
-if (string.IsNullOrWhiteSpace(_model.UserName))
-    _validationErrors.Add("Username is required.");
-
-if (string.IsNullOrWhiteSpace(_model.EmailAddress))
-    _validationErrors.Add("Email is required.");
-else if (!Regex.IsMatch(_model.EmailAddress, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
-    _validationErrors.Add("Email format is invalid.");
-
-if (string.IsNullOrWhiteSpace(_model.MobileNumber))
-    _validationErrors.Add("Phone number is required.");
-if (!_dateOfBirth.HasValue)
-{
-    _validationErrors.Add("Date of Birth is required.");
-}
-else
-{
-    var today = DateTime.Today;
-    var minimumAllowedDate = today.AddYears(-10); 
-
-    if (_dateOfBirth.Value > today)
-    {
-        _validationErrors.Add("Select valid date of birth.");
-    }
-    
-}
-
-if (string.IsNullOrWhiteSpace(_model.Nationality))
-    _validationErrors.Add("Nationality is required.");
-
-if (string.IsNullOrWhiteSpace(_model.LanguagePreferences))
-    _validationErrors.Add("Language is required.");
-
-if (string.IsNullOrWhiteSpace(_model.Password))
-    _validationErrors.Add("Password is required.");
-else if (!Regex.IsMatch(_model.Password, @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$"))
-    _validationErrors.Add("Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.");
-
-if (string.IsNullOrWhiteSpace(_confirmPassword))
-    _validationErrors.Add("Confirm Password is required.");
-else if (_model.Password != _confirmPassword)
-    _validationErrors.Add("Password and Confirm Password must match.");
-    
-if (!showVerificationSuccess)
-    _validationErrors.Add("Verify your email address before proceeding.");
-if (!AcceptedTerms)
-    _validationErrors.Add("You must accept the Terms and Conditions.");
-
-    if (_validationErrors.Any())
-    {
-        _loading = false;
-        return;
-    }
          var payload = new
         {
             username = _model.UserName,
             firstName = _model.FirstName,
             lastname = _model.LastName,
-            dateofbirth = _dateOfBirth?.ToString("yyyy-MM-dd"), 
+            dateofbirth = "1990-01-01", 
             gender = "male",
             mobileOperator = "vodofone",
             mobilenumber = _model.MobileNumber,
             emailaddress = _model.EmailAddress,
-            nationality = _model.Nationality,
+            nationality = "Test",
             password = _model.Password,
-            languagepreferences = _model.LanguagePreferences,
-            location = "location"
+            languagepreferences = "Test",
+            location = "India"
         }; 
 
 
@@ -533,8 +183,6 @@ if (!AcceptedTerms)
         {
             Console.WriteLine(payload); 
             var res = await Api.PostAsync<object, ResponseModel<object> >("auth/register", payload); 
-                Console.WriteLine(res.Status);
-                Console.WriteLine(res.Message);
             if (res!.Status)
             {
                 UserState.Email = _model.EmailAddress;
@@ -545,12 +193,21 @@ if (!AcceptedTerms)
                     enable = EnableTwoFactor
                 };
                 var response = await Api.PostAsync<object, ResponseModel<object> >("auth/manage/2fa", body); 
-                signUpSucesss = true;
+                    Snackbar.Add(response.Message, Severity.Success);
+                    
+                if (EnableTwoFactor) {
+                NavManager.NavigateTo("/select-verification");
+                }
+                else {
+                NavManager.NavigateTo("/");
+                }
             }
             else
             {
-                Snackbar.Add(res.Message, Severity.Error);
+                Snackbar.Add("Signup failed. Please check your details.", Severity.Error);
             } 
+
+             
         }
         catch (Exception ex)
         {
@@ -561,97 +218,9 @@ if (!AcceptedTerms)
             _loading = false;
         }
     }
-    
 
-    private async void OnVerifyEmailClicked()
-    {
-        isEmail = true;
-        email = _model.EmailAddress;
-     if (string.IsNullOrWhiteSpace(_model.EmailAddress))
-        {
-            Snackbar.Add("Please enter your email address.", Severity.Warning);
-            return;
-            }   
-        var payload = new
-        {  
-            email = _model.EmailAddress,
-        }; 
-        try
-        {
-            Console.WriteLine(payload); 
-            var res = await Api.PostAsync<object, ResponseModel<object> >("auth/verify-email-request", payload); 
-                Console.WriteLine(res.Status);
-                Console.WriteLine(res.Message);
-            if (res!.Status)
-            {
-                 _showVerificationPopup = true;
-                  showVerificationSuccess = true;
-            }
-            else
-            {
-                Snackbar.Add(res.Message, Severity.Error);
-            } 
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Signup failed: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            _loading = false;
-        }
 
-    }
 
-    private async void OnVerifyPhoneClicked()
-    {
-        isEmail = false;
-        email = _model.MobileNumber;
-     if (string.IsNullOrWhiteSpace(_model.MobileNumber))
-        {
-            Snackbar.Add("Please enter your Mobile Number", Severity.Warning);
-            return;
-            }   
-        var payload = new
-        {  
-            phoneNumber = _model.MobileNumber,
-        }; 
-        try
-        {
-            Console.WriteLine(payload); 
-            var res = await Api.PostAsync<object, ResponseModel<object> >("auth/verify-phone-request", payload); 
-                Console.WriteLine(res.Status);
-                Console.WriteLine(res.Message);
-            if (res!.Status)
-            {
-                 _showVerificationPopup = true;
-                  showMobileVerificationSuccess = true;
-            }
-            else
-            {
-                Snackbar.Add(res.Message, Severity.Error);
-            } 
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Signup failed: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            _loading = false;
-        }
-
-    }
-    private void CloseVerificationPopup()
-{
-    _showVerificationPopup = false;
-}
-private void CloseSuccessPopup()
-{
-    signUpSucesss = false;
-    NavManager.NavigateTo("/login");
-
-}
     public class SignupModel
     {
         public string UserName { get; set; }
@@ -674,23 +243,3 @@ private void CloseSuccessPopup()
     }
 }
 
-<style>
-    .popup-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px); 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000; 
-}
-.phone-flex {
-    display: flex;
-    align-items: center;
-    gap: 16px; 
-}
-</style>
