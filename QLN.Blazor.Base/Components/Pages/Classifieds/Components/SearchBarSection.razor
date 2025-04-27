@@ -1,0 +1,82 @@
+@using MudBlazor
+
+<MudPaper Elevation="0" Class="py-4" Style="background-color: #f4f4f4; border-radius: 0;">
+    <MudContainer MaxWidth="MaxWidth.False">
+        <!-- Search Row - Tightly spaced components -->
+        <div class="d-flex flex-column flex-md-row align-items-center px-4">
+            <!-- Search Field (60% width) -->
+            <div style="flex: 4;">
+                <MudTextField T="string"
+                            Variant="Variant.Outlined"
+                            Placeholder="iPhone 16 pro not more than 1600 QAR"
+                            FullWidth="true"
+                            Adornment="Adornment.Start"
+                            AdornmentIcon="@Icons.Material.Filled.Search"
+                            Class="bg-white"
+                            Style="text-transform: none; border-color: #e0e0e0;"
+                            />
+            </div>
+
+            <!-- Category Select (25% width) -->
+            <div style="flex: 2.2; padding-left:1px;">
+                <MudSelect T="string"
+                         @bind-Value="selectedCategory"
+                         Placeholder="Category"
+                         Variant="Variant.Outlined"
+                         Dense="true"
+                         FullWidth="true"
+                         Class="bg-white"
+                         Style="text-transform: none; border-color: #e0e0e0;border-radius: 0;"
+                        >
+                    @foreach (var category in categoryOptions)
+                    {
+                        <MudSelectItem Value="@category">@category</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+
+            <!-- Search Button (15% width) -->
+            <div style="flex: 1.2;">
+                <MudButton Variant="Variant.Filled"
+                          Color="Color.Warning"
+                          FullWidth="true"
+                          Style="height: 56px; color: white;border-radius: 0;">
+                    Search
+                </MudButton>
+            </div>
+        </div>
+        
+        <!-- Quick Search Shortcuts -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap px-4 mt-4">
+            <div class="d-flex align-items-center flex-wrap">
+                <MudButton Variant="Variant.Outlined" 
+                           Color="Color.Default" 
+                           StartIcon="@Icons.Material.Filled.AutoAwesome" 
+                           Class="me-2 mb-2 bg-white" 
+                           Style="text-transform: none; border-color: #e0e0e0; color: #0d47a1;">
+                    search in electronics
+                </MudButton>
+
+                <MudButton Variant="Variant.Outlined" 
+                           Color="Color.Default" 
+                           StartIcon="@Icons.Material.Filled.AutoAwesome" 
+                           Class="me-2 mb-2 bg-white" 
+                           Style="text-transform: none; border-color: #e0e0e0; color: #0d47a1;">
+                    search in accessories
+                </MudButton>
+                <MudText Typo="Typo.body2" style="color: #0d47a1" >
+                    max price: 1600 QAR
+                </MudText>
+            </div>
+            
+            <MudText Typo="Typo.caption" Class="text-muted ">
+                This will be a popup on top of the content
+            </MudText>
+        </div>
+    </MudContainer>
+</MudPaper>
+
+@code {
+    private string selectedCategory;
+    private List<string> categoryOptions = new() { "Electronics", "Accessories", "Fashion", "Toys" };
+}

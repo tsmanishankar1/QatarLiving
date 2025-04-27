@@ -1,0 +1,502 @@
+﻿@page "/edit-profile"
+@inject ISnackbar Snackbar
+@inject NavigationManager NavManager
+@inject ApiService Api
+@using QLN.Blazor.Base.Services
+@using QLN.Blazor.Base.Components
+@inject UserState UserState
+@using MudBlazor
+@using MudBlazor.Components
+@rendermode InteractiveServer
+@using QLN.Blazor.Base.Models
+@using QLN.Web.Shared.Components.CustomButton
+@using QLN.Web.Shared.Components.ModalDialog
+@using System.Text.RegularExpressions;
+@inject IDialogService DialogService
+
+@if (_showVerificationPopup)
+{
+    <div class="popup-overlay">
+        <VerificationPopup ShowSuccess="@showVerificationSuccess" isEmail="@isEmail" email="@email" OnClose="CloseVerificationPopup" /> 
+    </div> 
+}
+
+<div style="width: 100%; background-color: #F5F6FA; padding: 32px 16px;">
+    <div style="max-width: 400px; margin: 0 auto;">
+        <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-6" Style="font-weight: 700;">
+            Edit Profile
+        </MudText>
+
+        @if (_validationErrors?.Any() == true)
+        {
+            <MudPaper Class="p-2 mb-4" Style="background-color: #d32f2f; color: white;">
+                @foreach (var error in _validationErrors)
+                {
+                    <MudGrid Class="align-center mb-2" Style="border-bottom: 1px solid white; padding-bottom: 4px;">
+                        <MudItem xs="1">
+                            <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Medium" />
+                        </MudItem>
+                        <MudItem xs="10">
+                            <MudText Typo="Typo.body2">@error</MudText>
+                        </MudItem>
+                        <MudItem xs="1" Class="d-flex justify-end">
+                            <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Inherit" Size="Size.Small" OnClick="@(() => RemoveError(error))" />
+                        </MudItem>
+                    </MudGrid>
+                }
+            </MudPaper>
+        }
+
+        <MudText Typo="Typo.body1" Style="font-weight: 400;">
+            First Name
+        </MudText>
+        <MudTextField T="string"
+                      Label="First Name"
+                      Variant="Variant.Outlined"
+                      FullWidth="true"
+                      Class="mt-4"
+                      @bind-Value="_model.FirstName"
+                      Style="background-color: #FFFFFF;"
+                      Required="true"
+                      MaxLength="64"/>
+
+        <MudText Typo="Typo.body1" Style="font-weight: 400;">
+            Last Name
+        </MudText>
+        <MudTextField T="string"
+                      Label="Last Name"
+                      Variant="Variant.Outlined"
+                      FullWidth="true"
+                      Class="mt-4"
+                      @bind-Value="_model.LastName"
+                      Style="background-color: #FFFFFF;"
+                      Required="true"
+                      RequiredError="Last Name is required" />
+
+        <MudText Typo="Typo.body1" Style="font-weight: 400;">
+            Username
+        </MudText>
+        <MudTextField T="string"
+                      Label="Username"
+                      Variant="Variant.Outlined"
+                      FullWidth="true"
+                      Class="mt-4"
+                      @bind-Value="_model.UserName"
+                      Style="background-color: #FFFFFF;"
+                      Required="true"
+                      RequiredError="Username is required" />
+              
+        <MudText Typo="Typo.body1" Style="font-weight: 400;">
+            Email
+        </MudText>
+   
+        <MudPaper Class="phone-container pa-4" Elevation="0" Style="border: 1px solid #ccc; border-radius: 8px;">
+            <div class="phone-flex">
+                <MudTextField @bind-Value="_model.EmailAddress" Placeholder="Email Address" Class="phone-input" Disabled="true" />
+                @if (showVerificationSuccess)
+                {
+                    <MudText Typo="Typo.body1" Style="font-weight: 400; color: #079455;">
+                        Verified
+                    </MudText>
+                }
+            </div>
+        </MudPaper>
+
+        <MudText Typo="Typo.body1" Style="font-weight: 400;">
+            Phone Number
+        </MudText>
+
+        <MudPaper Class="phone-container pa-4" Elevation="0" Style="border: 1px solid #ccc; border-radius: 8px;">
+            <div class="phone-flex">
+                <MudSelect T="Country" @bind-Value="SelectedCountry" Class="country-select" DisableUnderline="true" Style="width: 120px;">
+                    @foreach (var country in countries)
+                    {
+                        <MudSelectItem Value="@country">
+                            <img src="@country.FlagUrl" style="width:24px; height:16px; margin-right:5px;" />
+                            @country.CountryCode
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+                <MudTextField @bind-Value="_model.MobileNumber" 
+                              Placeholder="Phone number" 
+                              Class="phone-input" 
+                              StartAdornment="@SelectedCountry.CountryCode" 
+                              Style="flex-grow: 1;" />
+
+                @if (showMobileVerificationSuccess)
+                {
+                    <MudText Typo="Typo.body1" Style="font-weight: 400; color: #079455;">
+                        Verified
+                    </MudText>
+                }
+                else
+                {              
+                    <MudButton Variant="Variant.Filled" 
+                               Color="Color.Warning" 
+                               OnClick="OnVerifyPhoneClicked" 
+                               Class="verify-button" 
+                               Style="background-color: #FF7F38; color: white;">
+                        Verify
+                    </MudButton> 
+                }
+            </div>
+        </MudPaper>
+
+        <MudText Typo="Typo.body1" Style="font-weight: 400;">
+            Date of Birth
+        </MudText>
+        <MudDatePicker @bind-Date="_dateOfBirth"
+                       T="DateTime?"
+                       Label="Date of Birth"
+                       Variant="Variant.Outlined"
+                       Required="true"
+                       Style="background-color: #FFFFFF;"
+                       RequiredError="Date of Birth is required"
+                       PickerVariant="PickerVariant.Inline"
+                       Class="mt-4" />
+
+        <MudText Typo="Typo.body1" Style="font-weight: 400;">
+            Nationality
+        </MudText>
+        <MudSelect T="string"
+                   Label="Nationality"
+                   Variant="Variant.Outlined"
+                   Dense="false"
+                   FullWidth="true"
+                   @bind-Value="_model.Nationality"
+                   Style="background-color: #FFFFFF;"
+                   DisableUnderline="true"
+                   Class="mt-4">
+            @foreach (var country in _countries)
+            {
+                <MudSelectItem T="string" Value="@country">@country</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudText Typo="Typo.body1" Style="font-weight: 400;">
+            Language
+        </MudText>
+        <MudSelect T="string"
+                   Label="Language"
+                   Variant="Variant.Outlined"
+                   Dense="false"
+                   FullWidth="true"
+                   @bind-Value="_model.LanguagePreferences"
+                   Style="background-color: #FFFFFF;"
+                   DisableUnderline="true"
+                   Class="mt-4">
+            @foreach (var country in languageOptions)
+            {
+                <MudSelectItem T="string" Value="@country">@country</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudCheckBox T="bool" Label="Enable Two-Factor Authentication" Class="mt-3" @bind-Checked="EnableTwoFactor" />
+
+        <CustomButton 
+            BackgroundColor="#FF7F38"
+            TextColor="#FFFFFF"
+            Text="Save Changes"
+            Disabled="_loading"
+            Loading="_loading"
+            OnClick="@SubmitProfileChanges"
+            Class="mt-4" />
+    </div>
+</div>
+
+@code {
+    private ProfileModel _model = new();
+    private bool _loading = false;
+    private bool _showOtp = false;
+    public bool isEmail { get; set; } = false;
+    public string email { get; set; } = string.Empty;
+    private string _firstName_error = "";
+    private string _lastName_error = "";
+    private string _username_error = "";
+    private string _email_error = "";
+    private string _phone_error = "";
+    private List<string> _validationErrors = new();
+    private bool _showVerificationPopup = false;
+    private bool showVerificationSuccess = false;
+    private bool showMobileVerificationSuccess = false;
+    private bool EnableTwoFactor { get; set; } = true;
+    private bool MarketingOptIn { get; set; }
+    private DateTime? _dateOfBirth;
+    
+    private Country SelectedCountry { get; set; } = new Country 
+    { 
+        Value = "Qatar", 
+        FlagUrl = "https://flagcdn.com/w40/qa.png", 
+        CountryCode = "+974" 
+    };
+
+    private List<Country> countries = new List<Country>
+    {
+        new Country { Value = "Qatar", FlagUrl = "https://flagcdn.com/w40/qa.png", CountryCode = "+974" },
+        new Country { Value = "UAS", FlagUrl = "https://flagcdn.com/w40/us.png", CountryCode = "+1" },
+        new Country { Value = "India", FlagUrl = "https://flagcdn.com/w40/in.png", CountryCode = "+91" }
+    };
+
+    public class Country
+    {
+        public string Value { get; set; }
+        public string FlagUrl { get; set; }
+        public string CountryCode { get; set; }
+    }
+
+    private void RemoveError(string error)
+    {
+        _validationErrors.Remove(error);
+    }
+
+    private List<string> _countries = new()
+    {
+        "Algeria",
+        "India",
+        "United States",
+        "Canada",
+        "Germany",
+        "Australia",
+        "Japan",
+        "France"
+    };
+    
+    private List<string> languageOptions = new() { "English", "Arabic", "French", "German" }; 
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserProfile();
+    }
+
+    private async Task LoadUserProfile()
+    {
+        _loading = true;
+        try
+        {
+            var response = await Api.GetAsync<ResponseModel<ProfileData>>($"auth/manage/info?identity={UserState.Email}");
+            
+            if (response.Status && response.Data != null)
+            {
+                _model.FirstName = response.Data.firstname;  // lowercase access
+                _model.LastName = response.Data.lastname;    // lowercase access
+                _model.UserName = response.Data.UserName;
+                _model.EmailAddress = response.Data.Email;
+                _model.MobileNumber = response.Data.PhoneNumber;
+                _model.Gender = response.Data.Gender;
+                _model.Nationality = response.Data.nationality; // lowercase access
+                _model.LanguagePreferences = response.Data.languagepreferences; // lowercase access
+                _dateOfBirth = DateTime.Parse(response.Data.dateofbirth); // lowercase access
+                EnableTwoFactor = response.Data.TwoFactorEnabled;
+                showVerificationSuccess = response.Data.EmailConfirmed;
+                showMobileVerificationSuccess = response.Data.PhoneNumberConfirmed;
+                
+                // Set country based on phone number prefix if needed
+                if (!string.IsNullOrEmpty(_model.MobileNumber))
+                {
+                    // You might want to parse the country code from the phone number
+                    // and set SelectedCountry accordingly
+                }
+            }
+            else
+            {
+                Snackbar.Add(response.Message, Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load profile: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task SubmitProfileChanges()
+    {
+        _loading = true;
+        _validationErrors.Clear();
+
+        if (string.IsNullOrWhiteSpace(_model.FirstName))
+            _validationErrors.Add("First Name is required.");
+        else if (!Regex.IsMatch(_model.FirstName, @"^[a-zA-Z]+$"))
+            _validationErrors.Add("First Name must contain only letters.");
+
+        if (string.IsNullOrWhiteSpace(_model.LastName))
+            _validationErrors.Add("Last Name is required.");
+        else if (!Regex.IsMatch(_model.LastName, @"^[a-zA-Z]+$"))
+            _validationErrors.Add("Last Name must contain only letters.");
+
+        if (string.IsNullOrWhiteSpace(_model.UserName))
+            _validationErrors.Add("Username is required.");
+
+        if (string.IsNullOrWhiteSpace(_model.MobileNumber))
+            _validationErrors.Add("Phone number is required.");
+
+        if (!_dateOfBirth.HasValue)
+        {
+            _validationErrors.Add("Date of Birth is required.");
+        }
+        else
+        {
+            var today = DateTime.Today;
+            if (_dateOfBirth.Value > today)
+            {
+                _validationErrors.Add("Select valid date of birth.");
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(_model.Nationality))
+            _validationErrors.Add("Nationality is required.");
+
+        if (string.IsNullOrWhiteSpace(_model.LanguagePreferences))
+            _validationErrors.Add("Language is required.");
+
+        if (_validationErrors.Any())
+        {
+            _loading = false;
+            return;
+        }
+
+        var payload = new
+        {
+            username = _model.UserName,
+            firstName = _model.FirstName,
+            lastname = _model.LastName,
+            dateofbirth = _dateOfBirth?.ToString("yyyy-MM-dd"), 
+            gender = _model.Gender,
+            mobileOperator = "vodofone", 
+            mobilenumber = _model.MobileNumber,
+            nationality = _model.Nationality,
+            languagepreferences = _model.LanguagePreferences,
+            enableTwoFactor = EnableTwoFactor,
+        }; 
+
+        try
+        {
+            var res = await Api.PutAsync<object, ResponseModel<object>>("auth/manage/update", payload);
+            
+            if (res.Status)
+            {
+                Snackbar.Add("Profile updated successfully!", Severity.Success);
+                await LoadUserProfile(); 
+            }
+            else
+            {
+                Snackbar.Add(res.Message, Severity.Error);
+            } 
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Update failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async void OnVerifyPhoneClicked()
+    {
+        isEmail = false;
+        email = _model.MobileNumber;
+        
+        if (string.IsNullOrWhiteSpace(_model.MobileNumber))
+        {
+            Snackbar.Add("Please enter your Mobile Number", Severity.Warning);
+            return;
+        }   
+        
+        var payload = new
+        {  
+            phoneNumber = _model.MobileNumber,
+        }; 
+        
+        try
+        {
+            var res = await Api.PostAsync<object, ResponseModel<object>>("auth/verify-phone-request", payload); 
+            
+            if (res.Status)
+            {
+                _showVerificationPopup = true;
+                showMobileVerificationSuccess = true;
+            }
+            else
+            {
+                Snackbar.Add(res.Message, Severity.Error);
+            } 
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Verification failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void CloseVerificationPopup()
+    {
+        _showVerificationPopup = false;
+    }
+
+    public class ProfileModel
+    {
+        public string UserName { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string EmailAddress { get; set; }
+        public string MobileNumber { get; set; }
+        public string Gender { get; set; }
+        public DateTime? DateOfBirth { get; set; }
+        public string Nationality { get; set; }
+        public string LanguagePreferences { get; set; } = "english";
+    }
+    public class ProfileData
+    {
+        public string UserName { get; set; }
+        public string firstname { get; set; } 
+        public string lastname { get; set; }   
+        public string Email { get; set; }
+        public string PhoneNumber { get; set; }
+        public string Gender { get; set; }
+        public string dateofbirth { get; set; } 
+        public string Location { get; set; }
+        public string languagepreferences { get; set; } 
+        public string nationality { get; set; } 
+        public string mobileoperator { get; set; } 
+        public bool PhoneNumberConfirmed { get; set; }
+        public bool EmailConfirmed { get; set; }
+        public bool IsCompany { get; set; }
+        public bool IsActive { get; set; }
+        public bool TwoFactorEnabled { get; set; }
+    }
+    public class ResponseModel<T>
+    {
+        public bool Status { get; set; }
+        public string Message { get; set; }
+        public T Data { get; set; }
+    }
+}
+
+<style>
+    .popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px); 
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000; 
+    }
+    .phone-flex {
+        display: flex;
+        align-items: center;
+        gap: 16px; 
+    }
+</style>

@@ -1,6 +1,7 @@
 using System.Net.Http;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Options;
+using System.Text.Json;
 
 namespace QLN.Blazor.Base.Services
 {
@@ -28,24 +29,31 @@ namespace QLN.Blazor.Base.Services
         }
 
         public async Task<TResponse?> PostAsync<TRequest, TResponse>(string endpoint, TRequest data)
+{
+    try
+    {
+        var response = await _http.PostAsJsonAsync($"{_baseUrl}/{endpoint}", data);
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+
+        if (!string.IsNullOrWhiteSpace(responseContent))
         {
-            Console.WriteLine("button clicked");
-            try
+            var result = JsonSerializer.Deserialize<TResponse>(responseContent, new JsonSerializerOptions
             {
-                var response = await _http.PostAsJsonAsync($"{_baseUrl}/{endpoint}", data);
-                if (response.IsSuccessStatusCode)
-                {
-                    return await response.Content.ReadFromJsonAsync<TResponse>();
-                }
-                Console.WriteLine($"POST Error: {response.StatusCode}");
-                return default;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"POST Exception: {ex.Message}");
-                return default;
-            }
+                PropertyNameCaseInsensitive = true
+            });
+            return result;
         }
+
+        Console.WriteLine($"POST Error: {response.StatusCode}");
+        return default;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"POST Exception: {ex.Message}");
+        return default;
+    }
+}
         
 
 
@@ -87,5 +95,31 @@ namespace QLN.Blazor.Base.Services
                 return false;
             }
         }
+
+        public async Task<TResponse?> PutAsync<TRequest, TResponse>(string endpoint, TRequest data)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Put, $"{_baseUrl}/{endpoint}")
+                {
+                    Content = JsonContent.Create(data)
+                };
+
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<TResponse>();
+                }
+
+                Console.WriteLine($"PUT Error: {response.StatusCode}");
+                return default;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"PUT Exception: {ex.Message}");
+                return default;
+            }
+        }
+
     }
 }

@@ -1,0 +1,171 @@
+@using MudBlazor
+
+<div class="categories-section">
+    <MudContainer MaxWidth="MaxWidth.False">
+        <MudText Typo="Typo.h5" Class="section-header">Featured Categories</MudText>
+
+        <MudGrid GutterSize="16px" AlignItems="Stretch">
+            <!-- 1st Column (Tall Single Card) -->
+            <MudItem xs="12" sm="6" md="3">
+                <MudCard Class="category-card full-height" OnClick="@(() => HandleCategoryClick(categories[0]))">
+                    <MudCardContent>
+                        <div class="category-content">
+                            <MudText Typo="Typo.subtitle2" Class="category-title">@categories[0].Name</MudText>
+                            <img src="@categories[0].ImageUrl" class="category-image2" />
+                        </div>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <!-- 2nd Column (Two Cards) -->
+            <MudItem xs="12" sm="6" md="3">
+                <MudGrid GutterSize="16px" Direction="Column">
+                    <MudItem xs="12">
+                        <MudCard Class="category-card" OnClick="@(() => HandleCategoryClick(categories[1]))">
+                            <MudCardContent>
+                                <div class="category-content">
+                                    <MudText Typo="Typo.subtitle2" Class="category-title">@categories[1].Name</MudText>
+                                    <img src="@categories[1].ImageUrl" class="category-image1" />
+                                </div>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudCard Class="category-card" OnClick="@(() => HandleCategoryClick(categories[2]))">
+                            <MudCardContent>
+                                <div class="category-content">
+                                    <MudText Typo="Typo.subtitle2" Class="category-title">@categories[2].Name</MudText>
+                                    <img src="@categories[2].ImageUrl" class="category-image1" />
+                                </div>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+
+            <!-- 3rd Column (Two Cards) -->
+            <MudItem xs="12" sm="6" md="3">
+                <MudGrid GutterSize="16px" Direction="Column">
+                    <MudItem xs="12">
+                        <MudCard Class="category-card" OnClick="@(() => HandleCategoryClick(categories[3]))">
+                            <MudCardContent>
+                                <div class="category-content">
+                                    <MudText Typo="Typo.subtitle2" Class="category-title">@categories[3].Name</MudText>
+                                    <img src="@categories[3].ImageUrl" class="category-image1" />
+                                </div>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudCard Class="category-card" OnClick="@(() => HandleCategoryClick(categories[4]))">
+                            <MudCardContent>
+                                <div class="category-content">
+                                    <MudText Typo="Typo.subtitle2" Class="category-title">@categories[4].Name</MudText>
+                                    <img src="@categories[4].ImageUrl" class="category-image1" />
+                                </div>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+
+            <!-- 4th Column (Tall Single Card) -->
+            <MudItem xs="12" sm="6" md="3">
+                <MudCard Class="category-card full-height" OnClick="@(() => HandleCategoryClick(categories[5]))">
+                    <MudCardContent>
+                        <div class="category-content">
+                            <MudText Typo="Typo.subtitle2" Class="category-title">@categories[5].Name</MudText>
+                            <img src="@categories[5].ImageUrl" class="category-image2" />
+                        </div>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    </MudContainer>
+</div>
+
+@code {
+    public class CategoryItem
+    {
+        public string Name { get; set; }
+        public string ImageUrl { get; set; }
+    }
+
+    private List<CategoryItem> categories = new()
+    {
+        new() { Name = "Ramadan Items",  ImageUrl = "/images/categories/ramadan.svg" },
+        new() { Name = "Mobile Phones",  ImageUrl = "/images/categories/mobile.svg" },
+        new() { Name = "Gaming",         ImageUrl = "/images/categories/gaming.svg" },
+        new() { Name = "Furniture",      ImageUrl = "/images/categories/furniture.svg" },
+        new() { Name = "Home Gym",       ImageUrl = "/images/categories/gym.svg" },
+        new() { Name = "Back to School", ImageUrl = "/images/categories/school.svg" },
+    };
+
+    void HandleCategoryClick(CategoryItem c)
+        => Console.WriteLine($"Clicked {c.Name}");
+}
+
+<style>
+.categories-section {
+    background-color: #f7f9fc;
+    padding: 2rem 1rem;
+}
+
+.section-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    font-weight: bold;
+    color: #1A1A1A;
+}
+
+.category-card {
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    background-color: white;
+    border-radius: 8px;
+}
+
+.category-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+}
+
+.full-height {
+    height: 100%;
+}
+
+.category-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+    height: 100%;
+}
+
+.category-title {
+    align-self: flex-start;
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 2rem;
+    color: #003366;
+}
+
+.category-image1 {
+    width: 200px;
+    height: 80px;
+    object-fit: contain;
+    flex-grow: 1; /* makes image take available space */
+}
+
+.category-image2 {
+    width: 200px;
+    height: 300px;
+    object-fit: contain;
+    flex-grow: 1; /* makes image take available space */
+}
+</style>
+
+
