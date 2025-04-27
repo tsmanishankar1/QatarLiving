@@ -4,8 +4,8 @@ trigger:
     - qln-dev
   paths:
     include:
-    - QLN.Backend.API/**/*
-    - QLN.Common/**/*
+    - QLN.Backend.API/*
+    - QLN.Common/*
 
 variables:
  - name: acrRegistry
