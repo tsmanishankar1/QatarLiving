@@ -95,5 +95,31 @@ namespace QLN.Blazor.Base.Services
                 return false;
             }
         }
+
+        public async Task<TResponse?> PutAsync<TRequest, TResponse>(string endpoint, TRequest data)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Put, $"{_baseUrl}/{endpoint}")
+                {
+                    Content = JsonContent.Create(data)
+                };
+
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<TResponse>();
+                }
+
+                Console.WriteLine($"PUT Error: {response.StatusCode}");
+                return default;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"PUT Exception: {ex.Message}");
+                return default;
+            }
+        }
+
     }
 }
