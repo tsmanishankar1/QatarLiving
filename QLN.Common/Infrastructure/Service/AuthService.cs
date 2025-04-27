@@ -71,10 +71,10 @@ namespace QLN.Common.Infrastructure.Service
             }
 
             // mobile no validation
-            var mobileRegex = new Regex(@"^(\+?\d{1,3})?[\s]?\d{10}$");
+            var mobileRegex = new Regex(@"^(\+?\d{1,3})?[\s]?\d{10,15}$");
             if (!mobileRegex.IsMatch(request.Mobilenumber))
             {
-                return TypedResults.Ok(ApiResponse<string>.Fail("Invalid mobile number format. Please enter a valid 10-digit number."));
+                return TypedResults.Ok(ApiResponse<string>.Fail("Invalid mobile number format. Please enter a valid 10 to 15 digits."));
             }
 
             // Age validation
@@ -195,13 +195,12 @@ namespace QLN.Common.Infrastructure.Service
                 return TypedResults.BadRequest("Invalid or expired OTP.");
 
             TempVerificationStore.VerifiedEmails.Add(email);
+
             return TypedResults.Ok(ApiResponse<string>.Success("Email verified successfully."));
         }
         
         public async Task<Ok<ApiResponse<string>>> SendPhoneOtpAsync(string phoneNumber)
-        {
-           
-
+        {         
             var user = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber);
 
             if (user != null)
@@ -284,7 +283,7 @@ namespace QLN.Common.Infrastructure.Service
                 var code = await _userManager.GeneratePasswordResetTokenAsync(user);
                 var encodedCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
 
-                var resetUrl = $"https://yourfrontend.com/reset-password?email={Uri.EscapeDataString(request.Email)}&code={encodedCode}";
+                var resetUrl = $"http://localhost:5047/reset-password?email={Uri.EscapeDataString(request.Email)}&code={encodedCode}";
 
                 await _emailSender.SendPasswordResetLinkAsync(user, user.Email, resetUrl);
             }
@@ -301,6 +300,13 @@ namespace QLN.Common.Infrastructure.Service
             }
 
             var decodedCode = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(request.ResetCode));
+
+            var isValidToken = await _userManager.VerifyUserTokenAsync(user, TokenOptions.DefaultProvider, "ResetPassword", decodedCode);
+            if (!isValidToken)
+            {
+                return TypedResults.Ok(ApiResponse<string>.Fail("Invalid or expired token."));
+            }
+            
             var result = await _userManager.ResetPasswordAsync(user, decodedCode, request.NewPassword);
             if (!result.Succeeded)
             {
@@ -461,11 +467,19 @@ namespace QLN.Common.Infrastructure.Service
             return TypedResults.Ok(ApiResponse<object>.Success("Profile data", new
             {
                 user.UserName,
+                user.Firstname,
+                user.Lastname,
                 user.Email,
                 user.PhoneNumber,
                 user.Gender,
                 user.Dateofbirth,
                 user.Location,
+                user.Languagepreferences,
+                user.Nationality,
+                user.Mobileoperator,                 
+                user.PhoneNumberConfirmed, 
+                user.EmailConfirmed,
+                user.IsCompany,
                 user.Isactive,
                 user.TwoFactorEnabled
             }));
@@ -482,10 +496,13 @@ namespace QLN.Common.Infrastructure.Service
                 return TypedResults.Unauthorized();
 
             user.Firstname = request.FirstName;
-            user.Lastname = request.LastName;
-            user.PhoneNumber = request.MobileNumber;
+            user.Lastname = request.LastName;                                   
+            user.Gender = request.Gender;
+            user.Dateofbirth = request.Dateofbirth;
+            user.Nationality = request.Nationality;
             user.Location = request.Location;
-
+            user.PhoneNumber = request.MobileNumber;
+            user.Languagepreferences = request.Languagepreferences;
             await _userManager.UpdateAsync(user);
 
             return TypedResults.Ok(ApiResponse<string>.Success("Profile updated successfully"));
