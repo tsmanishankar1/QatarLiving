@@ -1,0 +1,181 @@
+@using MudBlazor
+@inject IJSRuntime JSRuntime
+
+<div class="store-media-section">
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <div class="d-flex flex-column" style="height: 100%; justify-content: center;">
+                <MudText Typo="Typo.h6" Style="color: #333; font-weight: bold;">@Title</MudText>
+                <MudText Typo="Typo.body1" Class="my-2" Style="color: #666;">
+                    @Description
+                </MudText>
+                <div class="d-flex mt-3">
+                    @foreach (var platform in SocialPlatforms)
+                    {
+                            <MudIconButton Icon="@platform.Icon" 
+                                        Color="Color.Warning"
+                                        Class="mr-2 border-warning border-solid border-2" 
+                                        Href="@platform.Link"
+                                        Target="_blank" />
+                    }
+                </div>
+            </div>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <div style="display: flex; gap: 16px; height: 100%; justify-content: center; align-items: center;">
+                @foreach (var video in VideoCards)
+                {
+                    <div style="position: relative; width: 220px; height: 320px; border-radius: 12px; overflow: hidden; cursor: pointer;"
+                         class="video-card"
+                         @onclick="() => ToggleVideoPlay(video)"
+                         @onmouseenter="() => ShowPlayButton(video)"
+                         @onmouseleave="() => HidePlayButton(video)">
+                        
+                        <!-- Video element -->
+                        <video width="100%" height="100%" 
+                               muted loop
+                               style="object-fit: cover;"
+                               src="@video.VideoUrl"
+                               @ref="video.VideoElement">
+                        </video>
+                        
+                        <!-- Play button overlay - shown on hover when not playing -->
+                        @if (video.ShowPlayButton)
+                        {
+                            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
+                                        display: flex; justify-content: center; align-items: center;
+                                        background: rgba(0,0,0,0.3);">
+                                <MudIcon Icon="@Icons.Material.Filled.PlayCircle" 
+                                         Style="color: white; font-size: 36px;" />
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </MudItem>
+    </MudGrid>
+</div>
+
+<style>
+    .store-media-section {
+       background-color: white;
+       padding: 2rem 1rem;
+    }
+
+</style>
+
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = "Are you Following Classifieds on Social Media?";
+
+    [Parameter]
+    public string Description { get; set; } = "Stay Tuned with Qatar Living Classifieds on social media for the latest updates, featured exclusive listings, market trends, and valuable insights to guide your investments.";
+
+  [Parameter]
+public List<SocialPlatform> SocialPlatforms { get; set; } = new()
+{
+    new SocialPlatform { 
+        Name = "Facebook", 
+        Icon = Icons.Custom.Brands.Facebook, 
+        Link = "https://www.facebook.com/QatarLiving" 
+    },
+    new SocialPlatform { 
+        Name = "Instagram", 
+        Icon = Icons.Custom.Brands.Instagram, 
+        Link = "https://www.instagram.com/qatarliving" 
+    },
+    new SocialPlatform { 
+        Name = "YouTube", 
+        Icon = Icons.Custom.Brands.YouTube, 
+        Link = "https://www.youtube.com/channel/UCcsJRinZg4qYGLRDkFiVHcQ" 
+    },
+    new SocialPlatform { 
+        Name = "LinkedIn", 
+        Icon = Icons.Custom.Brands.LinkedIn, 
+        Link = "https://www.linkedin.com/company/qatarliving-com" 
+    },
+    new SocialPlatform { 
+        Name = "Twitter", 
+        Icon = Icons.Custom.Brands.Twitter, 
+        Link = "https://twitter.com/qatarliving" 
+    }
+};
+
+    [Parameter]
+    public List<VideoCard> VideoCards { get; set; } = new()
+    {
+        new VideoCard { 
+            VideoUrl = "https://scontent-cdg4-2.cdninstagram.com/o1/v/t2/f2/m86/AQOZunXBiqqju0iko0Ugj3Ne3DZ6NDIlYVTwW4EB5xBt-Io2A5WIlH8eFUc7IdSXMOtO00ttpHnbPdIhsN8455rRaCC8UND2ndjj32k.mp4?_nc_cat=101&_nc_sid=5e9851&_nc_ht=scontent-cdg4-2.cdninstagram.com&_nc_ohc=pELNKesG7-oQ7kNvwHTje0L&efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5JTlNUQUdSQU0uQ0xJUFMuQzMuNzIwLmRhc2hfYmFzZWxpbmVfMV92MSIsInhwdl9hc3NldF9pZCI6MTkxMDg2NTI5MzA1MjgxMSwidmlfdXNlY2FzZV9pZCI6MTAwOTksImR1cmF0aW9uX3MiOjk5LCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&ccb=17-1&vs=94c2a8d75ff9d5f8&_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC8yRjQwREQyMThDOTdGRTlFRUY1QURFQjU3MkFFQUI4N192aWRlb19kYXNoaW5pdC5tcDQVAALIAQAVAhg6cGFzc3Rocm91Z2hfZXZlcnN0b3JlL0dBVWhLeDB3T0xieTVyOEhBUFBoZ0QyWjN4d2dicV9FQUFBRhUCAsgBACgAGAAbAogHdXNlX29pbAExEnByb2dyZXNzaXZlX3JlY2lwZQExFQAAJpaujPD_-uQGFQIoAkMzLBdAWOqfvnbItBgSZGFzaF9iYXNlbGluZV8xX3YxEQB1_gcA&_nc_zt=28&oh=00_AfFpYrYu99-YC2oB7LjwFeOxhn_6TLmp1uywsHhXlO6AVw&oe=680F05A2#t=0.001",
+            Title = "Video 1"
+        },
+        new VideoCard { 
+            VideoUrl = "https://scontent-cdg4-1.cdninstagram.com/o1/v/t2/f2/m86/AQMbfBcHuDL_9-I8spCSkMp1pCXOoTZJolpFI25xJihD8ncBm_70eSqBSrOvdC-l8TjguFkzfHvhejYThNaZhz5vISeagKkhyI9IcUw.mp4?_nc_cat=108&_nc_sid=5e9851&_nc_ht=scontent-cdg4-1.cdninstagram.com&_nc_ohc=r8Om-XFtRLsQ7kNvwF30A06&efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5JTlNUQUdSQU0uQ0xJUFMuQzMuNzIwLmRhc2hfYmFzZWxpbmVfMV92MSIsInhwdl9hc3NldF9pZCI6MTAyMDAyMjk1NjcwODQxNywidmlfdXNlY2FzZV9pZCI6MTAwOTksImR1cmF0aW9uX3MiOjYsInVybGdlbl9zb3VyY2UiOiJ3d3cifQ%3D%3D&ccb=17-1&vs=ee9bb6fe9f1483b8&_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC8wMTRDMDgwREYwNTU2NDA0RDYzNkQyNUZDOEZCNkRCQl92aWRlb19kYXNoaW5pdC5tcDQVAALIAQAVAhg6cGFzc3Rocm91Z2hfZXZlcnN0b3JlL0dGcmlDUjFfbUpQWWY1OERBRzBSZW5TRlZDc1picV9FQUFBRhUCAsgBACgAGAAbAogHdXNlX29pbAExEnByb2dyZXNzaXZlX3JlY2lwZQExFQAAJoLJ-p-T7c8DFQIoAkMzLBdAGAAAAAAAABgSZGFzaF9iYXNlbGluZV8xX3YxEQB1_gcA&_nc_zt=28&oh=00_AfGnGvTckrqjcKk0PpQ-FbqAp--7uwBP3IcLIuiohTbk-g&oe=680ED511#t=0.001",
+            Title = "Video 2"
+        },
+        new VideoCard { 
+            VideoUrl = "https://scontent-cdg4-1.cdninstagram.com/o1/v/t2/f2/m86/AQMbfBcHuDL_9-I8spCSkMp1pCXOoTZJolpFI25xJihD8ncBm_70eSqBSrOvdC-l8TjguFkzfHvhejYThNaZhz5vISeagKkhyI9IcUw.mp4?_nc_cat=108&_nc_sid=5e9851&_nc_ht=scontent-cdg4-1.cdninstagram.com&_nc_ohc=r8Om-XFtRLsQ7kNvwF30A06&efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5JTlNUQUdSQU0uQ0xJUFMuQzMuNzIwLmRhc2hfYmFzZWxpbmVfMV92MSIsInhwdl9hc3NldF9pZCI6MTAyMDAyMjk1NjcwODQxNywidmlfdXNlY2FzZV9pZCI6MTAwOTksImR1cmF0aW9uX3MiOjYsInVybGdlbl9zb3VyY2UiOiJ3d3cifQ%3D%3D&ccb=17-1&vs=ee9bb6fe9f1483b8&_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC8wMTRDMDgwREYwNTU2NDA0RDYzNkQyNUZDOEZCNkRCQl92aWRlb19kYXNoaW5pdC5tcDQVAALIAQAVAhg6cGFzc3Rocm91Z2hfZXZlcnN0b3JlL0dGcmlDUjFfbUpQWWY1OERBRzBSZW5TRlZDc1picV9FQUFBRhUCAsgBACgAGAAbAogHdXNlX29pbAExEnByb2dyZXNzaXZlX3JlY2lwZQExFQAAJoLJ-p-T7c8DFQIoAkMzLBdAGAAAAAAAABgSZGFzaF9iYXNlbGluZV8xX3YxEQB1_gcA&_nc_zt=28&oh=00_AfGnGvTckrqjcKk0PpQ-FbqAp--7uwBP3IcLIuiohTbk-g&oe=680ED511#t=0.001",
+            Title = "Video 3"
+        }
+    };
+
+    private async Task ToggleVideoPlay(VideoCard video)
+    {
+        if (video.IsPlaying)
+        {
+            await JSRuntime.InvokeVoidAsync("pauseVideo", video.VideoElement);
+            video.IsPlaying = false;
+            video.ShowPlayButton = true; // Show play button again when paused
+        }
+        else
+        {
+            // Pause all other videos first
+            foreach (var v in VideoCards.Where(v => v != video && v.IsPlaying))
+            {
+                await JSRuntime.InvokeVoidAsync("pauseVideo", v.VideoElement);
+                v.IsPlaying = false;
+                v.ShowPlayButton = true;
+            }
+            
+            await JSRuntime.InvokeVoidAsync("playVideo", video.VideoElement);
+            video.IsPlaying = true;
+            video.ShowPlayButton = false; // Hide play button when playing
+        }
+        
+        StateHasChanged();
+    }
+
+    private void ShowPlayButton(VideoCard video)
+    {
+        if (!video.IsPlaying)
+        {
+            video.ShowPlayButton = true;
+            StateHasChanged();
+        }
+    }
+
+    private void HidePlayButton(VideoCard video)
+    {
+        if (!video.IsPlaying)
+        {
+            video.ShowPlayButton = false;
+            StateHasChanged();
+        }
+    }
+
+    public class SocialPlatform
+    {
+        public string Name { get; set; }
+        public string Icon { get; set; }
+        public string Link { get; set; }
+    }
+
+    public class VideoCard
+    {
+        public string VideoUrl { get; set; }
+        public string Title { get; set; }
+        public bool ShowPlayButton { get; set; }
+        public bool IsPlaying { get; set; }
+        public ElementReference VideoElement { get; set; }
+    }
+}
