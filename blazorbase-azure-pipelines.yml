@@ -4,9 +4,9 @@ trigger:
     - qln-dev
   paths:
     include:
-    - QLN.Blazor.Base/**/*
-    - QLN.Common/**/*
-    - QLN.Web.Shared/**/*
+    - QLN.Blazor.Base/*
+    - QLN.Common/*
+    - QLN.Web.Shared/*
 
 variables:
  - name: acrRegistry
