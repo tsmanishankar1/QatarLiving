@@ -1,61 +1,144 @@
 @using MudBlazor
-@using QLN.Web.Shared.Components.CustomButton
-<MudPaper Class="profile-container mx-auto my-4" Elevation="1">
-    <MudGrid Justify="Justify.Center" Class="text-center">
-        <MudItem xs="12">
-            <MudAvatar Size="Size.Large" Image="@ProfileImageUrl" Class="mb-2 responsive-avatar" />
+
+<MudPaper Class="profile-container mx-auto " Elevation="1" Style="max-width: 400px; background-color: white;">
+    <MudGrid Justify="Justify.Center" Class="text-center" Style="gap: 0">
+    <MudItem xs="12" Class="mb-0">  <!-- Reduced margin-bottom -->
+        <MudAvatar Size="Size.Large" Class="responsive-avatar" Style="margin-bottom: 1px">  <!-- Custom small margin -->
+            @if (string.IsNullOrEmpty(ProfileImageUrl))
+            {
+                <MudIcon Icon="@Icons.Material.Filled.AccountCircle" Size="Size.Large" Color="Color.Default" />
+            }
+            else
+            {
+                <img src="@ProfileImageUrl" class="responsive-avatar" />
+            }
+        </MudAvatar>
+    </MudItem>
+
+    <MudItem xs="12" Class="mb-0">  <!-- Reduced margin-bottom -->
+        <MudText Typo="Typo.h6" Class="text-style" Style="margin-bottom: 1px">@Name</MudText>  <!-- Custom small margin -->
+    </MudItem>
+
+    @if (IsPremium)
+    {
+        <MudItem xs="12" Class="mb-0"> 
+            <MudChip T="string"
+                     Style="background-color: #e3f2fd; color: #1976d2; font-weight:600; margin-top: 1px"
+                     Class="premium-chip">
+                Premium User
+            </MudChip>
         </MudItem>
-        <MudItem xs="12">
-            <MudText Typo="Typo.h6" Class="text-style">@Name</MudText>
-        </MudItem>
-        @if (IsPremium)
-        {
-            <MudItem xs="12">
-                <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Class="my-1">
-                    Premium User
-                </MudChip>
-            </MudItem>
-        }
-    </MudGrid>
+    }
+</MudGrid>
 
-    <MudDivider Class="my-3" />
 
-    <MudText Typo="Typo.subtitle2" Class="heading-style mb-2 p-4">Personal Information</MudText>
+    <MudText Typo="Typo.subtitle2" Class="heading-style mb-2 px-4">Personal Information</MudText>
 
-    <MudGrid GutterSize="GutterSize.Small" Class="mx-4">
+    <MudGrid Class="px-4">
         @foreach (var item in InfoItems)
         {
-           <MudGrid Class="mb-1">
-            <MudItem xs="4">
-                <MudText  Style="font-weight: 500;">
-                    @item.Key
-                </MudText>
-            </MudItem>
-            <MudItem xs="8">
-                <MudText Class="text-primary" Style="font-weight: 500;">
-                    @item.Value
-                </MudText>
-            </MudItem>
-        </MudGrid>
+            @if (!string.IsNullOrEmpty(item.Value))
+            {
+                <MudItem xs="12" Class="d-flex align-items-start">
+                    <MudText Class="label-text">@item.Key:</MudText>
+                    <MudText Class="value-text">@item.Value</MudText>
+                </MudItem>
+            }
         }
-        
-    <CustomButton 
-                                BackgroundColor= "var(--color-button-secondary)"
-                                TextColor="#FFFFFF"
-                                Text="Edit Profile"
-                                Class="mt-4 custom-width" />
     </MudGrid>
 
+    <div class="text-center mt-4">
+        <MudButton T="string" Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Class="edit-button"
+                   OnClick="OnEditClicked"
+                   Style="background-color: #1976d2; text-transform: none; font-weight: 600;">
+            Edit Profile
+        </MudButton>
+    </div>
 
     <MudDivider Class="my-4" />
 
-    <MudText Typo="Typo.caption" Class="text-secondary font-weight-bold mb-2 mx-4">HELP RESOURCES</MudText>
-    <MudList T="string" Dense="true">
-    <MudListItem T="string" Href="#"><MudText>Help Center</MudText></MudListItem>
-    <MudListItem T="string" Href="#"><MudText>Contact Support</MudText></MudListItem>
-    <MudListItem T="string" Href="#"><MudText>Safety Tips</MudText></MudListItem>
+    <MudText Typo="Typo.caption" Class="help-resources-title mb-2 mx-4">HELP RESOURCES</MudText>
+    <MudList Dense="true" T="string" Class="mx-2">
+        <MudListItem>
+            <MudText T="string" Class="help-item">Help Center</MudText>
+        </MudListItem>
+        <MudListItem>
+            <MudText T="string" Class="help-item">Contact Support</MudText>
+        </MudListItem>
+        <MudListItem>
+            <MudText T="string" Class="help-item">Safety Tips</MudText>
+        </MudListItem>
     </MudList>
 </MudPaper>
+
+<style>
+    .profile-container {
+        padding: 5px;
+        border-radius: 10px;
+        background-color: #f9fafb;
+    }
+
+    .responsive-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .text-style {
+        font-size: 18px;
+        font-weight: 700;
+        font-family: 'Public Sans', sans-serif;
+        color: #212121;
+    }
+
+    .heading-style {
+        font-size: 16px;
+        font-weight: 700;
+        font-family: 'Public Sans', sans-serif;
+        color: #333;
+    }
+
+    .label-text {
+        width: 100px;
+        font-weight: 500;
+        color: #555;
+        font-size: 12px;
+        flex-shrink: 0;
+    }
+
+    .value-text {
+        font-weight: 400;
+        color: #1976d2;
+        font-size: 12px;
+        word-break: break-word;
+        margin-left: 10px;
+    }
+
+    .edit-button {
+        width: 180px;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .help-resources-title {
+        color: #666;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .help-item {
+        font-size: 14px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    .premium-chip {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+    }
+</style>
 
 @code {
     [Parameter] public string ProfileImageUrl { get; set; } = string.Empty;
@@ -80,25 +163,3 @@
         { "Languages", string.Join(", ", Languages) }
     };
 }
-
-<style>
-    .responsive-avatar {
-    width: 110px;
-    height: 110px;
-    }
-    .text-style {
-        font-size: 18px;
-        font-weight: 700;
-        font-family: 'Public Sans', sans-serif;
-        color: "var(--color-button-secondary)";
-    }
-    .heading-style{
-        font-size: 16px;
-        font-weight: 700;
-        font-family: 'Public Sans', sans-serif;
-        color: "var(--color-button-secondary)";
-    }
-    .custom-width {
-    width: 200px;
-}
-</style>
