@@ -1,0 +1,115 @@
+@using MudBlazor
+@using QLN.Web.Shared.Components.FeaturedItemCard
+
+<div class="featured-cards-section">
+    <!-- Featured Items Header -->
+    <div class="featured-header">
+        <MudText Typo="Typo.h6" Class="featured-title">Featured Items</MudText>
+    </div>
+
+    <!-- Cards Container -->
+    <div class="cards-container">
+        @foreach (var item in featuredItems)
+        {
+            <FeaturedItemCard Item="item" OnHeartClick="HandleHeartClick" />
+        }
+    </div>
+</div>
+
+<style>
+    .featured-cards-section {
+        background-color: #f7f9fc; /* Light background */
+        padding: 2rem 1rem;
+    }
+
+    .featured-header {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding: 0 0.5rem;
+    }
+
+    .featured-title {
+        font-weight: 600;
+        color: #333;
+        font-size: 1.25rem;
+    }
+
+    .cards-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
+
+    @@media (max-width: 1200px) {
+        .cards-container {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @@media (max-width: 900px) {
+        .cards-container {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @@media (max-width: 600px) {
+        .cards-container {
+            grid-template-columns: 1fr;
+        }
+        
+        .featured-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+
+@code {
+    private List<FeaturedItemCard.FeaturedItem> featuredItems = new()
+    {
+        new FeaturedItemCard.FeaturedItem
+        {
+            ImageUrl = "images/categories/GameImage.svg",
+            Category = "Xbox Controller",
+            Title = "Microsoft Xbox Series X|S Wireless Controller - White",
+            Price = "2,100 QAR",
+            Location = "The Pearl, Doha",
+            IsFeatured = true
+        },
+        new FeaturedItemCard.FeaturedItem
+        {
+            ImageUrl = "images/categories/cycleImage.svg",
+            Category = "Mountain Bike",
+            Title = "Bentley Continental GT Coupe 2023",
+            Price = "2,100 QAR",
+            Location = "The Pearl, Doha",
+            IsFeatured = true
+        },
+        new FeaturedItemCard.FeaturedItem
+        {
+            ImageUrl = "images/categories/PhoneImage.svg",
+            Category = "iPhone 16 Pro",
+            Title = "Apple iPhone 16 Pro - 128GB Desert Titanium",
+            Price = "12,900 QAR",
+            Location = "West Bay, Doha",
+            IsFeatured = true
+        },
+        new FeaturedItemCard.FeaturedItem
+        {
+            ImageUrl = "images/categories/CardImage.svg",
+            Category = "Trading Cards",
+            Title = "Topos Chrome Charizard Tekno #06",
+            Price = "2,100 QAR",
+            Location = "Al Sadd, Doha",
+            IsFeatured = false
+        }
+    };
+
+    private void HandleHeartClick(FeaturedItemCard.FeaturedItem item)
+    {
+        // Handle favorite logic
+        Console.WriteLine($"Heart clicked for {item.Title}");
+    }
+}
