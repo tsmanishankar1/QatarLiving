@@ -15,8 +15,9 @@
     --color-indicator:#FFA726;
     --color-indicator-secondary:#F0F0F0;
     --color-background:#F5F6FA;
+    --color-button-secondary:#01416D;
 }
-,
+
 .subscription-card {
     padding: 24px;
     display: flex;

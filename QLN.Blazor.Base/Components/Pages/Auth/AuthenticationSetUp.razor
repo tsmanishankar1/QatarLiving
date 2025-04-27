@@ -11,12 +11,12 @@
 @using QLN.Web.Shared.Components.CustomButton
 
 
-<MudPaper Class="pa-6 mx-auto mt-10" 
-          Style="max-width: 500px; border-radius: 12px; margin-top: 30px; margin-bottom: 30px;">
+<div style="width: 100%; background-color: #F5F6FA; padding: 32px 16px;">
+    <div style="max-width: 400px; margin: 0 auto;">
     
     <MudStack Spacing="3">
         <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-6" Style="font-weight: 700;">
-        Set Up Two-Factor Authentication
+        Two-Factor Authentication
     </MudText>
 
         <MudText Typo="Typo.caption" Align="Align.Center">
@@ -31,6 +31,7 @@
                       Label="Verification Code" 
                       Variant="Variant.Outlined" 
                       FullWidth="true" 
+                      Style="background-color: #FFFFFF;"
                       @bind-Value="_code" />
 
         <MudText Align="Align.Start"
@@ -69,7 +70,8 @@
 </div>
         
     </MudStack>
-</MudPaper>
+    </div>
+</div>
 
 @code {
     private string _input = string.Empty;

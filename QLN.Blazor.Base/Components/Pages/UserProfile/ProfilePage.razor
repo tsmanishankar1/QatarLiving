@@ -1,0 +1,78 @@
+@page "/profilePage"
+@using MudBlazor
+@using QLN.Web.Shared.Components.ProfileCard
+@using QLN.Web.Shared.Components.CustomButton
+@* @using QLN.Web.Shared.Components.PropertyCard *@
+
+<MudContainer MaxWidth="MaxWidth.False" DisableGutters="true" Class="p-4 custom-background">
+    <MudGrid>
+        <MudItem xs="12" sm="4" md="3">
+            <ProfileCard
+            ProfileImageUrl="images/sampleProfile.jpg"
+            Name="Farha Hassan"
+            IsPremium="true"
+            Email="ahmed.h@example.com"
+            Phone="+974 5553 4482"
+            Location="Doha, Qatar"
+            Gender="Male"
+            Nationality="Qatari"
+            Languages="@(new List<string> { "Arabic", "English" })"
+            OnEditClicked="@(() => Console.WriteLine("Edit clicked"))" />
+        </MudItem>
+
+        <MudItem xs="12" sm="8" md="9">
+            <MudStack Spacing="3">
+                <MudPaper Class="p-4"  Elevation="2">
+                    <MudGrid Justify="Justify.SpaceBetween">
+                            <MudStack Direction="Row" AlignItems="AlignItems.Center" JustifyContent="space-between" Spacing="2">
+                                <MudText Typo="Typo.h6">Name:</MudText>
+                                <MudText>Farha Hassan</MudText>
+                                <MudChip  T="string" Color="Color.Primary" Variant="Variant.Outlined">Premium User</MudChip>
+                            </MudStack>
+
+                        <MudItem xs="12" sm="6">
+                            <CustomButton 
+                                BackgroundColor= "var(--color-secondary)"
+                                TextColor="#FFFFFF"
+                                Text="View Details"
+                                Class="mt-4 custom-width" />
+                        </MudItem>
+                   </MudGrid>
+                </MudPaper>
+                <MudPaper Class="p-4"  Elevation="2">
+                    <MudGrid>
+                        @* <PropertyCard 
+    Title="Capstone Property"
+    Icon="Icons.Material.Filled.Apartment"
+    Description="Real estate 20 - 12 months"
+    ValidFrom="new DateTime(2023, 7, 28)"
+    ValidTo="new DateTime(2024, 7, 28)"
+    ButtonText="Edit Company Profile" /> *@
+                            <MudStack Direction="Row" AlignItems="AlignItems.Center" JustifyContent="space-between" Spacing="2">
+                                <MudText Typo="Typo.h6">Name:</MudText>
+                                <MudText>Farha Hassan</MudText>
+                                <MudChip  T="string" Color="Color.Primary" Variant="Variant.Outlined">Premium User</MudChip>
+                            </MudStack>
+
+                        <MudItem xs="12" sm="6">
+                            <CustomButton 
+                                BackgroundColor= "var(--color-secondary)"
+                                TextColor="#FFFFFF"
+                                Text="View Details"
+                                Class="mt-4 custom-width" />
+                        </MudItem>
+                   </MudGrid>
+                </MudPaper>
+            </MudStack>
+        </MudItem> 
+    </MudGrid>
+</MudContainer>
+
+<style>
+.custom-width {
+    width: 200px;
+}
+.custom-background {
+     background-color: "var(--color-background)"; 
+}
+</style>

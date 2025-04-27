@@ -4,15 +4,16 @@
 @inject NavigationManager NavManager
 @inject ISnackbar Snackbar
 
-<MudPaper Elevation="3" Class="pa-6 my-10 mx-auto" MaxWidth="500px">
-     <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-6" Style="font-weight: 700;">
-        Select Verification Method
+<div style="width: 100%; background-color: #F5F6FA; padding: 32px 16px;">
+    <div style="max-width: 400px; background-color: #F5F6FA; margin: 0 auto;">    
+    <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-6" Style="font-weight: 700;">
+       Verification Method
     </MudText>
     <MudText Typo="Typo.subtitle1" Align="Align.Center" GutterBottom="true">
         Choose how you want to receive your verification code
     </MudText>
 
-   <MudPaper Elevation="0" Class="d-flex flex-column gap-3 p-3">
+   <MudPaper Elevation="0" Class="d-flex flex-column gap-3 p-3 background-color: #F5F6FA;">
     <MudItem>
         
         <MudPaper Class="@GetPaperClass("sms")" Style="border: 1px solid #ccc; border-radius: 8px;" @onclick="SelectOption">
@@ -81,8 +82,8 @@
     <MudButton Variant="Variant.Filled" Color="Color.Warning" FullWidth="true" OnClick="NavigateTo" Style="margin-top: 24px; background-color: #FF7F38;">
         Continue
     </MudButton>
-</MudPaper>
-
+</div>    
+</div> 
 @code {
    private string _selectedMethod = string.Empty;
 
