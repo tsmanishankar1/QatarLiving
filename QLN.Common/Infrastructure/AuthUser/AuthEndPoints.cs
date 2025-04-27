@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.Service;
+using static QLN.Common.Infrastructure.DTO_s.OtpDTO;
 
 
 namespace QLN.Common.Infrastructure.AuthUser
@@ -44,45 +45,78 @@ namespace QLN.Common.Infrastructure.AuthUser
             return group;
         }
 
-        // confirm email
-        public static RouteGroupBuilder MapConfirmEmailEndpoint(this RouteGroupBuilder group)
+        // Email OTP Send
+        public static RouteGroupBuilder MapSendEmailOtpEndpoint(this RouteGroupBuilder group)
         {
-            group.MapGet("/confirm-email", async Task<Results<Ok<ApiResponse<string>>, BadRequest<string>, NotFound<string>, ValidationProblem>>
-            (
-                [FromQuery] Guid userId,
-                [FromQuery] string code,
+            group.MapPost("/verify-email-request", async Task<Ok<ApiResponse<string>>> (
+                [FromBody] EmailOtpRequest request,
                 [FromServices] IAuthService authService
             ) =>
             {
-                return await authService.ConfirmEmailAsync(userId, code);
+                return await authService.SendEmailOtpAsync(request.Email);
             })
-            .WithName("ConfirmEmail")
+            .WithName("SendEmailOtp")
             .WithTags("Authentication")
-            .WithSummary("Confirm email address")
-            .WithDescription("Verifies the email using confirmation link parameters.");
+            .WithSummary("Send Email OTP")
+            .WithDescription("Sends an OTP to the user's email address for verification.");
 
             return group;
         }
 
-        // Resend Confirmation Email
-        public static RouteGroupBuilder MapResendConfirmationEmailEndpoint(this RouteGroupBuilder group)
+        // Email OTP Verify
+        public static RouteGroupBuilder MapVerifyEmailOtpEndpoint(this RouteGroupBuilder group)
         {
-            group.MapPost("/resend-confirmation-email", async Task<Results<Ok<ApiResponse<string>>, NotFound>> (
-                [FromBody] ResendConfirmationEmailRequest request,
-                HttpContext context,
+            group.MapPost("/verify-email-otp", async Task<Results<Ok<ApiResponse<string>>, BadRequest<string>>> (
+                [FromBody] VerifyEmailOtpRequest request,
                 [FromServices] IAuthService authService
             ) =>
             {
-                return await authService.ResendEmailAsync(request, context);
+                return await authService.VerifyEmailOtpAsync(request.Email, request.Otp);
             })
-            .WithName("ResendConfirmationEmail")
+            .WithName("VerifyEmailOtp")
             .WithTags("Authentication")
-            .WithSummary("Resend email confirmation link")
-            .WithDescription("Sends a new confirmation link to the user’s email if the original confirmation email was not received or expired.");
+            .WithSummary("Verify Email OTP")
+            .WithDescription("Verifies the OTP entered by the user for their email address.");
 
             return group;
         }
 
+        // Phone OTP Send
+        public static RouteGroupBuilder MapSendPhoneOtpEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapPost("/verify-phone-request", async Task<Ok<ApiResponse<string>>> (
+                [FromBody] PhoneOtpRequest request,
+                [FromServices] IAuthService authService
+            ) =>
+            {
+                return await authService.SendPhoneOtpAsync(request.PhoneNumber);
+            })
+            .WithName("SendPhoneOtp")
+            .WithTags("Authentication")
+            .WithSummary("Send Phone OTP")
+            .WithDescription("Generates and stores OTP for phone number verification.");
+
+            return group;
+        }
+
+        // Phone OTP Verify
+        public static RouteGroupBuilder MapVerifyPhoneOtpEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapPost("/verify-phone-otp", async Task<Results<Ok<ApiResponse<string>>, BadRequest<string>>> (
+                [FromBody] VerifyPhoneOtpRequest request,
+                [FromServices] IAuthService authService
+            ) =>
+            {
+                return await authService.VerifyPhoneOtpAsync(request.PhoneNumber, request.Otp);
+            })
+            .WithName("VerifyPhoneOtp")
+            .WithTags("Authentication")
+            .WithSummary("Verify Phone OTP")
+            .WithDescription("Verifies the OTP entered for the phone number.");
+
+            return group;
+        }
+      
         // Forgot Password
         public static RouteGroupBuilder MapForgotPasswordEndpoint(this RouteGroupBuilder group)
         {
@@ -96,7 +130,7 @@ namespace QLN.Common.Infrastructure.AuthUser
             .WithName("ForgotPassword")
             .WithTags("Authentication")
             .WithSummary("Request password reset")
-            .WithDescription("Sends a password reset token to the user’s email if the email is registered and confirmed.");
+            .WithDescription("Sends a password reset link to the user’s email if the email is registered and confirmed.");
 
             return group;
         }
@@ -232,6 +266,7 @@ namespace QLN.Common.Infrastructure.AuthUser
             return group;
         }
 
+       
 
     }
 }

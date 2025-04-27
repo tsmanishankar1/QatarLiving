@@ -11,5 +11,6 @@ namespace QLN.Common.Infrastructure.IService
        where TUser : class
     {
         Task SendTwoFactorCode(TUser user, string email, string code);
+        Task SendOtpEmailAsync(string email, string otp);
     }
 }

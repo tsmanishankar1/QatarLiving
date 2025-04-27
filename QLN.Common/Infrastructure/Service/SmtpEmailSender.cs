@@ -53,6 +53,14 @@ namespace QLN.Common.Infrastructure.Service
             await SendEmailAsync(email, subject, body);
         }
 
+        public async Task SendOtpEmailAsync(string email, string otp)
+        {
+            var subject = "Your Email OTP - Qatar Living";
+            var body = $"Hi,<br/><br/>Your One-Time Password (OTP) is: <b>{otp}</b><br/><br/>Thanks,<br/>Qatar Living Team";
+
+            await SendEmailAsync(email, subject, body);
+        }
+
         private async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
         {
             var smtpConfig = _config.GetSection("Smtp");
