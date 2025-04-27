@@ -22,12 +22,12 @@
 }
 @if (signUpSucesss){
     <div class="popup-overlay">
-       <ModalDialog
+       <ModalDialog 
         Title="Account Created!" 
         Description="Account created successfully"
         ButtonName="Continue"
         StatusType="Success"
-        OnClick="CloseVerificationPopup" />
+        OnClick="CloseSuccessPopup" />
     </div> 
 }
 <div style="width: 100%; background-color: #F5F6FA; padding: 32px 16px;">
@@ -120,7 +120,7 @@
     </div>
 </MudPaper>
 
-              <MudText Typo="Typo.body1"  Style="font-weight: 400;">
+        <MudText Typo="Typo.body1"  Style="font-weight: 400;">
         Phone Number
         </MudText>
 
@@ -135,6 +135,7 @@
                 </MudSelectItem>
             }
         </MudSelect>
+        
         <MudTextField @bind-Value="_model.MobileNumber" 
                       Placeholder="Phone number" 
                       Class="phone-input" 
@@ -246,16 +247,23 @@
 <MudText Typo="Typo.body1"  Style="font-weight: 400;">
         Comnfirm Password
 </MudText>
-<MudTextField T="string"
+
+
+              <MudTextField T="string"
               Label="Confirm Password"
               Variant="Variant.Outlined"
-              InputType="InputType.Password"
+              InputType="@(_showConfirmPassword ? InputType.Text : InputType.Password)"
               FullWidth="true"
               Class="mt-4"
               @bind-Value="_confirmPassword"
               Style="background-color: #FFFFFF;"
               Required="true"
-              RequiredError="Please confirm your password" />
+              RequiredError="Please confirm your password"
+              For="@(() => _confirmPassword)"
+              Adornment="Adornment.End"
+              AdornmentIcon="@(_showConfirmPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
+              OnAdornmentClick="ToggleConfirmVisibility"
+              AdornmentColor="Color.Default" />
 
         <MudCheckBox @bind-Value="AcceptedTerms" Label="">
         <LabelContent>
@@ -290,22 +298,22 @@
 <MudGrid Justify="Justify.SpaceEvenly" GutterSize="12px" Class="mt-4">
     <MudItem xs="2">
         <MudButton Variant="Variant.Outlined" Style="background-color: #FFFFFF; border-color: #DDDDDD; height: 44px; width: 78px; border-radius: 8px; min-width: 50px; padding: 0;">
-            <img src="/images/google.svg" alt="Google" style="height: 24px;" />
+            <img src="images/google.svg" alt="Google" style="height: 24px;" />
         </MudButton>
     </MudItem>
     <MudItem xs="2">
         <MudButton Variant="Variant.Outlined" Style="background-color: #FFFFFF; border-color: #DDDDDD; height: 44px; width: 78px; min-width: 50px; padding: 0; border-radius: 8px;">
-            <img src="/images/apple.svg" alt="Apple" style="height: 24px;" />
+            <img src="images/apple.svg" alt="Apple" style="height: 24px;" />
         </MudButton>
     </MudItem>
     <MudItem xs="2">
         <MudButton Variant="Variant.Outlined" Style="background-color: #FFFFFF; border-color: #DDDDDD; height: 44px; width: 78px; min-width: 50px; padding: 0; border-radius: 8px;">
-            <img src="/images/microsoft.svg" alt="Microsoft" style="height: 24px;" />
+            <img src="images/microsoft.svg" alt="Microsoft" style="height: 24px;" />
         </MudButton>
     </MudItem>
     <MudItem xs="2">
         <MudButton Variant="Variant.Outlined" Style="background-color: #FFFFFF; border-color: #DDDDDD; height: 44px; width: 78px; min-width: 50px; padding: 0; border-radius: 8px;">
-            <img src="/images/facebook.svg" alt="Facebook" style="height: 24px;" />
+            <img src="images/facebook.svg" alt="Facebook" style="height: 24px;" />
         </MudButton>
     </MudItem>
 </MudGrid>
@@ -314,10 +322,13 @@
 
 
 
-    <MudText Align="Align.Center" Class="mt-4">
-        Already have an account? 
-         <MudText Link="true" Style="color: #FF7F38;" Class="ml-1 d-inline">Sign In</MudText>
-    </MudText>
+    <MudText Align="Align.Center" Class="mt-4 d-flex justify-center">
+    Already have an account? 
+    <MudLink Href="/login" Class="ml-1" Style="color: #FF7F38;">
+        Sign In
+    </MudLink>
+</MudText>
+    
  </div>
 </div>
 
@@ -343,6 +354,7 @@
     private DateTime? _dateOfBirth;
     private List<string> _validationErrors = new();
     private bool _showPassword = false;
+    private bool _showConfirmPassword = false;
     private bool _showVerificationPopup = false;
     private bool showVerificationSuccess = false;
     private bool showMobileVerificationSuccess = false;
@@ -371,6 +383,10 @@
     private void TogglePasswordVisibility()
     {
         _showPassword = !_showPassword;
+    }
+    private void ToggleConfirmVisibility()
+    {
+        _showConfirmPassword = !_showConfirmPassword;
     }
     private void RemoveError(string error)
 {
@@ -549,12 +565,12 @@ if (!AcceptedTerms)
             }
             else
             {
-                Snackbar.Add(res.Message, Severity.Error);
+                 _validationErrors.Add(res.Message);
             } 
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Signup failed: {ex.Message}", Severity.Error);
+            _validationErrors.Add($"Signup failed: {ex.Message}");
         }
         finally
         {
@@ -569,7 +585,7 @@ if (!AcceptedTerms)
         email = _model.EmailAddress;
      if (string.IsNullOrWhiteSpace(_model.EmailAddress))
         {
-            Snackbar.Add("Please enter your email address.", Severity.Warning);
+            _validationErrors.Add("Please enter your email address.");
             return;
             }   
         var payload = new
@@ -589,12 +605,12 @@ if (!AcceptedTerms)
             }
             else
             {
-                Snackbar.Add(res.Message, Severity.Error);
+                 _validationErrors.Add(res.Message);
             } 
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Signup failed: {ex.Message}", Severity.Error);
+            _validationErrors.Add($"Signup failed: {ex.Message}");
         }
         finally
         {
@@ -609,7 +625,7 @@ if (!AcceptedTerms)
         email = _model.MobileNumber;
      if (string.IsNullOrWhiteSpace(_model.MobileNumber))
         {
-            Snackbar.Add("Please enter your Mobile Number", Severity.Warning);
+             _validationErrors.Add("Please enter your phone number.");
             return;
             }   
         var payload = new
@@ -629,12 +645,12 @@ if (!AcceptedTerms)
             }
             else
             {
-                Snackbar.Add(res.Message, Severity.Error);
+                    _validationErrors.Add(res.Message);
             } 
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Signup failed: {ex.Message}", Severity.Error);
+            _validationErrors.Add($"Signup failed: {ex.Message}");
         }
         finally
         {
@@ -663,7 +679,7 @@ private void CloseSuccessPopup()
         public DateTime? DateOfBirth { get; set; } = DateTime.Today;
         public string Password { get; set; }
         public string Nationality { get; set; }
-        public string LanguagePreferences { get; set; } = "english";
+        public string LanguagePreferences { get; set; } = "English";
         public string Location { get; set; }
     }
 
