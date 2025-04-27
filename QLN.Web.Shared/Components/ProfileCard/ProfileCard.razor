@@ -1,4 +1,5 @@
 @using MudBlazor
+@inject NavigationManager Navigation
 
 <MudPaper Class="profile-container mx-auto " Elevation="1" Style="max-width: 400px; background-color: white;">
     <MudGrid Justify="Justify.Center" Class="text-center" Style="gap: 0">
@@ -51,7 +52,7 @@
         <MudButton T="string" Variant="Variant.Filled"
                    Color="Color.Primary"
                    Class="edit-button"
-                   OnClick="OnEditClicked"
+                    OnClick="@(() => Navigation.NavigateTo("/edit-profile"))"
                    Style="background-color: #1976d2; text-transform: none; font-weight: 600;">
             Edit Profile
         </MudButton>
