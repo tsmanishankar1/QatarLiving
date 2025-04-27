@@ -10,6 +10,7 @@
     <ScopedCssEnabled>true</ScopedCssEnabled>
 	  <DevelopmentServerPort>5047</DevelopmentServerPort>
 	  <DevelopmentServerV6Port>5048</DevelopmentServerV6Port>
+
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,5 +22,8 @@
 	  <ProjectReference Include="..\QLN.Web.Shared\QLN.Web.Shared.csproj" />
 
   </ItemGroup>
+
+	
+
 
 </Project>
