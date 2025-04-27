@@ -467,11 +467,19 @@ namespace QLN.Common.Infrastructure.Service
             return TypedResults.Ok(ApiResponse<object>.Success("Profile data", new
             {
                 user.UserName,
+                user.Firstname,
+                user.Lastname,
                 user.Email,
                 user.PhoneNumber,
                 user.Gender,
                 user.Dateofbirth,
                 user.Location,
+                user.Languagepreferences,
+                user.Nationality,
+                user.Mobileoperator,                 
+                user.PhoneNumberConfirmed, 
+                user.EmailConfirmed,
+                user.IsCompany,
                 user.Isactive,
                 user.TwoFactorEnabled
             }));
@@ -488,10 +496,13 @@ namespace QLN.Common.Infrastructure.Service
                 return TypedResults.Unauthorized();
 
             user.Firstname = request.FirstName;
-            user.Lastname = request.LastName;
-            user.PhoneNumber = request.MobileNumber;
+            user.Lastname = request.LastName;                                   
+            user.Gender = request.Gender;
+            user.Dateofbirth = request.Dateofbirth;
+            user.Nationality = request.Nationality;
             user.Location = request.Location;
-
+            user.PhoneNumber = request.MobileNumber;
+            user.Languagepreferences = request.Languagepreferences;
             await _userManager.UpdateAsync(user);
 
             return TypedResults.Ok(ApiResponse<string>.Success("Profile updated successfully"));
