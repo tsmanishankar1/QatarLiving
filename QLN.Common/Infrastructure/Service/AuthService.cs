@@ -127,18 +127,9 @@ namespace QLN.Common.Infrastructure.Service
             var response = ApiResponse<string>.Success("User registered successfully.", null);
             return TypedResults.Ok(response);
         }
-
-
-        // Send OTP to Email (using Identity Token Provider)
+        
         public async Task<Ok<ApiResponse<string>>> SendEmailOtpAsync(string email)
-        {
-            //var otp = new Random().Next(100000, 999999).ToString();
-            //TempVerificationStore.EmailOtps[email] = otp; // Store in memory
-
-            //await _emailSender.SendOtpEmailAsync(email, otp);
-
-            //return TypedResults.Ok(ApiResponse<string>.Success("OTP sent to your email."));
-
+        {           
             var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
 
             if (user != null)
@@ -192,8 +183,7 @@ namespace QLN.Common.Infrastructure.Service
 
             return TypedResults.Ok(ApiResponse<string>.Success("OTP sent to your email."));
         }
-
-        // Verify Email OTP
+        
         public async Task<Results<Ok<ApiResponse<string>>, BadRequest<string>>> VerifyEmailOtpAsync(string email, string otp)
         {           
             var user = await _userManager.FindByEmailAsync(email);
@@ -207,8 +197,7 @@ namespace QLN.Common.Infrastructure.Service
             TempVerificationStore.VerifiedEmails.Add(email);
             return TypedResults.Ok(ApiResponse<string>.Success("Email verified successfully."));
         }
-
-        // Send OTP to Phone (write to text file)
+        
         public async Task<Ok<ApiResponse<string>>> SendPhoneOtpAsync(string phoneNumber)
         {
            
@@ -271,8 +260,7 @@ namespace QLN.Common.Infrastructure.Service
             return TypedResults.Ok(ApiResponse<string>.Success("OTP generated for phone."));
 
         }
-
-        // Verify Phone OTP
+        
         public async Task<Results<Ok<ApiResponse<string>>, BadRequest<string>>> VerifyPhoneOtpAsync(string phoneNumber, string otp)
         {
            
