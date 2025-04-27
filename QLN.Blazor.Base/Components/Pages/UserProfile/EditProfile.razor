@@ -277,12 +277,18 @@
             
             if (response.Status && response.Data != null)
             {
+                _model.FirstName = response.Data.firstname;  // lowercase access
+                _model.LastName = response.Data.lastname;    // lowercase access
                 _model.UserName = response.Data.UserName;
                 _model.EmailAddress = response.Data.Email;
                 _model.MobileNumber = response.Data.PhoneNumber;
                 _model.Gender = response.Data.Gender;
-                _dateOfBirth = DateTime.Parse(response.Data.DateOfBirth);
+                _model.Nationality = response.Data.nationality; // lowercase access
+                _model.LanguagePreferences = response.Data.languagepreferences; // lowercase access
+                _dateOfBirth = DateTime.Parse(response.Data.dateofbirth); // lowercase access
                 EnableTwoFactor = response.Data.TwoFactorEnabled;
+                showVerificationSuccess = response.Data.EmailConfirmed;
+                showMobileVerificationSuccess = response.Data.PhoneNumberConfirmed;
                 
                 // Set country based on phone number prefix if needed
                 if (!string.IsNullOrEmpty(_model.MobileNumber))
@@ -359,12 +365,11 @@
             lastname = _model.LastName,
             dateofbirth = _dateOfBirth?.ToString("yyyy-MM-dd"), 
             gender = _model.Gender,
-            mobileOperator = "vodofone", // You might want to make this dynamic
+            mobileOperator = "vodofone", 
             mobilenumber = _model.MobileNumber,
             nationality = _model.Nationality,
             languagepreferences = _model.LanguagePreferences,
             enableTwoFactor = EnableTwoFactor,
-            marketingOptIn = MarketingOptIn
         }; 
 
         try
@@ -374,7 +379,7 @@
             if (res.Status)
             {
                 Snackbar.Add("Profile updated successfully!", Severity.Success);
-                await LoadUserProfile(); // Refresh data
+                await LoadUserProfile(); 
             }
             else
             {
@@ -448,19 +453,25 @@
         public string Nationality { get; set; }
         public string LanguagePreferences { get; set; } = "english";
     }
-
     public class ProfileData
     {
         public string UserName { get; set; }
+        public string firstname { get; set; } 
+        public string lastname { get; set; }   
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
         public string Gender { get; set; }
-        public string DateOfBirth { get; set; }
+        public string dateofbirth { get; set; } 
         public string Location { get; set; }
+        public string languagepreferences { get; set; } 
+        public string nationality { get; set; } 
+        public string mobileoperator { get; set; } 
+        public bool PhoneNumberConfirmed { get; set; }
+        public bool EmailConfirmed { get; set; }
+        public bool IsCompany { get; set; }
         public bool IsActive { get; set; }
         public bool TwoFactorEnabled { get; set; }
     }
-
     public class ResponseModel<T>
     {
         public bool Status { get; set; }
