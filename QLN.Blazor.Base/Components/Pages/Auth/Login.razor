@@ -183,11 +183,7 @@
                     NavManager.NavigateTo("/select-verification");
                     return;
                 }
-                else
-                {
-                    Snackbar.Add($"Logged in as {result.Data.Emailaddress}", Severity.Success);
-                    NavManager.NavigateTo("/");
-                }
+              
             }
             else
             {
