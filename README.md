@@ -57,19 +57,68 @@ Install the following extensions in Visual Studio Code:
    dotnet restore
    ```
 
-3. **Run the Backend API**  
-   Navigate to the backend API directory and run the project:  
-   ```bash
-   cd QLN.Backend.API
-   dotnet run
-   ```
+3. **Set Up VS Code for Multi-Project Debugging**  
+   Open the repository in Visual Studio Code. Ensure the solution file (`QLN-V2.sln`) is loaded. Configure a `launch.json` file to enable debugging for both the backend API and the Blazor frontend.  
 
-4. **Run the Blazor Frontend**  
-   Navigate to the Blazor project directory and run the project:  
-   ```bash
-   cd QLN.Blazor.Base
-   dotnet run
-   ```
+   - Open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P` on macOS) and select `Debug: Open launch.json`.
+   - Add the following configurations:
+
+     ```json
+     {
+       "version": "0.2.0",
+       "configurations": [
+         {
+           "name": "Launch Backend API",
+           "type": "coreclr",
+           "request": "launch",
+           "preLaunchTask": "build",
+           "program": "${workspaceFolder}/QLN.Backend.API/bin/Debug/net8.0/QLN.Backend.API.dll",
+           "args": [],
+           "cwd": "${workspaceFolder}/QLN.Backend.API",
+           "stopAtEntry": false,
+           "serverReadyAction": {
+             "action": "openExternally",
+             "pattern": "Now listening on: (https?://\\S+)",
+             "uriFormat": "%s"
+           },
+           "env": {},
+           "sourceFileMap": {
+             "/Views": "${workspaceFolder}/Views"
+           }
+         },
+         {
+           "name": "Launch Blazor Frontend",
+           "type": "coreclr",
+           "request": "launch",
+           "preLaunchTask": "build",
+           "program": "${workspaceFolder}/QLN.Blazor.Base/bin/Debug/net8.0/QLN.Blazor.Base.dll",
+           "args": [],
+           "cwd": "${workspaceFolder}/QLN.Blazor.Base",
+           "stopAtEntry": false,
+           "serverReadyAction": {
+             "action": "openExternally",
+             "pattern": "Now listening on: (https?://\\S+)",
+             "uriFormat": "%s"
+           },
+           "env": {},
+           "sourceFileMap": {
+             "/Views": "${workspaceFolder}/Views"
+           }
+         }
+       ],
+       "compounds": [
+         {
+           "name": "Run Both Projects",
+           "configurations": ["Launch Backend API", "Launch Blazor Frontend"]
+         }
+       ]
+     }
+     ```
+
+4. **Run and Debug the Projects**  
+   - Open the Debug view in Visual Studio Code (`Ctrl+Shift+D` or `Cmd+Shift+D` on macOS).
+   - Select the desired configuration (e.g., "Launch Backend API" or "Launch Blazor Frontend") and click the green play button to start debugging.
+   - You can also run both configurations simultaneously by adding them to a compound configuration in the `launch.json` file.
 
 5. **Access the Applications**  
    - Backend API: `http://localhost:5200` (or the port specified in `launchSettings.json`)
