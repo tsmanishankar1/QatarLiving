@@ -4,21 +4,12 @@
 @inject NavigationManager NavManager
 @inject UserState UserState
 @using QLN.Blazor.Base.Services
+@using QLN.Blazor.Base.Helpers
 @using MudBlazor
 @using QLN.Blazor.Base.Models
 @using QLN.Web.Shared.Components.CustomButton
 @using QLN.Web.Shared.Components.ModalDialog
 
-@if (loginSucesss){
-    <div class="popup-overlay">
-       <ModalDialog
-        Title="Verification Successful" 
-        Description="Your email has been successfully verified."
-        ButtonName="Continue"
-        StatusType="Success"
-        OnClick="CloseVerificationPopup" />
-    </div> 
-}
 <div style="width: 100%; background-color: #F5F6FA; padding: 32px 16px;">
     <div style="max-width: 400px; margin: 0 auto;">
     <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-4">Log in to your account</MudText>
@@ -28,18 +19,21 @@
     </MudText>
     </MudStack>
      <MudText Typo="Typo.body1"  Style="font-weight: 400;">
-        Email or Phone Number
-        </MudText>
-    <MudTextField T="string"
-    Label="Email or Username"
-    Variant="Variant.Outlined"
-    FullWidth="true"
-    InputType="InputType.Text"
-    Style="background-color: #FFFFFF;"
-    @bind-Value="_username"
-    Required="true"
-    Error="@(!string.IsNullOrEmpty(_usernameError))"
-    ErrorText="@_usernameError" />
+        Email or Phone Number </MudText>
+        <MudTextField T="string"
+                      Label="Email or Username"
+                      Variant="Variant.Outlined"
+                      FullWidth="true"
+                      InputType="InputType.Text"
+                      Class="mud-text-field-custom"
+                      Required="true"
+                      Error="@(!string.IsNullOrEmpty(_usernameError))"
+                      ErrorText="@_usernameError"
+                      Immediate="true"
+                       ValueChanged="OnEmailChanged"
+                      ValueExpression="(() => _username)"
+                      OnBlur="@ValidateUsername" />
+
 
         <MudText Typo="Typo.body1"  Style="font-weight: 400;">
         Password
@@ -49,16 +43,18 @@
     Variant="Variant.Outlined"
     InputType="@(_showPassword ? InputType.Text : InputType.Password)"
     FullWidth="true"
-    Class="mt-4"
-    @bind-Value="_password"
-    Style="background-color: #FFFFFF;"
+     Class="mud-text-field-custom mt-4" 
     Required="true"
     Adornment="Adornment.End"
     AdornmentIcon="@(_showPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
     OnAdornmentClick="TogglePasswordVisibility"
     AdornmentColor="Color.Default"
     Error="@(!string.IsNullOrEmpty(_passwordError))"
-    ErrorText="@_passwordError" />
+    ErrorText="@_passwordError"
+                      Immediate="true"
+                      ValueChanged="OnPasswordChanged"
+                      ValueExpression="(() => _password)"
+                      OnBlur="ValidatePassword" />
 
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
@@ -87,18 +83,19 @@
 
     <MudGrid Justify="Justify.SpaceEvenly" GutterSize="12px" Class="mt-4">
     <MudItem xs="2">
-        <MudButton Variant="Variant.Outlined" Style="background-color: #FFFFFF; border-color: #DDDDDD; height: 44px; width: 78px; border-radius: 8px; min-width: 50px; padding: 0;">
+                <MudButton Variant="Variant.Outlined" Class="social-login-button">
             <img src="/images/google.svg" alt="Google" style="height: 24px;" />
         </MudButton>
     </MudItem>
     <MudItem xs="2">
-        <MudButton Variant="Variant.Outlined" Style="background-color: #FFFFFF; border-color: #DDDDDD; height: 44px; width: 78px; min-width: 50px; padding: 0; border-radius: 8px;">
+                <MudButton Variant="Variant.Outlined" Class="social-login-button">
             <img src="/images/microsoft.svg" alt="Microsoft" style="height: 24px;" />
         </MudButton>
     </MudItem>
     <MudItem xs="2">
-        <MudButton Variant="Variant.Outlined" Style="background-color: #FFFFFF; border-color: #DDDDDD; height: 44px; width: 78px; min-width: 50px; padding: 0; border-radius: 8px;">
-            <img src="/images/facebook.svg" alt="Facebook" style="height: 24px;" />
+                <MudButton Variant="Variant.Outlined" Class="social-login-button">
+ 
+            <img src="/images/facebook.svg" alt="Facebook" />
         </MudButton>
     </MudItem>
     </MudGrid>
@@ -120,45 +117,75 @@
     private bool loginSucesss = false;
 
 
-    // New validation messages
     private string _usernameError = string.Empty;
     private string _passwordError = string.Empty;
 
-    private void CloseVerificationPopup()
-{
-    loginSucesss = false;
-}
+   
+    private async Task OnEmailChanged(string value)
+    {
+        _username = value;
+        ValidateUsername();
+    }
 
+
+    private void TogglePasswordVisibility()
+    {
+        _showPassword = !_showPassword;
+    }
+
+
+    private void ValidateUsername()
+    {
+        _usernameError = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(_username))
+        {
+            _usernameError = "Please enter your email or phone number.";
+        }
+        else if (!ValidationHelper.IsValidEmail(_username) && !ValidationHelper.IsValidPhoneNumber(_username))
+        {
+            _usernameError = "Please enter a valid email or phone number.";
+        }
+
+        StateHasChanged(); 
+    }
+    private async Task OnPasswordChanged(string value)
+    {
+        _password = value;
+        ValidatePassword();
+    }
+
+    private void ValidatePassword()
+    {
+        _passwordError = ValidationHelper.ValidatePassword(_password);
+        StateHasChanged(); 
+    }
     private async Task PerformLogin()
     {
-        // Clear previous errors
         _usernameError = string.Empty;
         _passwordError = string.Empty;
 
         bool hasError = false;
 
-        // Validate username/email
         if (string.IsNullOrWhiteSpace(_username))
         {
             _usernameError = "Please enter your email or phone number.";
             hasError = true;
         }
-        else if (!IsValidEmail(_username) && !IsPhoneNumber(_username))
+        else if (!ValidationHelper.IsValidEmail(_username) && !ValidationHelper.IsValidPhoneNumber(_username))
         {
             _usernameError = "Please enter a valid email or phone number.";
             hasError = true;
         }
-
-        // Validate password
-        if (string.IsNullOrWhiteSpace(_password))
+        _passwordError = ValidationHelper.ValidatePassword(_password);
+        if (!string.IsNullOrEmpty(_passwordError))
         {
-            _passwordError = "Please enter your password.";
             hasError = true;
         }
 
         if (hasError)
         {
-            StateHasChanged(); 
+            StateHasChanged();
             return;
         }
 
@@ -168,27 +195,32 @@
         try
         {
             Console.WriteLine($"Payload: {payload}");
-            var result = await Api.PostAsync<object, ResponseModel<LoginResponseData>>("auth/login", payload);
+            var response = await Api.PostAsync<object, ResponseModel<LoginResponseData>>("auth/login", payload);
 
-            if (result?.Status == true)
+            if (response?.StatusCode == 200)
             {
-                UserState.Email = result.Data.Emailaddress;
-                UserState.mobileNumber = result.Data.Mobilenumber;
-                modalData = ErrorHandler.HandleApiError(result);
+                UserState.Email = response.Data.Emailaddress;
+                UserState.mobileNumber = response.Data.Mobilenumber;
                 StateHasChanged();
-                
-                if (result.Data.IsTwoFactorEnabled)
+
+                if (response.Data.IsTwoFactorEnabled)
                 {
-                    Snackbar.Add($"Logged in as {result.Data.Emailaddress}", Severity.Success);
+                    Snackbar.Add($"Logged in as {response.Data.Emailaddress}", Severity.Success);
                     NavManager.NavigateTo("/select-verification");
                     return;
                 }
-              
+                else if (!response.Data.IsTwoFactorEnabled)
+                {
+                    Snackbar.Add($"Logged in as {response.Data.Emailaddress}", Severity.Success);
+                    NavManager.NavigateTo("/");
+                }
+                else
+                {
+                    Snackbar.Add("Error: Could not determine two-factor authentication status.", Severity.Error);
+                }
+
             }
-            else
-            {
-                Snackbar.Add("Login failed. Please check credentials.", Severity.Error);
-            }
+           
         }
         catch (Exception ex)
         {
@@ -200,30 +232,9 @@
         }
     }
 
-    private void TogglePasswordVisibility()
-    {
-        _showPassword = !_showPassword;
-    }
 
-    // Helper: Basic email validation
-    private bool IsValidEmail(string email)
-    {
-        try
-        {
-            var addr = new System.Net.Mail.MailAddress(email);
-            return addr.Address == email;
-        }
-        catch
-        {
-            return false;
-        }
-    }
+    
 
-    // Helper: Basic phone number check
-    private bool IsPhoneNumber(string input)
-    {
-        return input.All(char.IsDigit) && input.Length >= 8 && input.Length <= 15;
-    }
 
     public class LoginResponseData
     {
@@ -248,18 +259,4 @@
     }
 }
 
-<style>
-    .popup-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px); 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000; 
-}
-</style>
+

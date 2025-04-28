@@ -21,5 +21,35 @@ namespace QLN.Blazor.Base.Helpers
             var regex = new Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
             return regex.IsMatch(email);
         }
+
+        public static string ValidatePassword(string password)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                return "Please enter your password.";
+            }
+            else if (password.Length < 8)
+            {
+                return "Password must be at least 8 characters long.";
+            }
+            else if (!password.Any(char.IsDigit))
+            {
+                return "Password must contain at least one digit.";
+            }
+            else if (!password.Any(char.IsLower))
+            {
+                return "Password must contain at least one lowercase letter.";
+            }
+            else if (!password.Any(char.IsUpper))
+            {
+                return "Password must contain at least one uppercase letter.";
+            }
+            else if (!password.Any(ch => !char.IsLetterOrDigit(ch)))
+            {
+                return "Password must contain at least one special character.";
+            }
+
+            return string.Empty; 
+        }
     }
 }
