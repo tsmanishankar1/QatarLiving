@@ -2,12 +2,15 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
+using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.Model;
 using System;
@@ -31,6 +34,8 @@ namespace QLN.Common.Infrastructure.Service
         private readonly LinkGenerator _linkGenerator;
         private readonly ITokenService _tokenService;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IConfiguration _config;
+        private readonly IEventlogger _log;
 
 
         public AuthService(
@@ -38,7 +43,9 @@ namespace QLN.Common.Infrastructure.Service
             RoleManager<IdentityRole<Guid>> roleManager,
             IExtendedEmailSender<ApplicationUser> emailSender,
             LinkGenerator linkGenerator,
-            ITokenService tokenService,            
+            ITokenService tokenService,
+            IConfiguration configuration,
+            IEventlogger logger,
             IHttpContextAccessor httpContextAccessor)
         {
             _userManager = userManager;
@@ -47,87 +54,142 @@ namespace QLN.Common.Infrastructure.Service
             _linkGenerator = linkGenerator;
             _tokenService = tokenService;
             _httpContextAccessor = httpContextAccessor;
+            _config = configuration;
+            _log = logger;
         }
 
 
-        public async Task<Results<Ok<ApiResponse<string>>, ValidationProblem>> RegisterAsync(RegisterRequest request, HttpContext context)
+        public async Task<IResult> RegisterAsync(RegisterRequest request, HttpContext context)
         {
-            if (!TempVerificationStore.VerifiedEmails.Contains(request.Emailaddress) ||
-                !TempVerificationStore.VerifiedPhoneNumbers.Contains(request.Mobilenumber))
+            try
             {
-                return TypedResults.Ok(ApiResponse<string>.Fail("Please verify your Email and Phone Number before registering."));
-            }
+                // Verification check
+                if (!TempVerificationStore.VerifiedEmails.Contains(request.Emailaddress) ||
+                    !TempVerificationStore.VerifiedPhoneNumbers.Contains(request.Mobilenumber))
+                {
+                    return Results.BadRequest(new ApiResponse<string>
+                    {
+                        Status = false,
+                        Message = "Please verify your Email and Phone Number before registering."
+                    });
+                }
 
-            var existingUser = await _userManager.FindByEmailAsync(request.Emailaddress);
-            if (existingUser == null)
+                var existingUser = await _userManager.FindByEmailAsync(request.Emailaddress);
+                if (existingUser == null)
+                {
+                    return Results.NotFound(new ApiResponse<string>
+                    {
+                        Status = false,
+                        Message = "Email not verified. Please verify before registering."
+                    });
+                }
+
+                if (existingUser.Firstname != "Temp")
+                {
+                    return Results.Conflict(new ApiResponse<string>
+                    {
+                        Status = false,
+                        Message = "Email is already registered. Please login."
+                    });
+                }
+
+                // Username check
+                var usernameExists = await _userManager.FindByNameAsync(request.Username);
+                if (usernameExists != null)
+                {
+                    return Results.BadRequest(new ApiResponse<string>
+                    {
+                        Status = false,
+                        Message = $"Username '{request.Username}' is already taken."
+                    });
+                }
+
+                // Mobile validation
+                var mobileRegex = new Regex(@"^(\+?\d{1,3})?[\s]?\d{10,15}$");
+                if (!mobileRegex.IsMatch(request.Mobilenumber))
+                {
+                    return Results.BadRequest(new ApiResponse<string>
+                    {
+                        Status = false,
+                        Message = "Invalid mobile number format. Please enter a valid 10 to 15 digits."
+                    });
+                }
+
+                // Age validation
+                var today = DateOnly.FromDateTime(DateTime.Today);
+                var age = today.Year - request.Dateofbirth.Year;
+                if (request.Dateofbirth > today.AddYears(-age)) age--;
+
+                if (age < 18)
+                {
+                    return Results.BadRequest(new ApiResponse<string>
+                    {
+                        Status = false,
+                        Message = "You must be at least 18 years old to register."
+                    });
+                }
+
+                // Update user properties
+                existingUser.UserName = request.Username;
+                existingUser.Firstname = request.FirstName;
+                existingUser.Lastname = request.Lastname;
+                existingUser.Dateofbirth = request.Dateofbirth;
+                existingUser.Gender = request.Gender;
+                existingUser.Mobileoperator = request.MobileOperator;
+                existingUser.PhoneNumber = request.Mobilenumber;
+                existingUser.Nationality = request.Nationality;
+                existingUser.Languagepreferences = request.Languagepreferences;
+                existingUser.Location = request.Location;
+                existingUser.IsCompany = false;
+                existingUser.EmailConfirmed = true;
+                existingUser.PhoneNumberConfirmed = true;
+                existingUser.Isactive = true;
+
+                var passwordHash = _userManager.PasswordHasher.HashPassword(existingUser, request.Password);
+                existingUser.PasswordHash = passwordHash;
+
+                var updateResult = await _userManager.UpdateAsync(existingUser);
+
+                if (!updateResult.Succeeded)
+                {
+                    var errors = updateResult.Errors
+                        .GroupBy(e => e.Code)
+                        .ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
+
+                    return Results.ValidationProblem(errors,
+                        detail: "One or more errors occurred during registration.",
+                        statusCode: 400);
+                }
+
+                if (!await _roleManager.RoleExistsAsync("User"))
+                    await _roleManager.CreateAsync(new IdentityRole<Guid>("User"));
+
+                await _userManager.AddToRoleAsync(existingUser, "User");
+
+                return Results.Ok(new ApiResponse<string>
+                {
+                    Status = true,
+                    Message = "User registered successfully."
+                });
+            }
+            catch (Exception ex)
             {
-                return TypedResults.Ok(ApiResponse<string>.Fail("Email not verified. Please verify before registering."));
+                _log.LogException(ex);
+                return Results.Problem(
+                    detail: "An unexpected error occurred. Please try again later.",
+                    statusCode: StatusCodes.Status500InternalServerError,
+                    extensions: new Dictionary<string, object?>
+                    {
+                        {
+                            "response", new ApiResponse<string>
+                            {
+                                Status = false,
+                                Message = "An unexpected error occurred. Please try again later."
+                            }}
+                    });
             }
-
-            // Extra check
-            if (existingUser.Firstname != "Temp")
-            {
-                return TypedResults.Ok(ApiResponse<string>.Fail("Email is already registered. Please login."));
-            }
-
-            // mobile no validation
-            var mobileRegex = new Regex(@"^(\+?\d{1,3})?[\s]?\d{10,15}$");
-            if (!mobileRegex.IsMatch(request.Mobilenumber))
-            {
-                return TypedResults.Ok(ApiResponse<string>.Fail("Invalid mobile number format. Please enter a valid 10 to 15 digits."));
-            }
-
-            // Age validation
-            var today = DateOnly.FromDateTime(DateTime.Today);
-            var age = today.Year - request.Dateofbirth.Year;
-            if (request.Dateofbirth > today.AddYears(-age))
-            {
-                age--;
-            }
-
-            if (age < 18)
-            {
-                return TypedResults.Ok(ApiResponse<string>.Fail("You must be at least 18 years old to register."));
-            }
-
-            
-            existingUser.UserName = request.Username;
-            existingUser.Firstname = request.FirstName;
-            existingUser.Lastname = request.Lastname;
-            existingUser.Dateofbirth = request.Dateofbirth;
-            existingUser.Gender = request.Gender;
-            existingUser.Mobileoperator = request.MobileOperator;
-            existingUser.PhoneNumber = request.Mobilenumber;
-            existingUser.Nationality = request.Nationality;
-            existingUser.Languagepreferences = request.Languagepreferences;
-            existingUser.Location = request.Location;
-            existingUser.IsCompany = false;
-            existingUser.EmailConfirmed = true;
-            existingUser.PhoneNumberConfirmed = true;
-            existingUser.Isactive = true;
-
-            var passwordHash = _userManager.PasswordHasher.HashPassword(existingUser, request.Password);
-            existingUser.PasswordHash = passwordHash;
-
-            var updateResult = await _userManager.UpdateAsync(existingUser);
-
-            if (!updateResult.Succeeded)
-            {
-                var errors = updateResult.Errors
-                    .GroupBy(e => e.Code)
-                    .ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
-                return TypedResults.ValidationProblem(errors);
-            }
-
-            if (!await _roleManager.RoleExistsAsync("User"))
-                await _roleManager.CreateAsync(new IdentityRole<Guid>("User"));
-
-            await _userManager.AddToRoleAsync(existingUser, "User");
-
-            var response = ApiResponse<string>.Success("User registered successfully.", null);
-            return TypedResults.Ok(response);
         }
-        
+
         public async Task<Ok<ApiResponse<string>>> SendEmailOtpAsync(string email)
         {           
             var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
@@ -282,8 +344,9 @@ namespace QLN.Common.Infrastructure.Service
             {
                 var code = await _userManager.GeneratePasswordResetTokenAsync(user);
                 var encodedCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+                var baseUrl = _config.GetSection("BaseUrl")["resetPassword"];
 
-                var resetUrl = $"http://localhost:5047/reset-password?email={Uri.EscapeDataString(request.Email)}&code={encodedCode}";
+                var resetUrl = $"{baseUrl}?email={Uri.EscapeDataString(request.Email)}&code={encodedCode}";
 
                 await _emailSender.SendPasswordResetLinkAsync(user, user.Email, resetUrl);
             }
@@ -319,53 +382,67 @@ namespace QLN.Common.Infrastructure.Service
             return TypedResults.Ok(ApiResponse<string>.Success("Password has been reset successfully"));
         }
 
-        public async Task<Results<Ok<ApiResponse<LoginResponse>>, UnauthorizedHttpResult, ValidationProblem>> LoginAsync(LoginRequest request)
+        public async Task<Results<Ok<ApiResponse<LoginResponse>>, BadRequest<ApiResponse<string>>, UnauthorizedHttpResult, ValidationProblem>> LoginAsync(LoginRequest request)
         {
-            var user = await _userManager.Users.FirstOrDefaultAsync(u =>
+            try
+            {
+                var user = await _userManager.Users.FirstOrDefaultAsync(u =>
                 u.UserName == request.UsernameOrEmailOrPhone ||
                 u.Email == request.UsernameOrEmailOrPhone ||
                 u.PhoneNumber == request.UsernameOrEmailOrPhone);
 
-            if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
-                return TypedResults.Unauthorized();
+                if (user == null)
+                {
+                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid username"));
+                }
 
-            if (!await _userManager.IsEmailConfirmedAsync(user))
-            {
-                return TypedResults.ValidationProblem(new Dictionary<string, string[]> {
-                { "Email", new[] { "Email not confirmed." } }
-            });
-            }
+                if (!await _userManager.CheckPasswordAsync(user, request.Password))
+                {
+                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid password"));
+                }
 
-            if (user.TwoFactorEnabled)
-            {
-                var code = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
-                await _emailSender.SendTwoFactorCode(user, user.Email, code);
+                if (!await _userManager.IsEmailConfirmedAsync(user))
+                {
+                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Email not confirmed."));
+                }
 
-                return TypedResults.Ok(ApiResponse<LoginResponse>.Success("2FA code sent to email. Please verify to complete login.", new LoginResponse
+
+                if (user.TwoFactorEnabled)
+                {
+                    var code = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
+                    await _emailSender.SendTwoFactorCode(user, user.Email, code);
+
+                    return TypedResults.Ok(ApiResponse<LoginResponse>.Success("2FA code sent to email. Please verify to complete login.", new LoginResponse
+                    {
+                        Username = user.UserName,
+                        Emailaddress = user.Email,
+                        Mobilenumber = user.PhoneNumber,
+                        AccessToken = string.Empty,
+                        RefreshToken = string.Empty,
+                        IsTwoFactorEnabled = true
+                    }));
+                }
+
+                var accessToken = await _tokenService.GenerateAccessToken(user);
+                var refreshToken = _tokenService.GenerateRefreshToken();
+
+                await _userManager.SetAuthenticationTokenAsync(user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshToken, refreshToken);
+                await _userManager.SetAuthenticationTokenAsync(user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
+
+                return TypedResults.Ok(ApiResponse<LoginResponse>.Success("Login successful", new LoginResponse
                 {
                     Username = user.UserName,
                     Emailaddress = user.Email,
                     Mobilenumber = user.PhoneNumber,
-                    AccessToken = string.Empty,
-                    RefreshToken = string.Empty,
-                    IsTwoFactorEnabled = true
+                    AccessToken = accessToken,
+                    RefreshToken = refreshToken
                 }));
             }
-
-            var accessToken = await _tokenService.GenerateAccessToken(user);
-            var refreshToken = _tokenService.GenerateRefreshToken();
-
-            await _userManager.SetAuthenticationTokenAsync(user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshToken, refreshToken);
-            await _userManager.SetAuthenticationTokenAsync(user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
-
-            return TypedResults.Ok(ApiResponse<LoginResponse>.Success("Login successful", new LoginResponse
+            catch(Exception ex)
             {
-                Username = user.UserName,
-                Emailaddress = user.Email,
-                Mobilenumber = user.PhoneNumber,
-                AccessToken = accessToken,
-                RefreshToken = refreshToken
-            }));
+                _log.LogException(ex);
+                return TypedResults.BadRequest(ApiResponse<string>.Fail("An unexpected error occurred. Please try again later."));
+            }
         }
 
         public async Task<Results<Ok<ApiResponse<LoginResponse>>, ValidationProblem, NotFound>> Verify2FAAsync(Verify2FARequest request)

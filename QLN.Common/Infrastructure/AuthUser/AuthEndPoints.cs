@@ -27,20 +27,37 @@ namespace QLN.Common.Infrastructure.AuthUser
         // register
         public static RouteGroupBuilder MapRegisterEndpoints(this RouteGroupBuilder group)
         {
-            group.MapPost("/register", async Task<Results<Ok<ApiResponse<string>>, ValidationProblem>>
+            group.MapPost("/register", async Task<Results<
+                Ok<ApiResponse<string>>,
+                BadRequest<ApiResponse<string>>,
+                ValidationProblem,
+                NotFound<ApiResponse<string>>,
+                Conflict<ApiResponse<string>>,
+                ProblemHttpResult>>
             (
                 [FromBody] RegisterRequest request,
                 HttpContext context,
-                [FromServices] IAuthService authService // Inject only the service now
+                [FromServices] IAuthService authService
             ) =>
             {
-                // Delegate to service method
-                return await authService.RegisterAsync(request, context);
+                var result = await authService.RegisterAsync(request, context);
+                return (Results<Ok<ApiResponse<string>>,
+                               BadRequest<ApiResponse<string>>,
+                               ValidationProblem,
+                               NotFound<ApiResponse<string>>,
+                               Conflict<ApiResponse<string>>,
+                               ProblemHttpResult>)result;
             })
             .WithName("Register")
             .WithTags("Authentication")
             .WithSummary("Register a new user")
-            .WithDescription("Registers a new user and sends an email confirmation link.");
+            .WithDescription("Registers a new user and sends an email confirmation link.")
+            .Produces<ApiResponse<string>>(StatusCodes.Status200OK)
+            .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest)
+            .Produces<ApiResponse<string>>(StatusCodes.Status404NotFound)
+            .Produces<ApiResponse<string>>(StatusCodes.Status409Conflict)
+            .Produces<ValidationProblemDetails>(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
             return group;
         }
@@ -156,7 +173,11 @@ namespace QLN.Common.Infrastructure.AuthUser
         // login              
         public static RouteGroupBuilder MapLoginEndpoint(this RouteGroupBuilder group)
         {
-            group.MapPost("/login", async Task<Results<Ok<ApiResponse<LoginResponse>>, UnauthorizedHttpResult, ValidationProblem>> (
+            group.MapPost("/login", async Task<Results<
+                Ok<ApiResponse<LoginResponse>>,
+                BadRequest<ApiResponse<string>>,
+                UnauthorizedHttpResult,
+                ValidationProblem>> (
                 [FromBody] LoginRequest request,
                 [FromServices] IAuthService authService
             ) =>
@@ -166,10 +187,17 @@ namespace QLN.Common.Infrastructure.AuthUser
             .WithName("Login")
             .WithTags("Authentication")
             .WithSummary("User login")
-            .WithDescription("Logs in a user using email/username/phone and password. If 2FA is enabled, a verification code is sent to the email.");
+            .WithDescription("Logs in a user using email/username/phone and password. If 2FA is enabled, a verification code is sent to the email.")
+            .Produces<ApiResponse<LoginResponse>>(StatusCodes.Status200OK)  
+            .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest) 
+            .Produces<ApiResponse<string>>(StatusCodes.Status404NotFound)
+            .Produces<ApiResponse<string>>(StatusCodes.Status409Conflict)
+            .Produces<ValidationProblemDetails>(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
             return group;
         }
+
 
 
         // verify twofactorAuth
