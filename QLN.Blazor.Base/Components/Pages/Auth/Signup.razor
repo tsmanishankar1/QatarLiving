@@ -127,8 +127,12 @@
         <MudPaper Class="phone-container pa-4" Elevation="0" Style="border: 1px solid #ccc; border-radius: 8px;">
     <div class="phone-flex">
         <MudSelect T="Country" @bind-Value="SelectedCountry" Class="country-select" DisableUnderline="true" Style="width: 120px;">
+            <MudSelectItem Value="@SelectedCountry">
+        <img src="@SelectedCountry.FlagUrl" style="width:24px; height:16px; margin-right:5px;" />
+        @SelectedCountry.CountryCode
+    </MudSelectItem>
             @foreach (var country in countries)
-            {
+            { 
                 <MudSelectItem Value="@country">
                     <img src="@country.FlagUrl" style="width:24px; height:16px; margin-right:5px;" />
                     @country.CountryCode
@@ -379,6 +383,10 @@
         public string Value { get; set; }
         public string FlagUrl { get; set; }
         public string CountryCode { get; set; }
+        public override string ToString()
+        {
+        return $"({CountryCode})"; 
+        }
     }
     private void TogglePasswordVisibility()
     {
@@ -610,7 +618,7 @@ if (!AcceptedTerms)
         }
         catch (Exception ex)
         {
-            _validationErrors.Add($"Signup failed: {ex.Message}");
+            _validationErrors.Add($"Verification failed: {ex.Message}");
         }
         finally
         {
