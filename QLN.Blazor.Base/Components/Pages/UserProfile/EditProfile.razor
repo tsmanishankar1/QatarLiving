@@ -1,18 +1,25 @@
 ﻿@page "/edit-profile"
+@rendermode InteractiveServer
+
 @inject ISnackbar Snackbar
 @inject NavigationManager NavManager
 @inject ApiService Api
-@using QLN.Blazor.Base.Services
-@using QLN.Blazor.Base.Components
 @inject UserState UserState
+@inject IDialogService DialogService
+
+@using System.Text.RegularExpressions
+
 @using MudBlazor
 @using MudBlazor.Components
-@rendermode InteractiveServer
+
+@using QLN.Blazor.Base.Services
+@using QLN.Blazor.Base.Components
 @using QLN.Blazor.Base.Models
+@using QLN.Blazor.Base.Helpers
+
 @using QLN.Web.Shared.Components.CustomButton
 @using QLN.Web.Shared.Components.ModalDialog
-@using System.Text.RegularExpressions;
-@inject IDialogService DialogService
+
 
 @if (_showVerificationPopup)
 {
@@ -222,7 +229,7 @@
     private bool EnableTwoFactor { get; set; } = true;
     private bool MarketingOptIn { get; set; }
     private DateTime? _dateOfBirth;
-    
+
     private Country SelectedCountry { get; set; } = new Country 
     { 
         Value = "Qatar", 
@@ -260,7 +267,7 @@
         "Japan",
         "France"
     };
-    
+
     private List<string> languageOptions = new() { "English", "Arabic", "French", "German" }; 
 
     protected override async Task OnInitializedAsync()
@@ -274,28 +281,23 @@
         try
         {
             var response = await Api.GetAsync<ResponseModel<ProfileData>>($"auth/manage/info?identity={UserState.Email}");
-            
+
             if (response.Status && response.Data != null)
             {
-                _model.FirstName = response.Data.firstname;  // lowercase access
-                _model.LastName = response.Data.lastname;    // lowercase access
+                _model.FirstName = response.Data.firstname;  
+                _model.LastName = response.Data.lastname;    
                 _model.UserName = response.Data.UserName;
                 _model.EmailAddress = response.Data.Email;
                 _model.MobileNumber = response.Data.PhoneNumber;
                 _model.Gender = response.Data.Gender;
-                _model.Nationality = response.Data.nationality; // lowercase access
-                _model.LanguagePreferences = response.Data.languagepreferences; // lowercase access
-                _dateOfBirth = DateTime.Parse(response.Data.dateofbirth); // lowercase access
+                _model.Nationality = response.Data.nationality;
+                _model.LanguagePreferences = response.Data.languagepreferences; 
+                _dateOfBirth = DateTime.Parse(response.Data.dateofbirth);
                 EnableTwoFactor = response.Data.TwoFactorEnabled;
                 showVerificationSuccess = response.Data.EmailConfirmed;
                 showMobileVerificationSuccess = response.Data.PhoneNumberConfirmed;
+
                 
-                // Set country based on phone number prefix if needed
-                if (!string.IsNullOrEmpty(_model.MobileNumber))
-                {
-                    // You might want to parse the country code from the phone number
-                    // and set SelectedCountry accordingly
-                }
             }
             else
             {
@@ -332,6 +334,8 @@
 
         if (string.IsNullOrWhiteSpace(_model.MobileNumber))
             _validationErrors.Add("Phone number is required.");
+        else if (!ValidationHelper.IsValidPhoneNumber(_model.MobileNumber))
+            _validationErrors.Add("Invalid phone number format.");
 
         if (!_dateOfBirth.HasValue)
         {
@@ -360,12 +364,11 @@
 
         var payload = new
         {
-            username = _model.UserName,
+            usernameOrEmailOrPhone = _model.EmailAddress,
             firstName = _model.FirstName,
             lastname = _model.LastName,
             dateofbirth = _dateOfBirth?.ToString("yyyy-MM-dd"), 
             gender = _model.Gender,
-            mobileOperator = "vodofone", 
             mobilenumber = _model.MobileNumber,
             nationality = _model.Nationality,
             languagepreferences = _model.LanguagePreferences,
@@ -375,7 +378,8 @@
         try
         {
             var res = await Api.PutAsync<object, ResponseModel<object>>("auth/manage/update", payload);
-            
+            Console.WriteLine("res", res);
+
             if (res.Status)
             {
                 Snackbar.Add("Profile updated successfully!", Severity.Success);
