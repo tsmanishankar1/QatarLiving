@@ -26,7 +26,7 @@
                       FullWidth="true"
                       InputType="InputType.Text"
                       Class="mud-text-field-custom"
-                      MaxLength="10"
+                      MaxLength="50"
                       Required="true"
                       Error="@(!string.IsNullOrEmpty(_usernameError))"
                       ErrorText="@_usernameError"
@@ -43,7 +43,7 @@
         </MudText>
        <MudTextField T="string"
     Label="Password"
-    MaxLength="10"
+    MaxLength="50"
     Variant="Variant.Outlined"
     InputType="@(_showPassword ? InputType.Text : InputType.Password)"
     FullWidth="true"
@@ -124,7 +124,7 @@
     private string _usernameError = string.Empty;
     private string _passwordError = string.Empty;
 
-   
+
     private async Task OnEmailChanged(string value)
     {
         _username = value;
@@ -200,6 +200,7 @@
         {
             Console.WriteLine($"Payload: {payload}");
             var response = await Api.PostAsync<object, LoginResponseData>("auth/login", payload);
+            Console.WriteLine("response", response);
             if (response?.StatusCode == 200)
             {
                 UserState.Email = response.Data.Emailaddress;
@@ -222,7 +223,10 @@
                     Snackbar.Add("Error: Could not determine two-factor authentication status.", Severity.Error);
                 }
             }  
-            Console.WriteLine("no case");
+            else
+            {
+                Snackbar.Add("Error: " + response.Message, Severity.Error);
+            }
         }
         catch (Exception ex)
         {
