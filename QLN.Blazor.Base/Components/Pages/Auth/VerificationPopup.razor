@@ -111,11 +111,15 @@ public bool ShowSuccess { get; set; }
 public bool isEmail {get; set;} 
 
 [Parameter]
+ public bool _showMobileVerificationSuccess { get; set; }
+
+[Parameter]
 public string email { get; set; } 
 
     private string _code = string.Empty;
     private bool _isLoading = false;
-    private bool _showSucess = false;
+    public bool _showSucess = false;
+   
     
     [Parameter] public EventCallback OnClose { get; set; }
     
@@ -156,7 +160,9 @@ public string email { get; set; }
                 Console.WriteLine(res?.Status);
                 if (res?.Status == true)
                 {
+                    _showSucess = true;
                     ShowSuccess = true;
+
                 }
                 else
                 {
@@ -172,7 +178,8 @@ public string email { get; set; }
                 Console.WriteLine(res?.Status);
                 if (res?.Status == true)
                 {
-                    ShowSuccess = true;
+                    _showSucess = true;
+                    _showMobileVerificationSuccess = true;
                 }
                 else
                 {
