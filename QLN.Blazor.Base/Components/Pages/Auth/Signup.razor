@@ -469,6 +469,7 @@
      if (string.IsNullOrWhiteSpace(_model.EmailAddress))
         {
             _validationErrors.Add("Please enter your email address.");
+            
             return;
             }   
         var payload = new
