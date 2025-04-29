@@ -67,8 +67,7 @@ namespace QLN.Backend.UnitTest.AuthTest
                 Mobilenumber = "1234567890",
                 Emailaddress = "test@example.com",
                 Nationality = "TestNation",
-                Languagepreferences = "English",
-                Location = "TestLocation",
+                Languagepreferences = "English",                
                 Password = "weak"
             };
 
@@ -111,8 +110,7 @@ namespace QLN.Backend.UnitTest.AuthTest
                 Mobilenumber = "1234567890",
                 Emailaddress = "test@example.com",
                 Nationality = "TestNation",
-                Languagepreferences = "English",
-                Location = "TestLocation",
+                Languagepreferences = "English",                
                 Password = "Password123!"
             };
 
@@ -159,8 +157,7 @@ namespace QLN.Backend.UnitTest.AuthTest
                 PhoneNumber = request.Mobilenumber,
                 Email = request.Emailaddress,
                 Nationality = request.Nationality,
-                Languagepreferences = request.Languagepreferences,
-                Location = request.Location,
+                Languagepreferences = request.Languagepreferences,                
                 Isactive = true
             };
 
@@ -548,11 +545,9 @@ namespace QLN.Backend.UnitTest.AuthTest
         {
             var request = new UpdateProfileRequest
             {
-                UsernameOrEmailOrPhone = "testuser",
                 FirstName = "John",
                 LastName = "Doe",
-                MobileNumber = "1234567890",
-                Location = "Doha"
+                MobileNumber = "1234567890",                
             };
 
             var user = new ApplicationUser
@@ -582,17 +577,14 @@ namespace QLN.Backend.UnitTest.AuthTest
             var result = await new Func<UpdateProfileRequest, UserManager<ApplicationUser>, Task<IResult>>(async (req, um) =>
             {
                 var foundUser = um.Users.FirstOrDefault(u =>
-                    u.UserName == req.UsernameOrEmailOrPhone ||
-                    u.Email == req.UsernameOrEmailOrPhone ||
-                    u.PhoneNumber == req.UsernameOrEmailOrPhone);
+                    u.PhoneNumber == req.MobileNumber);
 
                 if (foundUser == null)
                     return TypedResults.Unauthorized();
 
                 foundUser.Firstname = req.FirstName;
                 foundUser.Lastname = req.LastName;
-                foundUser.PhoneNumber = req.MobileNumber;
-                foundUser.Location = req.Location;
+                foundUser.PhoneNumber = req.MobileNumber;                
                 await um.UpdateAsync(foundUser);
 
                 return TypedResults.Ok(ApiResponse<string>.Success("Profile updated successfully"));
@@ -606,13 +598,17 @@ namespace QLN.Backend.UnitTest.AuthTest
         public static async Task UpdateProfileUserNotFoundReturnsUnauthorized()
         {
             var request = new UpdateProfileRequest
-            {
-                UsernameOrEmailOrPhone = "nonexistentuser",
+            {                
                 FirstName = "Jane",
                 LastName = "Smith",
+                Dateofbirth = new DateOnly(1990, 1, 1),
+                Gender = "Male",
                 MobileNumber = "9999999999",
-                Location = "Doha"
+                Nationality = "Qatari",                                   
+                Languagepreferences = "English"
             };
+
+            var usernameOrEmailOrPhone = "nonexistentuser";
 
             var emptyUserList = new List<ApplicationUser>().AsQueryable();
 
@@ -632,17 +628,14 @@ namespace QLN.Backend.UnitTest.AuthTest
             var result = await new Func<UpdateProfileRequest, UserManager<ApplicationUser>, Task<IResult>>(async (req, um) =>
             {
                 var foundUser = um.Users.FirstOrDefault(u =>
-                    u.UserName == req.UsernameOrEmailOrPhone ||
-                    u.Email == req.UsernameOrEmailOrPhone ||
-                    u.PhoneNumber == req.UsernameOrEmailOrPhone);
+                    u.PhoneNumber == req.MobileNumber);
 
                 if (foundUser == null)
                     return TypedResults.Unauthorized();
 
                 foundUser.Firstname = req.FirstName;
                 foundUser.Lastname = req.LastName;
-                foundUser.PhoneNumber = req.MobileNumber;
-                foundUser.Location = req.Location;
+                foundUser.PhoneNumber = req.MobileNumber;                
                 await um.UpdateAsync(foundUser);
 
                 return TypedResults.Ok(ApiResponse<string>.Success("Profile updated successfully"));

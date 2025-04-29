@@ -14,20 +14,18 @@ namespace QLN.Common.DTO_s
         public string Emailaddress { get; set; } = null!;
         public string Nationality { get; set; } = null!;
         public string Password { get; set; } = null!;
-        public string? Languagepreferences { get; set; }
-        public string? Location { get; set; }
+        public string? Languagepreferences { get; set; }        
     }
 
     public class UpdateProfileRequest
     {
-        public string UsernameOrEmailOrPhone { get; set; } = null!;
+        
         public string FirstName { get; set; } = null!;
         public string LastName { get; set; } = null!;
         public DateOnly Dateofbirth { get; set; }
         public string Gender { get; set; } = null!;        
         public string MobileNumber { get; set; } = null!;        
-        public string Nationality { get; set; } = null!;
-        public string Location { get; set; } = null!;
+        public string Nationality { get; set; } = null!;        
         public string? Languagepreferences { get; set; }
     }
 
