@@ -24,6 +24,7 @@ namespace QLN.Blazor.Base.Helpers
 
         public static string ValidatePassword(string password)
         {
+           
             if (string.IsNullOrWhiteSpace(password))
             {
                 return "Please enter your password.";
