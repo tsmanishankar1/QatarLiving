@@ -12,6 +12,7 @@
 @using QLN.Web.Shared.Components.ModalDialog
 @using System.Diagnostics
 @using System.ComponentModel.DataAnnotations
+@using System.Net
 
 <div style="width: 100%; background-color: #F5F6FA; padding: 32px 16px;">
     <div style="max-width: 400px; margin: 0 auto;">
@@ -144,29 +145,27 @@
 
             var payload = new { usernameOrEmailOrPhone = _username, password = _password };
 
-            var response = await Api.PostAsync<object, ResponseModel<LoginResponseData>>("auth/login", payload);
+            var result = await Api.PostAsync<object, ResponseModel<LoginResponseData>>("auth/login", payload);
 
-            if (response?.StatusCode == 200)
+            if (result?.Body?.Status == true)
             {
-                UserState.Email = response.Data.Emailaddress;
-                UserState.mobileNumber = response.Data.Mobilenumber;
+                var data = result.Body.Data;
+                UserState.Email = data.Emailaddress;
+                UserState.mobileNumber = data.Mobilenumber;
                 StateHasChanged();
 
-                if (response.Data.IsTwoFactorEnabled)
+                if (data.IsTwoFactorEnabled)
                 {
-                    Snackbar.Add($"Logged in as {response.Data.Emailaddress}", Severity.Success);
+                    Snackbar.Add($"Logged in as {data.Emailaddress}", Severity.Success);
                     NavManager.NavigateTo("/select-verification");
                 }
                 else
                 {
-                    Snackbar.Add($"Logged in as {response.Data.Emailaddress}", Severity.Success);
+                    Snackbar.Add($"Logged in as {data.Emailaddress}", Severity.Success);
                     NavManager.NavigateTo("/");
                 }
             }
-            else
-            {
-                Snackbar.Add("Login failed. Please check your credentials.", Severity.Error);
-            }
+           
         }
         catch (Exception ex)
         {
