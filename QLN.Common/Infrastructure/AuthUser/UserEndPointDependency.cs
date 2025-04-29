@@ -6,7 +6,7 @@ namespace QLN.Common.Infrastructure.AuthUser
     { 
         public static RouteGroupBuilder MapAuthEndpoints(this RouteGroupBuilder group)
         {
-            group.MapRegisterEndpoints()             
+            group.MapRegisterEndpoints()
                 .MapForgotPasswordEndpoint()
                 .MapResetPasswordEndpoint()
                 .MapLoginEndpoint()
@@ -16,9 +16,10 @@ namespace QLN.Common.Infrastructure.AuthUser
                 .MapGetProfileEndpoint()
                 .MapUpdateProfileEndpoint()
                 .MapSendEmailOtpEndpoint()
-                .MapVerifyEmailOtpEndpoint()                
+                .MapVerifyEmailOtpEndpoint()
                 .MapSendPhoneOtpEndpoint()
-                .MapVerifyPhoneOtpEndpoint();
+                .MapVerifyPhoneOtpEndpoint()
+                .MapLogoutEndpoint();
             return group;
         }
     }

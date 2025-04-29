@@ -32,6 +32,12 @@ builder.Services.AddSwaggerGen(options =>
     }
 });
 
+
+builder.Services.Configure<DataProtectionTokenProviderOptions>(opt =>
+{
+    opt.TokenLifespan = TimeSpan.FromMinutes(30);
+});
+
 builder.Services.Configure<IdentityOptions>(options =>
 {
     // Password settings.

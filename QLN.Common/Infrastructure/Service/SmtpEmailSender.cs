@@ -36,7 +36,12 @@ namespace QLN.Common.Infrastructure.Service
         public async Task SendPasswordResetLinkAsync(ApplicationUser user, string email, string resetLink)
         {
             var subject = "Reset your password";
-            var body = $"Hi {user.UserName},<br/>Reset your password using this link: <a href='{resetLink}'>Reset Password</a>";
+            var body = $"Dear {user.UserName},<br/><br/>You requested to reset your password. Please click the link below to reset your password: <a href='{resetLink}'>Reset your password</a><br/>" +
+                $"This link will expire in 30 minutes<br/>" +
+                $"If you did not request this, please ignore this email<br/><br/>" +
+                $"Best regards,<br/>" +
+                $"Qatar Living";
+
 
             await SendEmailAsync(email, subject, body);
         }

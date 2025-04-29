@@ -18,12 +18,13 @@ using System.Security.Claims;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.Service;
 using static QLN.Common.Infrastructure.DTO_s.OtpDTO;
+using QLN.Common.Infrastructure.EventLogger;
 
 
 namespace QLN.Common.Infrastructure.AuthUser
 {
     public static class AuthEndPoints
-    {
+    {        
         // register
         public static RouteGroupBuilder MapRegisterEndpoints(this RouteGroupBuilder group)
         {
@@ -37,16 +38,22 @@ namespace QLN.Common.Infrastructure.AuthUser
             (
                 [FromBody] RegisterRequest request,
                 HttpContext context,
-                [FromServices] IAuthService authService
+                [FromServices] IAuthService authService,
+                [FromServices] IEventlogger log
             ) =>
             {
-                var result = await authService.RegisterAsync(request, context);
-                return (Results<Ok<ApiResponse<string>>,
-                               BadRequest<ApiResponse<string>>,
-                               ValidationProblem,
-                               NotFound<ApiResponse<string>>,
-                               Conflict<ApiResponse<string>>,
-                               ProblemHttpResult>)result;
+                try
+                {
+                    var result = await authService.Register(request, context);
+                    return result;
+                }
+                catch(Exception ex)
+                {
+                    log.LogException(ex);
+                    return TypedResults.Problem(
+                        detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
             })
             .WithName("Register")
             .WithTags("Authentication")
@@ -65,17 +72,33 @@ namespace QLN.Common.Infrastructure.AuthUser
         // Email OTP Send
         public static RouteGroupBuilder MapSendEmailOtpEndpoint(this RouteGroupBuilder group)
         {
-            group.MapPost("/verify-email-request", async Task<Ok<ApiResponse<string>>> (
+            group.MapPost("/verify-email-request", async (
                 [FromBody] EmailOtpRequest request,
-                [FromServices] IAuthService authService
+                [FromServices] IAuthService authService,
+                [FromServices] IEventlogger log
             ) =>
             {
-                return await authService.SendEmailOtpAsync(request.Email);
+                try
+                {
+                    return await authService.SendEmailOtp(request.Email);
+                }
+                catch(Exception ex)
+                {                    
+                    log.LogException(ex);
+                    return TypedResults.Problem(
+                        detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
             })
             .WithName("SendEmailOtp")
             .WithTags("Authentication")
             .WithSummary("Send Email OTP")
-            .WithDescription("Sends an OTP to the user's email address for verification.");
+            .WithDescription("Sends an OTP to the user's email address for verification.")
+            .Produces<ApiResponse<string>>(StatusCodes.Status200OK)                
+            .Produces<ApiResponse<string>>(StatusCodes.Status404NotFound)          
+            .Produces<ApiResponse<string>>(StatusCodes.Status409Conflict)           
+            .Produces<ValidationProblemDetails>(StatusCodes.Status400BadRequest)    
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
             return group;
         }
@@ -83,17 +106,31 @@ namespace QLN.Common.Infrastructure.AuthUser
         // Email OTP Verify
         public static RouteGroupBuilder MapVerifyEmailOtpEndpoint(this RouteGroupBuilder group)
         {
-            group.MapPost("/verify-email-otp", async Task<Results<Ok<ApiResponse<string>>, BadRequest<string>>> (
+            group.MapPost("/verify-email-otp", async (
                 [FromBody] VerifyEmailOtpRequest request,
-                [FromServices] IAuthService authService
+                [FromServices] IAuthService authService,
+                [FromServices] IEventlogger log
             ) =>
             {
-                return await authService.VerifyEmailOtpAsync(request.Email, request.Otp);
+                try
+                {
+                    return await authService.VerifyEmailOtp(request.Email, request.Otp);
+                }
+                catch(Exception ex)
+                {
+                    log.LogException(ex);
+                    return TypedResults.Problem(
+                    detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
+                    statusCode: StatusCodes.Status500InternalServerError);
+                }
             })
             .WithName("VerifyEmailOtp")
             .WithTags("Authentication")
             .WithSummary("Verify Email OTP")
-            .WithDescription("Verifies the OTP entered by the user for their email address.");
+            .WithDescription("Verifies the OTP entered by the user for their email address.")
+             .Produces<ApiResponse<string>>(StatusCodes.Status200OK)               
+             .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest)         
+             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
             return group;
         }
@@ -101,35 +138,62 @@ namespace QLN.Common.Infrastructure.AuthUser
         // Phone OTP Send
         public static RouteGroupBuilder MapSendPhoneOtpEndpoint(this RouteGroupBuilder group)
         {
-            group.MapPost("/verify-phone-request", async Task<Ok<ApiResponse<string>>> (
+            group.MapPost("/verify-phone-request", async Task<Results<Ok<ApiResponse<string>>, ProblemHttpResult, BadRequest<ApiResponse<string>>>> (
                 [FromBody] PhoneOtpRequest request,
-                [FromServices] IAuthService authService
+                [FromServices] IAuthService authService,
+                [FromServices] IEventlogger log
             ) =>
             {
-                return await authService.SendPhoneOtpAsync(request.PhoneNumber);
+                try
+                {
+                    return await authService.SendPhoneOtp(request.PhoneNumber);
+                }
+                catch(Exception ex)
+                {
+                    log.LogException(ex);
+                    return TypedResults.Problem(
+                        detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
             })
             .WithName("SendPhoneOtp")
             .WithTags("Authentication")
             .WithSummary("Send Phone OTP")
-            .WithDescription("Generates and stores OTP for phone number verification.");
-
+            .WithDescription("Generates and stores OTP for phone number verification.")
+            .Produces<ApiResponse<string>>(StatusCodes.Status200OK)
+            .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
             return group;
         }
 
         // Phone OTP Verify
         public static RouteGroupBuilder MapVerifyPhoneOtpEndpoint(this RouteGroupBuilder group)
         {
-            group.MapPost("/verify-phone-otp", async Task<Results<Ok<ApiResponse<string>>, BadRequest<string>>> (
+            group.MapPost("/verify-phone-otp", async Task<Results<Ok<ApiResponse<string>>, ProblemHttpResult, BadRequest<ApiResponse<string>>>> (
                 [FromBody] VerifyPhoneOtpRequest request,
-                [FromServices] IAuthService authService
+                [FromServices] IAuthService authService,
+                [FromServices] IEventlogger log
             ) =>
             {
-                return await authService.VerifyPhoneOtpAsync(request.PhoneNumber, request.Otp);
+                try
+                {
+                    return await authService.VerifyPhoneOtp(request.PhoneNumber, request.Otp);
+                }
+                catch(Exception ex)
+                {
+                    log.LogException(ex);
+                    return TypedResults.Problem(
+                        detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
             })
             .WithName("VerifyPhoneOtp")
             .WithTags("Authentication")
             .WithSummary("Verify Phone OTP")
-            .WithDescription("Verifies the OTP entered for the phone number.");
+            .WithDescription("Verifies the OTP entered for the phone number.")
+            .Produces<ApiResponse<string>>(StatusCodes.Status200OK)
+            .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
             return group;
         }
@@ -137,17 +201,31 @@ namespace QLN.Common.Infrastructure.AuthUser
         // Forgot Password
         public static RouteGroupBuilder MapForgotPasswordEndpoint(this RouteGroupBuilder group)
         {
-            group.MapPost("/forgot-password", async Task<Ok<ApiResponse<string>>> (
+            group.MapPost("/forgot-password", async (
                 [FromBody] ForgotPasswordRequest request,
-                [FromServices] IAuthService authService
+                [FromServices] IAuthService authService,
+                [FromServices] IEventlogger log
             ) =>
             {
-                return await authService.ForgotPasswordAsync(request);
+                try
+                {
+                    return await authService.ForgotPassword(request);
+                }
+                catch(Exception ex)
+                {
+                    log.LogException(ex);
+                    return TypedResults.Problem(
+                        detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
             })
             .WithName("ForgotPassword")
             .WithTags("Authentication")
             .WithSummary("Request password reset")
-            .WithDescription("Sends a password reset link to the user’s email if the email is registered and confirmed.");
+            .WithDescription("Sends a password reset link to the user’s email if the email is registered and confirmed.")
+            .Produces<ApiResponse<string>>(StatusCodes.Status200OK)  
+            .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest)  
+            .ProducesProblem(StatusCodes.Status500InternalServerError); 
 
             return group;
         }
@@ -155,17 +233,32 @@ namespace QLN.Common.Infrastructure.AuthUser
         // Reset Password
         public static RouteGroupBuilder MapResetPasswordEndpoint(this RouteGroupBuilder group)
         {
-            group.MapPost("/reset-password", async Task<Results<Ok<ApiResponse<string>>, ValidationProblem>> (
+            group.MapPost("/reset-password", async (
                 [FromBody] ResetPasswordRequest request,
-                [FromServices] IAuthService authService
+                [FromServices] IAuthService authService,
+                [FromServices] IEventlogger log
             ) =>
             {
-                return await authService.ResetPasswordAsync(request);
+                try
+                {
+                    return await authService.ResetPassword(request);
+                }
+                catch(Exception ex)
+                {
+                    log.LogException(ex);
+                    return TypedResults.Problem(
+                        detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
             })
-            .WithName("ResetPassword")
-            .WithTags("Authentication")
-            .WithSummary("Reset password")
-            .WithDescription("Resets the user’s password using a valid reset token.");
+                .WithName("ResetPassword")
+                .WithTags("Authentication")
+                .WithSummary("Reset password")
+                .WithDescription("Resets the user’s password using a valid reset token.")
+                .Produces<ApiResponse<string>>(StatusCodes.Status200OK)  
+                .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest)  
+                .ProducesValidationProblem()  
+                .ProducesProblem(StatusCodes.Status500InternalServerError);  
 
             return group;
         }
@@ -177,12 +270,24 @@ namespace QLN.Common.Infrastructure.AuthUser
                 Ok<ApiResponse<LoginResponse>>,
                 BadRequest<ApiResponse<string>>,
                 UnauthorizedHttpResult,
-                ValidationProblem>> (
+                ProblemHttpResult,
+                ValidationProblem >> (
                 [FromBody] LoginRequest request,
-                [FromServices] IAuthService authService
+                [FromServices] IAuthService authService,
+                [FromServices] IEventlogger log
             ) =>
             {
-                return await authService.LoginAsync(request);
+                try
+                {
+                    return await authService.Login(request);
+                }
+                catch(Exception ex)
+                {
+                    log.LogException(ex);
+                    return TypedResults.Problem(
+                        detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
             })
             .WithName("Login")
             .WithTags("Authentication")
@@ -198,22 +303,37 @@ namespace QLN.Common.Infrastructure.AuthUser
             return group;
         }
 
-
-
         // verify twofactorAuth
         public static RouteGroupBuilder MapVerify2FAEndpoint(this RouteGroupBuilder group)
         {
-            group.MapPost("/verify-2fa", async Task<Results<Ok<ApiResponse<LoginResponse>>, ValidationProblem, NotFound>> (
+            group.MapPost("/verify-2fa", async Task<Results<Ok<ApiResponse<LoginResponse>>,  BadRequest<ApiResponse<string>>, ProblemHttpResult, ValidationProblem>> (
                 [FromBody] Verify2FARequest request,
-                [FromServices] IAuthService authService
+                [FromServices] IAuthService authService,
+                [FromServices] IEventlogger log
             ) =>
             {
-                return await authService.Verify2FAAsync(request);
+                try
+                {
+                    return await authService.Verify2FA(request);
+                }
+                catch(Exception ex)
+                {
+                    log.LogException(ex);
+                    return TypedResults.Problem(
+                        detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
             })
             .WithName("VerifyTwoFactor")
             .WithTags("Authentication")
             .WithSummary("Verify Two-Factor Authentication")
-            .WithDescription("Verifies the OTP code sent to the user's email and completes login by issuing tokens.");
+            .WithDescription("Verifies the OTP code sent to the user's email and completes login by issuing tokens.")
+            .Produces<ApiResponse<LoginResponse>>(StatusCodes.Status200OK)
+            .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest)
+            .Produces<ApiResponse<string>>(StatusCodes.Status404NotFound)
+            .Produces<ApiResponse<string>>(StatusCodes.Status409Conflict)
+            .Produces<ValidationProblemDetails>(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
             return group;
         }
@@ -222,17 +342,33 @@ namespace QLN.Common.Infrastructure.AuthUser
         // refresh
         public static RouteGroupBuilder MapRefreshTokenEndpoint(this RouteGroupBuilder group)
         {
-            group.MapPost("/refresh", async Task<Results<Ok<ApiResponse<RefreshTokenResponse>>, UnauthorizedHttpResult>> (
+            group.MapPost("/refresh", async Task<Results<Ok<ApiResponse<RefreshTokenResponse>>, BadRequest<ApiResponse<string>>, ProblemHttpResult, UnauthorizedHttpResult>> (
                 [FromBody] RefreshTokenRequest request,
-                [FromServices] IAuthService authService
+                [FromServices] IAuthService authService,
+                [FromServices] IEventlogger log
             ) =>
             {
-                return await authService.RefreshTokenAsync(request);
+                try
+                {
+                    return await authService.RefreshToken(request);
+                }
+                catch(Exception ex)
+                {
+                    return TypedResults.Problem(
+                        detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
             })
             .WithName("RefreshToken")
             .WithTags("Authentication")
             .WithSummary("Refresh JWT access token")
-            .WithDescription("Uses a valid refresh token to generate new access and refresh tokens.");
+            .WithDescription("Uses a valid refresh token to generate new access and refresh tokens.")
+            .Produces<ApiResponse<LoginResponse>>(StatusCodes.Status200OK)
+            .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest)
+            .Produces<ApiResponse<string>>(StatusCodes.Status404NotFound)
+            .Produces<ApiResponse<string>>(StatusCodes.Status409Conflict)
+            .Produces<ValidationProblemDetails>(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
             return group;
         }
@@ -243,15 +379,32 @@ namespace QLN.Common.Infrastructure.AuthUser
         {
             group.MapPost("/manage/2fa", async Task<IResult> (
                 [FromBody] TwoFactorToggleRequest request,
-                [FromServices] IAuthService authService
+                [FromServices] IAuthService authService,
+                [FromServices] IEventlogger log
             ) =>
             {
-                return await authService.Toggle2FAAsync(request);
+                try
+                {
+                    return await authService.Toggle2FA(request);
+                }
+                catch(Exception ex)
+                {
+                    log.LogException(ex);
+                    return TypedResults.Problem(
+                        detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
             })
             .WithName("ToggleTwoFactor")
             .WithTags("Manage Account")
             .WithSummary("Enable or disable two-factor authentication")
-            .WithDescription("Allows user to enable or disable 2FA.");
+            .WithDescription("Allows user to enable or disable 2FA.")
+            .Produces<ApiResponse<LoginResponse>>(StatusCodes.Status200OK)
+            .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest)
+            .Produces<ApiResponse<string>>(StatusCodes.Status404NotFound)
+            .Produces<ApiResponse<string>>(StatusCodes.Status409Conflict)
+            .Produces<ValidationProblemDetails>(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
             return group;
         }
@@ -261,16 +414,33 @@ namespace QLN.Common.Infrastructure.AuthUser
         public static RouteGroupBuilder MapGetProfileEndpoint(this RouteGroupBuilder group)
         {
             group.MapGet("/manage/info", async Task<IResult> (
-                [FromQuery] string identity,
-                [FromServices] IAuthService authService
+                [FromQuery] Guid Id,
+                [FromServices] IAuthService authService,
+                [FromServices] IEventlogger log
             ) =>
             {
-                return await authService.GetProfileAsync(identity);
+                try
+                {
+                    return await authService.GetProfile(Id);
+                }
+                catch(Exception ex)
+                {
+                    log.LogException(ex);
+                    return TypedResults.Problem(
+                        detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
             })
             .WithName("GetProfile")
             .WithTags("Manage Account")
             .WithSummary("Get user profile information")
-            .WithDescription("Retrieves profile data using email as identity.");
+            .WithDescription("Retrieves profile data using email as identity.")
+            .Produces<ApiResponse<LoginResponse>>(StatusCodes.Status200OK)
+            .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest)
+            .Produces<ApiResponse<string>>(StatusCodes.Status404NotFound)
+            .Produces<ApiResponse<string>>(StatusCodes.Status409Conflict)
+            .Produces<ValidationProblemDetails>(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
             return group;
         }
@@ -280,21 +450,67 @@ namespace QLN.Common.Infrastructure.AuthUser
         public static RouteGroupBuilder MapUpdateProfileEndpoint(this RouteGroupBuilder group)
         {
             group.MapPut("/manage/update", async Task<IResult> (
+                [FromHeader(Name = "Id")] Guid Id,
                 [FromBody] UpdateProfileRequest request,
-                [FromServices] IAuthService authService
+                [FromServices] IAuthService authService,
+                [FromServices] IEventlogger log
             ) =>
             {
-                return await authService.UpdateProfileAsync(request);
+                try
+                {
+                    return await authService.UpdateProfile(Id, request);
+                }
+                catch(Exception ex)
+                {
+                    log.LogException(ex);
+                    return TypedResults.Problem(
+                        detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
             })
             .WithName("UpdateProfile")
             .WithTags("Manage Account")
             .WithSummary("Update user profile")
-            .WithDescription("Allows a user to update their profile details.");
+            .WithDescription("Allows a user to update their profile details.")
+            .Produces<ApiResponse<string>>(StatusCodes.Status200OK)
+            .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status500InternalServerError);
 
             return group;
         }
 
-       
+        // log out endpoint
+        public static RouteGroupBuilder MapLogoutEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapPost("/logout", async (
+                [FromHeader(Name = "Id")] Guid Id,
+                [FromServices] IAuthService authService,
+                [FromServices] IEventlogger log
+            ) =>
+            {
+                try
+                {
+                    return await authService.Logout(Id);
+                }
+                catch (Exception ex)
+                {
+                    log.LogException(ex);
+                    return TypedResults.Problem(
+                        detail: ApiResponse<string>.Fail("An unexpected error occurred during logout.").Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("Logout")
+            .WithTags("Authentication")
+            .WithSummary("Logs out the user")
+            .WithDescription("Removes tokens and signs the user out.")
+            .Produces<ApiResponse<string>>(StatusCodes.Status200OK)
+            .Produces<ApiResponse<string>>(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
 
     }
 }
