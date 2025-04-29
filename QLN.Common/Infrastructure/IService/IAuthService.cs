@@ -11,7 +11,7 @@ namespace QLN.Common.Infrastructure.IService
 {
     public interface IAuthService
     {
-        Task<Results<Ok<ApiResponse<string>>, ValidationProblem>> RegisterAsync(RegisterRequest request, HttpContext context);
+        Task<IResult> RegisterAsync(RegisterRequest request, HttpContext context);
 
         Task<Ok<ApiResponse<string>>> SendEmailOtpAsync(string email);
         
@@ -23,7 +23,7 @@ namespace QLN.Common.Infrastructure.IService
       
         Task<Ok<ApiResponse<string>>> ForgotPasswordAsync(ForgotPasswordRequest request);
         Task<Results<Ok<ApiResponse<string>>, ValidationProblem>> ResetPasswordAsync(ResetPasswordRequest request);
-        Task<Results<Ok<ApiResponse<LoginResponse>>, UnauthorizedHttpResult, ValidationProblem>> LoginAsync(LoginRequest request);
+        Task<Results<Ok<ApiResponse<LoginResponse>>, BadRequest<ApiResponse<string>>, UnauthorizedHttpResult, ValidationProblem>> LoginAsync(LoginRequest request);
         Task<Results<Ok<ApiResponse<LoginResponse>>, ValidationProblem, NotFound>> Verify2FAAsync(Verify2FARequest request);
         Task<Results<Ok<ApiResponse<RefreshTokenResponse>>, UnauthorizedHttpResult>> RefreshTokenAsync(RefreshTokenRequest request);
         Task<IResult> Toggle2FAAsync(TwoFactorToggleRequest request);

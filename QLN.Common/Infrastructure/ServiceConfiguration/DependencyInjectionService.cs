@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Service;
@@ -19,6 +20,7 @@ namespace QLN.Common.Infrastructure.ServiceConfiguration
             services.AddScoped<IAuthService, AuthService>();
             services.AddTransient<QLN.Common.Infrastructure.TokenProvider.EmailTokenProvider<ApplicationUser>>();
             services.AddTransient<QLN.Common.Infrastructure.TokenProvider.PhoneTokenProvider<ApplicationUser>>();
+            services.AddTransient<IEventlogger, Eventlogger>();
 
             return services;
         }

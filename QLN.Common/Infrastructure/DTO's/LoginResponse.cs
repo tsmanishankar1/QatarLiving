@@ -8,8 +8,8 @@ namespace QLN.Common.DTO_s
         public string Mobilenumber { get; set; } = null!;
         public string Emailaddress { get; set; } = null!;
         public string AccessToken { get; set; } = string.Empty;
-        public string RefreshToken { get; set; } = string.Empty;     
-        public bool? IsTwoFactorEnabled { get; set; }
+        public string RefreshToken { get; set; } = string.Empty;
+        public bool? IsTwoFactorEnabled { get; set; } = false;
     }
 
     public class RefreshTokenRequest
