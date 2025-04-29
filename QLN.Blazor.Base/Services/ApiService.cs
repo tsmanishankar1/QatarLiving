@@ -2,10 +2,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
-using Microsoft.AspNetCore.Http;
-using QLN.Common.DTO_s;
-using QLN.Common.Infrastructure.DTO_s;
-using System.Net;
+using QLN.Blazor.Base.Models;
 
 namespace QLN.Blazor.Base.Services
 {
@@ -32,40 +29,48 @@ namespace QLN.Blazor.Base.Services
             }
         }
 
-        public async Task<ApiResult<TResponse>> PostAsync<TRequest, TResponse>(string endpoint, TRequest data)
+        
+
+public async Task<ResponseModel<TData>?> PostAsync<TRequest, TData>(string endpoint, TRequest data)
+{
+    try
+    {
+        var response = await _http.PostAsJsonAsync($"{_baseUrl}/{endpoint}", data);
+        var statusCode = (int)response.StatusCode;
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"Response Content: {responseContent}");
+
+        if (!string.IsNullOrWhiteSpace(responseContent))
         {
-            try
+            var result = JsonSerializer.Deserialize<ResponseModel<TData>>(responseContent, new JsonSerializerOptions
             {
-                var response = await _http.PostAsJsonAsync($"{_baseUrl}/{endpoint}", data);
-                var responseContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"[API] Status Code: {(int)response.StatusCode} ({response.StatusCode})");
+                PropertyNameCaseInsensitive = true
+            });
 
-                TResponse? result = default;
-
-                if (!string.IsNullOrWhiteSpace(responseContent))
-                {
-                    result = JsonSerializer.Deserialize<TResponse>(responseContent, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
-                }
-
-                return new ApiResult<TResponse>
-                {
-                    StatusCode = response.StatusCode,
-                    Body = result
-                };
-            }
-            catch (Exception ex)
+            if (result != null)
             {
-                Console.WriteLine($"POST Exception: {ex.Message}");
-                return new ApiResult<TResponse>
-                {
-                    StatusCode = HttpStatusCode.InternalServerError,
-                    Body = default
-                };
+                result.StatusCode = statusCode;
+                return result;
             }
         }
+        return default;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"POST Exception: {ex.Message}");
+        return new ResponseModel<TData>
+        {
+            Status = false,
+            Message = ex.Message,
+            StatusCode = 0
+        };
+    }
+}
+
+
+
+        
 
 
         public async Task<TResponse?> PatchAsync<TRequest, TResponse>(string endpoint, TRequest data)
@@ -133,4 +138,10 @@ namespace QLN.Blazor.Base.Services
         }
 
     }
+}
+
+public class ApiResponse<T>
+{
+    public T Data { get; set; }
+    public int StatusCode { get; set; }
 }
