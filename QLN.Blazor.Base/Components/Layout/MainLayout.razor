@@ -19,31 +19,52 @@
     </div>
 
     <nav class="nav-links">
-        <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Daily</NavLink>
+        <NavLink href="/profilePage" style="color: white;" class="nav-link">Daily</NavLink>
         <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Properties</NavLink>
         <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Vehicles</NavLink>
         <NavLink href="/classifieds" style="color: white;" class="nav-link active">Classifieds</NavLink>
         <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Services</NavLink>
         <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Jobs</NavLink>
         <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Rewards</NavLink>
+       <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn">
+            Post
+        </MudButton>
     </nav>
 
     <div class="header-right">
-        <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn">
-            Post
-        </MudButton>
+ 
 
+  <MudAvatar Size="Size.Medium" Style="background-color: #E8F2FE;">
+                <img src="/images/header/favourite_icon.svg" alt="Account" style="width: 70%; height: 70%; padding: 4px;" />
+            </MudAvatar>
         <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-            <ActivatorContent>
-                <div style="display: flex; align-items: center; gap: 0.5rem;" class="cursor-pointer">
-                    @* <MudAvatar Size="Size.Medium">
-                        <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="User" style="width: 100%; height: 100%; border-radius: 50%;" />
-                    </MudAvatar> *@
-                    <span class="user-name">
-                        @(UserState.IsLoggedIn ? UserState.Email : "Guest")
-                    </span>
-                </div>
-            </ActivatorContent>
+           <ActivatorContent>
+        <div style="display: flex; align-items: center; gap: 0.5rem;" class="cursor-pointer">
+        @if (UserState.IsLoggedIn)
+        {
+            @if (!string.IsNullOrEmpty(UserState.ProfileImageUrl))
+            {
+                <MudAvatar Size="Size.Medium" Img="@UserState.ProfileImageUrl" />
+            }
+            else
+            {
+               <MudAvatar Size="Size.Medium" Style="background-color: #D6E8F2;">
+                <img src="/images/header/account.svg" alt="Account" style="width: 100%; height: 100%;" />
+            </MudAvatar>
+            }
+
+            <span class="user-name">@UserState.Email</span>
+        }
+        else
+        {
+            <MudAvatar Size="Size.Medium" Style="background-color: #E8F2FE;">
+                <img src="/images/header/account.svg" alt="Account" style="width: 70%; height: 70%; padding: 4px;" />
+            </MudAvatar>
+
+        }
+    </div>
+</ActivatorContent>
+
 
             <ChildContent>
                 @if (UserState.IsLoggedIn)

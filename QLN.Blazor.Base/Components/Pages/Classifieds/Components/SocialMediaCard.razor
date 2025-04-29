@@ -13,7 +13,7 @@
                     @foreach (var platform in SocialPlatforms)
                     {
                             <MudIconButton Icon="@platform.Icon" 
-                                        Color="Color.Warning"
+                                        Style="background-color: var(--color-secondary);  color: white;"
                                         Class="mr-2 border-warning border-solid border-2" 
                                         Href="@platform.Link"
                                         Target="_blank" />
