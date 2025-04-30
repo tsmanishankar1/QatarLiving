@@ -2,6 +2,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
+using QLN.Blazor.Base.Models;
 
 namespace QLN.Blazor.Base.Services
 {
@@ -28,32 +29,47 @@ namespace QLN.Blazor.Base.Services
             }
         }
 
-        public async Task<TResponse?> PostAsync<TRequest, TResponse>(string endpoint, TRequest data)
+        
+
+public async Task<ResponseModel<TData>?> PostAsync<TRequest, TData>(string endpoint, TRequest data)
 {
     try
     {
         var response = await _http.PostAsJsonAsync($"{_baseUrl}/{endpoint}", data);
+        var statusCode = (int)response.StatusCode;
 
         var responseContent = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"Response Content: {responseContent}");
 
         if (!string.IsNullOrWhiteSpace(responseContent))
         {
-            var result = JsonSerializer.Deserialize<TResponse>(responseContent, new JsonSerializerOptions
+            var result = JsonSerializer.Deserialize<ResponseModel<TData>>(responseContent, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });
-            return result;
-        }
 
-        Console.WriteLine($"POST Error: {response.StatusCode}");
+            if (result != null)
+            {
+                result.StatusCode = statusCode;
+                return result;
+            }
+        }
         return default;
     }
     catch (Exception ex)
     {
         Console.WriteLine($"POST Exception: {ex.Message}");
-        return default;
+        return new ResponseModel<TData>
+        {
+            Status = false,
+            Message = ex.Message,
+            StatusCode = 0
+        };
     }
 }
+
+
+
         
 
 
@@ -122,4 +138,10 @@ namespace QLN.Blazor.Base.Services
         }
 
     }
+}
+
+public class ApiResponse<T>
+{
+    public T Data { get; set; }
+    public int StatusCode { get; set; }
 }

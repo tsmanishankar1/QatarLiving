@@ -6,19 +6,27 @@
 @using QLN.Blazor.Base.Components
 @inject UserState UserState
 @using MudBlazor
+@using QLN.Blazor.Base.Helpers
 @using MudBlazor.Components
+@using System.ComponentModel.DataAnnotations;
 @rendermode InteractiveServer
 @using QLN.Blazor.Base.Models
 @using QLN.Web.Shared.Components.CustomButton
 @using QLN.Web.Shared.Components.ModalDialog
+@using QLN.Web.Shared.Components.PasswordStrengthIndicator
 @using System.Text.RegularExpressions;
+@using QLN.Blazor.Base.Models;
+@using System.Net.Http;
+@using System.Text.Json;
 @inject IDialogService DialogService
+@inject HttpClient Http
 
 @if (_showVerificationPopup)
 {
      <div class="popup-overlay">
-        <VerificationPopup ShowSuccess="@showVerificationSuccess" isEmail="@isEmail" email="@email" OnClose="CloseVerificationPopup" /> 
+        <VerificationPopup ShowSuccess="@showVerificationSuccess" _showMobileVerificationSuccess="@showMobileVerificationSuccess" isEmail="@isEmail" email="@email" OnClose="CloseVerificationPopup" OnAction="@ShowVerificationSuccessPopup" /> 
     </div> 
+    
 }
 @if (signUpSucesss){
     <div class="popup-overlay">
@@ -36,64 +44,47 @@
         Create Account
     </MudText>
 
-@if (_validationErrors?.Any() == true)
-{
-    <MudPaper Class="p-2 mb-4" Style="background-color: #d32f2f; color: white;">
-        @foreach (var error in _validationErrors)
-        {
-            <MudGrid Class="align-center mb-2" Style="border-bottom: 1px solid white; padding-bottom: 4px;">
-                <MudItem xs="1">
-                    <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Medium" />
-                </MudItem>
-                <MudItem xs="10">
-                    <MudText Typo="Typo.body2">@error</MudText>
-                </MudItem>
-                <MudItem xs="1" Class="d-flex justify-end">
-                    <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Inherit" Size="Size.Small" OnClick="@(() => RemoveError(error))" />
-                </MudItem>
-            </MudGrid>
-        }
-    </MudPaper>
-}
 
-
+<MudForm @ref="_form" Model="@_model" OnValidSubmit="SubmitSignup">
 
         <MudText Typo="Typo.body1"  Style="font-weight: 400;">
         First Name
         </MudText>
-         <MudTextField T="string"
-              Label="First Name"
-              Variant="Variant.Outlined"
-              FullWidth="true"
-              Class="mt-4"
-              @bind-Value="_model.FirstName"
-              Style="background-color: #FFFFFF;"
-              Required="true"
-              MaxLength="64"/>
+
+               <MudTextField T="string"
+                  For="@(() => _model.FirstName)"
+                  Label="First Name"
+                  @bind-Value="_model.FirstName"
+                  Immediate="true"
+                  Variant="Variant.Outlined"
+                  Class="mud-text-field-custom"
+                  MaxLength="50"
+                  FullWidth="true"
+                   />
         <MudText Typo="Typo.body1"  Style="font-weight: 400;">
         Last Name
         </MudText>
          <MudTextField T="string"
               Label="Last Name"
-              Variant="Variant.Outlined"
-              FullWidth="true"
-              Class="mt-4"
+              For="@(() => _model.LastName)"
               @bind-Value="_model.LastName"
-              Style="background-color: #FFFFFF;"
-              Required="true"
-              RequiredError="Last Name is required" />
+              Variant="Variant.Outlined"
+              Immediate="true"
+              MaxLength="50"
+              FullWidth="true"
+              Class="mud-text-field-custom" />
         <MudText Typo="Typo.body1"  Style="font-weight: 400;">
         Username
         </MudText>
         <MudTextField T="string"
               Label="Username"
-              Variant="Variant.Outlined"
-              FullWidth="true"
-              Class="mt-4"
+              For="@(() => _model.UserName)"
               @bind-Value="_model.UserName"
-              Style="background-color: #FFFFFF;"
-              Required="true"
-              RequiredError="Username is required" />
+              Variant="Variant.Outlined"
+              MaxLength="50"
+              FullWidth="true"
+              Immediate="true"
+              Class="mud-text-field-custom" />
               
     <MudText Typo="Typo.body1"  Style="font-weight: 400;">
         Email
@@ -102,19 +93,49 @@
 <MudPaper Class="phone-container pa-4" Elevation="0" Style="border: 1px solid #ccc; border-radius: 8px;">
     <div class="phone-flex">
 
-        <MudTextField @bind-Value="_model.EmailAddress" Placeholder="Email Address" Class="phone-input" />
+        <MudTextField T="string"
+              Label="Email Address"
+              For="@(() => _model.EmailAddress)"
+              @bind-Value="_model.EmailAddress"
+              MaxLength="50"
+              FullWidth="true"
+              Immediate="true"
+              Class="phone-input" />
 
         @if (showVerificationSuccess)
         {
+            @if (isEmail){
             <MudText Typo="Typo.body1" Style="font-weight: 400; color: #079455;">
             Verified
             </MudText>
+            }
         }
         else
         {
-            <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="OnVerifyEmailClicked" Class="verify-button" Style="background-color: #FF7F38; color: white;">
-                Verify
-            </MudButton>
+            
+                <MudButton Variant="Variant.Filled"
+           Loading="@_emailVerifying"
+           Disabled="@(string.IsNullOrWhiteSpace(_model.EmailAddress) || !Regex.IsMatch(_model.EmailAddress, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))"
+           Color="Color.Warning"
+           OnClick="OnVerifyEmailClicked"
+           Class="verify-button"
+           Style="background-color: var(--color-secondary); color: white; min-width: 50px;">
+
+    <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+        @if (_emailVerifying)
+        {
+            <MudProgressCircular Indeterminate="true"
+                                 Size="Size.Small"
+                                 Style="color: var(--color-secondary);"
+                                 Color="Color.Inherit"
+                                 Class="mx-3" />
+        }
+        else
+        {
+            <MudText Typo="Typo.button">Verify</MudText>
+        }
+    </div>
+</MudButton>
         }
 
     </div>
@@ -123,50 +144,76 @@
         <MudText Typo="Typo.body1"  Style="font-weight: 400;">
         Phone Number
         </MudText>
-
-        <MudPaper Class="phone-container pa-4" Elevation="0" Style="border: 1px solid #ccc; border-radius: 8px;">
-    <div class="phone-flex">
-        <MudSelect T="Country" @bind-Value="SelectedCountry" Class="country-select" DisableUnderline="true" Style="width: 120px;">
+        <!-- PHONE FIELD BOX -->
+<MudPaper Class="phone-container pa-4" Elevation="0" Style="border: 1px solid #ccc; border-radius: 8px;">
+    <div class="phone-flex" style="align-items: center;">
+        <MudSelect T="CountryModel" @bind-Value="SelectedCountry" Class="country-select" DisableUnderline="true" Style="width: 120px;">
             <MudSelectItem Value="@SelectedCountry">
-        <img src="@SelectedCountry.FlagUrl" style="width:24px; height:16px; margin-right:5px;" />
-        @SelectedCountry.CountryCode
-    </MudSelectItem>
-            @foreach (var country in countries)
-            { 
+                <img src="@SelectedCountry.Flag" style="width:24px; height:16px; margin-right:5px;" />
+                @SelectedCountry.Code
+            </MudSelectItem>
+            @foreach (var country in countryList)
+            {
                 <MudSelectItem Value="@country">
-                    <img src="@country.FlagUrl" style="width:24px; height:16px; margin-right:5px;" />
-                    @country.CountryCode
+                    <img src="@country.Flag" style="width:24px; height:16px; margin-right:5px;" />
+                    @country.Code
                 </MudSelectItem>
             }
         </MudSelect>
-        
-        <MudTextField @bind-Value="_model.MobileNumber" 
-                      Placeholder="Phone number" 
-                      Class="phone-input" 
-                      StartAdornment="@SelectedCountry.CountryCode" 
-                      Style="flex-grow: 1;" />
 
-         @if (showMobileVerificationSuccess)
+        <MudTextField T="string"
+                      For="@(() => _model.MobileNumber)"
+                      @bind-Value="_model.MobileNumber"
+                      Validation="ValidatePhone"
+                      @ref="_mobileFieldRef"
+                      MaxLength="50"
+                      FullWidth="true"
+                      StartAdornment="@SelectedCountry.Code"
+                      Immediate="true"
+                      Class="mobile-input" />
+        
+        @if (showMobileVerificationSuccess && !isEmail)
         {
             <MudText Typo="Typo.body1" Style="font-weight: 400; color: #079455;">
-            Verified
+                Verified
             </MudText>
         }
         else
-        {              
-
-        <MudButton Variant="Variant.Filled" 
-                   Color="Color.Warning" 
-                   OnClick="OnVerifyPhoneClicked" 
-                   Class="verify-button" 
-                   Style="background-color: #FF7F38; color: white;">
-            Verify
-        </MudButton> 
+        {
+            <MudButton Variant="Variant.Filled"
+                       Loading="@_phoneVerifying"
+                       Disabled="@(string.IsNullOrWhiteSpace(_model.MobileNumber) || !Regex.IsMatch(_model.MobileNumber, @"^\d{8,15}$"))"
+                       Color="Color.Warning"
+                       OnClick="OnVerifyPhoneClicked"
+                       Class="verify-button"
+                       Style="background-color: var(--color-secondary); color: white; min-width: 70px;">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    @if (_phoneVerifying)
+                    {
+                        <MudProgressCircular Indeterminate="true"
+                                             Size="Size.Small"
+                                             Style="color: var(--color-secondary);"
+                                             Color="Color.Inherit"
+                                             Class="mx-3" />
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.button">Verify</MudText>
+                    }
+                </div>
+            </MudButton>
         }
     </div>
 </MudPaper>
 
-               <MudText Typo="Typo.body1"  Style="font-weight: 400;">
+@* @if (_mobileFieldRef != null && _mobileFieldRef.HasErrors)
+{
+    <MudText Class="mt-1 ml-2" Style="color: #d32f2f; font-size: 0.75rem;">
+        @_mobileFieldRef.ErrorText
+    </MudText>
+}      *@
+
+        <MudText Typo="Typo.body1"  Style="font-weight: 400;">
         Date of Birth
         </MudText>
               <MudDatePicker @bind-Date="_dateOfBirth"
@@ -190,9 +237,9 @@
            Style="background-color: #FFFFFF;"
            DisableUnderline="true"
            Class="mt-4">
-    @foreach (var country in _countries)
+    @foreach (var country in countryList)
     {
-        <MudSelectItem T="string" Value="@country">@country</MudSelectItem>
+        <MudSelectItem T="string" Value="@country.Name">@country.Name</MudSelectItem>
     }
 </MudSelect>
 <MudText Typo="Typo.body1"  Style="font-weight: 400;">
@@ -204,9 +251,8 @@
            Dense="false"
            FullWidth="true"
            @bind-Value="_model.LanguagePreferences"
-           Style="background-color: #FFFFFF;"
            DisableUnderline="true"
-           Class="mt-4">
+           Class="mt-4 mud-text-field-custom">
     @foreach (var country in languageOptions)
     {
         <MudSelectItem T="string" Value="@country">@country</MudSelectItem>
@@ -220,33 +266,25 @@
 <MudTextField T="string"
               Label="Password"
               Variant="Variant.Outlined"
+              MaxLength="50"
               InputType="@(_showPassword ? InputType.Text : InputType.Password)"
               FullWidth="true"
-              Class="mt-4"
+              Class="mud-text-field-custom"
+              OnInput="@OnPasswordInput"
               @bind-Value="_model.Password"
-              Style="background-color: #FFFFFF;"
+              Immediate="true"
               Required="true"
               For="@(() => _model.Password)"
-              Error="@(_model.Password != null && PasswordStrengthCategory == "Weak")"
-              ErrorText="Password is too weak"
               Adornment="Adornment.End"
               AdornmentIcon="@(_showPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
               OnAdornmentClick="TogglePasswordVisibility"
               AdornmentColor="Color.Default" />
+              
 
-@if (!string.IsNullOrEmpty(_model.Password))
-{
-    <div class="d-flex align-center mt-2">
-        <span>Password strength:</span>
-        @for (int i = 0; i < 4; i++)
-        {
-            <MudProgressLinear Class="mx-1"
-                               Color="@GetStrengthBlockColor(i)"
-                               Value="100"
-                               Style="width: 50px; height: 8px; border-radius: 8px;" />
-        }
-    </div>
-}
+
+
+    <PasswordStrengthIndicator Password="@_model.Password" />
+
 
 <MudText Typo="Typo.body1"  Style="font-weight: 400;">
         Comnfirm Password
@@ -256,27 +294,34 @@
               <MudTextField T="string"
               Label="Confirm Password"
               Variant="Variant.Outlined"
+              Immediate="true"
+              MaxLength="50"
               InputType="@(_showConfirmPassword ? InputType.Text : InputType.Password)"
               FullWidth="true"
-              Class="mt-4"
+              Class="mt-4 mud-text-field-custom"
               @bind-Value="_confirmPassword"
-              Style="background-color: #FFFFFF;"
-              Required="true"
-              RequiredError="Please confirm your password"
+              Validation="ValidateConfirmPassword"
               For="@(() => _confirmPassword)"
               Adornment="Adornment.End"
               AdornmentIcon="@(_showConfirmPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
               OnAdornmentClick="ToggleConfirmVisibility"
               AdornmentColor="Color.Default" />
 
-        <MudCheckBox @bind-Value="AcceptedTerms" Label="">
+        <MudCheckBox @bind-Value="_model.AggreeToTerms" Label="">
         <LabelContent>
             I agree to the 
             <MudText Link="true" Style="color: #FF7F38;" Class="ml-1 mr-1 d-inline">Terms and Conditions</MudText>
             and 
             <MudText Link="true" Style="color: #FF7F38;" Class="ml-1 d-inline">Privacy Policy</MudText>
         </LabelContent>
+
     </MudCheckBox>
+    @if (showAgreeTermsError)
+{
+    <MudText Color="Color.Error" Class="mt-2" Typo="Typo.caption">
+        You must agree to the terms and conditions to proceed.
+    </MudText>
+}
     <MudCheckBox T="bool" Label="Enable Two-Factor Authentication" Class="mt-3" @bind-Checked="EnableTwoFactor" />
     <MudCheckBox T="bool" Label="I want to receive marketing emails and offers" Class="mt-2" @bind-Checked="MarketingOptIn" />
 
@@ -290,7 +335,6 @@
     OnClick="@SubmitSignup"
     Class="mt-4" />
 
-    <!-- Divider -->
     <div class="d-flex align-center my-4">
         <div style="flex-grow: 1; height: 1px; background-color: #ccc;"></div>
         <MudText Typo="Typo.caption" Class="mx-2">Or continue with</MudText>
@@ -316,15 +360,11 @@
         </MudButton>
     </MudItem>
     <MudItem xs="2">
-        <MudButton Variant="Variant.Outlined" Style="background-color: #FFFFFF; border-color: #DDDDDD; height: 44px; width: 78px; min-width: 50px; padding: 0; border-radius: 8px;">
+        <MudButton Variant="Variant.Outlined" Class="social-login-button">
             <img src="images/facebook.svg" alt="Facebook" style="height: 24px;" />
         </MudButton>
     </MudItem>
 </MudGrid>
-
-
-
-
 
     <MudText Align="Align.Center" Class="mt-4 d-flex justify-center">
     Already have an account? 
@@ -332,12 +372,14 @@
         Sign In
     </MudLink>
 </MudText>
-    
+</MudForm>
  </div>
 </div>
 
 
 @code {
+    private MudForm _form;
+    private MudTextField<string> _mobileFieldRef;
     private SignupModel _model = new();
     private bool _loading = false;
     private bool _showOtp = false;
@@ -352,9 +394,14 @@
     private string _phone_error = "";
     private string _password_error = "";
     private string _confirmPassword_error = "";
-    private bool EnableTwoFactor { get; set; } = true;
+    private bool EnableTwoFactor { get; set; } = false;
+
+    [Required(ErrorMessage = "You must accept the Terms and Conditions.")]
     private bool AcceptedTerms { get; set; }
     private bool MarketingOptIn { get; set; }
+
+    private bool showEmailVerificationBox { get; set; } = false;
+    private bool showPhoneVerificationBox { get; set; } = false;
     private DateTime? _dateOfBirth;
     private List<string> _validationErrors = new();
     private bool _showPassword = false;
@@ -363,31 +410,27 @@
     private bool showVerificationSuccess = false;
     private bool showMobileVerificationSuccess = false;
     private bool signUpSucesss = false;
-    private Country SelectedCountry { get; set; } = new Country 
-{ 
-    Value = "Qatar", 
-    FlagUrl = "https://flagcdn.com/w40/qa.png", 
-    CountryCode = "+974" 
-};
-
-
-    private List<Country> countries = new List<Country>
+    private bool showAgreeTermsError = false;
+    private bool _emailVerifying = false;
+    private bool _phoneVerifying = false;
+    private List<CountryModel> countryList = new List<CountryModel>();
+    
+    protected override async Task OnInitializedAsync()
     {
-        new Country { Value = "Qatar", FlagUrl = "https://flagcdn.com/w40/qa.png", CountryCode = "+974" },
-        new Country { Value = "UAS", FlagUrl = "https://flagcdn.com/w40/us.png", CountryCode = "+1" },
-        new Country { Value = "India", FlagUrl = "https://flagcdn.com/w40/in.png", CountryCode = "+91" }
-    };
-
-    public class Country
-    {
-        public string Value { get; set; }
-        public string FlagUrl { get; set; }
-        public string CountryCode { get; set; }
-        public override string ToString()
-        {
-        return $"({CountryCode})"; 
-        }
+        countryList = await FetchCountriesAsync();
     }
+    
+    private CountryModel SelectedCountry { get; set; } = new CountryModel
+    {
+        Name = "Qatar",
+        Code = "+974",
+        Flag = "https://flagcdn.com/w40/qa.png"
+    };
+    private void OnPasswordInput(ChangeEventArgs e)
+{
+    _model.Password = e?.Value?.ToString() ?? string.Empty;
+    StateHasChanged(); 
+}
     private void TogglePasswordVisibility()
     {
         _showPassword = !_showPassword;
@@ -396,146 +439,29 @@
     {
         _showConfirmPassword = !_showConfirmPassword;
     }
-    private void RemoveError(string error)
-{
-    _validationErrors.Remove(error);
-}
-
-    private int PasswordScore => CalculatePasswordScore(_model.Password);
-
-    private string PasswordStrengthCategory
-    {
-        get
-        {
-            if (PasswordScore <= 1) return "Weak";
-            if (PasswordScore == 2) return "Medium";
-            return "Strong";
-        }
-    }
-
-    private int CalculatePasswordScore(string password)
-    {
-        if (string.IsNullOrEmpty(password))
-            return 0;
-
-        int score = 0;
-
-        if (password.Length >= 8) score++;
-        if (password.Any(char.IsUpper)) score++;
-        if (password.Any(char.IsDigit)) score++;
-        if (password.Any(c => !char.IsLetterOrDigit(c))) score++;
-
-        return score;
-    }
-
-    private Color GetStrengthBlockColor(int index)
-    {
-        if (PasswordScore == 0)
-            return Color.Default;
-
-        if (index < PasswordScore)
-        {
-            return PasswordStrengthCategory switch
-            {
-                "Weak" => Color.Error,
-                "Medium" => Color.Warning,
-                "Strong" => Color.Success,
-                _ => Color.Default
-            };
-        }
-        else
-        {
-            return Color.Default;
-        }
-    }
-
     
-
-
-    private List<string> genderOptions = new() { "Male", "Female", "Other" };
-        private List<string> _countries = new()
-    {
-        "Algeria",
-        "India",
-        "United States",
-        "Canada",
-        "Germany",
-        "Australia",
-        "Japan",
-        "France"
-    };
     private List<string> languageOptions = new() { "English", "Arabic", "French", "German" }; 
 
 
     private async Task SubmitSignup()
     {
         _loading = true;
-        _validationErrors.Clear();
-
-    _validationErrors.Clear();
-
-if (string.IsNullOrWhiteSpace(_model.FirstName))
-    _validationErrors.Add("First Name is required.");
-else if (!Regex.IsMatch(_model.FirstName, @"^[a-zA-Z]+$"))
-    _validationErrors.Add("First Name must contain only letters.");
-
-if (string.IsNullOrWhiteSpace(_model.LastName))
-    _validationErrors.Add("Last Name is required.");
-else if (!Regex.IsMatch(_model.LastName, @"^[a-zA-Z]+$"))
-    _validationErrors.Add("Last Name must contain only letters.");
-
-if (string.IsNullOrWhiteSpace(_model.UserName))
-    _validationErrors.Add("Username is required.");
-
-if (string.IsNullOrWhiteSpace(_model.EmailAddress))
-    _validationErrors.Add("Email is required.");
-else if (!Regex.IsMatch(_model.EmailAddress, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
-    _validationErrors.Add("Email format is invalid.");
-
-if (string.IsNullOrWhiteSpace(_model.MobileNumber))
-    _validationErrors.Add("Phone number is required.");
-if (!_dateOfBirth.HasValue)
-{
-    _validationErrors.Add("Date of Birth is required.");
-}
-else
-{
-    var today = DateTime.Today;
-    var minimumAllowedDate = today.AddYears(-10); 
-
-    if (_dateOfBirth.Value > today)
-    {
-        _validationErrors.Add("Select valid date of birth.");
-    }
-    
-}
-
-if (string.IsNullOrWhiteSpace(_model.Nationality))
-    _validationErrors.Add("Nationality is required.");
-
-if (string.IsNullOrWhiteSpace(_model.LanguagePreferences))
-    _validationErrors.Add("Language is required.");
-
-if (string.IsNullOrWhiteSpace(_model.Password))
-    _validationErrors.Add("Password is required.");
-else if (!Regex.IsMatch(_model.Password, @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$"))
-    _validationErrors.Add("Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.");
-
-if (string.IsNullOrWhiteSpace(_confirmPassword))
-    _validationErrors.Add("Confirm Password is required.");
-else if (_model.Password != _confirmPassword)
-    _validationErrors.Add("Password and Confirm Password must match.");
-    
-if (!showVerificationSuccess)
-    _validationErrors.Add("Verify your email address before proceeding.");
-if (!AcceptedTerms)
-    _validationErrors.Add("You must accept the Terms and Conditions.");
-
-    if (_validationErrors.Any())
-    {
-        _loading = false;
-        return;
-    }
+        await _form.Validate();
+        if (!_model.AggreeToTerms)
+        {
+            showAgreeTermsError = true;
+            _loading = false;
+            return;
+        }
+        else
+        {
+            showAgreeTermsError = false;
+        }
+        if (!_form.IsValid)
+        {
+            _loading = false;
+            return;
+        }   
          var payload = new
         {
             username = _model.UserName,
@@ -552,14 +478,13 @@ if (!AcceptedTerms)
             location = "location"
         }; 
 
-
         try
         {
             Console.WriteLine(payload); 
-            var res = await Api.PostAsync<object, ResponseModel<object> >("auth/register", payload); 
-                Console.WriteLine(res.Status);
-                Console.WriteLine(res.Message);
-            if (res!.Status)
+            var response = await Api.PostAsync<object, ResponseModel<object> >("auth/register", payload); 
+                Console.WriteLine(response.Status);
+                Console.WriteLine(response.Message);
+            if (response.StatusCode == 200)
             {
                 UserState.Email = _model.EmailAddress;
                 UserState.mobileNumber = _model.MobileNumber;
@@ -568,17 +493,33 @@ if (!AcceptedTerms)
                     emailorPhoneNumber = _model.MobileNumber,
                     enable = EnableTwoFactor
                 };
-                var response = await Api.PostAsync<object, ResponseModel<object> >("auth/manage/2fa", body); 
+                if (EnableTwoFactor)
+                {
+                    body = new
+                    {
+                        emailorPhoneNumber = _model.MobileNumber,
+                        enable = EnableTwoFactor
+                    };
+                    var result = await Api.PostAsync<object, ResponseModel<object> >("auth/manage/2fa", body);
+                    if (result?.StatusCode == 200)
+                    {
+                        Console.WriteLine("2FA enabled successfully");
+                    }
+                    else
+                    {
+                        Snackbar.Add(result?.Message);
+                    }
+                }
                 signUpSucesss = true;
             }
             else
             {
-                 _validationErrors.Add(res.Message);
+                 Snackbar.Add(response.Message, Severity.Error);
             } 
         }
         catch (Exception ex)
         {
-            _validationErrors.Add($"Signup failed: {ex.Message}");
+           Snackbar.Add(ex.Message, Severity.Error);
         }
         finally
         {
@@ -587,15 +528,13 @@ if (!AcceptedTerms)
     }
     
 
-    private async void OnVerifyEmailClicked()
+    private async Task OnVerifyEmailClicked()
     {
+        Console.WriteLine("Email verification clicked");
+        _emailVerifying = true;
+        
         isEmail = true;
         email = _model.EmailAddress;
-     if (string.IsNullOrWhiteSpace(_model.EmailAddress))
-        {
-            _validationErrors.Add("Please enter your email address.");
-            return;
-            }   
         var payload = new
         {  
             email = _model.EmailAddress,
@@ -603,66 +542,58 @@ if (!AcceptedTerms)
         try
         {
             Console.WriteLine(payload); 
-            var res = await Api.PostAsync<object, ResponseModel<object> >("auth/verify-email-request", payload); 
-                Console.WriteLine(res.Status);
-                Console.WriteLine(res.Message);
-            if (res!.Status)
+            var response = await Api.PostAsync<object, object >("auth/verify-email-request", payload); 
+             if (response?.StatusCode == 200)
             {
                  _showVerificationPopup = true;
-                  showVerificationSuccess = true;
+                 await InvokeAsync(StateHasChanged); 
             }
             else
             {
-                 _validationErrors.Add(res.Message);
-            } 
+                Snackbar.Add(response?.Message, Severity.Error);
+            }  
+    
         }
         catch (Exception ex)
         {
-            _validationErrors.Add($"Verification failed: {ex.Message}");
+            Snackbar.Add($"Verification failed: {ex.Message}");
         }
         finally
         {
-            _loading = false;
+            _emailVerifying = false;
         }
 
     }
 
-    private async void OnVerifyPhoneClicked()
+    private async Task OnVerifyPhoneClicked()
     {
         isEmail = false;
-        email = _model.MobileNumber;
-     if (string.IsNullOrWhiteSpace(_model.MobileNumber))
-        {
-             _validationErrors.Add("Please enter your phone number.");
-            return;
-            }   
+        _phoneVerifying = true;
+        email = _model.MobileNumber; 
         var payload = new
         {  
             phoneNumber = _model.MobileNumber,
         }; 
         try
         {
-            Console.WriteLine(payload); 
-            var res = await Api.PostAsync<object, ResponseModel<object> >("auth/verify-phone-request", payload); 
-                Console.WriteLine(res.Status);
-                Console.WriteLine(res.Message);
-            if (res!.Status)
+            var response = await Api.PostAsync<object, object>("auth/verify-phone-request", payload); 
+            if (response?.StatusCode == 200)
             {
                  _showVerificationPopup = true;
-                  showMobileVerificationSuccess = true;
+                 await InvokeAsync(StateHasChanged); 
             }
             else
             {
-                    _validationErrors.Add(res.Message);
+                    Snackbar.Add(response?.Message, Severity.Error);
             } 
         }
         catch (Exception ex)
         {
-            _validationErrors.Add($"Signup failed: {ex.Message}");
+            Snackbar.Add($"Verification failed: {ex.Message}");
         }
         finally
         {
-            _loading = false;
+            _phoneVerifying = false;
         }
 
     }
@@ -670,6 +601,17 @@ if (!AcceptedTerms)
 {
     _showVerificationPopup = false;
 }
+private void ShowVerificationSuccessPopup()
+{
+    @if (isEmail){
+        showVerificationSuccess = true;
+    }
+    else{
+        showMobileVerificationSuccess = true;
+    }
+}
+
+
 private void CloseSuccessPopup()
 {
     signUpSucesss = false;
@@ -677,25 +619,129 @@ private void CloseSuccessPopup()
 
 }
     public class SignupModel
-    {
-        public string UserName { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public string EmailAddress { get; set; }
-        public string MobileNumber { get; set; }
-        public string Gender { get; set; }
-        public DateTime? DateOfBirth { get; set; } = DateTime.Today;
-        public string Password { get; set; }
-        public string Nationality { get; set; }
-        public string LanguagePreferences { get; set; } = "English";
-        public string Location { get; set; }
-    }
+{
+    [Required(ErrorMessage = "Username is required.")]
+    public string UserName { get; set; }
+
+    [Required(ErrorMessage = "First name is required.")]
+    [RegularExpression("^[A-Za-z]+$", ErrorMessage = "First name must contain only alphabets.")]
+    public string FirstName { get; set; }
+
+    [Required(ErrorMessage = "Last name is required.")]
+    [RegularExpression("^[A-Za-z]+$", ErrorMessage = "Last name must contain only alphabets.")]
+    public string LastName { get; set; }
+
+    [Required(ErrorMessage = "Email address is required.")]
+    [RegularExpression(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", ErrorMessage = "Invalid email address format.")]
+    public string EmailAddress { get; set; }
+
+     [Required(ErrorMessage = "Mobile number is required.")]
+    [RegularExpression("^[0-9]+$", ErrorMessage = "Mobile number must contain only digits.")]
+    public string MobileNumber { get; set; }
+
+    public string Gender { get; set; }
+
+    [Required(ErrorMessage = "Date of birth is required.")]
+    public DateTime? DateOfBirth { get; set; } = DateTime.Today;
+
+    [Required(ErrorMessage = "Password is required.")]
+    [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", 
+        ErrorMessage = "Password must contain at least one uppercase letter, one lowercase letter, one number, one special character, and no whitespace.")]
+    public string Password { get; set; }
+
+    [Required(ErrorMessage = "Nationality is required.")]
+    public string Nationality { get; set; } = "Qatar";
+
+    public string LanguagePreferences { get; set; } = "English";
+
+    public string Location { get; set; }
+
+    public bool AggreeToTerms { get; set; } = false;
+}
 
     public class TokenResponse
     {
         public string JwtToken { get; set; }
         public string RefreshToken { get; set; }
     }
+    private async Task<List<CountryModel>> FetchCountriesAsync()
+    {
+
+        try
+        {
+            var response = await Http.GetStringAsync("https://restcountries.com/v3.1/all");
+
+            var countriesJson = JsonSerializer.Deserialize<List<JsonElement>>(response);
+
+            foreach (var country in countriesJson)
+{
+    if (country.TryGetProperty("name", out var nameDict) &&
+        nameDict.TryGetProperty("common", out var nameElement))
+    {
+        string name = nameElement.GetString();
+        string code = "N/A";
+        string flag = "";
+
+        if (country.TryGetProperty("idd", out var idd))
+        {
+            if (idd.TryGetProperty("root", out var rootElement) &&
+                idd.TryGetProperty("suffixes", out var suffixesElement))
+            {
+                var root = rootElement.GetString();
+                var suffix = suffixesElement[0].GetString();
+                if (root != null && suffix != null)
+                {
+                    code = root + suffix;
+                }
+            }
+        }
+
+        if (country.TryGetProperty("flags", out var flags) &&
+            flags.TryGetProperty("png", out var flagElement))
+        {
+            flag = flagElement.GetString();
+        }
+
+        countryList.Add(new CountryModel
+        {
+            Name = name,
+            Code = code,
+            Flag = flag ?? ""
+        });
+    }
+}
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error fetching countries: " + ex.Message);
+        }
+
+        return countryList.OrderBy(c => c.Name).ToList();;
+    }
+    private string ValidatePhone(string value)
+{
+    if (string.IsNullOrWhiteSpace(value))
+        {
+            return "Please enter your email or phone number.";
+        }
+        else if (!ValidationHelper.IsValidPhoneNumber(value))
+        {
+            return "Please enter a valid email or phone number.";
+        }
+        StateHasChanged(); 
+        return null;
+}
+private string ValidateConfirmPassword(string value)
+{
+    if (string.IsNullOrWhiteSpace(value))
+        return "Please confirm your password.";
+
+    if (value != _model.Password) 
+        return "Passwords do not match.";
+
+    return null;
+}
+
 }
 
 <style>

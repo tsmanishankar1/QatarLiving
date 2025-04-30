@@ -3,115 +3,133 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager NavManager
 @inject UserState UserState
-
 @using QLN.Blazor.Base.Services
 @using QLN.Blazor.Base.Helpers
 @using MudBlazor
 @using QLN.Blazor.Base.Models
 @using QLN.Web.Shared.Components.CustomButton
 @using QLN.Web.Shared.Components.ModalDialog
-@using System.Diagnostics
-@using System.ComponentModel.DataAnnotations
 
 <div style="width: 100%; background-color: #F5F6FA; padding: 32px 16px;">
     <div style="max-width: 400px; margin: 0 auto;">
-        <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-4">Log in to your account</MudText>
+    <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-4">Log in to your account</MudText>
+    <MudStack AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
+    <MudText Typo="Typo.body1" Align="Align.Center">
+        Welcome back! Please enter your details.
+    </MudText>
+    </MudStack>
+     <MudText Typo="Typo.body1"  Style="font-weight: 400;">
+        Email or Phone Number </MudText>
+        <MudTextField T="string"
+                      Label="Email or Username"
+                      Variant="Variant.Outlined"
+                      FullWidth="true"
+                      InputType="InputType.Text"
+                      Class="mud-text-field-custom"
+                      MaxLength="50"
+                      Required="true"
+                      Error="@(!string.IsNullOrEmpty(_usernameError))"
+                      ErrorText="@_usernameError"
+                      Immediate="true"
+                       ValueChanged="OnEmailChanged"
+                      ValueExpression="(() => _username)"
+                      OnBlur="@ValidateUsername" />
 
-        <MudStack AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
-            <MudText Typo="Typo.body1" Align="Align.Center">
-                Welcome back! Please enter your details.
-            </MudText>
-        </MudStack>
+                      
 
-            <MudForm @ref="_form">
-          
 
-            <MudText Typo="Typo.body1" Style="font-weight: 400;">Email or Phone Number</MudText>
-            <MudTextField T="string"
-                          Label="Email or Username"
-                          Variant="Variant.Outlined"
-                          FullWidth="true"
-                          Class="mud-text-field-custom"
-                          Required="true"
-                          RequiredError="Email is required."
-                          Immediate="true"
-                          For="@(() => _username)"
-                          Validation="@ValidateEmailFormat" />
+        <MudText Typo="Typo.body1"  Style="font-weight: 400;">
+        Password
+        </MudText>
+       <MudTextField T="string"
+    Label="Password"
+    MaxLength="50"
+    Variant="Variant.Outlined"
+    InputType="@(_showPassword ? InputType.Text : InputType.Password)"
+    FullWidth="true"
+     Class="mud-text-field-custom mt-4" 
+    Required="true"
+    Adornment="Adornment.End"
+    AdornmentIcon="@(_showPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
+    OnAdornmentClick="TogglePasswordVisibility"
+    AdornmentColor="Color.Default"
+    Error="@(!string.IsNullOrEmpty(_passwordError))"
+    ErrorText="@_passwordError"
+                      Immediate="true"
+                      ValueChanged="OnPasswordChanged"
+                      ValueExpression="(() => _password)"
+                      OnBlur="ValidatePassword" />
 
-            <MudText Typo="Typo.body1" Style="font-weight: 400;">Password</MudText>
-            <MudTextField T="string"
-                          Label="Password"
-                          Variant="Variant.Outlined"
-                          FullWidth="true"
-                          InputType="@(_showPassword ? InputType.Text : InputType.Password)"
-                          Class="mud-text-field-custom mt-4"
-                          Required="true"
-                          RequiredError="Password is required."
-                          Immediate="true"
-                          For="@(() => _password)"
-                          Validation="@ValidatePassword"
-                          Adornment="Adornment.End"
-                          AdornmentIcon="@(_showPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
-                          OnAdornmentClick="TogglePasswordVisibility"
-                          AdornmentColor="Color.Default"
-                        />
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
-                <MudCheckBox T="bool" Label="Remember me" DisableMargins="true" />
-                <MudLink Href="/forgot-password" Style="color: #FF7F38; text-decoration: none;">Forgot Password?</MudLink>
-            </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
+    <MudCheckBox T="bool" Label="Remember me" DisableMargins="true" />
 
-            <CustomButton BackgroundColor="var(--color-secondary)"
-                          TextColor="#FFFFFF"
-                          Text="Sign In"
-                          Disabled="_isLoading"
-                          Loading="_isLoading"
-                          OnClick="@HandleSubmit"
-                          Class="mt-4" />
-        </MudForm>
+    <MudLink Href="/forgot-password" Style="color: #FF7F38; text-decoration: none;">
+        Forgot Password?
+    </MudLink>
+</div>
+   
+<CustomButton 
+    BackgroundColor= "var(--color-secondary)"
+    TextColor="#FFFFFF"
+    Text="Sign In"
+    Disabled="_isLoading"
+    Loading="_isLoading"
+    OnClick="@PerformLogin"
+    Class="mt-4" />
 
-        <div class="d-flex align-center my-4">
-            <div style="flex-grow: 1; height: 1px; background-color: #ccc;"></div>
-            <MudText Typo="Typo.caption" Class="mx-2">Or continue with</MudText>
-            <div style="flex-grow: 1; height: 1px; background-color: #ccc;"></div>
-        </div>
 
-        <MudGrid Justify="Justify.SpaceEvenly" GutterSize="12px" Class="mt-4">
-            <MudItem xs="2">
+     <div class="d-flex align-center my-4">
+        <div style="flex-grow: 1; height: 1px; background-color: #ccc;"></div>
+        <MudText Typo="Typo.caption" Class="mx-2">Or continue with</MudText>
+        <div style="flex-grow: 1; height: 1px; background-color: #ccc;"></div>
+    </div>
+
+    <MudGrid Justify="Justify.SpaceEvenly" GutterSize="12px" Class="mt-4">
+    <MudItem xs="2">
                 <MudButton Variant="Variant.Outlined" Class="social-login-button">
-                    <img src="/images/google.svg" alt="Google" style="height: 24px;" />
-                </MudButton>
-            </MudItem>
-            <MudItem xs="2">
+            <img src="/images/google.svg" alt="Google" style="height: 24px;" />
+        </MudButton>
+    </MudItem>
+    <MudItem xs="2">
                 <MudButton Variant="Variant.Outlined" Class="social-login-button">
-                    <img src="/images/microsoft.svg" alt="Microsoft" style="height: 24px;" />
-                </MudButton>
-            </MudItem>
-            <MudItem xs="2">
+            <img src="/images/microsoft.svg" alt="Microsoft" style="height: 24px;" />
+        </MudButton>
+    </MudItem>
+    <MudItem xs="2">
                 <MudButton Variant="Variant.Outlined" Class="social-login-button">
-                    <img src="/images/facebook.svg" alt="Facebook" style="height: 24px;" />
-                </MudButton>
-            </MudItem>
-        </MudGrid>
-
-        <MudStack AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
-            <MudText Align="Align.Start" Class="mt-4">
-                Don't have an account?
-                <MudLink Href="/signup" Class="ml-1" Style="color: #FF7F38;">Sign Up</MudLink>
-            </MudText>
-        </MudStack>
+ 
+            <img src="/images/facebook.svg" alt="Facebook" />
+        </MudButton>
+    </MudItem>
+    </MudGrid>
+    <MudStack AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
+    <MudText Align="Align.Start" Class="mt-4">
+        Don't have an account? 
+        <MudLink Href="/signup" Class="ml-1" Style="color: #FF7F38;">Sign Up</MudLink>
+    </MudText>
+    </MudStack>
     </div>
 </div>
 
 @code {
-    private MudForm _form;
-
-    private string _username { get; set; } = string.Empty;
-    private string _password { get; set; } = string.Empty;
+    private string _username = string.Empty;
+    private string _password = string.Empty;
     private bool _isLoading = false;
     private bool _showPassword = false;
+    private ModalData modalData = new();
+    private bool loginSucesss = false;
+
+
     private string _usernameError = string.Empty;
     private string _passwordError = string.Empty;
+
+
+    private async Task OnEmailChanged(string value)
+    {
+        _username = value;
+        ValidateUsername();
+    }
 
 
     private void TogglePasswordVisibility()
@@ -119,33 +137,70 @@
         _showPassword = !_showPassword;
     }
 
-    private string ValidateEmailFormat(string _username)
+
+    private void ValidateUsername()
     {
-        return ValidationHelper.IsValidEmail(_username) ? null : "Invalid email address.";
+        _usernameError = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(_username))
+        {
+            _usernameError = "Please enter your email or phone number.";
+        }
+        else if (!ValidationHelper.IsValidEmail(_username) && !ValidationHelper.IsValidPhoneNumber(_username))
+        {
+            _usernameError = "Please enter a valid email or phone number.";
+        }
+
+        StateHasChanged(); 
+    }
+    private async Task OnPasswordChanged(string value)
+    {
+        _password = value;
+        ValidatePassword();
     }
 
-    private string ValidatePassword(string password)
+    private void ValidatePassword()
     {
-        var result = ValidationHelper.ValidatePassword(password);
-        return string.IsNullOrEmpty(result) ? null : result;
+        _passwordError = ValidationHelper.ValidatePassword(_password);
+        StateHasChanged(); 
     }
-
-    private async Task HandleSubmit()
+    private async Task PerformLogin()
     {
-        
+        _usernameError = string.Empty;
+        _passwordError = string.Empty;
+
+        bool hasError = false;
+
+        if (string.IsNullOrWhiteSpace(_username))
+        {
+            _usernameError = "Please enter your email or phone number.";
+            hasError = true;
+        }
+        else if (!ValidationHelper.IsValidEmail(_username) && !ValidationHelper.IsValidPhoneNumber(_username))
+        {
+            _usernameError = "Please enter a valid email or phone number.";
+            hasError = true;
+        }
+        _passwordError = ValidationHelper.ValidatePassword(_password);
+        if (!string.IsNullOrEmpty(_passwordError))
+        {
+            hasError = true;
+        }
+
+        if (hasError)
+        {
+            StateHasChanged();
+            return;
+        }
+
+        _isLoading = true;
+        var payload = new { usernameOrEmailOrPhone = _username, password = _password };
+
         try
         {
-            _isLoading = true;
-
-            await _form.Validate();
-
-            if (!_form.IsValid)
-                return;
-
-            var payload = new { usernameOrEmailOrPhone = _username, password = _password };
-
-            var response = await Api.PostAsync<object, ResponseModel<LoginResponseData>>("auth/login", payload);
-
+            Console.WriteLine($"Payload: {payload}");
+            var response = await Api.PostAsync<object, LoginResponseData>("auth/login", payload);
+            Console.WriteLine("response", response);
             if (response?.StatusCode == 200)
             {
                 UserState.Email = response.Data.Emailaddress;
@@ -156,16 +211,21 @@
                 {
                     Snackbar.Add($"Logged in as {response.Data.Emailaddress}", Severity.Success);
                     NavManager.NavigateTo("/select-verification");
+                    return;
                 }
-                else
+                else if (!response.Data.IsTwoFactorEnabled)
                 {
                     Snackbar.Add($"Logged in as {response.Data.Emailaddress}", Severity.Success);
                     NavManager.NavigateTo("/");
                 }
-            }
+                else
+                {
+                    Snackbar.Add("Error: Could not determine two-factor authentication status.", Severity.Error);
+                }
+            }  
             else
             {
-                Snackbar.Add("Login failed. Please check your credentials.", Severity.Error);
+                Snackbar.Add("Error: " + response.Message, Severity.Error);
             }
         }
         catch (Exception ex)
@@ -178,13 +238,33 @@
         }
     }
 
+
+    
+
+
     public class LoginResponseData
     {
-        public string ?Username { get; set; }
-        public string ?Mobilenumber { get; set; }
-        public string ?Emailaddress { get; set; }
-        public string ?AccessToken { get; set; }
-        public string ?RefreshToken { get; set; }
+        public string Username { get; set; }
+        public string Mobilenumber { get; set; }
+        public string Emailaddress { get; set; }
+        public string AccessToken { get; set; }
+        public string RefreshToken { get; set; }
         public bool IsTwoFactorEnabled { get; set; }
     }
+  
+
+    private class LoginResult
+    {
+        public bool Success { get; set; }
+        public MessageContent Message { get; set; }
+    }
+
+    private class MessageContent
+    {
+        public string JwtToken { get; set; }
+        public string RefreshToken { get; set; }
+    }
 }
+
+
+

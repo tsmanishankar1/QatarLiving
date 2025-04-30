@@ -9,6 +9,7 @@
 @rendermode InteractiveServer
 @using QLN.Blazor.Base.Models
 @using QLN.Web.Shared.Components.CustomButton
+@using System.Text.RegularExpressions;
 
 
 
@@ -66,19 +67,24 @@
         </MudText>
 
         <MudTextField T="string"
-                      Label="Verification Code"
-                      Variant="Variant.Outlined"
-                      FullWidth="true"
-                      InputType="InputType.Text"
-                      MaxLength="6"
-                      @bind-Value="_code"
-                      Required="true" /> 
+              Label="Verification Code"
+              Variant="Variant.Outlined"
+              FullWidth="true"
+              InputType="InputType.Text"
+              MaxLength="6"
+              @bind-Value="_code"
+              Immediate="true"
+              OnInput="ValidateOtp"
+              Error="@(!string.IsNullOrEmpty(_otpError))"
+              ErrorText="_otpError"
+              Required="true" />
  
         <CustomButton 
     BackgroundColor="#FF7F38"
     TextColor="#FFFFFF"
     Text="Verify"
     Disabled="_isLoading"
+    Loading="_isLoading"
     OnClick="@VerifyCode"
     Class="mt-4">
 </CustomButton>
@@ -106,16 +112,24 @@
 @code {
     [Parameter]
 public bool ShowSuccess { get; set; }
-
  [Parameter]
 public bool isEmail {get; set;} 
 
 [Parameter]
+ public bool _showMobileVerificationSuccess { get; set; }
+
+[Parameter]
 public string email { get; set; } 
+
+[Parameter]
+public EventCallback OnAction { get; set; }
+
+private string? _otpError;
 
     private string _code = string.Empty;
     private bool _isLoading = false;
-    private bool _showSucess = false;
+    public bool _showSucess = false;
+   
     
     [Parameter] public EventCallback OnClose { get; set; }
     
@@ -134,7 +148,7 @@ public string email { get; set; }
         _isLoading = true;
         if (string.IsNullOrWhiteSpace(_code))
         {
-            Snackbar.Add("Enter the verification code", Severity.Warning);
+             _otpError = "Enter a Verification Code";
             _isLoading = false;
             return;
         }
@@ -145,22 +159,25 @@ public string email { get; set; }
             return;
         }
         try
-        {
-            
+        {   
             if (isEmail)
             {
               var payload = new { email = email, otp = _code };
               Console.WriteLine(payload);
-                var res = await Api.PostAsync<object, ResponseModel<object>>("auth/verify-email-otp", payload);
-                
-                Console.WriteLine(res?.Status);
-                if (res?.Status == true)
+                var response = await Api.PostAsync<object, object>("auth/verify-email-otp", payload);
+                Console.WriteLine(response?.Status);
+                if (response?.StatusCode == 200)
                 {
+                    _showSucess = true;
                     ShowSuccess = true;
+                     if (OnAction.HasDelegate)
+                    {
+                        await OnAction.InvokeAsync();
+                    }
                 }
                 else
                 {
-                    Snackbar.Add(res?.Message ?? "Failed to verify email.", Severity.Warning);
+                    Snackbar.Add(response?.Message, Severity.Warning);
                 }
             }
             else
@@ -168,15 +185,20 @@ public string email { get; set; }
 
                 var body = new { phoneNumber = email, otp = _code };
                 Console.WriteLine(body);
-                var res = await Api.PostAsync<object, ResponseModel<object>>("auth/verify-phone-otp", body);
-                Console.WriteLine(res?.Status);
-                if (res?.Status == true)
+                var response = await Api.PostAsync<object, object>("auth/verify-phone-otp", body);
+                Console.WriteLine(response?.Status);
+                if (response?.StatusCode == 200)
                 {
-                    ShowSuccess = true;
+                    _showSucess = true;
+                    _showMobileVerificationSuccess = true;
+                    if (OnAction.HasDelegate)
+                    {
+                        await OnAction.InvokeAsync();
+                    }
                 }
                 else
                 {
-                    Snackbar.Add(res?.Message ?? "Failed to verify email.", Severity.Warning);
+                    Snackbar.Add(response?.Message, Severity.Warning);
                 }
                 
             }
@@ -184,14 +206,26 @@ public string email { get; set; }
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Signup failed: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Verification failed: {ex.Message}", Severity.Error);
         }
         finally
         {
-            _showSucess = true;
             _isLoading = false;
         }
     }
+    private void ValidateOtp(ChangeEventArgs e)
+{
+    _code = e.Value?.ToString() ?? string.Empty;
+
+    if (!Regex.IsMatch(_code, @"^\d{6}$"))
+    {
+        _otpError = "OTP must be exactly 6 digits.";
+    }
+    else
+    {
+        _otpError = null;
+    }
+}
 
     
 
