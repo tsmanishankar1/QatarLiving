@@ -1,15 +1,14 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using System.Net.Mail;
 using System.Net;
 using QLN.Common.Infrastructure.Model;
-using QLN.Common.Infrastructure.IService;
-namespace QLN.Common.Infrastructure.Service
+using QLN.Common.Infrastructure.IService.IEmailService;
+namespace QLN.Common.Infrastructure.Service.SmtpService
 {
-    public class SmtpEmailSender : IExtendedEmailSender<ApplicationUser>
+    public class EmailSenderService : IExtendedEmailSender<ApplicationUser>
     {
         private readonly IConfiguration _config;
-        public SmtpEmailSender(IConfiguration config)
+        public EmailSenderService(IConfiguration config)
         {
             _config = config;
         }
@@ -87,6 +86,6 @@ namespace QLN.Common.Infrastructure.Service
             mail.To.Add(toEmail);
 
             await client.SendMailAsync(mail);
-        }              
+        }
     }
 }

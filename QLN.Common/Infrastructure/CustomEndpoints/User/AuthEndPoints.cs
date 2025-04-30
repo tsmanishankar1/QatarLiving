@@ -6,25 +6,16 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.WebUtilities;
-using System.Text.Encodings.Web;
-using Microsoft.EntityFrameworkCore;
-using QLN.Common.Infrastructure.IService;
-using QLN.Common.Infrastructure.Model;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Security.Claims;
-using QLN.Common.Infrastructure.Constants;
-using QLN.Common.Infrastructure.Service;
 using static QLN.Common.Infrastructure.DTO_s.OtpDTO;
 using QLN.Common.Infrastructure.EventLogger;
+using QLN.Common.Infrastructure.IService.IAuthService;
+using QLN.Common.Infrastructure.Utilities;
 
 
-namespace QLN.Common.Infrastructure.AuthUser
+namespace QLN.Common.Infrastructure.CustomEndpoints.User
 {
     public static class AuthEndPoints
-    {        
+    {
         // register
         public static RouteGroupBuilder MapRegisterEndpoints(this RouteGroupBuilder group)
         {
@@ -44,10 +35,11 @@ namespace QLN.Common.Infrastructure.AuthUser
             {
                 try
                 {
+
                     var result = await authService.Register(request, context);
                     return result;
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     log.LogException(ex);
                     return TypedResults.Problem(
@@ -82,8 +74,8 @@ namespace QLN.Common.Infrastructure.AuthUser
                 {
                     return await authService.SendEmailOtp(request.Email);
                 }
-                catch(Exception ex)
-                {                    
+                catch (Exception ex)
+                {
                     log.LogException(ex);
                     return TypedResults.Problem(
                         detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
@@ -94,10 +86,10 @@ namespace QLN.Common.Infrastructure.AuthUser
             .WithTags("Authentication")
             .WithSummary("Send Email OTP")
             .WithDescription("Sends an OTP to the user's email address for verification.")
-            .Produces<ApiResponse<string>>(StatusCodes.Status200OK)                
-            .Produces<ApiResponse<string>>(StatusCodes.Status404NotFound)          
-            .Produces<ApiResponse<string>>(StatusCodes.Status409Conflict)           
-            .Produces<ValidationProblemDetails>(StatusCodes.Status400BadRequest)    
+            .Produces<ApiResponse<string>>(StatusCodes.Status200OK)
+            .Produces<ApiResponse<string>>(StatusCodes.Status404NotFound)
+            .Produces<ApiResponse<string>>(StatusCodes.Status409Conflict)
+            .Produces<ValidationProblemDetails>(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
             return group;
@@ -116,7 +108,7 @@ namespace QLN.Common.Infrastructure.AuthUser
                 {
                     return await authService.VerifyEmailOtp(request.Email, request.Otp);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     log.LogException(ex);
                     return TypedResults.Problem(
@@ -128,8 +120,8 @@ namespace QLN.Common.Infrastructure.AuthUser
             .WithTags("Authentication")
             .WithSummary("Verify Email OTP")
             .WithDescription("Verifies the OTP entered by the user for their email address.")
-             .Produces<ApiResponse<string>>(StatusCodes.Status200OK)               
-             .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest)         
+             .Produces<ApiResponse<string>>(StatusCodes.Status200OK)
+             .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest)
              .ProducesProblem(StatusCodes.Status500InternalServerError);
 
             return group;
@@ -147,7 +139,7 @@ namespace QLN.Common.Infrastructure.AuthUser
                 try
                 {
                     var result = await authService.SendPhoneOtp(request.PhoneNumber);
-                    return result; 
+                    return result;
                 }
                 catch (Exception ex)
                 {
@@ -163,7 +155,7 @@ namespace QLN.Common.Infrastructure.AuthUser
             .WithDescription("Generates and stores OTP for phone number verification. If the phone number is already registered, it will return a failure response.")
             .Produces<ApiResponse<string>>(StatusCodes.Status200OK)
             .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status500InternalServerError);  
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
             return group;
         }
@@ -182,7 +174,7 @@ namespace QLN.Common.Infrastructure.AuthUser
                 {
                     return await authService.VerifyPhoneOtp(request.PhoneNumber, request.Otp);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     log.LogException(ex);
                     return TypedResults.Problem(
@@ -200,7 +192,7 @@ namespace QLN.Common.Infrastructure.AuthUser
 
             return group;
         }
-      
+
         // Forgot Password
         public static RouteGroupBuilder MapForgotPasswordEndpoint(this RouteGroupBuilder group)
         {
@@ -214,7 +206,7 @@ namespace QLN.Common.Infrastructure.AuthUser
                 {
                     return await authService.ForgotPassword(request);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     log.LogException(ex);
                     return TypedResults.Problem(
@@ -226,9 +218,9 @@ namespace QLN.Common.Infrastructure.AuthUser
             .WithTags("Authentication")
             .WithSummary("Request password reset")
             .WithDescription("Sends a password reset link to the user’s email if the email is registered and confirmed.")
-            .Produces<ApiResponse<string>>(StatusCodes.Status200OK)  
-            .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest)  
-            .ProducesProblem(StatusCodes.Status500InternalServerError); 
+            .Produces<ApiResponse<string>>(StatusCodes.Status200OK)
+            .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
             return group;
         }
@@ -246,7 +238,7 @@ namespace QLN.Common.Infrastructure.AuthUser
                 {
                     return await authService.ResetPassword(request);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     log.LogException(ex);
                     return TypedResults.Problem(
@@ -258,10 +250,10 @@ namespace QLN.Common.Infrastructure.AuthUser
                 .WithTags("Authentication")
                 .WithSummary("Reset password")
                 .WithDescription("Resets the user’s password using a valid reset token.")
-                .Produces<ApiResponse<string>>(StatusCodes.Status200OK)  
-                .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest)  
-                .ProducesValidationProblem()  
-                .ProducesProblem(StatusCodes.Status500InternalServerError);  
+                .Produces<ApiResponse<string>>(StatusCodes.Status200OK)
+                .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest)
+                .ProducesValidationProblem()
+                .ProducesProblem(StatusCodes.Status500InternalServerError);
 
             return group;
         }
@@ -274,7 +266,7 @@ namespace QLN.Common.Infrastructure.AuthUser
                 BadRequest<ApiResponse<string>>,
                 UnauthorizedHttpResult,
                 ProblemHttpResult,
-                ValidationProblem >> (
+                ValidationProblem>> (
                 [FromBody] LoginRequest request,
                 [FromServices] IAuthService authService,
                 [FromServices] IEventlogger log
@@ -284,7 +276,7 @@ namespace QLN.Common.Infrastructure.AuthUser
                 {
                     return await authService.Login(request);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     log.LogException(ex);
                     return TypedResults.Problem(
@@ -296,8 +288,8 @@ namespace QLN.Common.Infrastructure.AuthUser
             .WithTags("Authentication")
             .WithSummary("User login")
             .WithDescription("Logs in a user using email/username/phone and password. If 2FA is enabled, a verification code is sent to the email.")
-            .Produces<ApiResponse<LoginResponse>>(StatusCodes.Status200OK)  
-            .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest) 
+            .Produces<ApiResponse<LoginResponse>>(StatusCodes.Status200OK)
+            .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest)
             .Produces<ApiResponse<string>>(StatusCodes.Status404NotFound)
             .Produces<ApiResponse<string>>(StatusCodes.Status409Conflict)
             .Produces<ValidationProblemDetails>(StatusCodes.Status400BadRequest)
@@ -309,7 +301,7 @@ namespace QLN.Common.Infrastructure.AuthUser
         // verify twofactorAuth
         public static RouteGroupBuilder MapVerify2FAEndpoint(this RouteGroupBuilder group)
         {
-            group.MapPost("/verify-2fa", async Task<Results<Ok<ApiResponse<LoginResponse>>,  BadRequest<ApiResponse<string>>, ProblemHttpResult, ValidationProblem>> (
+            group.MapPost("/verify-2fa", async Task<Results<Ok<ApiResponse<LoginResponse>>, BadRequest<ApiResponse<string>>, ProblemHttpResult, ValidationProblem>> (
                 [FromBody] Verify2FARequest request,
                 [FromServices] IAuthService authService,
                 [FromServices] IEventlogger log
@@ -319,7 +311,7 @@ namespace QLN.Common.Infrastructure.AuthUser
                 {
                     return await authService.Verify2FA(request);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     log.LogException(ex);
                     return TypedResults.Problem(
@@ -355,7 +347,7 @@ namespace QLN.Common.Infrastructure.AuthUser
                 {
                     return await authService.RefreshToken(request);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     return TypedResults.Problem(
                         detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
@@ -371,7 +363,8 @@ namespace QLN.Common.Infrastructure.AuthUser
             .Produces<ApiResponse<string>>(StatusCodes.Status404NotFound)
             .Produces<ApiResponse<string>>(StatusCodes.Status409Conflict)
             .Produces<ValidationProblemDetails>(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status500InternalServerError);
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
 
             return group;
         }
@@ -390,7 +383,7 @@ namespace QLN.Common.Infrastructure.AuthUser
                 {
                     return await authService.Toggle2FA(request);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     log.LogException(ex);
                     return TypedResults.Problem(
@@ -417,16 +410,22 @@ namespace QLN.Common.Infrastructure.AuthUser
         public static RouteGroupBuilder MapGetProfileEndpoint(this RouteGroupBuilder group)
         {
             group.MapGet("/manage/info", async Task<IResult> (
-                [FromQuery] Guid Id,
+                HttpContext context,
                 [FromServices] IAuthService authService,
                 [FromServices] IEventlogger log
+
             ) =>
             {
                 try
                 {
-                    return await authService.GetProfile(Id);
+                    var userId = context.User.GetId();
+                    if (userId == Guid.Empty)
+                    {
+                        return TypedResults.Unauthorized();
+                    }
+                    return await authService.GetProfile(userId);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     log.LogException(ex);
                     return TypedResults.Problem(
@@ -443,7 +442,8 @@ namespace QLN.Common.Infrastructure.AuthUser
             .Produces<ApiResponse<string>>(StatusCodes.Status404NotFound)
             .Produces<ApiResponse<string>>(StatusCodes.Status409Conflict)
             .Produces<ValidationProblemDetails>(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status500InternalServerError);
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
 
             return group;
         }
@@ -453,7 +453,7 @@ namespace QLN.Common.Infrastructure.AuthUser
         public static RouteGroupBuilder MapUpdateProfileEndpoint(this RouteGroupBuilder group)
         {
             group.MapPut("/manage/update", async Task<IResult> (
-                [FromHeader(Name = "Id")] Guid Id,
+                HttpContext context,
                 [FromBody] UpdateProfileRequest request,
                 [FromServices] IAuthService authService,
                 [FromServices] IEventlogger log
@@ -461,9 +461,14 @@ namespace QLN.Common.Infrastructure.AuthUser
             {
                 try
                 {
-                    return await authService.UpdateProfile(Id, request);
+                    var userId = context.User.GetId();
+                    if (userId == Guid.Empty)
+                    {
+                        return TypedResults.Unauthorized();
+                    }
+                    return await authService.UpdateProfile(userId, request);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     log.LogException(ex);
                     return TypedResults.Problem(
@@ -478,7 +483,8 @@ namespace QLN.Common.Infrastructure.AuthUser
             .Produces<ApiResponse<string>>(StatusCodes.Status200OK)
             .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status500InternalServerError);
+            .Produces(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
 
             return group;
         }
@@ -487,14 +493,19 @@ namespace QLN.Common.Infrastructure.AuthUser
         public static RouteGroupBuilder MapLogoutEndpoint(this RouteGroupBuilder group)
         {
             group.MapPost("/logout", async (
-                [FromHeader(Name = "Id")] Guid Id,
+                HttpContext context,
                 [FromServices] IAuthService authService,
                 [FromServices] IEventlogger log
             ) =>
             {
                 try
                 {
-                    return await authService.Logout(Id);
+                    var userId = context.User.GetId();
+                    if (userId == Guid.Empty)
+                    {
+                        return TypedResults.Unauthorized();
+                    }
+                    return await authService.Logout(userId);
                 }
                 catch (Exception ex)
                 {
@@ -510,7 +521,8 @@ namespace QLN.Common.Infrastructure.AuthUser
             .WithDescription("Removes tokens and signs the user out.")
             .Produces<ApiResponse<string>>(StatusCodes.Status200OK)
             .Produces<ApiResponse<string>>(StatusCodes.Status404NotFound)
-            .ProducesProblem(StatusCodes.Status500InternalServerError);
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
 
             return group;
         }

@@ -2,30 +2,21 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using QLN.Common.DTO_s;
-using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.EventLogger;
-using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.IAuthService;
+using QLN.Common.Infrastructure.IService.IEmailService;
+using QLN.Common.Infrastructure.IService.ITokenService;
 using QLN.Common.Infrastructure.Model;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Numerics;
-using System.Security.Claims;
 using System.Text;
-using System.Text.Encodings.Web;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace QLN.Common.Infrastructure.Service
+namespace QLN.Common.Infrastructure.Service.AuthService
 {
     public class AuthService : IAuthService
     {
@@ -60,7 +51,7 @@ namespace QLN.Common.Infrastructure.Service
         }
 
 
-        public async Task<Results<Ok<ApiResponse<string>>,BadRequest<ApiResponse<string>>,ValidationProblem,NotFound<ApiResponse<string>>,Conflict<ApiResponse<string>>,ProblemHttpResult>>Register(RegisterRequest request, HttpContext context)
+        public async Task<Results<Ok<ApiResponse<string>>, BadRequest<ApiResponse<string>>, ValidationProblem, NotFound<ApiResponse<string>>, Conflict<ApiResponse<string>>, ProblemHttpResult>> Register(RegisterRequest request, HttpContext context)
         {
             try
             {
@@ -73,7 +64,7 @@ namespace QLN.Common.Infrastructure.Service
                         Message = "Please verify your Email and Phone Number before registering."
                     });
                 }
-                
+
                 var existingUser = await _userManager.FindByEmailAsync(request.Emailaddress);
                 if (existingUser != null)
                 {
@@ -128,12 +119,14 @@ namespace QLN.Common.Infrastructure.Service
                     Gender = request.Gender,
                     Mobileoperator = request.MobileOperator,
                     Nationality = request.Nationality,
-                    Languagepreferences = request.Languagepreferences,                    
+                    Languagepreferences = request.Languagepreferences,
                     IsCompany = false,
                     EmailConfirmed = true,
                     PhoneNumberConfirmed = true,
                     Isactive = true,
-                    SecurityStamp = Guid.NewGuid().ToString()
+                    SecurityStamp = Guid.NewGuid().ToString(),
+                    Createdat = DateTime.UtcNow,
+
                 };
 
                 var createResult = await _userManager.CreateAsync(newUser, request.Password);
@@ -177,17 +170,17 @@ namespace QLN.Common.Infrastructure.Service
         public async Task<Results<Ok<ApiResponse<string>>, ProblemHttpResult, BadRequest<ApiResponse<string>>>> SendEmailOtp(string email)
         {
             try
-            {                
+            {
                 var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email && u.Isactive == true);
                 if (existingUser != null)
                 {
                     return TypedResults.BadRequest(ApiResponse<string>.Fail("Email already registered. Please login."));
                 }
-                
+
                 var otp = new Random().Next(100000, 999999).ToString();
-                
+
                 TempVerificationStore.EmailOtps[email] = otp;
-               
+
                 await _emailSender.SendOtpEmailAsync(email, otp);
 
                 return TypedResults.Ok(ApiResponse<string>.Success("OTP sent to your email."));
@@ -218,7 +211,7 @@ namespace QLN.Common.Infrastructure.Service
 
                 TempVerificationStore.VerifiedEmails.Add(email);
 
-                
+
                 TempVerificationStore.EmailOtps.Remove(email);
 
                 return TypedResults.Ok(ApiResponse<string>.Success("Email verified successfully."));
@@ -236,18 +229,18 @@ namespace QLN.Common.Infrastructure.Service
         public async Task<Results<Ok<ApiResponse<string>>, ProblemHttpResult, BadRequest<ApiResponse<string>>>> SendPhoneOtp(string phoneNumber)
         {
             try
-            {                
+            {
                 var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber && u.Isactive == true);
                 if (existingUser != null)
                 {
                     return TypedResults.BadRequest(ApiResponse<string>.Fail("Phone number already registered. Please login."));
                 }
-                
+
                 var otp = new Random().Next(100000, 999999).ToString();
 
-                
+
                 TempVerificationStore.PhoneOtps[phoneNumber] = otp;
-                
+
                 string smsText = $"Your OTP for verification is {otp}.";
 
                 string customerId = _config["OoredooSmsApi:CustomerId"];
@@ -295,7 +288,7 @@ namespace QLN.Common.Infrastructure.Service
 
                 TempVerificationStore.VerifiedPhoneNumbers.Add(phoneNumber);
 
-                
+
                 TempVerificationStore.PhoneOtps.Remove(phoneNumber);
 
                 return TypedResults.Ok(ApiResponse<string>.Success("Phone number verified successfully."));
@@ -313,7 +306,7 @@ namespace QLN.Common.Infrastructure.Service
         public async Task<Results<Ok<ApiResponse<string>>, ProblemHttpResult, BadRequest<ApiResponse<string>>>> ForgotPassword(ForgotPasswordRequest request)
         {
             try
-            {                
+            {
                 var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == request.Email && u.Isactive == true);
 
                 if (user != null && await _userManager.IsEmailConfirmedAsync(user))
@@ -327,13 +320,13 @@ namespace QLN.Common.Infrastructure.Service
                     await _emailSender.SendPasswordResetLinkAsync(user, user.Email, resetUrl);
 
                     return TypedResults.Ok(ApiResponse<string>.Success("If your email is registered and confirmed, password reset link has been sent."));
-                }                
+                }
                 else
-                {                    
+                {
                     return TypedResults.BadRequest(ApiResponse<string>.Fail("User is not registered with this email or email is not confirmed."));
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _log.LogException(ex);
                 return TypedResults.Problem(
@@ -345,7 +338,7 @@ namespace QLN.Common.Infrastructure.Service
         public async Task<Results<Ok<ApiResponse<string>>, BadRequest<ApiResponse<string>>, NotFound<ApiResponse<string>>, ValidationProblem, ProblemHttpResult>> ResetPassword(ResetPasswordRequest request)
         {
             try
-            {                
+            {
                 var user = await _userManager.Users.FirstOrDefaultAsync(r => r.Email == request.Email && r.Isactive == true);
 
                 if (user == null || !await _userManager.IsEmailConfirmedAsync(user))
@@ -372,7 +365,7 @@ namespace QLN.Common.Infrastructure.Service
 
                 return TypedResults.Ok(ApiResponse<string>.Success("Password has been reset successfully"));
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _log.LogException(ex);
                 return TypedResults.Problem(
@@ -381,7 +374,7 @@ namespace QLN.Common.Infrastructure.Service
             }
         }
 
-        public async Task<Results<Ok<ApiResponse<LoginResponse>>, BadRequest<ApiResponse<string>>, UnauthorizedHttpResult, ProblemHttpResult,  ValidationProblem>> Login(LoginRequest request)
+        public async Task<Results<Ok<ApiResponse<LoginResponse>>, BadRequest<ApiResponse<string>>, UnauthorizedHttpResult, ProblemHttpResult, ValidationProblem>> Login(LoginRequest request)
         {
             try
             {
@@ -406,7 +399,7 @@ namespace QLN.Common.Infrastructure.Service
                     return TypedResults.BadRequest(ApiResponse<string>.Fail("Email not confirmed."));
                 }
 
-               
+
 
                 if (user.TwoFactorEnabled)
                 {
@@ -427,8 +420,8 @@ namespace QLN.Common.Infrastructure.Service
                 var accessToken = await _tokenService.GenerateAccessToken(user);
                 var refreshToken = _tokenService.GenerateRefreshToken();
 
-                await _userManager.SetAuthenticationTokenAsync(user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshToken, refreshToken);
-                await _userManager.SetAuthenticationTokenAsync(user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
+                await _userManager.SetAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshToken, refreshToken);
+                await _userManager.SetAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
 
                 return TypedResults.Ok(ApiResponse<LoginResponse>.Success("Login successful", new LoginResponse
                 {
@@ -439,7 +432,7 @@ namespace QLN.Common.Infrastructure.Service
                     RefreshToken = refreshToken
                 }));
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _log.LogException(ex);
                 return TypedResults.Problem(
@@ -448,7 +441,7 @@ namespace QLN.Common.Infrastructure.Service
             }
         }
 
-        public async Task<Results<Ok<ApiResponse<LoginResponse>>,BadRequest<ApiResponse<string>>, ProblemHttpResult, ValidationProblem>> Verify2FA(Verify2FARequest request)
+        public async Task<Results<Ok<ApiResponse<LoginResponse>>, BadRequest<ApiResponse<string>>, ProblemHttpResult, ValidationProblem>> Verify2FA(Verify2FARequest request)
         {
             try
             {
@@ -460,7 +453,7 @@ namespace QLN.Common.Infrastructure.Service
                 if (user == null)
                 {
                     return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid username, email, or mobile number."));
-                }                    
+                }
 
                 if (!user.TwoFactorEnabled)
                 {
@@ -476,8 +469,8 @@ namespace QLN.Common.Infrastructure.Service
                 var accessToken = await _tokenService.GenerateAccessToken(user);
                 var refreshToken = _tokenService.GenerateRefreshToken();
 
-                await _userManager.SetAuthenticationTokenAsync(user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshToken, refreshToken);
-                await _userManager.SetAuthenticationTokenAsync(user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
+                await _userManager.SetAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshToken, refreshToken);
+                await _userManager.SetAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
 
                 return TypedResults.Ok(ApiResponse<LoginResponse>.Success("2FA verified. Login successful.", new LoginResponse
                 {
@@ -505,8 +498,8 @@ namespace QLN.Common.Infrastructure.Service
                 ApplicationUser? user = null;
                 foreach (var u in _userManager.Users)
                 {
-                    var storedToken = await _userManager.GetAuthenticationTokenAsync(u, QLNTokenConstants.RefreshToken, "refresh_token");
-                    var expiryStr = await _userManager.GetAuthenticationTokenAsync(u, QLNTokenConstants.RefreshTokenExpiry, "refresh_token_expiry");
+                    var storedToken = await _userManager.GetAuthenticationTokenAsync(u, Constants.ConstantValues.RefreshToken, "refresh_token");
+                    var expiryStr = await _userManager.GetAuthenticationTokenAsync(u, Constants.ConstantValues.RefreshTokenExpiry, "refresh_token_expiry");
 
                     if (storedToken == request.RefreshToken)
                     {
@@ -533,8 +526,8 @@ namespace QLN.Common.Infrastructure.Service
                 var newAccessToken = await _tokenService.GenerateAccessToken(user);
                 var newRefreshToken = _tokenService.GenerateRefreshToken();
 
-                await _userManager.SetAuthenticationTokenAsync(user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshToken, newRefreshToken);
-                await _userManager.SetAuthenticationTokenAsync(user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
+                await _userManager.SetAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshToken, newRefreshToken);
+                await _userManager.SetAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
 
                 return TypedResults.Ok(ApiResponse<RefreshTokenResponse>.Success("Token refreshed", new RefreshTokenResponse
                 {
@@ -542,7 +535,7 @@ namespace QLN.Common.Infrastructure.Service
                     RefreshToken = newRefreshToken
                 }));
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _log.LogException(ex);
                 return TypedResults.Problem(
@@ -580,7 +573,7 @@ namespace QLN.Common.Infrastructure.Service
                 var status = request.Enable ? "enabled" : "disabled";
                 return TypedResults.Ok(ApiResponse<string>.Success($"Two-Factor Authentication has been {status}."));
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _log.LogException(ex);
                 return TypedResults.Problem(
@@ -593,17 +586,17 @@ namespace QLN.Common.Infrastructure.Service
         {
             try
             {
-                if(Id == Guid.Empty)
+                if (Id == Guid.Empty)
                 {
                     return TypedResults.BadRequest(ApiResponse<string>.Fail("email is required."));
                 }
 
                 var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == Id && u.Isactive == true);
-                
+
                 if (user == null)
                 {
                     return TypedResults.NotFound(ApiResponse<string>.Fail("User not Found"));
-                }                
+                }
                 return TypedResults.Ok(ApiResponse<object>.Success("Profile data", new
                 {
                     user.UserName,
@@ -612,17 +605,17 @@ namespace QLN.Common.Infrastructure.Service
                     user.Email,
                     user.PhoneNumber,
                     user.Gender,
-                    user.Dateofbirth,                    
+                    user.Dateofbirth,
                     user.Languagepreferences,
                     user.Nationality,
-                    user.Mobileoperator,                 
-                    user.PhoneNumberConfirmed, 
+                    user.Mobileoperator,
+                    user.PhoneNumberConfirmed,
                     user.EmailConfirmed,
-                    user.IsCompany,                    
+                    user.IsCompany,
                     user.TwoFactorEnabled
                 }));
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _log.LogException(ex);
                 return TypedResults.Problem(
@@ -641,25 +634,26 @@ namespace QLN.Common.Infrastructure.Service
                 }
 
                 var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == id && u.Isactive == true);
-                
+
 
                 if (user == null || user.Isactive == false)
                 {
                     return TypedResults.NotFound(ApiResponse<string>.Fail("User not found"));
-                }                    
+                }
 
                 user.Firstname = request.FirstName;
                 user.Lastname = request.LastName;
                 user.Gender = request.Gender;
                 user.Dateofbirth = request.Dateofbirth;
-                user.Nationality = request.Nationality;                
+                user.Nationality = request.Nationality;
                 user.PhoneNumber = request.MobileNumber;
                 user.Languagepreferences = request.Languagepreferences;
+                user.Updatedat = DateTime.UtcNow;
                 await _userManager.UpdateAsync(user);
 
                 return TypedResults.Ok(ApiResponse<string>.Success("Profile updated successfully"));
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _log.LogException(ex);
                 return TypedResults.Problem(
@@ -679,11 +673,11 @@ namespace QLN.Common.Infrastructure.Service
                     return TypedResults.NotFound(ApiResponse<string>.Fail("User not found."));
                 }
 
-                
-                await _userManager.RemoveAuthenticationTokenAsync(user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshToken);
-                await _userManager.RemoveAuthenticationTokenAsync(user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshTokenExpiry);
 
-                
+                await _userManager.RemoveAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshToken);
+                await _userManager.RemoveAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshTokenExpiry);
+
+
                 await _httpContextAccessor.HttpContext!.SignOutAsync();
 
                 return TypedResults.Ok(ApiResponse<string>.Success("User logged out successfully."));
@@ -713,7 +707,7 @@ namespace QLN.Common.Infrastructure.Service
                            "&Private=false";
 
             using (var client = new HttpClient())
-            {                
+            {
                 var response = await client.GetAsync(apiUrl + "?" + query);
                 return response;
             }

@@ -1,11 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace QLN.Common.Infrastructure.IService
+namespace QLN.Common.Infrastructure.IService.IEmailService
 {
     public interface IExtendedEmailSender<TUser> : IEmailSender<TUser>
        where TUser : class
