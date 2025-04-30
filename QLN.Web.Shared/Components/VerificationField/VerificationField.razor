@@ -1,0 +1,71 @@
+@using MudBlazor
+@using System.Text.RegularExpressions;
+
+<MudTextField T="string"
+              @bind-Value="Code"
+              Variant="Variant.Outlined"
+              MaxLength="6"
+              FullWidth="true"
+              Style="background-color: #FFFFFF;"
+              InputType="InputType.Text"
+              DisableUnderLine="true"
+              Class="my-2"
+              Immediate="true"
+              Validation="@(new Func<string, string>(value =>
+                  string.IsNullOrEmpty(value) ? "Verification code is required" :
+                  !System.Text.RegularExpressions.Regex.IsMatch(value, @"^\d{6}$") ? "Enter valid verification code" :
+                  null))">
+
+   
+            <MudButton Variant="Variant.Text"
+                       Color="Color.Primary"
+                       OnClick="TriggerVerification"
+                       Class="px-2"
+                       Style="background-color: #FF7F38; color: white; min-width: 70px;">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    @if (IsLoading)
+                    {
+                        <MudProgressCircular Indeterminate="true"
+                                             Size="Size.Small"
+                                             Style="color: #FF7F38;"
+                                             Color="Color.Inherit"
+                                             Class="mx-3" />
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.button">Check</MudText>
+                    }
+                </div>
+            </MudButton>
+        
+</MudTextField>
+
+@code {
+    [Parameter] public string Input { get; set; }
+    [Parameter] public EventCallback<string> InputChanged { get; set; }
+
+    [Parameter] public string Code { get; set; } = string.Empty;
+
+    [Parameter] public EventCallback OnVerified { get; set; }
+
+    private bool IsLoading { get; set; } = false;
+    private string? _otpError;
+    private bool isEmail { get; set; } = false;
+
+    private async Task TriggerVerification()
+    {
+        IsLoading = true;
+        StateHasChanged();
+
+        // Simulated delay or API call
+        await Task.Delay(1000);
+
+        if (Input == Code)
+        {
+            await OnVerified.InvokeAsync();
+        }
+
+        IsLoading = false;
+        StateHasChanged();
+    }
+}
