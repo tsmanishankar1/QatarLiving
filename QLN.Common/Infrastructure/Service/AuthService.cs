@@ -16,6 +16,7 @@ using QLN.Common.Infrastructure.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Numerics;
 using System.Security.Claims;
 using System.Text;
@@ -72,7 +73,7 @@ namespace QLN.Common.Infrastructure.Service
                         Message = "Please verify your Email and Phone Number before registering."
                     });
                 }
-
+                
                 var existingUser = await _userManager.FindByEmailAsync(request.Emailaddress);
                 if (existingUser != null)
                 {
@@ -247,13 +248,26 @@ namespace QLN.Common.Infrastructure.Service
                 
                 TempVerificationStore.PhoneOtps[phoneNumber] = otp;
                 
-                var path = Path.Combine(Directory.GetCurrentDirectory(), "OtpLogs");
-                if (!Directory.Exists(path))
-                    Directory.CreateDirectory(path);
+                string smsText = $"Your OTP for verification is {otp}.";
 
-                await File.AppendAllTextAsync(Path.Combine(path, "phone_otps.txt"), $"{phoneNumber}|{otp}|{DateTime.UtcNow}\n");
+                string customerId = _config["OoredooSmsApi:CustomerId"];
+                string userName = _config["OoredooSmsApi:UserName"];
+                string userPassword = _config["OoredooSmsApi:UserPassword"];
+                string originator = _config["OoredooSmsApi:Originator"];
+                string apiUrl = _config["OoredooSmsApi:ApiUrl"];
 
-                return TypedResults.Ok(ApiResponse<string>.Success("OTP generated for phone."));
+                var response = await SendSmsAsync(apiUrl, customerId, userName, userPassword, phoneNumber, smsText, originator);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return TypedResults.Ok(ApiResponse<string>.Success("OTP sent successfully to phone."));
+                }
+                else
+                {
+                    return TypedResults.Problem(
+                        detail: "Failed to send OTP via SMS. Please try again later.",
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
             }
             catch (Exception ex)
             {
@@ -680,6 +694,28 @@ namespace QLN.Common.Infrastructure.Service
                 return TypedResults.Problem(
                     detail: ApiResponse<string>.Fail("An unexpected error occurred during logout.").Message,
                     statusCode: StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        private async Task<HttpResponseMessage> SendSmsAsync(string apiUrl, string customerId, string userName, string userPassword, string phoneNumber, string smsText, string originator)
+        {
+            // Build the query parameters
+            string query = $"smsText={Uri.EscapeDataString(smsText)}" +
+                           $"&recipientPhone={Uri.EscapeDataString(phoneNumber)}" +
+                           "&messageType=Latin" +
+                           "&defDate=" +
+                           $"&customerID={Uri.EscapeDataString(customerId)}" +
+                           $"&userName={Uri.EscapeDataString(userName)}" +
+                           $"&userPassword={Uri.EscapeDataString(userPassword)}" +
+                           $"&originator={Uri.EscapeDataString(originator)}" +
+                           "&blink=false" +
+                           "&flash=false" +
+                           "&Private=false";
+
+            using (var client = new HttpClient())
+            {                
+                var response = await client.GetAsync(apiUrl + "?" + query);
+                return response;
             }
         }
 

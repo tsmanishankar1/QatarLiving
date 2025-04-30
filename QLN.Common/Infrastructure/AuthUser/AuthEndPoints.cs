@@ -146,25 +146,28 @@ namespace QLN.Common.Infrastructure.AuthUser
             {
                 try
                 {
-                    return await authService.SendPhoneOtp(request.PhoneNumber);
+                    var result = await authService.SendPhoneOtp(request.PhoneNumber);
+                    return result; 
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     log.LogException(ex);
                     return TypedResults.Problem(
-                        detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
+                        detail: "An unexpected error occurred. Please try again later.",
                         statusCode: StatusCodes.Status500InternalServerError);
                 }
             })
             .WithName("SendPhoneOtp")
             .WithTags("Authentication")
             .WithSummary("Send Phone OTP")
-            .WithDescription("Generates and stores OTP for phone number verification.")
+            .WithDescription("Generates and stores OTP for phone number verification. If the phone number is already registered, it will return a failure response.")
             .Produces<ApiResponse<string>>(StatusCodes.Status200OK)
             .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status500InternalServerError);
+            .ProducesProblem(StatusCodes.Status500InternalServerError);  
+
             return group;
         }
+
 
         // Phone OTP Verify
         public static RouteGroupBuilder MapVerifyPhoneOtpEndpoint(this RouteGroupBuilder group)
