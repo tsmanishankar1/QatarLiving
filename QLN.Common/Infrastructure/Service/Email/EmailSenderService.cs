@@ -1,15 +1,14 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using System.Net.Mail;
 using System.Net;
 using QLN.Common.Infrastructure.Model;
-using QLN.Common.Infrastructure.IService;
-namespace QLN.Common.Infrastructure.Service
+using QLN.Common.Infrastructure.IService.IEmailService;
+namespace QLN.Common.Infrastructure.Service.SmtpService
 {
-    public class SmtpEmailSender : IExtendedEmailSender<ApplicationUser>
+    public class EmailSenderService : IExtendedEmailSender<ApplicationUser>
     {
         private readonly IConfiguration _config;
-        public SmtpEmailSender(IConfiguration config)
+        public EmailSenderService(IConfiguration config)
         {
             _config = config;
         }
@@ -36,7 +35,12 @@ namespace QLN.Common.Infrastructure.Service
         public async Task SendPasswordResetLinkAsync(ApplicationUser user, string email, string resetLink)
         {
             var subject = "Reset your password";
-            var body = $"Hi {user.UserName},<br/>Reset your password using this link: <a href='{resetLink}'>Reset Password</a>";
+            var body = $"Dear {user.UserName},<br/><br/>You requested to reset your password. Please click the link below to reset your password: <a href='{resetLink}'>Reset your password</a><br/>" +
+                $"This link will expire in 30 minutes<br/>" +
+                $"If you did not request this, please ignore this email<br/><br/>" +
+                $"Best regards,<br/>" +
+                $"Qatar Living";
+
 
             await SendEmailAsync(email, subject, body);
         }
@@ -82,6 +86,6 @@ namespace QLN.Common.Infrastructure.Service
             mail.To.Add(toEmail);
 
             await client.SendMailAsync(mail);
-        }              
+        }
     }
 }

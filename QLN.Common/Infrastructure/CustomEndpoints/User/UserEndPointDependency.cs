@@ -1,12 +1,12 @@
 ﻿using Microsoft.AspNetCore.Routing;
 
-namespace QLN.Common.Infrastructure.AuthUser
+namespace QLN.Common.Infrastructure.CustomEndpoints.User
 {
     public static class UserEndPointDependency
-    { 
+    {
         public static RouteGroupBuilder MapAuthEndpoints(this RouteGroupBuilder group)
         {
-            group.MapRegisterEndpoints()             
+            group.MapRegisterEndpoints()
                 .MapForgotPasswordEndpoint()
                 .MapResetPasswordEndpoint()
                 .MapLoginEndpoint()
@@ -16,9 +16,10 @@ namespace QLN.Common.Infrastructure.AuthUser
                 .MapGetProfileEndpoint()
                 .MapUpdateProfileEndpoint()
                 .MapSendEmailOtpEndpoint()
-                .MapVerifyEmailOtpEndpoint()                
+                .MapVerifyEmailOtpEndpoint()
                 .MapSendPhoneOtpEndpoint()
-                .MapVerifyPhoneOtpEndpoint();
+                .MapVerifyPhoneOtpEndpoint()
+                .MapLogoutEndpoint();
             return group;
         }
     }

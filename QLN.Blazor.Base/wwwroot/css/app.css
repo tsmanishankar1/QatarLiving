@@ -80,3 +80,39 @@ h1:focus {
     text-align: start;  
     color: var(--color-heading);   
 }
+
+/*text field properties*/
+.mud-text-field-custom {
+    background-color: #FFFFFF;
+}
+
+
+/*button properties*/
+
+.mud-button.social-login-button {
+    background-color: #FFFFFF !important;
+    border-color: #DDDDDD !important;
+    height: 44px !important;
+    width: 78px !important;
+    min-width: 50px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+}
+
+    .mud-button.social-login-button img {
+        height: 24px !important;
+    }
+/*modal style*/
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}

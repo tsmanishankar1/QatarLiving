@@ -12,7 +12,7 @@ using Moq;
 using QLN.Backend.UnitTest.IService;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
-using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.ITokenService;
 using QLN.Common.Infrastructure.Model;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -406,19 +406,19 @@ namespace QLN.Backend.UnitTest.AuthTest
             mockUserManager.Setup(m => m.Users).Returns(usersDbSet.Object);
 
             mockUserManager.Setup(m => m.GetAuthenticationTokenAsync(
-                user, QLNTokenConstants.RefreshToken, "refresh_token"))
+                user, ConstantValues.RefreshToken, "refresh_token"))
                 .ReturnsAsync(validRefreshToken);
 
             mockUserManager.Setup(m => m.GetAuthenticationTokenAsync(
-                user, QLNTokenConstants.RefreshTokenExpiry, "refresh_token_expiry"))
+                user, ConstantValues.RefreshTokenExpiry, "refresh_token_expiry"))
                 .ReturnsAsync(DateTime.UtcNow.AddMinutes(30).ToString("o"));
 
             mockUserManager.Setup(m => m.SetAuthenticationTokenAsync(
-                user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshToken, newRefreshToken))
+                user, ConstantValues.QLNProvider, ConstantValues.RefreshToken, newRefreshToken))
                 .ReturnsAsync(IdentityResult.Success);
 
             mockUserManager.Setup(m => m.SetAuthenticationTokenAsync(
-                user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshTokenExpiry, It.IsAny<string>()))
+                user, ConstantValues.QLNProvider, ConstantValues.RefreshTokenExpiry, It.IsAny<string>()))
                 .ReturnsAsync(IdentityResult.Success);
 
             mockUserManager.Setup(m => m.UpdateAsync(user))
@@ -443,8 +443,8 @@ namespace QLN.Backend.UnitTest.AuthTest
 
                 foreach (var u in userManager.Users)
                 {
-                    var storedToken = await userManager.GetAuthenticationTokenAsync(u, QLNTokenConstants.RefreshToken, "refresh_token");
-                    var expiryStr = await userManager.GetAuthenticationTokenAsync(u, QLNTokenConstants.RefreshTokenExpiry, "refresh_token_expiry");
+                    var storedToken = await userManager.GetAuthenticationTokenAsync(u, ConstantValues.RefreshToken, "refresh_token");
+                    var expiryStr = await userManager.GetAuthenticationTokenAsync(u, ConstantValues.RefreshTokenExpiry, "refresh_token_expiry");
 
                     if (storedToken == req.RefreshToken &&
                         DateTime.TryParse(expiryStr, out var expiry) &&
@@ -461,8 +461,8 @@ namespace QLN.Backend.UnitTest.AuthTest
                 var accessToken = await tokenService.GenerateAccessToken(matchedUser);
                 var refreshToken = tokenService.GenerateRefreshToken();
 
-                await userManager.SetAuthenticationTokenAsync(matchedUser, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshToken, refreshToken);
-                await userManager.SetAuthenticationTokenAsync(matchedUser, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
+                await userManager.SetAuthenticationTokenAsync(matchedUser, ConstantValues.QLNProvider, ConstantValues.RefreshToken, refreshToken);
+                await userManager.SetAuthenticationTokenAsync(matchedUser, ConstantValues.QLNProvider, ConstantValues.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
 
                 return TypedResults.Ok(ApiResponse<RefreshTokenResponse>.Success("Token refreshed", new RefreshTokenResponse
                 {
@@ -495,11 +495,11 @@ namespace QLN.Backend.UnitTest.AuthTest
             var usersDbSet = new List<ApplicationUser> { user }.AsQueryable().BuildMockDbSet();
             mockUserManager.Setup(m => m.Users).Returns(usersDbSet.Object);
             mockUserManager.Setup(m => m.GetAuthenticationTokenAsync(
-                user, QLNTokenConstants.RefreshToken, "refresh_token"))
+                user, ConstantValues.RefreshToken, "refresh_token"))
                 .ReturnsAsync("some-other-token");
 
             mockUserManager.Setup(m => m.GetAuthenticationTokenAsync(
-                user, QLNTokenConstants.RefreshTokenExpiry, "refresh_token_expiry"))
+                user, ConstantValues.RefreshTokenExpiry, "refresh_token_expiry"))
                 .ReturnsAsync(DateTime.UtcNow.AddMinutes(30).ToString("o"));
 
             var request = new RefreshTokenRequest { RefreshToken = invalidToken };
@@ -515,8 +515,8 @@ namespace QLN.Backend.UnitTest.AuthTest
 
                 foreach (var u in userManager.Users)
                 {
-                    var storedToken = await userManager.GetAuthenticationTokenAsync(u, QLNTokenConstants.RefreshToken, "refresh_token");
-                    var expiryStr = await userManager.GetAuthenticationTokenAsync(u, QLNTokenConstants.RefreshTokenExpiry, "refresh_token_expiry");
+                    var storedToken = await userManager.GetAuthenticationTokenAsync(u, ConstantValues.RefreshToken, "refresh_token");
+                    var expiryStr = await userManager.GetAuthenticationTokenAsync(u, ConstantValues.RefreshTokenExpiry, "refresh_token_expiry");
 
                     if (storedToken == req.RefreshToken &&
                         DateTime.TryParse(expiryStr, out var expiry) &&
@@ -843,10 +843,10 @@ namespace QLN.Backend.UnitTest.AuthTest
             mockTokenService.Setup(x => x.GenerateAccessToken(user)).ReturnsAsync("access-token");
             mockTokenService.Setup(x => x.GenerateRefreshToken()).Returns("refresh-token");
             mockUserManager.Setup(x => x.SetAuthenticationTokenAsync(
-                user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshToken, It.IsAny<string>()))
+                user, ConstantValues.QLNProvider, ConstantValues.RefreshToken, It.IsAny<string>()))
                 .ReturnsAsync(IdentityResult.Success);
             mockUserManager.Setup(x => x.SetAuthenticationTokenAsync(
-                user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshTokenExpiry, It.IsAny<string>()))
+                user, ConstantValues.QLNProvider, ConstantValues.RefreshTokenExpiry, It.IsAny<string>()))
                 .ReturnsAsync(IdentityResult.Success);
             mockUserManager.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
 
@@ -884,8 +884,8 @@ namespace QLN.Backend.UnitTest.AuthTest
                     var accessToken = await tokenSvc.GenerateAccessToken(foundUser);
                     var refreshToken = tokenSvc.GenerateRefreshToken();
 
-                    await userMgr.SetAuthenticationTokenAsync(foundUser, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshToken, refreshToken);
-                    await userMgr.SetAuthenticationTokenAsync(foundUser, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
+                    await userMgr.SetAuthenticationTokenAsync(foundUser, ConstantValues.QLNProvider, ConstantValues.RefreshToken, refreshToken);
+                    await userMgr.SetAuthenticationTokenAsync(foundUser, ConstantValues.QLNProvider, ConstantValues.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
                     await userMgr.UpdateAsync(foundUser);
 
                     return TypedResults.Ok(ApiResponse<LoginResponse>.Success("Login successful", new LoginResponse
@@ -1007,9 +1007,9 @@ namespace QLN.Backend.UnitTest.AuthTest
                 .ReturnsAsync(true);
             mockUserManager.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
 
-            mockUserManager.Setup(x => x.SetAuthenticationTokenAsync(user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshToken, It.IsAny<string>()))
+            mockUserManager.Setup(x => x.SetAuthenticationTokenAsync(user, ConstantValues.QLNProvider, ConstantValues.RefreshToken, It.IsAny<string>()))
                 .ReturnsAsync(IdentityResult.Success);
-            mockUserManager.Setup(x => x.SetAuthenticationTokenAsync(user, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshTokenExpiry, It.IsAny<string>()))
+            mockUserManager.Setup(x => x.SetAuthenticationTokenAsync(user, ConstantValues.QLNProvider, ConstantValues.RefreshTokenExpiry, It.IsAny<string>()))
                 .ReturnsAsync(IdentityResult.Success);
 
             mockTokenService.Setup(x => x.GenerateAccessToken(user)).ReturnsAsync("access-token");
@@ -1042,8 +1042,8 @@ namespace QLN.Backend.UnitTest.AuthTest
                     var accessToken = await tokenSvc.GenerateAccessToken(foundUser);
                     var refreshToken = tokenSvc.GenerateRefreshToken();
 
-                    await userMgr.SetAuthenticationTokenAsync(foundUser, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshToken, refreshToken);
-                    await userMgr.SetAuthenticationTokenAsync(foundUser, QLNTokenConstants.QLNProvider, QLNTokenConstants.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
+                    await userMgr.SetAuthenticationTokenAsync(foundUser, ConstantValues.QLNProvider, ConstantValues.RefreshToken, refreshToken);
+                    await userMgr.SetAuthenticationTokenAsync(foundUser, ConstantValues.QLNProvider, ConstantValues.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
                     await userMgr.UpdateAsync(foundUser);
 
                     return TypedResults.Ok(ApiResponse<LoginResponse>.Success("2FA verified. Login successful.", new LoginResponse

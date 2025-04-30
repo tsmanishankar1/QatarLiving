@@ -1,103 +1,141 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using QLN.Common.Infrastructure.AuthUser;
 using QLN.Common.Infrastructure.DbContext;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Common.Infrastructure.TokenProvider;
 using System.Text;
+using Microsoft.OpenApi.Models;
+using QLN.Common.Infrastructure.CustomEndpoints.User;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
+
+#region swagger configuration
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1.1.1", new Microsoft.OpenApi.Models.OpenApiInfo
+    options.SwaggerDoc("v1.1.1", new OpenApiInfo
     {
         Title = "Qatar Management API",
         Version = "v1.1.1",
         Description = "API documentation for Qatar Management system."
     });
 
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http, 
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter 'Bearer' followed by your JWT token."
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+
     var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-
     if (File.Exists(xmlPath))
     {
         options.IncludeXmlComments(xmlPath);
     }
 });
+#endregion
 
-builder.Services.Configure<IdentityOptions>(options =>
+builder.Services.Configure<DataProtectionTokenProviderOptions>(opt =>
 {
-    // Password settings.
-    options.Password.RequireDigit = true;              
-    options.Password.RequireLowercase = true;          
-    options.Password.RequireUppercase = true;          
-    options.Password.RequireNonAlphanumeric = true;    
-    options.Password.RequiredLength = 8;               
-    options.Password.RequiredUniqueChars = 1;          
+    opt.TokenLifespan = TimeSpan.FromMinutes(30);
 });
 
-#region dbinject
+
+#region password identity options
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequiredLength = 8;
+    options.Password.RequiredUniqueChars = 1;
+});
+#endregion
+
+#region database context
 builder.Services.AddDbContext<QatarlivingDevContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 
-
-
-// Custom Token Providers registration
+#region verification
 builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
 {
     options.SignIn.RequireConfirmedEmail = true;
 
     options.Tokens.ProviderMap["EmailVerification"] = new TokenProviderDescriptor(typeof(QLN.Common.Infrastructure.TokenProvider.EmailTokenProvider<ApplicationUser>));
-    options.Tokens.ProviderMap["PhoneVerification"] = new TokenProviderDescriptor(typeof(PhoneTokenProvider<ApplicationUser>));
+    options.Tokens.ProviderMap["PhoneVerification"] = new TokenProviderDescriptor(typeof(CommonTokenProvider<ApplicationUser>));
 
     options.Tokens.EmailConfirmationTokenProvider = "EmailVerification";
     options.Tokens.ChangePhoneNumberTokenProvider = "PhoneVerification";
 })
 .AddEntityFrameworkStores<QatarlivingDevContext>()
 .AddDefaultTokenProviders();
+#endregion
 
-
+#region authentication
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultScheme = IdentityConstants.ApplicationScheme;
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-.AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+.AddJwtBearer(options =>
 {
-    var config = builder.Configuration;
+    options.RequireHttpsMetadata = true;
+
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = config["Jwt:Issuer"],
-        ValidAudience = config["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]!))
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
     };
-})
-.AddGoogle("Google", options =>
-{
-    options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
-    options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
-    options.SignInScheme = IdentityConstants.ExternalScheme;
+
+    options.MapInboundClaims = false;
+
+    options.TokenValidationParameters.RoleClaimType = "role";
+    options.TokenValidationParameters.NameClaimType = "name";
+
 });
+
+#endregion
 
 
 
 builder.Services.AddAuthorization();
+
+
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 builder.Services.ServicesConfiguration(builder.Configuration);
 
-//builder.Services.ServicesConfiguration(builder.Configuration);
 
 var app = builder.Build();
 
@@ -112,11 +150,12 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// Group Auth Routes
+
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

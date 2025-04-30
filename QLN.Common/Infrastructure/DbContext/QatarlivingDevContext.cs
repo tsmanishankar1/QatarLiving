@@ -11,7 +11,5 @@ namespace QLN.Common.Infrastructure.DbContext
             : base(options)
         {
         }
-
-        // Optional: other DbSets like Posts, Listings etc.
     }
 }

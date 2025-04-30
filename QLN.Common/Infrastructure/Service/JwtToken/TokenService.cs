@@ -1,13 +1,13 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.ITokenService;
 using QLN.Common.Infrastructure.Model;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace QLN.Common.Infrastructure.Service
+namespace QLN.Common.Infrastructure.Service.JwtTokenService
 {
     public class TokenService : ITokenService
     {
@@ -23,7 +23,11 @@ namespace QLN.Common.Infrastructure.Service
                 new(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new(ClaimTypes.Name, user.UserName ?? string.Empty),
                 new(ClaimTypes.Email, user.Email ?? string.Empty),
-                new("MobileNumber", user.PhoneNumber ?? string.Empty)
+                new(ClaimTypes.MobilePhone, user.PhoneNumber ?? string.Empty),
+                new("UserId", user.Id.ToString()),
+                new("UserName", user.UserName ?? string.Empty),
+                new("Email", user.Email ?? string.Empty),
+                new("PhoneNumber", user.PhoneNumber ?? string.Empty),
             };
 
             var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));

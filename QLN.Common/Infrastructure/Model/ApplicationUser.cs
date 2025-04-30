@@ -1,9 +1,4 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.Model
 {
@@ -19,5 +14,7 @@ namespace QLN.Common.Infrastructure.Model
         public string? Location { get; set; }
         public bool IsCompany { get; set; } = false;
         public bool Isactive { get; set; } = true;
+        public DateTime Createdat { get; set; } = DateTime.UtcNow;
+        public DateTime? Updatedat { get; set; } = null;
     }
 }

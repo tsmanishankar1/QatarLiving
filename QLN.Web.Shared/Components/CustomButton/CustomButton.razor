@@ -2,12 +2,20 @@
 @using System.Collections.Generic
 
 <MudButton OnClick="OnClick"
-           Disabled="Disabled"
+           Disabled="Disabled || Loading"
            Loading="Loading"
            FullWidth="true"
            Style="@($"background-color: {BackgroundColor}; color: {TextColor}; border-radius: 8px;")"
            Class="@Class">
-    @Text
+    @if (Loading)
+    {
+        <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" Style="@($"color: {TextColor};")" />
+
+    }
+    else
+    {
+        <MudText Typo="Typo.button"  Style="text-transform: capitalize;">@Text</MudText>
+    }
 </MudButton>
 
 @code {
