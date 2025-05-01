@@ -26,7 +26,7 @@
         <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Services</NavLink>
         <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Jobs</NavLink>
         <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Rewards</NavLink>
-       <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn">
+       <MudButton Variant="Variant.Filled" Style="background-color: #FF7F38; color: white;" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn">
             Post
         </MudButton>
     </nav>
@@ -49,11 +49,13 @@
             else
             {
                <MudAvatar Size="Size.Medium" Style="background-color: #D6E8F2;">
-                <img src="/images/header/account.svg" alt="Account" style="width: 100%; height: 100%;" />
+                <img src="/images/header/account.svg" alt="Account" style="width: 70%; height: 70%; padding: 4px;" />
             </MudAvatar>
             }
 
-            <span class="user-name">@UserState.Email</span>
+            <span class="user-name">
+                @((UserState.username?.Length > 10) ? UserState.username.Substring(0, 10) + "..." : UserState.username)
+            </span>
         }
         else
         {

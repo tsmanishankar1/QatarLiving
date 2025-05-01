@@ -1,5 +1,5 @@
 html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: 'Public Sans', sans-serif;
 }
 
 a, .btn-link {
@@ -81,11 +81,16 @@ h1:focus {
     color: var(--color-heading);   
 }
 
-/*text field properties*/
-.mud-text-field-custom {
-    background-color: #FFFFFF;
+
+/* Make sure to scope this in your stylesheet or page/component CSS */
+.custom-checkbox .mud-checkbox-input:checked + .mud-checkbox-ripple {
+    background-color: #FF7F38 !important; /* Custom orange background */
+    border-color: #FF7F38 !important;
 }
 
+.custom-checkbox .mud-checkbox-input:checked + .mud-checkbox-ripple svg {
+    fill: white !important; /* White tick/check icon */
+}
 
 /*button properties*/
 

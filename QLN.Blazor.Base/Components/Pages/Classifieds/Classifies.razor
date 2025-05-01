@@ -1,36 +1,48 @@
 @page "/classifieds"
+
 @using MudBlazor
 @using QLN.Web.Shared.Components.Carousel
 @using QLN.Blazor.Base.Components.Pages.Classifieds.Components
 
+<!-- Page: Classifieds -->
+
 <!-- Navigation Tabs -->
 <NavigationTabs />
 
-<!-- Carousel Banner -->
-<div style="width: 100%;">
-    <CarouselBanner ImageUrls="carouselImages"
-                    ShowArrows="true"
-                    EnableSwipeGesture="false"
-                    AutoCycle="true"
-                    Transition="Transition.Slide" />
+<!-- Main Container -->
+<div style="width: 100%; background-color: var(--color-secondary-background);">
+    <div style="width: 100%; padding: 0 20px;">
+        
+        <!-- Carousel Banner -->
+        <CarouselBanner 
+            ImageUrls="carouselImages"
+            ShowArrows="true"
+            EnableSwipeGesture="false"
+            AutoCycle="true"
+            Transition="Transition.Slide" />
+
+        <!-- Search Bar Section -->
+        <SearchBarSection />
+
+        <!-- Featured Categories -->
+        <FeaturedCategoriesSection />
+
+        <!-- Featured Cards -->
+        <FeaturedCardsSection />
+
+        <!-- Store Deals -->
+        <StoreDealsSection />
+
+        <!-- Category Card -->
+        <CategoryCard />
+    </div>
+
+    <!-- Social Media Section -->
+    <SocialMediaCard />
+
+    <!-- FAQs Section -->
+    <FAQsSection />
 </div>
-<!-- Search Bar Section -->
-<SearchBarSection />
-
-<!-- Featured Categories Section -->
-<FeaturedCategoriesSection />
-
-<!-- Featured Cards Section -->
-<FeaturedCardsSection />
-
-<!-- Store Deals Section -->
-<StoreDealsSection />
-
-<!-- Social Media -->
-<SocialMediaCard />
-
-<!-- FAQs Section -->
-<FAQsSection />
 
 @code {
     private List<string> carouselImages = new()
