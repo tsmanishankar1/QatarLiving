@@ -75,9 +75,10 @@
               @bind-Value="_code"
               Immediate="true"
               OnInput="ValidateOtp"
-              Error="@(!string.IsNullOrEmpty(_otpError))"
-              ErrorText="_otpError"
-              Required="true" />
+              Error="@(!string.IsNullOrEmpty(_code))"
+              ErrorText="@_otpError"
+              Required="true"
+               />
  
         <CustomButton 
     BackgroundColor="#FF7F38"
@@ -90,9 +91,16 @@
 </CustomButton>
 
         <MudText Align="Align.Center" Class="mt-4">
-            Didn't receive a code?
-            <MudLink Href="/signup" Class="ml-1" Style="color: #FF7F38;">Resend</MudLink>
-        </MudText>
+    Didn't receive a code?
+    @if (_canResend)
+    {
+        <MudLink OnClick="@ResendCode" Class="ml-1 px-3" Style="color: #FF7F38; cursor: pointer;">Resend</MudLink>
+    }
+    else
+    {
+        <span class="ml-1" style="color: gray;">Resend Code in @_resendCountdown s</span>
+    }
+</MudText>
         <MudText Align="Align.Center"
                  Class="mud-clickable mt-2"
                  Style="color: #FF7F38; cursor: pointer;" 
@@ -117,6 +125,29 @@ public string email { get; set; }
 
 [Parameter]
 public EventCallback OnAction { get; set; }
+private bool _canResend = true;
+private int _resendCountdown = 60;
+private System.Timers.Timer? _resendTimer;
+protected override async Task OnInitializedAsync()
+{
+    if(isEmail){ 
+    await OnVerifyEmailClicked();
+    }
+    else{
+        await OnVerifyPhoneClicked();
+    }
+}
+private async Task ResendCode()
+{
+    _code = string.Empty;
+     StartResendTimer();
+    if(isEmail){ 
+    await OnVerifyEmailClicked();
+    }
+    else{
+        await OnVerifyPhoneClicked();
+    }
+}
 
 private string? _otpError;
 
@@ -210,7 +241,7 @@ private string? _otpError;
     private void ValidateOtp(ChangeEventArgs e)
 {
     _code = e.Value?.ToString() ?? string.Empty;
-
+    _otpError = string.IsNullOrWhiteSpace(_code) ? "Verification code is required." : string.Empty;
     if (!Regex.IsMatch(_code, @"^\d{6}$"))
     {
         _otpError = "OTP must be exactly 6 digits.";
@@ -221,9 +252,84 @@ private string? _otpError;
     }
 }
 
-    
+     private async Task OnVerifyEmailClicked()
+    {
+        Console.WriteLine("Email verification clicked");        
+        var payload = new
+        {  
+            email = email,
+        }; 
+        try
+        {
+            Console.WriteLine(payload); 
+            var response = await Api.PostAsync<object, object >("auth/verify-email-request", payload); 
+             if (response?.StatusCode == 200)
+            {
+                Snackbar.Add(response?.Message, Severity.Success);
+                 await InvokeAsync(StateHasChanged); 
+            }
+            else
+            {
+                Snackbar.Add(response?.Message, Severity.Error);
+            }  
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Verification failed: {ex.Message}");
+        }
+    }
 
+    private async Task OnVerifyPhoneClicked()
+    {
+        var payload = new
+        {  
+            phoneNumber = email,
+        }; 
+        try
+        {
+            var response = await Api.PostAsync<object, object>("auth/verify-phone-request", payload); 
+            if (response?.StatusCode == 200)
+            {
+                Snackbar.Add(response?.Message, Severity.Success);
+                 await InvokeAsync(StateHasChanged); 
+            }
+            else
+            {
+                    Snackbar.Add(response?.Message, Severity.Error);
+            } 
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Verification failed: {ex.Message}");
+        }
+    } 
 
+    private void StartResendTimer()
+{
+    _canResend = false;
+    _resendCountdown = 60;
+
+    _resendTimer?.Stop();
+    _resendTimer?.Dispose();
+
+    _resendTimer = new System.Timers.Timer(1000); 
+    _resendTimer.Elapsed += (sender, e) =>
+    {
+        if (_resendCountdown > 0)
+        {
+            _resendCountdown--;
+            InvokeAsync(StateHasChanged); 
+        }
+        else
+        {
+            _canResend = true;
+            _resendTimer?.Stop();
+            InvokeAsync(StateHasChanged);
+        }
+    };
+
+    _resendTimer.Start();
+}
 }
 
 <style>

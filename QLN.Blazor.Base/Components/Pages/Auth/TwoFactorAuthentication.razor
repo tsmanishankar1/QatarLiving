@@ -114,25 +114,23 @@ private async Task VerifyCode()
     try
     {
         var payload = new { usernameOrEmailOrPhone = UserState.Email, twoFactorCode = _code };
-        var res = await Api.PostAsync<object, ResponseModel<object>>("auth/verify-2fa", payload);
+        var response = await Api.PostAsync<object, object>("auth/verify-2fa", payload);
 
-        if (res?.Status == true)
+        if (response?.StatusCode == 200)
         {
             VerificationSucesss = true;
-            @* Snackbar.Add("Signup successful!", Severity.Success); *@
-            @* NavManager.NavigateTo("/"); *@
         }
         else
         {
             _hasError = true;
-            _errorMessage = res?.Message ?? "Invalid verification code.";
+            _errorMessage = response?.Message ?? "Invalid verification code.";
             Snackbar.Add(_errorMessage, Severity.Warning);
         }
     }
     catch (Exception ex)
     {
         _hasError = true;
-        _errorMessage = $"Signup failed: {ex.Message}";
+        _errorMessage = ex.Message;
         Snackbar.Add(_errorMessage, Severity.Error);
     }
     finally

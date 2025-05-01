@@ -105,15 +105,12 @@
 
         @if (showVerificationSuccess)
         {
-            @if (isEmail){
             <MudText Typo="Typo.body1" Style="font-weight: 400; color: #079455;">
             Verified
             </MudText>
-            }
         }
         else
         {
-            
             <MudButton Variant="Variant.Filled"
            Loading="@_emailVerifying"
            Disabled="@(string.IsNullOrWhiteSpace(_model.EmailAddress) ||  ValidateEmailFormat(_model.EmailAddress) != null)"
@@ -144,7 +141,6 @@
         <MudText Typo="Typo.body1"  Style="font-weight: 400;">
         Phone Number
         </MudText>
-        <!-- PHONE FIELD BOX -->
 <MudPaper Class="phone-container pa-4" Elevation="0" Style="border: 1px solid #ccc; border-radius: 8px;">
     <div class="phone-flex" style="align-items: center;">
        <MudSelect T="CountryModel"
@@ -216,12 +212,7 @@
     </div>
 </MudPaper>
 
-@* @if (_mobileFieldRef != null && _mobileFieldRef.HasErrors)
-{
-    <MudText Class="mt-1 ml-2" Style="color: #d32f2f; font-size: 0.75rem;">
-        @_mobileFieldRef.ErrorText
-    </MudText>
-}      *@
+
 
         <MudText Typo="Typo.body1"  Style="font-weight: 400;">
         Date of Birth
@@ -513,74 +504,18 @@
     }
     
 
-    private async Task OnVerifyEmailClicked()
-    {
-        Console.WriteLine("Email verification clicked");
-        _emailVerifying = true;
-        
+    private async void OnVerifyEmailClicked()
+    {        
         isEmail = true;
         email = _model.EmailAddress;
-        var payload = new
-        {  
-            email = _model.EmailAddress,
-        }; 
-        try
-        {
-            Console.WriteLine(payload); 
-            var response = await Api.PostAsync<object, object >("auth/verify-email-request", payload); 
-             if (response?.StatusCode == 200)
-            {
-                 _showVerificationPopup = true;
-                 await InvokeAsync(StateHasChanged); 
-            }
-            else
-            {
-                Snackbar.Add(response?.Message, Severity.Error);
-            }  
-    
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Verification failed: {ex.Message}");
-        }
-        finally
-        {
-            _emailVerifying = false;
-        }
-
+        _showVerificationPopup = true;
     }
 
-    private async Task OnVerifyPhoneClicked()
+    private async void OnVerifyPhoneClicked()
     {
         isEmail = false;
-        _phoneVerifying = true;
         email = _model.MobileNumber; 
-        var payload = new
-        {  
-            phoneNumber = _model.MobileNumber,
-        }; 
-        try
-        {
-            var response = await Api.PostAsync<object, object>("auth/verify-phone-request", payload); 
-            if (response?.StatusCode == 200)
-            {
-                 _showVerificationPopup = true;
-                 await InvokeAsync(StateHasChanged); 
-            }
-            else
-            {
-                    Snackbar.Add(response?.Message, Severity.Error);
-            } 
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Verification failed: {ex.Message}");
-        }
-        finally
-        {
-            _phoneVerifying = false;
-        }
-
+        _showVerificationPopup = true;
     }
     private void CloseVerificationPopup()
 {
