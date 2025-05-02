@@ -40,7 +40,7 @@
         <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
            <ActivatorContent>
         <div style="display: flex; align-items: center; gap: 0.5rem;" class="cursor-pointer">
-        @if (UserState.IsLoggedIn)
+        @if (!string.IsNullOrEmpty(UserState.Token))
         {
             @if (!string.IsNullOrEmpty(UserState.ProfileImageUrl))
             {
@@ -69,7 +69,7 @@
 
 
             <ChildContent>
-                @if (UserState.IsLoggedIn)
+                 @if (!string.IsNullOrEmpty(UserState.Token))
                 {
                     <MudButton Variant="Variant.Outlined"
                                Color="Color.Warning"

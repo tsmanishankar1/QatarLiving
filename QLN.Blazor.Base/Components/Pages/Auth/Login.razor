@@ -25,6 +25,7 @@
                       Variant="Variant.Outlined"
                       FullWidth="true"
                       InputType="InputType.Text"
+                      style="background-color: var(--color-background)"
                       MaxLength="50"
                       Required="true"
                       Error="@(!string.IsNullOrEmpty(_usernameError))"
@@ -46,7 +47,8 @@
     Variant="Variant.Outlined"
     InputType="@(_showPassword ? InputType.Text : InputType.Password)"
     FullWidth="true"
-     Class="mud-text-field-custom mt-4" 
+     Class="mt-4" 
+     style="background-color: var(--color-background)"
     Required="true"
     Adornment="Adornment.End"
     AdornmentIcon="@(_showPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
@@ -201,11 +203,11 @@
                 UserState.username = response.Data.Username;
                 UserState.Email = response.Data.Emailaddress;
                 UserState.mobileNumber = response.Data.Mobilenumber;
+                UserState.Token = response?.Data?.AccessToken;
                 StateHasChanged();
 
                 if (response.Data.IsTwoFactorEnabled)
                 {
-                    Snackbar.Add($"Logged in as {response.Data.Emailaddress}", Severity.Success);
                     NavManager.NavigateTo("/select-verification");
                     return;
                 }
