@@ -64,6 +64,7 @@
         <MudForm @ref="_form"  OnValidSubmit="VerifyCode">
     <MudTextField T="string"
                   For="@(() => _code)"
+                  @bind-Value="_code"
                   Label="Verification Code"
                   Variant="Variant.Outlined"
                   FullWidth="true"
