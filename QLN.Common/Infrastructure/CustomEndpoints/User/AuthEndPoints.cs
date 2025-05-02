@@ -10,6 +10,7 @@ using static QLN.Common.Infrastructure.DTO_s.OtpDTO;
 using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService.IAuthService;
 using QLN.Common.Infrastructure.Utilities;
+using QLN.Common.Infrastructure.DTO_s;
 
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.User
@@ -298,6 +299,44 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.User
             return group;
         }
 
+        // Send 2FA OTP (for login or resend)
+        public static RouteGroupBuilder MapSend2FAOtpEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapPost("/send-2fa", async Task<Results<
+                Ok<ApiResponse<string>>,
+                BadRequest<ApiResponse<string>>,
+                ProblemHttpResult>> (
+                [FromBody] Send2FARequest request,
+                [FromServices] IAuthService authService,
+                [FromServices] IEventlogger log
+            ) =>
+            {
+                try
+                {
+                    var result = await authService.SendTwoFactorOtp(request);
+                    return result.Status
+                        ? TypedResults.Ok(result)
+                        : TypedResults.BadRequest(result);
+                }
+                catch (Exception ex)
+                {
+                    log.LogException(ex);
+                    return TypedResults.Problem(
+                        detail: ApiResponse<string>.Fail("An unexpected error occurred.").Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("Send2FAOtp")
+            .WithTags("Authentication")
+            .WithSummary("Send 2FA OTP")
+            .WithDescription("Sends a two-factor authentication OTP using email, phone, or authenticator.")
+            .Produces<ApiResponse<string>>(StatusCodes.Status200OK)
+            .Produces<ApiResponse<string>>(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+
         // verify twofactorAuth
         public static RouteGroupBuilder MapVerify2FAEndpoint(this RouteGroupBuilder group)
         {
@@ -332,7 +371,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.User
 
             return group;
         }
-
 
         // refresh
         public static RouteGroupBuilder MapRefreshTokenEndpoint(this RouteGroupBuilder group)

@@ -25,6 +25,8 @@ namespace QLN.Common.DTO_s
         public string UsernameOrEmailOrPhone { get; set; } = null!;
         [Required]
         public string TwoFactorCode { get; set; } = null!;
+        [Required]
+        public string Method { get; set; } = null!;
     }
 
 }

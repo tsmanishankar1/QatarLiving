@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService.IAuthService;
@@ -174,7 +175,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email && u.Isactive == true);
                 if (existingUser != null)
                 {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Email already registered. Please login."));
+                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Email already registered"));
                 }
 
                 var otp = new Random().Next(100000, 999999).ToString();
@@ -233,7 +234,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber && u.Isactive == true);
                 if (existingUser != null)
                 {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Phone number already registered. Please login."));
+                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Phone number already registered."));
                 }
 
                 var otp = new Random().Next(100000, 999999).ToString();
@@ -249,7 +250,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 string originator = _config["OoredooSmsApi:Originator"];
                 string apiUrl = _config["OoredooSmsApi:ApiUrl"];
 
-                var response = await SendSmsAsync(apiUrl, customerId, userName, userPassword, phoneNumber, smsText, originator);
+                var response = await SendSms(apiUrl, customerId, userName, userPassword, phoneNumber, smsText, originator);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -386,27 +387,19 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                 if (user == null)
                 {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid username or email or phonenumber"));
+                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid credentials"));
                 }
 
                 else if (!await _userManager.CheckPasswordAsync(user, request.Password))
                 {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid password"));
+                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid credentials"));
                 }
-
-                else if (!await _userManager.IsEmailConfirmedAsync(user))
-                {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Email not confirmed."));
-                }
-
 
 
                 if (user.TwoFactorEnabled)
                 {
-                    var code = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
-                    await _emailSender.SendTwoFactorCode(user, user.Email, code);
-
-                    return TypedResults.Ok(ApiResponse<LoginResponse>.Success("2FA code sent to email. Please verify to complete login.", new LoginResponse
+                 
+                    return TypedResults.Ok(ApiResponse<LoginResponse>.Success("Two-Factor Authentication is enabled. Choose email or mobile to receive OTP.", new LoginResponse
                     {
                         Username = user.UserName,
                         Emailaddress = user.Email,
@@ -452,7 +445,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                 if (user == null)
                 {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid username, email, or mobile number."));
+                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid credentials."));
                 }
 
                 if (!user.TwoFactorEnabled)
@@ -460,10 +453,15 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     return TypedResults.BadRequest(ApiResponse<string>.Fail("Two-Factor Authentication is not enabled for this user."));
                 }
 
-                var isValid = await _userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider, request.TwoFactorCode);
+                var provider = request.Method.Equals(ConstantValues.Phone, StringComparison.OrdinalIgnoreCase)
+                    ? TokenOptions.DefaultPhoneProvider
+                    : TokenOptions.DefaultEmailProvider;
+
+                var isValid = await _userManager.VerifyTwoFactorTokenAsync(user, provider, request.TwoFactorCode);             
+
                 if (!isValid)
                 {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid two-factor authentication code."));
+                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid or expired 2FA code."));
                 }
 
                 var accessToken = await _tokenService.GenerateAccessToken(user);
@@ -691,7 +689,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             }
         }
 
-        private async Task<HttpResponseMessage> SendSmsAsync(string apiUrl, string customerId, string userName, string userPassword, string phoneNumber, string smsText, string originator)
+        private async Task<HttpResponseMessage> SendSms(string apiUrl, string customerId, string userName, string userPassword, string phoneNumber, string smsText, string originator)
         {
             // Build the query parameters
             string query = $"smsText={Uri.EscapeDataString(smsText)}" +
@@ -710,6 +708,55 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             {
                 var response = await client.GetAsync(apiUrl + "?" + query);
                 return response;
+            }
+        }
+
+        public async Task<ApiResponse<string>> SendTwoFactorOtp(Send2FARequest request)
+        {
+            var user = await _userManager.Users.FirstOrDefaultAsync(u =>
+                (u.UserName == request.UsernameOrEmailOrPhone ||
+                 u.Email == request.UsernameOrEmailOrPhone ||
+                 u.PhoneNumber == request.UsernameOrEmailOrPhone) &&
+                 u.Isactive == true);
+
+            if (user == null)
+                return ApiResponse<string>.Fail("User not found.");
+
+            if (!user.TwoFactorEnabled)
+                return ApiResponse<string>.Fail("Two-Factor Authentication is not enabled for this user.");
+
+            var method = request.Method?.Trim().ToLowerInvariant();
+
+            if (method == Constants.ConstantValues.Phone.ToLowerInvariant())
+            {
+                if (string.IsNullOrWhiteSpace(user.PhoneNumber) || !user.PhoneNumberConfirmed)
+                    return ApiResponse<string>.Fail("Phone number is not set or confirmed.");
+
+                var otp = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultPhoneProvider);
+                var smsText = $"Your 2FA OTP is {otp}";
+
+                var response = await SendSms(
+                    _config["OoredooSmsApi:ApiUrl"],
+                    _config["OoredooSmsApi:CustomerId"],
+                    _config["OoredooSmsApi:UserName"],
+                    _config["OoredooSmsApi:UserPassword"],
+                    user.PhoneNumber,smsText,
+                    _config["OoredooSmsApi:Originator"]
+                );
+
+                return response.IsSuccessStatusCode
+                    ? ApiResponse<string>.Success("2FA OTP sent via phone.")
+                    : ApiResponse<string>.Fail("Failed to send OTP via SMS.");
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(user.Email) || !user.EmailConfirmed)
+                    return ApiResponse<string>.Fail("Email is not set or confirmed.");
+
+                var code = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
+                await _emailSender.SendTwoFactorCode(user, user.Email, code);
+
+                return ApiResponse<string>.Success("2FA OTP sent via email.");
             }
         }
 
