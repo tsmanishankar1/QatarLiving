@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.DTO_s;
 
 namespace QLN.Common.Infrastructure.IService.IAuthService
 {
@@ -20,5 +21,6 @@ namespace QLN.Common.Infrastructure.IService.IAuthService
         Task<IResult> GetProfile(Guid Id);
         Task<IResult> UpdateProfile(Guid id, UpdateProfileRequest request);
         Task<IResult> Logout(Guid id);
+        Task<ApiResponse<string>> SendTwoFactorOtp(Send2FARequest request);
     }
 }
