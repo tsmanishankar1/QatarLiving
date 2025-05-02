@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService.IAuthService;
@@ -403,8 +404,8 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                 if (user.TwoFactorEnabled)
                 {
-                    var otpResult = await SendTwoFactorOtpInternal(user, Constants.ConstantValues.Email);
-                    return TypedResults.Ok(ApiResponse<LoginResponse>.Success(otpResult.Message, new LoginResponse
+                 
+                    return TypedResults.Ok(ApiResponse<LoginResponse>.Success("Two-Factor Authentication is enabled. Choose email or mobile to receive OTP.", new LoginResponse
                     {
                         Username = user.UserName,
                         Emailaddress = user.Email,
@@ -458,20 +459,15 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     return TypedResults.BadRequest(ApiResponse<string>.Fail("Two-Factor Authentication is not enabled for this user."));
                 }
 
-                var isValid = false;
+                var provider = request.Method.Equals(ConstantValues.Phone, StringComparison.OrdinalIgnoreCase)
+                    ? TokenOptions.DefaultPhoneProvider
+                    : TokenOptions.DefaultEmailProvider;
 
-                if (request.Method.ToLower() == Constants.ConstantValues.Phone)
-                {
-                    isValid = await _userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultPhoneProvider, request.TwoFactorCode);
-                }
-                else
-                {
-                    isValid = await _userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider, request.TwoFactorCode);
-                }
+                var isValid = await _userManager.VerifyTwoFactorTokenAsync(user, provider, request.TwoFactorCode);             
 
                 if (!isValid)
                 {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid 2FA code."));
+                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid or expired 2FA code."));
                 }
 
                 var accessToken = await _tokenService.GenerateAccessToken(user);
@@ -724,23 +720,20 @@ namespace QLN.Common.Infrastructure.Service.AuthService
         public async Task<ApiResponse<string>> SendTwoFactorOtp(Send2FARequest request)
         {
             var user = await _userManager.Users.FirstOrDefaultAsync(u =>
-                u.UserName == request.UsernameOrEmailOrPhone ||
-                u.Email == request.UsernameOrEmailOrPhone ||
-                u.PhoneNumber == request.UsernameOrEmailOrPhone &&
-                u.Isactive == true);
+                (u.UserName == request.UsernameOrEmailOrPhone ||
+                 u.Email == request.UsernameOrEmailOrPhone ||
+                 u.PhoneNumber == request.UsernameOrEmailOrPhone) &&
+                 u.Isactive == true);
 
             if (user == null)
                 return ApiResponse<string>.Fail("User not found.");
 
-            return await SendTwoFactorOtpInternal(user, request.Method);
-        }
-
-        private async Task<ApiResponse<string>> SendTwoFactorOtpInternal(ApplicationUser user, string method)
-        {
             if (!user.TwoFactorEnabled)
                 return ApiResponse<string>.Fail("Two-Factor Authentication is not enabled for this user.");
 
-            if (method == Constants.ConstantValues.Phone)
+            var method = request.Method?.Trim().ToLowerInvariant();
+
+            if (method == Constants.ConstantValues.Phone.ToLowerInvariant())
             {
                 if (string.IsNullOrWhiteSpace(user.PhoneNumber) || !user.PhoneNumberConfirmed)
                     return ApiResponse<string>.Fail("Phone number is not set or confirmed.");
@@ -753,8 +746,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     _config["OoredooSmsApi:CustomerId"],
                     _config["OoredooSmsApi:UserName"],
                     _config["OoredooSmsApi:UserPassword"],
-                    user.PhoneNumber,
-                    smsText,
+                    user.PhoneNumber,smsText,
                     _config["OoredooSmsApi:Originator"]
                 );
 
