@@ -29,16 +29,23 @@
 
 <Breadcrumb Items="breadcrumbItems" />
 
-<div class="content-section">
-    <p>This is the Qatar Living content...</p>
 
+<div class="content-section">
+
+  
+
+    <!-- Section: Carousel Banner -->
+    <h3 class="section-header">Carousel Components</h3>
     <div style="width: 100%;">
-    <CarouselBanner ImageUrls="carouselImages"
-                    ShowArrows="true"
-                    EnableSwipeGesture="false"
-                    AutoCycle="true"
-                    Transition="Transition.Slide" />
-</div>
+        <CarouselBanner ImageUrls="carouselImages"
+                        ShowArrows="true"
+                        EnableSwipeGesture="false"
+                        AutoCycle="true"
+                        Transition="Transition.Slide" />
+    </div>
+
+    <!-- Section: Action Buttons -->
+    <h3 class="section-header">Button Components</h3>
     <div style="width: 100%;flex-direction:column">
         <CustomButton BackgroundColor="var(--color-secondary)"
                       TextColor="#FFFFFF"
@@ -63,6 +70,7 @@
                       Loading="false"
                       OnClick="() => {}"
                       Class="mt-4" />
+
         <CustomButton BackgroundColor="white"
                       TextColor="#0F986A"
                       Text="Approve"
@@ -70,6 +78,7 @@
                       Loading="false"
                       OnClick="() => {}"
                       Class="mt-4" />
+
         <CustomButton BackgroundColor="white"
                       TextColor="#D92D20"
                       Text="Decline"
@@ -78,6 +87,9 @@
                       OnClick="() => {}"
                       Class="mt-4" />
     </div>
+
+    <!-- Section: Verification Trigger Button -->
+    <h3 class="section-header"> Popup Components</h3>
     <div style="width: 100%;">
         <CustomButton BackgroundColor="#FF7F38"
                       TextColor="#FFFFFF"
@@ -86,19 +98,17 @@
                       Loading="false"
                       OnClick="@VerifyCode"
                       Class="mt-4" />
-       
     </div>
+
+    <!-- Section: Featured Items -->
+    <h3 class="section-header">Card Components</h3>
     <div class="cards-container">
         @foreach (var item in featuredItems)
         {
             <FeaturedItemCard Item="item" OnHeartClick="HandleHeartClick" />
         }
     </div>
-
-  
 </div>
-
-
 
 @code {
     private bool VerificationSucesss = false;
@@ -191,8 +201,16 @@
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
+    .section-header {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #172B4D;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+    }
+
     .featured-cards-section {
-        background-color: #f7f9fc; /* Light background */
+        background-color: #f7f9fc;
         padding: 2rem 1rem;
     }
 
