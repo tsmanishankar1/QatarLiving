@@ -212,7 +212,7 @@
                 else if (!response.Data.IsTwoFactorEnabled)
                 {
                     Snackbar.Add($"Logged in as {response.Data.Emailaddress}", Severity.Success);
-                    NavManager.NavigateTo("/");
+                    NavManager.NavigateTo("/classifieds");
                 }
                 else
                 {

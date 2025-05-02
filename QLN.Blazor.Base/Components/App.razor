@@ -43,6 +43,18 @@
         }
     };
 </script>
+<script>
+    document.addEventListener('input', function (e) {
+        if (e.target.maxLength === 1 && e.target.value.length === 1) {
+            let next = e.target.nextElementSibling;
+            while (next && next.tagName !== 'INPUT') {
+                next = next.nextElementSibling;
+            }
+            if (next) next.focus();
+        }
+    });
+</script>
+
 </body>
 
 </html>

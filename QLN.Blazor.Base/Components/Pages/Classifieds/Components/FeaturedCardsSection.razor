@@ -2,18 +2,18 @@
 
 <div class="categories-section">
     <MudContainer MaxWidth="MaxWidth.False">
-        <MudText Typo="Typo.h6" Class="section-header">Featured Categories</MudText>
+        <h4 class="section-header">Featured Categories</h4>
 
-        <MudGrid GutterSize="24px">
+        <MudGrid GutterSize="12px" Class="category-grid">
             @foreach (var category in categories)
             {
                 <MudItem xs="6" sm="4" md="2">
-                    <MudCard Class="category-card" OnClick="@(() => HandleCategoryClick(category))">
-                        <MudCardContent Class="card-content">
+                    <div class="category-card-section" @onclick="() => HandleCategoryClick(category)">
+                        <div class="card-contents">
                             <img src="@category.ImageUrl" alt="@category.Name" class="category-image" />
-                            <MudText Typo="Typo.subtitle2" Class="category-title">@category.Name</MudText>
-                        </MudCardContent>
-                    </MudCard>
+                            <p class="category-titles">@category.Name</p>
+                        </div>
+                    </div>
                 </MudItem>
             }
         </MudGrid>
@@ -29,12 +29,12 @@
 
     private List<CategoryItem> categories = new()
     {
-        new() { Name = "Ramadan Essentials",  ImageUrl = "/images/categories/ramadan.svg" },
-        new() { Name = "Back to School",      ImageUrl = "/images/categories/school.svg" },
-        new() { Name = "Gym Motivation",      ImageUrl = "/images/categories/gym.svg" },
-        new() { Name = "Outdoors & Camping",  ImageUrl = "/images/categories/camping.svg" },
-        new() { Name = "Electronics Rush",    ImageUrl = "/images/categories/electronics.svg" },
-        new() { Name = "Cats & Dogs",         ImageUrl = "/images/categories/pets.svg" },
+        new() { Name = "Ramadan Essentials",  ImageUrl = "/images/categories/new1.svg" },
+        new() { Name = "Back to School",      ImageUrl = "/images/categories/new2.svg" },
+        new() { Name = "Gym Motivation",      ImageUrl = "/images/categories/new3.svg" },
+        new() { Name = "Outdoors & Camping",  ImageUrl = "/images/categories/new4.svg" },
+        new() { Name = "Electronics Rush",    ImageUrl = "/images/categories/new5.svg" },
+        new() { Name = "Cats & Dogs",         ImageUrl = "/images/categories/new6.svg" },
     };
 
     void HandleCategoryClick(CategoryItem category)
@@ -46,50 +46,52 @@
 <style>
 .categories-section {
     padding: 2rem 1rem;
+    background-color: var(--color-secondary-background);
 }
 
 .section-header {
     text-align: center;
     margin-bottom: 2rem;
     font-weight: 600;
-    color: var(--mud-palette-text-primary);
+    color: #1a1a1a;
 }
 
-.category-card {
-    cursor: pointer;
-    border-radius: 16px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    height: 100%;
+.category-grid {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    text-align: center;
+    flex-wrap: wrap;
+    justify-content: flex-start; /* or space-evenly, etc. */
+    align-items: flex-start;
 }
 
-.category-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+.category-card-section {
+    cursor: pointer;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    transition: transform 0.2s ease;
 }
 
-.card-content {
+.card-contents {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-start;
+    text-align: left;
 }
 
 .category-image {
-    width: 80px;
-    height: 80px;
-    object-fit: contain;
-    margin-bottom: 12px;
+    max-width: 230px;
+    max-height: 300px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 8px;
 }
 
-.category-title {
-    font-size: 1rem;
-    font-weight: 500;
-    color: var(--mud-palette-text-primary);
+.category-titles {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--color-text-secondary);;
+    margin: 0;
+    padding-left: 4px;
 }
-
 </style>
