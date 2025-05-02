@@ -16,15 +16,16 @@
                 <div class="store-info">
                     <div class="store-name">@store.Name</div>
                     <div class="store-items">@store.ItemCount Items</div>
-                </div>
-                <MudButton Variant="Variant.Filled" 
-                           Style="background-color: var(--color-secondary);  color: white;"
+                      <MudButton Variant="Variant.Text" 
+                           Style="color: var(--color-accent);"
                            Size="Size.Small"
                            FullWidth="true"
                            Class="shop-now-btn"
+                           EndIcon="@Icons.Material.Filled.ArrowForward"
                            OnClick="@(() => HandleShopNow(store))">
                     Shop Now
                 </MudButton>
+                </div>
             </div>
         }
     </div>
@@ -32,7 +33,6 @@
 
 <style>
     .store-deals-section {
-       background-color: #f7f9fc;
        padding: 2rem 1rem;
     }
 
@@ -40,7 +40,7 @@
         text-align: center;
         margin-bottom: 1.5rem;
         font-weight: 600;
-        color: #333;
+        color: var(--color-text-secondary);
     }
 
     .stores-container {
@@ -67,7 +67,7 @@
         height: 100px;
         margin-bottom: 8px;
         border-radius: 50px;
-        background: white;
+        background: var(--color-background);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -82,14 +82,14 @@
 
     .store-info {
         text-align: center;
-        margin-bottom: 8px;
+        gap: 5px;
         width: 100%;
     }
 
     .store-name {
         font-size: 0.75rem;
         font-weight: 600;
-        color: #333;
+        color: var(--color-text-secondary);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -97,14 +97,12 @@
 
     .store-items {
         font-size: 0.65rem;
-        color: #666;
+        color: var(--color-text-caption);
     }
 
     .shop-now-btn {
-        height: 28px;
         min-width: 0;
         font-size: 0.7rem;
-        padding: 0 8px;
         text-transform: capitalize;
     }
 

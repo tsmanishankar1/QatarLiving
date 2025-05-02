@@ -1,165 +1,202 @@
 @page "/two-factor-authentication"
 @inject NavigationManager NavManager
-@using MudBlazor
 @inject ISnackbar Snackbar
 @inject ApiService Api
-@using QLN.Blazor.Base.Services
 @inject UserState UserState
-@using MudBlazor.Components
+@inject IJSRuntime JS
+
 @rendermode InteractiveServer
 @using QLN.Blazor.Base.Models
+@using QLN.Blazor.Base.Services
 @using QLN.Web.Shared.Components.CustomButton
 @using QLN.Web.Shared.Components.ModalDialog
+@using System.Text.Json;
 
-@if (VerificationSucesss){
+@if (VerificationSucesss)
+{
     <div class="popup-overlay">
-       <ModalDialog
-        Title="Verification Successful" 
-        Description="Your email has been successfully verified."
-        ButtonName="Continue"
-        StatusType="Success"
-        OnClick="CloseVerificationPopup" />
-    </div> 
+        <ModalDialog
+            Title="Verification Successful"
+            Description="Your email has been successfully verified."
+            ButtonName="Continue"
+            StatusType="Success"
+            OnClick="CloseVerificationPopup" />
+    </div>
 }
-<div style="width: 100%; background-color: #F5F6FA; padding: 32px 16px;">
-    <div style="max-width: 400px; margin: 0 auto;">
-    
-    <MudStack Spacing="3">
-        <MudText Typo="Typo.h5" Align="Align.Center">Two-Factor Authentication</MudText>
 
-        <MudText Typo="Typo.caption" Align="Align.Center">
-            We've sent a verification code to your mail ending in @UserState.Email
-        </MudText>
+<div class="auth-wrapper">
+    <div class="auth-container">
+        <h2 class="title">Two-Factor Authentication</h2>
+        <p class="subtitle">We've sent a verification code to your mail ending in @UserState.Email</p>
 
-        <MudTextField T="string"
-              Label="Verification Code"
-              Variant="Variant.Outlined"
-              FullWidth="true"
-              InputType="InputType.Text"
-              MaxLength="6"
-              @bind-Value="_code"
-              Style="background-color: #FFFFFF;"
-              Required="true"
-               />
+        <div class="otp-container">
+            @for (int i = 0; i < 6; i++)
+            {
+                var index = i;
+                <input class="otp-box"
+                       id="otp-@index"
+                       maxlength="1"
+                       value="@_otpDigits[index]"
+                       @oninput="(e => OnOtpChanged(((ChangeEventArgs)e).Value?.ToString(), index))"
+                       type="text"
+                       inputmode="numeric"
+                       pattern="[0-9]*" />
+            }
+        </div>
 
-        
-         <CustomButton 
-    BackgroundColor="#FF7F38"
-    TextColor="#FFFFFF"
-    Text="Verify"
-    Disabled="_isLoading"
-    Loading="_isLoading"
-    OnClick="@VerifyCode"
-    Class="mt-4" />
+        <CustomButton
+            BackgroundColor="#FF7F38"
+            TextColor="#FFFFFF"
+            Text="Verify"
+            Disabled="_isLoading"
+            Loading="_isLoading"
+            OnClick="@VerifyCode"
+            Class="verify-btn" />
 
-
-
-        <MudText Align="Align.Center" Class="mt-4">
-Didn't receive a code?
-<MudLink Href="/signup" Class="ml-1" Style="color: #FF7F38;">Resend</MudLink>
-    </MudText>
-        <MudText Align="Align.Center"
-                 Class="mud-clickable mt-2"
-                 Style="color: #FF7F38; cursor: pointer;" 
-                 @onclick="NavigateToForgotPassword">
-                 Use another verification method
-        </MudText>
-    </MudStack>
+        <p class="resend">Didn't receive a code? <NavLink href="/signup" style="color:var(--color-accent)" >Resend</NavLink></p>
+        <p class="alternative" @onclick="NavigateToForgotPassword">Use another verification method</p>
+    </div>
 </div>
-</div>
+
 @code {
-    private string _input = string.Empty;
+    private string[] _otpDigits = new string[6];
     private string _code = string.Empty;
     private bool _isLoading = false;
-    private bool _checked;
     private bool VerificationSucesss = false;
-    [Parameter] public EventCallback OnClose { get; set; }
-
-    private async Task Close()
-    {
-        await OnClose.InvokeAsync();
-    }
-    
-
-    private void NavigateToForgotPassword()
-    {
-        NavManager.NavigateTo("/login");
-    }
-    private void RestrictToDigits(ChangeEventArgs e)
-{
-    string input = e.Value?.ToString() ?? "";
-    if (input.All(char.IsDigit) && input.Length <= 6)
-    {
-        _code = input;
-    }
-}
-
     private bool _hasError = false;
-private string _errorMessage = string.Empty;
+    private string _errorMessage = string.Empty;
 
-private async Task VerifyCode()
-{
-    _isLoading = true;
-    _hasError = false;
-    _errorMessage = string.Empty;
-
-    if (string.IsNullOrWhiteSpace(_code))
+    private async Task OnOtpChanged(string? value, int index)
     {
-        _hasError = true;
-        _errorMessage = "Please enter the verification code.";
-        _isLoading = false;
-        return;
-    }
-
-    try
-    {
-        var payload = new { usernameOrEmailOrPhone = UserState.Email, twoFactorCode = _code };
-        var res = await Api.PostAsync<object, ResponseModel<object>>("auth/verify-2fa", payload);
-
-        if (res?.Status == true)
+        if (!string.IsNullOrEmpty(value) && char.IsDigit(value[0]))
         {
-            VerificationSucesss = true;
-            @* Snackbar.Add("Signup successful!", Severity.Success); *@
-            @* NavManager.NavigateTo("/"); *@
+            _otpDigits[index] = value.Substring(0, 1);
+
+            if (index < 5)
+            {
+                await JS.InvokeVoidAsync("eval", $"setTimeout(() => {{ const el = document.getElementById('otp-{index + 1}'); if (el) el.focus(); }}, 10);");
+            }
         }
         else
         {
-            _hasError = true;
-            _errorMessage = res?.Message ?? "Invalid verification code.";
-            Snackbar.Add(_errorMessage, Severity.Warning);
+            _otpDigits[index] = string.Empty;
         }
     }
-    catch (Exception ex)
-    {
-        _hasError = true;
-        _errorMessage = $"Signup failed: {ex.Message}";
-        Snackbar.Add(_errorMessage, Severity.Error);
-    }
-    finally
-    {
-        _isLoading = false;
-    }
-}
-private void CloseVerificationPopup()
-{
-    VerificationSucesss = false;
-    NavManager.NavigateTo("/classifieds");
-}
-}
 
+    private async Task VerifyCode()
+    {
+        _isLoading = true;
+        _hasError = false;
+        _errorMessage = string.Empty;
+        _code = string.Join("", _otpDigits);
+
+        if (_code.Length != 6 || _otpDigits.Any(string.IsNullOrEmpty))
+        {
+            _hasError = true;
+            _errorMessage = "Please enter all 6 digits.";
+            _isLoading = false;
+            return;
+        }
+
+        try
+        {
+            var payload = new { usernameOrEmailOrPhone = UserState.Email, twoFactorCode = _code };
+            var response = await Api.PostAsync<object, object>("auth/verify-2fa", payload);
+
+            if (response?.StatusCode == 200)
+            {
+                VerificationSucesss = true;
+            }
+            else
+            {
+                _hasError = true;
+                _errorMessage = response?.Message ?? "Invalid verification code.";
+                Snackbar.Add(_errorMessage, Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _hasError = true;
+            _errorMessage = ex.Message;
+            Snackbar.Add(_errorMessage, Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void NavigateToForgotPassword() => NavManager.NavigateTo("/select-verification");
+    private void CloseVerificationPopup() => NavManager.NavigateTo("/classifieds");
+}
 <style>
-    .popup-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px); 
+.auth-wrapper {
+    background-color: var(--color-secondary-background);
+    padding: 48px 16px;
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000; 
+}
+
+.auth-container {
+    max-width: 400px;
+    width: 100%;
+    padding: 32px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 12px;
+    color:var(--color-text-secondary)
+}
+
+.subtitle {
+    font-size: 14px;
+    color:var(--color-text-caption) ;
+    margin-bottom: 24px;
+}
+
+.otp-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.otp-box {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+    text-align: center;
+    border: 1px solid var(--color-secondary-background);
+    border-radius: 6px;
+}
+
+.verify-btn {
+    margin-top: 16px;
+    width: 100%;
+}
+
+
+.resend {
+    font-size: 14px;
+    margin-top: 16px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+}
+.alternative {
+    font-size: 14px;
+    margin-top: 16px;
+    color:var(--color-accent);
+    cursor: pointer;
+}   
+.otp-box:focus {
+    border: 2px solid var(--color-accent);  /* Orange border on focus */
+    outline: none;
+    background-color: #FFF7F0;  /* Optional: light orange background */
 }
 
 </style>

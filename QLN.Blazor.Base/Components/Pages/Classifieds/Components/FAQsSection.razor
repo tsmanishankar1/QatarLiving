@@ -1,7 +1,7 @@
 @using MudBlazor
 
 <div class="faqs-section">
-    <MudText Typo="Typo.h4" Class="faq-title">FAQ's</MudText>
+    <MudText Typo="Typo.h6" Class="faq-title">FAQ's</MudText>
 
     @foreach (var faq in faqs)
     {
@@ -26,14 +26,13 @@
 <style>
 /* Container */
 .faqs-section {
-    background-color: #f7f9fc;
     padding: 2rem 1rem;
 }
 
 /* Title */
 .faq-title {
     font-weight: 600;
-    color: #333;
+    color: var(--color-text-secondary);
     margin-bottom: 2rem;
     text-align: center;
 }
@@ -43,14 +42,14 @@
     margin-bottom: 8px;
     border-radius: 8px;
     overflow: hidden;
-    background-color: #f7f9fc;
+    background-color: var(--color-secondary-background);
     transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 /* Hover and Expanded - MudPaper */
 .faq-item:hover,
 .faq-item.expanded {
-    background-color: white;
+    background-color: var(--color-background);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -67,7 +66,7 @@
 /* Hover and Expanded - MudButton */
 .faq-item:hover .faq-question,
 .faq-item.expanded .faq-question {
-    background-color: white;
+    background-color: var(--color-background);
 }
 
 /* End Icon */
@@ -80,7 +79,7 @@
 .faq-answer {
     padding: 1rem;
     padding-top: 0;
-    background-color: white;
+    background-color: var(--color-background);
 }
 
 /* Mobile Responsive */

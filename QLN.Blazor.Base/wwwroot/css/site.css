@@ -1,21 +1,22 @@
 :root {
     /* Brand Colors */
-    --color-primary: #00426D;
-    --color-secondary: #FF7F38;
-
+    --color-primary: #00426D;         /* Dark Blue */
+    --color-primary-container: #8BC6D2; /* Primary Container */
+    --color-secondary: #414042;       /* Dark Grey */
+    --color-accent: #FF7F38;          /* Accent */
+  
     /* Text Colors */
-    --color-heading: #181D27;
-    --color-caption: #646464;
-    --color-outline: #D0D5DD;
-    --color-placeholder: #787878;
+    --color-text-primary: #00426D;      /* For headings or strong text */
+    --color-text-secondary: #414042;    /* For body or secondary text */
+    --color-text-caption: #8C8C8C;      /* For smaller caption or helper text */
+    --color-text-white: #FFFFFF;        /* For use on dark backgrounds */
 
-    /* UI Colors */
-    --color-text-secondary:#999999;
-    --color-container:#F9F9F9;
-    --color-indicator:#FFA726;
-    --color-indicator-secondary:#F0F0F0;
-    --color-background:#F5F6FA;
-    --color-button-secondary:#01416D;
+    /* Backgrounds and Containers */
+    --color-background: #FFFFFF;      /* white background */
+    --color-secondary-background:#F5F6FA;
+    --color-grey-container: #D9D9D9;  /* Grey Container */
+    --color-secondary-grey-container: #E3E3E3;  /* secondary Grey Container */
+    --color-background-grey: #00000066; /* For the background when popup is displayed. */
 }
 
 .subscription-card {
@@ -79,4 +80,17 @@
 .feature-item {
     color: #172B4D;
     font-size: 0.85rem;
+}
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
 }

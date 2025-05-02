@@ -4,23 +4,32 @@ namespace QLN.Blazor.Base.Helpers
 {
     public static class ValidationHelper
     {
-        public static bool IsValidPhoneNumber(string phoneNumber)
-        {
-            if (string.IsNullOrWhiteSpace(phoneNumber))
-                return false;
+      public static bool IsValidPhoneNumber(string phoneNumber)
+{
+    if (string.IsNullOrWhiteSpace(phoneNumber))
+        return false;
 
-            var regex = new Regex(@"^\d{6,15}$");
-            return regex.IsMatch(phoneNumber);
-        }
+    // Remove hyphens to check the digit count
+    var digitsOnly = phoneNumber.Replace("-", "");
+
+    if (!Regex.IsMatch(digitsOnly, @"^\d{6,15}$"))
+        return false;
+
+    // Ensure the original input only contains digits and hyphens
+    return Regex.IsMatch(phoneNumber, @"^[\d-]+$");
+}
 
         public static bool IsValidEmail(string email)
-        {
-            if (string.IsNullOrWhiteSpace(email))
-                return false;
+            {
+                if (string.IsNullOrWhiteSpace(email))
+                    return false;
 
-            var regex = new Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
-            return regex.IsMatch(email);
-        }
+                // Updated regular expression to prevent consecutive dots anywhere in the email
+                var regex = new Regex(@"^(?!.*\.\.)[^@\s]+@[^@\s]+\.[^@\s]+$");
+
+                return regex.IsMatch(email);
+            }
+
 
         public static string ValidatePassword(string password)
         {

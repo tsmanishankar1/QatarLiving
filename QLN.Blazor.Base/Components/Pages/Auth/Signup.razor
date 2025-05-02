@@ -23,10 +23,9 @@
 
 @if (_showVerificationPopup)
 {
-     <div class="popup-overlay">
-        <VerificationPopup ShowSuccess="@showVerificationSuccess" _showMobileVerificationSuccess="@showMobileVerificationSuccess" isEmail="@isEmail" email="@email" OnClose="CloseVerificationPopup" OnAction="@ShowVerificationSuccessPopup" /> 
+          <div class="popup-overlay">
+        <VerificationPopup ShowSuccess="@showVerificationSuccess" _showMobileVerificationSuccess="@showMobileVerificationSuccess" isEmail="@isEmail" email="@email" OnClose="CloseVerificationPopup" OnAction="@ShowVerificationSuccessPopup" VerificationMethod="SelectedVerificationMethod" /> 
     </div> 
-    
 }
 @if (signUpSucesss){
     <div class="popup-overlay">
@@ -38,16 +37,13 @@
         OnClick="CloseSuccessPopup" />
     </div> 
 }
-<div style="width: 100%; background-color: #F5F6FA; padding: 32px 16px;">
-    <div style="max-width: 400px; margin: 0 auto;">
-    <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-6" Style="font-weight: 700;">
+<div class="form-container">
+    <div class="form-wrapper">
+    <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-6 heading-text">
         Create Account
     </MudText>
-
-
 <MudForm @ref="_form" Model="@_model" OnValidSubmit="SubmitSignup">
-
-        <MudText Typo="Typo.body1"  Style="font-weight: 400;">
+        <MudText Typo="Typo.body1"  Class="label-text">
         First Name
         </MudText>
 
@@ -57,11 +53,11 @@
                   @bind-Value="_model.FirstName"
                   Immediate="true"
                   Variant="Variant.Outlined"
-                  Class="mud-text-field-custom"
+                  Class="custom-textfield"
                   MaxLength="50"
                   FullWidth="true"
                    />
-        <MudText Typo="Typo.body1"  Style="font-weight: 400;">
+        <MudText Typo="Typo.body1"  Class="label-text">
         Last Name
         </MudText>
          <MudTextField T="string"
@@ -72,8 +68,8 @@
               Immediate="true"
               MaxLength="50"
               FullWidth="true"
-              Class="mud-text-field-custom" />
-        <MudText Typo="Typo.body1"  Style="font-weight: 400;">
+              Class="custom-textfield"  />
+        <MudText Typo="Typo.body1"  Class="label-text">
         Username
         </MudText>
         <MudTextField T="string"
@@ -84,55 +80,49 @@
               MaxLength="50"
               FullWidth="true"
               Immediate="true"
-              Class="mud-text-field-custom" />
+              Class="custom-textfield" />
               
-    <MudText Typo="Typo.body1"  Style="font-weight: 400;">
+    <MudText Typo="Typo.body1"  Class="label-text">
         Email
      </MudText>
    
-<MudPaper Class="phone-container pa-4" Elevation="0" Style="border: 1px solid #ccc; border-radius: 8px;">
+<MudPaper Class="pa-4 custom-paper" Elevation="0" >
     <div class="phone-flex">
-
         <MudTextField T="string"
               Label="Email Address"
               For="@(() => _model.EmailAddress)"
               @bind-Value="_model.EmailAddress"
               MaxLength="50"
+              Validation="@ValidateEmailFormat"
               FullWidth="true"
               Immediate="true"
               Class="phone-input" />
 
         @if (showVerificationSuccess)
         {
-            @if (isEmail){
-            <MudText Typo="Typo.body1" Style="font-weight: 400; color: #079455;">
+            <MudText Typo="Typo.body1" Class="success-text">
             Verified
             </MudText>
-            }
         }
         else
         {
-            
-                <MudButton Variant="Variant.Filled"
+            <MudButton Variant="Variant.Filled"
            Loading="@_emailVerifying"
-           Disabled="@(string.IsNullOrWhiteSpace(_model.EmailAddress) || !Regex.IsMatch(_model.EmailAddress, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))"
-           Color="Color.Warning"
+           Disabled="@(string.IsNullOrWhiteSpace(_model.EmailAddress) ||  ValidateEmailFormat(_model.EmailAddress) != null)"
            OnClick="OnVerifyEmailClicked"
-           Class="verify-button"
-           Style="background-color: var(--color-secondary); color: white; min-width: 50px;">
+           Class="verify-button">
 
-    <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+    <div class="verify-container">
         @if (_emailVerifying)
         {
             <MudProgressCircular Indeterminate="true"
                                  Size="Size.Small"
-                                 Style="color: var(--color-secondary);"
                                  Color="Color.Inherit"
-                                 Class="mx-3" />
+                                 Class="mx-3 verify-progress-circular" />
         }
         else
         {
-            <MudText Typo="Typo.button">Verify</MudText>
+            <MudText Typo="Typo.button"  Class="verify-button-text">Verify</MudText>
         }
     </div>
 </MudButton>
@@ -141,23 +131,30 @@
     </div>
 </MudPaper>
 
-        <MudText Typo="Typo.body1"  Style="font-weight: 400;">
+        <MudText Typo="Typo.body1"  Class="label-text">
         Phone Number
         </MudText>
-        <!-- PHONE FIELD BOX -->
-<MudPaper Class="phone-container pa-4" Elevation="0" Style="border: 1px solid #ccc; border-radius: 8px;">
-    <div class="phone-flex" style="align-items: center;">
-        <MudSelect T="CountryModel" @bind-Value="SelectedCountry" Class="country-select" DisableUnderline="true" Style="width: 120px;">
+<MudPaper Class="pa-4 custom-paper" Elevation="0">
+    <div class="phone-flex">
+       <MudSelect T="CountryModel"
+                   @bind-Value="SelectedCountry"
+                   Class="country-select"
+                   DisableUnderline="true"
+                   Searchable="true">
             <MudSelectItem Value="@SelectedCountry">
-                <img src="@SelectedCountry.Flag" style="width:24px; height:16px; margin-right:5px;" />
+                <img src="@SelectedCountry.Flag" Class="selected-country-flag" />
                 @SelectedCountry.Code
             </MudSelectItem>
             @foreach (var country in countryList)
             {
-                <MudSelectItem Value="@country">
-                    <img src="@country.Flag" style="width:24px; height:16px; margin-right:5px;" />
-                    @country.Code
-                </MudSelectItem>
+               <MudSelectItem Value="@country">
+                <div Class="country-option">
+                    <img src="@country.Flag"
+                        alt="flag"
+                        Class="country-flag" />
+                    <span Class="country-code-text">@country.Code</span>
+                </div>
+            </MudSelectItem>
             }
         </MudSelect>
 
@@ -166,15 +163,15 @@
                       @bind-Value="_model.MobileNumber"
                       Validation="ValidatePhone"
                       @ref="_mobileFieldRef"
-                      MaxLength="50"
+                      MaxLength="15"
                       FullWidth="true"
                       StartAdornment="@SelectedCountry.Code"
                       Immediate="true"
-                      Class="mobile-input" />
+                      Class="mobile-input"/>
         
         @if (showMobileVerificationSuccess && !isEmail)
         {
-            <MudText Typo="Typo.body1" Style="font-weight: 400; color: #079455;">
+            <MudText Typo="Typo.body1"  Class="success-text">
                 Verified
             </MudText>
         }
@@ -182,23 +179,20 @@
         {
             <MudButton Variant="Variant.Filled"
                        Loading="@_phoneVerifying"
-                       Disabled="@(string.IsNullOrWhiteSpace(_model.MobileNumber) || !Regex.IsMatch(_model.MobileNumber, @"^\d{8,15}$"))"
-                       Color="Color.Warning"
+                       Disabled="@(string.IsNullOrWhiteSpace(_model.MobileNumber) || ValidatePhone(_model.MobileNumber) != null)"
                        OnClick="OnVerifyPhoneClicked"
-                       Class="verify-button"
-                       Style="background-color: var(--color-secondary); color: white; min-width: 70px;">
-                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                       Class="verify-button">
+                <div class="verify-container">
                     @if (_phoneVerifying)
                     {
                         <MudProgressCircular Indeterminate="true"
                                              Size="Size.Small"
-                                             Style="color: var(--color-secondary);"
                                              Color="Color.Inherit"
-                                             Class="mx-3" />
+                                             Class="mx-3 verify-progress-circular" />
                     }
                     else
                     {
-                        <MudText Typo="Typo.button">Verify</MudText>
+                        <MudText Typo="Typo.button" Class="verify-button-text">Verify</MudText>
                     }
                 </div>
             </MudButton>
@@ -206,14 +200,8 @@
     </div>
 </MudPaper>
 
-@* @if (_mobileFieldRef != null && _mobileFieldRef.HasErrors)
-{
-    <MudText Class="mt-1 ml-2" Style="color: #d32f2f; font-size: 0.75rem;">
-        @_mobileFieldRef.ErrorText
-    </MudText>
-}      *@
 
-        <MudText Typo="Typo.body1"  Style="font-weight: 400;">
+        <MudText Typo="Typo.body1"  Class="label-text">
         Date of Birth
         </MudText>
               <MudDatePicker @bind-Date="_dateOfBirth"
@@ -221,38 +209,39 @@
                Label="Date of Birth"
                Variant="Variant.Outlined"
                Required="true"
-               Style="background-color: #FFFFFF;"
+               Style="background-color:-var(--color-text-white);"
                RequiredError="Date of Birth is required"
                PickerVariant="PickerVariant.Inline"
                Class="mt-4" />
-        <MudText Typo="Typo.body1"  Style="font-weight: 400;">
+        <MudText Typo="Typo.body1"  Class="label-text">
         Nationality
         </MudText>
         <MudSelect T="string"
            Label="Nationality"
+           Placeholder="Choose"
            Variant="Variant.Outlined"
            Dense="false"
            FullWidth="true"
            @bind-Value="_model.Nationality"
-           Style="background-color: #FFFFFF;"
            DisableUnderline="true"
-           Class="mt-4">
+           Class="mt-4 date-picker">
     @foreach (var country in countryList)
     {
         <MudSelectItem T="string" Value="@country.Name">@country.Name</MudSelectItem>
     }
 </MudSelect>
-<MudText Typo="Typo.body1"  Style="font-weight: 400;">
+<MudText Typo="Typo.body1"  Class="label-text">
         Language
         </MudText>
 <MudSelect T="string"
            Label="Language"
+           Placeholder="Choose"
            Variant="Variant.Outlined"
            Dense="false"
            FullWidth="true"
            @bind-Value="_model.LanguagePreferences"
            DisableUnderline="true"
-           Class="mt-4 mud-text-field-custom">
+           Class="mt-4">
     @foreach (var country in languageOptions)
     {
         <MudSelectItem T="string" Value="@country">@country</MudSelectItem>
@@ -260,7 +249,7 @@
 </MudSelect>
 
 
-<MudText Typo="Typo.body1"  Style="font-weight: 400;">
+<MudText Typo="Typo.body1"  Class="label-text">
         Password
 </MudText>
 <MudTextField T="string"
@@ -269,7 +258,7 @@
               MaxLength="50"
               InputType="@(_showPassword ? InputType.Text : InputType.Password)"
               FullWidth="true"
-              Class="mud-text-field-custom"
+              Class="password-input"
               OnInput="@OnPasswordInput"
               @bind-Value="_model.Password"
               Immediate="true"
@@ -279,18 +268,12 @@
               AdornmentIcon="@(_showPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
               OnAdornmentClick="TogglePasswordVisibility"
               AdornmentColor="Color.Default" />
-              
-
-
-
     <PasswordStrengthIndicator Password="@_model.Password" />
 
 
-<MudText Typo="Typo.body1"  Style="font-weight: 400;">
+<MudText Typo="Typo.body1"  Class="label-text">
         Comnfirm Password
 </MudText>
-
-
               <MudTextField T="string"
               Label="Confirm Password"
               Variant="Variant.Outlined"
@@ -298,7 +281,7 @@
               MaxLength="50"
               InputType="@(_showConfirmPassword ? InputType.Text : InputType.Password)"
               FullWidth="true"
-              Class="mt-4 mud-text-field-custom"
+              Class="mt-4 "
               @bind-Value="_confirmPassword"
               Validation="ValidateConfirmPassword"
               For="@(() => _confirmPassword)"
@@ -306,13 +289,12 @@
               AdornmentIcon="@(_showConfirmPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
               OnAdornmentClick="ToggleConfirmVisibility"
               AdornmentColor="Color.Default" />
-
-        <MudCheckBox @bind-Value="_model.AggreeToTerms" Label="">
+        <MudCheckBox @bind-Value="_model.AggreeToTerms" Label=""   Class="custom-checkbox" >
         <LabelContent>
             I agree to the 
-            <MudText Link="true" Style="color: #FF7F38;" Class="ml-1 mr-1 d-inline">Terms and Conditions</MudText>
+            <MudText Link="true" Class="ml-1 mr-1 d-inline terms-link">Terms and Conditions</MudText>
             and 
-            <MudText Link="true" Style="color: #FF7F38;" Class="ml-1 d-inline">Privacy Policy</MudText>
+            <MudText Link="true" Class="ml-1 d-inline terms-link">Privacy Policy</MudText>
         </LabelContent>
 
     </MudCheckBox>
@@ -324,8 +306,6 @@
 }
     <MudCheckBox T="bool" Label="Enable Two-Factor Authentication" Class="mt-3" @bind-Checked="EnableTwoFactor" />
     <MudCheckBox T="bool" Label="I want to receive marketing emails and offers" Class="mt-2" @bind-Checked="MarketingOptIn" />
-
-    
     <CustomButton 
     BackgroundColor="#FF7F38"
     TextColor="#FFFFFF"
@@ -334,43 +314,15 @@
     Loading="_loading"
     OnClick="@SubmitSignup"
     Class="mt-4" />
-
     <div class="d-flex align-center my-4">
-        <div style="flex-grow: 1; height: 1px; background-color: #ccc;"></div>
+        <div class="divider-line"></div>
         <MudText Typo="Typo.caption" Class="mx-2">Or continue with</MudText>
-        <div style="flex-grow: 1; height: 1px; background-color: #ccc;"></div>
+        <div class="divider-line"></div>
     </div>
-
-
-
-<MudGrid Justify="Justify.SpaceEvenly" GutterSize="12px" Class="mt-4">
-    <MudItem xs="2">
-        <MudButton Variant="Variant.Outlined" Style="background-color: #FFFFFF; border-color: #DDDDDD; height: 44px; width: 78px; border-radius: 8px; min-width: 50px; padding: 0;">
-            <img src="images/google.svg" alt="Google" style="height: 24px;" />
-        </MudButton>
-    </MudItem>
-    <MudItem xs="2">
-        <MudButton Variant="Variant.Outlined" Style="background-color: #FFFFFF; border-color: #DDDDDD; height: 44px; width: 78px; min-width: 50px; padding: 0; border-radius: 8px;">
-            <img src="images/apple.svg" alt="Apple" style="height: 24px;" />
-        </MudButton>
-    </MudItem>
-    <MudItem xs="2">
-        <MudButton Variant="Variant.Outlined" Style="background-color: #FFFFFF; border-color: #DDDDDD; height: 44px; width: 78px; min-width: 50px; padding: 0; border-radius: 8px;">
-            <img src="images/microsoft.svg" alt="Microsoft" style="height: 24px;" />
-        </MudButton>
-    </MudItem>
-    <MudItem xs="2">
-        <MudButton Variant="Variant.Outlined" Class="social-login-button">
-            <img src="images/facebook.svg" alt="Facebook" style="height: 24px;" />
-        </MudButton>
-    </MudItem>
-</MudGrid>
 
     <MudText Align="Align.Center" Class="mt-4 d-flex justify-center">
     Already have an account? 
-    <MudLink Href="/login" Class="ml-1" Style="color: #FF7F38;">
-        Sign In
-    </MudLink>
+    <NavLink href="/login" Class="terms-link" >Sign In</NavLink>
 </MudText>
 </MudForm>
  </div>
@@ -395,6 +347,7 @@
     private string _password_error = "";
     private string _confirmPassword_error = "";
     private bool EnableTwoFactor { get; set; } = false;
+    private Func<Task> SelectedVerificationMethod;
 
     [Required(ErrorMessage = "You must accept the Terms and Conditions.")]
     private bool AcceptedTerms { get; set; }
@@ -527,17 +480,15 @@
         }
     }
     
-
     private async Task OnVerifyEmailClicked()
     {
-        Console.WriteLine("Email verification clicked");
         _emailVerifying = true;
-        
         isEmail = true;
         email = _model.EmailAddress;
+        Console.WriteLine("Email verification clicked");        
         var payload = new
         {  
-            email = _model.EmailAddress,
+            email = email,
         }; 
         try
         {
@@ -545,41 +496,42 @@
             var response = await Api.PostAsync<object, object >("auth/verify-email-request", payload); 
              if (response?.StatusCode == 200)
             {
-                 _showVerificationPopup = true;
+                Snackbar.Add(response?.Message, Severity.Success);
+                SelectedVerificationMethod = OnVerifyEmailClicked;
+                _showVerificationPopup = true;
                  await InvokeAsync(StateHasChanged); 
             }
             else
             {
                 Snackbar.Add(response?.Message, Severity.Error);
             }  
-    
         }
         catch (Exception ex)
         {
             Snackbar.Add($"Verification failed: {ex.Message}");
         }
-        finally
-        {
+        finally{
             _emailVerifying = false;
         }
-
     }
 
     private async Task OnVerifyPhoneClicked()
     {
-        isEmail = false;
         _phoneVerifying = true;
+        isEmail = false;
         email = _model.MobileNumber; 
         var payload = new
         {  
-            phoneNumber = _model.MobileNumber,
+            phoneNumber = email,
         }; 
         try
         {
             var response = await Api.PostAsync<object, object>("auth/verify-phone-request", payload); 
             if (response?.StatusCode == 200)
             {
-                 _showVerificationPopup = true;
+                Snackbar.Add(response?.Message, Severity.Success);
+                SelectedVerificationMethod = OnVerifyPhoneClicked;
+                _showVerificationPopup = true;
                  await InvokeAsync(StateHasChanged); 
             }
             else
@@ -591,12 +543,10 @@
         {
             Snackbar.Add($"Verification failed: {ex.Message}");
         }
-        finally
-        {
-            _phoneVerifying = false;
+        finally{
+             _phoneVerifying = false;
         }
-
-    }
+    } 
     private void CloseVerificationPopup()
 {
     _showVerificationPopup = false;
@@ -632,11 +582,9 @@ private void CloseSuccessPopup()
     public string LastName { get; set; }
 
     [Required(ErrorMessage = "Email address is required.")]
-    [RegularExpression(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", ErrorMessage = "Invalid email address format.")]
     public string EmailAddress { get; set; }
 
      [Required(ErrorMessage = "Mobile number is required.")]
-    [RegularExpression("^[0-9]+$", ErrorMessage = "Mobile number must contain only digits.")]
     public string MobileNumber { get; set; }
 
     public string Gender { get; set; }
@@ -650,9 +598,9 @@ private void CloseSuccessPopup()
     public string Password { get; set; }
 
     [Required(ErrorMessage = "Nationality is required.")]
-    public string Nationality { get; set; } = "Qatar";
+    public string Nationality { get; set; }
 
-    public string LanguagePreferences { get; set; } = "English";
+    public string LanguagePreferences { get; set; }
 
     public string Location { get; set; }
 
@@ -666,7 +614,6 @@ private void CloseSuccessPopup()
     }
     private async Task<List<CountryModel>> FetchCountriesAsync()
     {
-
         try
         {
             var response = await Http.GetStringAsync("https://restcountries.com/v3.1/all");
@@ -722,15 +669,18 @@ private void CloseSuccessPopup()
 {
     if (string.IsNullOrWhiteSpace(value))
         {
-            return "Please enter your email or phone number.";
+            return "Phone number is required.";
         }
         else if (!ValidationHelper.IsValidPhoneNumber(value))
         {
-            return "Please enter a valid email or phone number.";
+            return "Please enter a valid phone number.";
         }
-        StateHasChanged(); 
         return null;
 }
+private string ValidateEmailFormat(string email)
+    {
+        return ValidationHelper.IsValidEmail(email) ? null : "Invalid email address.";
+    }
 private string ValidateConfirmPassword(string value)
 {
     if (string.IsNullOrWhiteSpace(value))
@@ -762,5 +712,98 @@ private string ValidateConfirmPassword(string value)
     display: flex;
     align-items: center;
     gap: 16px; 
+}
+.form-container {
+    width: 100%;
+    background-color: var(--color-secondary-background);
+    padding: 32px 16px;
+}
+
+.form-wrapper {
+    max-width: 400px;
+    margin: 0 auto;
+}
+.heading-text {
+    font-weight: 700;
+}
+.label-text {
+    font-weight: 400;
+}
+.custom-textfield {
+    background-color: var(--color-secondary-background);
+}
+.custom-paper {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+.success-text {
+    font-weight: 400;
+    color: #079455;
+}
+.verify-button {
+    background-color:var(--color-accent);
+    color: white;
+    min-width: 50px;
+}
+
+.verify-button:disabled {
+    opacity: 0.5;  
+}
+.verify-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.verify-progress {
+    color: var(--color-accent);
+}
+.verify-text {
+    text-transform: capitalize;
+}
+.verify-progress-circular {
+    color: var(--color-accent);
+}
+.verify-button-text {
+    text-transform: capitalize;
+}
+.country-select {
+    width: 120px;
+}
+.selected-country-flag {
+    width: 20px;
+    height: 14px;
+    margin-right: 5px;
+}
+.country-option {
+    display: flex;
+    align-items: center;
+}
+.country-flag {
+    width: 20px;
+    height: 14px;
+    object-fit: cover;
+    margin-right: 8px;
+}
+.country-code-text {
+    white-space: nowrap;
+    font-size: 14px;
+}
+.mobile-input {
+    text-transform: capitalize;
+}
+.date-picker {
+    background-color:var(--color-text-white);
+}
+.password-input {
+    background-color: var(--color-secondary-background);
+}
+.terms-link {
+    color: var(--color-accent);
+}
+.divider-line {
+    flex-grow: 1;
+    height: 1px;
+    background-color: #ccc;
 }
 </style>

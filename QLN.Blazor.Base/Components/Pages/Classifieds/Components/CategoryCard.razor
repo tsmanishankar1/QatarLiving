@@ -1,0 +1,106 @@
+@using MudBlazor
+
+<div class="featured-categories-section">
+    <div class="categories-grid">
+        @foreach (var category in categories)
+        {
+            <div class="category-card">
+                <div class="category-content">
+                    <div class="category-title">@category.Title</div>
+                    <MudButton Variant="Variant.Text"
+                        Style="color: var(--color-accent); text-transform: none; justify-content: flex-start"
+                        Size="Size.Small"
+                        FullWidth="true"
+                        EndIcon="@Icons.Material.Filled.ArrowForward">
+                    @category.Subtitle
+                </MudButton>
+                </div>
+                <div class="category-img">
+                    <img src="@category.ImageUrl" alt="@category.Title" />
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .featured-categories-section {
+        padding: 3rem 2rem;
+    }
+
+    .categories-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+    }
+
+    .category-card {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+        background-color: var(--color-background);
+        padding: 5px;
+        padding-left: 10px;
+        border-radius: 16px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        transition: transform 0.2s ease-in-out;
+    }
+
+    .category-card:hover {
+        transform: translateY(-4px);
+    }
+
+    .category-content {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+    }
+
+    .category-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--color-text-primary);
+        margin-bottom: 6px;
+    }
+
+    .category-subtitle {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--color-text-caption);
+    }
+
+    .category-img {
+        flex-shrink: 0;
+        width: 100px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+    }
+
+    .category-img img {
+        height: 100px;
+        width: auto;
+        object-fit: contain;
+    }
+
+  
+</style>
+
+@code {
+    private List<CategoryItem> categories = new()
+    {
+        new CategoryItem { Title = "Electronics", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image1.svg" },
+        new CategoryItem { Title = "Sports & Hobbies", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image2.svg" },
+        new CategoryItem { Title = "Mobile Phones & Tablets", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image3.svg" },
+        new CategoryItem { Title = "Furniture & Decor", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image4.svg" },
+    };
+
+    public class CategoryItem
+    {
+        public string Title { get; set; }
+        public string Subtitle { get; set; }
+        public string ImageUrl { get; set; }
+    }
+}

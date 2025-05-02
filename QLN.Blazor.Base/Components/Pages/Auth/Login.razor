@@ -25,13 +25,12 @@
                       Variant="Variant.Outlined"
                       FullWidth="true"
                       InputType="InputType.Text"
-                      Class="mud-text-field-custom"
                       MaxLength="50"
                       Required="true"
                       Error="@(!string.IsNullOrEmpty(_usernameError))"
                       ErrorText="@_usernameError"
                       Immediate="true"
-                       ValueChanged="OnEmailChanged"
+                      ValueChanged="OnEmailChanged"
                       ValueExpression="(() => _username)"
                       OnBlur="@ValidateUsername" />
 
@@ -64,13 +63,11 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
     <MudCheckBox T="bool" Label="Remember me" DisableMargins="true" />
 
-    <MudLink Href="/forgot-password" Style="color: #FF7F38; text-decoration: none;">
-        Forgot Password?
-    </MudLink>
+     <NavLink href="/forgot-password" style="color: #FF7F38;" > Forgot Password?</NavLink>
 </div>
    
 <CustomButton 
-    BackgroundColor= "var(--color-secondary)"
+    BackgroundColor= "var(--color-accent)"
     TextColor="#FFFFFF"
     Text="Sign In"
     Disabled="_isLoading"
@@ -106,7 +103,7 @@
     <MudStack AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
     <MudText Align="Align.Start" Class="mt-4">
         Don't have an account? 
-        <MudLink Href="/signup" Class="ml-1" Style="color: #FF7F38;">Sign Up</MudLink>
+    <NavLink href="/signup" style="color: #FF7F38;" >Sign Up</NavLink>
     </MudText>
     </MudStack>
     </div>
@@ -119,8 +116,6 @@
     private bool _showPassword = false;
     private ModalData modalData = new();
     private bool loginSucesss = false;
-
-
     private string _usernameError = string.Empty;
     private string _passwordError = string.Empty;
 
@@ -203,6 +198,7 @@
             Console.WriteLine("response", response);
             if (response?.StatusCode == 200)
             {
+                UserState.username = response.Data.Username;
                 UserState.Email = response.Data.Emailaddress;
                 UserState.mobileNumber = response.Data.Mobilenumber;
                 StateHasChanged();
@@ -216,7 +212,7 @@
                 else if (!response.Data.IsTwoFactorEnabled)
                 {
                     Snackbar.Add($"Logged in as {response.Data.Emailaddress}", Severity.Success);
-                    NavManager.NavigateTo("/");
+                    NavManager.NavigateTo("/classifieds");
                 }
                 else
                 {
