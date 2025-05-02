@@ -175,7 +175,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email && u.Isactive == true);
                 if (existingUser != null)
                 {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Email already registered. Please login."));
+                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Email already registered"));
                 }
 
                 var otp = new Random().Next(100000, 999999).ToString();
@@ -234,7 +234,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber && u.Isactive == true);
                 if (existingUser != null)
                 {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Phone number already registered. Please login."));
+                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Phone number already registered."));
                 }
 
                 var otp = new Random().Next(100000, 999999).ToString();
@@ -387,19 +387,13 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                 if (user == null)
                 {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid username or email or phonenumber"));
+                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid credentials"));
                 }
 
                 else if (!await _userManager.CheckPasswordAsync(user, request.Password))
                 {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid password"));
+                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid credentials"));
                 }
-
-                else if (!await _userManager.IsEmailConfirmedAsync(user))
-                {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Email not confirmed."));
-                }
-
 
 
                 if (user.TwoFactorEnabled)
@@ -451,7 +445,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                 if (user == null)
                 {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid username, email, or mobile number."));
+                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid credentials."));
                 }
 
                 if (!user.TwoFactorEnabled)

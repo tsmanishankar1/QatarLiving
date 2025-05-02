@@ -372,7 +372,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.User
             return group;
         }
 
-
         // refresh
         public static RouteGroupBuilder MapRefreshTokenEndpoint(this RouteGroupBuilder group)
         {
