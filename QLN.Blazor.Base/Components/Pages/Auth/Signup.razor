@@ -53,7 +53,7 @@
                   @bind-Value="_model.FirstName"
                   Immediate="true"
                   Variant="Variant.Outlined"
-                  Class="custom-textfield"
+                  style="background-color: var(--color-background)"
                   MaxLength="50"
                   FullWidth="true"
                    />
@@ -68,7 +68,7 @@
               Immediate="true"
               MaxLength="50"
               FullWidth="true"
-              Class="custom-textfield"  />
+              style="background-color: var(--color-background)"  />
         <MudText Typo="Typo.body1"  Class="label-text">
         Username
         </MudText>
@@ -80,7 +80,7 @@
               MaxLength="50"
               FullWidth="true"
               Immediate="true"
-              Class="custom-textfield" />
+              style="background-color: var(--color-background)" />
               
     <MudText Typo="Typo.body1"  Class="label-text">
         Email
@@ -209,7 +209,7 @@
                Label="Date of Birth"
                Variant="Variant.Outlined"
                Required="true"
-               Style="background-color:-var(--color-text-white);"
+               style="background-color: var(--color-background)"
                RequiredError="Date of Birth is required"
                PickerVariant="PickerVariant.Inline"
                Class="mt-4" />
@@ -222,9 +222,10 @@
            Variant="Variant.Outlined"
            Dense="false"
            FullWidth="true"
+           style="background-color: var(--color-background)"
            @bind-Value="_model.Nationality"
            DisableUnderline="true"
-           Class="mt-4 date-picker">
+           Class="mt-4">
     @foreach (var country in countryList)
     {
         <MudSelectItem T="string" Value="@country.Name">@country.Name</MudSelectItem>
@@ -238,6 +239,7 @@
            Placeholder="Choose"
            Variant="Variant.Outlined"
            Dense="false"
+           style="background-color: var(--color-background)"
            FullWidth="true"
            @bind-Value="_model.LanguagePreferences"
            DisableUnderline="true"
@@ -262,6 +264,7 @@
               OnInput="@OnPasswordInput"
               @bind-Value="_model.Password"
               Immediate="true"
+              style="background-color: var(--color-background)"
               Required="true"
               For="@(() => _model.Password)"
               Adornment="Adornment.End"
@@ -282,6 +285,7 @@
               InputType="@(_showConfirmPassword ? InputType.Text : InputType.Password)"
               FullWidth="true"
               Class="mt-4 "
+              style="background-color: var(--color-background)"
               @bind-Value="_confirmPassword"
               Validation="ValidateConfirmPassword"
               For="@(() => _confirmPassword)"
@@ -710,7 +714,7 @@ private string ValidateConfirmPassword(string value)
 }
 .phone-flex {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 16px; 
 }
 .form-container {

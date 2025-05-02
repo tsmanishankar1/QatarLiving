@@ -1,23 +1,25 @@
 @page "/two-factor-authentication"
+@implements IDisposable
 @inject NavigationManager NavManager
 @inject ISnackbar Snackbar
 @inject ApiService Api
 @inject UserState UserState
 @inject IJSRuntime JS
 
-@rendermode InteractiveServer
+@using Microsoft.AspNetCore.WebUtilities
 @using QLN.Blazor.Base.Models
 @using QLN.Blazor.Base.Services
 @using QLN.Web.Shared.Components.CustomButton
 @using QLN.Web.Shared.Components.ModalDialog
-@using System.Text.Json;
+@using System.Text.Json
+@using System.Timers
 
 @if (VerificationSucesss)
 {
     <div class="popup-overlay">
         <ModalDialog
             Title="Verification Successful"
-            Description="Your email has been successfully verified."
+            Description="Your code has been successfully verified."
             ButtonName="Continue"
             StatusType="Success"
             OnClick="CloseVerificationPopup" />
@@ -27,7 +29,16 @@
 <div class="auth-wrapper">
     <div class="auth-container">
         <h2 class="title">Two-Factor Authentication</h2>
-        <p class="subtitle">We've sent a verification code to your mail ending in @UserState.Email</p>
+        <p class="subtitle">We've sent a verification code to your 
+            @if (_method == "email")
+            {
+                <text>email ending in @UserState.Email</text>
+            }
+            else if (_method == "sms")
+            {
+                <text>phone number ending in @UserState.mobileNumber</text>
+            }
+        </p>
 
         <div class="otp-container">
             @for (int i = 0; i < 6; i++)
@@ -53,7 +64,18 @@
             OnClick="@VerifyCode"
             Class="verify-btn" />
 
-        <p class="resend">Didn't receive a code? <NavLink href="/signup" style="color:var(--color-accent)" >Resend</NavLink></p>
+        <p class="resend">
+            Didn't receive a code?
+            @if (_isResendDisabled)
+            {
+                <span style="color:gray;"> Resend in 00:@_resendCountdown.ToString("D2")</span>
+            }
+            else
+            {
+                <span style="color:var(--color-accent); cursor:pointer;" @onclick="ResendCode">Resend</span>
+            }
+        </p>
+
         <p class="alternative" @onclick="NavigateToForgotPassword">Use another verification method</p>
     </div>
 </div>
@@ -65,16 +87,29 @@
     private bool VerificationSucesss = false;
     private bool _hasError = false;
     private string _errorMessage = string.Empty;
+    private string _method = "email";
+
+    private bool _isResendDisabled = false;
+    private int _resendCountdown = 0;
+    private Timer? _resendTimer;
+
+    protected override void OnInitialized()
+    {
+        var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("method", out var method))
+        {
+            _method = method.ToString();
+        }
+    }
 
     private async Task OnOtpChanged(string? value, int index)
     {
         if (!string.IsNullOrEmpty(value) && char.IsDigit(value[0]))
         {
             _otpDigits[index] = value.Substring(0, 1);
-
             if (index < 5)
             {
-                await JS.InvokeVoidAsync("eval", $"setTimeout(() => {{ const el = document.getElementById('otp-{index + 1}'); if (el) el.focus(); }}, 10);");
+                await JS.InvokeVoidAsync("eval", $"setTimeout(() => {{ document.getElementById('otp-{index + 1}')?.focus(); }}, 10);");
             }
         }
         else
@@ -94,17 +129,31 @@
         {
             _hasError = true;
             _errorMessage = "Please enter all 6 digits.";
+            Snackbar.Add(_errorMessage, Severity.Warning);
             _isLoading = false;
             return;
         }
 
+        var contactInfo = _method == "sms" ? UserState.mobileNumber : UserState.Email;
+
+        var payload = new
+        {
+            usernameOrEmailOrPhone = contactInfo,
+            twoFactorCode = _code,
+            method = _method == "sms" ? "phone" : _method
+        };
+
         try
         {
-            var payload = new { usernameOrEmailOrPhone = UserState.Email, twoFactorCode = _code };
-            var response = await Api.PostAsync<object, object>("auth/verify-2fa", payload);
+            var response = await Api.PostAsync<object, Verify2FAResponseData>("auth/verify-2fa", payload);
 
-            if (response?.StatusCode == 200)
+            if (response?.StatusCode == 200 && response.Data is not null)
             {
+                UserState.username = response.Data.Username;
+                UserState.Email = response.Data.Emailaddress;
+                UserState.mobileNumber = response.Data.Mobilenumber;
+                UserState.Token = response.Data.AccessToken;
+
                 VerificationSucesss = true;
             }
             else
@@ -126,9 +175,79 @@
         }
     }
 
+    private async Task ResendCode()
+    {
+        if (_isResendDisabled) return;
+
+        var payload = new
+        {
+            usernameOrEmailOrPhone = _method == "email" ? UserState.Email : UserState.mobileNumber,
+            method = _method == "sms" ? "phone" : _method
+        };
+
+        try
+        {
+            var response = await Api.PostAsync<object, object>("auth/send-2fa", payload);
+
+            if (response?.StatusCode == 200)
+            {
+                Snackbar.Add("Verification code resent successfully.", Severity.Success);
+                StartResendCountdown();
+            }
+            else
+            {
+                Snackbar.Add(response?.Message ?? "Failed to resend code.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void StartResendCountdown()
+    {
+        _resendCountdown = 60;
+        _isResendDisabled = true;
+
+        _resendTimer?.Dispose();
+        _resendTimer = new Timer(1000);
+        _resendTimer.Elapsed += (sender, args) =>
+        {
+            if (_resendCountdown > 0)
+            {
+                _resendCountdown--;
+                InvokeAsync(StateHasChanged);
+            }
+            else
+            {
+                _isResendDisabled = false;
+                _resendTimer?.Stop();
+                _resendTimer?.Dispose();
+                InvokeAsync(StateHasChanged);
+            }
+        };
+        _resendTimer.Start();
+    }
+
     private void NavigateToForgotPassword() => NavManager.NavigateTo("/select-verification");
     private void CloseVerificationPopup() => NavManager.NavigateTo("/classifieds");
+
+    public void Dispose()
+    {
+        _resendTimer?.Dispose();
+    }
+
+    private class Verify2FAResponseData
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Emailaddress { get; set; } = string.Empty;
+        public string Mobilenumber { get; set; } = string.Empty;
+        public string AccessToken { get; set; } = string.Empty;
+    }
 }
+
+
 <style>
 .auth-wrapper {
     background-color: var(--color-secondary-background);

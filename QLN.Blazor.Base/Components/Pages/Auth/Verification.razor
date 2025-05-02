@@ -1,9 +1,11 @@
 @page "/select-verification"
-@inject UserState UserState
 @using MudBlazor
+@using QLN.Web.Shared.Components.CustomButton
 @inject NavigationManager NavManager
 @inject ISnackbar Snackbar
-@using QLN.Web.Shared.Components.CustomButton
+@inject UserState UserState
+@using QLN.Blazor.Base.Services
+@inject ApiService Api
 
 <div class="page-wrapper">
     <div class="form-container">    
@@ -28,8 +30,8 @@
                         <div class="ml-3" style="display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start;">
                             <MudText Typo="Typo.subtitle1">@option.Label</MudText>
                             <MudText Typo="Typo.caption" Style="color: var(--color-text-caption);">
-                    @option.Description
-                </MudText>
+                                @option.Description
+                            </MudText>
                         </div>
                     </div>
                 </MudPaper>
@@ -40,10 +42,12 @@
             BackgroundColor="var(--color-accent)"
             TextColor="#FFFFFF"
             Text="Continue"
+            Disabled="_isLoading"
+    Loading="_isLoading"
             OnClick="NavigateTo"
             Class="mt-4" />
     </div>
-</div> 
+</div>
 
 <style>
 .page-wrapper {
@@ -78,12 +82,6 @@
     background-color: var(--color-background);
 }
 
-.option-description {
-    color: var(--color-text-caption);
-    font-size: 0.8rem;
-    margin: 0;  
-}
-
 .custom-radio {
     appearance: none;
     -webkit-appearance: none;
@@ -111,6 +109,7 @@
 
 @code {
     private string _selectedMethod = string.Empty;
+    private bool _isLoading = false;
 
     private List<VerificationOption> verificationOptions => new()
     {
@@ -140,15 +139,48 @@
     private void SelectOption(string method) =>
         _selectedMethod = method;
 
-    private void NavigateTo()
+    private async void NavigateTo()
     {
         if (string.IsNullOrWhiteSpace(_selectedMethod))
         {
             Snackbar.Add("Choose a verification method!", Severity.Warning);
+            return;
         }
-        else
+
+        if (_selectedMethod == "authenticator")
         {
-            NavManager.NavigateTo("/two-factor-authentication");
+            Snackbar.Add("Authenticator method is currently not supported. Please select Email or SMS.", Severity.Error);
+            return;
+        }
+
+        _isLoading = true;
+        try
+        {
+            var payload = new
+            {
+                usernameOrEmailOrPhone = _selectedMethod == "email" ? UserState.Email : UserState.mobileNumber,
+                method = _selectedMethod == "sms" ? "phone" : _selectedMethod
+            };
+            Console.WriteLine($"Payload: {payload}");
+            var response = await Api.PostAsync<object, object>("auth/send-2fa", payload);
+
+            if (response?.StatusCode == 200)
+            {
+                NavManager.NavigateTo("/two-factor-authentication");
+            }
+            else
+            {
+                Snackbar.Add("Failed to send verification code. Please try again.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged(); // force UI update
         }
     }
 
