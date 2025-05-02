@@ -1,0 +1,96 @@
+﻿@namespace QLN.Web.Shared.Components.BreadCrumb
+@using Microsoft.AspNetCore.Components
+@using System.Collections.Generic
+
+<div class="breadcrumb-wrapper">
+  
+    <div class="breadcrumb-trail">
+        <i class="fa fa-home"></i>
+        @foreach (var item in Items.Select((value, index) => new { value, index }))
+        {
+            @if (!string.IsNullOrEmpty(item.value.Url) && !item.value.IsLast)
+            {
+                <a href="@item.value.Url" class="breadcrumb-link">@item.value.Label</a>
+            }
+            else
+            {
+                <span class="breadcrumb-text">@item.value.Label</span>
+            }
+
+            @if (!item.value.IsLast)
+            {
+                <span class="breadcrumb-separator">></span>
+            }
+        }
+    </div>
+    <div class="back-link">
+        <a href="@BackLinkUrl"> <span class="breadcrumb-text">Back to</span> @BackLinkText</a>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public List<BreadcrumbItem> Items { get; set; } = new();
+
+    [Parameter]
+    public string BackLinkUrl { get; set; } = "#";
+
+    [Parameter]
+    public string BackLinkText { get; set; } = "Living Rewards";
+}
+
+<style>
+    .breadcrumb-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .back-link {
+        align-self: flex-start;
+        margin-top:2
+    }
+
+        .back-link a {
+            color: #1d3557;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+            .back-link a:hover {
+                text-decoration: underline;
+            }
+
+    .breadcrumb-trail {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.9rem;
+        color: #1d3557;
+    }
+
+    .fa-home {
+        margin-right: 0.25rem;
+    }
+
+    .breadcrumb-link, .breadcrumb-text {
+        color: #475467;
+        padding: 0 2px;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+        .breadcrumb-link:hover {
+            text-decoration: underline;
+        }
+
+    .breadcrumb-separator {
+        color: inherit;
+        padding: 0 0.1rem;
+    }
+</style>
