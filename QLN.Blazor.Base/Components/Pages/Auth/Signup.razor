@@ -180,7 +180,6 @@
             <MudButton Variant="Variant.Filled"
                        Loading="@_phoneVerifying"
                        Disabled="@(string.IsNullOrWhiteSpace(_model.MobileNumber) || ValidatePhone(_model.MobileNumber) != null)"
-                       Color="Color.Warning"
                        OnClick="OnVerifyPhoneClicked"
                        Class="verify-button">
                 <div class="verify-container">
@@ -670,7 +669,7 @@ private void CloseSuccessPopup()
 {
     if (string.IsNullOrWhiteSpace(value))
         {
-            return "Please enter a valid phone number.";
+            return "Phone number is required.";
         }
         else if (!ValidationHelper.IsValidPhoneNumber(value))
         {
