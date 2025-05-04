@@ -9,5 +9,8 @@ namespace QLN.Common.Infrastructure.Constants
         public const string RefreshTokenExpiry = "refresh_token_expiry";
         public const string Email = "email";
         public const string Phone = "phone";
+        public const string ByPassEmail = "testuser@qatarliving.com";
+        public const string ByPassMobile = "0000000000";
+        public const string ByPass2FA = "000000";
     }
 }

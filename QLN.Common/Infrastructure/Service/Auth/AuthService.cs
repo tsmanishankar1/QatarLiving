@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
@@ -29,6 +31,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IConfiguration _config;
         private readonly IEventlogger _log;
+        private readonly IWebHostEnvironment _env;
 
 
         public AuthService(
@@ -39,7 +42,9 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             ITokenService tokenService,
             IConfiguration configuration,
             IEventlogger logger,
-            IHttpContextAccessor httpContextAccessor)
+            IHttpContextAccessor httpContextAccessor,
+            IWebHostEnvironment env
+            )
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -49,6 +54,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             _httpContextAccessor = httpContextAccessor;
             _config = configuration;
             _log = logger;
+            _env = env;
         }
 
 
@@ -56,8 +62,13 @@ namespace QLN.Common.Infrastructure.Service.AuthService
         {
             try
             {
-                if (!TempVerificationStore.VerifiedEmails.Contains(request.Emailaddress) ||
-                    !TempVerificationStore.VerifiedPhoneNumbers.Contains(request.Mobilenumber))
+                // Checks the user is bypassed user and environment is development
+                var isBypassUser = _env.IsDevelopment() &&
+                   request.Emailaddress == ConstantValues.ByPassEmail &&
+                   request.Mobilenumber == ConstantValues.ByPassMobile;
+
+                if (!isBypassUser && (!TempVerificationStore.VerifiedEmails.Contains(request.Emailaddress) ||
+                    !TempVerificationStore.VerifiedPhoneNumbers.Contains(request.Mobilenumber)))
                 {
                     return TypedResults.BadRequest(new ApiResponse<string>
                     {
@@ -72,7 +83,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     return TypedResults.NotFound(new ApiResponse<string>
                     {
                         Status = false,
-                        Message = "Email is already registered. Please login."
+                        Message = "Email is already registered"
                     });
                 }
 
@@ -149,8 +160,11 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                 await _userManager.AddToRoleAsync(newUser, "User");
 
-                TempVerificationStore.VerifiedEmails.Remove(request.Emailaddress);
-                TempVerificationStore.VerifiedPhoneNumbers.Remove(request.Mobilenumber);
+                if (!isBypassUser)
+                {
+                    TempVerificationStore.VerifiedEmails.Remove(request.Emailaddress);
+                    TempVerificationStore.VerifiedPhoneNumbers.Remove(request.Mobilenumber);
+                }
 
                 return TypedResults.Ok(new ApiResponse<string>
                 {
@@ -443,6 +457,10 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     u.Email == request.UsernameOrEmailOrPhone ||
                     u.PhoneNumber == request.UsernameOrEmailOrPhone && u.Isactive == true);
 
+                var isBypassUser = _env.IsDevelopment() &&
+                   (user.Email == ConstantValues.ByPassEmail || user.PhoneNumber == ConstantValues.ByPassMobile);
+
+
                 if (user == null)
                 {
                     return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid credentials."));
@@ -457,9 +475,9 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     ? TokenOptions.DefaultPhoneProvider
                     : TokenOptions.DefaultEmailProvider;
 
-                var isValid = await _userManager.VerifyTwoFactorTokenAsync(user, provider, request.TwoFactorCode);             
+                var isValid = await _userManager.VerifyTwoFactorTokenAsync(user, provider, request.TwoFactorCode);
 
-                if (!isValid)
+                if (!isValid && !(isBypassUser && request.TwoFactorCode == ConstantValues.ByPass2FA))
                 {
                     return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid or expired 2FA code."));
                 }
