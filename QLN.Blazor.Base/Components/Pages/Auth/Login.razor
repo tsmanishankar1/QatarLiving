@@ -9,19 +9,20 @@
 @using QLN.Blazor.Base.Models
 @using QLN.Web.Shared.Components.CustomButton
 @using QLN.Web.Shared.Components.ModalDialog
+@using System.Text.RegularExpressions;
 
-<div style="width: 100%; background-color: #F5F6FA; padding: 32px 16px;">
+<div style="width: 100%; background-color: var(--color-secondary-background); padding: 32px 16px;">
     <div style="max-width: 400px; margin: 0 auto;">
-    <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-4">Log in to your account</MudText>
+    <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-4 login-heading">Log in to your account</MudText>
     <MudStack AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
-    <MudText Typo="Typo.body1" Align="Align.Center">
+    <MudText Typo="Typo.body1" Align="Align.Center" Class="login-description">
         Welcome back! Please enter your details.
     </MudText>
     </MudStack>
-     <MudText Typo="Typo.body1"  Style="font-weight: 400;">
-        Email or Phone Number </MudText>
+     <MudText Typo="Typo.body1"  Class="label-text">
+        Email or Phone number </MudText>
         <MudTextField T="string"
-                      Label="Email or Username"
+                      Label="Email or Phone number"
                       Variant="Variant.Outlined"
                       FullWidth="true"
                       InputType="InputType.Text"
@@ -34,11 +35,7 @@
                       ValueChanged="OnEmailChanged"
                       ValueExpression="(() => _username)"
                       OnBlur="@ValidateUsername" />
-
-                      
-
-
-        <MudText Typo="Typo.body1"  Style="font-weight: 400;">
+        <MudText Typo="Typo.body1"  Class="label-text">
         Password
         </MudText>
        <MudTextField T="string"
@@ -64,8 +61,7 @@
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
     <MudCheckBox T="bool" Label="Remember me" DisableMargins="true" />
-
-     <NavLink href="/forgot-password" style="color: #FF7F38;" > Forgot Password?</NavLink>
+     <NavLink href="/forgot-password" style="color: var(--color-accent)" > Forgot Password?</NavLink>
 </div>
    
 <CustomButton 
@@ -79,15 +75,20 @@
 
 
      <div class="d-flex align-center my-4">
-        <div style="flex-grow: 1; height: 1px; background-color: #ccc;"></div>
+        <div style="flex-grow: 1; height: 1px; background-color: var(--color-secondary-grey-container)"></div>
         <MudText Typo="Typo.caption" Class="mx-2">Or continue with</MudText>
-        <div style="flex-grow: 1; height: 1px; background-color: #ccc;"></div>
+        <div style="flex-grow: 1; height: 1px; background-color: var(--color-secondary-grey-container)"></div>
     </div>
 
-    <MudGrid Justify="Justify.SpaceEvenly" GutterSize="12px" Class="mt-4">
+    <MudGrid Justify="Justify.SpaceEvenly" GutterSize="12px" >
     <MudItem xs="2">
                 <MudButton Variant="Variant.Outlined" Class="social-login-button">
             <img src="/images/google.svg" alt="Google" style="height: 24px;" />
+        </MudButton>
+    </MudItem>
+    <MudItem xs="2">
+                <MudButton Variant="Variant.Outlined" Class="social-login-button">
+            <img src="/images/apple.svg" alt="Google" style="height: 24px;" />
         </MudButton>
     </MudItem>
     <MudItem xs="2">
@@ -103,9 +104,9 @@
     </MudItem>
     </MudGrid>
     <MudStack AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
-    <MudText Align="Align.Start" Class="mt-4">
+    <MudText Align="Align.Start" Class="mt-4 label-text">
         Don't have an account? 
-    <NavLink href="/signup" style="color: #FF7F38;" >Sign Up</NavLink>
+    <NavLink href="/signup" style="color: var(--color-accent)" >Sign Up</NavLink>
     </MudText>
     </MudStack>
     </div>
@@ -138,15 +139,20 @@
     private void ValidateUsername()
     {
         _usernameError = string.Empty;
-
         if (string.IsNullOrWhiteSpace(_username))
         {
-            _usernameError = "Please enter your email or phone number.";
+            _usernameError = "Please enter your email or phone number";
         }
-        else if (!ValidationHelper.IsValidEmail(_username) && !ValidationHelper.IsValidPhoneNumber(_username))
-        {
-            _usernameError = "Please enter a valid email or phone number.";
-        }
+         if (_username.Contains("@"))
+    {
+        if (!ValidationHelper.IsValidEmail(_username))
+            _usernameError = "Enter valid email address.";
+    }
+    else if (_username.Any(char.IsDigit))
+    {
+        if (!ValidationHelper.IsValidPhoneNumber(_username))
+            _usernameError = "Enter valid phone number";
+    }
 
         StateHasChanged(); 
     }
@@ -195,9 +201,7 @@
 
         try
         {
-            Console.WriteLine($"Payload: {payload}");
             var response = await Api.PostAsync<object, LoginResponseData>("auth/login", payload);
-            Console.WriteLine("response", response);
             if (response?.StatusCode == 200)
             {
                 UserState.username = response.Data.Username;
@@ -266,3 +270,26 @@
 
 
 
+<style>
+    .login-heading {
+    font-weight: 500;
+    font-size: 30px;
+    font-family: 'Public Sans', sans-serif;
+    margin-bottom: 1.5rem; 
+    text-align: center;  
+    color: var(--color-text-heading);    
+}
+.login-description {
+    font-weight: 400;
+    font-size: 16px;
+    font-family: 'Public Sans', sans-serif;
+    text-align: center;  
+    color: var(--color-text-descripton);   
+}
+.label-text {
+    font-family: 'Public Sans', sans-serif;
+    font-weight: 400;
+    font-size: 14px;
+    color: var(--color-text-heading);
+}
+</style>
