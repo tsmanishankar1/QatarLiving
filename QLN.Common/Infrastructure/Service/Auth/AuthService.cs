@@ -745,6 +745,13 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
             var method = request.Method?.Trim().ToLowerInvariant();
 
+            var isBypassUser = _env.IsDevelopment() && (user.Email == ConstantValues.ByPassEmail || user.PhoneNumber == ConstantValues.ByPassMobile);
+
+            if (isBypassUser)
+            {
+                // Skip sending actual OTP
+                return ApiResponse<string>.Success($"2FA OTP bypassed in development for {method}.");
+            }
             if (method == Constants.ConstantValues.Phone.ToLowerInvariant())
             {
                 if (string.IsNullOrWhiteSpace(user.PhoneNumber) || !user.PhoneNumberConfirmed)
