@@ -25,7 +25,8 @@ namespace QLN.Common.DTO_s
         public string Nationality { get; set; } = null!;
         [Required]
         public string Password { get; set; } = null!;
-        public string? Languagepreferences { get; set; }        
+        public string? Languagepreferences { get; set; }
+        public bool TwoFactorEnabled { get; set; } = false;
     }
 
     public class UpdateProfileRequest

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using Azure.Core;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -67,6 +68,15 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                    request.Emailaddress == ConstantValues.ByPassEmail &&
                    request.Mobilenumber == ConstantValues.ByPassMobile;
 
+                if (isBypassUser)
+                {
+                    var existingBypassUser = await _userManager.Users.FirstOrDefaultAsync( r => r.Email == request.Emailaddress || r.PhoneNumber == request.Mobilenumber);
+                    if (existingBypassUser != null)
+                    {
+                        await _userManager.DeleteAsync(existingBypassUser);
+                    }
+                }
+
                 if (!isBypassUser && (!TempVerificationStore.VerifiedEmails.Contains(request.Emailaddress) ||
                     !TempVerificationStore.VerifiedPhoneNumbers.Contains(request.Mobilenumber)))
                 {
@@ -120,6 +130,11 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     });
                 }
 
+                if (!IsValidEmail(request.Emailaddress))
+                {
+                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid email format."));
+                }
+
                 var newUser = new ApplicationUser
                 {
                     UserName = request.Username,
@@ -135,6 +150,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     IsCompany = false,
                     EmailConfirmed = true,
                     PhoneNumberConfirmed = true,
+                    TwoFactorEnabled = request.TwoFactorEnabled,
                     Isactive = true,
                     SecurityStamp = Guid.NewGuid().ToString(),
                     Createdat = DateTime.UtcNow,
@@ -186,6 +202,17 @@ namespace QLN.Common.Infrastructure.Service.AuthService
         {
             try
             {
+                var isBypassUser = _env.IsDevelopment() &&
+                  email == ConstantValues.ByPassEmail;
+
+                if (isBypassUser)
+                {
+                    return TypedResults.Ok(ApiResponse<string>.Success("OTP bypassed."));
+                }
+                if (!IsValidEmail(email))
+                {
+                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid email format."));
+                }
                 var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email && u.Isactive == true);
                 if (existingUser != null)
                 {
@@ -214,6 +241,14 @@ namespace QLN.Common.Infrastructure.Service.AuthService
         {
             try
             {
+                var isBypassUser = _env.IsDevelopment() &&
+                  email == ConstantValues.ByPassEmail;
+
+                if (isBypassUser)
+                {
+                    return TypedResults.Ok(ApiResponse<string>.Success("Email bypassed."));
+                }
+
                 if (!TempVerificationStore.EmailOtps.TryGetValue(email, out var storedOtp))
                 {
                     return TypedResults.BadRequest(ApiResponse<string>.Fail("OTP not requested or expired."));
@@ -245,6 +280,14 @@ namespace QLN.Common.Infrastructure.Service.AuthService
         {
             try
             {
+               
+                var isBypassUser = _env.IsDevelopment() &&
+                  phoneNumber == ConstantValues.ByPassMobile;
+
+                if (isBypassUser)
+                {
+                    return TypedResults.Ok(ApiResponse<string>.Success("OTP bypassed."));
+                }
                 var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber && u.Isactive == true);
                 if (existingUser != null)
                 {
@@ -291,6 +334,14 @@ namespace QLN.Common.Infrastructure.Service.AuthService
         {
             try
             {
+                var isBypassUser = _env.IsDevelopment() &&
+                 phoneNumber == ConstantValues.ByPassMobile;
+
+                if (isBypassUser)
+                {
+                    return TypedResults.Ok(ApiResponse<string>.Success("PhoneNumber bypassed."));
+                }
+
                 if (!TempVerificationStore.PhoneOtps.TryGetValue(phoneNumber, out var storedOtp))
                 {
                     return TypedResults.BadRequest(ApiResponse<string>.Fail("OTP not requested or expired."));
@@ -784,6 +835,10 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 return ApiResponse<string>.Success("2FA OTP sent via email.");
             }
         }
-
+        private static bool IsValidEmail(string email)
+        {
+            return !string.IsNullOrWhiteSpace(email) &&
+                   Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase);
+        }
     }
 }
