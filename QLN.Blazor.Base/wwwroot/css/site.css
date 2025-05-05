@@ -10,6 +10,10 @@
     --color-text-secondary: #414042;    /* For body or secondary text */
     --color-text-caption: #8C8C8C;      /* For smaller caption or helper text */
     --color-text-white: #FFFFFF;        /* For use on dark backgrounds */
+    --color-text-descripton: #646464;  /* For use on descripton text */
+    --color-text-heading: #242424;     /* For use on heading text */
+    --color-text-gray: #454545;       /*For use on the subtitle text */
+    --color-text-green: #079455;      /* For the success green text */
 
     /* Backgrounds and Containers */
     --color-background: #FFFFFF;      /* white background */
@@ -17,6 +21,8 @@
     --color-grey-container: #D9D9D9;  /* Grey Container */
     --color-secondary-grey-container: #E3E3E3;  /* secondary Grey Container */
     --color-background-grey: #00000066; /* For the background when popup is displayed. */
+    --color-header-button: #E8F2FE;    /* For the icon button in header */
+    --color-captcha-box: #D0D5DD; /* For the border of the captcha box */
     --color-background-secondary-grey: #F0F0F0; /* For the background when popup is displayed. */
 }
 
