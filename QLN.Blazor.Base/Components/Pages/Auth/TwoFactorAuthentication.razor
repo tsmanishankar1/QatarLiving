@@ -178,7 +178,10 @@
     private async Task ResendCode()
     {
         if (_isResendDisabled) return;
-
+        for (int i = 0; i < _otpDigits.Length; i++)
+        {
+            _otpDigits[i] = string.Empty;
+        }
         var payload = new
         {
             usernameOrEmailOrPhone = _method == "email" ? UserState.Email : UserState.mobileNumber,

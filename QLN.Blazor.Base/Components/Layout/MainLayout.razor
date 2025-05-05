@@ -19,14 +19,14 @@
     </div>
 
     <nav class="nav-links">
-        <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Daily</NavLink>
-        <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Properties</NavLink>
-        <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Vehicles</NavLink>
-        <NavLink href="/classifieds" style="color: white;" class="nav-link active">Classifieds</NavLink>
-        <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Services</NavLink>
-        <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Jobs</NavLink>
-        <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Rewards</NavLink>
-       <MudButton Variant="Variant.Filled" Style="background-color: #FF7F38; color: white;" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn">
+        <NavLink href="/more-features-coming-soon" style="color: var(--color-text-white);" class="nav-link">Daily</NavLink>
+        <NavLink href="/more-features-coming-soon" style="color:  var(--color-text-white);" class="nav-link">Properties</NavLink>
+        <NavLink href="/more-features-coming-soon" style="color:  var(--color-text-white);" class="nav-link">Vehicles</NavLink>
+        <NavLink href="/classifieds" style="color:  var(--color-text-white);" class="nav-link active">Classifieds</NavLink>
+        <NavLink href="/more-features-coming-soon" style="color:  var(--color-text-white);" class="nav-link">Services</NavLink>
+        <NavLink href="/more-features-coming-soon" style="color:  var(--color-text-white);" class="nav-link">Jobs</NavLink>
+        <NavLink href="/more-features-coming-soon" style="color:  var(--color-text-white);" class="nav-link">Rewards</NavLink>
+       <MudButton Variant="Variant.Filled" Style="background-color:  var(--color-accent); color:  var(--color-text-white);" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn">
             Post
         </MudButton>
     </nav>
@@ -34,7 +34,7 @@
     <div class="header-right">
  
 
-  <MudAvatar Size="Size.Medium" Style="background-color: #E8F2FE;">
+  <MudAvatar Size="Size.Medium" Style="background-color: var(--color-header-button);">
                 <img src="/images/header/favourite_icon.svg" alt="Account" style="width: 70%; height: 70%; padding: 4px;" />
             </MudAvatar>
         <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
@@ -59,7 +59,7 @@
         }
         else
         {
-            <MudAvatar Size="Size.Medium" Style="background-color: #E8F2FE;">
+            <MudAvatar Size="Size.Medium" Style="background-color: var(--color-header-button);">
                 <img src="/images/header/account.svg" alt="Account" style="width: 70%; height: 70%; padding: 4px;" />
             </MudAvatar>
 
@@ -74,7 +74,7 @@
                     <MudButton Variant="Variant.Outlined"
                                Color="Color.Warning"
                                StartIcon="@Icons.Material.Filled.AccountCircle"
-                                Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;"
+                                Style="margin: 8px 12px 8px 12px; color: var(--color-accent); border-color: var(--color-accent); width: calc(100% - 24px); font-weight: bold;"
                                OnClick="@GoToProfile">
                         My Profile
                     </MudButton>
@@ -82,7 +82,7 @@
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Warning"
                                StartIcon="@Icons.Material.Filled.Logout"
-                               Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;"
+                               Style="margin: 8px 12px; background-color: var(--color-accent); color: var(--color-text-white); width: calc(100% - 24px); font-weight: bold;"
                                OnClick="@Logout">
                         Logout
                     </MudButton>
@@ -92,7 +92,7 @@
                     <MudButton Variant="Variant.Outlined"
                                Color="Color.Warning"
                                StartIcon="@Icons.Material.Filled.Login"
-                               Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;"
+                               Style="margin: 8px 12px 8px 12px; color: var(--color-accent); border-color: var(--color-accent); width: calc(100% - 24px); font-weight: bold;"
                                OnClick="@(() => NavManager.NavigateTo("/login"))">
                         Login
                     </MudButton>
@@ -100,7 +100,7 @@
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Warning"
                                StartIcon="@Icons.Material.Filled.PersonAdd"
-                               Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;"
+                               Style="margin: 8px 12px; background-color: var(--color-accent); color: var(--color-text-white); width: calc(100% - 24px); font-weight: bold;"
                                OnClick="@(() => NavManager.NavigateTo("/signup"))">
                         Sign Up
                     </MudButton>

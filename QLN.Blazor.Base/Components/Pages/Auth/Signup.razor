@@ -165,28 +165,23 @@
     <MudText Color="Color.Error" Typo="Typo.caption" Class="mt-1">
         @emailCodeErrorMessage
     </MudText>
-     <MudText Align="Align.Center" Typo="Typo.caption" Class="mt-1 d-flex justify-center">
     @if (_canResend)
     {
-        <MudText 
-                 Class="mud-clickable terms-link"
-                 style="font-size: 0.8rem;"
-                 @onclick="TriggerEmailCodeResend">
-            Resend Code
-        </MudText>
+        <span 
+    style="color: var(--color-accent); 
+           cursor: @(ValidationHelper.IsValidEmail(_model.EmailAddress) ? "pointer" : "not-allowed"); 
+           font-size: 0.8rem; 
+           opacity: @(ValidationHelper.IsValidEmail(_model.EmailAddress) ? "1" : "0.5");" 
+    @onclick="@(ValidationHelper.IsValidEmail(_model.EmailAddress) ? TriggerEmailCodeResend : null)">
+    Resend Code
+</span>
     }
     else
     {
         <span class="ml-1" style="color: var(--color-text-gray); font-size: 0.8rem;">Resend Code in @resendCountdown s</span>
     }
-</MudText>
 </div>
 }
-
-
-
-
-
 
         <MudText Typo="Typo.body1"  Class="label-text mb-1">
         Phone Number
@@ -267,8 +262,6 @@
               FullWidth="true"
               Immediate="true"
               Class="phone-input" />
-
-
     <div class="verify-container">
         @if (_phoneCodeVerifying)
         {
@@ -296,21 +289,21 @@
     <MudText Color="Color.Error" Typo="Typo.caption" Class="mt-1">
         @phoneCodeErrorMessage
     </MudText>
-     <MudText Align="Align.Center" Typo="Typo.caption" Class="mt-1 d-flex justify-center">
     @if (_ResendPhoneCode)
     {
-        <MudText 
-                 Class="mud-clickable terms-link"
-                 style="font-size: 0.8rem;"
-                 @onclick="TriggerPhoneCodeResend">
-            Resend Code
-        </MudText>
+        <span 
+    style="color: var(--color-accent); 
+           cursor: @(ValidationHelper.IsValidPhoneNumber(_model.MobileNumber) ? "pointer" : "not-allowed"); 
+           font-size: 0.8rem; 
+           opacity: @(ValidationHelper.IsValidPhoneNumber(_model.MobileNumber) ? "1" : "0.5");" 
+    @onclick="@(ValidationHelper.IsValidPhoneNumber(_model.MobileNumber) ? TriggerPhoneCodeResend : null)">
+    Resend Code
+</span>
     }
     else
     {
         <span class="ml-1" style="color: var(--color-text-gray); font-size: 0.8rem;">Resend Code in @resendPhoneCountdown s</span>
     }
-</MudText>
 </div>
 }
 
