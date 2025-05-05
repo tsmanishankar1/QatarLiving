@@ -9,8 +9,8 @@
 
 <div class="page-wrapper">
     <div class="form-container">    
-        <h2 class="title-text">Verification Method</h2>
-        <p class="subtitle">Choose how you want to receive your verification code</p>
+        <MudText Class="title-text">Verification Method</MudText>
+        <MudText Class="subtitle">Choose how you want to receive your verification code</MudText>
 
         <MudPaper Elevation="0" Class="d-flex flex-column gap-3 p-3 option-list">
             @foreach (var option in verificationOptions)
@@ -28,8 +28,8 @@
                             @onchange="() => SelectOption(option.Value)" 
                         />
                         <div class="ml-3" style="display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start;">
-                            <MudText Typo="Typo.subtitle1">@option.Label</MudText>
-                            <MudText Typo="Typo.caption" Style="color: var(--color-text-caption);">
+                            <MudText Class="label-text">@option.Label</MudText>
+                            <MudText Class="description-text">
                                 @option.Description
                             </MudText>
                         </div>
@@ -48,64 +48,6 @@
             Class="mt-4" />
     </div>
 </div>
-
-<style>
-.page-wrapper {
-    width: 100%;
-    background-color:  var(--color-secondary-background);
-    padding: 32px 16px;
-}
-
-.form-container {
-    max-width: 400px;
-    margin: 0 auto;
-    text-align: center;
-}
-
-.title-text {
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 12px;
-    color:var(--color-text-secondary)
-}
-.subtitle {
-    font-size: 14px;
-    color:var(--color-text-caption) ;
-    margin-bottom: 24px;
-}
-.option-list {
-    background-color: var(--color-secondary-background);
-}
-
-.option-card {
-    border-radius: 8px;
-    background-color: var(--color-background);
-}
-
-.custom-radio {
-    appearance: none;
-    -webkit-appearance: none;
-    background-color: var(--color-background);
-    border: 3px solid var(--color-accent);
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    position: relative;
-    cursor: pointer;
-}
-
-.custom-radio:checked::before {
-    content: "";
-    width: 8px;
-    height: 8px;
-    background-color: var(--color-accent);
-    border-radius: 50%;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-</style>
 
 @code {
     private string _selectedMethod = string.Empty;
@@ -161,9 +103,7 @@
                 usernameOrEmailOrPhone = _selectedMethod == "email" ? UserState.Email : UserState.mobileNumber,
                 method = _selectedMethod == "sms" ? "phone" : _selectedMethod
             };
-            Console.WriteLine($"Payload: {payload}");
             var response = await Api.PostAsync<object, object>("auth/send-2fa", payload);
-
             if (response?.StatusCode == 200)
             {
                 NavManager.NavigateTo("/two-factor-authentication");
@@ -180,7 +120,7 @@
         finally
         {
             _isLoading = false;
-            StateHasChanged(); // force UI update
+            StateHasChanged(); 
         }
     }
 
@@ -191,3 +131,76 @@
         public string Description { get; set; }
     }
 }
+
+<style>
+.page-wrapper {
+    width: 100%;
+    background-color:  var(--color-secondary-background);
+    padding: 32px 16px;
+}
+
+.form-container {
+    max-width: 400px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.title-text {
+    font-size: 30px;
+    font-weight: 500;
+    font-family: 'Public Sans', sans-serif;
+    margin-bottom: 12px;
+    color:var(--color-text-secondary)
+}
+.subtitle {
+    font-size: 16px;
+    font-weight: 400;
+    font-family: 'Public Sans', sans-serif;
+    color:var(--color-text-caption) ;
+    margin-bottom: 24px;
+}
+.label-text{
+    font-size: 18px;
+    font-weight: 500;
+    font-family: 'Public Sans', sans-serif;
+    color: var(--color-text-gray);
+}
+.description-text{
+    font-size: 14px;
+    font-weight: 400;
+    font-family: 'Public Sans', sans-serif;
+    color: var(--color-text-caption);
+}
+.option-list {
+    background-color: var(--color-secondary-background);
+}
+
+.option-card {
+    border-radius: 8px;
+    background-color: var(--color-background);
+}
+
+.custom-radio {
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: var(--color-background);
+    border: 3px solid var(--color-accent);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    position: relative;
+    cursor: pointer;
+}
+
+.custom-radio:checked::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    background-color: var(--color-accent);
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+</style>

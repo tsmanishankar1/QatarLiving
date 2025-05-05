@@ -11,7 +11,7 @@
 @using QLN.Web.Shared.Components.CustomButton
 
 
-<div style="width: 100%; background-color: #F5F6FA; padding: 32px 16px;">
+<div style="width: 100%; background-color: var(--color-secondary-background); padding: 32px 16px;">
     <div style="max-width: 400px; margin: 0 auto;">
     
     <MudStack Spacing="3">
@@ -101,8 +101,6 @@
     {
         var payload = new { usernameOrEmailOrPhone = "9677484367", twoFactorCode = _code };
         var res = await Api.PostAsync<object, ResponseModel<object>>("auth/verify-2fa", payload);
-            Console.WriteLine(payload);
-            Console.WriteLine(res?.Status);
         if (res?.Status == true)
         {
             Snackbar.Add("Signup successful! Please enter OTP.", Severity.Success); 
