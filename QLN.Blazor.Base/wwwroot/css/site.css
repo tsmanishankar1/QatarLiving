@@ -24,7 +24,7 @@
     --color-header-button: #E8F2FE;    /* For the icon button in header */
     --color-captcha-box: #D0D5DD; /* For the border of the captcha box */
 }
-
+ 
 .subscription-card {
     padding: 24px;
     display: flex;
@@ -36,23 +36,23 @@
     transition: box-shadow 0.2s;
     cursor: pointer;
 }
-
+ 
     .subscription-card:hover {
         box-shadow: 0 0 12px rgba(0,0,0,0.1);
     }
-
+ 
 .card-top {
     text-align: center;
     margin-bottom: 16px;
 }
-
+ 
 .title-text {
     font-size: 1rem;
     font-weight: 600;
     margin-top: 8px;
     color: #172B4D;
 }
-
+ 
 .price-section {
     background-color: #FBE7C6;
     text-align: center;
@@ -60,29 +60,29 @@
     border-radius: 4px;
     margin-bottom: 12px;
 }
-
+ 
 .from-text {
     font-size: 0.8rem;
     color: #999;
 }
-
+ 
 .price-text {
     color: #F26D1E;
     font-weight: bold;
 }
-
+ 
 .duration-text {
     font-size: 0.75rem;
     color: #444;
 }
-
+ 
 .feature-list {
     display: flex;
     flex-direction: column;
     gap: 4px;
     text-align: center;
 }
-
+ 
 .feature-item {
     color: #172B4D;
     font-size: 0.85rem;
