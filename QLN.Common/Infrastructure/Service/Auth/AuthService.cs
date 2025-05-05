@@ -140,20 +140,19 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     UserName = request.Username,
                     Email = request.Emailaddress,
                     PhoneNumber = request.Mobilenumber,
-                    Firstname = request.FirstName,
-                    Lastname = request.Lastname,
-                    Dateofbirth = request.Dateofbirth,
-                    Gender = request.Gender,
-                    Mobileoperator = request.MobileOperator,
+                    FirstName = request.Firstname,
+                    LastName = request.Lastname,
+                    DateOfBirth = request.Dateofbirth,                    
+                    MobileOperator = request.Mobileoperator,
                     Nationality = request.Nationality,
-                    Languagepreferences = request.Languagepreferences,
+                    LanguagePreferences = request.Languagepreferences,
                     IsCompany = false,
                     EmailConfirmed = true,
                     PhoneNumberConfirmed = true,
                     TwoFactorEnabled = request.TwoFactorEnabled,
                     Isactive = true,
                     SecurityStamp = Guid.NewGuid().ToString(),
-                    Createdat = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow,
 
                 };
 
@@ -373,7 +372,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
         {
             try
             {
-                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == request.Email && u.Isactive == true);
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive == true);
 
                 if (user != null && await _userManager.IsEmailConfirmedAsync(user))
                 {
@@ -405,7 +404,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
         {
             try
             {
-                var user = await _userManager.Users.FirstOrDefaultAsync(r => r.Email == request.Email && r.Isactive == true);
+                var user = await _userManager.Users.FirstOrDefaultAsync(r => r.Email == request.Email && r.IsActive == true);
 
                 if (user == null || !await _userManager.IsEmailConfirmedAsync(user))
                 {
@@ -447,7 +446,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 var user = await _userManager.Users.FirstOrDefaultAsync(u =>
                 u.UserName == request.UsernameOrEmailOrPhone ||
                 u.Email == request.UsernameOrEmailOrPhone ||
-                u.PhoneNumber == request.UsernameOrEmailOrPhone && u.Isactive == true);
+                u.PhoneNumber == request.UsernameOrEmailOrPhone && u.IsActive == true);
 
 
                 if (user == null)
@@ -462,8 +461,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
 
                 if (user.TwoFactorEnabled)
-                {
-                 
+                {                 
                     return TypedResults.Ok(ApiResponse<LoginResponse>.Success("Two-Factor Authentication is enabled. Choose email or mobile to receive OTP.", new LoginResponse
                     {
                         Username = user.UserName,
@@ -506,7 +504,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 var user = await _userManager.Users.FirstOrDefaultAsync(u =>
                     u.UserName == request.UsernameOrEmailOrPhone ||
                     u.Email == request.UsernameOrEmailOrPhone ||
-                    u.PhoneNumber == request.UsernameOrEmailOrPhone && u.Isactive == true);
+                    u.PhoneNumber == request.UsernameOrEmailOrPhone && u.IsActive == true);
 
                 var isBypassUser = _env.IsDevelopment() &&
                    (user.Email == ConstantValues.ByPassEmail || user.PhoneNumber == ConstantValues.ByPassMobile);
@@ -621,7 +619,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 }
 
                 var user = await _userManager.Users.FirstOrDefaultAsync(u =>
-                u.Email == request.EmailorPhoneNumber || u.PhoneNumber == request.EmailorPhoneNumber && u.Isactive == true);
+                u.Email == request.EmailorPhoneNumber || u.PhoneNumber == request.EmailorPhoneNumber && u.IsActive == true);
 
                 if (user == null)
                 {
@@ -658,7 +656,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     return TypedResults.BadRequest(ApiResponse<string>.Fail("email is required."));
                 }
 
-                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == Id && u.Isactive == true);
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == Id && u.IsActive == true);
 
                 if (user == null)
                 {
@@ -667,15 +665,15 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 return TypedResults.Ok(ApiResponse<object>.Success("Profile data", new
                 {
                     user.UserName,
-                    user.Firstname,
-                    user.Lastname,
+                    user.FirstName,
+                    user.LastName,
                     user.Email,
                     user.PhoneNumber,
                     user.Gender,
-                    user.Dateofbirth,
-                    user.Languagepreferences,
+                    user.DateOfBirth,
+                    user.LanguagePreferences,
                     user.Nationality,
-                    user.Mobileoperator,
+                    user.MobileOperator,
                     user.PhoneNumberConfirmed,
                     user.EmailConfirmed,
                     user.IsCompany,
@@ -700,22 +698,22 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     return TypedResults.BadRequest(ApiResponse<string>.Fail("User ID is required."));
                 }
 
-                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == id && u.Isactive == true);
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == id && u.IsActive == true);
 
 
-                if (user == null || user.Isactive == false)
+                if (user == null || user.IsActive == false)
                 {
                     return TypedResults.NotFound(ApiResponse<string>.Fail("User not found"));
                 }
 
-                user.Firstname = request.FirstName;
-                user.Lastname = request.LastName;
+                user.FirstName = request.FirstName;
+                user.LastName = request.LastName;
                 user.Gender = request.Gender;
-                user.Dateofbirth = request.Dateofbirth;
+                user.DateOfBirth = request.Dateofbirth;
                 user.Nationality = request.Nationality;
                 user.PhoneNumber = request.MobileNumber;
-                user.Languagepreferences = request.Languagepreferences;
-                user.Updatedat = DateTime.UtcNow;
+                user.LanguagePreferences = request.Languagepreferences;
+                user.UpdatedAt = DateTime.UtcNow;
                 await _userManager.UpdateAsync(user);
 
                 return TypedResults.Ok(ApiResponse<string>.Success("Profile updated successfully"));
@@ -733,7 +731,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
         {
             try
             {
-                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == id && u.Isactive == true);
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == id && u.IsActive == true);
 
                 if (user == null)
                 {
@@ -786,7 +784,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 (u.UserName == request.UsernameOrEmailOrPhone ||
                  u.Email == request.UsernameOrEmailOrPhone ||
                  u.PhoneNumber == request.UsernameOrEmailOrPhone) &&
-                 u.Isactive == true);
+                 u.IsActive == true);
 
             if (user == null)
                 return ApiResponse<string>.Fail("User not found.");
