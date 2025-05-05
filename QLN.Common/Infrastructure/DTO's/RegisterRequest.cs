@@ -9,13 +9,13 @@ namespace QLN.Common.DTO_s
         [Required]
         public string Username { get; set; } = null!;
         [Required]
-        public string Firstname { get; set; } = null!;
+        public string FirstName { get; set; } = null!;
         [Required]
         public string Lastname { get; set; } = null!;
         [Required]
         public DateOnly Dateofbirth { get; set; }
         
-        public string Mobileoperator { get; set; } = null;
+        public string MobileOperator { get; set; } = null;
         [Required]
         public string Mobilenumber { get; set; } = null!;
         [Required]
