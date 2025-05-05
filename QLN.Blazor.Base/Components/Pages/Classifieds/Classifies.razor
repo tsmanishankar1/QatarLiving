@@ -1,56 +1,6 @@
 @page "/classifieds"
 
-@using MudBlazor
-@using QLN.Web.Shared.Components.Carousel
-@using QLN.Blazor.Base.Components.Pages.Classifieds.Components
+@using QLN.Blazor.Base.Components.Pages.Classifieds
 
-<!-- Page: Classifieds -->
-
-<!-- Navigation Tabs -->
-<NavigationTabs />
-
-<!-- Main Container -->
-<div style="width: 100%; background-color: var(--color-secondary-background);">
-    <div style="width: 100%; padding: 0 20px;">
-        
-        <!-- Carousel Banner -->
-        <CarouselBanner 
-            ImageUrls="carouselImages"
-            ShowArrows="true"
-            EnableSwipeGesture="false"
-            AutoCycle="true"
-            Transition="Transition.Slide" />
-
-        <!-- Search Bar Section -->
-        <SearchBarSection />
-
-        <!-- Featured Categories -->
-        <FeaturedCategoriesSection />
-        </div>
-        <!-- Featured Cards -->
-        <FeaturedCardsSection />
-
-    <div style="width: 100%; padding: 0 20px;">
-        <!-- Store Deals -->
-        <StoreDealsSection />
-
-        <!-- Category Card -->
-        <CategoryCard />
-    
-    </div>
-
-    <!-- Social Media Section -->
-    <SocialMediaCard />
-
-    <!-- FAQs Section -->
-    <FAQsSection />
-</div>
-
-@code {
-    private List<string> carouselImages = new()
-    {
-        "/images/category1.png",
-        "/images/category1.png",
-        "/images/category1.png"
-    };
-}
+<!-- Page: Landing Index Classifieds -->
+<LandingIndex />
