@@ -64,23 +64,10 @@
     <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.0" />
-	<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\QLN.Web.Shared\QLN.Web.Shared.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="NewMainPage.xaml.cs">
-      <DependentUpon>NewMainPage.xaml</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <MauiXaml Update="NewMainPage.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </MauiXaml>
   </ItemGroup>
 
 </Project>
