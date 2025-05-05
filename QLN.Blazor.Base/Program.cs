@@ -5,6 +5,7 @@ using QLN.Blazor.Base.Components;
 using QLN.Blazor.Base.Data;
 using MudBlazor.Services;
 using QLN.Blazor.Base.Services;
+using QLN.Web.Shared.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using QLN.Common.Infrastructure.Model;
 using QLN.Web.Shared.Components.Account;
-using QLN.Web.Shared.Data;
 
 namespace QLN.Web.Shared.Components.Account
 {

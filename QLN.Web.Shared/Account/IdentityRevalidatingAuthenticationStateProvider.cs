@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using QLN.Web.Shared.Data;
+using QLN.Common.Infrastructure.Model;
 
 namespace QLN.Web.Shared.Components.Account
 {

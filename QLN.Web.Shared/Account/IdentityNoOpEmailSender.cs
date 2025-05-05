@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using QLN.Web.Shared.Data;
+using QLN.Common.Infrastructure.Model;
 
 namespace QLN.Web.Shared.Components.Account
 {

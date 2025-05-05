@@ -71,4 +71,16 @@
     <ProjectReference Include="..\QLN.Web.Shared\QLN.Web.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="NewMainPage.xaml.cs">
+      <DependentUpon>NewMainPage.xaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <MauiXaml Update="NewMainPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </MauiXaml>
+  </ItemGroup>
+
 </Project>
