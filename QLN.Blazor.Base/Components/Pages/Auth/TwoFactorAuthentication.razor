@@ -1,120 +1,344 @@
 @page "/two-factor-authentication"
+@implements IDisposable
 @inject NavigationManager NavManager
-@using MudBlazor
 @inject ISnackbar Snackbar
 @inject ApiService Api
-@using QLN.Blazor.Base.Services
 @inject UserState UserState
-@using MudBlazor.Components
-@rendermode InteractiveServer
+@inject IJSRuntime JS
+
+@using Microsoft.AspNetCore.WebUtilities
 @using QLN.Blazor.Base.Models
+@using QLN.Blazor.Base.Services
 @using QLN.Web.Shared.Components.CustomButton
+@using QLN.Web.Shared.Components.ModalDialog
+@using System.Text.Json
+@using System.Timers
 
-
-<MudPaper Class="pa-6 mx-auto mt-10" 
-          Style="max-width: 450px; border-radius: 12px; margin-top: 30px; margin-bottom: 30px;">
-    
-    <MudStack Spacing="3">
-        <MudText Typo="Typo.h5" Align="Align.Center">Two-Factor Authentication</MudText>
-
-        <MudText Typo="Typo.caption" Align="Align.Center">
-            We've sent a verification code to your mail ending in @UserState.Email
-        </MudText>
-
-        <MudTextField T="string"
-              Label="Verification Code"
-              Variant="Variant.Outlined"
-              FullWidth="true"
-              InputType="InputType.Text"
-              MaxLength="6"
-              @bind-Value="_code"
-              Required="true"
-               />
-
-        
-         <CustomButton 
-    BackgroundColor="#FF7F38"
-    TextColor="#FFFFFF"
-    Text="Verify"
-    Disabled="_isLoading"
-    Loading="_isLoading"
-    OnClick="@VerifyCode"
-    Class="mt-4" />
-
-
-
-        <MudText Align="Align.Center" Class="mt-4">
-Didn't receive a code?
-<MudLink Href="/signup" Class="ml-1" Style="color: #FF7F38;">Resend</MudLink>
-    </MudText>
-        <MudText Align="Align.Center"
-                 Class="mud-clickable mt-2"
-                 Style="color: #FF7F38; cursor: pointer;" 
-                 @onclick="NavigateToForgotPassword">
-                 Use another verification method
-        </MudText>
-
-        <MudText Align="Align.Center"
-                 Class="mud-clickable mt-2"
-                 Style="color: #FF7F38; cursor: pointer;" 
-                 @onclick="NavigateToForgotPassword">
-            Back to Sign In
-        </MudText>
-    </MudStack>
-</MudPaper>
-
-@code {
-    private string _input = string.Empty;
-    private string _code = string.Empty;
-    private bool _isLoading = false;
-    private bool _checked;
-    
-
-    private void NavigateToForgotPassword()
-    {
-        NavManager.NavigateTo("/login");
-    }
-    private void RestrictToDigits(ChangeEventArgs e)
+@if (VerificationSucesss)
 {
-    string input = e.Value?.ToString() ?? "";
-    if (input.All(char.IsDigit) && input.Length <= 6)
-    {
-        _code = input;
-    }
+    <div class="popup-overlay">
+        <ModalDialog
+            Title="Verification Successful"
+            Description="Your code has been successfully verified."
+            ButtonName="Continue"
+            StatusType="Success"
+            OnClick="CloseVerificationPopup" />
+    </div>
 }
 
-    private async Task VerifyCode()
-{
-     _isLoading = true;
-    if (string.IsNullOrWhiteSpace(_code))
+<div class="auth-wrapper">
+    <div class="auth-container">
+        <h2 class="title">Two-Factor Authentication</h2>
+        <p class="subtitle">We've sent a verification code to your 
+            @if (_method == "email")
+            {
+                <text>email ending in @UserState.Email</text>
+            }
+            else if (_method == "sms")
+            {
+                <text>phone number ending in @UserState.mobileNumber</text>
+            }
+        </p>
+
+        <div class="otp-container">
+            @for (int i = 0; i < 6; i++)
+            {
+                var index = i;
+                <input class="otp-box"
+                       id="otp-@index"
+                       maxlength="1"
+                       value="@_otpDigits[index]"
+                       @oninput="(e => OnOtpChanged(((ChangeEventArgs)e).Value?.ToString(), index))"
+                       type="text"
+                       inputmode="numeric"
+                       pattern="[0-9]*" />
+            }
+        </div>
+
+        <CustomButton
+            BackgroundColor="#FF7F38"
+            TextColor="#FFFFFF"
+            Text="Verify"
+            Disabled="_isLoading"
+            Loading="_isLoading"
+            OnClick="@VerifyCode"
+            Class="verify-btn" />
+
+        <p class="resend">
+            Didn't receive a code?
+            @if (_isResendDisabled)
+            {
+                <span style="color:gray;"> Resend in 00:@_resendCountdown.ToString("D2")</span>
+            }
+            else
+            {
+                <span style="color:var(--color-accent); cursor:pointer;" @onclick="ResendCode">Resend</span>
+            }
+        </p>
+
+        <p class="alternative" @onclick="NavigateToForgotPassword">Use another verification method</p>
+    </div>
+</div>
+
+@code {
+    private string[] _otpDigits = new string[6];
+    private string _code = string.Empty;
+    private bool _isLoading = false;
+    private bool VerificationSucesss = false;
+    private bool _hasError = false;
+    private string _errorMessage = string.Empty;
+    private string _method = "email";
+
+    private bool _isResendDisabled = false;
+    private int _resendCountdown = 0;
+    private Timer? _resendTimer;
+
+    protected override void OnInitialized()
     {
-        Snackbar.Add("Enter the verification code", Severity.Warning);
-        _isLoading = false;
-        return;
-    }
-    try
-    {
-        var payload = new { usernameOrEmailOrPhone = "9677484367", twoFactorCode = _code };
-        var res = await Api.PostAsync<object, ResponseModel<object>>("auth/verify-2fa", payload);
-            Console.WriteLine(payload);
-            Console.WriteLine(res?.Status);
-        if (res?.Status == true)
+        var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("method", out var method))
         {
-            Snackbar.Add("Signup successful! Please enter OTP.", Severity.Success); 
-            NavManager.NavigateTo("/");
+            _method = method.ToString();
+        }
+    }
+
+    private async Task OnOtpChanged(string? value, int index)
+    {
+        if (!string.IsNullOrEmpty(value) && char.IsDigit(value[0]))
+        {
+            _otpDigits[index] = value.Substring(0, 1);
+            if (index < 5)
+            {
+                await JS.InvokeVoidAsync("eval", $"setTimeout(() => {{ document.getElementById('otp-{index + 1}')?.focus(); }}, 10);");
+            }
         }
         else
         {
-            Snackbar.Add(res?.Message ?? "Failed to verify email.", Severity.Warning);
+            _otpDigits[index] = string.Empty;
         }
     }
-    catch (Exception ex)
+
+    private async Task VerifyCode()
     {
-        Snackbar.Add($"Signup failed: {ex.Message}", Severity.Error);
-    }
-    finally
-    {
+        _isLoading = true;
+        _hasError = false;
+        _errorMessage = string.Empty;
+        _code = string.Join("", _otpDigits);
+
+        if (_code.Length != 6 || _otpDigits.Any(string.IsNullOrEmpty))
+        {
+            _hasError = true;
+            _errorMessage = "Please enter all 6 digits.";
+            Snackbar.Add(_errorMessage, Severity.Warning);
             _isLoading = false;
+            return;
+        }
+
+        var contactInfo = _method == "sms" ? UserState.mobileNumber : UserState.Email;
+
+        var payload = new
+        {
+            usernameOrEmailOrPhone = contactInfo,
+            twoFactorCode = _code,
+            method = _method == "sms" ? "phone" : _method
+        };
+
+        try
+        {
+            var response = await Api.PostAsync<object, Verify2FAResponseData>("auth/verify-2fa", payload);
+
+            if (response?.StatusCode == 200 && response.Data is not null)
+            {
+                UserState.username = response.Data.Username;
+                UserState.Email = response.Data.Emailaddress;
+                UserState.mobileNumber = response.Data.Mobilenumber;
+                UserState.Token = response.Data.AccessToken;
+
+                VerificationSucesss = true;
+            }
+            else
+            {
+                _hasError = true;
+                _errorMessage = response?.Message ?? "Invalid verification code.";
+                Snackbar.Add(_errorMessage, Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _hasError = true;
+            _errorMessage = ex.Message;
+            Snackbar.Add(_errorMessage, Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ResendCode()
+    {
+        if (_isResendDisabled) return;
+        for (int i = 0; i < _otpDigits.Length; i++)
+        {
+            _otpDigits[i] = string.Empty;
+        }
+        var payload = new
+        {
+            usernameOrEmailOrPhone = _method == "email" ? UserState.Email : UserState.mobileNumber,
+            method = _method == "sms" ? "phone" : _method
+        };
+
+        try
+        {
+            var response = await Api.PostAsync<object, object>("auth/send-2fa", payload);
+
+            if (response?.StatusCode == 200)
+            {
+                Snackbar.Add("Verification code resent successfully.", Severity.Success);
+                StartResendCountdown();
+            }
+            else
+            {
+                Snackbar.Add(response?.Message ?? "Failed to resend code.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void StartResendCountdown()
+    {
+        _resendCountdown = 60;
+        _isResendDisabled = true;
+
+        _resendTimer?.Dispose();
+        _resendTimer = new Timer(1000);
+        _resendTimer.Elapsed += (sender, args) =>
+        {
+            if (_resendCountdown > 0)
+            {
+                _resendCountdown--;
+                InvokeAsync(StateHasChanged);
+            }
+            else
+            {
+                _isResendDisabled = false;
+                _resendTimer?.Stop();
+                _resendTimer?.Dispose();
+                InvokeAsync(StateHasChanged);
+            }
+        };
+        _resendTimer.Start();
+    }
+
+    private void NavigateToForgotPassword() => NavManager.NavigateTo("/select-verification");
+    private void CloseVerificationPopup() => NavManager.NavigateTo("/classifieds");
+
+    public void Dispose()
+    {
+        _resendTimer?.Dispose();
+    }
+
+    private class Verify2FAResponseData
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Emailaddress { get; set; } = string.Empty;
+        public string Mobilenumber { get; set; } = string.Empty;
+        public string AccessToken { get; set; } = string.Empty;
     }
 }
+
+
+<style>
+.auth-wrapper {
+    background-color: var(--color-secondary-background);
+    padding: 48px 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
+
+.auth-container {
+    max-width: 400px;
+    width: 100%;
+    padding: 32px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.title {
+    margin-bottom: 12px;
+    color:var(--color-text-secondary);
+    font-family: 'Public Sans', sans-serif;
+    font-weight: 600;
+    font-size: 30px;
+}
+
+.subtitle {
+    color:var(--color-text-caption) ;
+    margin-bottom: 24px;
+    font-family: 'Public Sans', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+}
+
+.otp-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.otp-box {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+    text-align: center;
+    border: 1px solid var(--color-secondary-background);
+    border-radius: 6px;
+}
+
+.verify-btn {
+    margin-top: 16px;
+    width: 100%;
+}
+
+
+.resend {
+    margin-top: 16px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-family: 'Public Sans', sans-serif;
+    font-weight: 400;
+    font-size: 14px;
+}
+.alternative {
+    margin-top: 16px;
+    color:var(--color-accent);
+    cursor: pointer;
+    font-family: 'Public Sans', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+}   
+.otp-box:focus {
+    border: 2px solid var(--color-accent);  
+    outline: none;
+    background-color: var(--color-background);  
+}
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(120, 120, 120, 1); 
+    backdrop-filter: blur(8px); 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+</style>

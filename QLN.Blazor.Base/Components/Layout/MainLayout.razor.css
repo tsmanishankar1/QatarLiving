@@ -3,7 +3,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.75rem 2rem;
-    background-color: #003d66; 
+    background-color: #00426D; 
     color: white;
 }
 
@@ -44,7 +44,7 @@
 .header-right {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.5rem;
 }
 
 .post-ad-btn {

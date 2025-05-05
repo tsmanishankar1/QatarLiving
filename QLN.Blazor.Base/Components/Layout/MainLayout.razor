@@ -12,38 +12,69 @@
 
 
 <header class="site-header mud-elevation-1">
+    <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleMobileMenu" Class="mobile-menu-button" />
+
     <div class="header-left">
         <NavLink href="/">
-            <MudImage Src="images/logo.png" Alt="Qatar Living" Height="30" />
+            <MudImage Src="/images/logo.png" Alt="Qatar Living" Height="30" />
         </NavLink>
     </div>
-
-    <nav class="nav-links">
-        <NavLink href="/daily" style="color: white;" class="nav-link">Daily</NavLink>
-        <NavLink href="/properties" style="color: white;" class="nav-link">Properties</NavLink>
-        <NavLink href="/vehicles" style="color: white;" class="nav-link">Vehicles</NavLink>
-        <NavLink href="/classifieds" style="color: white;" class="nav-link active">Classifieds</NavLink>
-        <NavLink href="/authnetication-setup" style="color: white;" class="nav-link">Services</NavLink>
-        <NavLink href="/two-factor-authentication" style="color: white;" class="nav-link">Jobs</NavLink>
-        <NavLink href="/select-verification" style="color: white;" class="nav-link">Rewards</NavLink>
-    </nav>
+<div class="@($"nav-container {(showMobileMenu ? "mobile-menu-open" : "")}")">
+<nav class="nav-links">
+<NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Daily</NavLink>
+<NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Properties</NavLink>
+<NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Vehicles</NavLink>
+<NavLink href="/classifieds" style="color: white;" class="nav-link active">Classifieds</NavLink>
+<NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Services</NavLink>
+<NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Jobs</NavLink>
+<NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Rewards</NavLink>
+        </nav>
+     
+</div>
 
     <div class="header-right">
-        <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn">
-            Post
-        </MudButton>
+        <div class="post-button-wrapper">
+            <MudButton Variant="Variant.Filled" Style="background-color: #FF7F38; color: white;" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn desktop-post-btn">
+                Post
+            </MudButton>
 
+            <img src="/images/header/add_post_svg.svg" alt="Post" class="mobile-post-icon" @onclick="@(() => NavManager.NavigateTo("/"))" />
+        </div>
+
+
+        <MudAvatar Size="Size.Medium" Style="background-color: #E8F2FE;">
+            <img src="/images/header/favourite_icon.svg" alt="Account" style="width: 70%; height: 70%; padding: 4px;" />
+        </MudAvatar>
         <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
             <ActivatorContent>
                 <div style="display: flex; align-items: center; gap: 0.5rem;" class="cursor-pointer">
-                    @* <MudAvatar Size="Size.Medium">
-                        <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="User" style="width: 100%; height: 100%; border-radius: 50%;" />
-                    </MudAvatar> *@
-                    <span class="user-name">
-                        @(UserState.IsLoggedIn ? UserState.Email : "Guest")
-                    </span>
+                    @if (UserState.IsLoggedIn)
+                    {
+                        @if (!string.IsNullOrEmpty(UserState.ProfileImageUrl))
+                        {
+                            <MudAvatar Size="Size.Medium" Img="@UserState.ProfileImageUrl" />
+                        }
+                        else
+                        {
+                            <MudAvatar Size="Size.Medium" Style="background-color: #D6E8F2;">
+                                <img src="/images/header/account.svg" alt="Account" style="width: 70%; height: 70%; padding: 4px;" />
+                            </MudAvatar>
+                        }
+
+                        <span class="user-name">
+                            @((UserState.username?.Length > 10) ? UserState.username.Substring(0, 10) + "..." : UserState.username)
+                        </span>
+                    }
+                    else
+                    {
+                        <MudAvatar Size="Size.Medium" Style="background-color: #E8F2FE;">
+                            <img src="/images/header/account.svg" alt="Account" style="width: 70%; height: 70%; padding: 4px;" />
+                        </MudAvatar>
+
+                    }
                 </div>
             </ActivatorContent>
+
 
             <ChildContent>
                 @if (UserState.IsLoggedIn)
@@ -51,16 +82,19 @@
                     <MudButton Variant="Variant.Outlined"
                                Color="Color.Warning"
                                StartIcon="@Icons.Material.Filled.AccountCircle"
-                                Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;"
-                               OnClick="@GoToProfile">
+                               Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
+                               OnClick="@GoToProfile"
+                               Class="no-capitalize">
+
                         My Profile
                     </MudButton>
 
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Warning"
                                StartIcon="@Icons.Material.Filled.Logout"
-                               Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;"
-                               OnClick="@Logout">
+                               Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
+                               OnClick="@Logout"
+                               Class="no-capitalize">
                         Logout
                     </MudButton>
                 }
@@ -69,16 +103,18 @@
                     <MudButton Variant="Variant.Outlined"
                                Color="Color.Warning"
                                StartIcon="@Icons.Material.Filled.Login"
-                               Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;"
-                               OnClick="@(() => NavManager.NavigateTo("/login"))">
+                               Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
+                               OnClick="@(() => NavManager.NavigateTo("/login"))"
+                               Class="no-capitalize">
                         Login
                     </MudButton>
 
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Warning"
                                StartIcon="@Icons.Material.Filled.PersonAdd"
-                               Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;"
-                               OnClick="@(() => NavManager.NavigateTo("/signup"))">
+                               Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
+                               OnClick="@(() => NavManager.NavigateTo("/signup"))"
+                               Class="no-capitalize">
                         Sign Up
                     </MudButton>
                 }
@@ -91,11 +127,74 @@
     @Body
     <Footer />
 </main>
+<style>
+    .mobile-menu-button {
+        display: none;
+        color:white;
+    }
+
+    .desktop-post-btn {
+        display: inline-flex;
+    }
+
+    .mobile-post-icon {
+        display: none;
+        width: 32px;
+        height: 32px;
+        cursor: pointer;
+    }
+    @@media (max-width: 1024px) {
+    .desktop-post-btn {
+        display: none !important;
+    }
+
+    .mobile-post-icon {
+        display: inline-block !important;
+    }
+}
+    @@media (max-width: 992px) {
+        .mobile-menu-button {
+            display: block;
+            z-index: 1001;
+        }
+
+        .nav-container {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 80%;
+            max-width: 300px;
+            height: 100vh;
+            background-color: #003366;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding: 4rem 1rem 1rem;
+            z-index: 1000;
+            transition: left 0.3s ease;
+        }
+
+            .nav-container.mobile-menu-open {
+                left: 0;
+            }
+
+        .nav-links {
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+    }
+</style>
 
 @code {
+    private bool showMobileMenu = false;
+
+    private void ToggleMobileMenu()
+    {
+        showMobileMenu = !showMobileMenu;
+    }
     private void GoToProfile()
     {
-        NavManager.NavigateTo("/profile"); 
+        NavManager.NavigateTo("/profilePage");
     }
 
     private void Logout()

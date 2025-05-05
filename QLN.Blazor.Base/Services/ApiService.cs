@@ -1,6 +1,8 @@
 using System.Net.Http;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Options;
+using System.Text.Json;
+using QLN.Blazor.Base.Models;
 
 namespace QLN.Blazor.Base.Services
 {
@@ -27,25 +29,47 @@ namespace QLN.Blazor.Base.Services
             }
         }
 
-        public async Task<TResponse?> PostAsync<TRequest, TResponse>(string endpoint, TRequest data)
+        
+
+public async Task<ResponseModel<TData>?> PostAsync<TRequest, TData>(string endpoint, TRequest data)
+{
+    try
+    {
+        var response = await _http.PostAsJsonAsync($"{_baseUrl}/{endpoint}", data);
+        var statusCode = (int)response.StatusCode;
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"Response Content: {responseContent}");
+
+        if (!string.IsNullOrWhiteSpace(responseContent))
         {
-            Console.WriteLine("button clicked");
-            try
+            var result = JsonSerializer.Deserialize<ResponseModel<TData>>(responseContent, new JsonSerializerOptions
             {
-                var response = await _http.PostAsJsonAsync($"{_baseUrl}/{endpoint}", data);
-                if (response.IsSuccessStatusCode)
-                {
-                    return await response.Content.ReadFromJsonAsync<TResponse>();
-                }
-                Console.WriteLine($"POST Error: {response.StatusCode}");
-                return default;
-            }
-            catch (Exception ex)
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (result != null)
             {
-                Console.WriteLine($"POST Exception: {ex.Message}");
-                return default;
+                result.StatusCode = statusCode;
+                return result;
             }
         }
+        return default;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"POST Exception: {ex.Message}");
+        return new ResponseModel<TData>
+        {
+            Status = false,
+            Message = ex.Message,
+            StatusCode = 0
+        };
+    }
+}
+
+
+
         
 
 
@@ -87,5 +111,37 @@ namespace QLN.Blazor.Base.Services
                 return false;
             }
         }
+
+        public async Task<TResponse?> PutAsync<TRequest, TResponse>(string endpoint, TRequest data)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Put, $"{_baseUrl}/{endpoint}")
+                {
+                    Content = JsonContent.Create(data)
+                };
+
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<TResponse>();
+                }
+
+                Console.WriteLine($"PUT Error: {response.StatusCode}");
+                return default;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"PUT Exception: {ex.Message}");
+                return default;
+            }
+        }
+
     }
+}
+
+public class ApiResponse<T>
+{
+    public T Data { get; set; }
+    public int StatusCode { get; set; }
 }

@@ -3,14 +3,6 @@
 @using QLN.Blazor.Base.Components.Pages.UserProfile
 
 <MudContainer MaxWidth="MaxWidth.False">
-    <MudPaper Elevation="0" Class="pa-4 d-flex justify-space-between align-center" Style="border-bottom: 1px solid #e0e0e0;">
-        <div>
-            <MudText Typo="Typo.h5" Class="font-weight-bold">rewards_merchant1</MudText>
-            <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Member since: March 2025</MudText>
-        </div>
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small">Send a Message</MudButton>
-    </MudPaper>
-
     <MudGrid Class="mt-4">
         <MudItem xs="12" md="3">
             <MudNavMenu>
@@ -20,7 +12,7 @@
                     Elevation="0"
                     Class="pa-2 mb-1 d-flex justify-space-between align-center rounded cursor-pointer"
                     Style="@((item == SelectedItem) 
-                    ? "background-color: #003A63; color: white;" 
+                    ? "background-color: var(--color-accent); color: var(--color-text-white);" 
                     : "background-color: transparent; color: black;")"
                         @onclick="() => SelectedItem = item">
                          <MudText Class="m-0" Typo="Typo.body2">@item.Label</MudText>
@@ -39,11 +31,9 @@
         ? "background-color: #003A63; color: white;" 
         : "background-color: transparent; color: black;")"
     @onclick="@(() => SelectedItem = Messages)">
-    
     <MudText Class="m-0" Typo="Typo.body2">@Messages.Label</MudText>
     <MudText Class="m-0 font-weight-bold" Typo="Typo.body2">@Messages.Count</MudText>
 </MudPaper>
-
 <MudPaper 
     Elevation="0"
     Class="pa-2 mb-1 d-flex justify-space-between align-center rounded cursor-pointer"
@@ -51,7 +41,6 @@
         ? "background-color: #003A63; color: white;" 
         : "background-color: transparent; color: black;")"
     @onclick="@(() => SelectedItem = ProfileSettings)">
-    
     <MudText Class="m-0" Typo="Typo.body2">@ProfileSettings.Label</MudText>
 </MudPaper>
 <MudPaper 
@@ -110,7 +99,7 @@
     SidebarItem ProfileSettings { get; set; } = new SidebarItem
     {
         Label = "Profile & Settings",
-        ComponentType = typeof(ProfileSettingsComponet) 
+        ComponentType = typeof(ProfilePage) 
     };
     SidebarItem VerifyAccount { get; set; } = new SidebarItem
     {
@@ -140,11 +129,9 @@
         new SidebarItem { Label = "Jobs Closed", Count = 0, ComponentType = typeof(JobsClosedComponent) },
         new SidebarItem { Label = "Jobseeker profile", Count = 0, ComponentType = typeof(JobseekerProfileComponent) },
         new SidebarItem { Label = "Freelancer profile", Count = 0, ComponentType = typeof(FreelancerProfileComponent) },
-        new SidebarItem { Label = "Favourite Items", Count = 0, ComponentType = typeof(FavouriteItemsComponent) } 
+        new SidebarItem { Label = "Favourite Items", Count = 0, ComponentType = typeof(FavouriteItemsComponent) }, 
+        new SidebarItem { Label = "Subscription", Count = 0, ComponentType = typeof(Supscriptions) }
+
     };
 
-    protected override void OnInitialized()
-    {
-        SelectedItem = SidebarItems.FirstOrDefault();
-    }
 }

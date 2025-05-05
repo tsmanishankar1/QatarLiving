@@ -1,0 +1,260 @@
+﻿@page "/qatar-living"
+@using QLN.Web.Shared.Components.BreadCrumb
+@using QLN.Web.Shared.Components.Carousel
+@using QLN.Web.Shared.Components.CustomButton
+@using QLN.Web.Shared.Components.ModalDialog
+@using QLN.Web.Shared.Components.Classifieds.FeaturedItemCard
+
+@if (VerificationSucesss){
+    <div class="popup-overlay">
+       <ModalDialog
+        Title="Verification Successful" 
+        Description="Your email has been successfully verified."
+        ButtonName="Continue"
+        StatusType="Success"
+        OnClick="CloseVerificationPopup" />
+    </div> 
+}
+
+@if (VerificationFails)
+{
+    <div class="popup-overlay">
+        <ModalDialog Title=" Error"
+                     Description="Your email has not been  verified."
+                     ButtonName="Done"
+                     StatusType="Error"
+                     OnClick="CloseVerificationPopup" />
+    </div>
+}
+
+<Breadcrumb Items="breadcrumbItems" />
+
+
+<div class="content-section">
+
+  
+
+    <!-- Section: Carousel Banner -->
+    <h3 class="section-header">Carousel Components</h3>
+    <div style="width: 100%;">
+        <CarouselBanner ImageUrls="carouselImages"
+                        ShowArrows="true"
+                        EnableSwipeGesture="false"
+                        AutoCycle="true"
+                        Transition="Transition.Slide" />
+    </div>
+
+    <!-- Section: Action Buttons -->
+    <h3 class="section-header">Button Components</h3>
+    <div style="width: 100%;flex-direction:column">
+        <CustomButton BackgroundColor="var(--color-secondary)"
+                      TextColor="#FFFFFF"
+                      Text="Sign In"
+                      Disabled="false"
+                      Loading="false"
+                      OnClick="() => {}"
+                      Class="mt-4" />
+
+        <CustomButton BackgroundColor="white"
+                      TextColor="#242424"
+                      Text="Select All"
+                      Disabled="false"
+                      Loading="false"
+                      OnClick="() => {}"
+                      Class="mt-4" />
+
+        <CustomButton BackgroundColor="white"
+                      TextColor="#242424"
+                      Text="Unselect All"
+                      Disabled="false"
+                      Loading="false"
+                      OnClick="() => {}"
+                      Class="mt-4" />
+
+        <CustomButton BackgroundColor="white"
+                      TextColor="#0F986A"
+                      Text="Approve"
+                      Disabled="false"
+                      Loading="false"
+                      OnClick="() => {}"
+                      Class="mt-4" />
+
+        <CustomButton BackgroundColor="white"
+                      TextColor="#D92D20"
+                      Text="Decline"
+                      Disabled="false"
+                      Loading="false"
+                      OnClick="() => {}"
+                      Class="mt-4" />
+    </div>
+
+    <!-- Section: Verification Trigger Button -->
+    <h3 class="section-header"> Popup Components</h3>
+    <div style="width: 100%;">
+        <CustomButton BackgroundColor="#FF7F38"
+                      TextColor="#FFFFFF"
+                      Text="Open Primary Popup"
+                      Disabled="false"
+                      Loading="false"
+                      OnClick="@VerifyCode"
+                      Class="mt-4" />
+    </div>
+
+    <!-- Section: Featured Items -->
+    <h3 class="section-header">Card Components</h3>
+    <div class="cards-container">
+        @foreach (var item in featuredItems)
+        {
+            <FeaturedItemCard Item="item" OnHeartClick="HandleHeartClick" />
+        }
+    </div>
+</div>
+
+@code {
+    private bool VerificationSucesss = false;
+    private bool VerificationFails = false;
+    private List<FeaturedItemCard.FeaturedItem> featuredItems = new()
+    {
+        new FeaturedItemCard.FeaturedItem
+        {
+            ImageUrl = "/images/categories/game_image.svg",
+            Category = "Xbox Controller",
+            Title = "Microsoft Xbox Series X|S Wireless Controller - White",
+            Price = "2,100 QAR",
+            Location = "The Pearl, Doha",
+            IsFeatured = true
+        },
+        new FeaturedItemCard.FeaturedItem
+        {
+            ImageUrl = "/images/categories/cycle_image.svg",
+            Category = "Mountain Bike",
+            Title = "Bentley Continental GT Coupe 2023",
+            Price = "2,100 QAR",
+            Location = "The Pearl, Doha",
+            IsFeatured = true
+        },
+        new FeaturedItemCard.FeaturedItem
+        {
+            ImageUrl = "/images/categories/phone_image.svg",
+            Category = "iPhone 16 Pro",
+            Title = "Apple iPhone 16 Pro - 128GB Desert Titanium",
+            Price = "12,900 QAR",
+            Location = "West Bay, Doha",
+            IsFeatured = true
+        },
+        new FeaturedItemCard.FeaturedItem
+        {
+            ImageUrl = "/images/categories/card_image.svg",
+            Category = "Trading Cards",
+            Title = "Topos Chrome Charizard Tekno #06",
+            Price = "2,100 QAR",
+            Location = "Al Sadd, Doha",
+            IsFeatured = false
+        }
+    };
+    private async Task VerifyCode()
+    {
+        VerificationSucesss = true;
+
+    }
+    private void CloseVerificationPopup()
+    {
+        VerificationSucesss = false;
+        VerificationFails = false;
+    }
+
+    private async Task ErrorPopup()
+    {
+        VerificationFails = true;
+
+    }
+    
+
+
+        private List<string> carouselImages = new()
+    {
+        "/images/category1.png",
+        "/images/category1.png",
+        "/images/category1.png"
+    };
+    
+    List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new()
+    {
+        new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem { Label = "Home", Url = "/" },
+        new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem { Label = "Living", Url = "/living" },
+        new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem { Label = "Qatar", Url = "/qatar" },
+        new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem { Label = "Details", Url = "",IsLast = true }
+    };
+    private void HandleHeartClick(FeaturedItemCard.FeaturedItem item)
+    {
+        // Handle favorite logic
+        Console.WriteLine($"Heart clicked for {item.Title}");
+    }
+}
+
+<style>
+    .content-section {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .section-header {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #172B4D;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .featured-cards-section {
+        background-color: #f7f9fc;
+        padding: 2rem 1rem;
+    }
+
+    .featured-header {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding: 0 0.5rem;
+    }
+
+    .featured-title {
+        font-weight: 600;
+        color: #333;
+        font-size: 1.25rem;
+    }
+
+    .cards-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+        margin-top>:10px;
+    }
+
+    @@media (max-width: 1200px) {
+        .cards-container {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @@media (max-width: 900px) {
+        .cards-container {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @@media (max-width: 600px) {
+        .cards-container {
+            grid-template-columns: 1fr;
+        }
+
+        .featured-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>

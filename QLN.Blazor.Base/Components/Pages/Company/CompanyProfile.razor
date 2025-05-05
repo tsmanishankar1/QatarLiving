@@ -1,0 +1,67 @@
+@page "/company-profile"
+@using MudBlazor
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="company-profile-container">
+    <MudGrid GutterSize="3">
+        <!-- Left Column: Logo Upload -->
+        <MudItem xs="12" md="4">
+            <div class="upload-section" >
+                <MudText Typo="Typo.subtitle1" Class="label-title">Agency logo</MudText>
+                <MudPaper Class="upload-box" Outlined="true">
+                    <MudIconButton Icon="@Icons.Material.Filled.CloudUpload" Color="Color.Default" Size="Size.Large" />
+                    <MudText Typo="Typo.body2" Class="upload-label">Upload logo</MudText>
+                    <MudText Typo="Typo.caption" Class="recommend-text">Recommended image size: Minimum 1920 x 1200 pixels</MudText>
+                </MudPaper>
+            </div>
+        </MudItem>
+
+        <!-- Right Column: Form -->
+        <MudItem xs="12" md="8">
+            <div class="form-section">
+                <MudTextField T="string" Label="Agency Name" Variant="Variant.Outlined" FullWidth="true" />
+                <MudTextField T="string" Label="Address" Variant="Variant.Outlined" FullWidth="true" />
+                <MudTextField T="string" Label="City" Variant="Variant.Outlined" FullWidth="true" />
+                <MudTextField T="string" Label="Country" Value="@selectedCountry" ReadOnly="true" Variant="Variant.Outlined" FullWidth="true" />
+                <MudTextField T="string" Label="Phone Number" Variant="Variant.Outlined" FullWidth="true" />
+                <MudTextField T="string" Label="WhatsApp Number" Variant="Variant.Outlined" FullWidth="true" />
+                <MudTextField T="string" Label="Company Email" Variant="Variant.Outlined" FullWidth="true" />
+
+                <!-- Agency Profile -->
+                <MudText Typo="Typo.subtitle1" Class="section-heading">Agency Profile</MudText>
+                <MudTextField T="string" Lines="4" MaxLength="500" Variant="Variant.Outlined" Placeholder="Write about your agency..." FullWidth="true" />
+                <MudText Typo="Typo.caption" Align="Align.End" Class="char-limit">Maximum 500 characters allowed</MudText>
+
+                <!-- License & Visibility -->
+                <MudText Typo="Typo.subtitle1" Class="section-heading">License & Visibility</MudText>
+
+                <MudPaper Class="visibility-box" Elevation="0">
+                    <MudIcon Icon="@Icons.Material.Filled.Lightbulb" Color="Color.Warning" />
+                    <div>
+                        <MudText Typo="Typo.subtitle2" Class="bold">Show Profile in Agencies Directory</MudText>
+                        <MudText Typo="Typo.caption">Turn this toggle off to hide your profile from appearing in the <MudLink Href="#">agencies directory</MudLink>.</MudText>
+                    </div>
+                    <MudSwitch T="bool" Color="Color.Secondary" @bind-Checked="isVisible" />
+                </MudPaper>
+
+                <MudTextField T="string" Label="CR Number" Variant="Variant.Outlined" FullWidth="true" />
+                <div class="file-upload">
+                    <MudTextField T="string" Label="company_cr_2025.pdf" Variant="Variant.Outlined" FullWidth="true" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary">Upload</MudButton>
+                </div>
+
+                <MudTextField T="string" Label="License Number" Variant="Variant.Outlined" FullWidth="true" />
+                <div class="file-upload">
+                    <MudTextField T="string" Label="Upload license" Variant="Variant.Outlined" FullWidth="true" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary">Upload</MudButton>
+                </div>
+
+                <MudButton Variant="Variant.Filled" Color="Color.Secondary" FullWidth="true" Class="save-button mt-4">Save</MudButton>
+            </div>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private string selectedCountry = "Qatar";
+    private bool isVisible = true;
+}

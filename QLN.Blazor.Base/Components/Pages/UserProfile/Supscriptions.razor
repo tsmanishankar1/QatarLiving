@@ -1,0 +1,48 @@
+@page "/subscriptions"
+@inject NavigationManager NavigationManager
+@using MudBlazor
+
+@code {
+    private readonly string[] features3Month = { "30 Listings 40 Refreshes/Day", "Promoted Ads" };
+    private readonly string[] features6Month = { "50 Listings 50 Refreshes/Day", "Promoted Ads" };
+    private readonly string[] features12Month = { "80 Listings 75 Refreshes/Day", "Promoted Ads" };
+
+    private void NavigateToDetails(int months)
+    {
+        NavigationManager.NavigateTo($"/subscription-details/{months}");
+    }
+}
+
+<MudContainer MaxWidth="MaxWidth.Large">
+    <MudGrid GutterSize="24px">
+        <MudItem xs="12" sm="6" md="4">
+            <SubscriptionCard ImageSrc="/images/month3.png"
+                              AltText="3 Months"
+                              DurationText="3 Months"
+                              Price="1 500"
+                              PriceText="3 month"
+                              Features="features3Month"
+                              OnClick="() => NavigateToDetails(3)" />
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="4">
+            <SubscriptionCard ImageSrc="/images/month6.png"
+                              AltText="6 Months"
+                              DurationText="6 Months"
+                              Price="2 700"
+                              PriceText="6 month"
+                              Features="features6Month"
+                              OnClick="() => NavigateToDetails(6)" />
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="4">
+            <SubscriptionCard ImageSrc="/images/month12.png"
+                              AltText="1 Year"
+                              DurationText="1 Year"
+                              Price="5 000"
+                              PriceText="1 year"
+                              Features="features12Month"
+                              OnClick="() => NavigateToDetails(12)" />
+        </MudItem>
+    </MudGrid>
+</MudContainer>

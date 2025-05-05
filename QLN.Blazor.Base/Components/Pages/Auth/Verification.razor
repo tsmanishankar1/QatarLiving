@@ -1,108 +1,206 @@
 @page "/select-verification"
-@inject UserState UserState
 @using MudBlazor
+@using QLN.Web.Shared.Components.CustomButton
 @inject NavigationManager NavManager
 @inject ISnackbar Snackbar
+@inject UserState UserState
+@using QLN.Blazor.Base.Services
+@inject ApiService Api
 
-<MudPaper Elevation="3" Class="pa-6 my-10 mx-auto" MaxWidth="500px">
-     <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-6" Style="font-weight: 700;">
-        Select Verification Method
-    </MudText>
-    <MudText Typo="Typo.subtitle1" Align="Align.Center" GutterBottom="true">
-        Choose how you want to receive your verification code
-    </MudText>
+<div class="page-wrapper">
+    <div class="form-container">    
+        <MudText Class="title-text">Verification Method</MudText>
+        <MudText Class="subtitle">Choose how you want to receive your verification code</MudText>
 
-   <MudPaper Elevation="0" Class="d-flex flex-column gap-3 p-3">
-    <MudItem>
-        
-        <MudPaper Class="@GetPaperClass("sms")" Style="border: 1px solid #ccc; border-radius: 8px;" @onclick="SelectOption">
-            <div class="d-flex align-center p-3">
-        <input 
-            type="radio" 
-            name="method" 
-            value="sms" 
-            checked="@(_selectedMethod == "sms")" 
-            @onclick:stopPropagation 
-        />
-        <div class="ml-3">
-            <MudText Typo="Typo.subtitle1">Text Message (SMS)</MudText>
-            <MudText Typo="Typo.caption"  Style="color: #999999;">
-                Send code to @UserState.mobileNumber
-            </MudText>
-        </div>
-         </div>
+        <MudPaper Elevation="0" Class="d-flex flex-column gap-3 p-3 option-list">
+            @foreach (var option in verificationOptions)
+            {
+                var paperClass = $"option-card {GetSelectedClass(option.Value)}";
+
+                <MudPaper Class="@paperClass">
+                    <div class="d-flex align-center p-3">
+                        <input 
+                            type="radio" 
+                            name="method" 
+                            class="custom-radio"
+                            value="@option.Value"
+                            checked="@(_selectedMethod == option.Value)" 
+                            @onchange="() => SelectOption(option.Value)" 
+                        />
+                        <div class="ml-3" style="display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start;">
+                            <MudText Class="label-text">@option.Label</MudText>
+                            <MudText Class="description-text">
+                                @option.Description
+                            </MudText>
+                        </div>
+                    </div>
+                </MudPaper>
+            }
         </MudPaper>
 
-
-    </MudItem>
-
-    <MudItem>
-        <MudPaper Class="@GetPaperClass("sms")" Style="border: 1px solid #ccc; border-radius: 8px;" @onclick="SelectOption">
-    <div class="d-flex align-center p-3">
-        <input 
-            type="radio" 
-            name="method" 
-            value="sms" 
-            checked="@(_selectedMethod == "sms")" 
-            @onclick:stopPropagation 
-        />
-        <div class="ml-3">
-            <MudText Typo="Typo.subtitle1">Email</MudText>
-            <MudText Typo="Typo.caption"  Style="color: #999999;">
-                Send code to @UserState.Email
-            </MudText>
-        </div>
+        <CustomButton 
+            BackgroundColor="var(--color-accent)"
+            TextColor="#FFFFFF"
+            Text="Continue"
+            Disabled="_isLoading"
+    Loading="_isLoading"
+            OnClick="NavigateTo"
+            Class="mt-4" />
     </div>
-</MudPaper>
-    </MudItem>
-     <MudItem>
-        <MudPaper Class="@GetPaperClass("sms")" Style="border: 1px solid #ccc; border-radius: 8px;" @onclick="SelectOption">
-    <div class="d-flex align-center p-3">
-        <input 
-            type="radio" 
-            name="method" 
-            value="sms" 
-            checked="@(_selectedMethod == "sms")" 
-            @onclick:stopPropagation 
-        />
-        <div class="ml-3">
-            <MudText Typo="Typo.subtitle1">Authenticator App</MudText>
-            <MudText Typo="Typo.caption"  Style="color: #999999;">
-                Use code from your authenticator app
-            </MudText>
-        </div>
-    </div>
-</MudPaper>
-    </MudItem>
-</MudPaper>
-   
-
-
-    <MudButton Variant="Variant.Filled" Color="Color.Warning" FullWidth="true" OnClick="NavigateTo" Style="margin-top: 24px; background-color: #FF7F38;">
-        Continue
-    </MudButton>
-</MudPaper>
+</div>
 
 @code {
-   private string _selectedMethod = string.Empty;
+    private string _selectedMethod = string.Empty;
+    private bool _isLoading = false;
 
-    private string GetPaperClass(string method)
-        => _selectedMethod == method ? "border-selected" : "";
-
-    private string GetIconClass(string method)
-        => _selectedMethod == method ? "text-primary" : "text-disabled";
-
-        private void SelectOption(){
-            _selectedMethod = "sma";
-        }
-
-    private void NavigateTo(){
-        @* if (string.IsNullOrWhiteSpace(_selectedMethod))
+    private List<VerificationOption> verificationOptions => new()
+    {
+        new VerificationOption
         {
-        Snackbar.Add("Choose any method!", Severity.Warning);
+            Value = "sms",
+            Label = "Text Message (SMS)",
+            Description = $"Send code to {UserState.mobileNumber}"
+        },
+        new VerificationOption
+        {
+            Value = "email",
+            Label = "Email Address",
+            Description = $"Send code to {UserState.Email}"
+        },
+        new VerificationOption
+        {
+            Value = "authenticator",
+            Label = "Authenticator App",
+            Description = "Use the code from your authenticator app"
         }
-        else{ *@
-        NavManager.NavigateTo("/two-factor-authentication");
-        @* } *@
+    };
+
+    private string GetSelectedClass(string value) =>
+        _selectedMethod == value ? "selected" : "";
+
+    private void SelectOption(string method) =>
+        _selectedMethod = method;
+
+    private async void NavigateTo()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedMethod))
+        {
+            Snackbar.Add("Choose a verification method!", Severity.Warning);
+            return;
+        }
+
+        if (_selectedMethod == "authenticator")
+        {
+            Snackbar.Add("Authenticator method is currently not supported. Please select Email or SMS.", Severity.Error);
+            return;
+        }
+
+        _isLoading = true;
+        try
+        {
+            var payload = new
+            {
+                usernameOrEmailOrPhone = _selectedMethod == "email" ? UserState.Email : UserState.mobileNumber,
+                method = _selectedMethod == "sms" ? "phone" : _selectedMethod
+            };
+            var response = await Api.PostAsync<object, object>("auth/send-2fa", payload);
+            if (response?.StatusCode == 200)
+            {
+                NavManager.NavigateTo("/two-factor-authentication");
+            }
+            else
+            {
+                Snackbar.Add("Failed to send verification code. Please try again.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged(); 
+        }
+    }
+
+    public class VerificationOption
+    {
+        public string Value { get; set; }
+        public string Label { get; set; }
+        public string Description { get; set; }
     }
 }
+
+<style>
+.page-wrapper {
+    width: 100%;
+    background-color:  var(--color-secondary-background);
+    padding: 32px 16px;
+}
+
+.form-container {
+    max-width: 400px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.title-text {
+    font-size: 30px;
+    font-weight: 500;
+    font-family: 'Public Sans', sans-serif;
+    margin-bottom: 12px;
+    color:var(--color-text-secondary)
+}
+.subtitle {
+    font-size: 16px;
+    font-weight: 400;
+    font-family: 'Public Sans', sans-serif;
+    color:var(--color-text-caption) ;
+    margin-bottom: 24px;
+}
+.label-text{
+    font-size: 18px;
+    font-weight: 500;
+    font-family: 'Public Sans', sans-serif;
+    color: var(--color-text-gray);
+}
+.description-text{
+    font-size: 14px;
+    font-weight: 400;
+    font-family: 'Public Sans', sans-serif;
+    color: var(--color-text-caption);
+}
+.option-list {
+    background-color: var(--color-secondary-background);
+}
+
+.option-card {
+    border-radius: 8px;
+    background-color: var(--color-background);
+}
+
+.custom-radio {
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: var(--color-background);
+    border: 3px solid var(--color-accent);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    position: relative;
+    cursor: pointer;
+}
+
+.custom-radio:checked::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    background-color: var(--color-accent);
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+</style>

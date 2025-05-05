@@ -1,0 +1,166 @@
+@page "/profilePage"
+@using MudBlazor
+@using QLN.Web.Shared.Components.ProfileCard
+@using QLN.Web.Shared.Components.CustomButton
+@inject UserState UserState
+
+<MudContainer MaxWidth="MaxWidth.False" DisableGutters="true" Class="p-4 custom-background">
+    <MudGrid>
+        <!-- Left Side - Profile Card -->
+        <MudItem xs="12" sm="4" md="3">
+            <ProfileCard
+                ProfileImageUrl="/images/sample_profile.jpg"
+                Name="Farha Hassan"
+                IsPremium="true"
+                Email="@UserState.Email"
+                 Phone="@UserState.mobileNumber"
+                Location="Doha, Qatar"
+                Gender="Male"
+                Nationality="Qatari"
+                Languages="@(new List<string> { "Arabic", "English" })"
+                OnEditClicked="@(() => Console.WriteLine("Edit clicked"))" />
+        </MudItem>
+
+        <!-- Right Side - Rewards + Company Cards -->
+        <MudItem xs="12" sm="8" md="9">
+            <MudStack Spacing="3">
+
+                <!-- Rewards Status Card -->
+                <MudPaper Class="p-4" Elevation="2" Style="border-radius: 8px;">
+                    <MudGrid AlignItems="Center" Justify="Justify.SpaceBetween">
+                        <MudItem xs="12" sm="8">
+                            <MudText Typo="Typo.h6" Class="text-dark-blue">Your Rewards Status</MudText>
+                            <MudText Typo="Typo.caption" Class="text-success mb-1">Active Member</MudText>
+                            <MudText Typo="Typo.body2" Class="text-gray">Expiry: October 15, 2025</MudText>
+                            <MudText Typo="Typo.body2" Class="text-gray">Remaining listings: 25 | Featured spots: 5 | Refreshes: 20</MudText>
+                        </MudItem>
+                        <MudItem xs="12" sm="4" Class="d-flex justify-end">
+                            <MudButton Variant="Variant.Filled" Color="Color.Warning" Class="view-details-button">
+                                View Details
+                            </MudButton>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+
+                <!-- Company Cards List -->
+                <MudGrid GutterSize="3">
+                    @foreach (var company in CompanyProfiles)
+                    {
+                        <MudItem xs="12" sm="6" md="4"  Style="border-radius: 8px;">
+                            <MudPaper Class="p-4 text-center" Elevation="2">
+                                <MudText Typo="Typo.h6" Class="text-dark-blue mb-2">@company.Name</MudText>
+                                <MudAvatar Size="Size.Large" Class="mb-2" Color="Color.Primary">
+                                    <MudIcon Icon="@Icons.Material.Filled.Apartment" />
+                                </MudAvatar>
+                                <MudText Typo="Typo.body2" Class="text-gray mb-1">@company.Plan</MudText>
+                                <MudText Typo="Typo.caption" Class="text-gray">Valid from <br />@company.ValidFrom to @company.ValidTo</MudText>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="edit-profile-button mt-2">
+                                    Edit Company Profile
+                                </MudButton>
+                            </MudPaper>
+                        </MudItem>
+                    }
+                </MudGrid>
+                <!-- Recent Activity List Card -->
+<MudPaper Class="p-4" Elevation="2" Style="border-radius: 8px;">
+    <MudText Typo="Typo.h6" Class="text-dark-blue mb-4">Recent Activity</MudText>
+
+    <MudDivider Class="mb-2" />
+
+    @foreach (var activity in RecentActivities)
+    {
+        <MudGrid AlignItems="Center" Class="activity-row mb-2">
+            <MudItem xs="9">
+                <MudText Typo="Typo.body1" Class="text-dark-blue">@activity.Title</MudText>
+                <MudText Typo="Typo.caption" Class="text-gray">@activity.Timestamp</MudText>
+            </MudItem>
+            <MudItem xs="3" Class="d-flex justify-end">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="view-activity-button">
+                    View
+                </MudButton>
+            </MudItem>
+            <MudDivider Class="my-2" />
+        </MudGrid>
+    }
+</MudPaper>
+
+
+
+            </MudStack>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private List<CompanyProfile> CompanyProfiles = new()
+    {
+        new CompanyProfile { Name = "Capstone Property", Plan = "Real estate 20 - 12 months", ValidFrom = "July 28, 2023", ValidTo = "July 28, 2024" },
+        new CompanyProfile { Name = "Pay To Publish", Plan = "Real estate 20 - 12 months", ValidFrom = "July 28, 2023", ValidTo = "July 28, 2024" },
+        new CompanyProfile { Name = "Pay To Publish", Plan = "Real estate 20 - 12 months", ValidFrom = "July 28, 2023", ValidTo = "July 28, 2024" }
+    };
+private List<ActivityItem> RecentActivities = new()
+{
+    new ActivityItem { Title = "iPhone 14 Pro listing received a new offer", Timestamp = "Today, 10:45 AM" },
+    new ActivityItem { Title = "Samsung Galaxy S23 listing was refreshed", Timestamp = "Yesterday, 3:22 PM" },
+    new ActivityItem { Title = "New message from user @sarah_qatar about your MacBook Pro", Timestamp = "Apr 07, 2025" },
+    new ActivityItem { Title = "Payment received for Sony PlayStation 5", Timestamp = "Apr 05, 2025" },
+    new ActivityItem { Title = "Toyota Camry listing marked as featured", Timestamp = "Apr 03, 2025" },
+};
+
+public class ActivityItem
+{
+    public string Title { get; set; }
+    public string Timestamp { get; set; }
+}
+
+    public class CompanyProfile
+    {
+        public string Name { get; set; }
+        public string Plan { get; set; }
+        public string ValidFrom { get; set; }
+        public string ValidTo { get; set; }
+    }
+}
+
+<style>
+    .custom-background {
+        background-color: var(--color-background);
+    }
+    .text-dark-blue {
+        color: #003366;
+        font-weight: 700;
+    }
+    .text-success {
+        color: green;
+        font-weight: 600;
+    }
+    .text-gray {
+        color: #666666;
+    }
+    .view-details-button {
+        background-color: #ff6600;
+        color: white;
+        width: 160px;
+        height: 35px;
+        font-weight: 600;
+    }
+    .edit-profile-button {
+        border-color: #1976d2;
+        color: #1976d2;
+        font-weight: 600;
+        width: 180px;
+        text-transform: none;
+    }
+    .view-activity-button {
+    background-color: #003366;
+    color: white;
+    min-width: 80px;
+    height: 36px;
+    font-weight: 600;
+    border-radius: 8px;
+    text-transform: none;
+    font-size: 0.8rem;
+}
+
+</style> 
+
