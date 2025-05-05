@@ -46,6 +46,7 @@
                   Label="First Name"
                   @bind-Value="_model.FirstName"
                   Immediate="true"
+                  Required="true"
                   Variant="Variant.Outlined"
                   style="background-color: var(--color-background)"
                   MaxLength="50"
@@ -60,6 +61,7 @@
               @bind-Value="_model.LastName"
               Variant="Variant.Outlined"
               Immediate="true"
+              Required="true"
               MaxLength="50"
               FullWidth="true"
               style="background-color: var(--color-background)"  />
@@ -72,6 +74,7 @@
               @bind-Value="_model.UserName"
               Variant="Variant.Outlined"
               MaxLength="50"
+              Required="true"
               FullWidth="true"
               Immediate="true"
               style="background-color: var(--color-background)" />
@@ -83,7 +86,7 @@
 <MudPaper Class="@EmailFieldClass" Elevation="0" >
     <div class="phone-flex">
         <MudTextField T="string"
-              Label="Email Address"
+              Label="Email Address*"
               For="@(() => _model.EmailAddress)"
               MaxLength="50"
               ValueChanged="OnEmailChanged"
@@ -192,6 +195,7 @@
                    @bind-Value="SelectedCountry"
                    Class="country-select"
                    DisableUnderline="true"
+                   Label="Select Country"
                    Searchable="true">
             <MudSelectItem Value="@SelectedCountry">
                 <img src="@SelectedCountry.Flag" Class="selected-country-flag" />
@@ -213,6 +217,7 @@
         <MudTextField T="string"
                       For="@(() => _model.MobileNumber)"
                       ValueChanged="OnMobileNumberChanged"
+                       Label="Phone Number*"
                       MaxLength="15"
                       FullWidth="true"
                       StartAdornment="@SelectedCountry.Code"
@@ -326,6 +331,7 @@
            Label="Nationality"
            Placeholder="Choose"
            Variant="Variant.Outlined"
+           Required="true"
            Dense="false"
            FullWidth="true"
            style="background-color: var(--color-background)"
