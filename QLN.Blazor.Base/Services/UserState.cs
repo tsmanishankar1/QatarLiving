@@ -6,5 +6,5 @@ public class UserState
     public string? username { get; set; }
     public string? Token { get; set; }
 
-    public bool IsLoggedIn => !string.IsNullOrEmpty(Email);
+    public bool IsLoggedIn => !string.IsNullOrWhiteSpace(Token);
 }

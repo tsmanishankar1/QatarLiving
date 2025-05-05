@@ -1,5 +1,4 @@
-@using MudBlazor
-
+ 
 <div class="categories-wrapper">
     <!-- Header section with different background -->
     <div class="categories-header">
@@ -7,7 +6,7 @@
             <h4 class="section-header">Featured Categories</h4>
         </MudContainer>
     </div>
-
+ 
     <!-- Card grid section on full white background -->
     <div class="categories-section">
         <MudContainer MaxWidth="MaxWidth.False">
@@ -27,15 +26,15 @@
         </MudContainer>
     </div>
 </div>
-
-
+ 
+ 
 @code {
     public class CategoryItem
     {
         public string Name { get; set; }
         public string ImageUrl { get; set; }
     }
-
+ 
     private List<CategoryItem> categories = new()
     {
         new() { Name = "Ramadan Essentials",  ImageUrl = "/images/categories/new1.svg" },
@@ -45,38 +44,38 @@
         new() { Name = "Electronics Rush",    ImageUrl = "/images/categories/new5.svg" },
         new() { Name = "Cats & Dogs",         ImageUrl = "/images/categories/new6.svg" },
     };
-
+ 
     void HandleCategoryClick(CategoryItem category)
     {
         Console.WriteLine($"Clicked: {category.Name}");
     }
 }
-
-
+ 
+ 
 <style>
 .categories-wrapper {
     width: 100vw;
 }
-
+ 
 /* Header with secondary background */
 .categories-header {
     background-color: var(--color-secondary-background);
     padding: 2rem 0 1rem;
 }
-
+ 
 .section-header {
     text-align: center;
     font-weight: 600;
     color: #1a1a1a;
 }
-
+ 
 /* Grid section with full white background */
 .categories-section {
-    background-color: var(--color-background);
+    background-color: var(--color-background-secondary-grey-light);
     width: 100%;
-    padding: 2rem 0;
+    padding: 2rem;
 }
-
+ 
 .category-grid {
     display: flex;
     flex-wrap: wrap;
@@ -84,7 +83,7 @@
     align-items: flex-start;
     width: 100%;
 }
-
+ 
 .category-card-section {
     cursor: pointer;
     padding: 0;
@@ -93,22 +92,22 @@
     box-shadow: none;
     transition: transform 0.2s ease;
 }
-
+ 
 .card-contents {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     text-align: left;
 }
-
+ 
 .category-image {
-    max-width: 230px;
+    max-width: 210px;
     max-height: 300px;
     object-fit: cover;
     border-radius: 8px;
     margin-bottom: 8px;
 }
-
+ 
 .category-titles {
     font-size: 0.8rem;
     font-weight: bold;
@@ -116,6 +115,6 @@
     margin: 0;
     padding-left: 4px;
 }
-
-
+ 
+ 
 </style>

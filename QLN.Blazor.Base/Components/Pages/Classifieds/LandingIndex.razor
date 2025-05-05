@@ -1,61 +1,61 @@
 @using MudBlazor
 @using QLN.Web.Shared.Components.Carousel
 @using QLN.Blazor.Base.Components.Pages.Classifieds.Components.LandingComponents
-
+ 
 <!-- Page: Classifieds -->
-
+ 
 <!-- Navigation Tabs -->
 <NavigationTabs />
-
+ 
 <!-- Main Container -->
 <div style="width: 100%; background-color: var(--color-secondary-background);">
-    <div style="width: 100%; padding: 0 20px;">
-        
+    <div style="width: 100%; padding: 0 40px;">
+       
         <!-- Carousel Banner -->
-        <CarouselBanner 
+        <CarouselBanner
             ImageUrls="carouselImages"
             ShowArrows="true"
             EnableSwipeGesture="false"
             AutoCycle="true"
             Transition="Transition.Slide" />
-
+ 
         <!-- Search Bar Section -->
         <SearchBarSection />
-
+ 
         <!-- Featured Categories -->
         <FeaturedCategoriesSection />
         </div>
         <!-- Featured Cards -->
         <FeaturedCardsSection />
-
-    <div style="width: 100%; padding: 0 20px;">
+ 
+    <div style="width: 100%; padding: 0 40px;">
         <!-- Store Deals -->
         <StoreDealsSection />
-
+ 
         <!-- Category Card 1 -->
         <CategoryCard1 />
-
+ 
         <div class="category-banner-wrapper">
             <img src="/images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
         </div>
-
+ 
          <!-- Category Card 2 -->
         <CategoryCard2 />
-
+ 
         <Seasonal />
-    
+   
     </div>
-
+ 
     <!-- Social Media Section -->
     <SocialMediaCard />
-
+ 
     <!-- FAQs Section -->
     <FAQsSection />
-
+ 
     <!-- Popular Searches Section -->
     <PopularSearches />
 </div>
-
+ 
 @code {
     private List<string> carouselImages = new()
     {
@@ -64,14 +64,14 @@
         "/images/category1.png"
     };
 }
-
+ 
 <style>
     .category-banner-wrapper {
     width: 100%;
     display: flex;
     justify-content: center;
 }
-
+ 
 .category-banner-image {
     width: 100%;
     max-width: 100%;
@@ -80,5 +80,5 @@
     object-fit: cover;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
-
+ 
 </style>

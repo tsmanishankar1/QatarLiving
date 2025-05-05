@@ -20,24 +20,24 @@
 @using System.Text.Json;
 @inject IDialogService DialogService
 @inject HttpClient Http
-
-
+ 
+ 
 @if (signUpSucesss){
     <div class="popup-overlay">
-       <ModalDialog 
-        Title="Account Created!" 
+       <ModalDialog
+        Title="Account Created!"
         Description="Account created successfully"
         ButtonName="Continue"
         StatusType="Success"
         OnClick="CloseSuccessPopup" />
-    </div> 
+    </div>
 }
 <div class="form-container">
     <div class="form-wrapper">
-    <MudText Align="Align.Center" Class="mb-6 heading-text">
-        Create Account
-    </MudText>
-<MudForm @ref="_form" Model="@_model" OnValidSubmit="SubmitSignup">
+        <MudText Align="Align.Center" Class="mb-6 heading-text">
+            Create Account
+        </MudText>
+        <MudForm @ref="_form" Model="@_model" OnValidSubmit="SubmitSignup">
         <MudText Typo="Typo.body1"  Class="label-text">
         First Name
         </MudText>
@@ -55,7 +55,7 @@
         <MudText Typo="Typo.body1"  Class="label-text">
         Last Name
         </MudText>
-         <MudTextField T="string"
+        <MudTextField T="string"
               Label="Last Name"
               For="@(() => _model.LastName)"
               @bind-Value="_model.LastName"
@@ -64,7 +64,7 @@
               Required="true"
               MaxLength="50"
               FullWidth="true"
-              style="background-color: var(--color-background)"  />
+              style="background-color: var(--color-background)" />
         <MudText Typo="Typo.body1"  Class="label-text">
         Username
         </MudText>
@@ -83,17 +83,17 @@
         Email
      </MudText>
    
-<MudPaper Class="@EmailFieldClass" Elevation="0" >
+    <MudPaper Class="@EmailFieldClass" Elevation="0" >
     <div class="phone-flex">
         <MudTextField T="string"
               Label="Email Address*"
               For="@(() => _model.EmailAddress)"
               MaxLength="50"
               ValueChanged="OnEmailChanged"
+              Disabled="showVerificationSuccess"
               FullWidth="true"
               Immediate="true"
               Class="phone-input" />
-
         @if (showVerificationSuccess)
         {
             <MudText Typo="Typo.body1" Class="success-text">
@@ -102,12 +102,12 @@
         }
         else
         {
-            <MudButton Variant="Variant.Filled"
+           <MudButton Variant="Variant.Filled"
            Loading="@_emailVerifying"
            Disabled="@(!ValidationHelper.IsValidEmail(_model.EmailAddress))"
            OnClick="OnVerifyEmailClicked"
            Class="verify-button">
-
+ 
     <div class="verify-container">
         @if (_emailVerifying)
         {
@@ -121,9 +121,9 @@
             <MudText Typo="Typo.button"  Class="verify-button-text">Verify</MudText>
         }
     </div>
-</MudButton>
+    </MudButton>
         }
-
+ 
     </div>
 </MudPaper>
 <MudText Color="Color.Error" Typo="Typo.caption" Class="mt-1">
@@ -135,12 +135,12 @@
         <MudTextField T="string"
               Label="Email Verification Code"
               @bind-Value="EmailVerificationCode"
-              MaxLength="50"
+              MaxLength="6"
               FullWidth="true"
               Immediate="true"
               Class="phone-input" />
-
-
+ 
+ 
     <div class="verify-container">
         @if (_emailCodeVerifying)
         {
@@ -159,9 +159,9 @@
             </MudButton>
         }
     </div>
-
+ 
         
-
+ 
     </div>
     </MudPaper>
     <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
@@ -170,11 +170,11 @@
     </MudText>
     @if (_canResend)
     {
-        <span 
-    style="color: var(--color-accent); 
-           cursor: @(ValidationHelper.IsValidEmail(_model.EmailAddress) ? "pointer" : "not-allowed"); 
-           font-size: 0.8rem; 
-           opacity: @(ValidationHelper.IsValidEmail(_model.EmailAddress) ? "1" : "0.5");" 
+        <span
+    style="color: var(--color-accent);
+           cursor: @(ValidationHelper.IsValidEmail(_model.EmailAddress) ? "pointer" : "not-allowed");
+           font-size: 0.8rem;
+           opacity: @(ValidationHelper.IsValidEmail(_model.EmailAddress) ? "1" : "0.5");"
     @onclick="@(ValidationHelper.IsValidEmail(_model.EmailAddress) ? TriggerEmailCodeResend : null)">
     Resend Code
 </span>
@@ -185,7 +185,7 @@
     }
 </div>
 }
-
+ 
         <MudText Typo="Typo.body1"  Class="label-text mb-1">
         Phone Number
         </MudText>
@@ -196,6 +196,7 @@
                    Class="country-select"
                    DisableUnderline="true"
                    Label="Select Country"
+                   Disabled="@showMobileVerificationSuccess"
                    Searchable="true">
             <MudSelectItem Value="@SelectedCountry">
                 <img src="@SelectedCountry.Flag" Class="selected-country-flag" />
@@ -213,11 +214,12 @@
             </MudSelectItem>
             }
         </MudSelect>
-
+ 
         <MudTextField T="string"
                       For="@(() => _model.MobileNumber)"
                       ValueChanged="OnMobileNumberChanged"
                        Label="Phone Number*"
+                       Disabled="showMobileVerificationSuccess"
                       MaxLength="15"
                       FullWidth="true"
                       StartAdornment="@SelectedCountry.Code"
@@ -285,9 +287,9 @@
             </MudButton>
         }
     </div>
-
+ 
         
-
+ 
     </div>
     </MudPaper>
      <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
@@ -296,11 +298,11 @@
     </MudText>
     @if (_ResendPhoneCode)
     {
-        <span 
-    style="color: var(--color-accent); 
-           cursor: @(ValidationHelper.IsValidPhoneNumber(_model.MobileNumber) ? "pointer" : "not-allowed"); 
-           font-size: 0.8rem; 
-           opacity: @(ValidationHelper.IsValidPhoneNumber(_model.MobileNumber) ? "1" : "0.5");" 
+        <span
+    style="color: var(--color-accent);
+           cursor: @(ValidationHelper.IsValidPhoneNumber(_model.MobileNumber) ? "pointer" : "not-allowed");
+           font-size: 0.8rem;
+           opacity: @(ValidationHelper.IsValidPhoneNumber(_model.MobileNumber) ? "1" : "0.5");"
     @onclick="@(ValidationHelper.IsValidPhoneNumber(_model.MobileNumber) ? TriggerPhoneCodeResend : null)">
     Resend Code
 </span>
@@ -311,7 +313,7 @@
     }
 </div>
 }
-
+ 
         <MudText Typo="Typo.body1"  Class="label-text">
         Date of Birth
         </MudText>
@@ -361,8 +363,8 @@
         <MudSelectItem T="string" Value="@country">@country</MudSelectItem>
     }
 </MudSelect>
-
-
+ 
+ 
 <MudText Typo="Typo.body1"  Class="label-text">
         Password
 </MudText>
@@ -384,8 +386,8 @@
               OnAdornmentClick="TogglePasswordVisibility"
               AdornmentColor="Color.Default" />
     <PasswordStrengthIndicator Password="@_model.Password" />
-
-
+ 
+ 
 <MudText Typo="Typo.body1"  Class="label-text mt-2">
         Comnfirm Password
 </MudText>
@@ -409,9 +411,9 @@
                  RequiredError="You must agree to the terms and conditions to proceed" Class="custom-checkbox" >
         <LabelContent>
             <span class="label-text">
-            I agree to the 
+            I agree to the
             <MudText Link="true" Class="ml-1 mr-1 d-inline terms-link">Terms and Conditions</MudText>
-            and 
+            and
             <MudText Link="true" Class="ml-1 d-inline terms-link">Privacy Policy</MudText>
             </span>
         </LabelContent>
@@ -431,7 +433,7 @@
             </span>
         </LabelContent>
         </MudCheckBox>
-    <CustomButton 
+    <CustomButton
     BackgroundColor="#FF7F38"
     TextColor="#FFFFFF"
     Text="Sign In"
@@ -467,16 +469,16 @@
         </MudButton>
     </MudItem>
     </MudGrid>
-
+ 
     <MudText Align="Align.Center" Class="mt-4 d-flex justify-center">
     <span>Already have an account?</span>&nbsp;
     <NavLink href="/login" class="terms-link">Sign In</NavLink>
 </MudText>
 </MudForm>
- </div>
 </div>
-
-
+</div>
+ 
+ 
 @code {
     private MudForm _form;
     private SignupModel _model = new();
@@ -500,54 +502,49 @@
     private bool _canResend = true;
     private string EmailResendCodeStyle =>
     $"cursor: pointer; text-decoration: underline; opacity: {(ValidationHelper.IsValidEmail(_model.EmailAddress) ? "1" : "0.5")}; pointer-events: {(ValidationHelper.IsValidEmail(_model.EmailAddress) ? "auto" : "none")};";
-
-private string PhoneResendCodeStyle =>
+    private string PhoneResendCodeStyle =>
     $"cursor: pointer; text-decoration: underline; opacity: {(ValidationHelper.IsValidPhoneNumber(_model.MobileNumber) ? "1" : "0.5")}; pointer-events: {(ValidationHelper.IsValidPhoneNumber(_model.MobileNumber) ? "auto" : "none")};";
-
-
     private string EmailVerificationCode
-{
-    get => _emailVerificationCode;
-    set
     {
-        _emailVerificationCode = value;
-
-        if (string.IsNullOrWhiteSpace(value))
+        get => _emailVerificationCode;
+        set
         {
-            emailCodeErrorMessage = "Email Verification code is required.";
-        }
-        else if (!IsCodeValid(value))
-        {
-            emailCodeErrorMessage = "Enter a valid Email Verification code";
-        }
-        else
-        {
-            emailCodeErrorMessage = string.Empty;
+            _emailVerificationCode = value;
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                emailCodeErrorMessage = "Email Verification code is required.";
+            }
+            else if (!IsCodeValid(value))
+            {
+                emailCodeErrorMessage = "Enter a valid Email Verification code";
+            }
+            else
+            {
+                emailCodeErrorMessage = string.Empty;
+            }
         }
     }
-}
     private string _phoneVerificationCode {get; set; } = string.Empty;
     private string PhoneVerificationCode
-{
-    get => _phoneVerificationCode;
-    set
     {
-        _phoneVerificationCode = value;
-
-        if (string.IsNullOrWhiteSpace(value))
+        get => _phoneVerificationCode;
+        set
         {
-            phoneCodeErrorMessage = "Mobile Verification code is required.";
-        }
-        else if (!IsCodeValid(value))
-        {
-            phoneCodeErrorMessage = "Enter a valid Mobile Verification code";
-        }
-        else
-        {
-            phoneCodeErrorMessage = string.Empty;
+            _phoneVerificationCode = value;
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                phoneCodeErrorMessage = "Mobile Verification code is required.";
+            }
+            else if (!IsCodeValid(value))
+            {
+                phoneCodeErrorMessage = "Enter a valid Mobile Verification code";
+            }
+            else
+            {
+                phoneCodeErrorMessage = string.Empty;
+            }
         }
     }
-}
     private string _emailCodeError {get; set; } = string.Empty;
     private string _phoneCodeError {get; set; } = string.Empty;
     private DateTime? _dateOfBirth;
@@ -567,7 +564,6 @@ private string PhoneResendCodeStyle =>
     private string phoneErrorMessage = string.Empty;
     private string emailCodeErrorMessage = string.Empty;
     private string phoneCodeErrorMessage = string.Empty;
-    
     protected override async Task OnInitializedAsync()
     {
         countryList = await FetchCountriesAsync();
@@ -583,14 +579,11 @@ private string PhoneResendCodeStyle =>
         phoneErrorMessage = ValidatePhoneFormat(value);
     }
     private bool IsCodeValid(string code)
-{
-    return !string.IsNullOrWhiteSpace(code)
+    {
+        return !string.IsNullOrWhiteSpace(code)
            && code.Length == 6
            && code.All(char.IsDigit);
-}
-
-
-    
+    }    
     private CountryModel SelectedCountry { get; set; } = new CountryModel
     {
         Name = "Qatar",
@@ -598,10 +591,10 @@ private string PhoneResendCodeStyle =>
         Flag = "https://flagcdn.com/w40/qa.png"
     };
     private void OnPasswordInput(ChangeEventArgs e)
-{
-    _model.Password = e?.Value?.ToString() ?? string.Empty;
-    StateHasChanged(); 
-}
+    {
+        _model.Password = e?.Value?.ToString() ?? string.Empty;
+        StateHasChanged();
+    }
     private void TogglePasswordVisibility()
     {
         _showPassword = !_showPassword;
@@ -610,8 +603,7 @@ private string PhoneResendCodeStyle =>
     {
         _showConfirmPassword = !_showConfirmPassword;
     }
-    
-    private List<string> languageOptions = new() { "English", "Arabic", "French", "German" }; 
+    private List<string> languageOptions = new() { "English", "Arabic", "French", "German" };
     private async Task SubmitSignup()
     {
         _loading = true;
@@ -628,16 +620,15 @@ private string PhoneResendCodeStyle =>
             hasError = true;
         }   
         if (hasError){
-             _loading = false;
-             return;
+            _loading = false;
+            return;
         }
          var payload = new
         {
             username = _model.UserName,
             firstName = _model.FirstName,
             lastname = _model.LastName,
-            dateofbirth = _dateOfBirth?.ToString("yyyy-MM-dd"), 
-            gender = "male",
+            dateofbirth = _dateOfBirth?.ToString("yyyy-MM-dd"),
             mobileOperator = "vodofone",
             mobilenumber = _model.MobileNumber,
             emailaddress = _model.EmailAddress,
@@ -646,12 +637,11 @@ private string PhoneResendCodeStyle =>
             languagepreferences = _model.LanguagePreferences,
             location = "location",
             twoFactorEnabled = EnableTwoFactor
-        }; 
-
+        };
         try
         {
             Console.WriteLine(payload);
-            var response = await Api.PostAsync<object, ResponseModel<object> >("auth/register", payload); 
+            var response = await Api.PostAsync<object, ResponseModel<object> >("auth/register", payload);
             if (response.StatusCode == 200)
             {
                 UserState.Email = _model.EmailAddress;
@@ -661,7 +651,7 @@ private string PhoneResendCodeStyle =>
             else
             {
                  Snackbar.Add(response.Message, Severity.Error);
-            } 
+            }
         }
         catch (Exception ex)
         {
@@ -679,15 +669,15 @@ private string PhoneResendCodeStyle =>
         var payload = new
         {  
             email = _model.EmailAddress,
-        }; 
+        };
         try
         {
-            var response = await Api.PostAsync<object, object >("auth/verify-email-request", payload); 
+            var response = await Api.PostAsync<object, object >("auth/verify-email-request", payload);
              if (response?.StatusCode == 200)
             {
                 Snackbar.Add(response?.Message, Severity.Success);
                 showEmailVerificationBox = true;
-                 await InvokeAsync(StateHasChanged); 
+                 await InvokeAsync(StateHasChanged);
             }
             else
             {
@@ -702,26 +692,27 @@ private string PhoneResendCodeStyle =>
             _emailVerifying = false;
         }
     }
-
+ 
     private async Task OnVerifyPhoneClicked()
     {
         _phoneVerifying = true;
         var payload = new
         {  
             phoneNumber = _model.MobileNumber,
-        }; 
+        };
         try
         {
-            var response = await Api.PostAsync<object, object>("auth/verify-phone-request", payload); 
+            var response = await Api.PostAsync<object, object>("auth/verify-phone-request", payload);
             if (response?.StatusCode == 200)
             {
                 Snackbar.Add(response?.Message, Severity.Success);
-                 await InvokeAsync(StateHasChanged); 
+                showPhoneVerificationBox = true;
+                await InvokeAsync(StateHasChanged);
             }
             else
             {
                     Snackbar.Add(response?.Message, Severity.Error);
-            } 
+            }
         }
         catch (Exception ex)
         {
@@ -730,59 +721,47 @@ private string PhoneResendCodeStyle =>
         finally{
              _phoneVerifying = false;
         }
-    } 
-
-private void CloseSuccessPopup()
-{
-    signUpSucesss = false;
-    NavManager.NavigateTo("/login");
-
-}
+    }
+ 
+    private void CloseSuccessPopup()
+    {
+        signUpSucesss = false;
+        NavManager.NavigateTo("/login");
+    }
     public class SignupModel
-{
-    [Required(ErrorMessage = "Username is required.")]
-    public string UserName { get; set; }
-
-    [Required(ErrorMessage = "First name is required.")]
-    [RegularExpression("^[A-Za-z]+$", ErrorMessage = "First name must contain only alphabets.")]
-    public string FirstName { get; set; }
-
-    [Required(ErrorMessage = "Last name is required.")]
-    [RegularExpression("^[A-Za-z]+$", ErrorMessage = "Last name must contain only alphabets.")]
-    public string LastName { get; set; }
-
-    public string EmailAddress { get; set; }
-
-    public string MobileNumber { get; set; }
-
-    public string Gender { get; set; }
-
-    [Required(ErrorMessage = "Date of birth is required.")]
-    public DateTime? DateOfBirth { get; set; } = DateTime.Today;
-
-    [Required(ErrorMessage = "Password is required.")]
-    [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", 
+    {
+        [Required(ErrorMessage = "Username is required.")]
+        public string UserName { get; set; }
+        [Required(ErrorMessage = "First name is required.")]
+        [RegularExpression("^[A-Za-z]+$", ErrorMessage = "First name must contain only alphabets.")]
+        public string FirstName { get; set; }
+        [Required(ErrorMessage = "Last name is required.")]
+        [RegularExpression("^[A-Za-z]+$", ErrorMessage = "Last name must contain only alphabets.")]
+        public string LastName { get; set; }
+        public string EmailAddress { get; set; }
+        public string MobileNumber { get; set; }
+        public string Gender { get; set; }
+        [Required(ErrorMessage = "Date of birth is required.")]
+        public DateTime? DateOfBirth { get; set; } = DateTime.Today;
+        [Required(ErrorMessage = "Password is required.")]
+        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$",
         ErrorMessage = "Password must contain at least one uppercase letter, one lowercase letter, one number, one special character, and no whitespace.")]
     public string Password { get; set; }
-
     [Required(ErrorMessage = "Nationality is required.")]
     public string Nationality { get; set; }
-
     public string LanguagePreferences { get; set; }
-
     public string Location { get; set; }
-
     public bool AgreeToTerms { get; set; } = false;
-}
-
+    }
+ 
     private async Task<List<CountryModel>> FetchCountriesAsync()
     {
         try
         {
             var response = await Http.GetStringAsync("https://restcountries.com/v3.1/all");
-
+ 
             var countriesJson = JsonSerializer.Deserialize<List<JsonElement>>(response);
-
+ 
             foreach (var country in countriesJson)
 {
     if (country.TryGetProperty("name", out var nameDict) &&
@@ -791,7 +770,7 @@ private void CloseSuccessPopup()
         string name = nameElement.GetString();
         string code = "N/A";
         string flag = "";
-
+ 
         if (country.TryGetProperty("idd", out var idd))
         {
             if (idd.TryGetProperty("root", out var rootElement) &&
@@ -805,13 +784,13 @@ private void CloseSuccessPopup()
                 }
             }
         }
-
+ 
         if (country.TryGetProperty("flags", out var flags) &&
             flags.TryGetProperty("png", out var flagElement))
         {
             flag = flagElement.GetString();
         }
-
+ 
         countryList.Add(new CountryModel
         {
             Name = name,
@@ -825,7 +804,7 @@ private void CloseSuccessPopup()
         {
             Console.WriteLine("Error fetching countries: " + ex.Message);
         }
-
+ 
         return countryList.OrderBy(c => c.Name).ToList();;
     }
     private string ValidatePhoneFormat(string value)
@@ -856,10 +835,10 @@ private string ValidateConfirmPassword(string value)
 {
     if (string.IsNullOrWhiteSpace(value))
         return "Please confirm your password.";
-
-    if (value != _model.Password) 
+ 
+    if (value != _model.Password)
         return "Passwords do not match.";
-
+ 
     return null;
 }
 private void OnAgreeToTermsChanged(bool value)
@@ -880,7 +859,7 @@ private void OnAgreeToTermsChanged(bool value)
                 if (response?.StatusCode == 200)
                 {
                     showVerificationSuccess =  true;
-                    showEmailVerificationBox = false; 
+                    showEmailVerificationBox = false;
                     Snackbar.Add(response?.Message, Severity.Success);
                 }
                 else
@@ -894,7 +873,7 @@ private void OnAgreeToTermsChanged(bool value)
         }
         finally
         {
-            _emailCodeVerifying = false; 
+            _emailCodeVerifying = false;
         }
     }
     private async Task VerifyPhoneCode()
@@ -904,10 +883,14 @@ private void OnAgreeToTermsChanged(bool value)
         {   
               var body = new { phoneNumber = _model.MobileNumber, otp = _phoneVerificationCode };
                 var response = await Api.PostAsync<object, object>("auth/verify-phone-otp", body);
+                    Console.Write("api hitted");
+                    Console.Write(response.Message);
+                    Console.Write(response.StatusCode);
                 if (response?.StatusCode == 200)
                 {
                     showMobileVerificationSuccess = true;
                     showPhoneVerificationBox = false;
+                    Console.Write(response);
                     Snackbar.Add(response?.Message, Severity.Success);
                 }
                 else
@@ -951,20 +934,20 @@ private async void TriggerPhoneCodeResend()
     StartResendTimer();
     await OnVerifyPhoneClicked();
 }
- private void StartResendTimer()
+private void StartResendTimer()
 {
     if (resendType == "email"){
         _canResend = false;
         resendCountdown = 60;
          _resendTimer?.Stop();
         _resendTimer?.Dispose();
-        _resendTimer = new System.Timers.Timer(1000); 
+        _resendTimer = new System.Timers.Timer(1000);
         _resendTimer.Elapsed += (sender, e) =>
         {
             if (resendCountdown > 0)
             {
                 resendCountdown--;
-                InvokeAsync(StateHasChanged); 
+                InvokeAsync(StateHasChanged);
             }
             else
             {
@@ -980,13 +963,13 @@ private async void TriggerPhoneCodeResend()
         resendPhoneCountdown = 60;
          _resendPhoneTimer?.Stop();
         _resendPhoneTimer?.Dispose();
-       _resendPhoneTimer = new System.Timers.Timer(1000); 
+       _resendPhoneTimer = new System.Timers.Timer(1000);
         _resendPhoneTimer.Elapsed += (sender, e) =>
         {
             if (resendPhoneCountdown > 0)
             {
                 resendPhoneCountdown--;
-                InvokeAsync(StateHasChanged); 
+                InvokeAsync(StateHasChanged);
             }
             else
             {
@@ -998,9 +981,9 @@ private async void TriggerPhoneCodeResend()
         _resendPhoneTimer.Start();
     }
 }
-
+ 
 }
-
+ 
 <style>
     .popup-overlay {
     position: fixed;
@@ -1008,8 +991,8 @@ private async void TriggerPhoneCodeResend()
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(120, 120, 120, 1); 
-    backdrop-filter: blur(8px); 
+    background-color: rgba(120, 120, 120, 1);
+    backdrop-filter: blur(8px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1025,7 +1008,7 @@ private async void TriggerPhoneCodeResend()
     background-color: var(--color-secondary-background);
     padding: 32px 16px;
 }
-
+ 
 .form-wrapper {
     max-width: 400px;
     margin: 0 auto;
@@ -1051,11 +1034,11 @@ private async void TriggerPhoneCodeResend()
     border: 1px solid red !important;
     border-radius: 6px;
 }
-
+ 
 .custom-checkbox .label-text {
     color: inherit;
 }
-
+ 
 .success-text {
     font-weight: 400;
     color: var(--color-text-green);
@@ -1065,7 +1048,7 @@ private async void TriggerPhoneCodeResend()
     color: white;
     min-width: 70px;
 }
-
+ 
 .verify-button:disabled {
     opacity: 0.5;  
 }
@@ -1133,7 +1116,7 @@ private async void TriggerPhoneCodeResend()
     margin-top: 20px;
 }
 .custom-progress-color circle {
-    stroke: var(--color-accent); 
+    stroke: var(--color-accent);
     stroke-width: 4px;
 }
 .resend-code:hover {
