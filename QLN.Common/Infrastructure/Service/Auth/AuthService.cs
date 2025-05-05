@@ -150,7 +150,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     EmailConfirmed = true,
                     PhoneNumberConfirmed = true,
                     TwoFactorEnabled = request.TwoFactorEnabled,
-                    Isactive = true,
+                    IsActive = true,
                     SecurityStamp = Guid.NewGuid().ToString(),
                     CreatedAt = DateTime.UtcNow,
 
@@ -212,7 +212,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 {
                     return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid email format."));
                 }
-                var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email && u.Isactive == true);
+                var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email && u.IsActive == true);
                 if (existingUser != null)
                 {
                     return TypedResults.BadRequest(ApiResponse<string>.Fail("Email already registered"));
@@ -287,7 +287,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 {
                     return TypedResults.Ok(ApiResponse<string>.Success("OTP bypassed."));
                 }
-                var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber && u.Isactive == true);
+                var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber && u.IsActive == true);
                 if (existingUser != null)
                 {
                     return TypedResults.BadRequest(ApiResponse<string>.Fail("Phone number already registered."));
