@@ -82,16 +82,19 @@
                     <MudButton Variant="Variant.Outlined"
                                Color="Color.Warning"
                                StartIcon="@Icons.Material.Filled.AccountCircle"
-                               Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;"
-                               OnClick="@GoToProfile">
+                               Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
+                               OnClick="@GoToProfile"
+                               Class="no-capitalize">
+
                         My Profile
                     </MudButton>
 
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Warning"
                                StartIcon="@Icons.Material.Filled.Logout"
-                               Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;"
-                               OnClick="@Logout">
+                               Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
+                               OnClick="@Logout"
+                               Class="no-capitalize">
                         Logout
                     </MudButton>
                 }
@@ -100,16 +103,18 @@
                     <MudButton Variant="Variant.Outlined"
                                Color="Color.Warning"
                                StartIcon="@Icons.Material.Filled.Login"
-                               Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;"
-                               OnClick="@(() => NavManager.NavigateTo("/login"))">
+                               Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
+                               OnClick="@(() => NavManager.NavigateTo("/login"))"
+                               Class="no-capitalize">
                         Login
                     </MudButton>
 
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Warning"
                                StartIcon="@Icons.Material.Filled.PersonAdd"
-                               Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;"
-                               OnClick="@(() => NavManager.NavigateTo("/signup"))">
+                               Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
+                               OnClick="@(() => NavManager.NavigateTo("/signup"))"
+                               Class="no-capitalize">
                         Sign Up
                     </MudButton>
                 }
