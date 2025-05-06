@@ -4,6 +4,7 @@ using QLN.MAUI.App.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Security.Claims;
+using QLN.Web.Shared;
 
 namespace QLN.MAUI.App;
 
@@ -30,26 +31,13 @@ public static class MauiProgram
         builder.Logging.AddDebug();
 #endif
 
-        //return builder.Build();
-
         builder.Services.AddCascadingAuthenticationState();
         builder.Services.AddAuthorizationCore();
         builder.Services.TryAddScoped<AuthenticationStateProvider, ExternalAuthStateProvider>();
-        builder.Services.AddSingleton<AuthenticatedUser>();
-        var host = builder.Build();
 
-        var authenticatedUser = host.Services.GetRequiredService<AuthenticatedUser>();
+        builder.Services.AddWebSharedServices(builder.Configuration);
 
-        /*
-        Provide OpenID/MSAL code to authenticate the user. See your identity provider's 
-        documentation for details.
+        return builder.Build();
 
-        The user is represented by a new ClaimsPrincipal based on a new ClaimsIdentity.
-        */
-        var user = new ClaimsPrincipal(new ClaimsIdentity());
-
-        authenticatedUser.Principal = user;
-
-        return host;
     }
 }

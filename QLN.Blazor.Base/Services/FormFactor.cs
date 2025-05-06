@@ -1,6 +1,6 @@
 using QLN.Web.Shared.Services;
 
-namespace QLN.MAUI.App.Web.Services;
+namespace QLN.Blazor.Base.Services;
 
 public class FormFactor : IFormFactor
 {
