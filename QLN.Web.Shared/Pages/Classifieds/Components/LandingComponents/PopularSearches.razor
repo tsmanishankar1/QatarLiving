@@ -1,8 +1,8 @@
 @using MudBlazor
-
+ 
 <div class="ps-section">
     <MudText Typo="Typo.h6" Class="ps-title">Popular searches</MudText>
-
+ 
     @foreach (var faq in faqs)
     {
         <MudPaper Class="@($"ps-item {(faq.Expanded ? "expanded" : "")}")" Elevation="0">
@@ -13,7 +13,7 @@
                        OnClick="@(() => ToggleFaq(faq))">
                 <MudText Typo="Typo.subtitle1">@faq.Question</MudText>
             </MudButton>
-
+ 
             <MudCollapse Expanded="@faq.Expanded">
                 <div class="ps-columns">
                     @foreach (var location in faq.AnswerList)
@@ -25,20 +25,20 @@
         </MudPaper>
     }
 </div>
-
+ 
 <style>
     .ps-section {
         padding: 2rem 1rem;
         background-color: var(--color-secondary-background);
     }
-
+ 
     .ps-title {
         font-weight: 600;
         color:var(--color-text-secondary);
         margin-bottom: 2rem;
         text-align: center;
     }
-
+ 
     .ps-item {
         margin-bottom: 8px;
         border-radius: 4px;
@@ -46,11 +46,11 @@
         background-color: var(--color-secondary-background);
         transition: background-color 0.3s ease;
     }
-
+ 
     .ps-item.expanded {
         background-color: var(--color-secondary-background);
     }
-
+ 
     .ps-question {
         padding: 1rem;
         justify-content: space-between;
@@ -59,12 +59,12 @@
         background-color: transparent;
         transition: background-color 0.3s ease;
     }
-
+ 
     .ps-question:hover,
     .ps-question.expanded {
         background-color: var(--color-background-secondary-grey);
     }
-
+ 
     .ps-columns {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -72,30 +72,30 @@
         gap: 0.5rem 2rem;
         background-color: var(--color-secondary-background);
     }
-
+ 
     .ps-link {
         font-size: 0.9rem;
         color: #004080;
         text-decoration: none;
     }
-
+ 
     .ps-link:hover {
         text-decoration: underline;
     }
-
+ 
     @@media (max-width: 768px) {
         .ps-columns {
             grid-template-columns: repeat(2, 1fr);
         }
     }
-
+ 
     @@media (max-width: 480px) {
         .ps-columns {
             grid-template-columns: 1fr;
         }
     }
 </style>
-
+ 
 @code {
     private List<FAQItem> faqs = new()
     {
@@ -120,12 +120,12 @@
             AnswerList = new() { "Compounds in West Bay", "Compounds in Pearl", "Compounds in Lusail" }
         }
     };
-
+ 
     private void ToggleFaq(FAQItem faq)
     {
         faq.Expanded = !faq.Expanded;
     }
-
+ 
     public class FAQItem
     {
         public string Question { get; set; }
