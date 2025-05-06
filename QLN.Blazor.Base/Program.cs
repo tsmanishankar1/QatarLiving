@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services;
-using QLN.Common.Infrastructure.Model;
 using QLN.Web.Shared.Pages;
 
 var builder = WebApplication.CreateBuilder(args);

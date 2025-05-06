@@ -17,8 +17,8 @@ namespace QLN.Web.Shared
         {
             services.AddMudServices();
             services.AddSingleton<UserState>();
-            services.Configure<ApiSettings>(
-                configuration.GetSection("ApiSettings"));
+            var section = configuration.GetSection("ApiSettings");
+            services.Configure<ApiSettings>(o => o.BaseUrl = section.Value);
             services.AddHttpClient<ApiService>();
 
 
