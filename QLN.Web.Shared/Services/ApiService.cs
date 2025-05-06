@@ -13,7 +13,7 @@ namespace QLN.Web.Shared.Services
         public ApiService(HttpClient http, IOptions<ApiSettings> options)
         {
             _http = http ?? throw new ArgumentNullException(nameof(HttpClient));
-            _baseUrl = options.Value.BaseUrl.TrimEnd('/') ?? "https://localhost:7761";
+            _baseUrl = options.Value.BaseUrl?.TrimEnd('/') ?? "https://localhost:7761";
         }
 
         public async Task<T?> GetAsync<T>(string endpoint)
