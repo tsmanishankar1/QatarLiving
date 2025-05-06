@@ -20,6 +20,7 @@
 @using System.Text.Json;
 @inject IDialogService DialogService
 @inject HttpClient Http
+@inject IWebHostEnvironment Env
  
  
 @if (signUpSucesss){
@@ -93,7 +94,7 @@
               Disabled="showVerificationSuccess"
               FullWidth="true"
               Immediate="true"
-              Class="phone-input" />
+              Class="phone-input mobile-input" />
         @if (showVerificationSuccess)
         {
             <MudText Typo="Typo.body1" Class="success-text">
@@ -138,7 +139,7 @@
               MaxLength="6"
               FullWidth="true"
               Immediate="true"
-              Class="phone-input" />
+              Class="mobile-input" />
  
  
     <div class="verify-container">
@@ -152,7 +153,7 @@
         {
              <MudButton Variant="Variant.Filled"
            Loading="@_emailCodeVerifying"
-           Disabled="@(!IsCodeValid(_emailVerificationCode) && !ValidationHelper.IsValidEmail(_model.EmailAddress))"
+           Disabled="@(!IsCodeValid(EmailVerificationCode) || !ValidationHelper.IsValidEmail(_model.EmailAddress))"
            OnClick="VerifyEmailCode"
            Class="verify-button">
             <MudText Typo="Typo.button"  Class="verify-button-text">Check</MudText>
@@ -193,9 +194,8 @@
     <div class="phone-flex">
        <MudSelect T="CountryModel"
                    @bind-Value="SelectedCountry"
-                   Class="country-select"
+                   Class="country-select mobile-input"
                    DisableUnderline="true"
-                   Label="Select Country"
                    Disabled="@showMobileVerificationSuccess"
                    Searchable="true">
             <MudSelectItem Value="@SelectedCountry">
@@ -218,7 +218,6 @@
         <MudTextField T="string"
                       For="@(() => _model.MobileNumber)"
                       ValueChanged="OnMobileNumberChanged"
-                       Label="Phone Number*"
                        Disabled="showMobileVerificationSuccess"
                       MaxLength="15"
                       FullWidth="true"
@@ -268,7 +267,7 @@
               MaxLength="6"
               FullWidth="true"
               Immediate="true"
-              Class="phone-input" />
+              Class="phone-input mobile-input" />
     <div class="verify-container">
         @if (_phoneCodeVerifying)
         {
@@ -280,7 +279,7 @@
         {
              <MudButton Variant="Variant.Filled"
            Loading="@_phoneCodeVerifying"
-           Disabled="@(!IsCodeValid(_phoneVerificationCode) && !ValidationHelper.IsValidPhoneNumber(_model.MobileNumber))"
+           Disabled="@(!IsCodeValid(_phoneVerificationCode) || !ValidationHelper.IsValidPhoneNumber(_model.MobileNumber))"
            OnClick="VerifyPhoneCode"
            Class="verify-button">
             <MudText Typo="Typo.button"  Class="verify-button-text">Check</MudText>
@@ -325,6 +324,7 @@
                style="background-color: var(--color-background)"
                RequiredError="Date of Birth is required"
                PickerVariant="PickerVariant.Inline"
+               MaxDate="@DateTime.Today.AddDays(-1)"
                Class="mt-1" />
         <MudText Typo="Typo.body1"  Class="label-text">
         Nationality
@@ -504,6 +504,34 @@
     $"cursor: pointer; text-decoration: underline; opacity: {(ValidationHelper.IsValidEmail(_model.EmailAddress) ? "1" : "0.5")}; pointer-events: {(ValidationHelper.IsValidEmail(_model.EmailAddress) ? "auto" : "none")};";
     private string PhoneResendCodeStyle =>
     $"cursor: pointer; text-decoration: underline; opacity: {(ValidationHelper.IsValidPhoneNumber(_model.MobileNumber) ? "1" : "0.5")}; pointer-events: {(ValidationHelper.IsValidPhoneNumber(_model.MobileNumber) ? "auto" : "none")};";
+    private string _emailCodeError {get; set; } = string.Empty;
+    private string _phoneCodeError {get; set; } = string.Empty;
+    private DateTime? _dateOfBirth;
+    private bool _showPassword = false;
+    private bool _showConfirmPassword = false;
+    private bool showVerificationSuccess = false;
+    private bool showMobileVerificationSuccess = false;
+    private bool signUpSucesss = false;
+    private bool showAgreeTermsError = false;
+    private bool _emailVerifying = false;
+    private bool _phoneVerifying = false;
+    private bool _emailCodeVerifying = false;
+    private bool _phoneCodeVerifying = false;
+    private List<CountryModel> countryList = new List<CountryModel>();
+    private bool hasError = true;
+    private string emailErrorMessage =  string.Empty;
+    private string phoneErrorMessage = string.Empty;
+    private string emailCodeErrorMessage = string.Empty;
+    private string phoneCodeErrorMessage = string.Empty;
+    private string _phoneVerificationCode {get; set; } = string.Empty;
+    private List<string> languageOptions = new() { "English", "Arabic", "French", "German" };
+    private CountryModel SelectedCountry { get; set; } = new CountryModel
+    {
+        Name = "Qatar",
+        Code = "+974",
+        Flag = "https://flagcdn.com/w40/qa.png"
+    };
+ 
     private string EmailVerificationCode
     {
         get => _emailVerificationCode;
@@ -524,7 +552,6 @@
             }
         }
     }
-    private string _phoneVerificationCode {get; set; } = string.Empty;
     private string PhoneVerificationCode
     {
         get => _phoneVerificationCode;
@@ -545,25 +572,6 @@
             }
         }
     }
-    private string _emailCodeError {get; set; } = string.Empty;
-    private string _phoneCodeError {get; set; } = string.Empty;
-    private DateTime? _dateOfBirth;
-    private bool _showPassword = false;
-    private bool _showConfirmPassword = false;
-    private bool showVerificationSuccess = false;
-    private bool showMobileVerificationSuccess = false;
-    private bool signUpSucesss = false;
-    private bool showAgreeTermsError = false;
-    private bool _emailVerifying = false;
-    private bool _phoneVerifying = false;
-    private bool _emailCodeVerifying = false;
-    private bool _phoneCodeVerifying = false;
-    private List<CountryModel> countryList = new List<CountryModel>();
-    private bool hasError = true;
-    private string emailErrorMessage =  string.Empty;
-    private string phoneErrorMessage = string.Empty;
-    private string emailCodeErrorMessage = string.Empty;
-    private string phoneCodeErrorMessage = string.Empty;
     protected override async Task OnInitializedAsync()
     {
         countryList = await FetchCountriesAsync();
@@ -584,12 +592,6 @@
            && code.Length == 6
            && code.All(char.IsDigit);
     }    
-    private CountryModel SelectedCountry { get; set; } = new CountryModel
-    {
-        Name = "Qatar",
-        Code = "+974",
-        Flag = "https://flagcdn.com/w40/qa.png"
-    };
     private void OnPasswordInput(ChangeEventArgs e)
     {
         _model.Password = e?.Value?.ToString() ?? string.Empty;
@@ -603,65 +605,68 @@
     {
         _showConfirmPassword = !_showConfirmPassword;
     }
-    private List<string> languageOptions = new() { "English", "Arabic", "French", "German" };
     private async Task SubmitSignup()
     {
-        _loading = true;
-        await _form.Validate();
-        bool hasError = false;
-        if (!ValidationHelper.IsValidEmail(_model.EmailAddress) && !ValidationHelper.IsValidPhoneNumber(_model.MobileNumber)){
-           emailErrorMessage = ValidateEmailFormat(_model.EmailAddress);
-           phoneErrorMessage = ValidatePhoneFormat(_model.MobileNumber);
-            _loading = false;
-            hasError = true;
+    _loading = true;
+    await _form.Validate();
+    bool hasError = false;
+    
+    if (!ValidationHelper.IsValidEmail(_model.EmailAddress) && !ValidationHelper.IsValidPhoneNumber(_model.MobileNumber)){
+        emailErrorMessage = ValidateEmailFormat(_model.EmailAddress);
+        phoneErrorMessage = ValidatePhoneFormat(_model.MobileNumber);
+        _loading = false;
+        hasError = true;
+    }
+    
+    if (!_form.IsValid)
+    {
+        hasError = true;
+    }   
+ 
+    if (hasError){
+        _loading = false;
+        return;
+    }
+ 
+    var payload = new
+    {
+        username = _model.UserName,
+        firstName = _model.FirstName,
+        lastname = _model.LastName,
+        dateofbirth = _dateOfBirth?.ToString("yyyy-MM-dd"),
+        mobileOperator = "vodofone",
+        mobilenumber = _model.MobileNumber,
+        emailaddress = _model.EmailAddress,
+        nationality = _model.Nationality,
+        password = _model.Password,
+        languagepreferences = _model.LanguagePreferences,
+        location = "location",
+        twoFactorEnabled = EnableTwoFactor
+    };
+ 
+    try
+    {
+        var response = await Api.PostAsync<object, ResponseModel<object>>("auth/register", payload);
+        if (response.StatusCode == 200)
+        {
+            UserState.Email = _model.EmailAddress;
+            UserState.mobileNumber = _model.MobileNumber;
+            signUpSucesss = true;
         }
-        if (!_form.IsValid)
+        else
         {
-            hasError = true;
-        }   
-        if (hasError){
-            _loading = false;
-            return;
-        }
-         var payload = new
-        {
-            username = _model.UserName,
-            firstName = _model.FirstName,
-            lastname = _model.LastName,
-            dateofbirth = _dateOfBirth?.ToString("yyyy-MM-dd"),
-            mobileOperator = "vodofone",
-            mobilenumber = _model.MobileNumber,
-            emailaddress = _model.EmailAddress,
-            nationality = _model.Nationality,
-            password = _model.Password,
-            languagepreferences = _model.LanguagePreferences,
-            location = "location",
-            twoFactorEnabled = EnableTwoFactor
-        };
-        try
-        {
-            Console.WriteLine(payload);
-            var response = await Api.PostAsync<object, ResponseModel<object> >("auth/register", payload);
-            if (response.StatusCode == 200)
-            {
-                UserState.Email = _model.EmailAddress;
-                UserState.mobileNumber = _model.MobileNumber;
-                signUpSucesss = true;
-            }
-            else
-            {
-                 Snackbar.Add(response.Message, Severity.Error);
-            }
-        }
-        catch (Exception ex)
-        {
-           Snackbar.Add(ex.Message, Severity.Error);
-        }
-        finally
-        {
-            _loading = false;
+            Snackbar.Add(response.Message, Severity.Error);
         }
     }
+    catch (Exception ex)
+    {
+        Snackbar.Add($"An error occurred: {ex.Message}", Severity.Error);
+    }
+    finally
+    {
+        _loading = false;
+    }
+}
     
     private async Task OnVerifyEmailClicked()
     {
@@ -755,58 +760,61 @@
     }
  
     private async Task<List<CountryModel>> FetchCountriesAsync()
-    {
-        try
-        {
-            var response = await Http.GetStringAsync("https://restcountries.com/v3.1/all");
- 
-            var countriesJson = JsonSerializer.Deserialize<List<JsonElement>>(response);
- 
-            foreach (var country in countriesJson)
 {
-    if (country.TryGetProperty("name", out var nameDict) &&
-        nameDict.TryGetProperty("common", out var nameElement))
+    var countryList = new List<CountryModel>();
+    try
     {
-        string name = nameElement.GetString();
-        string code = "N/A";
-        string flag = "";
+        var filePath = Path.Combine(Env.WebRootPath, "data", "countries.json");
+        var json = await File.ReadAllTextAsync(filePath);
+        var countriesJson = JsonSerializer.Deserialize<List<JsonElement>>(json);
  
-        if (country.TryGetProperty("idd", out var idd))
+        foreach (var country in countriesJson!)
         {
-            if (idd.TryGetProperty("root", out var rootElement) &&
-                idd.TryGetProperty("suffixes", out var suffixesElement))
+            if (country.TryGetProperty("name", out var nameDict) &&
+                nameDict.TryGetProperty("common", out var nameElement))
             {
-                var root = rootElement.GetString();
-                var suffix = suffixesElement[0].GetString();
-                if (root != null && suffix != null)
+                string name = nameElement.GetString() ?? "Unknown";
+                string code = "N/A";
+                string flag = "";
+ 
+                if (country.TryGetProperty("idd", out var idd))
                 {
-                    code = root + suffix;
+                    if (idd.TryGetProperty("root", out var rootElement) &&
+                        idd.TryGetProperty("suffixes", out var suffixesElement) &&
+                        suffixesElement.ValueKind == JsonValueKind.Array &&
+                        suffixesElement.GetArrayLength() > 0)
+                    {
+                        var root = rootElement.GetString();
+                        var suffix = suffixesElement[0].GetString();
+                        if (!string.IsNullOrWhiteSpace(root) && !string.IsNullOrWhiteSpace(suffix))
+                        {
+                            code = root + suffix;
+                        }
+                    }
                 }
+ 
+                if (country.TryGetProperty("flags", out var flags) &&
+                    flags.TryGetProperty("png", out var flagElement))
+                {
+                    flag = flagElement.GetString() ?? "";
+                }
+ 
+                countryList.Add(new CountryModel
+                {
+                    Name = name,
+                    Code = code,
+                    Flag = flag
+                });
             }
         }
- 
-        if (country.TryGetProperty("flags", out var flags) &&
-            flags.TryGetProperty("png", out var flagElement))
-        {
-            flag = flagElement.GetString();
-        }
- 
-        countryList.Add(new CountryModel
-        {
-            Name = name,
-            Code = code,
-            Flag = flag ?? ""
-        });
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error loading countries: {ex.Message}");
+    }
+ 
+    return countryList;
 }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("Error fetching countries: " + ex.Message);
-        }
- 
-        return countryList.OrderBy(c => c.Name).ToList();;
-    }
     private string ValidatePhoneFormat(string value)
 {
     if (string.IsNullOrWhiteSpace(value))
@@ -1000,8 +1008,9 @@ private void StartResendTimer()
 }
 .phone-flex {
     display: flex;
-    @* align-items: flex-start;
-    gap: 16px;  *@
+    align-items: center;
+    justify-content: center;
+    gap: 16px; 
 }
 .form-container {
     width: 100%;
@@ -1095,6 +1104,15 @@ private void StartResendTimer()
 .mobile-input {
     text-transform: capitalize;
 }
+.mobile-input .mud-input-root {
+        border-bottom: none !important;
+        box-shadow: none !important;
+    }
+ 
+    .mobile-input .mud-input-underline:before,
+    .mobile-input .mud-input-underline:after {
+        display: none !important;
+    }
 .date-picker {
     background-color:var(--color-text-white);
 }
