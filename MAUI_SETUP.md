@@ -1,4 +1,4 @@
- ## Setting Up VS Code on macOS for MAUI Workload
+## Setting Up VS Code on macOS for MAUI Workload
  
  This guide explains how to configure Visual Studio Code (VS Code) on macOS to run a .NET MAUI (Multi-platform App UI) workload. 
  It assumes that you have followed the tool installation guide in the existing [`README.md`](README.md) file.
@@ -85,9 +85,65 @@
       - For Android: Ensure the emulator is running and select it as the target device.
       - For iOS: Ensure the iOS Simulator is running and select it as the target device.
     - Use the `Run and Debug` panel in VS Code to start the application.
- 
+
+### Refreshing Devices in VS Code
+
+To refresh Android and iOS devices in VS Code:
+
+1. **Android Devices**:
+   - Open the Command Palette (`Cmd+Shift+P` on macOS) and search for `> .NET MAUI: Configure Android`.
+   - Select the `Refresh Android Environment` option from the list.
+   - Ensure the Android Emulator is running or a physical device is connected.
+   - Expect to see the device name appear in the status bar at the bottom of VS Code.
+
+2. **iOS Devices**:
+   1. **iOS Devices**:
+      - Open the Command Palette (`Cmd+Shift+P` on macOS) and search for `> .NET MAUI: Configure Apple`.
+      - Select the `Refresh Apple Environment` option from the list.
+      - Ensure the iOS Simulator is running or a physical device is connected.
+      - Expect to see the simulator name appear in the status bar at the bottom of VS Code.
+      - Select the desired iOS Simulator from the list. If no simulators are listed, ensure Xcode is installed and the simulators are configured.
+      - Expect to see the simulator name appear in the status bar at the bottom of VS Code.
+
+### Adding an Android Device via Command Line
+
+If the `ANDROID_SDK` path is defined, you can add an Android device using the following steps:
+
+1. Open a terminal and navigate to the `platform-tools` directory within the Android SDK:
+
+    ```bash
+    cd $ANDROID_SDK/platform-tools
+    ```
+
+2. Start an Android Emulator:
+
+    ```bash
+    ./emulator -avd <emulator-name>
+    ```
+
+    Replace `<emulator-name>` with the name of the emulator you want to start. You can list available emulators by running:
+
+    ```bash
+    ./emulator -list-avds
+    ```
+
+3. Verify the device is connected:
+
+    ```bash
+    adb devices
+    ```
+
+    You should see the emulator listed as a connected device.
+
+### Using Xcode Simulator
+
+To use an Xcode Simulator:
+
+1. Open Xcode and navigate to `Xcode > Open Developer Tool > Simulator`.
+2. Select the desired simulator from the `Device` menu.
+3. Ensure the simulator is running and visible in the list of devices in VS Code when selecting a target device.
+
  ### Notes
  - Ensure that all dependencies are installed as per the [`README.md`](README.md) file.
  - For iOS development, you must have a valid Apple Developer account to deploy apps to physical devices.
  - For Android development, ensure that the Android Emulator is configured with a compatible API level.
- 
