@@ -132,6 +132,15 @@
 
             if (response?.StatusCode == 200 && response.Data is not null)
             {
+                await JS.InvokeVoidAsync("sessionStorage.setItem", "token", response.Data.AccessToken);
+                await JS.InvokeVoidAsync("sessionStorage.setItem", "username", response.Data.Username);
+                AppState!.Username = response.Data.Username;
+                AppState.Email = response.Data.Emailaddress;
+                AppState.MobileNumber = response.Data.Mobilenumber;
+                AppState.Token = response?.Data?.AccessToken;
+                AppState.NotifyStateChanged();
+                StateHasChanged();
+
                 AppState!.Username = response.Data.Username;
                 AppState.Email = response.Data.Emailaddress;
                 AppState.MobileNumber = response.Data.Mobilenumber;

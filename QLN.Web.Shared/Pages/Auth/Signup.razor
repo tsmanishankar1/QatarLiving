@@ -12,6 +12,7 @@
 @using QLN.Web.Shared.Components.CustomButton
 @using QLN.Web.Shared.Components.ModalDialog
 @using QLN.Web.Shared.Components.PasswordStrengthIndicator
+@inject CountryService CountryService
 @using System.Text.RegularExpressions;
 @using System.Net.Http;
 @using System.Text.Json;
@@ -329,7 +330,6 @@
            Label="Nationality"
            Placeholder="Choose"
            Variant="Variant.Outlined"
-           Required="true"
            Dense="false"
            FullWidth="true"
            style="background-color: var(--color-background)"
@@ -341,6 +341,9 @@
         <MudSelectItem T="string" Value="@country.Name">@country.Name</MudSelectItem>
     }
 </MudSelect>
+<MudText Color="Color.Error" Typo="Typo.caption" Class="mt-1">
+        @nationalityErrorMessage
+    </MudText>
 <MudText Typo="Typo.body1"  Class="label-text">
         Language
         </MudText>
@@ -520,6 +523,7 @@
     private string phoneErrorMessage = string.Empty;
     private string emailCodeErrorMessage = string.Empty;
     private string phoneCodeErrorMessage = string.Empty;
+    private string nationalityErrorMessage = string.Empty;
     private string _phoneVerificationCode {get; set; } = string.Empty;
     private List<string> languageOptions = new() { "English", "Arabic", "French", "German" };
     private CountryModel SelectedCountry { get; set; } = new CountryModel
@@ -571,7 +575,7 @@
     }
     protected override async Task OnInitializedAsync()
     {
-        countryList = await FetchCountriesAsync();
+        countryList = await CountryService.FetchCountriesAsync();
     }
     private async Task OnEmailChanged(string value)
     {
@@ -612,6 +616,11 @@
         emailErrorMessage = ValidateEmailFormat(_model.EmailAddress);
         phoneErrorMessage = ValidatePhoneFormat(_model.MobileNumber);
         _loading = false;
+        hasError = true;
+    }
+    if (string.IsNullOrWhiteSpace(_model.Nationality))
+    {
+        nationalityErrorMessage = "Nationality is requried";
         hasError = true;
     }
     
@@ -757,12 +766,13 @@
     private async Task<List<CountryModel>> FetchCountriesAsync()
 {
     var countryList = new List<CountryModel>();
+
     try
     {
-        var filePath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "data", "countries.json");
-        var json = await File.ReadAllTextAsync(filePath);
+        // Load JSON from wwwroot/data/countries.json
+        var json = await Http.GetStringAsync("data/countries.json");
         var countriesJson = JsonSerializer.Deserialize<List<JsonElement>>(json);
- 
+
         foreach (var country in countriesJson!)
         {
             if (country.TryGetProperty("name", out var nameDict) &&
@@ -771,7 +781,7 @@
                 string name = nameElement.GetString() ?? "Unknown";
                 string code = "N/A";
                 string flag = "";
- 
+
                 if (country.TryGetProperty("idd", out var idd))
                 {
                     if (idd.TryGetProperty("root", out var rootElement) &&
@@ -787,13 +797,13 @@
                         }
                     }
                 }
- 
+
                 if (country.TryGetProperty("flags", out var flags) &&
                     flags.TryGetProperty("png", out var flagElement))
                 {
                     flag = flagElement.GetString() ?? "";
                 }
- 
+
                 countryList.Add(new CountryModel
                 {
                     Name = name,
@@ -807,7 +817,7 @@
     {
         Console.WriteLine($"Error loading countries: {ex.Message}");
     }
- 
+
     return countryList;
 }
     private string ValidatePhoneFormat(string value)
@@ -850,6 +860,19 @@ private void OnAgreeToTermsChanged(bool value)
     if (_model.AgreeToTerms)
     {
         showAgreeTermsError = false;
+    }
+}
+private void OnNationalityChanged(string value)
+{
+    _model.Nationality = value;
+
+    if (string.IsNullOrWhiteSpace(value))
+    {
+        nationalityErrorMessage = "Nationality is required.";
+    }
+    else
+    {
+        nationalityErrorMessage = string.Empty;
     }
 }
     private async Task VerifyEmailCode()
