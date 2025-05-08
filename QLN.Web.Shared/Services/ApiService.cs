@@ -10,11 +10,12 @@ namespace QLN.Web.Shared.Services
     {
         private readonly HttpClient _http;
         private readonly string _baseUrl;
-        public ApiService(HttpClient http, IOptions<ApiSettings> options)
+          public ApiService(HttpClient http, IOptions<ApiSettings> options)
         {
-            _http = http ?? throw new ArgumentNullException(nameof(HttpClient));
-            _baseUrl = options.Value.BaseUrl?.TrimEnd('/') ?? "https://localhost:7761";
+            _http = http;
+            _baseUrl = options.Value.BaseUrl.TrimEnd('/');
         }
+
 
         public async Task<T?> GetAsync<T>(string endpoint)
         {

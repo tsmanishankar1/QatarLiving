@@ -4,7 +4,6 @@
 @inject ApiService Api
 @using QLN.Web.Shared.Services
 @using QLN.Web.Shared.Components
-@inject UserState UserState
 @using MudBlazor
 @using QLN.Web.Shared.Helpers
 @using MudBlazor.Components
@@ -477,6 +476,7 @@
  
  
 @code {
+    [CascadingParameter] public GlobalAppState? AppState { get; set; }
     private MudForm _form;
     private SignupModel _model = new();
     private bool _loading = false;
@@ -645,9 +645,7 @@
     {
         var response = await Api.PostAsync<object, ResponseModel<object>>("auth/register", payload);
         if (response.StatusCode == 200)
-        {
-            UserState.Email = _model.EmailAddress;
-            UserState.mobileNumber = _model.MobileNumber;
+        {            
             signUpSucesss = true;
         }
         else
