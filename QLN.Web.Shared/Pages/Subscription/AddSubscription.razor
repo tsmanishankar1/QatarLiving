@@ -1,0 +1,181 @@
+﻿@page "/add-subscription"
+@inject ISnackbar Snackbar
+
+@using MudBlazor
+@using QLN.Web.Shared.Models
+
+<MudPaper Class="pa-6" Elevation="1" Style="max-width: 800px; margin: 0 auto; font-family: 'Public Sans';">
+    <div class="mb-6" style="border-bottom: 1px solid #e5e7eb; padding-bottom: 1rem;">
+        <MudText Typo="Typo.h5" Style="color: #242424; font-weight: 600;">Add Subscription</MudText>
+    </div>
+
+    <MudForm Model="@subscriptionModel" @ref="form">
+        <MudGrid>
+            <!-- Subscription Name -->
+            <MudItem xs="12" md="6" Class="pa-2">
+                <MudTextField Label="Subscription Name*" 
+                             @bind-Value="subscriptionModel.SubscriptionName"
+                             Variant="Variant.Outlined"
+                             For="@(() => subscriptionModel.SubscriptionName)"
+                             Immediate="true"
+                             Style="color: #242424;"
+                             Class="mb-4"/>
+            </MudItem>
+
+            <!-- Price & Currency -->
+            <MudItem xs="12" md="3" Class="pa-2">
+                <MudTextField Label="Price*" 
+                             @bind-Value="subscriptionModel.Price"
+                             Variant="Variant.Outlined"
+                             For="@(() => subscriptionModel.Price)"
+                             Immediate="true"
+                             Style="color: #242424;"
+                             Class="mb-4"/>
+            </MudItem>
+
+            <MudItem xs="12" md="3" Class="pa-2">
+                <MudSelect Label="Currency*" 
+                          @bind-Value="subscriptionModel.Currency"
+                          Variant="Variant.Outlined"
+                          For="@(() => subscriptionModel.Currency)"
+                          Immediate="true"
+                          Style="color: #242424;"
+                          Class="mb-4">
+                    <MudSelectItem Value="@("QAR")">QAR</MudSelectItem>
+                    <MudSelectItem Value="@("USD")">USD</MudSelectItem>
+                    <MudSelectItem Value="@("EUR")">EUR</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+
+            <!-- Duration -->
+            <MudItem xs="12" md="6" Class="pa-2">
+                <MudSelect Label="Duration*" 
+                          @bind-Value="subscriptionModel.Duration"
+                          Variant="Variant.Outlined"
+                          For="@(() => subscriptionModel.Duration)"
+                          Immediate="true"
+                          Style="color: #242424;"
+                          Class="mb-4">
+                    <MudSelectItem Value="@("Month")">1 Month</MudSelectItem>
+                    <MudSelectItem Value="@("threeMonths")">3 Months</MudSelectItem>
+                    <MudSelectItem Value="@("sixMonths")">6 Months</MudSelectItem>
+                    <MudSelectItem Value="@("oneYear")">1 Year</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+
+            <!-- Vertical Type -->
+            <MudItem xs="12" md="6" Class="pa-2">
+                <MudSelect Label="Vertical Type*"
+                           Variant="Variant.Outlined"
+                           Value="@subscriptionModel.VerticalType"
+                           ValueChanged="@(EventCallback.Factory.Create<string>(this, OnVerticalTypeChanged))"
+                           Immediate="true"
+                           Style="color: #242424;"
+                           Class="mb-4">
+                    <MudSelectItem Value="@("Classified")">Classified</MudSelectItem>
+                    <MudSelectItem Value="@("Properties")">Properties</MudSelectItem>
+                    <MudSelectItem Value="@("Vehicles")">Vehicles</MudSelectItem>
+                    <MudSelectItem Value="@("Service")">Service</MudSelectItem>
+                    <MudSelectItem Value="@("Jobs")">Jobs</MudSelectItem>
+                    <MudSelectItem Value="@("Reward")">Reward</MudSelectItem>
+
+                </MudSelect>
+            </MudItem>
+
+            <!-- Sub Category (Conditional) -->
+            @if (showSubCategory)
+            {
+                <MudItem xs="12" md="6" Class="pa-2">
+                    <MudSelect Label="Sub Category*" 
+                              @bind-Value="subscriptionModel.SubCategory"
+                              Variant="Variant.Outlined"
+                              For="@(() => subscriptionModel.SubCategory)"
+                              Immediate="true"
+                              Style="color: #242424;"
+                              Class="mb-4">
+                        @foreach (var item in GetSubCategories())
+                        {
+                            <MudSelectItem Value="@item">@item</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            }
+
+            <!-- Description -->
+            <MudItem xs="12" Class="pa-2">
+                <MudTextField Label="Description" 
+                             @bind-Value="subscriptionModel.Description"
+                             Variant="Variant.Outlined"
+                             Lines="3"
+                             Style="color: #242424;"
+                             Class="mb-4"/>
+            </MudItem>
+
+        </MudGrid>
+
+        <!-- Save Button -->
+        <div class="mt-6" style="display: flex; justify-content: flex-end;">
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Primary" 
+                       Style="background-color: #00426D; color: white;"
+                       OnClick="@(() => SaveSubscription())">
+                Save
+            </MudButton>
+        </div>
+    </MudForm>
+</MudPaper>
+
+@code {
+    // private SubscriptionModel subscriptionModel = new();
+    private SubscriptionModel subscriptionModel = new SubscriptionModel();
+
+    private MudForm form;
+    private bool showSubCategory = false;
+    private void OnVerticalTypeChanged(string newValue)
+    {
+        subscriptionModel.VerticalType = newValue;
+        showSubCategory = !string.IsNullOrEmpty(newValue);
+        subscriptionModel.SubCategory = null;
+    }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            subscriptionModel.PropertyChanged += (sender, e) =>
+            {
+                if (e.PropertyName == nameof(SubscriptionModel.VerticalType))
+                {
+                    showSubCategory = !string.IsNullOrEmpty(subscriptionModel.VerticalType);
+                    subscriptionModel.SubCategory = null; 
+                    StateHasChanged(); 
+                }
+            };
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private List<string> GetSubCategories()
+    {
+        return subscriptionModel.VerticalType switch
+        {
+            "Classified" => new List<string> { "Deals", "Store", "Preloved" },
+            "Properties" => new List<string> { "Residential", "Commercial", "Vacation" },
+            "Vehicles" => new List<string> { "Cars", "Motorcycles", "Boats" },
+            _ => new List<string>()
+        };
+    }
+
+    private async Task SaveSubscription()
+    {
+        await form.Validate();
+        if (form.IsValid)
+        {
+            Console.WriteLine("Subscription saved: " + System.Text.Json.JsonSerializer.Serialize(subscriptionModel));
+            Snackbar.Add("Subscription added successfully!", Severity.Success);
+        }
+    }
+
+   
+}

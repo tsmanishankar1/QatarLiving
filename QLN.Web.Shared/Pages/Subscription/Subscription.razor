@@ -1,0 +1,140 @@
+﻿@page "/subscription"
+@page "/subscription/{type}"
+
+@using QLN.Web.Shared.Components.BreadCrumb
+@using QLN.Web.Shared.Models
+@using MudBlazor
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-6 px-4" Style="background-color: #F2F4F7;">
+    <!-- Breadcrumb + Title -->
+    <Breadcrumb Items="breadcrumbItems" />
+
+    <MudGrid GutterSize="4">
+        <!-- LEFT SECTION -->
+        <MudItem xs="12" md="9">
+            <div style="max-width: 800px; margin: 0 auto;">
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <MudText Typo="Typo.h5" Class="font-semibold mb-1" Style="color:#242424;">
+                        Classifieds Subscriptions
+                    </MudText>
+                    <MudText Typo="Typo.subtitle1" Class="mb-4" Style="color:#646464;">
+                        Promote smarter. Sell quicker. Stay visible longer
+                    </MudText>
+                </div>
+              
+                <MudTabs @bind-ActivePanelIndex="_activeTabIndex"
+                         Elevation="2" Rounded="true"  PanelClass="pa-6"
+                         Class="custom-tab">
+                    <MudTabPanel Text="Deals" Icon="@Icons.Material.Filled.LocalOffer" />
+                    <MudTabPanel Text="Stores" Icon="@Icons.Material.Filled.Store" />
+                    <MudTabPanel Text="Preloved" Icon="@Icons.Material.Filled.Recycling" />
+                </MudTabs>
+
+
+
+                <!-- Card Grid -->
+                <MudGrid GutterSize="4">
+                    @foreach (var plan in GetFilteredPlans())
+                    {
+                        <MudItem xs="12" sm="6" md="4">
+                            <SubscriptionCard Plan="plan"
+                                              IsSelected="_selectedPlan == plan"
+                                              OnSelect="() => SelectPlan(plan)" />
+                        </MudItem>
+                    }
+                </MudGrid>
+            </div>
+        </MudItem>
+
+        <!-- RIGHT SECTION -->
+        <MudItem xs="12" md="3">
+            <!-- Summary Card -->
+            <MudPaper   Style="@CardStyle" Elevation="2">
+                <MudText Typo="Typo.h6" Class="mb-2">Summary</MudText>
+                @if (_selectedPlan != null)
+                {
+                    <MudText>Plan: @_selectedPlan.Duration</MudText>
+                    <MudText>Price: @_selectedPlan.Price</MudText>
+                }
+                else
+                {
+                    <MudText>No plan selected.</MudText>
+                }
+
+                <MudDivider Class="my-2" />
+                <MudText Class="font-bold mt-2">Total: @(_selectedPlan?.Price ?? "0")</MudText>
+
+        <MudBox Class="mt-4" Style="width: 100%;display: flex; justify-content:center;align-items:center">
+        <MudButton
+        Class="font-semibold"
+        Style="background-color:#F26D1E; color:white; width: 200px;" >
+                Pay Now
+                </MudButton>
+            </MudBox>
+            </MudPaper>
+
+            <!-- Quotation Request Card -->
+            <MudPaper Elevation="2" Class="mt-2" Style="@CardStyle">
+                <MudText Typo="Typo.h6" Class="mb-2">Request a Quotation</MudText>
+                <MudText Typo="Typo.body2" Class="mb-2">
+                    Need something custom? Let us know and we'll get back to you.
+                </MudText>
+                   <MudBox Class="mt-4" Style="width: 100%;display: flex; justify-content:center;align-items:center">
+        <MudButton
+        Class="font-semibold"
+        Style="background-color:#F26D1E; color:white; width: 200px;" >
+                    Request Quotation
+                </MudButton>
+                </MudBox>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private int _activeTabIndex;
+    private SubscriptionPlan? _selectedPlan;
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? Type { get; set; }
+    private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override void OnInitialized()
+    {
+        breadcrumbItems = new()
+        {
+            new() { Label = Type ?? "default", Url = $"/{Type}" },
+            new() { Label = "Subscriptions", Url = "/Subscriptions", IsLast = true },
+        };
+
+    }
+
+
+   
+    private List<SubscriptionPlan> _plans = new()
+    {
+        new() { Flyers = 1, Price = "50", Duration = "1 day" },
+        new() { Flyers = 2, Price = "150", Duration = "1 Week" },
+
+        new() { Flyers = 3, Price = "250", Duration = "2 Week" },
+        new() { Flyers = 4, Price = "1,500", Duration = "1 Month" },
+        new() { Flyers = 12, Price = "3,500", Duration = "3 Months" },
+        new() { Flyers = 24, Price = "6,000", Duration = "6 Months" },
+        new() { Flyers = 48, Price = "10,000", Duration = "12 Months" },
+    };
+
+    private IEnumerable<SubscriptionPlan> GetFilteredPlans()
+    {
+        return _activeTabIndex switch
+        {
+            0 => _plans.Take(3),     // Deals
+            1 => _plans.Skip(3).Take(1), // Stores
+            2 => _plans.Skip(4),     // Preloved
+            _ => _plans
+        };
+    }
+
+    private void SelectPlan(SubscriptionPlan plan) => _selectedPlan = plan;
+    private string CardStyle =>
+       $"width: 258px; height: 200px; border-radius: 8px; padding: 12px 20px; border: 1px solid #E0E0E0; background-color: white;";
+}

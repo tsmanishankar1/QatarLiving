@@ -1,0 +1,53 @@
+﻿@using QLN.Web.Shared.Models
+@using MudBlazor
+@using QLN.Web.Shared.Components.CustomButton
+
+<MudPaper Class="p-4 hover:shadow-lg cursor-pointer transition-all duration-200 relative"
+          Style="@CardStyle"
+          OnClick="@OnSelect">
+
+    <!-- Radio Button at top right -->
+    <div style="position: absolute; top: 12px; right: 12px;">
+        <MudIcon Icon="@(IsSelected ? Icons.Material.Filled.RadioButtonChecked : Icons.Material.Filled.RadioButtonUnchecked)"
+                 Color="@(IsSelected ? Color.Primary : Color.Default)" />
+    </div>
+
+    <!-- Center Content -->
+    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1" Class="mb-4">
+        <MudText Class="font-semibold text-center"
+                 Style="font-family: 'Public Sans'; font-size: 15px; line-height: 26px; color: #242424;">
+            @($"{Plan.Flyers} Flyer{(Plan.Flyers > 1 ? "s" : "")}")
+        </MudText>
+
+        <MudText Class="font-semibold text-center"
+                 Style="font-family: 'Public Sans'; font-size: 25px; line-height: 26px; color: #00426D;">
+            @($"{Plan.Price:N0} QAR") /
+            <MudText Class="text-center font-medium"
+                     Style="font-family: 'Public Sans'; font-size: 14px; line-height: 22px; color: #646464;">
+                @Plan.Duration
+            </MudText>
+        </MudText>
+
+    </MudStack>
+
+    <!-- Button at bottom -->
+   <MudBox Class="mt-4" Style="width: 100%;display: flex; justify-content:center;align-items:center">
+    <MudButton
+        Class="font-semibold"
+        Style="background-color:#F26D1E; color:white; width: 200px;"
+        Disabled="@IsSelected">
+        @(IsSelected ? "Selected" : "Select")
+    </MudButton>
+</MudBox>
+
+</MudPaper>
+
+
+@code {
+    [Parameter] public SubscriptionPlan Plan { get; set; } = default!;
+    [Parameter] public bool IsSelected { get; set; }
+    [Parameter] public EventCallback OnSelect { get; set; }
+
+    private string CardStyle =>
+        $"width: 258px; height: 162px; border-radius: 8px; padding: 12px 20px; border: 1px solid {(IsSelected ? "#F26D1E" : "#E0E0E0")}; background-color: white;";
+}

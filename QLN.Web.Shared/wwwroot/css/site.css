@@ -102,3 +102,39 @@
     align-items: center;
     z-index: 1000;
 }
+
+.custom-tab .mud-tabs-toolbar {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0;
+}
+
+.custom-tab .mud-tab {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    justify-content: center;
+    color: #242424 !important;
+    padding: 12px 0;
+    margin: 0;
+    text-transform: none;
+    font-size: 14px;
+    font-weight: 500;
+}
+.custom-tab .mud-tab.mud-tab-active {
+    color: #00426D !important;
+}
+
+
+.custom-tab .mud-tabs-toolbar .mud-tab.mud-tab-active .mud-icon-root {
+    color: #00426D !important;
+}
+
+.custom-tab .mud-tabs-toolbar .mud-tab .mud-icon-root {
+    color: #242424 !important;
+}
+
+.custom-tab .mud-tabs-indicator {
+    background-color: #00426D !important;
+}
