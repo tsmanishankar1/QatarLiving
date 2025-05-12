@@ -53,6 +53,14 @@
         }
     });
 </script>
+<script>
+    window.scrollToCategoryIndex = (element, index, cardWidth) => {
+        if (element) {
+            const scrollLeft = index * (cardWidth + 8); // Adjust gap if needed
+            element.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+        }
+    };
+</script>
 
 </body>
 

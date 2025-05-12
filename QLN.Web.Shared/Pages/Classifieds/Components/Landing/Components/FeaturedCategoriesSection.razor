@@ -1,114 +1,144 @@
 @using MudBlazor
 @using QLN.Web.Shared.Components.Classifieds.FeaturedItemCard
- 
+
 <div class="featured-cards-section">
-    <!-- Featured Items Header -->
     <div class="featured-header">
         <MudText Typo="Typo.h6" Class="featured-title">Featured Items</MudText>
     </div>
- 
-    <!-- Cards Container -->
-    <div class="cards-container">
-        @foreach (var item in featuredItems)
-        {
-            <FeaturedItemCard Item="item" OnHeartClick="HandleHeartClick" />
-        }
+
+    <div class="carousel-container2">
+        <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
+                       Disabled="@(_startIndex == 0)"
+                       OnClick="MovePrevious"
+                       Class="arrow-button left" />
+
+        <div class="carousel-wrapper">
+            <div class="carousel-trackerack" style="transform: translateX(@TrackOffset);">
+                @foreach (var item in VisibleItems)
+                {
+                    <div class="carousel-card">
+                        <FeaturedItemCard Item="item" OnHeartClick="HandleHeartClick" />
+                    </div>
+                }
+            </div>
+        </div>
+
+        <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                       Disabled="@(_startIndex >= featuredItems.Count - VisibleCount)"
+                       OnClick="MoveNext"
+                       Class="arrow-button right" />
     </div>
 </div>
+
+@code {
+    private int _startIndex = 0;
+    private const int VisibleCount = 4;
+
+    private List<FeaturedItemCard.FeaturedItem> featuredItems = new()
+    {
+        new() { ImageUrl = "/images/categories/game_image.svg", Category = "Xbox Controller", Title = "Microsoft Xbox Series X|S Wireless Controller - White", Price = "2,100 QAR", Location = "The Pearl, Doha", IsFeatured = true },
+        new() { ImageUrl = "/images/categories/cycle_image.svg", Category = "Mountain Bike", Title = "Bentley Continental GT Coupe 2023", Price = "2,100 QAR", Location = "The Pearl, Doha", IsFeatured = true },
+        new() { ImageUrl = "/images/categories/phone_image.svg", Category = "iPhone 16 Pro", Title = "Apple iPhone 16 Pro - 128GB Desert Titanium", Price = "12,900 QAR", Location = "West Bay, Doha", IsFeatured = true },
+        new() { ImageUrl = "/images/categories/cycle_image.svg", Category = "Mountain Bike", Title = "Bentley Continental GT Coupe 2023", Price = "2,100 QAR", Location = "The Pearl, Doha", IsFeatured = true },
+        new() { ImageUrl = "/images/categories/phone_image.svg", Category = "iPhone 16 Pro", Title = "Apple iPhone 16 Pro - 128GB Desert Titanium", Price = "12,900 QAR", Location = "West Bay, Doha", IsFeatured = true },
+        new() { ImageUrl = "/images/categories/card_image.svg", Category = "Trading Cards", Title = "Topos Chrome Charizard Tekno #06", Price = "2,100 QAR", Location = "Al Sadd, Doha", IsFeatured = false },
+    };
+
+    private IEnumerable<FeaturedItemCard.FeaturedItem> VisibleItems =>
+        featuredItems.Skip(_startIndex).Take(VisibleCount);
+
+    private string TrackOffset => $"translateX(0)"; // Not needed if skipping manually
+
+    private void MoveNext()
+    {
+        if (_startIndex < featuredItems.Count - VisibleCount)
+            _startIndex++;
+    }
+
+    private void MovePrevious()
+    {
+        if (_startIndex > 0)
+            _startIndex--;
+    }
+
+    private void HandleHeartClick(FeaturedItemCard.FeaturedItem item)
+    {
+        Console.WriteLine($"Heart clicked for {item.Title}");
+    }
+}
+
  
 <style>
-    .featured-cards-section {
+      .featured-cards-section {
         padding: 2rem 1rem;
+        position: relative;
     }
- 
+
     .featured-header {
         display: flex;
         justify-content: center;
         align-items: center;
         margin-bottom: 1.5rem;
-        padding: 0 0.5rem;
     }
- 
+
     .featured-title {
         font-weight: 600;
-        color: #333;
         font-size: 1.25rem;
     }
- 
-    .cards-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 10px;
+
+  .carousel-container2 {
+    position: relative;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    padding: 0 1rem;
+}
+
+.carousel-wrapper {
+    overflow: hidden;
+    width: 100%;
+}
+
+.carousel-trackerack {
+    display: flex;
+    transition: transform 0.5s ease;
+}
+
+.carousel-card {
+    flex: 0 0 25%; /* 100 / 4 items */
+    max-width: 25%;
+    padding: 0.5rem;
+    box-sizing: border-box;
+}
+
+.arrow-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;  
+    width: 40px;
+    height: 40px;
+    background-color: white;
+    border-radius: 50%;
+    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+}
+
+.arrow-button.left {
+    left: 0;
+}
+
+.arrow-button.right {
+    right: 0;
+}
+
+@@media (max-width: 768px) {
+    .carousel-card {
+        flex: 0 0 100%;
+        max-width: 100%;
     }
- 
-    @@media (max-width: 1200px) {
-        .cards-container {
-            grid-template-columns: repeat(3, 1fr);
-        }
-    }
- 
-    @@media (max-width: 900px) {
-        .cards-container {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
- 
-    @@media (max-width: 600px) {
-        .cards-container {
-            grid-template-columns: 1fr;
-        }
-       
-        .featured-header {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-    }
-</style>
- 
-@code {
-    private List<FeaturedItemCard.FeaturedItem> featuredItems = new()
-    {
-        new FeaturedItemCard.FeaturedItem
-        {
-            ImageUrl = "/images/categories/game_image.svg",
-            Category = "Xbox Controller",
-            Title = "Microsoft Xbox Series X|S Wireless Controller - White",
-            Price = "2,100 QAR",
-            Location = "The Pearl, Doha",
-            IsFeatured = true
-        },
-        new FeaturedItemCard.FeaturedItem
-        {
-            ImageUrl = "/images/categories/cycle_image.svg",
-            Category = "Mountain Bike",
-            Title = "Bentley Continental GT Coupe 2023",
-            Price = "2,100 QAR",
-            Location = "The Pearl, Doha",
-            IsFeatured = true
-        },
-        new FeaturedItemCard.FeaturedItem
-        {
-            ImageUrl = "/images/categories/phone_image.svg",
-            Category = "iPhone 16 Pro",
-            Title = "Apple iPhone 16 Pro - 128GB Desert Titanium",
-            Price = "12,900 QAR",
-            Location = "West Bay, Doha",
-            IsFeatured = true
-        },
-        new FeaturedItemCard.FeaturedItem
-        {
-            ImageUrl = "/images/categories/card_image.svg",
-            Category = "Trading Cards",
-            Title = "Topos Chrome Charizard Tekno #06",
-            Price = "2,100 QAR",
-            Location = "Al Sadd, Doha",
-            IsFeatured = false
-        }
-    };
- 
-    private void HandleHeartClick(FeaturedItemCard.FeaturedItem item)
-    {
-        // Handle favorite logic
-        Console.WriteLine($"Heart clicked for {item.Title}");
+    .arrow-button {
+        display: none;
     }
 }
+.
+</style>
