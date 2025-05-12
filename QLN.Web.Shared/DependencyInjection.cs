@@ -1,0 +1,28 @@
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using MudBlazor.Services;
+using QLN.Web.Shared.Models;
+using QLN.Web.Shared.Services;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace QLN.Web.Shared
+{
+    public static class DependencyInjection
+    {
+        public static IServiceCollection AddWebSharedServices(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddMudServices();
+            services.AddScoped<GlobalAppState>();
+            var section = configuration.GetSection("ApiSettings");
+            services.Configure<ApiSettings>(configuration.GetSection("ApiSettings"));
+            services.AddHttpClient<ApiService>();
+
+
+            return services;
+        }
+    }
+}

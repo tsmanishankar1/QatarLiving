@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using Azure.Core;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService.IAuthService;
@@ -58,315 +61,328 @@ namespace QLN.Common.Infrastructure.Service.AuthService
         }
 
 
-        public async Task<Results<Ok<ApiResponse<string>>, BadRequest<ApiResponse<string>>, ValidationProblem, NotFound<ApiResponse<string>>, Conflict<ApiResponse<string>>, ProblemHttpResult>> Register(RegisterRequest request, HttpContext context)
+        public async Task<string> Register(RegisterRequest request, HttpContext context)
+        {
+            var isBypassUser = _env.IsDevelopment() &&
+                               request.Emailaddress == ConstantValues.ByPassEmail &&
+                               request.Mobilenumber == ConstantValues.ByPassMobile;
+
+            if (isBypassUser)
+            {
+                var existingBypassUser = await _userManager.Users
+                    .FirstOrDefaultAsync(r => r.Email == request.Emailaddress || r.PhoneNumber == request.Mobilenumber);
+                if (existingBypassUser != null)
+                    await _userManager.DeleteAsync(existingBypassUser);
+            }
+
+            if (!isBypassUser &&
+                (!TempVerificationStore.VerifiedEmails.Contains(request.Emailaddress) ||
+                 !TempVerificationStore.VerifiedPhoneNumbers.Contains(request.Mobilenumber)))
+            {
+                throw new VerificationRequiredException();
+            }
+
+            if (await _userManager.FindByEmailAsync(request.Emailaddress) is not null)
+                throw new EmailAlreadyRegisteredException();
+
+            if (await _userManager.FindByNameAsync(request.Username) is not null)
+                throw new UsernameTakenException(request.Username);
+
+            var mobileRegex = new Regex(@"^(\+?\d{1,3})?[\s]?\d{10,15}$");
+            if (!mobileRegex.IsMatch(request.Mobilenumber))
+                throw new InvalidMobileFormatException();
+
+            if (!IsValidEmail(request.Emailaddress))
+                throw new InvalidEmailFormatException();
+
+            var newUser = new ApplicationUser
+            {
+                UserName = request.Username,
+                Email = request.Emailaddress,
+                PhoneNumber = request.Mobilenumber,
+                FirstName = request.FirstName,
+                LastName = request.Lastname,
+                DateOfBirth = request.Dateofbirth,
+                MobileOperator = request.MobileOperator,
+                Nationality = request.Nationality,
+                LanguagePreferences = request.Languagepreferences,
+                IsCompany = false,
+                EmailConfirmed = true,
+                PhoneNumberConfirmed = true,
+                TwoFactorEnabled = request.TwoFactorEnabled,
+                IsActive = true,
+                SecurityStamp = Guid.NewGuid().ToString(),
+                CreatedAt = DateTime.UtcNow,
+            };
+
+            var createResult = await _userManager.CreateAsync(newUser, request.Password);
+            if (!createResult.Succeeded)
+            {
+                var errors = createResult.Errors
+                    .GroupBy(e => e.Code)
+                    .ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
+                throw new RegistrationValidationException(errors);
+            }
+
+            if (!await _roleManager.RoleExistsAsync("User"))
+                await _roleManager.CreateAsync(new IdentityRole<Guid>("User"));
+
+            await _userManager.AddToRoleAsync(newUser, "User");
+
+            if (!isBypassUser)
+            {
+                TempVerificationStore.VerifiedEmails.Remove(request.Emailaddress);
+                TempVerificationStore.VerifiedPhoneNumbers.Remove(request.Mobilenumber);
+            }
+
+            return "User registered successfully.";
+        }
+        public async Task<Results<Ok<ApiResponse<string>>, ProblemHttpResult, Conflict<ApiResponse<string>>>> SendEmailOtp(string email)
+        {
+
+            var isBypassUser = _env.IsDevelopment() && email == ConstantValues.ByPassEmail;
+            if (isBypassUser)
+            {
+                return TypedResults.Ok(ApiResponse<string>.Success("OTP bypassed."));
+            }
+
+            if (!IsValidEmail(email))
+            {
+                throw new InvalidEmailFormatException();
+            }
+
+            var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email && u.IsActive);
+            if (existingUser != null)
+            {
+                throw new EmailAlreadyRegisteredException();
+            }
+
+            var otp = new Random().Next(100000, 999999).ToString();
+            TempVerificationStore.EmailOtps[email] = otp;
+
+            await _emailSender.SendOtpEmailAsync(email, otp);
+
+            return TypedResults.Ok(ApiResponse<string>.Success("OTP sent to your email."));
+
+        }
+
+
+        public async Task<Results<Ok<ApiResponse<string>>, ProblemHttpResult, NotFound<ApiResponse<string>>, BadRequest<ApiResponse<string>>>> VerifyEmailOtp(string email, string otp)
         {
             try
             {
-                // Checks the user is bypassed user and environment is development
                 var isBypassUser = _env.IsDevelopment() &&
-                   request.Emailaddress == ConstantValues.ByPassEmail &&
-                   request.Mobilenumber == ConstantValues.ByPassMobile;
+                    email == ConstantValues.ByPassEmail;
 
-                if (!isBypassUser && (!TempVerificationStore.VerifiedEmails.Contains(request.Emailaddress) ||
-                    !TempVerificationStore.VerifiedPhoneNumbers.Contains(request.Mobilenumber)))
+                if (isBypassUser)
                 {
-                    return TypedResults.BadRequest(new ApiResponse<string>
-                    {
-                        Status = false,
-                        Message = "Please verify your Email and Phone Number before registering."
-                    });
+                    return TypedResults.Ok(ApiResponse<string>.Success("Email bypassed."));
                 }
 
-                var existingUser = await _userManager.FindByEmailAsync(request.Emailaddress);
+                if (!TempVerificationStore.EmailOtps.TryGetValue(email, out var storedOtp))
+                {
+                    throw new OtpNotRequestedException();
+                }
+
+                if (storedOtp != otp)
+                {
+                    throw new InvalidOtpException();
+                }
+
+                TempVerificationStore.VerifiedEmails.Add(email);
+                TempVerificationStore.EmailOtps.Remove(email);
+
+                return TypedResults.Ok(ApiResponse<string>.Success("Email verified successfully."));
+            }
+            catch (OtpNotRequestedException ex)
+            {
+                return TypedResults.NotFound(ApiResponse<string>.Fail(ex.Message));
+            }
+            catch (InvalidOtpException ex)
+            {
+                return TypedResults.NotFound(ApiResponse<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                return TypedResults.Problem(
+                    detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
+                    statusCode: StatusCodes.Status500InternalServerError);
+            }
+        }
+
+
+        public async Task<Results<Ok<ApiResponse<string>>, ProblemHttpResult, Conflict<ProblemDetails>>> SendPhoneOtp(string phoneNumber)
+        {
+            try
+            {
+                var isBypassUser = _env.IsDevelopment() &&
+                                   phoneNumber == ConstantValues.ByPassMobile;
+
+                if (isBypassUser)
+                {
+                    return TypedResults.Ok(ApiResponse<string>.Success("OTP bypassed."));
+                }
+
+                var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber && u.IsActive);
                 if (existingUser != null)
                 {
-                    return TypedResults.NotFound(new ApiResponse<string>
-                    {
-                        Status = false,
-                        Message = "Email is already registered"
-                    });
+                    throw new PhoneAlreadyRegisteredException();
                 }
 
-                var usernameExists = await _userManager.FindByNameAsync(request.Username);
-                if (usernameExists != null)
+                var otp = new Random().Next(100000, 999999).ToString();
+                TempVerificationStore.PhoneOtps[phoneNumber] = otp;
+
+                string smsText = $"Your OTP for verification is {otp}.";
+                var customerId = _config["OoredooSmsApi:CustomerId"];
+                var userName = _config["OoredooSmsApi:UserName"];
+                var userPassword = _config["OoredooSmsApi:UserPassword"];
+                var originator = _config["OoredooSmsApi:Originator"];
+                var apiUrl = _config["OoredooSmsApi:ApiUrl"];
+
+                var response = await SendSms(apiUrl, customerId, userName, userPassword, phoneNumber, smsText, originator);
+
+                if (!response.IsSuccessStatusCode)
                 {
-                    return TypedResults.BadRequest(new ApiResponse<string>
-                    {
-                        Status = false,
-                        Message = $"Username '{request.Username}' is already taken."
-                    });
+                    throw new SmsSendingFailedException();
                 }
 
-                var mobileRegex = new Regex(@"^(\+?\d{1,3})?[\s]?\d{10,15}$");
-                if (!mobileRegex.IsMatch(request.Mobilenumber))
+                return TypedResults.Ok(ApiResponse<string>.Success("OTP sent successfully to phone."));
+            }
+            catch (PhoneAlreadyRegisteredException ex)
+            {
+                return TypedResults.Conflict(new ProblemDetails
                 {
-                    return TypedResults.BadRequest(new ApiResponse<string>
-                    {
-                        Status = false,
-                        Message = "Invalid mobile number format. Please enter a valid 10 to 15 digits."
-                    });
+                    Title = "Phone Already Registered",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status409Conflict
+                });
+            }
+            catch (SmsSendingFailedException ex)
+            {
+                return TypedResults.Problem(
+                    detail: ex.Message,
+                    statusCode: StatusCodes.Status500InternalServerError);
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                return TypedResults.Problem(
+                    detail: "An unexpected error occurred. Please try again later.",
+                    statusCode: StatusCodes.Status500InternalServerError);
+            }
+        }
+
+
+        public async Task<Results<Ok<ApiResponse<string>>, ProblemHttpResult, BadRequest<ProblemDetails>>> VerifyPhoneOtp(string phoneNumber, string otp)
+        {
+            try
+            {
+                var isBypassUser = _env.IsDevelopment() &&
+                    phoneNumber == ConstantValues.ByPassMobile;
+
+                if (isBypassUser)
+                {
+                    return TypedResults.Ok(ApiResponse<string>.Success("PhoneNumber bypassed."));
                 }
 
-                var today = DateOnly.FromDateTime(DateTime.Today);
-                var age = today.Year - request.Dateofbirth.Year;
-                if (request.Dateofbirth > today.AddYears(-age)) age--;
-
-                if (age < 18)
+                if (!TempVerificationStore.PhoneOtps.TryGetValue(phoneNumber, out var storedOtp))
                 {
-                    return TypedResults.BadRequest(new ApiResponse<string>
-                    {
-                        Status = false,
-                        Message = "You must be at least 18 years old to register."
-                    });
+                    throw new PhoneOtpMissingException();
                 }
 
-                var newUser = new ApplicationUser
+                if (storedOtp != otp)
                 {
-                    UserName = request.Username,
-                    Email = request.Emailaddress,
-                    PhoneNumber = request.Mobilenumber,
-                    Firstname = request.FirstName,
-                    Lastname = request.Lastname,
-                    Dateofbirth = request.Dateofbirth,
-                    Gender = request.Gender,
-                    Mobileoperator = request.MobileOperator,
-                    Nationality = request.Nationality,
-                    Languagepreferences = request.Languagepreferences,
-                    IsCompany = false,
-                    EmailConfirmed = true,
-                    PhoneNumberConfirmed = true,
-                    Isactive = true,
-                    SecurityStamp = Guid.NewGuid().ToString(),
-                    Createdat = DateTime.UtcNow,
-
-                };
-
-                var createResult = await _userManager.CreateAsync(newUser, request.Password);
-
-                if (!createResult.Succeeded)
-                {
-                    var errors = createResult.Errors
-                        .GroupBy(e => e.Code)
-                        .ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
-
-                    return TypedResults.ValidationProblem(errors,
-                        detail: "One or more errors occurred during registration.");
+                    throw new InvalidPhoneOtpException();
                 }
 
-                if (!await _roleManager.RoleExistsAsync("User"))
-                {
-                    await _roleManager.CreateAsync(new IdentityRole<Guid>("User"));
-                }
+                TempVerificationStore.VerifiedPhoneNumbers.Add(phoneNumber);
+                TempVerificationStore.PhoneOtps.Remove(phoneNumber);
 
-                await _userManager.AddToRoleAsync(newUser, "User");
-
-                if (!isBypassUser)
+                return TypedResults.Ok(ApiResponse<string>.Success("Phone number verified successfully."));
+            }
+            catch (PhoneOtpMissingException ex)
+            {
+                return TypedResults.BadRequest(new ProblemDetails
                 {
-                    TempVerificationStore.VerifiedEmails.Remove(request.Emailaddress);
-                    TempVerificationStore.VerifiedPhoneNumbers.Remove(request.Mobilenumber);
-                }
-
-                return TypedResults.Ok(new ApiResponse<string>
+                    Title = "OTP Missing",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+            catch (InvalidPhoneOtpException ex)
+            {
+                return TypedResults.BadRequest(new ProblemDetails
                 {
-                    Status = true,
-                    Message = "User registered successfully."
+                    Title = "Invalid OTP",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status400BadRequest
                 });
             }
             catch (Exception ex)
             {
                 _log.LogException(ex);
                 return TypedResults.Problem(
-                    detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
+                    detail: "An unexpected error occurred. Please try again later.",
                     statusCode: StatusCodes.Status500InternalServerError);
             }
         }
 
 
-        public async Task<Results<Ok<ApiResponse<string>>, ProblemHttpResult, BadRequest<ApiResponse<string>>>> SendEmailOtp(string email)
+        public async Task<Results<Ok<ApiResponse<string>>, BadRequest<ProblemDetails>, ProblemHttpResult>> ForgotPassword(ForgotPasswordRequest request)
         {
             try
             {
-                var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email && u.Isactive == true);
-                if (existingUser != null)
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive);
+
+                if (user == null || !await _userManager.IsEmailConfirmedAsync(user))
+                    throw new ForgotPasswordUserNotFoundException();
+
+                var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var encodedCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+                var baseUrl = _config.GetSection("BaseUrl")["resetPassword"];
+                var resetUrl = $"{baseUrl}?email={Uri.EscapeDataString(request.Email)}&code={encodedCode}";
+
+                await _emailSender.SendPasswordResetLinkAsync(user, user.Email, resetUrl);
+
+                return TypedResults.Ok(ApiResponse<string>.Success("If your email is registered and confirmed, a password reset link has been sent."));
+            }
+            catch (ForgotPasswordUserNotFoundException ex)
+            {
+                return TypedResults.BadRequest(new ProblemDetails
                 {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Email already registered"));
-                }
-
-                var otp = new Random().Next(100000, 999999).ToString();
-
-                TempVerificationStore.EmailOtps[email] = otp;
-
-                await _emailSender.SendOtpEmailAsync(email, otp);
-
-                return TypedResults.Ok(ApiResponse<string>.Success("OTP sent to your email."));
+                    Title = "Invalid Email",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status400BadRequest
+                });
             }
             catch (Exception ex)
             {
                 _log.LogException(ex);
                 return TypedResults.Problem(
-                    detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
+                    title: "Server Error",
+                    detail: "An unexpected error occurred. Please try again later.",
                     statusCode: StatusCodes.Status500InternalServerError);
             }
         }
 
-
-        public async Task<Results<Ok<ApiResponse<string>>, ProblemHttpResult, BadRequest<ApiResponse<string>>>> VerifyEmailOtp(string email, string otp)
+        public async Task<Results<Ok<ApiResponse<string>>,BadRequest<ProblemDetails>,NotFound<ProblemDetails>,ValidationProblem,ProblemHttpResult>> ResetPassword(ResetPasswordRequest request)
         {
             try
             {
-                if (!TempVerificationStore.EmailOtps.TryGetValue(email, out var storedOtp))
-                {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("OTP not requested or expired."));
-                }
-
-                if (storedOtp != otp)
-                {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid or expired OTP."));
-                }
-
-                TempVerificationStore.VerifiedEmails.Add(email);
-
-
-                TempVerificationStore.EmailOtps.Remove(email);
-
-                return TypedResults.Ok(ApiResponse<string>.Success("Email verified successfully."));
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                return TypedResults.Problem(
-                    detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
-                    statusCode: StatusCodes.Status500InternalServerError);
-            }
-        }
-
-
-        public async Task<Results<Ok<ApiResponse<string>>, ProblemHttpResult, BadRequest<ApiResponse<string>>>> SendPhoneOtp(string phoneNumber)
-        {
-            try
-            {
-                var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber && u.Isactive == true);
-                if (existingUser != null)
-                {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Phone number already registered."));
-                }
-
-                var otp = new Random().Next(100000, 999999).ToString();
-
-
-                TempVerificationStore.PhoneOtps[phoneNumber] = otp;
-
-                string smsText = $"Your OTP for verification is {otp}.";
-
-                string customerId = _config["OoredooSmsApi:CustomerId"];
-                string userName = _config["OoredooSmsApi:UserName"];
-                string userPassword = _config["OoredooSmsApi:UserPassword"];
-                string originator = _config["OoredooSmsApi:Originator"];
-                string apiUrl = _config["OoredooSmsApi:ApiUrl"];
-
-                var response = await SendSms(apiUrl, customerId, userName, userPassword, phoneNumber, smsText, originator);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    return TypedResults.Ok(ApiResponse<string>.Success("OTP sent successfully to phone."));
-                }
-                else
-                {
-                    return TypedResults.Problem(
-                        detail: "Failed to send OTP via SMS. Please try again later.",
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                return TypedResults.Problem(
-                    detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
-                    statusCode: StatusCodes.Status500InternalServerError);
-            }
-        }
-
-
-        public async Task<Results<Ok<ApiResponse<string>>, ProblemHttpResult, BadRequest<ApiResponse<string>>>> VerifyPhoneOtp(string phoneNumber, string otp)
-        {
-            try
-            {
-                if (!TempVerificationStore.PhoneOtps.TryGetValue(phoneNumber, out var storedOtp))
-                {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("OTP not requested or expired."));
-                }
-
-                if (storedOtp != otp)
-                {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid or expired OTP."));
-                }
-
-                TempVerificationStore.VerifiedPhoneNumbers.Add(phoneNumber);
-
-
-                TempVerificationStore.PhoneOtps.Remove(phoneNumber);
-
-                return TypedResults.Ok(ApiResponse<string>.Success("Phone number verified successfully."));
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                return TypedResults.Problem(
-                    detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
-                    statusCode: StatusCodes.Status500InternalServerError);
-            }
-        }
-
-
-        public async Task<Results<Ok<ApiResponse<string>>, ProblemHttpResult, BadRequest<ApiResponse<string>>>> ForgotPassword(ForgotPasswordRequest request)
-        {
-            try
-            {
-                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == request.Email && u.Isactive == true);
-
-                if (user != null && await _userManager.IsEmailConfirmedAsync(user))
-                {
-                    var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-                    var encodedCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                    var baseUrl = _config.GetSection("BaseUrl")["resetPassword"];
-
-                    var resetUrl = $"{baseUrl}?email={Uri.EscapeDataString(request.Email)}&code={encodedCode}";
-
-                    await _emailSender.SendPasswordResetLinkAsync(user, user.Email, resetUrl);
-
-                    return TypedResults.Ok(ApiResponse<string>.Success("If your email is registered and confirmed, password reset link has been sent."));
-                }
-                else
-                {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("User is not registered with this email or email is not confirmed."));
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                return TypedResults.Problem(
-            detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
-            statusCode: StatusCodes.Status500InternalServerError);
-            }
-        }
-
-        public async Task<Results<Ok<ApiResponse<string>>, BadRequest<ApiResponse<string>>, NotFound<ApiResponse<string>>, ValidationProblem, ProblemHttpResult>> ResetPassword(ResetPasswordRequest request)
-        {
-            try
-            {
-                var user = await _userManager.Users.FirstOrDefaultAsync(r => r.Email == request.Email && r.Isactive == true);
+                var user = await _userManager.Users.FirstOrDefaultAsync(r => r.Email == request.Email && r.IsActive == true);
 
                 if (user == null || !await _userManager.IsEmailConfirmedAsync(user))
                 {
-                    return TypedResults.NotFound(ApiResponse<string>.Success("User with this email is not registered or email not confirmed."));
+                    throw new ResetPasswordUserNotFoundException();
                 }
 
                 var decodedCode = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(request.ResetCode));
-
                 var isValidToken = await _userManager.VerifyUserTokenAsync(user, TokenOptions.DefaultProvider, "ResetPassword", decodedCode);
+
                 if (!isValidToken)
                 {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid or expired token."));
+                    throw new ResetPasswordInvalidTokenException();
                 }
 
                 var result = await _userManager.ResetPasswordAsync(user, decodedCode, request.NewPassword);
@@ -375,45 +391,75 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     var errors = result.Errors
                         .GroupBy(e => e.Code)
                         .ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
-                    return TypedResults.ValidationProblem(errors);
+
+                    throw new PasswordResetValidationException(errors);
                 }
 
                 return TypedResults.Ok(ApiResponse<string>.Success("Password has been reset successfully"));
+            }
+            catch (ResetPasswordUserNotFoundException ex)
+            {
+                return TypedResults.NotFound(new ProblemDetails
+                {
+                    Title = "User Not Found or Not Confirmed",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status404NotFound
+                });
+            }
+            catch (ResetPasswordInvalidTokenException ex)
+            {
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "Invalid or Expired Token",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+            catch (PasswordResetValidationException ex)
+            {
+                return TypedResults.ValidationProblem(ex.Errors,
+                    title: "Reset Password Validation Failed");
             }
             catch (Exception ex)
             {
                 _log.LogException(ex);
                 return TypedResults.Problem(
-            detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
-            statusCode: StatusCodes.Status500InternalServerError);
+                    detail: "An unexpected error occurred. Please try again later.",
+                    statusCode: StatusCodes.Status500InternalServerError);
             }
         }
-
-        public async Task<Results<Ok<ApiResponse<LoginResponse>>, BadRequest<ApiResponse<string>>, UnauthorizedHttpResult, ProblemHttpResult, ValidationProblem>> Login(LoginRequest request)
+        public async Task<Results<Ok<LoginResponse>,BadRequest<ProblemDetails>,UnauthorizedHttpResult,ProblemHttpResult,ValidationProblem>> Login(LoginRequest request)
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(request.UsernameOrEmailOrPhone) || string.IsNullOrWhiteSpace(request.Password))
+                {
+                    var errors = new Dictionary<string, string[]>();
+                    if (string.IsNullOrWhiteSpace(request.UsernameOrEmailOrPhone))
+                        errors.Add(nameof(request.UsernameOrEmailOrPhone), new[] { "Username, email, or phone is required." });
+                    if (string.IsNullOrWhiteSpace(request.Password))
+                        errors.Add(nameof(request.Password), new[] { "Password is required." });
+
+                    return TypedResults.ValidationProblem(errors, title: "Login validation failed");
+                }
+
                 var user = await _userManager.Users.FirstOrDefaultAsync(u =>
-                u.UserName == request.UsernameOrEmailOrPhone ||
-                u.Email == request.UsernameOrEmailOrPhone ||
-                u.PhoneNumber == request.UsernameOrEmailOrPhone && u.Isactive == true);
+                    (u.UserName == request.UsernameOrEmailOrPhone ||
+                     u.Email == request.UsernameOrEmailOrPhone ||
+                     u.PhoneNumber == request.UsernameOrEmailOrPhone) &&
+                    u.IsActive == true);
 
-
-                if (user == null)
-                {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid credentials"));
-                }
-
-                else if (!await _userManager.CheckPasswordAsync(user, request.Password))
-                {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid credentials"));
-                }
-
+                if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Credentials",
+                        Detail = "Username or password is incorrect.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
 
                 if (user.TwoFactorEnabled)
                 {
-                 
-                    return TypedResults.Ok(ApiResponse<LoginResponse>.Success("Two-Factor Authentication is enabled. Choose email or mobile to receive OTP.", new LoginResponse
+                    return TypedResults.Ok(new LoginResponse
                     {
                         Username = user.UserName,
                         Emailaddress = user.Email,
@@ -421,7 +467,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                         AccessToken = string.Empty,
                         RefreshToken = string.Empty,
                         IsTwoFactorEnabled = true
-                    }));
+                    });
                 }
 
                 var accessToken = await _tokenService.GenerateAccessToken(user);
@@ -430,269 +476,385 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 await _userManager.SetAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshToken, refreshToken);
                 await _userManager.SetAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
 
-                return TypedResults.Ok(ApiResponse<LoginResponse>.Success("Login successful", new LoginResponse
+                return TypedResults.Ok(new LoginResponse
                 {
                     Username = user.UserName,
                     Emailaddress = user.Email,
                     Mobilenumber = user.PhoneNumber,
                     AccessToken = accessToken,
-                    RefreshToken = refreshToken
-                }));
+                    RefreshToken = refreshToken,
+                    IsTwoFactorEnabled = false
+                });
             }
             catch (Exception ex)
             {
                 _log.LogException(ex);
                 return TypedResults.Problem(
-           detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
-           statusCode: StatusCodes.Status500InternalServerError);
+                    title: "Server Error",
+                    detail: "An unexpected error occurred. Please try again later.",
+                    statusCode: StatusCodes.Status500InternalServerError);
             }
         }
 
-        public async Task<Results<Ok<ApiResponse<LoginResponse>>, BadRequest<ApiResponse<string>>, ProblemHttpResult, ValidationProblem>> Verify2FA(Verify2FARequest request)
+
+        public async Task<Results<Ok<ApiResponse<LoginResponse>>, BadRequest<ProblemDetails>, ProblemHttpResult>> Verify2FA(Verify2FARequest request)
         {
             try
             {
                 var user = await _userManager.Users.FirstOrDefaultAsync(u =>
-                    u.UserName == request.UsernameOrEmailOrPhone ||
-                    u.Email == request.UsernameOrEmailOrPhone ||
-                    u.PhoneNumber == request.UsernameOrEmailOrPhone && u.Isactive == true);
-
-                var isBypassUser = _env.IsDevelopment() &&
-                   (user.Email == ConstantValues.ByPassEmail || user.PhoneNumber == ConstantValues.ByPassMobile);
-
+                    (u.UserName == request.UsernameOrEmailOrPhone ||
+                     u.Email == request.UsernameOrEmailOrPhone ||
+                     u.PhoneNumber == request.UsernameOrEmailOrPhone) &&
+                    u.IsActive == true);
 
                 if (user == null)
-                {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid credentials."));
-                }
+                    throw new InvalidCredentialsException("Invalid username/email/phone number.");
 
                 if (!user.TwoFactorEnabled)
-                {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Two-Factor Authentication is not enabled for this user."));
-                }
+                    throw new InvalidOperationException("2FA is not enabled for this user.");
 
+                var isBypassUser = _env.IsDevelopment() &&
+                    (user.Email == ConstantValues.ByPassEmail || user.PhoneNumber == ConstantValues.ByPassMobile);
+
+                if (request.Method != ConstantValues.Phone && request.Method != ConstantValues.Email)
+                {
+                    throw new Exception();
+                }
                 var provider = request.Method.Equals(ConstantValues.Phone, StringComparison.OrdinalIgnoreCase)
                     ? TokenOptions.DefaultPhoneProvider
                     : TokenOptions.DefaultEmailProvider;
 
+
                 var isValid = await _userManager.VerifyTwoFactorTokenAsync(user, provider, request.TwoFactorCode);
 
                 if (!isValid && !(isBypassUser && request.TwoFactorCode == ConstantValues.ByPass2FA))
-                {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid or expired 2FA code."));
-                }
+                    throw new InvalidOperationException("Invalid or expired 2FA code.");
 
                 var accessToken = await _tokenService.GenerateAccessToken(user);
                 var refreshToken = _tokenService.GenerateRefreshToken();
 
-                await _userManager.SetAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshToken, refreshToken);
-                await _userManager.SetAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
+                await _userManager.SetAuthenticationTokenAsync(user,
+                    Constants.ConstantValues.QLNProvider,
+                    Constants.ConstantValues.RefreshToken,
+                    refreshToken);
 
-                return TypedResults.Ok(ApiResponse<LoginResponse>.Success("2FA verified. Login successful.", new LoginResponse
+                await _userManager.SetAuthenticationTokenAsync(user,
+                    Constants.ConstantValues.QLNProvider,
+                    Constants.ConstantValues.RefreshTokenExpiry,
+                    DateTime.UtcNow.AddDays(7).ToString("o"));
+
+                var response = new LoginResponse
                 {
                     Username = user.UserName,
                     Emailaddress = user.Email,
                     Mobilenumber = user.PhoneNumber,
                     AccessToken = accessToken,
-                    RefreshToken = refreshToken
-                }));
+                    RefreshToken = refreshToken,
+                    IsTwoFactorEnabled = true
+                };
+
+                return TypedResults.Ok(ApiResponse<LoginResponse>.Success("2FA verified. Login successful.", response));
+            }
+            catch (InvalidCredentialsException ex)
+            {
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "Invalid Credentials",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "2FA Verification Failed",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status400BadRequest
+                });
             }
             catch (Exception ex)
             {
                 _log.LogException(ex);
                 return TypedResults.Problem(
-                    detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
-                    statusCode: StatusCodes.Status500InternalServerError
-                );
+                    title: "Internal Server Error",
+                    detail: "An unexpected error occurred. Please try again later.",
+                    statusCode: StatusCodes.Status500InternalServerError);
             }
         }
 
-        public async Task<Results<Ok<ApiResponse<RefreshTokenResponse>>, BadRequest<ApiResponse<string>>, ProblemHttpResult, UnauthorizedHttpResult>> RefreshToken(RefreshTokenRequest request)
+        public async Task<Results<Ok<ApiResponse<RefreshTokenResponse>>, BadRequest<ProblemDetails>, ProblemHttpResult, UnauthorizedHttpResult>> RefreshToken(Guid userId,RefreshTokenRequest request)
         {
             try
             {
-                ApplicationUser? user = null;
-                foreach (var u in _userManager.Users)
-                {
-                    var storedToken = await _userManager.GetAuthenticationTokenAsync(u, Constants.ConstantValues.RefreshToken, "refresh_token");
-                    var expiryStr = await _userManager.GetAuthenticationTokenAsync(u, Constants.ConstantValues.RefreshTokenExpiry, "refresh_token_expiry");
-
-                    if (storedToken == request.RefreshToken)
-                    {
-                        if (!DateTime.TryParse(expiryStr, out var expiry))
-                        {
-                            return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid refresh token expiry date."));
-                        }
-
-                        if (expiry <= DateTime.UtcNow)
-                        {
-                            return TypedResults.BadRequest(ApiResponse<string>.Fail("Refresh token has expired."));
-                        }
-
-                        user = u;
-                        break;
-                    }
-                }
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId && u.IsActive == true);
 
                 if (user == null)
                 {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid refresh token."));
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Token",
+                        Detail = "Refresh token is not valid.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                var storedToken = await _userManager.GetAuthenticationTokenAsync(
+                        user,
+                        Constants.ConstantValues.QLNProvider,
+                        Constants.ConstantValues.RefreshToken);
+
+                var expiryStr = await _userManager.GetAuthenticationTokenAsync(
+                    user,
+                    Constants.ConstantValues.QLNProvider,
+                    Constants.ConstantValues.RefreshTokenExpiry);
+
+                if (storedToken == request.RefreshToken)
+                {
+                    if (!DateTime.TryParse(expiryStr, out var expiry))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Token Expiry",
+                            Detail = "Refresh token expiry date is invalid.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    if (expiry <= DateTime.UtcNow)
+                    {
+                        return TypedResults.Unauthorized();
+                    }
+
+                    var newAccessToken = await _tokenService.GenerateAccessToken(user);
+                    var newRefreshToken = _tokenService.GenerateRefreshToken();
+
+                    await _userManager.SetAuthenticationTokenAsync(user,
+                        Constants.ConstantValues.QLNProvider,
+                        Constants.ConstantValues.RefreshToken,
+                        newRefreshToken);
+
+                    await _userManager.SetAuthenticationTokenAsync(user,
+                        Constants.ConstantValues.QLNProvider,
+                        Constants.ConstantValues.RefreshTokenExpiry,
+                        DateTime.UtcNow.AddDays(7).ToString("o"));
+
+                    return TypedResults.Ok(ApiResponse<RefreshTokenResponse>.Success(
+                        "Token refreshed successfully",
+                        new RefreshTokenResponse
+                        {
+                            AccessToken = newAccessToken,
+                            RefreshToken = newRefreshToken
+                        }));
+                }
+                else
+                {
+                    return TypedResults.Problem(
+                        title: "Refresh Token Invalid",
+                        detail: "Refresh Token Invalid. Please try again later.",
+                        statusCode: StatusCodes.Status401Unauthorized);
+
                 }
 
-                var newAccessToken = await _tokenService.GenerateAccessToken(user);
-                var newRefreshToken = _tokenService.GenerateRefreshToken();
-
-                await _userManager.SetAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshToken, newRefreshToken);
-                await _userManager.SetAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
-
-                return TypedResults.Ok(ApiResponse<RefreshTokenResponse>.Success("Token refreshed", new RefreshTokenResponse
-                {
-                    AccessToken = newAccessToken,
-                    RefreshToken = newRefreshToken
-                }));
             }
             catch (Exception ex)
             {
                 _log.LogException(ex);
                 return TypedResults.Problem(
-                   detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
-                   statusCode: StatusCodes.Status500InternalServerError);
+                    title: "Server Error",
+                    detail: "An unexpected error occurred. Please try again later.",
+                    statusCode: StatusCodes.Status500InternalServerError);
             }
         }
 
-        public async Task<IResult> Toggle2FA(TwoFactorToggleRequest request)
+        public async Task<Results<Ok<ApiResponse<string>>, Accepted<ApiResponse<string>>, BadRequest<ProblemDetails>, ProblemHttpResult>> Toggle2FA(TwoFactorToggleRequest request)
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(request.EmailorPhoneNumber))
                 {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Email or phone number is required."));
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing Input",
+                        Detail = "Email or phone number is required.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
                 }
 
                 var user = await _userManager.Users.FirstOrDefaultAsync(u =>
-                u.Email == request.EmailorPhoneNumber || u.PhoneNumber == request.EmailorPhoneNumber && u.Isactive == true);
+                    (u.Email == request.EmailorPhoneNumber || u.PhoneNumber == request.EmailorPhoneNumber) && u.IsActive == true);
 
                 if (user == null)
                 {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("Invalid email or phone number."));
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "User Not Found",
+                        Detail = "Invalid email or phone number.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
                 }
 
                 user.TwoFactorEnabled = request.Enable;
-                var updateResult = await _userManager.UpdateAsync(user);
+                var result = await _userManager.UpdateAsync(user);
 
-                if (!updateResult.Succeeded)
+                if (!result.Succeeded)
                 {
-                    var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail($"Failed to update user: {errors}"));
+                    var errorMessage = string.Join(", ", result.Errors.Select(e => e.Description));
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Update Failed",
+                        Detail = $"Failed to update 2FA status: {errorMessage}",
+                        Status = StatusCodes.Status400BadRequest
+                    });
                 }
 
                 var status = request.Enable ? "enabled" : "disabled";
-                return TypedResults.Ok(ApiResponse<string>.Success($"Two-Factor Authentication has been {status}."));
+                var message = $"Two-Factor Authentication has been {status}.";
+
+                return request.Enable
+                    ? TypedResults.Ok(ApiResponse<string>.Success(message))
+                    : TypedResults.Accepted(string.Empty, ApiResponse<string>.Success(message));
             }
             catch (Exception ex)
             {
                 _log.LogException(ex);
                 return TypedResults.Problem(
-                  detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
-                  statusCode: StatusCodes.Status500InternalServerError);
+                    title: "Internal Server Error",
+                    detail: "An unexpected error occurred. Please try again later.",
+                    statusCode: StatusCodes.Status500InternalServerError
+                );
             }
         }
-
-        public async Task<IResult> GetProfile(Guid Id)
+        public async Task<Results<Ok<ApiResponse<object>>, BadRequest<ProblemDetails>, NotFound<ProblemDetails>, ProblemHttpResult>> GetProfile(Guid Id)
         {
             try
             {
                 if (Id == Guid.Empty)
                 {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("email is required."));
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid ID",
+                        Detail = "User ID is required.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
                 }
 
-                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == Id && u.Isactive == true);
-
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == Id && u.IsActive == true);
                 if (user == null)
                 {
-                    return TypedResults.NotFound(ApiResponse<string>.Fail("User not Found"));
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "User Not Found",
+                        Detail = "User not found.",
+                        Status = StatusCodes.Status404NotFound
+                    });
                 }
-                return TypedResults.Ok(ApiResponse<object>.Success("Profile data", new
+
+                var profile = new
                 {
                     user.UserName,
-                    user.Firstname,
-                    user.Lastname,
+                    user.FirstName,
+                    user.LastName,
                     user.Email,
                     user.PhoneNumber,
                     user.Gender,
-                    user.Dateofbirth,
-                    user.Languagepreferences,
+                    user.DateOfBirth,
+                    user.LanguagePreferences,
                     user.Nationality,
-                    user.Mobileoperator,
+                    user.MobileOperator,
                     user.PhoneNumberConfirmed,
                     user.EmailConfirmed,
                     user.IsCompany,
                     user.TwoFactorEnabled
-                }));
+                };
+
+                return TypedResults.Ok(ApiResponse<object>.Success("Profile data", profile));
             }
             catch (Exception ex)
             {
                 _log.LogException(ex);
                 return TypedResults.Problem(
-                    detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
+                    detail: "An unexpected error occurred. Please try again later.",
                     statusCode: StatusCodes.Status500InternalServerError);
             }
         }
 
-        public async Task<IResult> UpdateProfile(Guid id, UpdateProfileRequest request)
+        public async Task<Results<Ok<ApiResponse<string>>, BadRequest<ProblemDetails>, NotFound<ProblemDetails>, ProblemHttpResult>> UpdateProfile(Guid id, UpdateProfileRequest request)
         {
             try
             {
                 if (id == Guid.Empty)
                 {
-                    return TypedResults.BadRequest(ApiResponse<string>.Fail("User ID is required."));
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Request",
+                        Detail = "User ID is required.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
                 }
 
-                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == id && u.Isactive == true);
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == id && u.IsActive == true);
 
-
-                if (user == null || user.Isactive == false)
+                if (user == null)
                 {
-                    return TypedResults.NotFound(ApiResponse<string>.Fail("User not found"));
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "User Not Found",
+                        Detail = "The requested user does not exist or is inactive.",
+                        Status = StatusCodes.Status404NotFound
+                    });
                 }
 
-                user.Firstname = request.FirstName;
-                user.Lastname = request.LastName;
+                user.FirstName = request.FirstName;
+                user.LastName = request.LastName;
                 user.Gender = request.Gender;
-                user.Dateofbirth = request.Dateofbirth;
+                user.DateOfBirth = request.Dateofbirth;
                 user.Nationality = request.Nationality;
                 user.PhoneNumber = request.MobileNumber;
-                user.Languagepreferences = request.Languagepreferences;
-                user.Updatedat = DateTime.UtcNow;
-                await _userManager.UpdateAsync(user);
+                user.LanguagePreferences = request.Languagepreferences;
+                user.UpdatedAt = DateTime.UtcNow;
 
-                return TypedResults.Ok(ApiResponse<string>.Success("Profile updated successfully"));
+                var result = await _userManager.UpdateAsync(user);
+
+                if (!result.Succeeded)
+                {
+                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Update Failed",
+                        Detail = $"Failed to update profile: {errors}",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                return TypedResults.Ok(ApiResponse<string>.Success("Profile updated successfully."));
             }
             catch (Exception ex)
             {
                 _log.LogException(ex);
                 return TypedResults.Problem(
-                    detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
+                    title: "Server Error",
+                    detail: "An unexpected error occurred. Please try again later.",
                     statusCode: StatusCodes.Status500InternalServerError);
             }
         }
-
-        public async Task<IResult> Logout(Guid id)
+        public async Task<Results<Ok<ApiResponse<string>>, NotFound<ProblemDetails>, ProblemHttpResult>> Logout(Guid id)
         {
             try
             {
-                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == id && u.Isactive == true);
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == id && u.IsActive == true);
 
                 if (user == null)
                 {
-                    return TypedResults.NotFound(ApiResponse<string>.Fail("User not found."));
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "User Not Found",
+                        Detail = "No active user found with the provided ID.",
+                        Status = StatusCodes.Status404NotFound
+                    });
                 }
-
 
                 await _userManager.RemoveAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshToken);
                 await _userManager.RemoveAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshTokenExpiry);
-
 
                 await _httpContextAccessor.HttpContext!.SignOutAsync();
 
@@ -702,7 +864,8 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             {
                 _log.LogException(ex);
                 return TypedResults.Problem(
-                    detail: ApiResponse<string>.Fail("An unexpected error occurred during logout.").Message,
+                    title: "Logout Error",
+                    detail: "An unexpected error occurred during logout.",
                     statusCode: StatusCodes.Status500InternalServerError);
             }
         }
@@ -729,60 +892,109 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             }
         }
 
-        public async Task<ApiResponse<string>> SendTwoFactorOtp(Send2FARequest request)
+        public async Task<Results<Ok<ApiResponse<string>>, BadRequest<ProblemDetails>, ProblemHttpResult>> SendTwoFactorOtp(Send2FARequest request)
         {
-            var user = await _userManager.Users.FirstOrDefaultAsync(u =>
-                (u.UserName == request.UsernameOrEmailOrPhone ||
-                 u.Email == request.UsernameOrEmailOrPhone ||
-                 u.PhoneNumber == request.UsernameOrEmailOrPhone) &&
-                 u.Isactive == true);
-
-            if (user == null)
-                return ApiResponse<string>.Fail("User not found.");
-
-            if (!user.TwoFactorEnabled)
-                return ApiResponse<string>.Fail("Two-Factor Authentication is not enabled for this user.");
-
-            var method = request.Method?.Trim().ToLowerInvariant();
-
-            var isBypassUser = _env.IsDevelopment() && (user.Email == ConstantValues.ByPassEmail || user.PhoneNumber == ConstantValues.ByPassMobile);
-
-            if (isBypassUser)
+            try
             {
-                // Skip sending actual OTP
-                return ApiResponse<string>.Success($"2FA OTP bypassed in development for {method}.");
+                var user = await _userManager.Users.FirstOrDefaultAsync(u =>
+                    (u.UserName == request.UsernameOrEmailOrPhone ||
+                     u.Email == request.UsernameOrEmailOrPhone ||
+                     u.PhoneNumber == request.UsernameOrEmailOrPhone) &&
+                     u.IsActive == true);
+
+                if (user == null)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "User Not Found",
+                        Detail = "User does not exist or is inactive.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                if (!user.TwoFactorEnabled)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "2FA Not Enabled",
+                        Detail = "Two-Factor Authentication is not enabled for this user.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                var method = request.Method?.Trim().ToLowerInvariant();
+                var isBypassUser = _env.IsDevelopment() &&
+                                   (user.Email == ConstantValues.ByPassEmail || user.PhoneNumber == ConstantValues.ByPassMobile);
+
+                if (isBypassUser)
+                {
+                    return TypedResults.Ok(ApiResponse<string>.Success($"2FA OTP bypassed in development for {method}."));
+                }
+
+                if (method == Constants.ConstantValues.Phone.ToLowerInvariant())
+                {
+                    if (string.IsNullOrWhiteSpace(user.PhoneNumber) || !user.PhoneNumberConfirmed)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Phone Invalid",
+                            Detail = "Phone number is not set or confirmed.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var otp = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultPhoneProvider);
+                    var smsText = $"Your 2FA OTP is {otp}";
+
+                    var response = await SendSms(
+                        _config["OoredooSmsApi:ApiUrl"],
+                        _config["OoredooSmsApi:CustomerId"],
+                        _config["OoredooSmsApi:UserName"],
+                        _config["OoredooSmsApi:UserPassword"],
+                        user.PhoneNumber, smsText,
+                        _config["OoredooSmsApi:Originator"]);
+
+                    return response.IsSuccessStatusCode
+                        ? TypedResults.Ok(ApiResponse<string>.Success("2FA OTP sent via phone."))
+                        : TypedResults.Problem(
+                            detail: "Failed to send OTP via SMS. Please try again later.",
+                            statusCode: StatusCodes.Status500InternalServerError);
+                }
+                else if (method == Constants.ConstantValues.Email)
+                {
+                    if (string.IsNullOrWhiteSpace(user.Email) || !user.EmailConfirmed)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Email Invalid",
+                            Detail = "Email is not set or confirmed.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var code = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
+                    await _emailSender.SendTwoFactorCode(user, user.Email, code);
+
+                    return TypedResults.Ok(ApiResponse<string>.Success("2FA OTP sent via email."));
+                }
+                else
+                {
+                    throw new Exception();
+                }
             }
-            if (method == Constants.ConstantValues.Phone.ToLowerInvariant())
+            catch (Exception ex)
             {
-                if (string.IsNullOrWhiteSpace(user.PhoneNumber) || !user.PhoneNumberConfirmed)
-                    return ApiResponse<string>.Fail("Phone number is not set or confirmed.");
-
-                var otp = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultPhoneProvider);
-                var smsText = $"Your 2FA OTP is {otp}";
-
-                var response = await SendSms(
-                    _config["OoredooSmsApi:ApiUrl"],
-                    _config["OoredooSmsApi:CustomerId"],
-                    _config["OoredooSmsApi:UserName"],
-                    _config["OoredooSmsApi:UserPassword"],
-                    user.PhoneNumber,smsText,
-                    _config["OoredooSmsApi:Originator"]
-                );
-
-                return response.IsSuccessStatusCode
-                    ? ApiResponse<string>.Success("2FA OTP sent via phone.")
-                    : ApiResponse<string>.Fail("Failed to send OTP via SMS.");
+                _log.LogException(ex);
+                return TypedResults.Problem(
+                    title: "Server Error",
+                    detail: "An unexpected error occurred. Please try again later.",
+                    statusCode: StatusCodes.Status500InternalServerError);
             }
-            else
-            {
-                if (string.IsNullOrWhiteSpace(user.Email) || !user.EmailConfirmed)
-                    return ApiResponse<string>.Fail("Email is not set or confirmed.");
-
-                var code = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
-                await _emailSender.SendTwoFactorCode(user, user.Email, code);
-
-                return ApiResponse<string>.Success("2FA OTP sent via email.");
-            }
+        }
+        private static bool IsValidEmail(string email)
+        {
+            return !string.IsNullOrWhiteSpace(email) &&
+                   Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase);
         }
 
     }

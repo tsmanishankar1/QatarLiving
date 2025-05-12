@@ -149,3 +149,7 @@ docker run -p 5200:8080 qln-backend-api
 docker build -t qln-blazor-base -f QLN.Blazor.Base/Dockerfile .
 docker run -p 5047:8080 qln-blazor-base
 ```
+
+# MAUI Support
+
+For MAUI setup please follow the instructions in the [`MAUI_SETUP.md`](MAUI_SETUP.md) file.

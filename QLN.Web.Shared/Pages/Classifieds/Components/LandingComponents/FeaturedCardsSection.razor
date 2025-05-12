@@ -1,0 +1,120 @@
+ 
+<div class="categories-wrapper">
+    <!-- Header section with different background -->
+    <div class="categories-header">
+        <MudContainer MaxWidth="MaxWidth.False">
+            <h4 class="section-header">Featured Categories</h4>
+        </MudContainer>
+    </div>
+ 
+    <!-- Card grid section on full white background -->
+    <div class="categories-section">
+        <MudContainer MaxWidth="MaxWidth.False">
+            <MudGrid GutterSize="12px" Class="category-grid">
+                @foreach (var category in categories)
+                {
+                    <MudItem xs="6" sm="4" md="2">
+                        <div class="category-card-section" @onclick="() => HandleCategoryClick(category)">
+                            <div class="card-contents">
+                                <img src="@category.ImageUrl" alt="@category.Name" class="category-image" />
+                                <p class="category-titles">@category.Name</p>
+                            </div>
+                        </div>
+                    </MudItem>
+                }
+            </MudGrid>
+        </MudContainer>
+    </div>
+</div>
+ 
+ 
+@code {
+    public class CategoryItem
+    {
+        public string Name { get; set; }
+        public string ImageUrl { get; set; }
+    }
+ 
+    private List<CategoryItem> categories = new()
+    {
+        new() { Name = "Ramadan Essentials",  ImageUrl = "/images/categories/new1.svg" },
+        new() { Name = "Back to School",      ImageUrl = "/images/categories/new2.svg" },
+        new() { Name = "Gym Motivation",      ImageUrl = "/images/categories/new3.svg" },
+        new() { Name = "Outdoors & Camping",  ImageUrl = "/images/categories/new4.svg" },
+        new() { Name = "Electronics Rush",    ImageUrl = "/images/categories/new5.svg" },
+        new() { Name = "Cats & Dogs",         ImageUrl = "/images/categories/new6.svg" },
+    };
+ 
+    void HandleCategoryClick(CategoryItem category)
+    {
+        Console.WriteLine($"Clicked: {category.Name}");
+    }
+}
+ 
+ 
+<style>
+.categories-wrapper {
+    width: 100vw;
+}
+ 
+/* Header with secondary background */
+.categories-header {
+    background-color: var(--color-secondary-background);
+    padding: 2rem 0 1rem;
+}
+ 
+.section-header {
+    text-align: center;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+ 
+/* Grid section with full white background */
+.categories-section {
+    background-color: var(--color-background-secondary-grey-light);
+    width: 100%;
+    padding: 2rem;
+}
+ 
+.category-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: flex-start;
+    width: 100%;
+}
+ 
+.category-card-section {
+    cursor: pointer;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    transition: transform 0.2s ease;
+}
+ 
+.card-contents {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+}
+ 
+.category-image {
+    max-width: 210px;
+    max-height: 300px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+ 
+.category-titles {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--color-text-secondary);
+    margin: 0;
+    padding-left: 4px;
+}
+ 
+ 
+</style>

@@ -165,10 +165,10 @@ namespace QLN.Common.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("Createdat")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateOnly>("Dateofbirth")
+                    b.Property<DateOnly>("DateOfBirth")
                         .HasColumnType("date");
 
                     b.Property<string>("Email")
@@ -178,24 +178,23 @@ namespace QLN.Common.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("Firstname")
+                    b.Property<string>("FirstName")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Gender")
-                        .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsCompany")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("Isactive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Languagepreferences")
+                    b.Property<string>("LanguagePreferences")
                         .HasColumnType("text");
 
-                    b.Property<string>("Lastname")
+                    b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -208,7 +207,7 @@ namespace QLN.Common.Migrations
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Mobileoperator")
+                    b.Property<string>("MobileOperator")
                         .HasColumnType("text");
 
                     b.Property<string>("Nationality")
@@ -238,7 +237,7 @@ namespace QLN.Common.Migrations
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("boolean");
 
-                    b.Property<DateTime?>("Updatedat")
+                    b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UserName")

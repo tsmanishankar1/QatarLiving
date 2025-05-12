@@ -1,0 +1,16 @@
+﻿@inject GlobalAppState AppState
+
+<CascadingValue Value="AppState">
+
+    <Router AppAssembly="typeof(Layout.MainLayout).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+                <NotAuthorized>
+                    <RedirectToLogin />
+                </NotAuthorized>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="routeData" Selector="h1" />
+        </Found>
+    </Router>
+
+</CascadingValue>

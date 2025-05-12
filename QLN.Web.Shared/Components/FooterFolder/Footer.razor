@@ -29,8 +29,11 @@
         <div class="footer-column footer-apps">
             <img src="/images/new_qatar_logo.png" alt="Qatar Living" width="132.5" height="40.33" class="logo" />
             <p>Our Mobile App</p>
+            <div class="store-badges">
+
             <img src="/images/google_play_logo.svg" class="store-badge" />
             <img src="/images/app_store_logo.svg" class="store-badge" />
+            </div>
         </div>
     </div>
     <hr />
@@ -123,6 +126,14 @@
     .store-badge {
         max-width: 130px;
         margin: 5px 0;
+            display: flex;
+
+    }
+
+    .store-badges {
+        display: flex;
+        gap: 10px;
+        flex-direction:row
     }
 
     .newsletter {
@@ -213,4 +224,11 @@
         background-color: white;
         color: #003A63;
     }
+
+    @@media (max-width: 600px) {
+        .store-badges {
+            flex-direction: column !important;
+        }
+    }
+
 </style>
