@@ -4,7 +4,6 @@
 @inject NavigationManager NavManager
 @inject ApiService Api
 @using QLN.Web.Shared.Services
-@inject UserState UserState
 @using MudBlazor
 @using MudBlazor.Components
 @rendermode InteractiveServer
@@ -20,18 +19,15 @@
         Please check your inbox and follow the link to activate your account.
     </MudText>
 
-    <MudButton Class="mt-4"
-               Variant="Variant.Filled"
-               Color="Color.Primary"
-               Disabled="@_resending"
-               OnClick="ResendVerificationLink">
+    <MudButton Class="mt-4" Variant="Variant.Filled" Color="Color.Primary" Disabled="@_resending"
+        OnClick="ResendVerificationLink">
         @(_resending ? "Resending..." : "Resend Link")
     </MudButton>
 </MudPaper>
 
 @code {
     [Parameter]
-    public string Email { get; set; } = string.Empty; 
+    public string Email { get; set; } = string.Empty;
 
     private bool _resending = false;
 
@@ -40,20 +36,20 @@
         _resending = true;
         try
         {
-          /*   var payload = new { email = "ashwin99655@gmail.com" };
+            /* var payload = new { email = "ashwin99655@gmail.com" };
             var response = await Api.PostAsync<object, VerifyResponse>("auth/resend-confirmation-email", payload);
             var rawResponse = await response.Content.ReadAsStringAsync();
-            var plainText = Regex.Replace(rawResponse, "<.*?>", string.Empty); 
+            var plainText = Regex.Replace(rawResponse, "<.*?>", string.Empty);
 
             if (response.Status)
             {
-                Snackbar.Add(plainText, Severity.Success);
-                NavManager.NavigateTo("/verify-otp");
+            Snackbar.Add(plainText, Severity.Success);
+            NavManager.NavigateTo("/verify-otp");
             }
             else
             {
-                Snackbar.Add(response.Message ?? "Failed to resend verification email.", Severity.Warning);
-            }  */
+            Snackbar.Add(response.Message ?? "Failed to resend verification email.", Severity.Warning);
+            } */
         }
         catch (Exception ex)
         {

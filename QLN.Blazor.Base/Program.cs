@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Identity;
+using QLN.Web.Shared;
 using QLN.Web.Shared.Pages;
 using QLN.Web.Shared;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-
 builder.Services.AddAuthentication(options =>
     {
         options.DefaultScheme = IdentityConstants.ApplicationScheme;

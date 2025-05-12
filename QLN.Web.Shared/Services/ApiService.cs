@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 using QLN.Web.Shared.Models;
+using Microsoft.AspNetCore.Mvc;
 
 namespace QLN.Web.Shared.Services
 {
@@ -10,133 +11,115 @@ namespace QLN.Web.Shared.Services
     {
         private readonly HttpClient _http;
         private readonly string _baseUrl;
-        public ApiService(HttpClient http, IOptions<ApiSettings> options)
+          public ApiService(HttpClient http, IOptions<ApiSettings> options)
         {
-            _http = http ?? throw new ArgumentNullException(nameof(HttpClient));
-            _baseUrl = options.Value.BaseUrl?.TrimEnd('/') ?? "https://localhost:7761";
+            _http = http;
+            _baseUrl = options.Value.BaseUrl.TrimEnd('/');
         }
 
         public async Task<T?> GetAsync<T>(string endpoint)
         {
-            try
+            var response = await _http.GetAsync($"{_baseUrl}/{endpoint}");
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
             {
-                return await _http.GetFromJsonAsync<T>($"{_baseUrl}/{endpoint}");
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                return JsonSerializer.Deserialize<T>(responseContent, jsonOptions);
             }
-            catch (HttpRequestException ex)
-            {
-                Console.WriteLine($"GET Error: {ex.Message}");
-                return default;
-            }
+            await HandleError(response);
+            return default!;
         }
 
-        
 
-public async Task<ResponseModel<TData>?> PostAsync<TRequest, TData>(string endpoint, TRequest data)
-{
-    try
-    {
-        var response = await _http.PostAsJsonAsync($"{_baseUrl}/{endpoint}", data);
-        var statusCode = (int)response.StatusCode;
-
-        var responseContent = await response.Content.ReadAsStringAsync();
-        Console.WriteLine($"Response Content: {responseContent}");
-
-        if (!string.IsNullOrWhiteSpace(responseContent))
+        public async Task<T?> PostAsync<TRequest, T>(string endpoint, TRequest data)
         {
-            var result = JsonSerializer.Deserialize<ResponseModel<TData>>(responseContent, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
-
-            if (result != null)
-            {
-                result.StatusCode = statusCode;
-                return result;
+            var response = await _http.PostAsJsonAsync($"{_baseUrl}/{endpoint}", data);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode){
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                return await response.Content.ReadFromJsonAsync<T>(jsonOptions);
             }
+            await HandleError(response);
+            return default!;
         }
-        return default;
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"POST Exception: {ex.Message}");
-        return new ResponseModel<TData>
-        {
-            Status = false,
-            Message = ex.Message,
-            StatusCode = 0
-        };
-    }
-}
-
-
-
-        
-
 
         public async Task<TResponse?> PatchAsync<TRequest, TResponse>(string endpoint, TRequest data)
         {
-            try
+            var request = new HttpRequestMessage(HttpMethod.Patch, $"{_baseUrl}/{endpoint}")
             {
-                var request = new HttpRequestMessage(HttpMethod.Patch, $"{_baseUrl}/{endpoint}")
+                Content = JsonContent.Create(data)
+            };
+            var response = await _http.SendAsync(request);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonOptions = new JsonSerializerOptions
                 {
-                    Content = JsonContent.Create(data)
+                    PropertyNameCaseInsensitive = true
                 };
-
-                var response = await _http.SendAsync(request);
-                if (response.IsSuccessStatusCode)
-                {
-                    return await response.Content.ReadFromJsonAsync<TResponse>();
-                }
-
-                Console.WriteLine($"PATCH Error: {response.StatusCode}");
-                return default;
+                return await response.Content.ReadFromJsonAsync<TResponse>(jsonOptions);
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"PATCH Exception: {ex.Message}");
-                return default;
-            }
+                await HandleError(response);
+                return default!;
         }
 
         public async Task<bool> DeleteAsync(string endpoint)
         {
-            try
+            var response = await _http.DeleteAsync($"{_baseUrl}/{endpoint}");
+            var responseContent = await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode)
             {
-                var response = await _http.DeleteAsync($"{_baseUrl}/{endpoint}");
-                return response.IsSuccessStatusCode;
+                return true;
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"DELETE Exception: {ex.Message}");
-                return false;
-            }
+            await HandleError(response);
+            return false;
         }
 
         public async Task<TResponse?> PutAsync<TRequest, TResponse>(string endpoint, TRequest data)
         {
-            try
+            var request = new HttpRequestMessage(HttpMethod.Put, $"{_baseUrl}/{endpoint}")
             {
-                var request = new HttpRequestMessage(HttpMethod.Put, $"{_baseUrl}/{endpoint}")
+                Content = JsonContent.Create(data)
+            };
+            var response = await _http.SendAsync(request);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonOptions = new JsonSerializerOptions
                 {
-                    Content = JsonContent.Create(data)
+                    PropertyNameCaseInsensitive = true
                 };
-
-                var response = await _http.SendAsync(request);
-                if (response.IsSuccessStatusCode)
-                {
-                    return await response.Content.ReadFromJsonAsync<TResponse>();
-                }
-
-                Console.WriteLine($"PUT Error: {response.StatusCode}");
-                return default;
+                return await response.Content.ReadFromJsonAsync<TResponse>(jsonOptions);
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"PUT Exception: {ex.Message}");
-                return default;
-            }
+                await HandleError(response);
+                return default!;
         }
 
+        private async Task HandleError(HttpResponseMessage response)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            try
+            {
+                var problem = JsonSerializer.Deserialize<ProblemDetails>(content, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                var message = problem?.Detail ?? problem?.Title ?? "API Error";
+                throw new HttpRequestException($"{(int)response.StatusCode} - {message}");
+            }
+            catch
+            {
+                throw new HttpRequestException($"HTTP {(int)response.StatusCode}: {response.ReasonPhrase}");
+            }
+        }
     }
 }
 

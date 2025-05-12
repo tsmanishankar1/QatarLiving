@@ -4,7 +4,6 @@
 @inject ISnackbar Snackbar
 @inject ApiService Api
 @using QLN.Web.Shared.Services
-@inject UserState UserState
 @using MudBlazor.Components
 @rendermode InteractiveServer
 @using QLN.Web.Shared.Models
@@ -13,63 +12,42 @@
 
 <div style="width: 100%; background-color: var(--color-secondary-background); padding: 32px 16px;">
     <div style="max-width: 400px; margin: 0 auto;">
-    
-    <MudStack Spacing="3">
-        <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-6" Style="font-weight: 700;">
-        Two-Factor Authentication
-    </MudText>
 
-        <MudText Typo="Typo.caption" Align="Align.Center">
-            Improve your account security with 2FA
-        </MudText>
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-6" Style="font-weight: 700;">
+                Two-Factor Authentication
+            </MudText>
 
-        <MudText>1. Download an authenticator app</MudText>
-        <MudText>2. Scan this QR code</MudText>
-        <MudText>3. Enter the 6-digit code below</MudText>
+            <MudText Typo="Typo.caption" Align="Align.Center">
+                Improve your account security with 2FA
+            </MudText>
 
-        <MudTextField T="string" 
-                      Label="Verification Code" 
-                      Variant="Variant.Outlined" 
-                      FullWidth="true" 
-                      Style="background-color: #FFFFFF;"
-                      @bind-Value="_code" />
+            <MudText>1. Download an authenticator app</MudText>
+            <MudText>2. Scan this QR code</MudText>
+            <MudText>3. Enter the 6-digit code below</MudText>
 
-        <MudText Align="Align.Start"
-                 Class="mud-clickable mt-2"
-                 Style="color: #FF7F38; cursor: pointer;" 
-                 @onclick="NavigateToForgotPassword">
-                 Can't scan? Manual entry code:
-        </MudText>
-        <MudText Align="Align.Start"
-                 Class="mud-clickable mt-2"
-                 Style="color: #555555; cursor: pointer;" 
-                 @onclick="NavigateToForgotPassword">
-                 ABCD-EFGH-IJKL-MNOP
-        </MudText>
-<div style="display: flex; gap: 16px;">
-    
-    <CustomButton 
-    BackgroundColor="#FFFFFF"
-    TextColor="#555555"
-    BorderColor="#CCCCCC"
-    Text="Skip for now"
-    Disabled="_isLoading"
-    Loading="_isLoading"
-    OnClick="@Cancel"
-    Class="mt-4" />
+            <MudTextField T="string" Label="Verification Code" Variant="Variant.Outlined" FullWidth="true"
+                Style="background-color: #FFFFFF;" @bind-Value="_code" />
 
-   
-    <CustomButton 
-    BackgroundColor="#FF7F38"
-    TextColor="#FFFFFF"
-    Text="Verify"
-    Disabled="_isLoading"
-    Loading="_isLoading"
-    OnClick="@VerifyCode"
-    Class="mt-4" />
-</div>
-        
-    </MudStack>
+            <MudText Align="Align.Start" Class="mud-clickable mt-2" Style="color: #FF7F38; cursor: pointer;"
+                @onclick="NavigateToForgotPassword">
+                Can't scan? Manual entry code:
+            </MudText>
+            <MudText Align="Align.Start" Class="mud-clickable mt-2" Style="color: #555555; cursor: pointer;"
+                @onclick="NavigateToForgotPassword">
+                ABCD-EFGH-IJKL-MNOP
+            </MudText>
+            <div style="display: flex; gap: 16px;">
+
+                <CustomButton BackgroundColor="#FFFFFF" TextColor="#555555" BorderColor="#CCCCCC" Text="Skip for now"
+                    Disabled="_isLoading" Loading="_isLoading" OnClick="@Cancel" Class="mt-4" />
+
+
+                <CustomButton BackgroundColor="#FF7F38" TextColor="#FFFFFF" Text="Verify" Disabled="_isLoading"
+                    Loading="_isLoading" OnClick="@VerifyCode" Class="mt-4" />
+            </div>
+
+        </MudStack>
     </div>
 </div>
 
@@ -89,35 +67,35 @@
     }
 
     private async Task VerifyCode()
-{
-     _isLoading = true;
-    if (string.IsNullOrWhiteSpace(_code))
     {
-        Snackbar.Add("Enter the verification code", Severity.Warning);
-        _isLoading = false;
-        return;
-    }
-    try
-    {
-        var payload = new { usernameOrEmailOrPhone = "9677484367", twoFactorCode = _code };
-        var res = await Api.PostAsync<object, ResponseModel<object>>("auth/verify-2fa", payload);
-        if (res?.Status == true)
+        _isLoading = true;
+        if (string.IsNullOrWhiteSpace(_code))
         {
-            Snackbar.Add("Signup successful! Please enter OTP.", Severity.Success); 
-             NavManager.NavigateTo("/");
+            Snackbar.Add("Enter the verification code", Severity.Warning);
+            _isLoading = false;
+            return;
         }
-        else
+        try
         {
-            Snackbar.Add(res?.Message ?? "Failed to resend verification email.", Severity.Warning);
+            /* var payload = new { usernameOrEmailOrPhone = "9677784367", twoFactorCode = _code };
+            var res = await Api.PostAsync<object, ResponseModel<object>>("auth/verify-2fa", payload);
+            if (res?.Status == true)
+            {
+                Snackbar.Add("Signup successful! Please enter OTP.", Severity.Success);
+                NavManager.NavigateTo("/");
+            }
+            else
+            {
+                Snackbar.Add(res?.Message ?? "Failed to resend verification email.", Severity.Warning);
+            } */
         }
-    }
-    catch (Exception ex)
-    {
-        Snackbar.Add($"Signup failed: {ex.Message}", Severity.Error);
-    }
-    finally
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Signup failed: {ex.Message}", Severity.Error);
+        }
+        finally
         {
             _isLoading = false;
         }
-}
+    }
 }
