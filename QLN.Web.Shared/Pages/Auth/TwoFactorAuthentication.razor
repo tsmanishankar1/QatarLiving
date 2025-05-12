@@ -4,14 +4,15 @@
 @inject ISnackbar Snackbar
 @inject ApiService Api
 @inject IJSRuntime JS
-
 @using Microsoft.AspNetCore.WebUtilities
 @using QLN.Web.Shared.Models
 @using QLN.Web.Shared.Services
 @using QLN.Web.Shared.Components.CustomButton
 @using QLN.Web.Shared.Components.ModalDialog
+@using QLN.Common.DTO_s;
 @using System.Text.Json
-@using System.Timers
+@using System.Timers;
+@using static QLN.Web.Shared.Helpers.HttpErrorHelper;
 
 @if (VerificationSucesss)
 {
@@ -127,40 +128,23 @@
         };
 
         try
-        {
-            var response = await Api.PostAsync<object, Verify2FAResponseData>("auth/verify-2fa", payload);
-
-            if (response?.StatusCode == 200 && response.Data is not null)
-            {
-                await JS.InvokeVoidAsync("sessionStorage.setItem", "token", response.Data.AccessToken);
-                await JS.InvokeVoidAsync("sessionStorage.setItem", "username", response.Data.Username);
-                AppState!.Username = response.Data.Username;
-                AppState.Email = response.Data.Emailaddress;
-                AppState.MobileNumber = response.Data.Mobilenumber;
-                AppState.Token = response?.Data?.AccessToken;
-                AppState.NotifyStateChanged();
-                StateHasChanged();
-
-                AppState!.Username = response.Data.Username;
-                AppState.Email = response.Data.Emailaddress;
-                AppState.MobileNumber = response.Data.Mobilenumber;
-                AppState.Token = response.Data.AccessToken;
-                AppState.NotifyStateChanged();
-
-                VerificationSucesss = true;
-            }
-            else
-            {
-                _hasError = true;
-                _errorMessage = response?.Message ?? "Invalid verification code.";
-                Snackbar.Add(_errorMessage, Severity.Warning);
-            }
+         {
+            var response = await Api.PostAsync<object, LoginResponse>("auth/verify-2fa", payload);
+            await JS.InvokeVoidAsync("sessionStorage.setItem", "token", response.AccessToken);
+            await JS.InvokeVoidAsync("sessionStorage.setItem", "username", response.Username);
+            AppState!.Username = response.Username;
+            AppState.Email = response.Emailaddress;
+            AppState.MobileNumber = response.Mobilenumber;
+            AppState.Token = response.AccessToken;
+            AppState.NotifyStateChanged();
+            StateHasChanged();
+            VerificationSucesss = true;
         }
-        catch (Exception ex)
+        catch (HttpRequestException ex)
         {
-            _hasError = true;
-            _errorMessage = ex.Message;
-            Snackbar.Add(_errorMessage, Severity.Error);
+             _hasError = true;
+             _errorMessage = ex.Message;
+             HandleHttpException(ex, Snackbar);
         }
         finally
         {
@@ -184,20 +168,12 @@
         try
         {
             var response = await Api.PostAsync<object, object>("auth/send-2fa", payload);
-
-            if (response?.StatusCode == 200)
-            {
-                Snackbar.Add("Verification code resent successfully.", Severity.Success);
-                StartResendCountdown();
-            }
-            else
-            {
-                Snackbar.Add(response?.Message ?? "Failed to resend code.", Severity.Error);
-            }
+            Snackbar.Add("Verification code resent successfully.", Severity.Success);
+            StartResendCountdown();
         }
-        catch (Exception ex)
+        catch (HttpRequestException ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            HandleHttpException(ex, Snackbar);
         }
     }
 
@@ -232,14 +208,6 @@
     public void Dispose()
     {
         _resendTimer?.Dispose();
-    }
-
-    private class Verify2FAResponseData
-    {
-        public string Username { get; set; } = string.Empty;
-        public string Emailaddress { get; set; } = string.Empty;
-        public string Mobilenumber { get; set; } = string.Empty;
-        public string AccessToken { get; set; } = string.Empty;
     }
 }
 

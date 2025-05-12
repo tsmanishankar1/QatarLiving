@@ -77,7 +77,7 @@
         }
         try
         {
-            var payload = new { usernameOrEmailOrPhone = "9677484367", twoFactorCode = _code };
+            /* var payload = new { usernameOrEmailOrPhone = "9677784367", twoFactorCode = _code };
             var res = await Api.PostAsync<object, ResponseModel<object>>("auth/verify-2fa", payload);
             if (res?.Status == true)
             {
@@ -87,7 +87,7 @@
             else
             {
                 Snackbar.Add(res?.Message ?? "Failed to resend verification email.", Severity.Warning);
-            }
+            } */
         }
         catch (Exception ex)
         {

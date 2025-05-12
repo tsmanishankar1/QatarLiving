@@ -1,6 +1,7 @@
 @page "/select-verification"
 @using MudBlazor
 @using QLN.Web.Shared.Components.CustomButton
+@using static QLN.Web.Shared.Helpers.HttpErrorHelper
 @inject NavigationManager NavManager
 @inject ISnackbar Snackbar
 @using QLN.Web.Shared.Services
@@ -94,18 +95,11 @@ Description = "Use the code from your authenticator app"
                 method = _selectedMethod == "sms" ? "phone" : _selectedMethod
             };
             var response = await Api.PostAsync<object, object>("auth/send-2fa", payload);
-            if (response?.StatusCode == 200)
-            {
-                NavManager.NavigateTo("/two-factor-authentication");
-            }
-            else
-            {
-                Snackbar.Add("Failed to send verification code. Please try again.", Severity.Error);
-            }
+            NavManager.NavigateTo("/two-factor-authentication");
         }
-        catch (Exception ex)
+        catch (HttpRequestException ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            HandleHttpException(ex, Snackbar);
         }
         finally
         {

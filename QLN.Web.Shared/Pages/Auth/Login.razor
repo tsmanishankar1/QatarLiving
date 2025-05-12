@@ -8,7 +8,9 @@
 @using QLN.Web.Shared.Models
 @using QLN.Web.Shared.Components.CustomButton
 @using QLN.Web.Shared.Components.ModalDialog
+@using static QLN.Web.Shared.Helpers.HttpErrorHelper
 @using System.Text.RegularExpressions;
+@using QLN.Common.DTO_s;
 @inject IJSRuntime JS
 
 <div style="width: 100%; background-color: var(--color-secondary-background); padding: 32px 16px;">
@@ -168,48 +170,33 @@
             StateHasChanged();
             return;
         }
-
         _isLoading = true;
         var payload = new { usernameOrEmailOrPhone = _username, password = _password };
-
         try
         {
-            var response = await Api.PostAsync<object, LoginResponseData>("auth/login", payload);
-            if (response?.StatusCode == 200)
-            {
-                await JS.InvokeVoidAsync("sessionStorage.setItem", "token", response.Data.AccessToken);
-                await JS.InvokeVoidAsync("sessionStorage.setItem", "username", response.Data.Username);
-
-                AppState!.Username = response.Data.Username;
-                AppState.Email = response.Data.Emailaddress;
-                AppState.MobileNumber = response.Data.Mobilenumber;
-                AppState.Token = response?.Data?.AccessToken;
+                var response = await Api.PostAsync<object, LoginResponse>("auth/login", payload);
+                await JS.InvokeVoidAsync("sessionStorage.setItem", "token", response.AccessToken);
+                await JS.InvokeVoidAsync("sessionStorage.setItem", "username", response.Username);
+                AppState!.Username = response.Username;
+                AppState.Email = response.Emailaddress;
+                AppState.MobileNumber = response.Mobilenumber;
+                AppState.Token = response.AccessToken;
                 AppState.NotifyStateChanged();
                 StateHasChanged();
-
-                if (response.Data.IsTwoFactorEnabled)
+               if (response.IsTwoFactorEnabled.HasValue && response.IsTwoFactorEnabled.Value)
                 {
                     NavManager.NavigateTo("/select-verification");
                     return;
                 }
-                else if (!response.Data.IsTwoFactorEnabled)
+                else if (response.IsTwoFactorEnabled.HasValue && !response.IsTwoFactorEnabled.Value)
                 {
-                    Snackbar.Add($"Logged in as {response.Data.Emailaddress}", Severity.Success);
+                    Snackbar.Add($"Logged in as {response.Emailaddress}", Severity.Success);
                     NavManager.NavigateTo("/classifieds");
                 }
-                else
-                {
-                    Snackbar.Add("Error: Could not determine two-factor authentication status.", Severity.Error);
-                }
-            }
-            else
-            {
-                Snackbar.Add("Error: " + response.Message, Severity.Error);
-            }
         }
-        catch (Exception ex)
+        catch (HttpRequestException ex)
         {
-            Snackbar.Add("Error: " + ex.Message, Severity.Error);
+            HttpErrorHelper.HandleHttpException(ex, Snackbar);
         }
         finally
         {
