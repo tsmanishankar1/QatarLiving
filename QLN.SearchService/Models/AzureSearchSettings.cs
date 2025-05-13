@@ -4,6 +4,6 @@
     {
         public string Endpoint { get; set; } = string.Empty;
         public string ApiKey { get; set; } = string.Empty;
-        public string IndexName { get; set; } = string.Empty;
+        public Dictionary<string, string> Indexes { get; set; } = new();
     }
 }

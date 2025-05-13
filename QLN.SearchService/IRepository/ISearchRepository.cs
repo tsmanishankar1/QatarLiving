@@ -1,15 +1,15 @@
-﻿using QLN.SearchService.IndexModels;
+﻿using Azure.Search.Documents.Models;
+using QLN.SearchService.IndexModels;
 using QLN.SearchService.Models;
 
 namespace QLN.SearchService.IRepository
 {
     public interface ISearchRepository
     {
-        Task<IEnumerable<ClassifiedIndex>> SearchAsync(SearchRequest request);
-        Task<string> UploadAsync(ClassifiedIndex document);
-        Task<IEnumerable<ClassifiedIndex>> GetFeaturedItemsAsync();
-        Task<IEnumerable<LandingCategoryInfo>> GetFeaturedCategoriesAsync();
-        Task<IEnumerable<CategoryAdCount>> GetCategoryAdCountsAsync();
-        Task<IEnumerable<LandingStoreInfo>> GetStoresWithCountsAsync();
+        Task<IEnumerable<T>> SearchAsync<T>(string vertical, SearchRequest req);
+        Task<string> UploadAsync<T>(string vertical, T doc);
+
+        Task<string> UploadAsync(string vertical, SearchDocument doc)
+            => UploadAsync<SearchDocument>(vertical, doc);
     }
 }

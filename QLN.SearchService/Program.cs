@@ -1,53 +1,49 @@
-using Azure.Search.Documents;
-using Azure;
-using QLN.SearchService.IService;
-using QLN.SearchService.Service;
+﻿using Azure;
+using Azure.Search.Documents.Indexes;
+using Microsoft.Extensions.Options;
+using QLN.SearchService;
+using QLN.SearchService.CustomEndpoints;
 using QLN.SearchService.IndexModels;
-using QLN.SearchService.CustomEndponts;
 using QLN.SearchService.IRepository;
+using QLN.SearchService.IService;
 using QLN.SearchService.Repository;
-using QLN.SearchService.InitializerService;
+using QLN.SearchService.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-builder.Services.AddControllers();
 builder.Services.Configure<AzureSearchSettings>(
     builder.Configuration.GetSection("AzureSearch"));
-builder.Services.AddSingleton(serviceProvider =>
+
+builder.Services.AddSingleton(sp =>
 {
-    var config = builder.Configuration.GetSection("AzureSearch").Get<AzureSearchSettings>();
-    var endpoint = new Uri(config.Endpoint);
-    var credential = new AzureKeyCredential(config.ApiKey);
-    return new SearchClient(endpoint, config.IndexName, credential);
+    var s = sp.GetRequiredService<IOptions<AzureSearchSettings>>().Value;
+    return new SearchIndexClient(
+        new Uri(s.Endpoint),
+        new AzureKeyCredential(s.ApiKey)
+    );
 });
-builder.Services.AddScoped<ISearchService, SearchService>();
+
 builder.Services.AddScoped<ISearchRepository, SearchRepository>();
+builder.Services.AddScoped<ISearchService, SearchService>();
+builder.Services.AddSingleton<ISearchIndexInitializer, SearchIndexInitializer>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddSingleton<SearchIndexInitializer>();
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+using var scope = app.Services.CreateScope();
+await scope.ServiceProvider
+           .GetRequiredService<ISearchIndexInitializer>()
+           .InitializeAsync();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-var initializer = app.Services.GetRequiredService<SearchIndexInitializer>();
-await initializer.EnsureIndexExistsAsync();
 
-var classifiedGroup = app.MapGroup("/api/classifieds")
-                         .WithTags("Classifieds")
-                         .WithOpenApi();
-
-classifiedGroup.MapClassifiedSearchEndpoints();
+app.MapCommonIndexingEndpoints();
 
 app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
-
 app.Run();
