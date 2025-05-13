@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using QLN.SearchService.IndexModels;
 using QLN.SearchService.IService;
+using QLN.SearchService.Models;
 
 namespace QLN.SearchService.CustomEndponts
 {
@@ -9,6 +10,32 @@ namespace QLN.SearchService.CustomEndponts
     {
         public static RouteGroupBuilder MapClassifiedSearchEndpoints(this RouteGroupBuilder group)
         {
+            group.MapGet("/landing", async Task<Results<
+                Ok<ClassifiedLandingPageResponse>,
+                ProblemHttpResult>> (
+                [FromServices] ISearchService searchService
+            ) =>
+                        {
+                            try
+                            {
+                                var result = await searchService.GetLandingPageDataAsync();
+                                return TypedResults.Ok(result);
+                            }
+                            catch (Exception ex)
+                            {
+                                return TypedResults.Problem(
+                                    title: "Internal Server Error",
+                                    detail: ex.Message,
+                                    statusCode: StatusCodes.Status500InternalServerError);
+                            }
+                        })
+            .WithName("GetClassifiedLandingPage")
+            .WithTags("Classifieds")
+            .WithSummary("Returns full data for classifieds landing page")
+            .WithDescription("Fetches featured items, categories with ad count, and stores with logos and item counts from Azure AI Search index.")
+            .Produces<ClassifiedLandingPageResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
+
 
             // Search Endpoint
             group.MapPost("/search", async Task<Results<

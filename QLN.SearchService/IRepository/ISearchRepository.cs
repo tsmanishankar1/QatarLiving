@@ -1,4 +1,5 @@
 ﻿using QLN.SearchService.IndexModels;
+using QLN.SearchService.Models;
 
 namespace QLN.SearchService.IRepository
 {
@@ -6,5 +7,9 @@ namespace QLN.SearchService.IRepository
     {
         Task<IEnumerable<ClassifiedIndex>> SearchAsync(SearchRequest request);
         Task<string> UploadAsync(ClassifiedIndex document);
+        Task<IEnumerable<ClassifiedIndex>> GetFeaturedItemsAsync();
+        Task<IEnumerable<LandingCategoryInfo>> GetFeaturedCategoriesAsync();
+        Task<IEnumerable<CategoryAdCount>> GetCategoryAdCountsAsync();
+        Task<IEnumerable<LandingStoreInfo>> GetStoresWithCountsAsync();
     }
 }

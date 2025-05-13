@@ -1,6 +1,7 @@
 ﻿using QLN.SearchService.IndexModels;
 using QLN.SearchService.IRepository;
 using QLN.SearchService.IService;
+using QLN.SearchService.Models;
 
 namespace QLN.SearchService.Service
 {
@@ -18,5 +19,20 @@ namespace QLN.SearchService.Service
 
         public Task<string> UploadAsync(ClassifiedIndex document)
         => _repository.UploadAsync(document);
+        public async Task<ClassifiedLandingPageResponse> GetLandingPageDataAsync()
+        {
+            var featuredItems = await _repository.GetFeaturedItemsAsync();
+            var featuredCategories = await _repository.GetFeaturedCategoriesAsync();
+            var categoriesCount = await _repository.GetCategoryAdCountsAsync();
+            var stores = await _repository.GetStoresWithCountsAsync();
+
+            return new ClassifiedLandingPageResponse
+            {
+                FeaturedItems = featuredItems,
+                FeaturedCategories = featuredCategories,
+                CategoryAdCounts = categoriesCount,
+                FeaturedStores = stores
+            };
+        }
     }
 }

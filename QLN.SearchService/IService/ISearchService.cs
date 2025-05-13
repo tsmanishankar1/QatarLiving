@@ -1,4 +1,5 @@
 ﻿using QLN.SearchService.IndexModels;
+using QLN.SearchService.Models;
 
 namespace QLN.SearchService.IService
 {
@@ -6,6 +7,7 @@ namespace QLN.SearchService.IService
     {
         Task<IEnumerable<ClassifiedIndex>> SearchAsync(SearchRequest request);
         Task<string> UploadAsync(ClassifiedIndex document);
+        Task<ClassifiedLandingPageResponse> GetLandingPageDataAsync();
 
     }
 }

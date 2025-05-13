@@ -1,12 +1,11 @@
-﻿using Azure;
-using Azure.Search.Documents.Indexes.Models;
-using Azure.Search.Documents.Indexes;
-using Microsoft.Extensions.Options;
-using QLN.SearchService.IndexModels;
-using System;
-using System.Linq;
+﻿using System;
 using System.Threading.Tasks;
-using System.Collections.Generic;
+using Microsoft.Extensions.Options;
+using Azure;
+using Azure.Search.Documents.Indexes;
+using Azure.Search.Documents.Indexes.Models;
+using AzureFieldBuilder = Azure.Search.Documents.Indexes.FieldBuilder;
+using QLN.SearchService.IndexModels;
 
 namespace QLN.SearchService.InitializerService
 {
@@ -14,9 +13,7 @@ namespace QLN.SearchService.InitializerService
     {
         private readonly AzureSearchSettings _settings;
         public SearchIndexInitializer(IOptions<AzureSearchSettings> options)
-        {
-            _settings = options.Value;
-        }
+            => _settings = options.Value;
 
         public async Task EnsureIndexExistsAsync()
         {
@@ -25,19 +22,17 @@ namespace QLN.SearchService.InitializerService
             var adminClient = new SearchIndexClient(endpoint, credential);
             var indexName = _settings.IndexName;
 
-            // Get existing indexes using proper AsyncPageable handling
-            var existingIndexes = new List<string>();
-            await foreach (var indexNameItem in adminClient.GetIndexNamesAsync())
-            {
-                existingIndexes.Add(indexNameItem);
-            }
+            // if already there, skip
+            await foreach (var name in adminClient.GetIndexNamesAsync())
+                if (name == indexName) return;
 
-            if (existingIndexes.Any(i => i == indexName))
-                return;
+            // build fields from your POCO
+            var builder = new AzureFieldBuilder();
+            var searchFields = builder.Build(typeof(ClassifiedIndex));
 
-            var fieldBuilder = new FieldBuilder();
-            var searchFields = fieldBuilder.Build(typeof(ClassifiedIndex));
+            // simple, no semantic configuration
             var definition = new SearchIndex(indexName, searchFields);
+
             await adminClient.CreateIndexAsync(definition);
         }
     }

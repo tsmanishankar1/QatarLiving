@@ -1,8 +1,14 @@
-﻿using Azure;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Azure;
 using Azure.Search.Documents;
 using Azure.Search.Documents.Models;
-using QLN.SearchService.IRepository;
+using Microsoft.Extensions.Configuration;
 using QLN.SearchService.IndexModels;
+using QLN.SearchService.IRepository;
+using QLN.SearchService.Models;
 
 namespace QLN.SearchService.Repository
 {
@@ -13,26 +19,43 @@ namespace QLN.SearchService.Repository
         public SearchRepository(IConfiguration config)
         {
             var endpoint = new Uri(config["AzureSearch:Endpoint"]);
-            var key = new AzureKeyCredential(config["AzureSearch:ApiKey"]);
+            var credential = new AzureKeyCredential(config["AzureSearch:ApiKey"]);
             var indexName = config["AzureSearch:IndexName"];
-            _searchClient = new SearchClient(endpoint, indexName, key);
+            _searchClient = new SearchClient(endpoint, indexName, credential);
         }
 
-        public async Task<IEnumerable<ClassifiedIndex>> SearchAsync(SearchRequest request)
+        public async Task<IEnumerable<ClassifiedIndex>> SearchAsync(SearchRequest req)
         {
             var options = new SearchOptions
             {
-                Filter = BuildFilter(request),
-                Size = request.Top > 0 ? request.Top : 50
+                Size = req.Top > 0 ? req.Top : 50,
+                IncludeTotalCount = true
             };
 
-            var response = await _searchClient.SearchAsync<ClassifiedIndex>(request.Text ?? "*", options);
+            // add your facets:
+            options.Facets.Add("Category");
+            options.Facets.Add("L1Category");
+            options.Facets.Add("L2Category");
+            // …etc…
+
+            var filter = BuildFilter(req);
+            if (!string.IsNullOrWhiteSpace(filter))
+                options.Filter = filter;
+
+            var response = await _searchClient.SearchAsync<ClassifiedIndex>(
+                req.Text ?? "*", options);
+
             return response.Value.GetResults().Select(r => r.Document);
         }
 
         public async Task<string> UploadAsync(ClassifiedIndex document)
         {
-            var batch = IndexDocumentsBatch.Create(IndexDocumentsAction.Upload(document));
+            if (string.IsNullOrEmpty(document.Id))
+                document.Id = Guid.NewGuid().ToString();
+            if (document.CreatedDate == default)
+                document.CreatedDate = DateTime.UtcNow;
+
+            var batch = IndexDocumentsBatch.Upload(new[] { document });
             await _searchClient.IndexDocumentsAsync(batch);
             return "Document uploaded successfully.";
         }
@@ -40,51 +63,93 @@ namespace QLN.SearchService.Repository
         private string BuildFilter(SearchRequest request)
         {
             var filters = new List<string>();
+            void AddIf(string expr)
+            {
+                if (!string.IsNullOrWhiteSpace(expr)) filters.Add(expr);
+            }
 
-            if (!string.IsNullOrEmpty(request.Category))
-                filters.Add($"Category eq '{request.Category}'");
-
-            if (!string.IsNullOrEmpty(request.L1Category))
-                filters.Add($"L1Category eq '{request.L1Category}'");
-
-            if (!string.IsNullOrEmpty(request.L2Category))
-                filters.Add($"L2Category eq '{request.L2Category}'");
-
-            if (!string.IsNullOrEmpty(request.Location))
-                filters.Add($"Location eq '{request.Location}'");
-
-            if (!string.IsNullOrEmpty(request.Make))
-                filters.Add($"Make eq '{request.Make}'");
-
-            if (!string.IsNullOrEmpty(request.Model))
-                filters.Add($"Model eq '{request.Model}'");
-
-            if (!string.IsNullOrEmpty(request.Condition))
-                filters.Add($"Condition eq '{request.Condition}'");
-
-            if (!string.IsNullOrEmpty(request.Storage))
-                filters.Add($"Storage eq '{request.Storage}'");
-
-            if (!string.IsNullOrEmpty(request.Colour))
-                filters.Add($"Colour eq '{request.Colour}'");
-
-            if (!string.IsNullOrEmpty(request.Coverage))
-                filters.Add($"Coverage eq '{request.Coverage}'");
-
-            if (!string.IsNullOrEmpty(request.Size))
-                filters.Add($"Size eq '{request.Size}'");
-
-            if (!string.IsNullOrEmpty(request.Gender))
-                filters.Add($"Gender eq '{request.Gender}'");
+            AddIf(!string.IsNullOrEmpty(request.Category)
+                ? $"Category eq '{request.Category}'" : null);
+            AddIf(!string.IsNullOrEmpty(request.L1Category)
+                ? $"L1Category eq '{request.L1Category}'" : null);
+            AddIf(!string.IsNullOrEmpty(request.L2Category)
+                ? $"L2Category eq '{request.L2Category}'" : null);
+            // …repeat for all your string‐based filters…
 
             if (request.MinPrice.HasValue)
-                filters.Add($"Price ge {request.MinPrice.Value}");
-
+                AddIf($"Price ge {request.MinPrice.Value}");
             if (request.MaxPrice.HasValue)
-                filters.Add($"Price le {request.MaxPrice.Value}");
+                AddIf($"Price le {request.MaxPrice.Value}");
 
-            return filters.Count > 0 ? string.Join(" and ", filters) : null;
+            if (request.IsFeaturedItem.HasValue)
+                AddIf($"IsFeaturedItem eq {request.IsFeaturedItem.Value.ToString().ToLower()}");
+            // …and so on…
+
+            return filters.Count > 0
+                ? string.Join(" and ", filters)
+                : null;
         }
 
+        public async Task<IEnumerable<ClassifiedIndex>> GetFeaturedItemsAsync()
+        {
+            var options = new SearchOptions
+            {
+                Filter = "IsFeaturedItem eq true",
+                Size = 10,
+                OrderBy = { "CreatedDate desc" }
+            };
+            var resp = await _searchClient.SearchAsync<ClassifiedIndex>("*", options);
+            return resp.Value.GetResults().Select(r => r.Document);
+        }
+
+        public async Task<IEnumerable<CategoryAdCount>> GetCategoryAdCountsAsync()
+        {
+            var options = new SearchOptions
+            {
+                Size = 0,
+                Facets = { "Category,count:1000" }
+            };
+            var resp = await _searchClient.SearchAsync<ClassifiedIndex>("*", options);
+            return resp.Value.Facets["Category"]
+                       .Select(f => new CategoryAdCount
+                       {
+                           Category = f.Value.ToString(),
+                           Count = (int)(f.Count ?? 0)
+                       });
+        }
+
+        public async Task<IEnumerable<LandingCategoryInfo>> GetFeaturedCategoriesAsync()
+        {
+            var options = new SearchOptions
+            {
+                Filter = "IsFeaturedCategory eq true",
+                Size = 20
+            };
+            var resp = await _searchClient.SearchAsync<ClassifiedIndex>("*", options);
+            return resp.Value.GetResults()
+                       .GroupBy(r => r.Document.Category)
+                       .Select(g => new LandingCategoryInfo
+                       {
+                           Category = g.Key,
+                           ImageUrl = $"/images/categories/{g.Key.Replace(" ", "_").ToLower()}.svg"
+                       });
+        }
+
+        public async Task<IEnumerable<LandingStoreInfo>> GetStoresWithCountsAsync()
+        {
+            var options = new SearchOptions
+            {
+                Size = 0,
+                Facets = { "StoreName,count:10" }
+            };
+            var resp = await _searchClient.SearchAsync<ClassifiedIndex>("*", options);
+            return resp.Value.Facets["StoreName"]
+                       .Select(f => new LandingStoreInfo
+                       {
+                           StoreName = f.Value.ToString(),
+                           LogoUrl = $"/logos/{f.Value.ToString().Replace(" ", "_").ToLower()}.png",
+                           ItemCount = (int)f.Count.GetValueOrDefault()
+                       });
+        }
     }
 }
