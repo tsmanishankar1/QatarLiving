@@ -6,28 +6,15 @@
         <div class="d-flex flex-column flex-md-row align-items-center px-4">
             <!-- Search Field (60% width) -->
             <div style="flex: 4;">
-                <MudTextField T="string"
-                            Variant="Variant.Outlined"
-                            Placeholder="iPhone 16 pro not more than 1600 QAR"
-                            FullWidth="true"
-                            Adornment="Adornment.Start"
-                            AdornmentIcon="@Icons.Material.Filled.Search"
-                            Class="bg-white"
-                            Style="text-transform: none;"
-                            />
+                <MudTextField T="string" Variant="Variant.Outlined" Placeholder="iPhone 16 pro not more than 1600 QAR"
+                    FullWidth="true" style="background-color: var(--color-background)" Adornment="Adornment.Start"
+                    AdornmentIcon="@Icons.Material.Filled.Search" />
             </div>
 
             <!-- Category Select (25% width) -->
             <div style="flex: 2.2;">
-                <MudSelect T="string"
-                         @bind-Value="selectedCategory"
-                         Placeholder="Category"
-                         Variant="Variant.Outlined"
-                         Dense="true"
-                         FullWidth="true"
-                         Class="bg-white"
-                         Style="text-transform: none;border-radius: 0;"
-                        >
+                <MudSelect T="string" @bind-Value="selectedCategory" Placeholder="Category" Variant="Variant.Outlined"
+                    Dense="true" FullWidth="true" style="background-color: var(--color-background)">
                     @foreach (var category in categoryOptions)
                     {
                         <MudSelectItem Value="@category">@category</MudSelectItem>
@@ -37,9 +24,8 @@
 
             <!-- Search Button (15% width) -->
             <div style="flex: 1.2;">
-                <MudButton Variant="Variant.Filled"
-                          FullWidth="true"
-                          Style="height: 56px; color: var(--color-text-white);border-radius: 5px; background-color: var(--color-accent);text-transform: capitalize;">
+                <MudButton Variant="Variant.Filled" FullWidth="true"
+                    Style="height: 56px; color: var(--color-text-white);border-radius: 5px; background-color: var(--color-accent);text-transform: capitalize;">
                     Search
                 </MudButton>
             </div>

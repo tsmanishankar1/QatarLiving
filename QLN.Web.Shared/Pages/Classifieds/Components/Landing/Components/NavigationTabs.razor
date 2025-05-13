@@ -7,7 +7,7 @@
                    DisableElevation="true"
                    DisableRipple="true"
                    Style="background-color: transparent;"
-                   OnClick="@(() => ActivateTab(item))">
+                   OnClick="@(() => OnTabSelected(item))">
             <div class="tab-button-inner">
                 <img src="@(item.IsActive && !string.IsNullOrEmpty(item.ImageOrangePath) ? item.ImageOrangePath : item.ImagePath)"
                      class="tab-icon" />
@@ -23,50 +23,72 @@
 
 
 @code {
+        [Parameter] public EventCallback<string> OnTabChanged { get; set; }
+     private TabItem? activeTab;
+
     private List<TabItem> tabItems = new()
     {
         new TabItem {
             Text = "Items",
+            Key = "items",
             ImagePath = "/images/classifieds/tab/classifieds_items.svg",
             ImageOrangePath = "/images/classifieds/tab/classifieds_items_orange.svg"
         },
         new TabItem {
             Text = "Deals",
+            Key = "deals",
             ImagePath = "/images/classifieds/tab/classifieds_deals.svg",
             ImageOrangePath = "/images/classifieds/tab/classifieds_items_orange.svg"
         },
         new TabItem {
             Text = "Stores",
+            Key = "stores", 
             ImagePath = "/images/classifieds/tab/classifieds_store.svg",
             ImageOrangePath = "/images/classifieds/tab/classifieds_items_orange.svg"
         },
         new TabItem {
             Text = "Preloved",
+            Key = "preloved",
             ImagePath = "/images/classifieds/tab/classifieds_preloved.svg",
             ImageOrangePath = "/images/classifieds/tab/classifieds_items_orange.svg"
         },
         new TabItem {
             Text = "Collectibles",
+            Key = "collectibles",
             ImagePath = "/images/classifieds/tab/classifieds_collectibles.svg",
             ImageOrangePath = "/images/classifieds/tab/classifieds_items_orange.svg"
         }
     };
 
-    private void ActivateTab(TabItem selectedItem)
+ private async Task OnTabSelected(TabItem selected)
     {
-        foreach (var item in tabItems)
-            item.IsActive = item == selectedItem;
+        if (activeTab == selected)
+        {
+            // Deselect if clicked again
+            selected.IsActive = false;
+            activeTab = null;
+            await OnTabChanged.InvokeAsync(null); // pass null to parent
+        }
+        else
+        {
+            foreach (var item in tabItems)
+                item.IsActive = item == selected;
+
+            selected.IsActive = true;
+            activeTab = selected;
+            await OnTabChanged.InvokeAsync(selected.Key);
+        }
     }
 
     public class TabItem
     {
         public string Text { get; set; }
+        public string Key { get; set; }
         public string ImagePath { get; set; }
-        public string ImageOrangePath { get; set; } // ✅ New property
+        public string ImageOrangePath { get; set; }
         public bool IsActive { get; set; }
     }
 }
-
 
 <style>
     .tab-bar-wrapper {

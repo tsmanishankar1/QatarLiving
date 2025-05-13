@@ -2,8 +2,59 @@
 
 @using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components
 @using QLN.Web.Shared.Pages.Classifieds.Components.Landing
-<!-- Navigation Tabs -->
-<NavigationTabs />
+@using QLN.Web.Shared.Pages.Classifieds.Components.Itesm
 
-<!-- Page: Landing Classifieds -->
-<Landing />
+<NavigationTabs OnTabChanged="HandleTabChanged" />
+
+@if (isLoading)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else if (string.IsNullOrEmpty(selectedKey))
+{
+    <Landing />
+}
+else
+{
+    @switch (selectedKey)
+    {
+        case "items":
+            <Itesm />
+            break;
+        case "deals":
+            <Itesm />
+            break;
+        case "stores":
+            <Itesm />
+            break;
+        case "preloved":
+            <Itesm />
+            break;
+        case "collectibles":
+            <Itesm />
+            break;
+    }
+}
+
+@code {
+    private string? selectedKey = null;
+    private bool isLoading = true;
+
+    protected override void OnInitialized()
+    {
+        isLoading = false; // 🚀 Stop loading on first render
+    }
+
+    private async Task HandleTabChanged(string? key)
+    {
+        Console.WriteLine($"Selected Key: {key}");
+
+        isLoading = true;
+        StateHasChanged();
+
+        await Task.Delay(100); // simulate data loading
+
+        selectedKey = key;
+        isLoading = false;
+    }
+}

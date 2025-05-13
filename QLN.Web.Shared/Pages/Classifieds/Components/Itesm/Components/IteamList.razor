@@ -1,0 +1,116 @@
+@using MudBlazor
+@using QLN.Web.Shared.Components.Classifieds.PromotedItemCard
+
+<div class="item-list-header d-flex justify-between align-center mb-4">
+    <div class="breadcrumbs">
+        <MudText Typo="Typo.h6">Classifieds &gt; Items</MudText>
+        <MudText Typo="Typo.subtitle2" Class="text-secondary">@($"Items in Qatar ({featuredItems.Count} results)")
+        </MudText>
+    </div>
+
+    <div class="sort-section">
+        <MudSelect T="string" Label="Sort by" @bind-Value="selectedSort" Dense="true">
+            @foreach (var option in sortOptions)
+            {
+                <MudSelectItem Value="@option.Key">@option.Value</MudSelectItem>
+            }
+        </MudSelect>
+    </div>
+</div>
+
+<!-- Grid of Items -->
+<MudGrid GutterSize="16px">
+    @foreach (var item in featuredItems)
+    {
+        <MudItem xs="12" sm="6" md="4">
+            <PromotedItemCard Item="item" />
+        </MudItem>
+    }
+
+</MudGrid>
+
+<!-- Pagination -->
+<div class="pagination-container d-flex justify-center mt-6">
+    <MudPagination @bind-SelectedPage="currentPage" PageSize="12" TotalItems="@featuredItems.Count"
+        HideNextButton="false" HidePreviousButton="false" Color="Color.Primary" Size="Size.Medium" Rounded="true"
+        HideFirstLastPage="true" />
+</div>
+
+@code {
+    private string selectedSort = "default";
+    private int currentPage = 1;
+
+    private List<KeyValuePair<string, string>> sortOptions = new()
+{
+new("default", "Default"),
+new("priceLow", "Price: Low to High"),
+new("priceHigh", "Price: High to Low")
+};
+
+    private List<PromotedItemCard.PromotedItem> featuredItems = new()
+{
+new PromotedItemCard.PromotedItem
+{
+Images = new() { "/images/classifieds/item_one.svg", "/images/classifieds/item_one.svg" },
+Category = "Mobile Phones",
+Title = "Sealed iPhone 16 Pro Max",
+Price = "Free",
+Location = "West Bay, Doha",
+IsPromoted = true,
+Condition = "Brand New",
+Color = "Green",
+Storage = "256GB",
+Battery = "86%",
+Processor = "A15 Bionic",
+Company = "Rashid Electronics",
+CompanyLogoUrl = "/images/classifieds/item_one.svg"
+},
+
+new PromotedItemCard.PromotedItem
+{
+Images = new() { "/images/classifieds/item_one.svg", "/images/classifieds/item_one.svg" },
+Category = "Mobile Phones",
+Title = "Sealed iPhone 16 Pro Max",
+Price = "Free",
+Location = "West Bay, Doha",
+IsPromoted = true,
+Condition = "Brand New",
+Color = "Green",
+Storage = "256GB",
+Battery = "86%",
+Processor = "A15 Bionic",
+Company = "Rashid Electronics",
+CompanyLogoUrl = "/images/classifieds/item_one.svg"
+}
+};
+}
+
+<style>
+    .custom-pagination .mud-button {
+        color: var(--mud-palette-primary);
+        font-weight: bold;
+    }
+
+    .custom-pagination .mud-button.mud-button-outlined.mud-button-active {
+        background-color: var(--mud-palette-primary);
+        color: white;
+    }
+
+    .item-list-header {
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .breadcrumbs {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sort-section {
+        min-width: 180px;
+    }
+
+    .pagination-container {
+        margin-top: 24px;
+    }
+</style>
