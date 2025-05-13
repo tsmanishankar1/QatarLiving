@@ -17,7 +17,7 @@ namespace QLN.Common.Infrastructure.IService.BannerService
         Task<bool> DeleteBanner(Guid id, CancellationToken cancellationToken = default);        
         Task<BannerImage?> GetImage(Guid id, CancellationToken cancellationToken = default);
         Task<IEnumerable<BannerImage>> GetAllImages();
-        Task<BannerImage> UploadImage(BannerImageUploadRequest form, CancellationToken cancellationToken = default);
+        Task<List<BannerImage>> UploadImage(BannerImageUploadRequest form, CancellationToken cancellationToken = default);
         Task<BannerImage> UpdateImage(Guid id, BannerImageUpdateDto dto, CancellationToken cancellationToken = default);
         Task<bool> DeleteImage(Guid id, CancellationToken cancellationToken = default);
     }

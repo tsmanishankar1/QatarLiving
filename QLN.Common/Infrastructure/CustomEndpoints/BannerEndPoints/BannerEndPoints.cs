@@ -31,8 +31,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints
             })
             .WithName("CreateBanner").WithTags("Banner")
             .WithSummary("Create a new banner")
-            .WithDescription("Adds a new banner record to Dapr state store.")
-            .RequireAuthorization();
+            .WithDescription("Adds a new banner record to Dapr state store.");            
             return group;
         }
         public static RouteGroupBuilder MapUpdateBannerEndPoints(this RouteGroupBuilder group)
@@ -127,10 +126,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints
             .WithTags("BannerImage")
             .WithSummary("Upload image to banner")
             .WithDescription("Uploads a banner image from multipart form and stores in Dapr.")
-            .Accepts<BannerImageUploadRequest>("multipart/form-data") 
-            .Produces<BannerImage>(StatusCodes.Status200OK)
-            .DisableAntiforgery()
-            .RequireAuthorization();
+            .Accepts<BannerImageUploadRequest>("multipart/form-data")
+            .Produces<List<BannerImage>>(StatusCodes.Status200OK)
+            .DisableAntiforgery();           
             return group;
         }
 
@@ -182,8 +180,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints
                 .WithDescription("Updates banner image details and optionally replaces the image file if a new one is provided.")
                 .Produces<BannerImage>(StatusCodes.Status200OK)
                 .Produces(StatusCodes.Status404NotFound)
-                .DisableAntiforgery()
-                .RequireAuthorization(); 
+                .DisableAntiforgery();                
 
             return group;
         }

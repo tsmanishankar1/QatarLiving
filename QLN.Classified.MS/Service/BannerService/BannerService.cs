@@ -97,16 +97,17 @@ namespace QLN.Classified.MS.Service.BannerService
         {
             try
             {
-                var data = await _dapr.GetStateAsync<Banner>(BannerStore, $"banner-{id}");
+                var bannerKey = $"banner-{id}";
+                var banner = await _dapr.GetStateAsync<Banner>(BannerStore, bannerKey);
 
-                if (data == null)
-                {
+                if (banner == null)
                     throw new Exception("No Banner Found");
-                }
-                else
-                {
-                    return data;
-                }
+
+                // Fetch all images and filter those linked to this banner
+                var images = await GetAllImages();
+                banner.Images = images.Where(img => img.BannerId == id).ToList();
+
+                return banner;
             }
             catch (Exception ex)
             {
@@ -118,21 +119,28 @@ namespace QLN.Classified.MS.Service.BannerService
         {
             try
             {
-                var keys = await _dapr.GetStateAsync<List<string>>(BannerStore, BannerIndexKey) ?? new();
+                var bannerKeys = await _dapr.GetStateAsync<List<string>>(BannerStore, BannerIndexKey) ?? new();
+                if (bannerKeys.Count == 0) return Enumerable.Empty<Banner>();
 
-                if (keys.Count == 0)
-                    return Enumerable.Empty<Banner>();
-
-                var bulk = await _dapr.GetBulkStateAsync(BannerStore, keys, parallelism: 10);
+                var bannerBulk = await _dapr.GetBulkStateAsync(BannerStore, bannerKeys, parallelism: 10);
+                var imageList = (await GetAllImages()).ToList();
 
                 var result = new List<Banner>();
 
-                foreach (var entry in bulk)
+                foreach (var entry in bannerBulk)
                 {
                     if (!string.IsNullOrWhiteSpace(entry.Value))
                     {
-                        var banner = JsonSerializer.Deserialize<Banner>(entry.Value, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                        if (banner != null) result.Add(banner);
+                        var banner = JsonSerializer.Deserialize<Banner>(entry.Value, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+
+                        if (banner != null)
+                        {
+                            banner.Images = imageList.Where(img => img.BannerId == banner.Id).ToList();
+                            result.Add(banner);
+                        }
                     }
                 }
                 return result;
@@ -143,21 +151,42 @@ namespace QLN.Classified.MS.Service.BannerService
             }
         }
 
-
         public async Task<bool> DeleteBanner(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
-                var key = $"banner-{id}";
-                await _dapr.DeleteStateAsync(BannerStore, key);
+                var bannerKey = $"banner-{id}";
 
-                var keys = await _dapr.GetStateAsync<List<string>>(BannerStore, BannerIndexKey);
-                if (keys?.Remove(key) == true)
+                await _dapr.DeleteStateAsync(BannerStore, bannerKey);
+
+                var bannerKeys = await _dapr.GetStateAsync<List<string>>(BannerStore, BannerIndexKey);
+                if (bannerKeys?.Remove(bannerKey) == true)
                 {
-                    await _dapr.SaveStateAsync(BannerStore, BannerIndexKey, keys);
+                    await _dapr.SaveStateAsync(BannerStore, BannerIndexKey, bannerKeys);
+                }
+
+                var imageKeys = await _dapr.GetStateAsync<List<string>>(ImageStore, ImageIndexKey) ?? new();
+
+                var imagesToDelete = new List<string>();
+
+                foreach (var imageKey in imageKeys)
+                {
+                    var image = await _dapr.GetStateAsync<BannerImage>(ImageStore, imageKey);
+                    if (image?.BannerId == id)
+                    {
+                        await _dapr.DeleteStateAsync(ImageStore, imageKey);
+                        imagesToDelete.Add(imageKey);
+                    }
+                }
+
+                if (imagesToDelete.Any())
+                {
+                    imageKeys.RemoveAll(k => imagesToDelete.Contains(k));
+                    await _dapr.SaveStateAsync(ImageStore, ImageIndexKey, imageKeys);
                 }
 
                 return true;
+
             }
             catch (Exception ex)
             {
@@ -189,7 +218,7 @@ namespace QLN.Classified.MS.Service.BannerService
             {
                 Console.WriteLine("SaveImage Error: " + ex.Message);
                 if (ex.InnerException != null)
-                    Console.WriteLine("➡️ Inner: " + ex.InnerException.Message);
+                    Console.WriteLine("Inner: " + ex.InnerException.Message);
                 throw;
             }
         }
@@ -224,44 +253,52 @@ namespace QLN.Classified.MS.Service.BannerService
             }
         }
 
-        public async Task<BannerImage> UploadImage(BannerImageUploadRequest form, CancellationToken cancellationToken = default)
+        public async Task<List<BannerImage>> UploadImage(BannerImageUploadRequest form, CancellationToken cancellationToken = default)
         {
-            using var ms = new MemoryStream();
-            await form.File.CopyToAsync(ms);
-            var base64 = Convert.ToBase64String(ms.ToArray());
-
-            Console.WriteLine("Base64 size (bytes): " + base64.Length);
-
-            var banner = await GetBanner(form.BannerId);
-            if (banner == null)
+            try
             {
-                throw new Exception("Banner not found");
+                var banner = await GetBanner(form.BannerId);
+                if (banner == null)
+                    throw new Exception("Banner not found");
+
+                if (form.File == null || form.File.Length == 0)
+                    throw new Exception("No file was uploaded.");
+
+                using var ms = new MemoryStream();
+                await form.File.CopyToAsync(ms, cancellationToken);
+                var base64 = Convert.ToBase64String(ms.ToArray());
+
+                var image = new BannerImage
+                {
+                    Id = Guid.NewGuid(),
+                    BannerId = form.BannerId,
+                    Banner = banner,
+                    AnalyticsSlot = form.AnalyticsSlot,
+                    Alt = form.Alt,
+                    ImageDesktop = base64,
+                    ImageMobile = base64,
+                    Duration = form.Duration,
+                    Href = form.Href,
+                    WidthDesktop = form.WidthDesktop,
+                    HeightDesktop = form.HeightDesktop,
+                    WidthMobile = form.WidthMobile,
+                    HeightMobile = form.HeightMobile,
+                    IsDesktop = form.IsDesktop,
+                    IsMobile = form.IsMobile,
+                    SortOrder = form.SortOrder,
+                    Title = form.Title
+                };
+
+                await SaveImage(image);
+
+                return new List<BannerImage> { image };
             }
-
-            var image = new BannerImage
+            catch(Exception ex)
             {
-                Id = Guid.NewGuid(),
-                BannerId = form.BannerId,
-                Banner = null,
-                AnalyticsSlot = form.AnalyticsSlot,
-                Alt = form.Alt,
-                ImageDesktop = base64,
-                ImageMobile = base64,
-                Duration = form.Duration,
-                Href = form.Href,
-                WidthDesktop = form.WidthDesktop,
-                HeightDesktop = form.HeightDesktop,
-                WidthMobile = form.WidthMobile,
-                HeightMobile = form.HeightMobile,
-                IsDesktop = form.IsDesktop,
-                IsMobile = form.IsMobile,
-                SortOrder = form.SortOrder,
-                Title = form.Title
-            };
-
-            await SaveImage(image);
-            return image;
+                throw;
+            }
         }
+
 
         public async Task<BannerImage?> GetImage(Guid id, CancellationToken cancellationToken = default)
         {

@@ -150,11 +150,11 @@ namespace QLN.Backend.API.Service.BannerService
             }
         }
 
-        public async Task<BannerImage> UploadImage(BannerImageUploadRequest form, CancellationToken cancellationToken = default)
+        public async Task<List<BannerImage>> UploadImage(BannerImageUploadRequest form, CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<BannerImageUploadRequest, BannerImage>(
+                var result = await _dapr.InvokeMethodAsync<BannerImageUploadRequest, List<BannerImage>>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
                     "api/banner/banner/image",
