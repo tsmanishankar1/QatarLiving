@@ -5,7 +5,10 @@
 <div class="breadcrumb-wrapper">
   
     <div class="breadcrumb-trail">
-        <i class="fa fa-home"></i>
+        <a href="/" class="breadcrumb-link home-link">
+            <img src="/images/components/Home.svg" class="home-icon" alt="Home" />
+        </a>        <span class="breadcrumb-separator">></span>
+
         @foreach (var item in Items.Select((value, index) => new { value, index }))
         {
             @if (!string.IsNullOrEmpty(item.value.Url) && !item.value.IsLast)

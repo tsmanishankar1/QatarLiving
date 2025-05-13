@@ -4,10 +4,11 @@
 @using MudBlazor
 @using QLN.Web.Shared.Models
 
-<MudPaper Class="pa-6" Elevation="1" Style="max-width: 800px; margin: 0 auto; font-family: 'Public Sans';">
-    <div class="mb-6" style="border-bottom: 1px solid #e5e7eb; padding-bottom: 1rem;">
-        <MudText Typo="Typo.h5" Style="color: #242424; font-weight: 600;">Add Subscription</MudText>
-    </div>
+<div class="form-container">
+    <div class="form-wrapper">
+        <MudText Align="Align.Center" Class="mb-6 heading-text">
+            Add Subscription
+        </MudText>
 
     <MudForm Model="@subscriptionModel" @ref="form">
         <MudGrid>
@@ -123,8 +124,7 @@
             </MudButton>
         </div>
     </MudForm>
-</MudPaper>
-
+</div></div>
 @code {
     // private SubscriptionModel subscriptionModel = new();
     private SubscriptionModel subscriptionModel = new SubscriptionModel();
@@ -179,3 +179,180 @@
 
    
 }
+
+<style>
+    .popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(120, 120, 120, 1);
+        backdrop-filter: blur(8px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .phone-flex {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+    }
+
+    .form-container {
+        width: 100%;
+        background-color: var(--color-secondary-background);
+        padding: 32px 16px;
+    }
+
+    .form-wrapper {
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .heading-text {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 30px;
+    }
+
+    .label-text {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 400;
+        font-size: 14px;
+    }
+
+    .custom-textfield {
+        background-color: var(--color-secondary-background);
+    }
+
+    .custom-paper {
+        border: 1px solid #ccc;
+        border-radius: 6px;
+    }
+
+    .error-border {
+        border: 1px solid red !important;
+        border-radius: 6px;
+    }
+
+    .custom-checkbox .label-text {
+        color: inherit;
+    }
+
+    .success-text {
+        font-weight: 400;
+        color: var(--color-text-green);
+    }
+
+    .verify-button {
+        background-color: var(--color-accent);
+        color: white;
+        min-width: 70px;
+    }
+
+        .verify-button:disabled {
+            opacity: 0.5;
+        }
+
+    .verify-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .verify-progress {
+        color: var(--color-accent);
+    }
+
+    .verify-text {
+        text-transform: capitalize;
+    }
+
+    .verify-progress-circular {
+        color: var(--color-accent);
+    }
+
+    .verify-button-text {
+        text-transform: capitalize;
+    }
+
+    .country-select {
+        width: 120px;
+    }
+
+    .selected-country-flag {
+        width: 20px;
+        height: 14px;
+        margin-right: 5px;
+    }
+
+    .country-option {
+        display: flex;
+        align-items: center;
+    }
+
+    .country-flag {
+        width: 20px;
+        height: 14px;
+        object-fit: cover;
+        margin-right: 8px;
+    }
+
+    .country-code-text {
+        white-space: nowrap;
+        font-size: 14px;
+    }
+
+    .mobile-input {
+        text-transform: capitalize;
+    }
+
+        .mobile-input .mud-input-root {
+            border-bottom: none !important;
+            box-shadow: none !important;
+        }
+
+        .mobile-input .mud-input-underline:before,
+        .mobile-input .mud-input-underline:after {
+            display: none !important;
+        }
+
+    .date-picker {
+        background-color: var(--color-text-white);
+    }
+
+    .password-input {
+        background-color: var(--color-secondary-background);
+    }
+
+    .terms-link {
+        color: var(--color-accent);
+    }
+
+    .divider-line {
+        flex-grow: 1;
+        height: 1px;
+        background-color: #ccc;
+    }
+
+    .label-text {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 400;
+        font-size: 14px;
+        margin-top: 20px;
+    }
+
+    .custom-progress-color circle {
+        stroke: var(--color-accent);
+        stroke-width: 4px;
+    }
+
+    .resend-code:hover {
+        color: var(--color-accent);
+    }
+</style>

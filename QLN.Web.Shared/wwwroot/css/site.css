@@ -103,38 +103,80 @@
     z-index: 1000;
 }
 
-.custom-tab .mud-tabs-toolbar {
-    display: flex;
-    justify-content: space-between;
+.custom-tabs {
     width: 100%;
-    padding: 0;
+    margin: 0 auto;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.custom-tab .mud-tab {
+.tabs-toolbar {
+    display: flex;
+    width: 100%;
+    padding: 0;
+    background-color: #f5f5f5; /* Grey background for toolbar */
+    border-radius: 4px 4px 0 0;
+    overflow: hidden;
+}
+.home-icon {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 6px;
+    /* Default grey color for inactive icons */
+    color:#475467
+}
+.tab {
     flex: 1;
     min-width: 0;
     text-align: center;
-    justify-content: center;
-    color: #242424 !important;
+    color: #666; /* Default text color */
     padding: 12px 0;
     margin: 0;
     text-transform: none;
     font-size: 14px;
     font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    background-color: #f5f5f5; /* Grey background for tabs */
+    transition: all 0.3s ease;
 }
-.custom-tab .mud-tab.mud-tab-active {
-    color: #00426D !important;
+
+    .tab.active {
+        background-color: white; /* White background for active tab */
+        color: #00426D; /* Blue text for active tab */
+        font-weight: 600;
+    }
+
+.tab-icon {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 6px;
+    /* Default grey color for inactive icons */
+    filter: brightness(0) saturate(100%) invert(40%) sepia(0%) saturate(747%) hue-rotate(149deg) brightness(93%) contrast(87%);
 }
 
 
-.custom-tab .mud-tabs-toolbar .mud-tab.mud-tab-active .mud-icon-root {
-    color: #00426D !important;
+.tab.active .tab-icon {
+    /* Blue color for active icon */
+    filter: brightness(0) saturate(100%) invert(22%) sepia(98%) saturate(1206%) hue-rotate(176deg) brightness(93%) contrast(101%);
 }
 
-.custom-tab .mud-tabs-toolbar .mud-tab .mud-icon-root {
-    color: #242424 !important;
+.tab-indicator {
+    position: absolute;
+    bottom: 0;
+    height: 3px;
+    background-color: #00426D;
+    width: 100%;
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
 }
 
-.custom-tab .mud-tabs-indicator {
-    background-color: #00426D !important;
+.tab.active .tab-indicator {
+    transform: scaleX(1);
+}
+
+.tab-text {
+    margin-top: 4px;
 }
