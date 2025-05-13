@@ -1,6 +1,41 @@
 @page "/classifieds"
+@using Microsoft.AspNetCore.Http;
+@inject NavigationManager NavManager
+@inject CustomAuthStateProvider CustomAuthenticationStateProvider;
+@using System.Security.Claims;
 
 @using QLN.Web.Shared.Pages.Classifieds
 
 <!-- Page: Landing Index Classifieds -->
-<LandingIndex />
+@* <h3> Hi Welcome, @Name</h3>
+<div>
+    <a onclick="@logout">logout</a>
+</div> *@
+ <LandingIndex /> 
+
+@code {
+    
+    private bool showMobileMenu = false;
+    public string Name{ get; set; }
+
+    [Inject] IJSRuntime JS { get; set; } = default!;
+    private bool _hasRun = false; 
+    protected override async Task OnInitializedAsync()
+	{
+		 @* await base.OnInitializedAsync();  *@
+          @* var authState = await CustomAuthenticationStateProvider.GetAuthenticationStateAsync();
+                 if (authState == null){
+                    Console.WriteLine("AuthState is null");
+                 }
+                 else{
+                    var user = authState.User;
+                    if (user.Identity != null && user.Identity.IsAuthenticated)
+                    {
+                        Name = user.FindFirst(ClaimTypes.Name)?.Value;
+                    }
+                    else{
+                        NavManager.NavigateTo("/login");
+                    }
+                 } *@
+	}
+}

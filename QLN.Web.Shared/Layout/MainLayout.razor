@@ -1,7 +1,11 @@
 ﻿@inherits LayoutComponentBase
 @using QLN.Web.Shared.Components.FooterFolder
+@inject CustomAuthStateProvider CustomAuthenticationStateProvider;
 @inject NavigationManager NavManager
+@using System.Security.Claims;
+
 @inject ISnackbar Snackbar
+@using Microsoft.AspNetCore.Http;
 
 <MudThemeProvider />
 <MudDialogProvider />
@@ -19,7 +23,7 @@
     </div>
     <div class="@($"nav-container {(showMobileMenu ? "mobile-menu-open" : "")}")">
         <nav class="nav-links">
-            <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Daily</NavLink>
+            <NavLink href="/select-verification" style="color: white;" class="nav-link">Daily</NavLink>
             <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Properties</NavLink>
             <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Vehicles</NavLink>
             <NavLink href="/classifieds" style="color: white;" class="nav-link active">Classifieds</NavLink>
@@ -48,39 +52,20 @@
         <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
             <ActivatorContent>
                 <div style="display: flex; align-items: center; gap: 0.5rem;" class="cursor-pointer">
-                    @if (AppState?.IsLoggedIn == true)
-                    {
-                        @if (!string.IsNullOrEmpty(AppState?.ProfileImageUrl))
-                        {
-                            <MudAvatar Size="Size.Medium" Img="@AppState?.ProfileImageUrl" />
-                        }
-                        else
-                        {
                             <MudAvatar Size="Size.Medium" Style="background-color: #D6E8F2;">
                                 <img src="/images/header/account.svg" alt="Account"
                                     style="width: 70%; height: 70%; padding: 4px;" />
-                            </MudAvatar>
-                        }
-
+                            </MudAvatar> 
                     <span class="user-name">
-                        @((AppState?.Username?.Length > 10) ? AppState?.Username.Substring(0, 10) + "..." :
-                                                AppState?.Username)
+                        @((Name?.Length > 10) ? Name.Substring(0, 10) + "..." :
+                                                Name)
                     </span>
-                                        }
-                    else
-                    {
-                        <MudAvatar Size="Size.Medium" Style="background-color: #E8F2FE;">
-                            <img src="/images/header/account.svg" alt="Account"
-                                style="width: 70%; height: 70%; padding: 4px;" />
-                        </MudAvatar>
-
-                    }
                 </div>
             </ActivatorContent>
 
 
             <ChildContent>
-                @if (AppState?.IsLoggedIn == true)
+                @if (IsLoggedIn == true)
                 {
                     <MudButton Variant="Variant.Outlined" Color="Color.Warning"
                         StartIcon="@Icons.Material.Filled.AccountCircle"
@@ -92,7 +77,7 @@
 
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Logout"
                         Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
-                        OnClick="@Logout" Class="no-capitalize">
+                        OnClick="@logout" Class="no-capitalize">
                         Logout
                     </MudButton>
                 }
@@ -110,6 +95,7 @@
                         Sign Up
                     </MudButton>
                 }
+                   
             </ChildContent>
         </MudMenu>
     </div>
@@ -181,37 +167,41 @@
 
 @code {
     private bool showMobileMenu = false;
-
-    [CascadingParameter] public GlobalAppState? AppState { get; set; }
-
-    [Inject] IJSRuntime JS { get; set; } = default!;
-    private bool _hasRun = false; // prevent infinite loop
-
+    public string Name{ get; set; }
+    public bool IsLoggedIn { get; set; } = false;
+    
+    protected override async Task OnInitializedAsync()
+	{
+		    @* await base.OnInitializedAsync();   *@
+            var authState = await CustomAuthenticationStateProvider.GetAuthenticationStateAsync();
+             if (authState != null){
+                var user = authState.User;
+                if (user.Identity != null && user.Identity.IsAuthenticated)
+                {
+                    Name = user.FindFirst(ClaimTypes.Name)?.Value;
+                    IsLoggedIn = true;
+                }
+            } 
+	}
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!_hasRun)
-        {
-            _hasRun = true;
-
-            // Try restoring token from sessionStorage
-            if (string.IsNullOrWhiteSpace(AppState?.Token))
-            {
-                var token = await JS.InvokeAsync<string>("sessionStorage.getItem", "token");
-
-                if (!string.IsNullOrWhiteSpace(token))
+        if (firstRender) return; 
+        var authState = await CustomAuthenticationStateProvider.GetAuthenticationStateAsync();
+             if (authState != null){
+                var user = authState.User;
+                if (user.Identity != null && user.Identity.IsAuthenticated)
                 {
-                    AppState.Token = token;
-                    AppState.Username = await JS.InvokeAsync<string>("sessionStorage.getItem", "username");
-                    AppState.Email = await JS.InvokeAsync<string>("sessionStorage.getItem", "email");
-                    AppState.NotifyStateChanged();
-                    StateHasChanged(); // Trigger UI update
+                    Name = user.FindFirst(ClaimTypes.Name)?.Value;
+                    IsLoggedIn = true;
                 }
-            }
-
-            // ❌ No redirect here
-        }
+                else{
+                        IsLoggedIn = false;
+                }
+            } 
+            else{
+                        IsLoggedIn = false;
+                    }
     }
-
 
     private void ToggleMobileMenu()
     {
@@ -223,18 +213,11 @@
         NavManager.NavigateTo("/profilePage");
     }
 
-    private async void Logout()
+    public void logout()
     {
-        AppState!.Email = null;
-        AppState.Username = null;
-        AppState.MobileNumber = null;
-        AppState.Token = null;
-        AppState.NotifyStateChanged();
-
-        await JS.InvokeVoidAsync("sessionStorage.removeItem", "token");
-        await JS.InvokeVoidAsync("sessionStorage.removeItem", "username");
-
-        Snackbar.Add("Logged out successfully", Severity.Info);
-        NavManager.NavigateTo("/login", true);
+         CustomAuthenticationStateProvider.LogoutUser();
+         Name = string.Empty;
+         IsLoggedIn = false;
+         NavManager.NavigateTo("/login");
     }
 }

@@ -26,14 +26,7 @@
     <div class="auth-container">
         <h2 class="title">Two-Factor Authentication</h2>
         <p class="subtitle">We've sent a verification code to your
-            @if (_method == "email")
-            {
-                <text>email ending in @AppState.Email</text>
-            }
-            else if (_method == "sms")
-            {
-                <text>phone number ending in @AppState.MobileNumber</text>
-            }
+           
         </p>
 
         <div class="otp-container">
@@ -47,7 +40,8 @@
         </div>
 
         <CustomButton BackgroundColor="#FF7F38" TextColor="#FFFFFF" Text="Verify" Disabled="_isLoading"
-            Loading="_isLoading" OnClick="@VerifyCode" Class="verify-btn" />
+            Loading="_isLoading" OnClick="@VerifyCode" Class="verify-btn" aria-label="Verify Button"
+    data-testid="verify-button" />
 
         <p class="resend">
             Didn't receive a code?
@@ -57,7 +51,7 @@
             }
             else
             {
-                <span style="color:var(--color-accent); cursor:pointer;" @onclick="ResendCode">Resend</span>
+                <span style="color:var(--color-accent); cursor:pointer;" @onclick="ResendCode" id="resend-code" data-testid="resend-code-button">Resend</span>
             }
         </p>
 
@@ -66,7 +60,7 @@
 </div>
 
 @code {
-    [CascadingParameter] public GlobalAppState? AppState { get; set; }
+    @* [CascadingParameter] public GlobalAppState? AppState { get; set; } *@
     private string[] _otpDigits = new string[6];
     private string _code = string.Empty;
     private bool _isLoading = false;
@@ -123,7 +117,7 @@
         var payload = new
         {
             twoFactorCode = _code,
-            usernameOrEmailOrPhone = _method == "email" ? AppState?.Email : AppState?.MobileNumber,
+            @* usernameOrEmailOrPhone = _method == "email" ? AppState?.Email : AppState?.MobileNumber, *@
             method = _method == "sms" ? "phone" : _method
         };
 
@@ -132,11 +126,7 @@
             var response = await Api.PostAsync<object, LoginResponse>("auth/verify-2fa", payload);
             await JS.InvokeVoidAsync("sessionStorage.setItem", "token", response.AccessToken);
             await JS.InvokeVoidAsync("sessionStorage.setItem", "username", response.Username);
-            AppState!.Username = response.Username;
-            AppState.Email = response.Emailaddress;
-            AppState.MobileNumber = response.Mobilenumber;
-            AppState.Token = response.AccessToken;
-            AppState.NotifyStateChanged();
+           
             StateHasChanged();
             VerificationSucesss = true;
         }
@@ -161,7 +151,7 @@
         }
         var payload = new
         {
-            usernameOrEmailOrPhone = _method == "email" ? AppState?.Email : AppState?.MobileNumber,
+            @* usernameOrEmailOrPhone = _method == "email" ? AppState?.Email : AppState?.MobileNumber, *@
             method = _method == "sms" ? "phone" : _method
         };
 
