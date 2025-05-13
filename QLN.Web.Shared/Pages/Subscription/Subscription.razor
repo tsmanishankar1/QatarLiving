@@ -19,20 +19,20 @@
 <MudContainer MaxWidth="MaxWidth.Large" Class="py-6 px-4" Style="background-color: #F2F4F7;">
     <!-- Breadcrumb + Title -->
     <Breadcrumb Items="breadcrumbItems" />
-      
-             
+
     <div style="width: 100%;">
+        <div style="width: 80%;justify-content:center;align-items:center;margin-left:4%">
             <div style="text-align: center; margin-bottom: 24px;">
                 <MudText Typo="Typo.h5" Class="font-semibold mb-1" Style="color:#242424;">
                     Classifieds Subscriptions
                 </MudText>
                 <MudText Typo="Typo.subtitle1" Class="mb-4" Style="color:#646464;">
-                    Promote smarter. Sell quicker. Stay visible longer
+                We offer tailored subscription packages for every need, Whether you're listing a property, selling a vehicle, or promoting a service. Choose a category to get started
                 </MudText>
                 <div class="custom-tabs">
                     <div class="tabs-toolbar">
                         <div class="tab @( _activeVerticalTabIndex == 0 ? "active" : "" )" @onclick="() => SetVeritcalTab(0)">
-                            <div style="display:flex;flex-direction:column;gap:10px;align-items:center">
+                            <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
 
                                 <img src="/images/subscription/Properties.svg" class="tab-icon" alt="Deals">
                                 <span class="tab-text">Properties</span>
@@ -40,7 +40,7 @@
                             <div class="tab-indicator"></div>
                         </div>
                         <div class="tab @( _activeTabIndex == 1 ? "active" : "" )" @onclick="() => SetVeritcalTab(1)">
-                            <div style="display:flex;flex-direction:column;gap:10px;align-items:center">
+                            <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
 
                                 <img src="/images/subscription/Vehicles.svg" class="tab-icon" alt="Stores">
                                 <span class="tab-text">Vehicles</span>
@@ -48,7 +48,7 @@
                             <div class="tab-indicator"></div>
                         </div>
                         <div class="tab @( _activeVerticalTabIndex == 2 ? "active" : "" )" @onclick="() => SetVeritcalTab(2)">
-                            <div style="display:flex;flex-direction:column;gap:10px;align-items:center">
+                            <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
 
                                 <img src="/images/subscription/Classifieds.svg" class="tab-icon" alt="Preloved">
                                 <span class="tab-text">Classified</span>
@@ -56,7 +56,7 @@
                             <div class="tab-indicator"></div>
                         </div>
                         <div class="tab @( _activeVerticalTabIndex == 3 ? "active" : "" )" @onclick="() => SetVeritcalTab(3)">
-                            <div style="display:flex;flex-direction:column;gap:10px;align-items:center">
+                            <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
 
                                 <img src="/images/subscription/Services.svg" class="tab-icon" alt="Preloved">
                                 <span class="tab-text">Services</span>
@@ -64,7 +64,7 @@
                             <div class="tab-indicator"></div>
                         </div>
                         <div class="tab @( _activeVerticalTabIndex == 4 ? "active" : "" )" @onclick="() => SetVeritcalTab(4)">
-                            <div style="display:flex;flex-direction:column;gap:10px;align-items:center">
+                            <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
 
                                 <img src="/images/subscription/Jobs.svg" class="tab-icon" alt="Preloved">
                                 <span class="tab-text">Jobs</span>
@@ -72,7 +72,7 @@
                             <div class="tab-indicator"></div>
                         </div>
                         <div class="tab @( _activeVerticalTabIndex == 5 ? "active" : "" )" @onclick="() => SetVeritcalTab(5)">
-                            <div style="display:flex;flex-direction:column;gap:10px;align-items:center">
+                            <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
 
                                 <img src="/images/subscription/Rewards.svg" class="tab-icon" alt="Preloved">
                                 <span class="tab-text">Rewards</span>
@@ -81,6 +81,7 @@
                         </div>
                     </div>
                 </div>
+            </div>
             </div>
             </div>
 
@@ -216,11 +217,16 @@
                                         </MudButton>
 
                                         <MudButton Variant="Variant.Filled"
-                                                   Style="background-color: #F26D1E; color: white;"
+                                                   Style="background-color: #41979a; color: white;"
                                                    OnClick="SubmitMockCardPayment">
                                             Pay ₹@_selectedPlan?.Price
                                         </MudButton>
                                     </MudStack>
+                                    <MudText Typo="Typo.body2" Class="text-center mt-4">
+                                        GURANTEED SAFE CHECKOUT
+
+
+                                    </MudText>
                                 </MudStack>
                             </MudPaper>
                         </div>
@@ -267,7 +273,7 @@
     {
         breadcrumbItems = new()
         {
-            new() { Label = Type ?? "Classifieds", Url = $"/{Type}" },
+      new() {   Label = Type ?? "Classifieds",Url = Type != null ? $"/{Type}" : "classifieds" },
             new() { Label = "Subscriptions", Url = "/Subscriptions", IsLast = true },
         };
 

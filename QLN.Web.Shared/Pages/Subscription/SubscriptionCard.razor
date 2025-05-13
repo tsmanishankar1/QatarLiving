@@ -19,7 +19,7 @@
     <!-- Radio Button Top Right -->
     <div style="position: absolute; top: 12px; right: 12px;">
         <MudIcon Icon="@(IsSelected ? Icons.Material.Filled.RadioButtonChecked : Icons.Material.Filled.RadioButtonUnchecked)"
-                 Color="@(IsSelected ? Color.Primary : Color.Default)" />
+                 Style=@($"color:{(IsSelected ? "#F26D1E" : "#E0E0E0")}") />
     </div>
 
     <!-- Center Content -->
