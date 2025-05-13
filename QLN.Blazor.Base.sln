@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QLN.MAUI.App", "QLN.MAUI.Ap
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QLN.SearchService", "QLN.SearchService\QLN.SearchService.csproj", "{6F6EAA1C-70B0-415F-845B-E22B25AFBE15}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QLN.Classified.MS", "QLN.Classified.MS\QLN.Classified.MS.csproj", "{C636DF59-2333-4A0A-9332-5A0A00A1A1CA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

@@ -9,6 +9,10 @@ using QLN.Common.Infrastructure.TokenProvider;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
+using Dapr.Client;
+using QLN.Backend.API.ServiceConfiguration;
+using QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints;
+using QLN.Common.Swagger;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +38,14 @@ builder.Services.AddSwaggerGen(options =>
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
         Description = "Enter 'Bearer' followed by your JWT token."
+    });
+
+    options.OperationFilter<SwaggerFileUploadFilter>();
+
+    options.MapType<IFormFile>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Format = "binary"
     });
 
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -133,9 +145,16 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 
+builder.Services.AddDaprClient(clientBuilder =>
+{
+    clientBuilder
+        .UseHttpEndpoint("http://localhost:3500")
+        .UseGrpcEndpoint("http://localhost:58796"); 
+});
+
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 builder.Services.ServicesConfiguration(builder.Configuration);
-
+builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
 
 var app = builder.Build();
 
@@ -153,6 +172,9 @@ if (app.Environment.IsDevelopment())
 
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
+
+var bannerGroup = app.MapGroup("/api/banner");
+bannerGroup.MapBannerEndpoints();
 
 app.UseHttpsRedirection();
 app.UseAuthentication();

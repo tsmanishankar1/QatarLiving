@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using QLN.Common.Infrastructure.EventLogger;
+using QLN.Common.Infrastructure.IService.BannerService;
 using QLN.Common.Infrastructure.IService.IAuthService;
 using QLN.Common.Infrastructure.IService.IEmailService;
 using QLN.Common.Infrastructure.IService.ITokenService;
@@ -9,8 +10,6 @@ using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Service.AuthService;
 using QLN.Common.Infrastructure.Service.JwtTokenService;
 using QLN.Common.Infrastructure.Service.SmtpService;
-
-
 
 namespace QLN.Common.Infrastructure.ServiceConfiguration
 {
@@ -23,7 +22,7 @@ namespace QLN.Common.Infrastructure.ServiceConfiguration
             services.AddScoped<IExtendedEmailSender<ApplicationUser>, EmailSenderService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddTransient<QLN.Common.Infrastructure.TokenProvider.EmailTokenProvider<ApplicationUser>>();
-            services.AddTransient<QLN.Common.Infrastructure.TokenProvider.CommonTokenProvider<ApplicationUser>>();
+            services.AddTransient<QLN.Common.Infrastructure.TokenProvider.CommonTokenProvider<ApplicationUser>>();            
             services.AddScoped<IEventlogger, Eventlogger>();
 
             return services;
