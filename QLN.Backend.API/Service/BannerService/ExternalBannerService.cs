@@ -9,7 +9,7 @@ namespace QLN.Backend.API.Service.BannerService
     public class ExternalBannerService : IBannerService
     {
         private readonly DaprClient _dapr;
-        private const string SERVICE_APP_ID = "qln-classified-ms";
+        private const string SERVICE_APP_ID = "qln-classifieds-ms";
         private readonly IEventlogger _log;
 
         public ExternalBannerService(DaprClient dapr, IEventlogger eventlogger)
