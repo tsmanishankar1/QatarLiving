@@ -11,5 +11,6 @@ namespace QLN.SearchService.IRepository
 
         Task<string> UploadAsync(string vertical, SearchDocument doc)
             => UploadAsync<SearchDocument>(vertical, doc);
+        Task<T> GetByIdAsync<T>(string vertical, string key);
     }
 }

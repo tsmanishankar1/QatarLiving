@@ -111,6 +111,29 @@ namespace QLN.SearchService.CustomEndpoints
             .WithOpenApi()
             .WithName("CommonUpload");
 
+            group.MapGet("/{id}", async (
+                   [FromRoute] string vertical,
+                   [FromRoute] string id,
+                   [FromServices] ISearchService svc)
+               => {
+                   try
+                   {
+                       var doc = await svc.GetByIdAsync(vertical, id);
+                       return doc is null
+                           ? Results.NotFound()
+                           : Results.Ok(doc);
+                   }
+                   catch (ArgumentException ex)
+                   {
+                       return Results.BadRequest(new { ex.Message });
+                   }
+                   catch
+                   {
+                       return Results.Problem("Lookup Error");
+                   }
+               })
+               .WithOpenApi();
+
             return group;
         }
     }

@@ -8,5 +8,6 @@ namespace QLN.SearchService.IService
     {
         Task<IEnumerable<SearchDocument>> SearchAsync(string vertical, SearchRequest request);
         Task<string> UploadAsync(string vertical, SearchDocument document);
+        Task<object> GetByIdAsync(string vertical, string key);
     }
 }

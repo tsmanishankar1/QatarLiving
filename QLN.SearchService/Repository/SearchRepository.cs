@@ -113,5 +113,11 @@ namespace QLN.SearchService.Repository
             await client.IndexDocumentsAsync(batch);
             return $"Document indexed to '{vertical}'";
         }
+        public async Task<T> GetByIdAsync<T>(string vertical, string key)
+        {
+            var client = GetClient(vertical);
+            var resp = await client.GetDocumentAsync<T>(key);
+            return resp.Value;
+        }
     }
 }

@@ -16,5 +16,10 @@ namespace QLN.SearchService.Service
 
         public Task<string> UploadAsync(string vertical, SearchDocument document)
             => _repo.UploadAsync(vertical, document);
+        public async Task<object> GetByIdAsync(string vertical, string key)
+        {
+            var v = vertical.ToLowerInvariant();
+             return await _repo.GetByIdAsync<ClassifiedIndex>(vertical, key);
+        }
     }
 }
