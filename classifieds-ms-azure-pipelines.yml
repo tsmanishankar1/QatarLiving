@@ -13,7 +13,7 @@ variables:
  - name: appName
    value: QLN.Classified.MS
  - name: appShortName
-   value: classified-ms
+   value: classifieds-ms
 
 pool:
   vmImage: ubuntu-latest
