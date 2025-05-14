@@ -1,8 +1,7 @@
 @using MudBlazor
  
 <div class="ps-section">
-    <MudText Typo="Typo.h6" Class="ps-title">Popular searches</MudText>
- 
+  <h3 class="ps-title">Popular searches</h3>
     @foreach (var faq in faqs)
     {
         <MudPaper Class="@($"ps-item {(faq.Expanded ? "expanded" : "")}")" Elevation="0">
@@ -11,14 +10,14 @@
                        Class="@($"ps-question {(faq.Expanded ? "expanded" : "")}")"
                        EndIcon="@(faq.Expanded ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
                        OnClick="@(() => ToggleFaq(faq))">
-                <MudText Typo="Typo.subtitle1">@faq.Question</MudText>
+                <h4 class="ps-question-text">@faq.Question</h4>
             </MudButton>
  
             <MudCollapse Expanded="@faq.Expanded">
                 <div class="ps-columns">
                     @foreach (var location in faq.AnswerList)
                     {
-                        <MudLink Href="#" Class="ps-link">@location</MudLink>
+                        <h4 class="ps-link-text"><a href="#">@location</a></h4>
                     }
                 </div>
             </MudCollapse>
@@ -34,11 +33,33 @@
  
     .ps-title {
         font-weight: 600;
-        color:var(--color-text-secondary);
+        font-size: 30px;
+        color:var(--color-text-heading);
         margin-bottom: 2rem;
         text-align: center;
     }
- 
+    .ps-question-text {
+        font-weight: 500;
+        font-size: 15px;
+        color: var(--color-text-heading);
+        margin: 0; /* Remove default margin */
+    }
+
+    .ps-link-text {
+        font-weight: 400;
+        font-size: 14px;
+        margin: 0; /* Remove default margin */
+    }
+
+    .ps-link-text a {
+        color: var(--color-primary);
+        text-decoration: none;
+    }
+
+    .ps-link-text a:hover {
+        text-decoration: underline;
+    }
+
     .ps-item {
         margin-bottom: 8px;
         border-radius: 4px;

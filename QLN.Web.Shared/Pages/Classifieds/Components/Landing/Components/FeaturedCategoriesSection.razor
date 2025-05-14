@@ -3,7 +3,8 @@
 
 <div class="featured-cards-section">
     <div class="featured-header">
-        <MudText Typo="Typo.h6" Class="featured-title">Featured Items</MudText>
+         <h3 class="featured-title">Featured Categories</h3>
+         <h4 class="featured-title-one">Don’t miss out on these deals</h4>
     </div>
 
     <div class="carousel-container2">
@@ -13,8 +14,8 @@
                        Class="arrow-button left" />
 
         <div class="carousel-wrapper">
-            <div class="carousel-trackerack" style="transform: translateX(@TrackOffset);">
-                @foreach (var item in VisibleItems)
+            <div class="carousel-trackerack" style="transform: @TrackOffset">
+                @foreach (var item in featuredItems)
                 {
                     <div class="carousel-card">
                         <FeaturedItemCard Item="item" OnHeartClick="HandleHeartClick" />
@@ -24,15 +25,26 @@
         </div>
 
         <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
-                       Disabled="@(_startIndex >= featuredItems.Count - VisibleCount)"
+                       Disabled="@(_startIndex >= MaxIndex)"
                        OnClick="MoveNext"
                        Class="arrow-button right" />
+    </div>
+
+    <div class="pagination-dots">
+        @for (int i = 0; i <= MaxIndex; i++)
+        {
+            <span class="dot @(i == _startIndex ? "active" : "")" ></span>
+        }
     </div>
 </div>
 
 @code {
     private int _startIndex = 0;
-    private const int VisibleCount = 4;
+    private int VisibleCount => isMobile ? 1 : 4;
+    private bool isMobile => windowWidth <= 768;
+    private int MaxIndex => featuredItems.Count - VisibleCount;
+
+    private int windowWidth;
 
     private List<FeaturedItemCard.FeaturedItem> featuredItems = new()
     {
@@ -44,14 +56,11 @@
         new() { ImageUrl = "/images/categories/card_image.svg", Category = "Trading Cards", Title = "Topos Chrome Charizard Tekno #06", Price = "2,100 QAR", Location = "Al Sadd, Doha", IsFeatured = false },
     };
 
-    private IEnumerable<FeaturedItemCard.FeaturedItem> VisibleItems =>
-        featuredItems.Skip(_startIndex).Take(VisibleCount);
-
-    private string TrackOffset => $"translateX(0)"; // Not needed if skipping manually
+    private string TrackOffset => $"translateX(-{_startIndex * (100 / VisibleCount)}%)";
 
     private void MoveNext()
     {
-        if (_startIndex < featuredItems.Count - VisibleCount)
+        if (_startIndex < MaxIndex)
             _startIndex++;
     }
 
@@ -61,37 +70,62 @@
             _startIndex--;
     }
 
+    private void GoToPage(int index)
+    {
+        _startIndex = index;
+    }
+
     private void HandleHeartClick(FeaturedItemCard.FeaturedItem item)
     {
         Console.WriteLine($"Heart clicked for {item.Title}");
     }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            windowWidth = await JSRuntime.InvokeAsync<int>("getWindowWidth");
+            StateHasChanged();
+        }
+    }
+
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 }
 
  
 <style>
-      .featured-cards-section {
-        padding: 2rem 1rem;
-        position: relative;
-    }
+     .featured-cards-section {
+    padding: 2rem 0rem;
+    position: relative;
+    font-family: 'Public Sans', sans-serif;
+}
 
-    .featured-header {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-bottom: 1.5rem;
-    }
+.featured-header {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
 
-    .featured-title {
-        font-weight: 600;
-        font-size: 1.25rem;
-    }
+.featured-title {
+    font-weight: 600;
+    font-size: 25px;
+    color: var(--color-text-heading);
+}
+.featured-title-one {
+    font-weight: 400;
+    font-size: 15px;
+    color: var(--color-text-heading);
+}
 
-  .carousel-container2 {
+.carousel-container2 {
     position: relative;
     display: flex;
     align-items: center;
     overflow: hidden;
-    padding: 0 1rem;
+    width: 100%;
 }
 
 .carousel-wrapper {
@@ -102,10 +136,11 @@
 .carousel-trackerack {
     display: flex;
     transition: transform 0.5s ease;
+    will-change: transform;
 }
 
 .carousel-card {
-    flex: 0 0 25%; /* 100 / 4 items */
+    flex: 0 0 25%;
     max-width: 25%;
     padding: 0.5rem;
     box-sizing: border-box;
@@ -124,11 +159,33 @@
 }
 
 .arrow-button.left {
-    left: 0;
+    left: 20px;
+    top: 35%;
+}
+.arrow-button.right {
+    right: 20px;
+    top: 35%;
 }
 
-.arrow-button.right {
-    right: 0;
+.pagination-dots {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.pagination-dots .dot {
+    height: 10px;
+    width: 10px;
+    margin: 0 5px;
+    background-color: #bbb;
+    border-radius: 50%;
+    display: inline-block;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.pagination-dots .dot.active {
+    background-color: #333;
 }
 
 @@media (max-width: 768px) {
@@ -136,9 +193,13 @@
         flex: 0 0 100%;
         max-width: 100%;
     }
+    .pagination-dots{
+        display: none;
+    }
     .arrow-button {
         display: none;
     }
 }
-.
+
+
 </style>

@@ -1,0 +1,277 @@
+@using MudBlazor
+@using QLN.Web.Shared.Models
+
+@if (Item is not null)
+{
+    <h2 class="item-title">
+        @Item.Title
+        <div class="action-icons">
+            <MudIconButton Icon="@Icons.Material.Filled.Share" Color="Color.Inherit" />
+            <span>Share</span>
+            <MudIconButton Icon="@Icons.Material.Filled.BookmarkBorder" Color="Color.Inherit" />
+            <span>Save</span>
+        </div>
+    </h2>
+
+    <div class="main-layout">
+        <div class="left-column">
+            <div class="carousel-container">
+                <div class="main-image-container position-relative">
+                    <!-- Custom Badges -->
+                    @if (Item.IsPromoted)
+                    {
+                        <div class="Promoted-badge">
+                            <MudIcon Icon="@Icons.Material.Filled.FlashOn" Size="Size.Small" Class="Promoted-icon" />
+                            <span>Promoted</span>
+                        </div>
+                    }
+                    @if (Item.IsFeatured)
+                    {
+                        <div class="featured-badge">
+                            <MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" Class="featured-icon" />
+                            <span>Featured</span>
+                        </div>
+                    }
+
+                    <!-- Main Image -->
+                    <img src="@Item.Images[activeIndex]" alt="Product Image" class="main-image" />
+
+                    <!-- Navigation Arrows -->
+                    <button class="nav-arrow left" @onclick="PrevImage">&#10094;</button>
+                    <button class="nav-arrow right" @onclick="NextImage">&#10095;</button>
+
+                    <!-- Image Counter -->
+                    <div class="image-counter">@($"{activeIndex + 1}/{Item.Images.Count}")</div>
+
+                    <!-- View All Photos -->
+                    <div class="view-all-images">
+                        <MudIcon Icon="@Icons.Material.Filled.Collections" />
+                        <span>View all photos</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-column">
+            <h3>@Item.Title</h3>
+            <div class="price">@Item.Price</div>
+            <div class="action-buttons">
+                <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Call">
+                    Call
+                </MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Chat">
+                    WhatsApp
+                </MudButton>
+            </div>
+            <div class="poster-info">
+                <img src="@Item.CompanyLogoUrl" class="poster-logo" />
+                <div>
+                    <div class="poster-name">@Item.Company</div>
+                    <div class="poster-location">
+                        <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" />
+                        @Item.Location
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr />
+
+    <h3>Overview</h3>
+    <div class="overview-grid">
+        <div class="overview-item">
+            <MudIcon Icon="@Icons.Material.Filled.PhoneAndroid" /> @Item.Category
+        </div>
+        <div class="overview-item">
+            <MudIcon Icon="@Icons.Material.Filled.Memory" /> Storage: @Item.Storage
+        </div>
+        <div class="overview-item">
+            <MudIcon Icon="@Icons.Material.Filled.BatteryChargingFull" /> Battery: @Item.Battery
+        </div>
+        <div class="overview-item">
+            <MudIcon Icon="@Icons.Material.Filled.ColorLens" /> Color: @Item.Color
+        </div>
+        <div class="overview-item">
+            <MudIcon Icon="@Icons.Material.Filled.Settings" /> Processor: @Item.Processor
+        </div>
+        <div class="overview-item">
+            <MudIcon Icon="@Icons.Material.Filled.Shield" /> @Item.Condition
+        </div>
+    </div>
+
+    <hr />
+
+    <h3>Description</h3>
+    <p class="description">
+        Qatar International School is an independent school exclusively for the children...
+        <a href="#">Read more</a>
+    </p>
+}
+else
+{
+    <p class="no-selection">Please select an item to view details.</p>
+}
+
+<style>
+    .main-image-container {
+        position: relative;
+    }
+
+    .Promoted-badge,
+    .featured-badge {
+        position: absolute;
+        left: 10px;
+        background-color: #FF7F38;
+        color: white;
+        padding: 4px 6px;
+        border-radius: 2px;
+        font-size: 11px;
+        font-weight: 500;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+    }
+
+    .Promoted-badge {
+        top: 10px;
+    }
+
+    .featured-badge {
+        top: 40px;
+        background-color: #1976D2; /* Blue or your desired featured color */
+    }
+
+    .main-image {
+        width: 100%;
+        height: auto;
+        border-radius: 4px;
+    }
+
+    .carousel-container {
+        position: relative;
+    }
+
+    .nav-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background-color: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+        font-size: 18px;
+        z-index: 2;
+    }
+
+    .nav-arrow.left {
+        left: 10px;
+    }
+
+    .nav-arrow.right {
+        right: 10px;
+    }
+
+    .image-counter {
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        padding: 2px 6px;
+        font-size: 12px;
+        border-radius: 4px;
+    }
+
+    .view-all-images {
+        margin-top: 6px;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: #1976D2;
+        cursor: pointer;
+    }
+
+    .action-icons {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .main-layout {
+        display: flex;
+        gap: 24px;
+        margin-top: 16px;
+    }
+
+    .left-column {
+        flex: 2;
+    }
+
+    .right-column {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .poster-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 16px;
+    }
+
+    .poster-logo {
+        width: 40px;
+        height: 40px;
+        object-fit: contain;
+        border-radius: 4px;
+    }
+
+    .overview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    .overview-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+    }
+
+    .description {
+        font-size: 14px;
+        line-height: 1.6;
+        color: #444;
+    }
+</style>
+
+@code {
+    [Parameter] public PromotedItem? Item { get; set; }
+
+    private int activeIndex = 0;
+
+    private void PrevImage()
+    {
+        if (Item?.Images?.Count > 0)
+        {
+            activeIndex = (activeIndex - 1 + Item.Images.Count) % Item.Images.Count;
+        }
+    }
+
+    private void NextImage()
+    {
+        if (Item?.Images?.Count > 0)
+        {
+            activeIndex = (activeIndex + 1) % Item.Images.Count;
+        }
+    }
+}

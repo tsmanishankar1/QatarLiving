@@ -1,19 +1,38 @@
 @using MudBlazor
+@using QLN.Web.Shared.Models
 @using QLN.Web.Shared.Pages.Classifieds.Components.Itesm.Components
 
-<!-- Page: Itesm -->
 <div style="width: 100%; background-color: var(--color-secondary-background);">
-    <SearchSection />
+    
+    @if (SelectedItem is null)
+    {
+        <SearchSection />
+    }
 
-    <div style="width: 100%; padding: 10px 40px;">
+    <div style="width: 100%; padding: 0px 40px;">
         <div class="category-banner-wrapper">
             <img src="/images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
         </div>
-        <IteamList />
-    </div>
 
+        @if (SelectedItem is null)
+        {
+            <IteamList OnItemSelected="HandleItemSelected" />
+        }
+        else
+        {
+            <Iteamdetails Item="SelectedItem" />
+        }
+    </div>
 </div>
 
+@code {
+    private PromotedItem? SelectedItem;
+
+    private void HandleItemSelected(PromotedItem item)
+    {
+        SelectedItem = item;
+    }
+}
 
 <style>
     .category-banner-wrapper {

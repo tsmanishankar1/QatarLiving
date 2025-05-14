@@ -1,8 +1,7 @@
 @using MudBlazor
 
 <div class="faqs-section">
-    <MudText Typo="Typo.h6" Class="faq-title">FAQ's</MudText>
-
+    <h3 class="faq-title">FAQ's</h3>
     @foreach (var faq in faqs)
     {
         <MudPaper Class="@($"faq-item {(faq.Expanded ? "expanded" : "")}")" Elevation="0">
@@ -11,12 +10,12 @@
                        Class="@($"faq-question {(faq.Expanded ? "expanded" : "")}")"
                        EndIcon="@(faq.Expanded ? Icons.Material.Filled.Remove : Icons.Material.Filled.Add)"
                        OnClick="@(() => ToggleFaq(faq))">
-                <MudText Typo="Typo.subtitle1">@faq.Question</MudText>
+                <h4 class="faq-question-text">@faq.Question</h4>
             </MudButton>
 
             <MudCollapse Expanded="@faq.Expanded">
                 <MudPaper Class="faq-answer" Elevation="0">
-                    <MudText Typo="Typo.body1">@faq.Answer</MudText>
+                     <h4 class="faq-answer-text">@faq.Answer</h4>
                 </MudPaper>
             </MudCollapse>
         </MudPaper>
@@ -27,12 +26,14 @@
 /* Container */
 .faqs-section {
     padding: 2rem 1rem;
+    font-family: 'Public Sans', sans-serif;
 }
 
 /* Title */
 .faq-title {
     font-weight: 600;
-    color: var(--color-text-secondary);
+    font-size: 25px;
+    color: var(--color-text-heading);
     margin-bottom: 2rem;
     text-align: center;
 }
@@ -52,7 +53,16 @@
     background-color: var(--color-background);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
-
+.faq-question-text{
+     font-weight: 500;
+     font-size: 15px;
+    color: var(--color-text-heading);
+}
+.faq-answer-text{
+     font-weight: 500;
+     font-size: 15px;
+    color: var(--color-text-gray);
+}
 /* FAQ Button */
 .faq-question {
     justify-content: space-between;

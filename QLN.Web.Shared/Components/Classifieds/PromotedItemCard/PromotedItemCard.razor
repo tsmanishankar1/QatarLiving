@@ -1,4 +1,5 @@
 @using MudBlazor
+@using QLN.Web.Shared.Models
 
 <div class="card">
     @if (Item.IsPromoted)
@@ -9,9 +10,10 @@
         </div>
     }
 
-    <MudIconButton Icon="@(isFavorite? Icons.Material.Filled.Favorite : Icons.Material.Outlined.FavoriteBorder)"
-        Color="@(isFavorite? Color.Error: Color.Inherit)" OnClick="@(() => HandleHeartClick(Item))"
-        Class="@heartIconClass" />
+    <MudIconButton Icon="@(isFavorite ? Icons.Material.Filled.Favorite : Icons.Material.Outlined.FavoriteBorder)"
+                   Color="@(isFavorite ? Color.Error : Color.Inherit)"
+                   OnClick="@(() => HandleHeartClick(Item))"
+                   Class="@heartIconClass" />
 
     <div class="carousel-container" @onmouseover="() => isHovered = true" @onmouseout="() => isHovered = false">
         <img src="@Item.Images[activeIndex]" alt="@Item.Title" class="card-image" />
@@ -30,7 +32,7 @@
         }
     </div>
 
-    <div class="card-content">
+    <div class="card-content"  @onclick="() => OnSelect.InvokeAsync(Item)">
         <div class="category">@Item.Category</div>
         <h3 class="title">@Item.Title</h3>
         <div class="features">
@@ -53,19 +55,47 @@
     </div>
 </div>
 
+@code {
+    [Parameter] public PromotedItem Item { get; set; } = new();
+    [Parameter] public EventCallback<PromotedItem> OnSelect { get; set; }
+    [Parameter] public EventCallback<PromotedItem> OnHeartClick { get; set; }
+
+    private bool isFavorite = false;
+    private bool isHovered = false;
+    private int activeIndex = 0;
+
+    private string heartIconClass => isFavorite ? "heart-icon filled" : "heart-icon outlined";
+
+    private async Task HandleHeartClick(PromotedItem item)
+    {
+        isFavorite = !isFavorite;
+        await OnHeartClick.InvokeAsync(item);
+    }
+
+    private void PrevImage()
+    {
+        activeIndex = (activeIndex - 1 + Item.Images.Count) % Item.Images.Count;
+    }
+
+    private void NextImage()
+    {
+        activeIndex = (activeIndex + 1) % Item.Images.Count;
+    }
+}
 <style>
     .card {
         position: relative;
-        border-radius: 12px;
+        border-radius: 8px;
         overflow: hidden;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         background: #fff;
         font-family: 'Public Sans', sans-serif;
         transition: transform 0.3s ease;
+        flex: 1 1 auto;
+    max-width: 100%;
     }
 
     .card:hover {
-        transform: translateY(-5px);
+        transform: translateY(-2px);
     }
 
     .Promoted-badge {
@@ -74,14 +104,14 @@
         left: 0;
         background-color: #FF7F38;
         color: white;
-        padding: 4px 10px;
-        font-size: 12px;
-        font-weight: bold;
+        padding: 4px 6px;
+        font-size: 11px;
+        font-weight: 500;
         z-index: 2;
         display: flex;
         align-items: center;
-        gap: 6px;
-        border-radius: 0 4px 4px 0;
+        gap: 2px;
+        border-radius: 0 2px 2px 0;
     }
 
     .heart-icon {
@@ -93,6 +123,15 @@
         padding: 5px;
         box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
         z-index: 2;
+    }
+     .heart-icon.filled {
+        color: #FF7F38 !important;
+        background: white !important;
+    }
+
+     .heart-icon.outlined {
+        color: #FF7F38 !important;
+        background: white !important;
     }
 
     .carousel-container {
@@ -133,8 +172,8 @@
         left: 10px;
         background: #454545CC;
         color: white;
-        padding: 2px 8px;
-        border-radius: 12px;
+        padding: 2px 10px;
+        border-radius: 2px;
         font-size: 12px;
     }
 
@@ -192,7 +231,7 @@
     .company-logo {
         width: 40px;
         height: 40px;
-        border-radius: 10px;
+        border-radius: 2px;
         object-fit: contain;
     }
 
@@ -217,47 +256,3 @@
         gap: 4px;
     }
 </style>
-
-@code {
-    public class PromotedItem
-    {
-        public List<string> Images { get; set; } = new();
-        public string Category { get; set; } = string.Empty;
-        public string Title { get; set; } = string.Empty;
-        public string Price { get; set; } = string.Empty;
-        public string Location { get; set; } = string.Empty;
-        public string Company { get; set; } = string.Empty;
-        public string CompanyLogoUrl { get; set; } = string.Empty;
-        public string Condition { get; set; } = ""; // Brand New / Used
-        public string Color { get; set; } = string.Empty;
-        public string Storage { get; set; } = string.Empty;
-        public string Battery { get; set; } = string.Empty;
-        public string Processor { get; set; } = string.Empty;
-        public bool IsPromoted { get; set; }
-    }
-
-    [Parameter] public PromotedItem Item { get; set; } = new();
-    [Parameter] public EventCallback<PromotedItem> OnHeartClick { get; set; }
-
-    private bool isFavorite = false;
-    private bool isHovered = false;
-    private int activeIndex = 0;
-
-    private string heartIconClass => isFavorite ? "heart-icon filled" : "heart-icon outlined";
-
-    private async Task HandleHeartClick(PromotedItem item)
-    {
-        isFavorite = !isFavorite;
-        await OnHeartClick.InvokeAsync(item);
-    }
-
-    private void PrevImage()
-    {
-        activeIndex = (activeIndex - 1 + Item.Images.Count) % Item.Images.Count;
-    }
-
-    private void NextImage()
-    {
-        activeIndex = (activeIndex + 1) % Item.Images.Count;
-    }
-}

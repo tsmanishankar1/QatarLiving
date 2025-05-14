@@ -1,9 +1,7 @@
 @using MudBlazor
 
 <div class="store-carousel-wrapper">
-    <MudText Typo="Typo.h6" Align="Align.Center" Class="carousel-title">
-        Discover amazing deals from the best stores in Qatar
-    </MudText>
+    <h3 class="carousel-title">Discover amazing deals from the best stores in Qatar</h3>
 
     <div class="carousel-container">
         <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
@@ -98,12 +96,16 @@
 .store-carousel-wrapper {
     padding: 2rem 1rem;
     position: relative;
+    text-align: center;
+    font-family: 'Public Sans', sans-serif;
 }
 
 .carousel-title {
     font-weight: 600;
-    color: var(--color-text-secondary);
+    font-size: 25px;
+    color: var(--color-text-heading);
     margin-bottom: 1.5rem;
+    text-align: center;
 }
 
 .carousel-container {
