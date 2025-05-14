@@ -5,7 +5,10 @@
 <div class="breadcrumb-wrapper">
   
     <div class="breadcrumb-trail">
-        <i class="fa fa-home"></i>
+        <a href="/" class="breadcrumb-link home-link">
+            <img src="/images/components/Home.svg" class="home-icon" alt="Home" />
+        </a>        <span class="breadcrumb-separator">></span>
+
         @foreach (var item in Items.Select((value, index) => new { value, index }))
         {
             @if (!string.IsNullOrEmpty(item.value.Url) && !item.value.IsLast)
@@ -23,9 +26,9 @@
             }
         }
     </div>
-    <div class="back-link">
+   @*  <div class="back-link">
         <a href="@BackLinkUrl"> <span class="breadcrumb-text">Back to</span> @BackLinkText</a>
-    </div>
+    </div> *@
 </div>
 
 @code {
@@ -43,9 +46,9 @@
     .breadcrumb-wrapper {
         display: flex;
         flex-direction: column;
+        justify-content:center;
         gap: 0.5rem;
         padding: 1rem;
-        background-color: #f8f9fa;
         font-family: 'Public Sans', sans-serif;
     }
 
@@ -92,5 +95,11 @@
     .breadcrumb-separator {
         color: inherit;
         padding: 0 0.1rem;
+    }
+
+    .home-icon {
+        width: 24px;
+        height: 24px;
+        color: #475467
     }
 </style>

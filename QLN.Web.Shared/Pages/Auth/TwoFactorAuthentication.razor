@@ -3,66 +3,45 @@
 @inject NavigationManager NavManager
 @inject ISnackbar Snackbar
 @inject ApiService Api
-@inject UserState UserState
 @inject IJSRuntime JS
-
 @using Microsoft.AspNetCore.WebUtilities
 @using QLN.Web.Shared.Models
 @using QLN.Web.Shared.Services
 @using QLN.Web.Shared.Components.CustomButton
 @using QLN.Web.Shared.Components.ModalDialog
+@using QLN.Common.DTO_s;
 @using System.Text.Json
-@using System.Timers
+@using System.Timers;
+@using static QLN.Web.Shared.Helpers.HttpErrorHelper;
 
 @if (VerificationSucesss)
 {
     <div class="popup-overlay">
-        <ModalDialog
-            Title="Verification Successful"
-            Description="Your code has been successfully verified."
-            ButtonName="Continue"
-            StatusType="Success"
-            OnClick="CloseVerificationPopup" />
+        <ModalDialog Title="Verification Successful" Description="Your code has been successfully verified."
+            ButtonName="Continue" StatusType="Success" OnClick="CloseVerificationPopup" />
     </div>
 }
 
 <div class="auth-wrapper">
     <div class="auth-container">
         <h2 class="title">Two-Factor Authentication</h2>
-        <p class="subtitle">We've sent a verification code to your 
-            @if (_method == "email")
-            {
-                <text>email ending in @UserState.Email</text>
-            }
-            else if (_method == "sms")
-            {
-                <text>phone number ending in @UserState.mobileNumber</text>
-            }
+        <p class="subtitle">We've sent a verification code to your
+           
         </p>
 
         <div class="otp-container">
             @for (int i = 0; i < 6; i++)
             {
                 var index = i;
-                <input class="otp-box"
-                       id="otp-@index"
-                       maxlength="1"
-                       value="@_otpDigits[index]"
-                       @oninput="(e => OnOtpChanged(((ChangeEventArgs)e).Value?.ToString(), index))"
-                       type="text"
-                       inputmode="numeric"
-                       pattern="[0-9]*" />
+                <input class="otp-box" id="otp-@index" maxlength="1" value="@_otpDigits[index]"
+                    @oninput="(e => OnOtpChanged(((ChangeEventArgs)e).Value?.ToString(), index))" type="text"
+                    inputmode="numeric" pattern="[0-9]*" />
             }
         </div>
 
-        <CustomButton
-            BackgroundColor="#FF7F38"
-            TextColor="#FFFFFF"
-            Text="Verify"
-            Disabled="_isLoading"
-            Loading="_isLoading"
-            OnClick="@VerifyCode"
-            Class="verify-btn" />
+        <CustomButton BackgroundColor="#FF7F38" TextColor="#FFFFFF" Text="Verify" Disabled="_isLoading"
+            Loading="_isLoading" OnClick="@VerifyCode" Class="verify-btn" aria-label="Verify Button"
+    data-testid="verify-button" />
 
         <p class="resend">
             Didn't receive a code?
@@ -72,7 +51,7 @@
             }
             else
             {
-                <span style="color:var(--color-accent); cursor:pointer;" @onclick="ResendCode">Resend</span>
+                <span style="color:var(--color-accent); cursor:pointer;" @onclick="ResendCode" id="resend-code" data-testid="resend-code-button">Resend</span>
             }
         </p>
 
@@ -81,6 +60,7 @@
 </div>
 
 @code {
+    @* [CascadingParameter] public GlobalAppState? AppState { get; set; } *@
     private string[] _otpDigits = new string[6];
     private string _code = string.Empty;
     private bool _isLoading = false;
@@ -134,40 +114,27 @@
             return;
         }
 
-        var contactInfo = _method == "sms" ? UserState.mobileNumber : UserState.Email;
-
         var payload = new
         {
-            usernameOrEmailOrPhone = contactInfo,
             twoFactorCode = _code,
+            @* usernameOrEmailOrPhone = _method == "email" ? AppState?.Email : AppState?.MobileNumber, *@
             method = _method == "sms" ? "phone" : _method
         };
 
         try
-        {
-            var response = await Api.PostAsync<object, Verify2FAResponseData>("auth/verify-2fa", payload);
-
-            if (response?.StatusCode == 200 && response.Data is not null)
-            {
-                UserState.username = response.Data.Username;
-                UserState.Email = response.Data.Emailaddress;
-                UserState.mobileNumber = response.Data.Mobilenumber;
-                UserState.Token = response.Data.AccessToken;
-
-                VerificationSucesss = true;
-            }
-            else
-            {
-                _hasError = true;
-                _errorMessage = response?.Message ?? "Invalid verification code.";
-                Snackbar.Add(_errorMessage, Severity.Warning);
-            }
+         {
+            var response = await Api.PostAsync<object, LoginResponse>("auth/verify-2fa", payload);
+            await JS.InvokeVoidAsync("sessionStorage.setItem", "token", response.AccessToken);
+            await JS.InvokeVoidAsync("sessionStorage.setItem", "username", response.Username);
+           
+            StateHasChanged();
+            VerificationSucesss = true;
         }
-        catch (Exception ex)
+        catch (HttpRequestException ex)
         {
-            _hasError = true;
-            _errorMessage = ex.Message;
-            Snackbar.Add(_errorMessage, Severity.Error);
+             _hasError = true;
+             _errorMessage = ex.Message;
+             HandleHttpException(ex, Snackbar);
         }
         finally
         {
@@ -184,27 +151,19 @@
         }
         var payload = new
         {
-            usernameOrEmailOrPhone = _method == "email" ? UserState.Email : UserState.mobileNumber,
+            @* usernameOrEmailOrPhone = _method == "email" ? AppState?.Email : AppState?.MobileNumber, *@
             method = _method == "sms" ? "phone" : _method
         };
 
         try
         {
             var response = await Api.PostAsync<object, object>("auth/send-2fa", payload);
-
-            if (response?.StatusCode == 200)
-            {
-                Snackbar.Add("Verification code resent successfully.", Severity.Success);
-                StartResendCountdown();
-            }
-            else
-            {
-                Snackbar.Add(response?.Message ?? "Failed to resend code.", Severity.Error);
-            }
+            Snackbar.Add("Verification code resent successfully.", Severity.Success);
+            StartResendCountdown();
         }
-        catch (Exception ex)
+        catch (HttpRequestException ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            HandleHttpException(ex, Snackbar);
         }
     }
 
@@ -240,105 +199,99 @@
     {
         _resendTimer?.Dispose();
     }
-
-    private class Verify2FAResponseData
-    {
-        public string Username { get; set; } = string.Empty;
-        public string Emailaddress { get; set; } = string.Empty;
-        public string Mobilenumber { get; set; } = string.Empty;
-        public string AccessToken { get; set; } = string.Empty;
-    }
 }
 
 
 <style>
-.auth-wrapper {
-    background-color: var(--color-secondary-background);
-    padding: 48px 16px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
+    .auth-wrapper {
+        background-color: var(--color-secondary-background);
+        padding: 48px 16px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 
-.auth-container {
-    max-width: 400px;
-    width: 100%;
-    padding: 32px;
-    border-radius: 8px;
-    text-align: center;
-}
+    .auth-container {
+        max-width: 400px;
+        width: 100%;
+        padding: 32px;
+        border-radius: 8px;
+        text-align: center;
+    }
 
-.title {
-    margin-bottom: 12px;
-    color:var(--color-text-secondary);
-    font-family: 'Public Sans', sans-serif;
-    font-weight: 600;
-    font-size: 30px;
-}
+    .title {
+        margin-bottom: 12px;
+        color: var(--color-text-secondary);
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 30px;
+    }
 
-.subtitle {
-    color:var(--color-text-caption) ;
-    margin-bottom: 24px;
-    font-family: 'Public Sans', sans-serif;
-    font-weight: 400;
-    font-size: 16px;
-}
+    .subtitle {
+        color: var(--color-text-caption);
+        margin-bottom: 24px;
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 400;
+        font-size: 16px;
+    }
 
-.otp-container {
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    margin-bottom: 24px;
-}
+    .otp-container {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 24px;
+    }
 
-.otp-box {
-    width: 48px;
-    height: 48px;
-    font-size: 20px;
-    text-align: center;
-    border: 1px solid var(--color-secondary-background);
-    border-radius: 6px;
-}
+    .otp-box {
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+        text-align: center;
+        border: 1px solid var(--color-secondary-background);
+        border-radius: 6px;
+    }
 
-.verify-btn {
-    margin-top: 16px;
-    width: 100%;
-}
+    .verify-btn {
+        margin-top: 16px;
+        width: 100%;
+    }
 
 
-.resend {
-    margin-top: 16px;
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    font-family: 'Public Sans', sans-serif;
-    font-weight: 400;
-    font-size: 14px;
-}
-.alternative {
-    margin-top: 16px;
-    color:var(--color-accent);
-    cursor: pointer;
-    font-family: 'Public Sans', sans-serif;
-    font-weight: 600;
-    font-size: 14px;
-}   
-.otp-box:focus {
-    border: 2px solid var(--color-accent);  
-    outline: none;
-    background-color: var(--color-background);  
-}
-.popup-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(120, 120, 120, 1); 
-    backdrop-filter: blur(8px); 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
+    .resend {
+        margin-top: 16px;
+        color: var(--color-text-secondary);
+        cursor: pointer;
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 400;
+        font-size: 14px;
+    }
 
+    .alternative {
+        margin-top: 16px;
+        color: var(--color-accent);
+        cursor: pointer;
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .otp-box:focus {
+        border: 2px solid var(--color-accent);
+        outline: none;
+        background-color: var(--color-background);
+    }
+
+    .popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(120, 120, 120, 1);
+        backdrop-filter: blur(8px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
 </style>

@@ -1,20 +1,32 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using QLN.Web.Shared;
 using QLN.Web.Shared.Pages;
 using QLN.Web.Shared;
+using MudBlazor;
+using MudBlazor.Services;
+using QLN.Web.Shared.Services;
+using Microsoft.AspNetCore.Components.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddMudServices();
+// builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(Options=>{
+//     Options.Cookie.Name = "auth-name";
+//     Options.LoginPath = "/login";
+//     Options.Cookie.MaxAge=TimeSpan.FromMinutes(10);
 
-builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultScheme = IdentityConstants.ApplicationScheme;
-        options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-    })
-    .AddIdentityCookies();
+// });
+builder.Services.AddScoped<CustomAuthStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<CustomAuthStateProvider>());
+builder.Services.AddAuthorizationCore();
+// builder.Services.AddCascadingAuthenticationState();
+builder.Services.Configure<ApiSettings>(
+    builder.Configuration.GetSection("ApiSettings"));
 
-builder.Services.AddCascadingAuthenticationState();
-builder.Services.AddWebSharedServices(builder.Configuration);
+builder.Services.AddHttpClient<ApiService>();
+// builder.Services.AddWebSharedServices(builder.Configuration);
 
 var app = builder.Build();
 
@@ -33,8 +45,9 @@ else
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
-app.UseAntiforgery();
-
+// app.UseAuthentication();
+// app.UseAuthorization();
+ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 

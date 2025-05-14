@@ -1,14 +1,16 @@
 @page "/select-verification"
-@using MudBlazor
+ @using MudBlazor
 @using QLN.Web.Shared.Components.CustomButton
+@using static QLN.Web.Shared.Helpers.HttpErrorHelper
+@inject CustomAuthStateProvider CustomAuthenticationStateProvider;
 @inject NavigationManager NavManager
+@using System.Security.Claims;
 @inject ISnackbar Snackbar
-@inject UserState UserState
 @using QLN.Web.Shared.Services
 @inject ApiService Api
 
 <div class="page-wrapper">
-    <div class="form-container">    
+    <div class="form-container">
         <MudText Class="title-text">Verification Method</MudText>
         <MudText Class="subtitle">Choose how you want to receive your verification code</MudText>
 
@@ -19,15 +21,10 @@
 
                 <MudPaper Class="@paperClass">
                     <div class="d-flex align-center p-3">
-                        <input 
-                            type="radio" 
-                            name="method" 
-                            class="custom-radio"
-                            value="@option.Value"
-                            checked="@(_selectedMethod == option.Value)" 
-                            @onchange="() => SelectOption(option.Value)" 
-                        />
-                        <div class="ml-3" style="display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start;">
+                        <input type="radio" name="method" class="custom-radio" value="@option.Value"
+                            checked="@(_selectedMethod == option.Value)" @onchange="() => SelectOption(option.Value)" />
+                        <div class="ml-3"
+                            style="display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start;">
                             <MudText Class="label-text">@option.Label</MudText>
                             <MudText Class="description-text">
                                 @option.Description
@@ -38,48 +35,59 @@
             }
         </MudPaper>
 
-        <CustomButton 
-            BackgroundColor="var(--color-accent)"
-            TextColor="#FFFFFF"
-            Text="Continue"
-            Disabled="_isLoading"
-    Loading="_isLoading"
-            OnClick="NavigateTo"
-            Class="mt-4" />
+        <CustomButton BackgroundColor="var(--color-accent)" TextColor="#FFFFFF" Text="Continue" Disabled="_isLoading"
+            Loading="_isLoading" OnClick="NavigateTo" Class="mt-4" />
     </div>
 </div>
 
 @code {
+    [CascadingParameter] public GlobalAppState? AppState { get; set; }
+    public string email{ get; set; }
+    public string mobile{ get; set; }
+
     private string _selectedMethod = string.Empty;
     private bool _isLoading = false;
+    protected override async Task OnInitializedAsync()
+	{
+            var authState = await CustomAuthenticationStateProvider.GetAuthenticationStateAsync();
+             if (authState != null){
+                var user = authState.User;
+                if (user.Identity != null && user.Identity.IsAuthenticated)
+                {
+                    email = user.FindFirst(ClaimTypes.Email)?.Value;
+                    mobile = user.FindFirst(ClaimTypes.MobilePhone)?.Value;
+                }
+            } 
+	}
 
     private List<VerificationOption> verificationOptions => new()
-    {
-        new VerificationOption
-        {
-            Value = "sms",
-            Label = "Text Message (SMS)",
-            Description = $"Send code to {UserState.mobileNumber}"
-        },
-        new VerificationOption
-        {
-            Value = "email",
-            Label = "Email Address",
-            Description = $"Send code to {UserState.Email}"
-        },
-        new VerificationOption
-        {
-            Value = "authenticator",
-            Label = "Authenticator App",
-            Description = "Use the code from your authenticator app"
-        }
-    };
+{
+new VerificationOption
+{
+Value = "sms",
+Label = "Text Message (SMS)",
+Description = $"Send code to {mobile}",
+},
+new VerificationOption
+{
+Value = "email",
+Label = "Email Address",
+Description = $"Send code to {email}"
+},
+new VerificationOption
+{
+Value = "authenticator",
+Label = "Authenticator App",
+Description = "Use the code from your authenticator app"
+}
+};
+
 
     private string GetSelectedClass(string value) =>
-        _selectedMethod == value ? "selected" : "";
+    _selectedMethod == value ? "selected" : "";
 
     private void SelectOption(string method) =>
-        _selectedMethod = method;
+    _selectedMethod = method;
 
     private async void NavigateTo()
     {
@@ -100,27 +108,20 @@
         {
             var payload = new
             {
-                usernameOrEmailOrPhone = _selectedMethod == "email" ? UserState.Email : UserState.mobileNumber,
+                usernameOrEmailOrPhone = _selectedMethod == "email" ? AppState?.Email : AppState?.MobileNumber,
                 method = _selectedMethod == "sms" ? "phone" : _selectedMethod
             };
             var response = await Api.PostAsync<object, object>("auth/send-2fa", payload);
-            if (response?.StatusCode == 200)
-            {
-                NavManager.NavigateTo("/two-factor-authentication");
-            }
-            else
-            {
-                Snackbar.Add("Failed to send verification code. Please try again.", Severity.Error);
-            }
+            NavManager.NavigateTo("/two-factor-authentication");
         }
-        catch (Exception ex)
+        catch (HttpRequestException ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            HandleHttpException(ex, Snackbar);
         }
         finally
         {
             _isLoading = false;
-            StateHasChanged(); 
+            StateHasChanged();
         }
     }
 
@@ -133,74 +134,78 @@
 }
 
 <style>
-.page-wrapper {
-    width: 100%;
-    background-color:  var(--color-secondary-background);
-    padding: 32px 16px;
-}
+    .page-wrapper {
+        width: 100%;
+        background-color: var(--color-secondary-background);
+        padding: 32px 16px;
+    }
 
-.form-container {
-    max-width: 400px;
-    margin: 0 auto;
-    text-align: center;
-}
+    .form-container {
+        max-width: 400px;
+        margin: 0 auto;
+        text-align: center;
+    }
 
-.title-text {
-    font-size: 30px;
-    font-weight: 500;
-    font-family: 'Public Sans', sans-serif;
-    margin-bottom: 12px;
-    color:var(--color-text-secondary)
-}
-.subtitle {
-    font-size: 16px;
-    font-weight: 400;
-    font-family: 'Public Sans', sans-serif;
-    color:var(--color-text-caption) ;
-    margin-bottom: 24px;
-}
-.label-text{
-    font-size: 18px;
-    font-weight: 500;
-    font-family: 'Public Sans', sans-serif;
-    color: var(--color-text-gray);
-}
-.description-text{
-    font-size: 14px;
-    font-weight: 400;
-    font-family: 'Public Sans', sans-serif;
-    color: var(--color-text-caption);
-}
-.option-list {
-    background-color: var(--color-secondary-background);
-}
+    .title-text {
+        font-size: 30px;
+        font-weight: 500;
+        font-family: 'Public Sans', sans-serif;
+        margin-bottom: 12px;
+        color: var(--color-text-secondary)
+    }
 
-.option-card {
-    border-radius: 8px;
-    background-color: var(--color-background);
-}
+    .subtitle {
+        font-size: 16px;
+        font-weight: 400;
+        font-family: 'Public Sans', sans-serif;
+        color: var(--color-text-caption);
+        margin-bottom: 24px;
+    }
 
-.custom-radio {
-    appearance: none;
-    -webkit-appearance: none;
-    background-color: var(--color-background);
-    border: 3px solid var(--color-accent);
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    position: relative;
-    cursor: pointer;
-}
+    .label-text {
+        font-size: 18px;
+        font-weight: 500;
+        font-family: 'Public Sans', sans-serif;
+        color: var(--color-text-gray);
+    }
 
-.custom-radio:checked::before {
-    content: "";
-    width: 8px;
-    height: 8px;
-    background-color: var(--color-accent);
-    border-radius: 50%;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-</style>
+    .description-text {
+        font-size: 14px;
+        font-weight: 400;
+        font-family: 'Public Sans', sans-serif;
+        color: var(--color-text-caption);
+    }
+
+    .option-list {
+        background-color: var(--color-secondary-background);
+    }
+
+    .option-card {
+        border-radius: 8px;
+        background-color: var(--color-background);
+    }
+
+    .custom-radio {
+        appearance: none;
+        -webkit-appearance: none;
+        background-color: var(--color-background);
+        border: 3px solid var(--color-accent);
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        position: relative;
+        cursor: pointer;
+    }
+
+    .custom-radio:checked::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        background-color: var(--color-accent);
+        border-radius: 50%;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+</style> 
