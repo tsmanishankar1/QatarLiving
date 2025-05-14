@@ -21,6 +21,10 @@
     <!-- Featured Cards -->
     <FeaturedCardsSection />
 
+    <!-- Subscription Card -->
+    <SubscriptionCard OnSubscribeClick="@HandleSubscribeClick"/>
+
+
     <div style="width: 100%; padding: 0 40px;">
         <!-- Store Deals -->
         <StoreDealsSection />
@@ -56,6 +60,10 @@
 "/images/category1.png",
 "/images/category1.png"
 };
+    private void HandleSubscribeClick()
+    {
+        Console.WriteLine("Subscribe button clicked!");
+    }
 }
 
 <style>
