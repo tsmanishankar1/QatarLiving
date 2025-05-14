@@ -4,6 +4,7 @@ trigger:
     - qln-dev
   paths:
     include:
+    - blazorbase-azure-pipelines.yml
     - QLN.Blazor.Base/*
     - QLN.Common/*
     - QLN.Web.Shared/*

@@ -4,6 +4,7 @@ trigger:
     - qln-dev
   paths:
     include:
+    - classifieds-ms-azure-pipelines.yml
     - QLN.Classified.MS/*
     - QLN.Common/*
 
