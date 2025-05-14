@@ -1,0 +1,183 @@
+@using MudBlazor
+@using QLN.Web.Shared.Components.Classifieds.PromotedItemCard
+@using QLN.Web.Shared.Models
+@using QLN.Web.Shared.Components.BreadCrumb
+@using QLN.Web.Shared.Components.PaginationFooter
+
+<Breadcrumb Items="breadcrumbItems" />
+<div class="item-list">
+    <div class="item-list-header">
+        <div class="item-list-left">
+            <h3 class="results-count">@($"Items in Qatar ({items.Count} results)")</h3>
+        </div>
+
+        <div class="sort-section">
+            <MudSelect T="string" @bind-Value="selectedSort" Dense="true" Variant="Variant.Outlined"
+                style="background-color: var(--color-background)">
+                @foreach (var option in sortOptions)
+                {
+                    <MudSelectItem Value="@option.Key">@option.Value</MudSelectItem>
+                }
+            </MudSelect>
+        </div>
+    </div>
+
+
+    <!-- Grid of Items -->
+    <MudGrid GutterSize="16px" style="padding: 0 40px;">
+        @foreach (var item in items)
+        {
+            <MudItem xs="12" sm="6" md="4">
+                <PromotedItemCard Item="item" OnSelect="() => OnItemSelected.InvokeAsync(item)" />
+            </MudItem>
+        }
+
+    </MudGrid>
+
+    <!-- Pagination -->
+    <PaginationFooter TotalItems="items.Count" CurrentPage="currentPage" PageSize="pageSize"
+        OnPageChange="HandlePageChange" OnPageSizeChange="HandlePageSizeChange" />
+
+</div>
+
+@code {
+    private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
+    private string selectedSort = "default";
+
+    private int currentPage = 1;
+    private int pageSize = 12;
+
+    private void HandlePageChange(int newPage)
+    {
+        currentPage = newPage;
+    }
+
+    private void HandlePageSizeChange(int newSize)
+    {
+        pageSize = newSize;
+    }
+
+    private bool IsFirstPage => currentPage == 1;
+    private bool IsLastPage => currentPage * pageSize >= items.Count;
+    protected override void OnInitialized()
+    {
+        breadcrumbItems = new()
+{
+new() { Label = "Classifieds",Url ="classifieds" },
+
+new() { Label = "Item", Url = "/Item", IsLast = true },
+};
+
+    }
+    private List<KeyValuePair<string, string>> sortOptions = new()
+{
+new("default", "Default"),
+new("priceLow", "Price: Low to High"),
+new("priceHigh", "Price: High to Low")
+};
+
+    [Parameter] public EventCallback<PromotedItem> OnItemSelected { get; set; }
+
+    private List<PromotedItem> items = new()
+{
+new PromotedItem { Title = "Pixel 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {
+"/images/classifieds/google_image1.svg",
+"/images/classifieds/google_image2.svg","/images/classifieds/google_image3.svg"}, Color = "White", Storage = "256GB",
+Battery = "85%", Processor = "Tensor 4", CompanyLogoUrl = "/images/classifieds/item_logo.svg", Category = "Smartphone",
+IsPromoted = true, Condition = "Brand New" },
+new PromotedItem { Title = "goggle 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {
+"/images/classifieds/item_one.svg", "/images/classifieds/item_one.svg"}, Color = "White", Storage = "256GB", Battery =
+"85%", Processor = "Tensor 4", CompanyLogoUrl = "/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted
+= true, Condition = "Brand New" },
+
+new PromotedItem { Title = "Pixel 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {
+"/images/classifieds/google_image1.svg",
+"/images/classifieds/google_image2.svg","/images/classifieds/google_image3.svg"}, Color = "White", Storage = "256GB",
+Battery = "85%", Processor = "Tensor 4", CompanyLogoUrl = "/images/classifieds/item_logo.svg", Category = "Smartphone",
+IsPromoted = true, Condition = "Brand New" },
+new PromotedItem { Title = "goggle 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {
+"/images/classifieds/item_one.svg", "/images/classifieds/item_one.svg"}, Color = "White", Storage = "256GB", Battery =
+"85%", Processor = "Tensor 4", CompanyLogoUrl = "/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted
+= true, Condition = "Brand New" },
+
+new PromotedItem { Title = "Pixel 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {
+"/images/classifieds/google_image1.svg",
+"/images/classifieds/google_image2.svg","/images/classifieds/google_image3.svg"}, Color = "White", Storage = "256GB",
+Battery = "85%", Processor = "Tensor 4", CompanyLogoUrl = "/images/classifieds/item_logo.svg", Category = "Smartphone",
+IsPromoted = true, Condition = "Brand New" },
+new PromotedItem { Title = "goggle 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {
+"/images/classifieds/item_one.svg", "/images/classifieds/item_one.svg"}, Color = "White", Storage = "256GB", Battery =
+"85%", Processor = "Tensor 4", CompanyLogoUrl = "/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted
+= true, Condition = "Brand New" },
+// add more items
+};
+}
+
+<style>
+    .footer-pagination-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 32px 40px 0;
+    }
+
+    .pagination-center {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .pagination-button {
+        background-color: var(--color-background);
+        color: #475467;
+        text-transform: capitalize;
+    }
+
+    .pagination-icon {
+        color: #475467;
+    }
+
+    .custom-pagination .mud-button {
+        font-weight: bold;
+        color: #FFFFFF;
+        border-radius: 8px;
+        min-width: 36px;
+        height: 36px;
+    }
+
+    .custom-pagination .mud-button.mud-button-active {
+        background-color: #FFFFFF;
+        color: #475467;
+    }
+
+
+    .item-list-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+    }
+
+    .item-list-left {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .results-count {
+        color: #212529;
+        /* Adjust this to match the heading color in your image */
+        font-weight: 500;
+    }
+
+    .sort-section {
+        min-width: 200px;
+    }
+
+
+    .pagination-container {
+        margin-top: 24px;
+    }
+</style>

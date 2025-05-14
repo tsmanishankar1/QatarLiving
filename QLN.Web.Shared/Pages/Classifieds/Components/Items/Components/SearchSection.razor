@@ -1,4 +1,5 @@
 @using MudBlazor
+@using QLN.Web.Shared.Components.ViewToggleButtons
 
 <MudPaper Class="search-container" Elevation="0">
     <div class="search-row">
@@ -42,11 +43,10 @@
                 Class="action-icon" />
         </div>
 
-        <div class="search-col right-actions">
-            <MudText Class="save-search" Color="Color.Primary">Save Search</MudText>
-            <MudIconButton Icon="@Icons.Material.Filled.ViewList" Title="List View" Class="view-toggle" />
-            <MudIconButton Icon="@Icons.Material.Filled.GridView" Title="Grid View" Class="view-toggle active" />
-        </div>
+       <ViewToggleButtons Items="@_viewOptions"
+                 SelectedValue="@_selectedView"
+                 OnSelected="SetViewMode" />
+
     </div>
 </MudPaper>
 
@@ -55,6 +55,19 @@
     private string _category;
     private string _brand;
     private string _price;
+private string _selectedView = "grid";
+
+private void SetViewMode(string view)
+{
+    _selectedView = view;
+    // Do something with selected view
+}
+
+private List<ViewToggleButtons.ViewToggleOption> _viewOptions = new()
+{
+    new() { ImageUrl = "/images/list_icon.svg", Label = "List", Value = "list" },
+    new() { ImageUrl = "/images/grid_icon.svg", Label = "Grid", Value = "grid" }
+};
 
     private List<string> _categories = new() { "Books", "Electronics", "Furniture" };
     private List<string> _brands = new() { "Apple", "Samsung", "Sony" };

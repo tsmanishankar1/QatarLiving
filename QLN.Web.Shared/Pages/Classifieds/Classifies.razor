@@ -2,7 +2,8 @@
 
 @using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components
 @using QLN.Web.Shared.Pages.Classifieds.Components.Landing
-@using QLN.Web.Shared.Pages.Classifieds.Components.Itesm
+@using QLN.Web.Shared.Pages.Classifieds.Components.Items
+@using QLN.Web.Shared.Pages.Classifieds.Components.Deals
 
 <NavigationTabs OnTabChanged="HandleTabChanged" />
 
@@ -19,19 +20,19 @@ else
     @switch (selectedKey)
     {
         case "items":
-            <Itesm />
+            <Items />
             break;
         case "deals":
-            <Itesm />
+            <Deals />
             break;
         case "stores":
-            <Itesm />
+            <Items />
             break;
         case "preloved":
-            <Itesm />
+            <Items />
             break;
         case "collectibles":
-            <Itesm />
+            <Items />
             break;
     }
 }
