@@ -19,7 +19,7 @@ namespace QLN.SearchService.Service
         public async Task<object> GetByIdAsync(string vertical, string key)
         {
             var v = vertical.ToLowerInvariant();
-             return await _repo.GetByIdAsync<ClassifiedIndex>(vertical, key);
+            return await _repo.GetByIdAsync<ClassifiedIndex>(vertical, key);
         }
     }
 }

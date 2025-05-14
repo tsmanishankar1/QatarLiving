@@ -79,8 +79,8 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGroup("/api/banner")
-   .MapBannerEndpoints();
+app.MapGroup("/api/classified")
+   .MapClassifiedLandingEndpoints();
 
 app.MapGroup("/api/{vertical}")
    .MapClassifiedEndpoints();

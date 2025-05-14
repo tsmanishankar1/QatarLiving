@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Routing;
+using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints
 {
-    public static class BannerEndPointDependency
+    public static class ClassifiedEndPointDependency
     {
-        public static RouteGroupBuilder MapBannerEndpoints(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapClassifiedLandingEndpoints(this RouteGroupBuilder group)
         {
             group.MapCreateBannerEndPoints()
                 .MapUpdateBannerEndPoints()

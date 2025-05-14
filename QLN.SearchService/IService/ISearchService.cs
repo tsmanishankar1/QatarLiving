@@ -1,5 +1,7 @@
-﻿using Azure.Search.Documents.Models;
-using QLN.SearchService.IndexModels;
+﻿using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Azure.Search.Documents.Models;
 using QLN.SearchService.Models;
 
 namespace QLN.SearchService.IService

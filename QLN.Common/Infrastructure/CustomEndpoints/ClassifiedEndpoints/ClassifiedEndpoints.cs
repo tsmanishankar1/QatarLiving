@@ -140,3 +140,4 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
         }
     }
 }
+

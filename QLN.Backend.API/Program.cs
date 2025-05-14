@@ -13,6 +13,7 @@ using Dapr.Client;
 using QLN.Backend.API.ServiceConfiguration;
 using QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints;
 using QLN.Common.Swagger;
+using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -173,8 +174,10 @@ if (app.Environment.IsDevelopment())
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
 
-var bannerGroup = app.MapGroup("/api/banner");
-bannerGroup.MapBannerEndpoints();
+var classifiedGroup = app.MapGroup("/api/classified");
+classifiedGroup.MapClassifiedLandingEndpoints();
+var Classifiedandinggroup = app.MapGroup("/api/{vertical}");
+Classifiedandinggroup.MapClassifiedEndpoints();
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
