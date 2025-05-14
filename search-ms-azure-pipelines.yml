@@ -4,6 +4,7 @@ trigger:
     - qln-dev
   paths:
     include:
+    - search-ms-azure-pipelines.yml
     - QLN.SearchService/*
     - QLN.Common/*
 
