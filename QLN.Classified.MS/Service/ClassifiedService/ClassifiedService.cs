@@ -14,10 +14,12 @@ namespace QLN.Classified.MS.Service
     {
         private readonly DaprClient _dapr;
         private const string SearchAppId = "qln-search-ms";
+        private readonly IBannerService _bannerService;
 
-        public ClassifiedService(DaprClient dapr)
+        public ClassifiedService(DaprClient dapr, IBannerService bannerService)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
+            _bannerService = bannerService ?? throw new ArgumentNullException(nameof(bannerService));
         }
 
         /// <summary>
@@ -106,8 +108,8 @@ namespace QLN.Classified.MS.Service
             string vertical)
         {
             if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical cannot be null or empty.", nameof(vertical));
-
+                throw new ArgumentException("Vertical cannot be null or empty.", nameof(vertical));            
+            var banners = await _bannerService.GetAllBanners();            
             // Fetch up to 1000 items
             var all = await SearchAsync(vertical, new ClassifiedSearchRequest { Text = "*", Top = 1000 });
 
@@ -141,6 +143,7 @@ namespace QLN.Classified.MS.Service
 
             return new ClassifiedLandingPageResponse
             {
+                Banners = banners ?? Enumerable.Empty<Banner>(),
                 FeaturedItems = featuredItems,
                 FeaturedCategories = featuredCategories,
                 FeaturedStores = featuredStores,

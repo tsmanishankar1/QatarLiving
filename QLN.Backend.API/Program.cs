@@ -141,7 +141,12 @@ builder.Services.AddAuthentication(options =>
 
 #endregion
 
-
+builder.Services.AddDaprClient(clientBuilder =>
+{
+    clientBuilder
+        .UseHttpEndpoint("http://localhost:3500")
+        .UseGrpcEndpoint("http://localhost:58796");
+});
 
 builder.Services.AddAuthorization();
 
