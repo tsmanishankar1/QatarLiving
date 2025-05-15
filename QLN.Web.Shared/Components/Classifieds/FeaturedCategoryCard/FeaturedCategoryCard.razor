@@ -1,0 +1,76 @@
+@using MudBlazor
+
+<div class="category-card-section" @onclick="() => OnClick.InvokeAsync(Item)">
+    <div class="card-contents">
+        <img src="@Item.ImageUrl" alt="@Item.Name" class="category-image" />
+        <h4 class="category-title">@Item.Name</h4>
+    </div>
+</div>
+
+
+<style>
+    .category-card-section {
+        flex: 0 0 calc(100% / 5 - 1rem);
+        margin-right: 1rem;
+        border-radius: 12px;
+        transition: transform 0.3s ease;
+        cursor: pointer;
+        padding: 0;
+    }
+
+    .category-card-section:hover {
+        transform: scale(1.03);
+    }
+
+    .card-contents {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .category-image {
+        width: 100%;
+        max-height: 300px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 8px;
+    }
+
+    .category-titles {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--color-text-heading);
+    }
+
+    @@media (max-width: 768px) {
+
+
+        .category-card-section {
+            flex: 0 0 auto;
+            width: 120px;
+            border-radius: 12px;
+            scroll-snap-align: start;
+            margin-right: 0.5rem;
+        }
+
+        .category-image {
+            max-height: 250px;
+            object-fit: cover;
+        }
+
+        .card-contents {
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        .category-titles {
+            font-size: 0.85rem;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+    }
+</style>

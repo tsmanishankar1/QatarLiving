@@ -1,8 +1,20 @@
 @using MudBlazor
-@inject NavigationManager Navigation
 @using QLN.Web.Shared.Components.Carousel
-@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components
+@using QLN.Web.Shared.Components.Classifieds.FeaturedItemCard
+@using QLN.Web.Shared.Components.Classifieds.FeaturedCategoryCard
+@using QLN.Web.Shared.Components.Classifieds.StoreCard
+@using QLN.Web.Shared.Components.Classifieds.CategoryAdCard
 
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.SearchBarSection
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.FeaturedItemSection
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.FeaturedCategorySection
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.SubscriptionSection
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.StoreDealsSection
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.CategoryAdSection
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.SeasonalSection
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.SocialMediaSection
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.FAQsSection
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.PopularSearchesSection
 <!-- Page: Classifieds -->
 
 <!-- Main Container -->
@@ -14,44 +26,45 @@
             Transition="Transition.Slide" />
 
         <!-- Search Bar Section -->
-        <SearchBarSection />
+        <SearchBarSection   OnSearchCompleted="HandleSearchResults" />
 
-        <!-- Featured Categories -->
-        <FeaturedCategoriesSection />
+        <!-- Featured item -->
+        <FeaturedItemSection  FeaturedItems="featuredItemData" />
     </div>
-    <!-- Featured Cards -->
-    <FeaturedCardsSection />
+    <!-- Featured Categories -->
+    <FeaturedCategorySection FeaturedCategories="featuredCategoryData"/>
 
     <!-- Subscription Card -->
-    <SubscriptionCard OnSubscribeClick="@HandleSubscribeClick"/>
+    <SubscriptionSection />
 
 
     <div style="width: 100%; padding: 0 40px;">
         <!-- Store Deals -->
-        <StoreDealsSection />
+        <StoreDealsSection Stores="storeData" />
 
         <!-- Category Card 1 -->
-        <CategoryCard1 />
+        <CategoryAdSection Categories="@categoryListDataOne" />
 
         <div class="category-banner-wrapper">
             <img src="/images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
         </div>
 
         <!-- Category Card 2 -->
-        <CategoryCard2 />
+       <CategoryAdSection Categories="@categoryListDataTwo" />
 
-        <Seasonal />
+       <!-- Seasonal Section -->
+        <SeasonalSection />
 
     </div>
 
     <!-- Social Media Section -->
-    <SocialMediaCard />
+    <SocialMediaSection />
 
     <!-- FAQs Section -->
     <FAQsSection />
 
     <!-- Popular Searches Section -->
-    <PopularSearches />
+    <PopularSearchesSection />
 </div>
 
 @code {
@@ -61,11 +74,57 @@
 "/images/category1.png",
 "/images/category1.png"
 };
-    private void HandleSubscribeClick()
-    {
-        Navigation.NavigateTo("/subscription-details");
-    }
 
+    private List<FeaturedItemCard.FeaturedItem> SearchResults = new();
+
+    private void HandleSearchResults(List<FeaturedItemCard.FeaturedItem> results)
+    {
+        SearchResults = results;
+    }
+     private List<FeaturedItemCard.FeaturedItem> featuredItemData = new()
+    {
+        new() { ImageUrl = "/images/categories/game_image.svg", Category = "Xbox Controller", Title = "Microsoft Xbox Series X|S Wireless Controller - White", Price = "2,100 QAR", Location = "The Pearl, Doha", IsFeatured = true },
+        new() { ImageUrl = "/images/categories/cycle_image.svg", Category = "Mountain Bike", Title = "Bentley Continental GT Coupe 2023", Price = "2,100 QAR", Location = "The Pearl, Doha", IsFeatured = true },
+        new() { ImageUrl = "/images/categories/phone_image.svg", Category = "iPhone 16 Pro", Title = "Apple iPhone 16 Pro - 128GB Desert Titanium", Price = "12,900 QAR", Location = "West Bay, Doha", IsFeatured = true },
+        new() { ImageUrl = "/images/categories/cycle_image.svg", Category = "Mountain Bike", Title = "Bentley Continental GT Coupe 2023", Price = "2,100 QAR", Location = "The Pearl, Doha", IsFeatured = true },
+        new() { ImageUrl = "/images/categories/phone_image.svg", Category = "iPhone 16 Pro", Title = "Apple iPhone 16 Pro - 128GB Desert Titanium", Price = "12,900 QAR", Location = "West Bay, Doha", IsFeatured = true },
+        new() { ImageUrl = "/images/categories/card_image.svg", Category = "Trading Cards", Title = "Topos Chrome Charizard Tekno #06", Price = "2,100 QAR", Location = "Al Sadd, Doha", IsFeatured = false },
+    };
+   private List<FeaturedCategoryCard.CategoryItem> featuredCategoryData = new()
+    {
+        new() { Name = "Ramadan Essentials", ImageUrl = "/images/categories/new1.svg" },
+        new() { Name = "Back to School", ImageUrl = "/images/categories/new2.svg" },
+        new() { Name = "Gym Motivation", ImageUrl = "/images/categories/new3.svg" },
+        new() { Name = "Outdoors & Camping", ImageUrl = "/images/categories/new4.svg" },
+        new() { Name = "Electronics Rush", ImageUrl = "/images/categories/new5.svg" },
+        new() { Name = "Cats & Dogs", ImageUrl = "/images/categories/new6.svg" }
+    };
+private List<StoreCard.StoreItem> storeData = new()
+{
+    new() { Name = "AIRBNB", LogoUrl = "images/stores/vector.svg", ItemCount = "2,152" },
+    new() { Name = "Starlink", LogoUrl = "images/stores/starlink.svg", ItemCount = "2,152" },
+    new() { Name = "MICROSOFT", LogoUrl = "images/stores/microsoft.svg", ItemCount = "2,152" },
+    new() { Name = "Lulu Hypermarket", LogoUrl = "images/stores/hypermarket.svg", ItemCount = "2,152" },
+    new() { Name = "City Hypermarket", LogoUrl = "images/stores/hypermarket_city.svg", ItemCount = "1,845" },
+    new() { Name = "Al Meera", LogoUrl = "images/stores/meera.svg", ItemCount = "3,021" },
+    // ...add more as needed
+};
+  private List<CategoryAdCard.CategoryItem> categoryListDataOne = new()
+    {
+        new() { Title = "Furniture & Decor", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image1.svg" },
+        new() { Title = "Electronics", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image2.svg" },
+        new() { Title = "Phones & Tablets", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image3.svg" },
+        new() { Title = "Home & Office", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image4.svg" },
+        new() { Title = "Fashion & Beauty", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image5.svg" },
+        new() { Title = "Kids & Toys", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image6.svg" },
+    };
+      private List<CategoryAdCard.CategoryItem> categoryListDataTwo = new()
+    {
+        new() { Title = "Pets & Pets Care", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image7.svg" },
+        new() { Title = "Business & Industrial", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image8.svg" },
+        new() { Title = "Gym & Fitness", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image9.svg" },
+        new() { Title = "Other", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image10.svg" },
+    };
 }
 
 <style>

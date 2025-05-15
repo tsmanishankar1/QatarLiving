@@ -1,4 +1,3 @@
-@* FeaturedItemCard.razor *@
 @using MudBlazor
 
 <div class="card">
@@ -9,10 +8,11 @@
             <span>Featured</span>
         </div>
     }
-    <MudIconButton Icon="@(isFavorite? Icons.Material.Filled.Favorite : Icons.Material.Outlined.FavoriteBorder)"
-        Color="@(isFavorite? Color.Error: Color.Inherit)" OnClick="@(() => HandleHeartClick(Item))"
-        Class="@heartIconClass" />
-    <img src="@Item.ImageUrl" alt="@Item.Title" class="card-image">
+    <MudIconButton Icon="@(IsFavorite ? Icons.Material.Filled.Favorite : Icons.Material.Outlined.FavoriteBorder)"
+                   Color="@(IsFavorite ? Color.Error : Color.Inherit)"
+                   OnClick="@(() => HandleHeartClick(Item))"
+                   Class="@HeartIconClass" />
+    <img src="@Item.ImageUrl" alt="@Item.Title" class="card-image" />
     <div class="card-content">
         <div class="category">@Item.Category</div>
         <div class="price">@Item.Price QAR</div>
@@ -147,30 +147,3 @@
         gap: 6px;
     }
 </style>
-
-@code {
-    public class FeaturedItem
-    {
-        public string ImageUrl { get; set; } = string.Empty;
-        public string Category { get; set; } = string.Empty;
-        public string Title { get; set; } = string.Empty;
-        public string Price { get; set; } = string.Empty;
-        public string Location { get; set; } = string.Empty;
-        public bool IsFeatured { get; set; }
-    }
-
-    [Parameter]
-    public FeaturedItem Item { get; set; } = new();
-
-    [Parameter]
-    public EventCallback<FeaturedItem> OnHeartClick { get; set; }
-
-    private bool isFavorite = false;
-    private string heartIconClass => isFavorite ? "heart-icon filled" : "heart-icon outlined";
-
-    private async Task HandleHeartClick(FeaturedItem item)
-    {
-        isFavorite = !isFavorite;
-        await OnHeartClick.InvokeAsync(item);
-    }
-}
