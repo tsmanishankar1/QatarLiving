@@ -7,7 +7,7 @@
         <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" OnClick="@PrevSlide" Disabled="@IsFirstSlide"
             Class="custom-arrow-button1 left" />
 
-        <div class="carousel-viewport">
+        <div class="carousel-viewport-store-list">
             <div class="carousel-track" style="transform:@TrackOffset">
                 @foreach (var store in stores)
                 {
@@ -96,7 +96,7 @@ new StoreItem { Name = "MICROSOFT", LogoUrl = "images/stores/microsoft.svg", Ite
         position: relative;
     }
 
-    .carousel-viewport {
+    .carousel-viewport-store-list {
         overflow: hidden;
         width: 100%;
         padding: 0 1rem

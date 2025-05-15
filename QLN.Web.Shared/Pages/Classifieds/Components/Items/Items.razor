@@ -6,7 +6,7 @@
 
     @if (SelectedItem is null)
     {
-        <SearchSection />
+        <SearchSection OnViewModeChanged="HandleViewModeChange" />
     }
 
     <div style="width: 100%; padding: 0px 40px;">
@@ -16,7 +16,7 @@
 
         @if (SelectedItem is null)
         {
-            <IteamList OnItemSelected="HandleItemSelected" />
+            <IteamList OnItemSelected="HandleItemSelected" ViewMode="@currentViewMode" />
         }
         else
         {
@@ -26,6 +26,12 @@
 </div>
 
 @code {
+    private string currentViewMode = "grid";
+
+    private void HandleViewModeChange(string newMode)
+    {
+        currentViewMode = newMode;
+    }
     private PromotedItem? SelectedItem;
 
     private void HandleItemSelected(PromotedItem item)

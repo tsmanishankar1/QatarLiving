@@ -1,5 +1,6 @@
 @using MudBlazor
-@using QLN.Web.Shared.Components.Classifieds.PromotedItemCard
+@using QLN.Web.Shared.Components.Classifieds.PromotedItemGridCard
+@using QLN.Web.Shared.Components.Classifieds.PromotedItemListCard
 @using QLN.Web.Shared.Models
 @using QLN.Web.Shared.Components.BreadCrumb
 @using QLN.Web.Shared.Components.PaginationFooter
@@ -23,16 +24,34 @@
     </div>
 
 
-    <!-- Grid of Items -->
-    <MudGrid GutterSize="16px" style="padding: 0 40px;">
-        @foreach (var item in items)
-        {
-            <MudItem xs="12" sm="6" md="4">
-                <PromotedItemCard Item="item" OnSelect="() => OnItemSelected.InvokeAsync(item)" />
-            </MudItem>
-        }
+    @if (ViewMode == "grid")
+    {
+        <MudGrid GutterSize="16px" style="padding: 0 40px;">
+            @foreach (var item in items)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <PromotedItemGridCard Item="item" OnSelect="() => OnItemSelected.InvokeAsync(item)" />
+                </MudItem>
+            }
+        </MudGrid>
+    }
+    else if (ViewMode == "list")
+    {
+        <div class="list-view-wrapper">
+            <div class="list-view-left">
+                @foreach (var item in items)
+                {
+                    <PromotedItemListCard Item="item" OnSelect="() => OnItemSelected.InvokeAsync(item)" />
+                }
+            </div>
 
-    </MudGrid>
+            <div class="list-view-right">
+                <img src="/images/classifieds/ad_image.svg" alt="Ad Banner" class="ad-image" />
+            </div>
+        </div>
+
+    }
+
 
     <!-- Pagination -->
     <PaginationFooter TotalItems="items.Count" CurrentPage="currentPage" PageSize="pageSize"
@@ -43,7 +62,8 @@
 @code {
     private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
     private string selectedSort = "default";
-
+    [Parameter]
+    public string ViewMode { get; set; } = "grid";
     private int currentPage = 1;
     private int pageSize = 12;
 
@@ -138,20 +158,6 @@ new PromotedItem { Title = "goggle 9 Pro XL", Price = "$3,400", Company = "QLN",
         color: #475467;
     }
 
-    .custom-pagination .mud-button {
-        font-weight: bold;
-        color: #FFFFFF;
-        border-radius: 8px;
-        min-width: 36px;
-        height: 36px;
-    }
-
-    .custom-pagination .mud-button.mud-button-active {
-        background-color: #FFFFFF;
-        color: #475467;
-    }
-
-
     .item-list-header {
         display: flex;
         justify-content: space-between;
@@ -174,6 +180,34 @@ new PromotedItem { Title = "goggle 9 Pro XL", Price = "$3,400", Company = "QLN",
 
     .sort-section {
         min-width: 200px;
+    }
+
+    .list-view-wrapper {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+    }
+
+    .list-view-left {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .list-view-right {
+        width: 340px;
+        flex-shrink: 0;
+        position: sticky;
+        top: 16px;
+    }
+
+    .ad-image {
+        width: 100%;
+        height: 384px;
+        object-fit: cover;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
 

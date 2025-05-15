@@ -1,4 +1,5 @@
 @using MudBlazor
+@using QLN.Web.Shared.Components.Classifieds.StoreCard
 
 <div class="store-carousel-wrapper">
     <h3 class="carousel-title">Discover amazing deals from the best stores in Qatar</h3>
@@ -9,26 +10,11 @@
                        Disabled="@IsFirstSlide"
                        Class="custom-arrow-button1 left" />
 
-        <div class="carousel-viewport">
+        <div class="carousel-viewport-store">
             <div class="carousel-track" style="transform:@TrackOffset">
                 @foreach (var store in stores)
                 {
-                    <div class="store-card">
-                        <div class="store-logo-container">
-                            <img src="@store.LogoUrl" class="store-logo" alt="@store.Name" />
-                        </div>
-                        <div class="store-info">
-                            <div class="store-name">@store.Name</div>
-                            <div class="store-items">@store.ItemCount Items</div>
-                            <MudButton Variant="Variant.Text"
-                                       Size="Size.Small"
-                                       EndIcon="@Icons.Material.Filled.ArrowForward"
-                                       Class="shop-now-btn"
-                                       OnClick="@(() => HandleShopNow(store))">
-                                Shop Now
-                            </MudButton>
-                        </div>
-                    </div>
+                    <StoreCard StoreData="store" OnShopNow="HandleShopNow" />
                 }
             </div>
         </div>
@@ -41,22 +27,21 @@
 </div>
 
 @code {
-    private List<StoreItem> stores = new()
+   private List<StoreCard.StoreItem> stores = new()
     {
-        new StoreItem { Name = "AIRBNB", LogoUrl = "images/stores/vector.svg", ItemCount = "2,152" },
-        new StoreItem { Name = "Starlink", LogoUrl = "images/stores/starlink.svg", ItemCount = "2,152" },
-        new StoreItem { Name = "MICROSOFT", LogoUrl = "images/stores/microsoft.svg", ItemCount = "2,152" },
-        new StoreItem { Name = "Lulu Hypermarket", LogoUrl = "images/stores/hypermarket.svg", ItemCount = "2,152" },
-        new StoreItem { Name = "City Hypermarket", LogoUrl = "images/stores/hypermarket_city.svg", ItemCount = "1,845" },
-        new StoreItem { Name = "Al Meera", LogoUrl = "images/stores/meera.svg", ItemCount = "3,021" },
-        new StoreItem { Name = "MICROSOFT", LogoUrl = "images/stores/microsoft.svg", ItemCount = "2,152" },
-        new StoreItem { Name = "Lulu Hypermarket", LogoUrl = "images/stores/hypermarket.svg", ItemCount = "2,152" },
-        new StoreItem { Name = "AIRBNB", LogoUrl = "images/stores/vector.svg", ItemCount = "2,152" },
-        new StoreItem { Name = "Starlink", LogoUrl = "images/stores/starlink.svg", ItemCount = "2,152" },
-        new StoreItem { Name = "Al Meera", LogoUrl = "images/stores/meera.svg", ItemCount = "3,021" },
-        new StoreItem { Name = "MICROSOFT", LogoUrl = "images/stores/microsoft.svg", ItemCount = "2,152" },
+        new() { Name = "AIRBNB", LogoUrl = "images/stores/vector.svg", ItemCount = "2,152" },
+        new() { Name = "Starlink", LogoUrl = "images/stores/starlink.svg", ItemCount = "2,152" },
+        new() { Name = "MICROSOFT", LogoUrl = "images/stores/microsoft.svg", ItemCount = "2,152" },
+        new() { Name = "Lulu Hypermarket", LogoUrl = "images/stores/hypermarket.svg", ItemCount = "2,152" },
+        new() { Name = "City Hypermarket", LogoUrl = "images/stores/hypermarket_city.svg", ItemCount = "1,845" },
+        new() { Name = "Al Meera", LogoUrl = "images/stores/meera.svg", ItemCount = "3,021" },
+        new() { Name = "MICROSOFT", LogoUrl = "images/stores/microsoft.svg", ItemCount = "2,152" },
+        new() { Name = "Lulu Hypermarket", LogoUrl = "images/stores/hypermarket.svg", ItemCount = "2,152" },
+        new() { Name = "AIRBNB", LogoUrl = "images/stores/vector.svg", ItemCount = "2,152" },
+        new() { Name = "Starlink", LogoUrl = "images/stores/starlink.svg", ItemCount = "2,152" },
+        new() { Name = "Al Meera", LogoUrl = "images/stores/meera.svg", ItemCount = "3,021" },
+        new() { Name = "MICROSOFT", LogoUrl = "images/stores/microsoft.svg", ItemCount = "2,152" }
     };
-
     private int groupIndex = 0;
     private int itemsPerGroup = 6;
     private int cardWidthPx = 170 + 16;
@@ -79,16 +64,9 @@
     private bool IsFirstSlide => groupIndex == 0;
     private bool IsLastSlide => groupIndex >= TotalGroups - 1;
 
-    private void HandleShopNow(StoreItem store)
+   private void HandleShopNow(StoreCard.StoreItem store)
     {
         Console.WriteLine($"Shop Now clicked for {store.Name}");
-    }
-
-    public class StoreItem
-    {
-        public string Name { get; set; }
-        public string LogoUrl { get; set; }
-        public string ItemCount { get; set; }
     }
 }
 
@@ -115,9 +93,10 @@
     position: relative;
 }
 
-.carousel-viewport {
+.carousel-viewport-store {
     overflow: hidden;
     width: 100%; /* 6 cards * (200 + 16)px */
+    padding: 0 1rem
 }
 
 .carousel-track {
@@ -125,58 +104,6 @@
     padding: 5px;
     transition: transform 0.5s ease-in-out;
     width: fit-content;
-}
-
-.store-card {
-    width: 170px;
-    margin-right: 16px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 5px;
-    flex-shrink: 0;
-}
-
-.store-logo-container {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    background-color: var(--color-background);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 10px;
-}
-
-.store-logo {
-    max-width: 100%;
-    max-height: 100%;
-    padding: 10px;
-    object-fit: contain;
-}
-
-.store-info {
-    text-align: center;
-    font-size: 0.75rem;
-}
-
-.store-name {
-    font-weight: 600;
-    color: var(--color-text-secondary);
-}
-
-.store-items {
-    font-size: 0.65rem;
-    color: var(--color-text-caption);
-    margin-bottom: 4px;
-}
-
-.shop-now-btn {
-    font-size: 0.7rem;
-    text-transform: capitalize;
-    color: var(--color-accent);
-    padding: 0;
-    min-height: 0;
 }
 
 .custom-arrow-button1 {

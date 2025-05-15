@@ -4,14 +4,11 @@
 @using QLN.Web.Shared.Pages.Classifieds.Components.Landing
 @using QLN.Web.Shared.Pages.Classifieds.Components.Items
 @using QLN.Web.Shared.Pages.Classifieds.Components.Deals
+@using QLN.Web.Shared.Pages.Classifieds.Components.Stores
 
 <NavigationTabs OnTabChanged="HandleTabChanged" />
 
-@if (isLoading)
-{
-    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
-}
-else if (string.IsNullOrEmpty(selectedKey))
+@if (string.IsNullOrEmpty(selectedKey))
 {
     <Landing />
 }
@@ -26,7 +23,7 @@ else
             <Deals />
             break;
         case "stores":
-            <Items />
+            <Stores />
             break;
         case "preloved":
             <Items />
@@ -39,23 +36,11 @@ else
 
 @code {
     private string? selectedKey = null;
-    private bool isLoading = true;
 
-    protected override void OnInitialized()
+    private Task HandleTabChanged(string? key)
     {
-        isLoading = false; // 🚀 Stop loading on first render
-    }
-
-    private async Task HandleTabChanged(string? key)
-    {
-        Console.WriteLine($"Selected Key: {key}");
-
-        isLoading = true;
-        StateHasChanged();
-
-        await Task.Delay(100); // simulate data loading
-
         selectedKey = key;
-        isLoading = false;
+        StateHasChanged();
+        return Task.CompletedTask;
     }
 }
