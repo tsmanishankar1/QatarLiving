@@ -2,6 +2,9 @@
 @using QLN.Web.Shared.Models
 @using QLN.Web.Shared.Components.Classifieds.PromotedItemGridCard
 @using QLN.Web.Shared.Pages.Classifieds.Components.Items.Components
+@using QLN.Web.Shared.Components.BreadCrumb
+
+<Breadcrumb Items="breadcrumbItems" />
 
 @if (Item is not null)
 {
@@ -55,7 +58,8 @@
     <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
                    OnClick="@PrevSlide"
                    Disabled="@(selectedImageIndex == 0)"
-                   Class="custom-arrow-button left" />
+                   Style="color: var(--color-background);"
+                   Class="custom-arrow-details-button left" />
 
     <div class="carousel-viewport">
         <div class="carousel-track" style="transform:@TrackOffset">
@@ -71,8 +75,9 @@
 
     <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
                    OnClick="@NextSlide"
+                    Style="color: var(--color-background);"
                    Disabled="@(selectedImageIndex >= Item.Images.Count - 1)"
-                   Class="custom-arrow-button right" />
+                   Class="custom-arrow-details-button right" />
 </div>
 
         <OverviewCard />
@@ -481,9 +486,10 @@ else
 }
 */
 
-.custom-arrow-button {
+.custom-arrow-details-button {
     border-radius: 0;
     background-color: var(--color-text-heading);
+    color:var(--color-background);
     width: 40px;
     height: 100px;
     display: flex;
@@ -495,11 +501,11 @@ else
     transform: translateY(-50%);
 }
 
-.custom-arrow-button.left {
+.custom-arrow-details-button.left {
     left: 0;
 }
 
-.custom-arrow-button.right {
+.custom-arrow-details-button.right {
     right: 0;
 } 
 .custom-card {
@@ -689,10 +695,20 @@ else
 
 @code {
     private bool isSaved = false;
+    private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
     private int _startIndex = 0;
     [Parameter] public PromotedItem? Item { get; set; }
     private int selectedImageIndex = 0;
+   protected override void OnInitialized()
+    {
+        breadcrumbItems = new()
+{
+new() { Label = "Classifieds",Url ="classifieds" },
 
+new() { Label = "Item", Url = "/Item" },
+new() {Label = Item?.Title ?? "Details", Url = "/Item", IsLast = true },
+};
+}
 private void PrevSlide()
 {
          if (selectedImageIndex > 0)
