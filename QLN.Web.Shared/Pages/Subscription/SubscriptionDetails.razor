@@ -5,8 +5,9 @@
 <MudContainer MaxWidth="MaxWidth.Large" Class="py-6 px-4" Style="padding:20px;background-color: #F2F4F7;">
     <Breadcrumb Items="breadcrumbItems" />
 
-    <div class="text-center mb-6">
-        <MudText Typo="Typo.h5" Class="font-semibold" Style="color:#242424;">
+    <div style="display: flex; justify-content: center; align-items: center; text-align: center; margin-bottom: 24px;">
+        <MudText Typo="Typo.h5"
+                 Style="font-family: 'Public Sans'; font-weight: 600; font-size: 25px; line-height: 26px; letter-spacing: 0%; color: #242424;">
             Preloved Dashboard
         </MudText>
     </div>
@@ -30,9 +31,22 @@
         <!-- Summary Cards -->
         <div style="flex: 1;">
             <div style="display: flex; justify-content: space-between">
-                <MudText Typo="Typo.caption" Style="color: #5F6C7B;">Summary & Statistics</MudText>
+                <MudText Typo="Typo.caption"  Style="font-family: 'Public Sans', sans-serif; 
+           font-weight: 600; 
+           font-size: 18px; 
+           line-height: 26px; 
+           letter-spacing: 0; 
+           vertical-align: middle; 
+           color: #242424;">Summary & Statistics</MudText>
 
-                <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Download" Style="border-radius: 8px;">Download Report</MudButton>
+                <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #FF7F38; border-radius: 6px; padding: 8px 12px; width: fit-content;">
+                    <img src="/images/subscription/Download.svg" alt="Download" style="width: 24px;" />
+                    <span style="font-family: 'Public Sans'; font-weight: 500; font-size: 14px; line-height: 22px; letter-spacing: 0%; color: #FF7F38;">
+                        Download Report
+                    </span>
+                </div>
+
+
             </div>
 
             <MudGrid Class="mt-3">
@@ -55,18 +69,32 @@
         </div>
     </MudPaper>
 
-    <div  style="margin-top:40px;width:20%">
-        <div class="tabs-toolbar">
-            <div class="tab @( _activeTabIndex == 0 ? "active" : "" )" @onclick="() => SetTab(0)">
-                <div style="display:flex;flex-direction:row;gap:10px">
+    <div style="display: flex; width: 100%; margin-top: 40px; justify-content: space-between; align-items: center;">
 
-                    <span class="tab-text">My Ads</span>
+        <!-- Left side: 20% width tabs -->
+        <div style="width: 20%;">
+            <div class="tabs-toolbar">
+                <div class="tab @( _activeTabIndex == 0 ? "active" : "" )" @onclick="() => SetTab(0)">
+                    <div style="display: flex; flex-direction: row; gap: 10px;">
+                        <span class="tab-text">My Ads</span>
+                    </div>
+                    <div class="tab-indicator"></div>
                 </div>
-                <div class="tab-indicator"></div>
             </div>
-
         </div>
+
+        <!-- Right side: Post Add button -->
+        <div>
+            <MudButton Variant="Variant.Filled"
+                       Class="font-semibold mt-3"
+                       Style="border-radius: 8px; background-color: #F26D1E; color: white; width: 200px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <MudIcon Icon="@Icons.Material.Filled.Add" />
+                Post Add
+            </MudButton>
+        </div>
+
     </div>
+
     <!-- My Ads Section -->
  <MudPaper Class="mt-4 p-5 rounded-xl" Style="background-color: white; box-shadow: none;padding:40px">
 
@@ -76,19 +104,27 @@
     <!-- Tabs + Search/Sort -->
     <div class="d-flex mb-4" style="border-bottom: 1px solid #EAECF0;">
         <!-- Published Tab (active style) -->
-        <MudButton Variant="Variant.Text"
-
-                   Class="active-tab"
-                   Style="text-transform: none; font-weight: 600; padding-bottom: 12px; margin-right: 24px; position: relative;">
-            Published (@publishedAds.Count)
-            <div style="position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background-color: #F26D1E;"></div>
-        </MudButton>
-
+            <MudButton Variant="Variant.Text"
+                       Class="@(_selectedAdsTab == 0 ? "active-tab" : "")"
+                       Style="text-transform: none; font-weight: 600; padding-bottom: 12px; margin-right: 24px; position: relative;"
+                       @onclick="() => _selectedAdsTab = 0">
+                Published (@publishedAds.Count)
+                @if (_selectedAdsTab == 0)
+                {
+                    <div style="position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background-color: #F26D1E;"></div>
+                }
+            </MudButton>
         <!-- Unpublished Tab -->
-            <MudButton  Variant="Variant.Text"
-                       Style="text-transform: none; font-weight: 600; padding-bottom: 12px; position: relative;">
-            Unpublished (@unpublishedAds.Count)
-        </MudButton>
+            <MudButton Variant="Variant.Text"
+                       Class="@(_selectedAdsTab == 1 ? "active-tab" : "")"
+                       Style="text-transform: none; font-weight: 600; padding-bottom: 12px; position: relative;"
+                       @onclick="() => _selectedAdsTab = 1">
+                Unpublished (@unpublishedAds.Count)
+                @if (_selectedAdsTab == 1)
+                {
+                    <div style="position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background-color: #F26D1E;"></div>
+                }
+            </MudButton>
 
         <!-- spacer -->
         <div class="ml-auto d-flex align-items-center">
@@ -145,32 +181,38 @@
                         @ad.Price
                     </MudText>
 
-                    <div class="d-flex">
+                    <div class="d-flex mt-2">
                         <MudButton Variant="Variant.Text"
-                                   StartIcon="@Icons.Material.Filled.Refresh"
-                                   Style="text-transform: none;background-color:#F5F6FA;border-radius:4px; color: #242424; margin-right:8px;">
-                            Refresh
-                            <div style="font-size: 0.7em; color: #5F6C7B;">(Exp: @ad.ExpiryDate)</div>
+                                   Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424; margin-right: 8px; display: flex; align-items: center;">
+                            <img src="images/subscription/Refresh.svg" alt="Gucci" style=" margin-right: 8px;" />
+                            <div>
+                                Refresh
+                                <div style="font-size: 0.7em; color: #5F6C7B;">(Exp: @ad.ExpiryDate)</div>
+                            </div>
                         </MudButton>
+
                         @if (ad.IsFeatured)
                         {
                             <MudButton Variant="Variant.Text"
-                                       StartIcon="@Icons.Material.Filled.HighlightOff"
                                        Style="text-transform: none;background-color:#F5F6FA;border-radius:4px; color: #242424; margin-right:8px;">
+                                <img src="images/subscription/Feature.svg" style=" margin-right: 8px; alt="Feature" />
+
                                 Unfeature
                             </MudButton>
                         }
                         else
                         {
                             <MudButton Variant="Variant.Text"
-                                       StartIcon="@Icons.Material.Filled.FlashOn"
                                        Style="text-transform: none;background-color:#F5F6FA;border-radius:4px; color: #242424; margin-right:8px;">
+                                <img src="images/subscription/Feature.svg" style=" margin-right: 8px; alt="Feature" />
+
                                 Pay to Feature
                             </MudButton>
                         }
                         <MudButton Variant="Variant.Text"
-                                   StartIcon="@Icons.Material.Filled.TrendingUp"
                                    Style="text-transform: none;background-color:#F5F6FA;border-radius:4px; color: #242424; margin-right:8px;">
+                            <img src="images/subscription/Feature.svg" style=" margin-right: 8px;"  alt="Feature" />
+
                             Promote
                         </MudButton>
                         <MudIconButton Icon="@Icons.Material.Filled.MoreVert" />
@@ -182,6 +224,7 @@
                     <MudBadge Style="margin-right: 8px; vertical-align: middle;" Variant="BadgeVariant.Dot" Color="Color.Success" />
                     <MudText Typo="Typo.caption" Style="color: #5F6C7B;">Active</MudText>
                 </div> *@
+
 
 
 
@@ -232,7 +275,7 @@
 @code {
     private int _activeTabIndex;
     private bool _isChecked = false;
-
+    private int _selectedAdsTab = 0;
     private void SetTab(int index)
     {
         _activeTabIndex = index;
