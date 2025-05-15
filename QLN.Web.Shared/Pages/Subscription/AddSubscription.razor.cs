@@ -9,7 +9,8 @@ namespace QLN.Web.Shared.Pages.Subscription;
 
 public partial class AddSubscription : ComponentBase
 {
-    [Inject] protected IJSRuntime _jsRuntime { get; set; } = default!;
+    [Inject] protected IJSRuntime _jsRuntime { get; set; }
+    [Inject] private HttpClient Http { get; set; } = default!;
 
 
     private MudForm _form;
@@ -55,7 +56,34 @@ public partial class AddSubscription : ComponentBase
             Console.WriteLine(JsonSerializer.Serialize(_model));
             Console.WriteLine("Auth Token: " + _authToken);
 
-            Snackbar.Add("Subscription added!", Severity.Success);
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/subscription/add")
+                {
+                    Content = new StringContent(JsonSerializer.Serialize(_model), System.Text.Encoding.UTF8, "application/json")
+                };
+
+                if (!string.IsNullOrEmpty(_authToken))
+                {
+                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _authToken);
+                }
+
+                var response = await Http.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Subscription added successfully!", Severity.Success);
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Snackbar.Add($"Error: {response.StatusCode} - {errorContent}", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add("Error occurred while saving subscription: " + ex.Message, Severity.Error);
+            }
         }
     }
 }
