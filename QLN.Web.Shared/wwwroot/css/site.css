@@ -150,7 +150,7 @@
         color: #00426D; /* Blue text for active tab */
         font-weight: 600;
     }
-
+ 
 .tab-icon {
     width: 24px;
     height: 24px;
@@ -181,4 +181,15 @@
 
 .tab-text {
     margin-top: 4px;
+}
+
+/*header style*/
+.heading-style {
+    font-family: 'Public Sans', sans-serif;
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 26px;
+    letter-spacing: 0;
+    vertical-align: middle;
+    color: #00426D;
 }
