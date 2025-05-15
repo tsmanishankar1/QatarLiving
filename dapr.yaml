@@ -1,4 +1,7 @@
 version: 1
+common:
+  resourcesPaths:
+  - ./Components
 
 apps:
   - appID: qln-backend-api
@@ -9,10 +12,16 @@ apps:
       - run
 
   - appID: qln-classified-ms
-    appDirPath: QLN.classified.MS
-    appPort: 5028
+    appDirPath: QLN.Classified.MS
+    appPort: 5276
     command:
       - dotnet
       - run
-resourcesPaths:
-  - ../components
+
+  - appID: qln-search-ms
+    appDirPath: QLN.SearchService
+    appPort: 5244
+    command:
+      - dotnet
+      - run
+

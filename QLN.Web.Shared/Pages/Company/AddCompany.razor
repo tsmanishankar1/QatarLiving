@@ -1,0 +1,450 @@
+﻿@page "/add-company"
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+
+@using QLN.Web.Shared.Components.BreadCrumb
+@using System.ComponentModel.DataAnnotations
+
+<style>
+    .dashed-box {
+        border: 2px dashed #E0E0E0;
+        padding: 1.5rem;
+        text-align: center;
+        background-color: #FAFAFA;
+        border-radius: 0.5rem;
+    }
+
+    .input-caption {
+        font-size: 0.75rem;
+        color: #888;
+        margin-top: 0.25rem;
+    }
+
+    .section-header {
+        font-weight: 600;
+        font-size: 1.125rem;
+        margin: 1.5rem 0 0.75rem 0;
+        color: #333;
+    }
+
+    .file-upload-button {
+        display: inline-block;
+        margin-top: 0.5rem;
+        padding: 0.4rem 1rem;
+        background-color: #F26D1E;
+        color: white;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        cursor: pointer;
+    }
+
+        .file-upload-button:hover {
+            background-color: #d45c15;
+        }
+
+    .icon-inside {
+        position: relative;
+    }
+
+        .icon-inside input {
+            padding-left: 2rem;
+        }
+
+    .input-icon {
+        position: absolute;
+        top: 50%;
+        left: 0.5rem;
+        transform: translateY(-50%);
+        color: gray;
+    }
+
+    .image-upload-container {
+        padding: 1rem;
+    }
+
+    .upload-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .upload-content-container {
+        width: 240px;
+        height: 282px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .upload-box {
+        width: 240px;
+        height: 240px;
+        border: 2px dashed #A1A1A1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        background-color: white;
+    }
+
+    .upload-title {
+        color: #424242;
+        text-align: center;
+        margin-bottom: 8px;
+    }
+
+    .upload-subtitle {
+        color: #9E9E9E;
+        text-align: center;
+        margin-top: 8px;
+    }
+
+    .upload-icon {
+        color: #9E9E9E;
+        font-size: 3rem;
+    }
+
+    .logo-preview {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    .upload-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .action-button {
+        min-width: 100px;
+    }
+
+    .selector-wrapper {
+        width: 472px;
+        height: 60px;
+        margin-top: 10px;
+    }
+
+    .form-input {
+        width: 472px;
+        height: 60px;
+        background-color: #FFFFFF;
+        border-radius: 6px;
+        padding: 14px;
+        margin-top: 10px;
+    }
+
+        .form-input .mud-input-control {
+            width: 100%;
+        }
+        /* Special rule for select inputs */
+        .form-input.mud-select {
+            min-width: 100% !important;
+            width: 100% !important;
+        }
+
+    .row-flex {
+        display: flex;
+        gap: 6px;
+    }
+
+    .grid-input {
+        width: 130px !important;
+        height: 60px;
+        background-color: #FFFFFF;
+        padding: 14px;
+        margin-top: 10px;
+    }
+
+</style>
+<div style=" background-color: #F2F4F7; height: 100%;width:100%;padding: 24px;">
+
+    <Breadcrumb Items="breadcrumbItems" />
+
+    <MudText Class="heading-style mt-4 ml-4">Contact Information</MudText>
+
+    <MudForm @ref="_form" Model="@company" Validated="OnValidSubmit" Class="mt-6">
+        <MudGrid GutterSize="3">
+            <!-- Company Logo Upload -->
+            <MudGrid GutterSize="3">
+                <MudItem xs="12" sm="4">
+                    <div Class="image-upload-container" Style="height: 100%; display: flex; justify-content: center;">
+                        <div class="upload-wrapper">
+                            <div class="upload-content-container">
+                                <MudText Typo="Typo.subtitle2" Class="upload-title">Company Logo</MudText>
+
+                                <label for="logo-upload" class="upload-box">
+                                    @if (logoPreviewUrl != null)
+                                    {
+                                        <img src="@logoPreviewUrl" class="logo-preview" alt="Company logo preview" />
+                                    }
+                                    else
+                                    {
+                                        <MudIcon Icon="@Icons.Material.Filled.AddPhotoAlternate" Size="Size.Large" Class="upload-icon" />
+                                    }
+                                </label>
+
+                                <MudText Typo="Typo.caption" Class="upload-subtitle">Recommended size: 1920×1200 pixels</MudText>
+                            </div>
+
+                            <InputFile id="logo-upload" OnChange="HandleLogoUpload" accept="image/*" style="display: none;" />
+
+                            @*  @if (logoPreviewUrl != null)
+                            {
+                                <div class="upload-actions">
+                                    <MudButton Variant="Variant.Text" Color="Color.Error"
+                                               OnClick="RemoveLogo" StartIcon="@Icons.Material.Filled.Delete"
+                                               Class="action-button">
+                                        Remove
+                                    </MudButton>
+                                    <MudButton Variant="Variant.Text" Color="Color.Primary"
+                                               OnClick="TriggerFileInput" StartIcon="@Icons.Material.Filled.Edit"
+                                               Class="action-button">
+                                        Change
+                                    </MudButton>
+                                </div>
+                            } *@
+                        </div>
+                    </div>
+                </MudItem>
+
+
+                <!-- Form Fields -->
+                <MudItem xs="12" sm="8">
+                    <MudStack Spacing="2">
+                        <MudTextField Label="Business Name" For="@(() => company.BusinessName)"
+                                      Class="form-input"
+                                      Required />
+                        <div class="selector-wrapper">
+
+                            <MudSelect T="string" Label="Country" For="@(() => company.Country)"
+                                       Class="form-input"
+                                       Required>
+                                <MudSelectItem Value="@("Qatar")">Qatar</MudSelectItem>
+                                <MudSelectItem Value="@("UAE")">UAE</MudSelectItem>
+                            </MudSelect>
+                        </div>
+                        <div class="selector-wrapper">
+
+                            <MudSelect T="string" Label="City" For="@(() => company.City)"
+                                       Class="form-input"
+                                       Required>
+                                <MudSelectItem Value="@("Doha")">Doha</MudSelectItem>
+                                <MudSelectItem Value="@("Dubai")">Dubai</MudSelectItem>
+                            </MudSelect>
+                        </div>
+                        <MudTextField Label="Branch’s Locations" For="@(() => company.Location)"
+                                      Class="form-input"
+                                      Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.LocationOn" />
+                        <MudTextField Label="Phone Number" For="@(() => company.Phone)"
+                                      Class="form-input"
+                                      Required
+                                      Adornment="Adornment.Start" AdornmentIcon="mdi-phone" />
+                        <MudTextField Label="WhatsApp Number"
+                                      For="@(() => company.Whatsapp)"
+                                      Class="form-input"
+                                      Required
+                                      Adornment="Adornment.Start" AdornmentIcon="mdi-whatsapp" />
+                        <MudTextField Label="Email" For="@(() => company.Email)"
+                                      Class="form-input"
+                                      Required />
+                        <MudTextField Label="Website URL" Class="form-input"
+                                      For="@(() => company.Website)" />
+
+                        <MudTextField Label="Facebook URL" Class="form-input"
+                                      For="@(() => company.Facebook)" />
+
+                        <MudTextField Label="Instagram URL" Class="form-input"
+                                      For="@(() => company.Instagram)" />
+                        <!-- Operating Hours -->
+                        <MudItem xs="12" Style="width:400px">
+                            <MudText Typo="Typo.subtitle1" Class="mb-2" Style="font-weight:600;">Operating Hours</MudText>
+
+                            <div class="row-flex">
+                                <MudTextField Class="grid-input" Label="Start Day" Placeholder="e.g. Sunday" For="@(() => company.StartDay)" />
+                                <MudTextField Class="grid-input" Label="End Day" Placeholder="e.g. Thursday" For="@(() => company.EndDay)" />
+                            </div>
+
+                            <div class="row-flex">
+                                <MudTextField Class="grid-input" Label="Start Hour" Placeholder="e.g. 8:00 AM" For="@(() => company.StartHour)" />
+                                <MudTextField Class="grid-input" Label="End Hour" Placeholder="e.g. 5:00 PM" For="@(() => company.EndHour)" />
+                            </div>
+                        </MudItem>
+
+
+                        <!-- Company Profile -->
+                        <MudItem xs="12">
+                            <MudText Class="section-header">Company Profile</MudText>
+                            <div class="selector-wrapper">
+                                <MudSelect T="string" Label="Nature of Business" class="form-input" For="@(() => company.BusinessNature)" Required>
+                                    <MudSelectItem Value="@("Retail")">Retail</MudSelectItem>
+                                    <MudSelectItem Value="@("Wholesale")">Wholesale</MudSelectItem>
+                                </MudSelect>
+                            </div>
+                            <div class="selector-wrapper">
+                                <MudSelect T="string" Label="Company Size" For="@(() => company.CompanySize)" class="form-input" Required>
+                                    <MudSelectItem Value="@("1-10")">1-10</MudSelectItem>
+                                    <MudSelectItem Value="@("11-50")">11-50</MudSelectItem>
+                                    <MudSelectItem Value="@("51-200")">51-200</MudSelectItem>
+                                </MudSelect>
+                            </div>
+                            <div class="selector-wrapper">
+                                <MudSelect T="string" Label="Company Type" For="@(() => company.CompanyType)" class="form-input" Required>
+                                    <MudSelectItem Value="@("Private")">Private</MudSelectItem>
+                                    <MudSelectItem Value="@("Public")">Public</MudSelectItem>
+                                </MudSelect>
+                            </div>
+                            <div style="margin-top:10px">
+                                <MudTextField Class="form-input" Label="User Designation" For="@(() => company.Designation)" />
+
+                            </div>
+                            <MudTextField Class="form-input" Label="Description" For="@(() => company.Description)" Lines="4"
+                                          MaxLength="300" />
+
+
+
+                        </MudItem>
+
+                        <!-- License -->
+                        <MudItem xs="12">
+                            <MudText Class="section-header">License & Visibility</MudText>
+                            <MudTextField T="string"
+                                          Label="CR Number"
+                                          Class="form-input"
+                                          Adornment="Adornment.End"
+                                          AdornmentIcon="@Icons.Material.Filled.Upload"
+                                          OnAdornmentClick="TriggerFileUpload" />
+
+                            <InputFile @ref="hiddenFileInput" style="display: none;" />
+
+                            <div class="input-caption mt-2">
+                                Supported file formats: PDF, PNG, JPEG. Max: 10MB
+                            </div>
+
+
+                        </MudItem>
+
+                    </MudStack>
+                    <!-- Submit Button -->
+                    <MudItem xs="12">
+                        <MudButton Variant="Variant.Filled" OnClick="SubmitForm" Class="mt-4 px-8" Style="background-color: #F26D1E;color:white">
+                            Save
+                        </MudButton>
+
+                    </MudItem>
+                </MudItem>
+
+
+
+
+            </MudGrid>
+        </MudGrid>
+    </MudForm>
+
+</div>
+
+@code {
+    private MudForm _form;
+    private CompanyModel company = new();
+    private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
+    private string logoPreviewUrl;
+    private InputFile? hiddenFileInput;
+
+    private void TriggerFileUpload()
+    {
+        Console.WriteLine("clicked");
+    }
+    private async Task UploadCRDocument(InputFileChangeEventArgs e)
+    {
+        // Handle the uploaded file
+        var file = e.File;
+        if (file != null)
+        {
+            // Do something with the file (e.g., upload, read)
+        }
+    }
+
+    private async Task HandleLogoUpload(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            var format = "image/png";
+            var resizedImage = await file.RequestImageFileAsync(format, 1200, 1200);
+            var buffer = new byte[resizedImage.Size];
+            await resizedImage.OpenReadStream().ReadAsync(buffer);
+            logoPreviewUrl = $"data:{format};base64,{Convert.ToBase64String(buffer)}";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error uploading logo: {ex.Message}");
+        }
+    }
+
+    private async Task TriggerFileInput()
+    {
+        await JSRuntime.InvokeVoidAsync("eval", "document.getElementById('logo-upload').click()");
+    }
+
+    private void RemoveLogo()
+    {
+        logoPreviewUrl = null;
+    }
+
+    protected override void OnInitialized()
+    {
+        breadcrumbItems = new()
+        {
+            new() {   Label = "Classifieds",Url ="classifieds" },
+             new() { Label = "Company", Url = "/company"},
+
+            new() { Label = "Add Company", Url = "/add-company", IsLast = true },
+        };
+
+    }
+    private async Task UploadLogo(InputFileChangeEventArgs e)
+    {
+        // Handle logo file
+    }
+
+    private async Task UploadCRDocument()
+    {
+        // Handle CR file
+    }
+
+    private async Task SubmitForm()
+    {
+        await _form.Validate();
+    }
+
+    private void OnValidSubmit()
+    {
+        Snackbar.Add("Company profile submitted successfully!", Severity.Success);
+    }
+
+    public class CompanyModel
+    {
+        [Required] public string BusinessName { get; set; }
+        [Required] public string Country { get; set; }
+        [Required] public string City { get; set; }
+        public string Location { get; set; }
+        [Required] public string Phone { get; set; }
+        [Required] public string Whatsapp { get; set; }
+        [Required, EmailAddress] public string Email { get; set; }
+        public string Website { get; set; }
+        public string Facebook { get; set; }
+        public string Instagram { get; set; }
+        public string StartDay { get; set; }
+        public string EndDay { get; set; }
+        public string StartHour { get; set; }
+        public string EndHour { get; set; }
+        [Required] public string BusinessNature { get; set; }
+        [Required] public string CompanySize { get; set; }
+        [Required] public string CompanyType { get; set; }
+        public string Designation { get; set; }
+        public string Description { get; set; }
+        public string CRNumber { get; set; }
+    }
+}

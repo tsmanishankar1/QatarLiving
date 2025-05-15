@@ -1,8 +1,10 @@
 @page "/select-verification"
-@using MudBlazor
+ @using MudBlazor
 @using QLN.Web.Shared.Components.CustomButton
 @using static QLN.Web.Shared.Helpers.HttpErrorHelper
+@inject CustomAuthStateProvider CustomAuthenticationStateProvider;
 @inject NavigationManager NavManager
+@using System.Security.Claims;
 @inject ISnackbar Snackbar
 @using QLN.Web.Shared.Services
 @inject ApiService Api
@@ -40,8 +42,23 @@
 
 @code {
     [CascadingParameter] public GlobalAppState? AppState { get; set; }
+    public string email{ get; set; }
+    public string mobile{ get; set; }
+
     private string _selectedMethod = string.Empty;
     private bool _isLoading = false;
+    protected override async Task OnInitializedAsync()
+	{
+            var authState = await CustomAuthenticationStateProvider.GetAuthenticationStateAsync();
+             if (authState != null){
+                var user = authState.User;
+                if (user.Identity != null && user.Identity.IsAuthenticated)
+                {
+                    email = user.FindFirst(ClaimTypes.Email)?.Value;
+                    mobile = user.FindFirst(ClaimTypes.MobilePhone)?.Value;
+                }
+            } 
+	}
 
     private List<VerificationOption> verificationOptions => new()
 {
@@ -49,13 +66,13 @@ new VerificationOption
 {
 Value = "sms",
 Label = "Text Message (SMS)",
-Description = $"Send code to {AppState?.MobileNumber}"
+Description = $"Send code to {mobile}",
 },
 new VerificationOption
 {
 Value = "email",
 Label = "Email Address",
-Description = $"Send code to {AppState?.Email}"
+Description = $"Send code to {email}"
 },
 new VerificationOption
 {
@@ -191,4 +208,4 @@ Description = "Use the code from your authenticator app"
         left: 50%;
         transform: translate(-50%, -50%);
     }
-</style>
+</style> 

@@ -4,6 +4,7 @@ trigger:
     - qln-dev
   paths:
     include:
+    - backendapi-azure-pipelines.yml
     - QLN.Backend.API/*
     - QLN.Common/*
 

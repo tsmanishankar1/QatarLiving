@@ -1,0 +1,17 @@
+﻿<MudPaper Class="p-4 rounded-md border border-[#E1E3EA] mb-3" Elevation="0">
+    <MudText Typo="Typo.subtitle1" Class="font-semibold text-[#172B4D] mb-2">Summary</MudText>
+
+    <MudStack Row AlignItems="AlignItems.Center" JustifyContent="SpaceBetween" Class="mb-2">
+        <MudText Typo="Typo.body2" Class="text-[#6B7280]">Total</MudText>
+        <MudText Typo="Typo.body1" Class="font-semibold text-[#172B4D]">@Total QAR</MudText>
+    </MudStack>
+
+    <MudButton  Disabled="@(!HasPlan)" Color="Color.Primary" FullWidth Class="text-white" Style="background-color: #F26D1E;">
+        Pay now
+    </MudButton>
+</MudPaper>
+
+@code {
+    [Parameter] public decimal Total { get; set; }
+    [Parameter] public bool HasPlan { get; set; }
+}

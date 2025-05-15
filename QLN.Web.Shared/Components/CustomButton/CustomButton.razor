@@ -1,7 +1,9 @@
 @using MudBlazor
 @using System.Collections.Generic
 
-<MudButton OnClick="OnClick"
+<MudButton 
+            @attributes="AdditionalAttributes"
+            OnClick="OnClick"
            Disabled="Disabled || Loading"
            Loading="Loading"
            FullWidth="true"
@@ -27,4 +29,7 @@
     [Parameter] public bool Loading { get; set; }
     [Parameter] public EventCallback OnClick { get; set; }
     [Parameter] public string? Class { get; set; }
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object> AdditionalAttributes { get; set; }
+
 }
