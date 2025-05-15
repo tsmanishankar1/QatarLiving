@@ -1,0 +1,138 @@
+@using MudBlazor
+@using QLN.Web.Shared.Components.Classifieds.DealsCard
+@using QLN.Web.Shared.Components.PaginationFooter
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <div class="item-list-deal-header">
+        <div class="item-list-deal-left">
+            <h3 class="results-count">@($"Items in Qatar ({Deals.Count} results)")</h3>
+        </div>
+
+        <div class="sort-section-deal">
+            <MudSelect T="string" @bind-Value="selectedSort" Dense="true" Variant="Variant.Outlined"
+                Style="background-color: var(--color-background)">
+                @foreach (var option in sortOptions)
+                {
+                    <MudSelectItem Value="@option.Key">@option.Value</MudSelectItem>
+                }
+            </MudSelect>
+        </div>
+    </div>
+
+    <MudGrid GutterSize="16px">
+        @foreach (var item in Deals)
+        {
+            <MudItem xs="12" sm="6" md="3">
+                <DealsCard DealData="item" />
+            </MudItem>
+        }
+    </MudGrid>
+
+    <!-- Pagination -->
+    <PaginationFooter TotalItems="Deals.Count" CurrentPage="currentPage" PageSize="pageSize"
+        OnPageChange="HandlePageChange" OnPageSizeChange="HandlePageSizeChange" />
+
+</MudContainer>
+
+@code {
+    private string selectedSort = "default";
+    private int currentPage = 1;
+    private int pageSize = 12;
+
+    private void HandlePageChange(int newPage)
+    {
+        currentPage = newPage;
+    }
+
+    private void HandlePageSizeChange(int newSize)
+    {
+        pageSize = newSize;
+    }
+    private List<KeyValuePair<string, string>> sortOptions = new()
+{
+new("default", "Default"),
+new("priceLow", "Price: Low to High"),
+new("priceHigh", "Price: High to Low")
+};
+
+    private List<DealsCard.DealModel> Deals = new()
+{
+new DealsCard.DealModel
+{
+ImageUrl = "images/classifieds/deels_image.svg",
+StoreLogoUrl = "images/stores/hypermarket.svg",
+StoreName = "Lulu Hypermarket",
+StoreDescription = "Ramadan Savers • 12 Pages",
+Location = "Al Sadd, West Bay +2",
+ExpiryText = "End in 2 Days"
+},
+new DealsCard.DealModel
+{
+ImageUrl = "images/classifieds/deels_image.svg",
+StoreLogoUrl = "images/stores/hypermarket.svg",
+StoreName = "Carlo Electronics",
+StoreDescription = "Mega Sale • 6 Pages",
+Location = "Salwa Road",
+ExpiryText = "Ends Tomorrow"
+},new DealsCard.DealModel
+{
+ImageUrl = "images/classifieds/deels_image.svg",
+StoreLogoUrl = "images/stores/hypermarket.svg",
+StoreName = "Lulu Hypermarket",
+StoreDescription = "Ramadan Savers • 12 Pages",
+Location = "Al Sadd, West Bay +2",
+ExpiryText = "End in 2 Days"
+},
+new DealsCard.DealModel
+{
+ImageUrl = "images/classifieds/deels_image.svg",
+StoreLogoUrl = "images/stores/hypermarket.svg",
+StoreName = "Carlo Electronics",
+StoreDescription = "Mega Sale • 6 Pages",
+Location = "Salwa Road",
+ExpiryText = "Ends Tomorrow"
+},new DealsCard.DealModel
+{
+ImageUrl = "images/classifieds/deels_image.svg",
+StoreLogoUrl = "images/stores/hypermarket.svg",
+StoreName = "Lulu Hypermarket",
+StoreDescription = "Ramadan Savers • 12 Pages",
+Location = "Al Sadd, West Bay +2",
+ExpiryText = "End in 2 Days"
+},
+new DealsCard.DealModel
+{
+ImageUrl = "images/classifieds/deels_image.svg",
+StoreLogoUrl = "images/stores/hypermarket.svg",
+StoreName = "Carlo Electronics",
+StoreDescription = "Mega Sale • 6 Pages",
+Location = "Salwa Road",
+ExpiryText = "Ends Tomorrow"
+}
+};
+}
+
+<style>
+    .item-list-deal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+    }
+
+    .item-list-deal-left {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .results-count {
+        color: #212529;
+        font-weight: 500;
+    }
+
+    .sort-section-deal {
+        min-width: 200px;
+    }
+</style>

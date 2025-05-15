@@ -1,0 +1,21 @@
+@using QLN.Web.Shared.Components.Classifieds.CategoryCardUI
+
+<div class="category-wrapper">
+    <CategoryCardUI Categories="@categoryList" />
+</div>
+
+@code {
+    private List<CategoryCardUI.CategoryItem> categoryList = new()
+    {
+        new() { Title = "Pets & Pets Care", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image7.svg" },
+        new() { Title = "Business & Industrial", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image8.svg" },
+        new() { Title = "Gym & Fitness", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image9.svg" },
+        new() { Title = "Other", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image10.svg" },
+    };
+}
+
+<style>
+    .category-wrapper {
+       padding: 1rem 2rem;
+    }
+</style>

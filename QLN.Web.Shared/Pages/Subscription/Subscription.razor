@@ -1,6 +1,7 @@
 ﻿@page "/subscription"
 @page "/subscription/{type}"
 @inject IDialogService DialogService
+@inject NavigationManager Navigation
 @using QLN.Web.Shared.Components.ModalDialog
 @using QLN.Web.Shared.Components.BreadCrumb
 @using QLN.Web.Shared.Models
@@ -39,7 +40,7 @@
                             </div>
                             <div class="tab-indicator"></div>
                         </div>
-                        <div class="tab @( _activeVerticalTabIndex == 1 ? "active" : "" )" @onclick="() => SetVeritcalTab(1)">
+                        <div class="tab @( _activeTabIndex == 1 ? "active" : "" )" @onclick="() => SetVeritcalTab(1)">
                             <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
 
                                 <img src="/images/subscription/Vehicles.svg" class="tab-icon" alt="Stores">
@@ -115,7 +116,7 @@
                         <div class="tab @( _activeTabIndex == 2 ? "active" : "" )" @onclick="() => SetTab(2)">
                             <div style="display:flex;flex-direction:row;gap:10px">
 
-                            <img src="/images/subscription/PreLoved.svg" class="tab-icon" alt="Preloved">
+                            <img src="/images/subscription/Preloved.svg" class="tab-icon" alt="Preloved">
                             <span class="tab-text">Preloved</span>
                             </div>
                             <div class="tab-indicator"></div>
@@ -243,7 +244,7 @@
 
 @code {
     private int _activeTabIndex;
-    private int _activeVerticalTabIndex;
+    private int _activeVerticalTabIndex = 2;
 
     private SubscriptionPlan? _selectedPlan;
     private bool _isPaymentDialogOpen = false;
@@ -306,6 +307,8 @@
     private void CloseSuccessPopup()
     {
         signUpSucesss = false;
+        Navigation.NavigateTo("/add-company");
+
     }
 
     private void SelectPlan(SubscriptionPlan plan)
@@ -344,6 +347,21 @@
        $"width: 258px; height: 160px; border-radius: 8px; padding: 12px 20px; border: 1px solid #E0E0E0; background-color: white;";
 }
 
+}
 
 
-
+<style>
+    .popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(120, 120, 120, 1);
+        backdrop-filter: blur(8px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+</style>
