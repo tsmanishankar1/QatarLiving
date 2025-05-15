@@ -4,6 +4,7 @@
 @using QLN.Web.Shared.Models
 @using QLN.Web.Shared.Components.BreadCrumb
 @using QLN.Web.Shared.Components.PaginationFooter
+@using QLN.Web.Shared.Components.Classifieds.PromotedItemGridCard
 
 <Breadcrumb Items="breadcrumbItems" />
 <div class="item-list">
@@ -99,38 +100,17 @@ new("priceHigh", "Price: High to Low")
     [Parameter] public EventCallback<PromotedItem> OnItemSelected { get; set; }
 
     private List<PromotedItem> items = new()
-{
-new PromotedItem { Title = "Pixel 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {
-"/images/classifieds/google_image1.svg",
-"/images/classifieds/google_image2.svg","/images/classifieds/google_image3.svg"}, Color = "White", Storage = "256GB",
-Battery = "85%", Processor = "Tensor 4", CompanyLogoUrl = "/images/classifieds/item_logo.svg", Category = "Smartphone",
-IsPromoted = true, Condition = "Brand New" },
-new PromotedItem { Title = "goggle 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {
-"/images/classifieds/item_one.svg", "/images/classifieds/item_one.svg"}, Color = "White", Storage = "256GB", Battery =
-"85%", Processor = "Tensor 4", CompanyLogoUrl = "/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted
-= true, Condition = "Brand New" },
+    {
+        new PromotedItem { Title = "Pixel 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {  "/images/classifieds/google_image1.svg", "/images/classifieds/google_image2.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg"}, Color = "White", Storage = "256GB", Battery = "85%", Processor = "Tensor 4", CompanyLogoUrl = "/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
+        new PromotedItem { Title = "goggle 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {  "/images/classifieds/item_one.svg", "/images/classifieds/item_one.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg"}, Color = "White", Storage = "256GB", Battery = "85%", Processor = "Tensor 4", CompanyLogoUrl = "/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
 
-new PromotedItem { Title = "Pixel 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {
-"/images/classifieds/google_image1.svg",
-"/images/classifieds/google_image2.svg","/images/classifieds/google_image3.svg"}, Color = "White", Storage = "256GB",
-Battery = "85%", Processor = "Tensor 4", CompanyLogoUrl = "/images/classifieds/item_logo.svg", Category = "Smartphone",
-IsPromoted = true, Condition = "Brand New" },
-new PromotedItem { Title = "goggle 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {
-"/images/classifieds/item_one.svg", "/images/classifieds/item_one.svg"}, Color = "White", Storage = "256GB", Battery =
-"85%", Processor = "Tensor 4", CompanyLogoUrl = "/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted
-= true, Condition = "Brand New" },
+        new PromotedItem { Title = "Pixel 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {  "/images/classifieds/google_image1.svg", "/images/classifieds/google_image2.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg"}, Color = "White", Storage = "256GB", Battery = "85%", Processor = "Tensor 4", CompanyLogoUrl = "/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
+        new PromotedItem { Title = "goggle 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {  "/images/classifieds/item_one.svg", "/images/classifieds/item_one.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg"}, Color = "White", Storage = "256GB", Battery = "85%", Processor = "Tensor 4", CompanyLogoUrl = "/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
 
-new PromotedItem { Title = "Pixel 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {
-"/images/classifieds/google_image1.svg",
-"/images/classifieds/google_image2.svg","/images/classifieds/google_image3.svg"}, Color = "White", Storage = "256GB",
-Battery = "85%", Processor = "Tensor 4", CompanyLogoUrl = "/images/classifieds/item_logo.svg", Category = "Smartphone",
-IsPromoted = true, Condition = "Brand New" },
-new PromotedItem { Title = "goggle 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {
-"/images/classifieds/item_one.svg", "/images/classifieds/item_one.svg"}, Color = "White", Storage = "256GB", Battery =
-"85%", Processor = "Tensor 4", CompanyLogoUrl = "/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted
-= true, Condition = "Brand New" },
-// add more items
-};
+        new PromotedItem { Title = "Pixel 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {  "/images/classifieds/google_image1.svg", "/images/classifieds/google_image2.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg"}, Color = "White", Storage = "256GB", Battery = "85%", Processor = "Tensor 4", CompanyLogoUrl = "/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
+        new PromotedItem { Title = "goggle 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {  "/images/classifieds/item_one.svg", "/images/classifieds/item_one.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg"}, Color = "White", Storage = "256GB", Battery = "85%", Processor = "Tensor 4", CompanyLogoUrl = "/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
+    };
+
 }
 
 <style>

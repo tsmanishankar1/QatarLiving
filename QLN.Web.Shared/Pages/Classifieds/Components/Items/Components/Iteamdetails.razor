@@ -1,117 +1,158 @@
 @using MudBlazor
 @using QLN.Web.Shared.Models
+@using QLN.Web.Shared.Components.Classifieds.PromotedItemGridCard
+@using QLN.Web.Shared.Pages.Classifieds.Components.Items.Components
 
 @if (Item is not null)
 {
-    <h2 class="item-title">
-        @Item.Title
-        <div class="action-icons">
-            <MudIconButton Icon="@Icons.Material.Filled.Share" Color="Color.Inherit" />
-            <span>Share</span>
-            <MudIconButton Icon="@Icons.Material.Filled.BookmarkBorder" Color="Color.Inherit" />
-            <span>Save</span>
-        </div>
-    </h2>
-
+     
     <div class="main-layout">
         <div class="left-column">
             <div class="carousel-container">
-                <div class="main-image-container position-relative">
-                    <!-- Custom Badges -->
-                    @if (Item.IsPromoted)
-                    {
-                        <div class="Promoted-badge">
-                            <MudIcon Icon="@Icons.Material.Filled.FlashOn" Size="Size.Small" Class="Promoted-icon" />
-                            <span>Promoted</span>
+                <div class="item-title-container d-flex justify-space-between align-center">
+                        <MudText Typo="Typo.h5">@Item.Title</MudText>
+                        <div class="icon-label-container">
+                        <div class="icon-label" >
+                            <img src="/images/classifieds/share.svg" alt="Share Icon" class="icon-image" />
+                            <span class="icon-text">Share</span>
                         </div>
-                    }
-                    @if (Item.IsFeatured)
-                    {
-                        <div class="featured-badge">
-                            <MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" Class="featured-icon" />
-                            <span>Featured</span>
+                        <div class="icon-label" @onclick="OnSaveClicked">
+                            <img src="@HeartIcon" alt="Save Icon" class="icon-image" />
+                            <span class="icon-text">@(isSaved ? "Saved" : "Save")</span>
                         </div>
-                    }
+                        </div>
+                </div> 
+                <MudGrid AlignItems="Center" Justify="Justify.FlexStart" GutterSize="GutterSize.Small">
+    <MudItem xs="12" md="8" >
+        <div class="position-relative">
 
-                    <!-- Main Image -->
-                    <img src="@Item.Images[activeIndex]" alt="Product Image" class="main-image" />
-
-                    <!-- Navigation Arrows -->
-                    <button class="nav-arrow left" @onclick="PrevImage">&#10094;</button>
-                    <button class="nav-arrow right" @onclick="NextImage">&#10095;</button>
-
-                    <!-- Image Counter -->
-                    <div class="image-counter">@($"{activeIndex + 1}/{Item.Images.Count}")</div>
-
-                    <!-- View All Photos -->
-                    <div class="view-all-images">
-                        <MudIcon Icon="@Icons.Material.Filled.Collections" />
-                        <span>View all photos</span>
-                    </div>
+<div class="image-container">
+    <img src="@Item.Images[selectedImageIndex]" alt="Product Image" class="main-image" />
+    <div class="Promoted-badge">
+                    <MudIcon Icon="@Icons.Material.Filled.FlashOn" Size="Size.Small" Class="Promoted-icon" />
+                    <span>Promoted</span>
                 </div>
-            </div>
+
+
+    <div class="photo-count">@($"{selectedImageIndex + 1}/{Item.Images.Count}")</div>
+
+    <div class="dots">
+        @for (int i = 0; i < Item.Images.Count; i++)
+        {
+            <span class="dot @(i == selectedImageIndex ? "active" : "")"></span>
+        }
+    </div>
+
+    <button class="view-photos-btn">📷 View all @Item.Images.Count photos</button>
+</div>
+
+
+           
+
         </div>
 
-        <div class="right-column">
-            <h3>@Item.Title</h3>
-            <div class="price">@Item.Price</div>
-            <div class="action-buttons">
-                <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Call">
-                    Call
-                </MudButton>
-                <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Chat">
-                    WhatsApp
-                </MudButton>
+        <div class="carousel-container">
+    <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
+                   OnClick="@PrevSlide"
+                   Disabled="@(selectedImageIndex == 0)"
+                   Class="custom-arrow-button left" />
+
+    <div class="carousel-viewport">
+        <div class="carousel-track" style="transform:@TrackOffset">
+            @for (int i = 0; i < Item.Images.Count; i++)
+            {
+               <div class="seasonal-card @(selectedImageIndex == i ? "selected-card" : "")"
+                 @onclick="@(() => SelectImage(i))">
+                <img src="@Item.Images[i]" alt="Carousel Image" />
             </div>
-            <div class="poster-info">
-                <img src="@Item.CompanyLogoUrl" class="poster-logo" />
-                <div>
-                    <div class="poster-name">@Item.Company</div>
-                    <div class="poster-location">
-                        <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" />
-                        @Item.Location
-                    </div>
-                </div>
-            </div>
+            }
         </div>
     </div>
 
-    <hr />
+    <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                   OnClick="@NextSlide"
+                   Disabled="@(selectedImageIndex >= Item.Images.Count - 1)"
+                   Class="custom-arrow-button right" />
+</div>
 
-    <h3>Overview</h3>
-    <div class="overview-grid">
-        <div class="overview-item">
-            <MudIcon Icon="@Icons.Material.Filled.PhoneAndroid" /> @Item.Category
-        </div>
-        <div class="overview-item">
-            <MudIcon Icon="@Icons.Material.Filled.Memory" /> Storage: @Item.Storage
-        </div>
-        <div class="overview-item">
-            <MudIcon Icon="@Icons.Material.Filled.BatteryChargingFull" /> Battery: @Item.Battery
-        </div>
-        <div class="overview-item">
-            <MudIcon Icon="@Icons.Material.Filled.ColorLens" /> Color: @Item.Color
-        </div>
-        <div class="overview-item">
-            <MudIcon Icon="@Icons.Material.Filled.Settings" /> Processor: @Item.Processor
-        </div>
-        <div class="overview-item">
-            <MudIcon Icon="@Icons.Material.Filled.Shield" /> @Item.Condition
-        </div>
+        <OverviewCard />
+        <DescriptionBox />
+    </MudItem>
+
+    <MudItem xs="12" md="4" Style="max-width: 450px;">
+    <div style="display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap; justify-content: flex-start;">
+        <MudPaper Elevation="1" Class="custom-card">
+    <MudText Typo="Typo.caption" Class="status-text">Brand New</MudText>
+
+    <MudText Typo="Typo.h6" Class="title-text">@Item.Title</MudText>
+
+    <MudText Typo="Typo.h5" Class="price-text">@($"{Item.Price:N0} QAR")</MudText>
+
+    <div class="button-group">
+    <div class="button-wrapper">
+        <button class="custom-btn call-btn">
+            <img src="/images/classifieds/call.svg" class="btn-icon" />
+            Call
+        </button>
+    </div>
+    <div class="button-wrapper">
+        <button class="custom-btn whatsapp-btn">
+            <img src="/images/classifieds/whatsapp.svg" class="btn-icon" />
+            WhatsApp
+        </button>
+    </div>
+</div>
+
+    <div class="posted-by-container">
+  <div class="posted-label">Posted by:</div>
+
+  <div class="posted-details">
+    <div class="user-info">
+      <img src="/images/classifieds/personIcon.svg" class="person-icon" />
+      <div class="user-text">
+        <div class="username">@Item.Company</div>
+        <div class="updated-time">Updated 1 hour ago</div>
+      </div>
     </div>
 
-    <hr />
+    <div class="location-info">
+      <img src="/images/classifieds/location.svg" class="location-icon" />
+      <span class="location-text">@Item.Location</span>
+    </div>
+  </div>
+</div>
+</MudPaper>
 
-    <h3>Description</h3>
-    <p class="description">
-        Qatar International School is an independent school exclusively for the children...
-        <a href="#">Read more</a>
-    </p>
+        <img src="/images/classifieds/detail_ad.svg"
+             alt="Product Image"
+             class="main-image"
+             style="width: 300px; height: 350px; object-fit: contain;" />
+    </div>
+</MudItem>
+</MudGrid>
+
+
+                
+
+            </div>
+        </div>
+       
+    </div>
+     <MudGrid GutterSize="16px" style="margin-top: 10px; margin-bottom: 10px;">
+    @foreach (var item in items)
+    {
+<MudItem xs="12" sm="6" md="4">
+<PromotedItemGridCard Item="item"  />
+</MudItem>
+    }
+ 
+</MudGrid>
 }
 else
 {
     <p class="no-selection">Please select an item to view details.</p>
 }
+
 
 <style>
     .main-image-container {
@@ -122,7 +163,7 @@ else
     .featured-badge {
         position: absolute;
         left: 10px;
-        background-color: #FF7F38;
+        background-color: var(--color-accent);
         color: white;
         padding: 4px 6px;
         border-radius: 2px;
@@ -149,9 +190,11 @@ else
         border-radius: 4px;
     }
 
-    .carousel-container {
-        position: relative;
-    }
+     @* .carousel-container {
+         width: 709px;
+        height: 90px;
+         position: relative; 
+    }  *@
 
     .nav-arrow {
         position: absolute;
@@ -201,6 +244,7 @@ else
         gap: 8px;
         margin-top: 8px;
     }
+    
 
     .main-layout {
         display: flex;
@@ -252,26 +296,441 @@ else
         line-height: 1.6;
         color: #444;
     }
+    .item-title-container {
+    padding: 8px 0;
+    margin-right: 140px;
+    }
+
+    .action-icons span {
+    margin-right: 12px;
+    font-size: 0.9rem;
+    color: #555;
+    }
+    .carousel-container {
+    @* display: flex; *@
+    @* align-items: center;
+    justify-content: center; *@
+    @* position: relative; *@
+}
+.carousel-container {
+    @* display: flex; *@
+    flex-direction: row; /* Horizontal alignment */
+    align-items: center; /* Vertically center items */
+    justify-content: center; /* Horizontally center whole content */
+    position: relative;
+    gap: 10px; /* Optional spacing between elements */
+}
+.seasonal-card {
+    transition: border 0.3s ease;
+    border-radius: 0;
+}
+
+.selected-card {
+    border-color: var(--color-accent); /* Replace with your actual color or variable */
+}
+.seasonal-card img {
+    width: 134px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 0;
+    display: block;
+}
+.posted-by-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: 'Public Sans', sans-serif;
+}
+
+.posted-label {
+  font-weight: 500;
+  color: var(--color-text-heading);
+  font-size: 12px !important;
+}
+
+.posted-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.person-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.user-text .username {
+    font-weight: 500;
+  color: var(--color-primary);
+  font-size: 14px !important;
+}
+
+.user-text .updated-time {
+  font-weight: 400;
+  color: var(--color-text-descripton);
+  font-size: 11px !important;
+}
+
+.location-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.location-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.location-text {
+  color: var(--color-accent);
+  font-weight: 500;
+  font-size: 14px !important;
+}
+
+.carousel-viewport {
+    overflow: hidden;
+    width: 100%;
+}
+
+
+ .carousel-track {
+    display: flex;
+    transition: transform 0.5s ease;
+    gap: 10px;
+} 
+.icon-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.icon-image {
+    width: 18px;
+    height: 18px;
+    /* Adjust the above filter to match your desired orange color */
+}
+
+.icon-text {
+    margin-left: 0.5rem;
+    color: var(--color-accent); /* Your orange color */
+    font-family: 'Public Sans', sans-serif;
+    font-size: 13px !important;
+    font-weight: 500;
+}
+.icon-label-container {
+    display: flex;
+    gap: 2rem; /* Space between icons */
+    align-items: center;
+}
+.title-style{
+    color: var(--color-text-heading); /* Your orange color */
+    font-family: 'Public Sans', sans-serif;
+    font-size: 25px !important;
+    font-weight: 500;
+}
+@*  
+.seasonal-card {
+    flex: 0 0 auto;
+    margin-right: 10px;
+}
+
+.custom-arrow-button {
+    z-index: 1;
+} *@
+
+@* .carousel-viewport {
+    overflow: hidden;
+    width: 100%;
+    max-width: 90%;
+    background-color:blue;
+} *@
+
+.carousel-track {
+    display: flex;
+    transition: transform 0.5s ease-in-out;
+    flex-direction: row; 
+} 
+
+/*
+.seasonal-card {
+    max-width: 350px;
+    margin-right: 16px;
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: red;
+    @* background-color: var(--color-background); *@
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    flex-shrink: 0;
+}
+
+.seasonal-card img {
+    width: 134px;
+    height: 90px;
+    max-height: 200px;
+    object-fit: cover;
+    display: block;
+}
+*/
+
+.custom-arrow-button {
+    border-radius: 0;
+    background-color: var(--color-text-heading);
+    width: 40px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.custom-arrow-button.left {
+    left: 0;
+}
+
+.custom-arrow-button.right {
+    right: 0;
+} 
+.custom-card {
+    padding: 16px;
+    border-radius: 6px;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.status-text {
+    border-color: var(--color-category-outline);
+    color: var(--color-category-text);
+    font-family: 'Public Sans', sans-serif;
+    font-weight: 500;
+}
+
+.title-text {
+    font-size: 18px !important;
+    font-weight: 500;
+    color: var(--color-text-heading);
+    font-family: 'Public Sans', sans-serif;
+}
+
+.price-text {
+    font-size: 25px !important;
+    font-weight: 600;
+    color: var(--color-text-heading);
+    font-family: 'Public Sans', sans-serif;
+}
+
+.button-group {
+    display: flex;
+    gap: 12px;
+}
+
+.button-wrapper {
+    flex: 1;
+}
+
+.custom-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 2px solid transparent;
+    background-color: transparent;
+    box-sizing: border-box;
+}
+
+.call-btn {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    font-family: 'Public Sans', sans-serif;
+}
+
+.whatsapp-btn {
+    border-color: var(--color-whatsapp-outline);
+    color: var(--color-whatsapp-outline);
+    font-family: 'Public Sans', sans-serif;
+}
+
+.btn-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.posted-by {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-top: 1px solid #eee;
+    padding-top: 12px;
+    font-size: 0.875rem;
+}
+
+.posted-label {
+    font-weight: 500;
+}
+
+.username {
+    color: #007bff;
+    font-weight: 600;
+}
+
+.timestamp {
+    font-size: 0.75rem;
+    color: #888;
+}
+
+.location {
+    color: var(--color-accent);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+}
+.image-container {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    @* max-width: 600px; *@
+}
+
+.main-image {
+    width: 100%;
+    border-radius: 8px;
+}
+
+.promoted-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: orange;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.save-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+}
+
+.save-icon img {
+    width: 24px;
+    height: 24px;
+}
+
+.photo-count {
+    position: absolute;
+    bottom: 45px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    border-radius: 4px;
+}
+
+.dots {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.dot {
+    height: 8px;
+    width: 8px;
+    margin: 0 3px;
+    background-color: lightgray;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.dot.active {
+    background-color: #0033cc;
+}
+
+.view-photos-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background-color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    box-shadow: 0px 2px 5px rgba(0,0,0,0.2);
+}
+
+
+
 </style>
 
 @code {
+    private bool isSaved = false;
+    private int _startIndex = 0;
     [Parameter] public PromotedItem? Item { get; set; }
+    private int selectedImageIndex = 0;
 
-    private int activeIndex = 0;
+private void PrevSlide()
+{
+         if (selectedImageIndex > 0)
+            selectedImageIndex--;
+}
 
-    private void PrevImage()
+private void NextSlide()
+{
+    if (selectedImageIndex < Item.Images.Count - 1)
+        selectedImageIndex++;
+}
+
+private void SelectImage(int index)
+{
+    Console.WriteLine($"Selected image index: {index}");
+    if (Item?.Images != null && index >= 0 && index < Item.Images.Count)
     {
-        if (Item?.Images?.Count > 0)
-        {
-            activeIndex = (activeIndex - 1 + Item.Images.Count) % Item.Images.Count;
-        }
-    }
-
-    private void NextImage()
-    {
-        if (Item?.Images?.Count > 0)
-        {
-            activeIndex = (activeIndex + 1) % Item.Images.Count;
-        }
+        selectedImageIndex = index;
     }
 }
+
+private bool IsFirstSlide => selectedImageIndex == 0;
+private bool IsLastSlide => selectedImageIndex == Item.Images.Count - 1;
+
+private string TrackOffset => $"translateX(-{selectedImageIndex * 144}px)"; 
+private void OnSaveClicked()
+    {
+       isSaved = !isSaved;
+    }
+    private string HeartIcon => isSaved ? "images/classifieds/liked_heart.svg" : "images/classifieds/heart.svg";
+
+    private List<PromotedItem> items = new()
+    {
+        new PromotedItem { Title = "Pixel 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {  "/images/classifieds/google_image1.svg", "/images/classifieds/google_image2.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg"}, Color = "White", Storage = "256GB", Battery = "85%", Processor = "Tensor 4", CompanyLogoUrl = "/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
+        new PromotedItem { Title = "goggle 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {  "/images/classifieds/item_one.svg", "/images/classifieds/item_one.svg"}, Color = "White", Storage = "256GB", Battery = "85%", Processor = "Tensor 4", CompanyLogoUrl = "/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
+        new PromotedItem { Title = "Pixel 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {  "/images/classifieds/google_image1.svg", "/images/classifieds/google_image2.svg","/images/classifieds/google_image3.svg"}, Color = "White", Storage = "256GB", Battery = "85%", Processor = "Tensor 4", CompanyLogoUrl = "/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" }
+        
+    };
+    
+}
+
