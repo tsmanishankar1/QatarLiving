@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\QLN.Web.Shared\QLN.Web.Shared.csproj" />
+    <ProjectReference Include="..\QLN.Common\QLN.Common.csproj" />
   </ItemGroup>
 	
 

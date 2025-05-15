@@ -1,118 +1,129 @@
 @page "/login"
-@inject ApiService Api
-@inject ISnackbar Snackbar
-@inject NavigationManager NavManager
-@inject UserState UserState
 @using QLN.Web.Shared.Services
 @using QLN.Web.Shared.Helpers
 @using MudBlazor
 @using QLN.Web.Shared.Models
+@using Microsoft.AspNetCore.Http;
 @using QLN.Web.Shared.Components.CustomButton
 @using QLN.Web.Shared.Components.ModalDialog
+@using static QLN.Web.Shared.Helpers.HttpErrorHelper
 @using System.Text.RegularExpressions;
+@using System.Security.Claims;
+@using Microsoft.AspNetCore.Authentication.Cookies;
+@using Microsoft.AspNetCore.Authentication;
+@using QLN.Common.DTO_s;
+@inject ApiService Api
+@inject ISnackbar Snackbar
+@inject NavigationManager NavManager
+@inject CustomAuthStateProvider CustomAuthenticationStateProvider;
+@inject IJSRuntime JS
 
-<div style="width: 100%; background-color: var(--color-secondary-background); padding: 32px 16px;">
+<div id="login-container" style="width: 100%; background-color: var(--color-secondary-background); padding: 32px 16px;">
     <div style="max-width: 400px; margin: 0 auto;">
-    <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-4 login-heading">Log in to your account</MudText>
-    <MudStack AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
-    <MudText Typo="Typo.body1" Align="Align.Center" Class="login-description">
-        Welcome back! Please enter your details.
-    </MudText>
-    </MudStack>
-     <MudText Typo="Typo.body1"  Class="label-text">
-        Email or Phone number </MudText>
-        <MudTextField T="string"
-                      Label="Email or Phone number"
-                      Variant="Variant.Outlined"
-                      FullWidth="true"
-                      InputType="InputType.Text"
-                      style="background-color: var(--color-background)"
-                      MaxLength="50"
-                      Required="true"
-                      Error="@(!string.IsNullOrEmpty(_usernameError))"
-                      ErrorText="@_usernameError"
-                      Immediate="true"
-                      ValueChanged="OnEmailChanged"
-                      ValueExpression="(() => _username)"
-                      OnBlur="@ValidateUsername" />
-        <MudText Typo="Typo.body1"  Class="label-text">
-        Password
+        <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-4 login-heading">Log in to your account</MudText>
+        <MudStack AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
+            <MudText Typo="Typo.body1" Align="Align.Center" Class="login-description">
+                Welcome back! Please enter your details.
+            </MudText>
+        </MudStack>
+        <MudText Typo="Typo.body1" Class="label-text">
+            Email or Phone number </MudText>
+        <MudTextField T="string" Label="Email or Phone number" Variant="Variant.Outlined" FullWidth="true"
+            InputType="InputType.Text" style="background-color: var(--color-background)" MaxLength="50" Required="true"
+            Error="@(!string.IsNullOrEmpty(_usernameError))" ErrorText="@_usernameError" Immediate="true"
+            ValueChanged="OnEmailChanged" ValueExpression="(() => _username)" OnBlur="@ValidateUsername" InputAttributes="@(new Dictionary<string, object>
+              {
+                  ["aria-label"] = "Email",
+                  ["data-testid"] = "email-input"
+              })"/>
+        <MudText Typo="Typo.body1" Class="label-text">
+            Password
         </MudText>
-       <MudTextField T="string"
-    Label="Password"
-    MaxLength="50"
-    Variant="Variant.Outlined"
-    InputType="@(_showPassword ? InputType.Text : InputType.Password)"
-    FullWidth="true"
-     Class="mt-4" 
-     style="background-color: var(--color-background)"
-    Required="true"
-    Adornment="Adornment.End"
-    AdornmentIcon="@(_showPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
-    OnAdornmentClick="TogglePasswordVisibility"
-    AdornmentColor="Color.Default"
-    Error="@(!string.IsNullOrEmpty(_passwordError))"
-    ErrorText="@_passwordError"
-                      Immediate="true"
-                      ValueChanged="OnPasswordChanged"
-                      ValueExpression="(() => _password)"
-                      OnBlur="ValidatePassword" />
+        <MudTextField T="string" Label="Password" MaxLength="50" Variant="Variant.Outlined"
+            InputType="@(_showPassword? InputType.Text: InputType.Password)" FullWidth="true" Class="mt-4"
+            style="background-color: var(--color-background)" Required="true" Adornment="Adornment.End"
+            AdornmentIcon="@(_showPassword? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
+            OnAdornmentClick="TogglePasswordVisibility" AdornmentColor="Color.Default"
+            Error="@(!string.IsNullOrEmpty(_passwordError))" ErrorText="@_passwordError" Immediate="true"
+            ValueChanged="OnPasswordChanged" ValueExpression="(() => _password)" OnBlur="ValidatePassword" InputAttributes="@(new Dictionary<string, object>
+              {
+                  ["aria-label"] = "password",
+                  ["data-testid"] = "password-input"
+              })" />
 
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
-    <MudCheckBox T="bool" Label="Remember me" DisableMargins="true" />
-     <NavLink href="/forgot-password" style="color: var(--color-accent)" > Forgot Password?</NavLink>
-</div>
-   
-<CustomButton 
-    BackgroundColor= "var(--color-accent)"
-    TextColor="#FFFFFF"
-    Text="Sign In"
-    Disabled="_isLoading"
-    Loading="_isLoading"
-    OnClick="@PerformLogin"
-    Class="mt-4" />
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
+            <MudCheckBox T="bool" Label="Remember me" DisableMargins="true"  InputAttributes="@(new Dictionary<string, object>
+             {
+                 { "id", "remember-me-checkbox" },
+                 { "data-testid", "remember-me-checkbox" }
+             })"/>
+            <NavLink href="/forgot-password" style="color: var(--color-accent)"> Forgot Password?</NavLink>
+        </div>
+
+        <CustomButton BackgroundColor="var(--color-accent)" TextColor="#FFFFFF" Text="Sign In" Disabled="_isLoading"
+            Loading="_isLoading" OnClick="@PerformLogin" Class="mt-4" aria-label="Sign In Button"
+    data-testid="sign-in-button"/>
 
 
-     <div class="d-flex align-center my-4">
-        <div style="flex-grow: 1; height: 1px; background-color: var(--color-secondary-grey-container)"></div>
-        <MudText Typo="Typo.caption" Class="mx-2">Or continue with</MudText>
-        <div style="flex-grow: 1; height: 1px; background-color: var(--color-secondary-grey-container)"></div>
-    </div>
+        <div class="d-flex align-center my-4">
+            <div style="flex-grow: 1; height: 1px; background-color: var(--color-secondary-grey-container)"></div>
+            <MudText Typo="Typo.caption" Class="mx-2">Or continue with</MudText>
+            <div style="flex-grow: 1; height: 1px; background-color: var(--color-secondary-grey-container)"></div>
+        </div>
 
-    <MudGrid Justify="Justify.SpaceEvenly" GutterSize="12px" >
+        <MudGrid Justify="Justify.SpaceEvenly" GutterSize="12px">
     <MudItem xs="2">
-                <MudButton Variant="Variant.Outlined" Class="social-login-button">
+                <MudButton Variant="Variant.Outlined" Class="social-login-button" InputAttributes="@(new Dictionary<string, object>
+    {
+        ["aria-label"] = "Google Login Button",
+        ["data-testid"] = "google-login-button"
+    })">
             <img src="/images/google.svg" alt="Google" style="height: 24px;" />
         </MudButton>
     </MudItem>
     <MudItem xs="2">
-                <MudButton Variant="Variant.Outlined" Class="social-login-button">
+                <MudButton Variant="Variant.Outlined" Class="social-login-button" InputAttributes="@(new Dictionary<string, object>
+    {
+        ["aria-label"] = "Apple Login Button",
+        ["data-testid"] = "apple-login-button"
+    })">
             <img src="/images/apple.svg" alt="Google" style="height: 24px;" />
         </MudButton>
     </MudItem>
     <MudItem xs="2">
-                <MudButton Variant="Variant.Outlined" Class="social-login-button">
+                <MudButton Variant="Variant.Outlined" Class="social-login-button" InputAttributes="@(new Dictionary<string, object>
+    {
+        ["aria-label"] = "Microsoft Login Button",
+        ["data-testid"] = "microsoft-login-button"
+    })">
             <img src="/images/microsoft.svg" alt="Microsoft" style="height: 24px;" />
         </MudButton>
     </MudItem>
     <MudItem xs="2">
-                <MudButton Variant="Variant.Outlined" Class="social-login-button">
+                <MudButton Variant="Variant.Outlined" Class="social-login-button" InputAttributes="@(new Dictionary<string, object>
+    {
+        ["aria-label"] = "Facebook Login Button",
+        ["data-testid"] = "facebook-login-button"
+    })">
  
             <img src="/images/facebook.svg" alt="Facebook" />
         </MudButton>
     </MudItem>
     </MudGrid>
-    <MudStack AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
-    <MudText Align="Align.Start" Class="mt-4 label-text">
-        Don't have an account? 
-    <NavLink href="/signup" style="color: var(--color-accent)" >Sign Up</NavLink>
-    </MudText>
-    </MudStack>
+        <MudStack AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
+            <MudText Align="Align.Start" Class="mt-4 label-text">
+                Don't have an account?
+                <NavLink href="/signup" style="color: var(--color-accent)">Sign Up</NavLink>
+            </MudText>
+        </MudStack>
     </div>
 </div>
 
 @code {
+    [CascadingParameter] 
+    public HttpContext? HttpContext { get; set; } 
+    public string Name{ get; set; }
     private string _username = string.Empty;
     private string _password = string.Empty;
     private bool _isLoading = false;
@@ -122,19 +133,16 @@
     private string _usernameError = string.Empty;
     private string _passwordError = string.Empty;
 
-
     private async Task OnEmailChanged(string value)
     {
         _username = value;
         ValidateUsername();
     }
 
-
     private void TogglePasswordVisibility()
     {
         _showPassword = !_showPassword;
     }
-
 
     private void ValidateUsername()
     {
@@ -143,18 +151,17 @@
         {
             _usernameError = "Please enter your email or phone number";
         }
-         if (_username.Contains("@"))
-    {
-        if (!ValidationHelper.IsValidEmail(_username))
-            _usernameError = "Enter valid email address.";
-    }
-    else if (_username.Any(char.IsDigit))
-    {
-        if (!ValidationHelper.IsValidPhoneNumber(_username))
-            _usernameError = "Enter valid phone number";
-    }
-
-        StateHasChanged(); 
+        if (_username.Contains("@"))
+        {
+            if (!ValidationHelper.IsValidEmail(_username))
+                _usernameError = "Enter valid email address.";
+        }
+        else if (_username.Any(char.IsDigit))
+        {
+            if (!ValidationHelper.IsValidPhoneNumber(_username))
+                _usernameError = "Enter valid phone number";
+        }
+        StateHasChanged();
     }
     private async Task OnPasswordChanged(string value)
     {
@@ -165,15 +172,13 @@
     private void ValidatePassword()
     {
         _passwordError = ValidationHelper.ValidatePassword(_password);
-        StateHasChanged(); 
+        StateHasChanged();
     }
     private async Task PerformLogin()
     {
         _usernameError = string.Empty;
         _passwordError = string.Empty;
-
         bool hasError = false;
-
         if (string.IsNullOrWhiteSpace(_username))
         {
             _usernameError = "Please enter your email or phone number.";
@@ -189,82 +194,46 @@
         {
             hasError = true;
         }
-
         if (hasError)
         {
             StateHasChanged();
             return;
         }
-
         _isLoading = true;
         var payload = new { usernameOrEmailOrPhone = _username, password = _password };
-
         try
         {
-            var response = await Api.PostAsync<object, LoginResponseData>("auth/login", payload);
-            if (response?.StatusCode == 200)
-            {
-                UserState.username = response.Data.Username;
-                UserState.Email = response.Data.Emailaddress;
-                UserState.mobileNumber = response.Data.Mobilenumber;
-                UserState.Token = response?.Data?.AccessToken;
-                StateHasChanged();
-
-                if (response.Data.IsTwoFactorEnabled)
+             await CustomAuthenticationStateProvider.AuthenticateUser(_username, _password);
+             StateHasChanged(); 
+              var authState = await CustomAuthenticationStateProvider.GetAuthenticationStateAsync();
+            if (authState != null){
+                var user = authState.User;
+                if (user.Identity != null && user.Identity.IsAuthenticated)
                 {
-                    NavManager.NavigateTo("/select-verification");
-                    return;
+                    var is2FAString = user.FindFirst("IsTwoFactorEnabled")?.Value;
+                    bool isTwoFactorEnabled = bool.TryParse(is2FAString, out var result) && result;
+                    if (isTwoFactorEnabled)
+                    {
+                        NavManager.NavigateTo("/select-verification");
+                    }
+                    else{
+                        Snackbar.Add($"Logged in as {user.FindFirst(ClaimTypes.Email)?.Value}", Severity.Success);
+                        NavManager.NavigateTo("/classifieds");
+                    }
                 }
-                else if (!response.Data.IsTwoFactorEnabled)
-                {
-                    Snackbar.Add($"Logged in as {response.Data.Emailaddress}", Severity.Success);
-                    NavManager.NavigateTo("/classifieds");
-                }
-                else
-                {
-                    Snackbar.Add("Error: Could not determine two-factor authentication status.", Severity.Error);
-                }
-            }  
-            else
-            {
-                Snackbar.Add("Error: " + response.Message, Severity.Error);
             }
+             else{
+                NavManager.NavigateTo("/login");
+            } 
         }
-        catch (Exception ex)
+        catch (HttpRequestException ex)
         {
-            Snackbar.Add("Error: " + ex.Message, Severity.Error);
+            HttpErrorHelper.HandleHttpException(ex, Snackbar);
         }
         finally
         {
             _isLoading = false;
         }
-    }
-
-
-    
-
-
-    public class LoginResponseData
-    {
-        public string Username { get; set; }
-        public string Mobilenumber { get; set; }
-        public string Emailaddress { get; set; }
-        public string AccessToken { get; set; }
-        public string RefreshToken { get; set; }
-        public bool IsTwoFactorEnabled { get; set; }
-    }
-  
-
-    private class LoginResult
-    {
-        public bool Success { get; set; }
-        public MessageContent Message { get; set; }
-    }
-
-    private class MessageContent
-    {
-        public string JwtToken { get; set; }
-        public string RefreshToken { get; set; }
     }
 }
 
@@ -272,24 +241,26 @@
 
 <style>
     .login-heading {
-    font-weight: 500;
-    font-size: 30px;
-    font-family: 'Public Sans', sans-serif;
-    margin-bottom: 1.5rem; 
-    text-align: center;  
-    color: var(--color-text-heading);    
-}
-.login-description {
-    font-weight: 400;
-    font-size: 16px;
-    font-family: 'Public Sans', sans-serif;
-    text-align: center;  
-    color: var(--color-text-descripton);   
-}
-.label-text {
-    font-family: 'Public Sans', sans-serif;
-    font-weight: 400;
-    font-size: 14px;
-    color: var(--color-text-heading);
-}
+        font-weight: 500;
+        font-size: 30px;
+        font-family: 'Public Sans', sans-serif;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        color: var(--color-text-heading);
+    }
+
+    .login-description {
+        font-weight: 400;
+        font-size: 16px;
+        font-family: 'Public Sans', sans-serif;
+        text-align: center;
+        color: var(--color-text-descripton);
+    }
+
+    .label-text {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 400;
+        font-size: 14px;
+        color: var(--color-text-heading);
+    }
 </style>

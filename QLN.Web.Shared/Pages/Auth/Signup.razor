@@ -4,7 +4,6 @@
 @inject ApiService Api
 @using QLN.Web.Shared.Services
 @using QLN.Web.Shared.Components
-@inject UserState UserState
 @using MudBlazor
 @using QLN.Web.Shared.Helpers
 @using MudBlazor.Components
@@ -13,6 +12,7 @@
 @using QLN.Web.Shared.Components.CustomButton
 @using QLN.Web.Shared.Components.ModalDialog
 @using QLN.Web.Shared.Components.PasswordStrengthIndicator
+@using static QLN.Web.Shared.Helpers.HttpErrorHelper
 @using System.Text.RegularExpressions;
 @using System.Net.Http;
 @using System.Text.Json;
@@ -49,6 +49,11 @@
                   style="background-color: var(--color-background)"
                   MaxLength="50"
                   FullWidth="true"
+                  InputAttributes="@(new Dictionary<string, object>
+              {
+                  ["aria-label"] = "First Name",
+                  ["data-testid"] = "signup-firstname-input"
+              })"
                    />
         <MudText Typo="Typo.body1"  Class="label-text">
         Last Name
@@ -62,7 +67,12 @@
               Required="true"
               MaxLength="50"
               FullWidth="true"
-              style="background-color: var(--color-background)" />
+              style="background-color: var(--color-background)"
+              InputAttributes="@(new Dictionary<string, object>
+              {
+                  ["aria-label"] = "Last Name",
+                  ["data-testid"] = "signup-lastname-input"
+              })" />
         <MudText Typo="Typo.body1"  Class="label-text">
         Username
         </MudText>
@@ -75,7 +85,12 @@
               Required="true"
               FullWidth="true"
               Immediate="true"
-              style="background-color: var(--color-background)" />
+              style="background-color: var(--color-background)" 
+              InputAttributes="@(new Dictionary<string, object>
+              {
+                  ["aria-label"] = "Username",
+                  ["data-testid"] = "signup-username-input"
+              })"/>
               
     <MudText Typo="Typo.body1"  Class="label-text mb-1">
         Email
@@ -91,7 +106,12 @@
               Disabled="showVerificationSuccess"
               FullWidth="true"
               Immediate="true"
-              Class="phone-input mobile-input" />
+              Class="phone-input mobile-input"
+              InputAttributes="@(new Dictionary<string, object>
+              {
+                  ["aria-label"] = "Email",
+                  ["data-testid"] = "signup-email-input"
+              })" />
         @if (showVerificationSuccess)
         {
             <MudText Typo="Typo.body1" Class="success-text">
@@ -104,7 +124,12 @@
            Loading="@_emailVerifying"
            Disabled="@(!ValidationHelper.IsValidEmail(_model.EmailAddress))"
            OnClick="OnVerifyEmailClicked"
-           Class="verify-button">
+           Class="verify-button"
+           InputAttributes="@(new Dictionary<string, object>
+           {
+               ["aria-label"] = "Email Verify button",
+               ["data-testid"] = "email-verify-button"
+           })">
  
     <div class="verify-container">
         @if (_emailVerifying)
@@ -136,7 +161,12 @@
               MaxLength="6"
               FullWidth="true"
               Immediate="true"
-              Class="mobile-input" />
+              Class="mobile-input"
+              InputAttributes="@(new Dictionary<string, object>
+           {
+               ["aria-label"] = "Email Code input",
+               ["data-testid"] = "email-code-input"
+           })" />
  
  
     <div class="verify-container">
@@ -152,8 +182,14 @@
            Loading="@_emailCodeVerifying"
            Disabled="@(!IsCodeValid(EmailVerificationCode) || !ValidationHelper.IsValidEmail(_model.EmailAddress))"
            OnClick="VerifyEmailCode"
+           InputAttributes="@(new Dictionary<string, object>
+           {
+               ["aria-label"] = "Email Check button",
+               ["data-testid"] = "email-code-check-button"
+           })"
            Class="verify-button">
             <MudText Typo="Typo.button"  Class="verify-button-text">Check</MudText>
+            
             </MudButton>
         }
     </div>
@@ -173,7 +209,9 @@
            cursor: @(ValidationHelper.IsValidEmail(_model.EmailAddress) ? "pointer" : "not-allowed");
            font-size: 0.8rem;
            opacity: @(ValidationHelper.IsValidEmail(_model.EmailAddress) ? "1" : "0.5");"
-    @onclick="@(ValidationHelper.IsValidEmail(_model.EmailAddress) ? TriggerEmailCodeResend : null)">
+    @onclick="@(ValidationHelper.IsValidEmail(_model.EmailAddress) ? TriggerEmailCodeResend : null)"
+    aria-label="Resend email verification code"
+    data-testid="resend-email-code-span">
     Resend Code
 </span>
     }
@@ -195,13 +233,13 @@
                    DisableUnderline="true"
                    Disabled="@showMobileVerificationSuccess"
                    Searchable="true">
-            <MudSelectItem Value="@SelectedCountry">
+            <MudSelectItem Value="@SelectedCountry" >
                 <img src="@SelectedCountry.Flag" Class="selected-country-flag" />
                 @SelectedCountry.Code
             </MudSelectItem>
             @foreach (var country in countryList)
             {
-               <MudSelectItem Value="@country">
+               <MudSelectItem Value="@country" >
                 <div Class="country-option">
                     <img src="@country.Flag"
                         alt="flag"
@@ -220,7 +258,12 @@
                       FullWidth="true"
                       StartAdornment="@SelectedCountry.Code"
                       Immediate="true"
-                      Class="mobile-input"/>
+                      Class="mobile-input"
+                      InputAttributes="@(new Dictionary<string, object>
+              {
+                  ["aria-label"] = "Mobile Number",
+                  ["data-testid"] = "mobile-number-input"
+              })"/>
         
         @if (showMobileVerificationSuccess)
         {
@@ -234,7 +277,12 @@
                        Loading="@_phoneVerifying"
                        Disabled="@(!ValidationHelper.IsValidPhoneNumber(_model.MobileNumber))"
                        OnClick="OnVerifyPhoneClicked"
-                       Class="verify-button">
+                       Class="verify-button"
+                       Attributes="@(new Dictionary<string, object>
+           {
+               ["aria-label"] = "Verify Phone Button",
+               ["data-testid"] = "verify-phone-button"
+           })">
                 <div class="verify-container">
                     @if (_phoneVerifying)
                     {
@@ -245,7 +293,11 @@
                     }
                     else
                     {
-                        <MudText Typo="Typo.button" Class="verify-button-text">Verify</MudText>
+                        <MudText Typo="Typo.button" Class="verify-button-text" Attributes="@(new Dictionary<string, object>
+         {
+             ["aria-label"] = "Verify Phone Text",
+             ["data-testid"] = "verify-phone-text"
+         })">Verify</MudText>
                     }
                 </div>
             </MudButton>
@@ -264,7 +316,12 @@
               MaxLength="6"
               FullWidth="true"
               Immediate="true"
-              Class="phone-input mobile-input" />
+              Class="phone-input mobile-input" 
+               InputAttributes="@(new Dictionary<string, object>
+           {
+               ["aria-label"] = "Email Code button",
+               ["data-testid"] = "email-code-button"
+           })"/>
     <div class="verify-container">
         @if (_phoneCodeVerifying)
         {
@@ -278,9 +335,22 @@
            Loading="@_phoneCodeVerifying"
            Disabled="@(!IsCodeValid(_phoneVerificationCode) || !ValidationHelper.IsValidPhoneNumber(_model.MobileNumber))"
            OnClick="VerifyPhoneCode"
-           Class="verify-button">
-            <MudText Typo="Typo.button"  Class="verify-button-text">Check</MudText>
-            </MudButton>
+           Class="verify-button"
+           Attributes="@(new Dictionary<string, object>
+           {
+               ["data-testid"] = "phone-code-check-button",
+               ["aria-label"] = "Phone Code Check Button"
+           })">
+    <MudText Typo="Typo.button"
+             Class="verify-button-text"
+             Attributes="@(new Dictionary<string, object>
+             {
+                 ["data-testid"] = "phone-code-check-button-text",
+                 ["aria-label"] = "Phone Code Check Button Text"
+             })">
+        Check
+    </MudText>
+</MudButton>
         }
     </div>
  
@@ -299,7 +369,9 @@
            cursor: @(ValidationHelper.IsValidPhoneNumber(_model.MobileNumber) ? "pointer" : "not-allowed");
            font-size: 0.8rem;
            opacity: @(ValidationHelper.IsValidPhoneNumber(_model.MobileNumber) ? "1" : "0.5");"
-    @onclick="@(ValidationHelper.IsValidPhoneNumber(_model.MobileNumber) ? TriggerPhoneCodeResend : null)">
+    @onclick="@(ValidationHelper.IsValidPhoneNumber(_model.MobileNumber) ? TriggerPhoneCodeResend : null)"
+    data-testid="resend-phone-code"
+    aria-label="Resend Phone Verification Code">
     Resend Code
 </span>
     }
@@ -322,7 +394,12 @@
                RequiredError="Date of Birth is required"
                PickerVariant="PickerVariant.Inline"
                MaxDate="@DateTime.Today.AddDays(-1)"
-               Class="mt-1" />
+               Class="mt-1" 
+               InputAttributes="@(new Dictionary<string, object>
+               {
+                   ["aria-label"] = "Date of Birth",
+                   ["data-testid"] = "date-of-birth-picker"
+               })"/>
         <MudText Typo="Typo.body1"  Class="label-text">
         Nationality
         </MudText>
@@ -336,7 +413,12 @@
            style="background-color: var(--color-background)"
            @bind-Value="_model.Nationality"
            DisableUnderline="true"
-           Class="mt-4">
+           Class="mt-4"
+           InputAttributes="@(new Dictionary<string, object>
+           {
+               ["aria-label"] = "Nationality",
+               ["data-testid"] = "nationality-select"
+           })">
     @foreach (var country in countryList)
     {
         <MudSelectItem T="string" Value="@country.Name">@country.Name</MudSelectItem>
@@ -354,7 +436,12 @@
            FullWidth="true"
            @bind-Value="_model.LanguagePreferences"
            DisableUnderline="true"
-           Class="mt-4">
+           Class="mt-4"
+           InputAttributes="@(new Dictionary<string, object>
+           {
+               ["aria-label"] = "Language select",
+               ["data-testid"] = "language-select"
+           })">
     @foreach (var country in languageOptions)
     {
         <MudSelectItem T="string" Value="@country">@country</MudSelectItem>
@@ -381,7 +468,12 @@
               Adornment="Adornment.End"
               AdornmentIcon="@(_showPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
               OnAdornmentClick="TogglePasswordVisibility"
-              AdornmentColor="Color.Default" />
+              AdornmentColor="Color.Default"
+              InputAttributes="@(new Dictionary<string, object>
+              {
+                  ["aria-label"] = "Password input",
+                  ["data-testid"] = "password-input"
+              })" />
     <PasswordStrengthIndicator Password="@_model.Password" />
  
  
@@ -403,9 +495,18 @@
               Adornment="Adornment.End"
               AdornmentIcon="@(_showConfirmPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
               OnAdornmentClick="ToggleConfirmVisibility"
-              AdornmentColor="Color.Default" />
+              AdornmentColor="Color.Default"
+              InputAttributes="@(new Dictionary<string, object>
+              {
+                  ["aria-label"] = "Confirm Password input",
+                  ["data-testid"] = "confirm-password-input"
+              })" />
         <MudCheckBox @bind-Value="_model.AgreeToTerms" For="@(() => _model.AgreeToTerms)" CheckedChanged="OnAgreeToTermsChanged" Required="true"
-                 RequiredError="You must agree to the terms and conditions to proceed" Class="custom-checkbox" >
+                 RequiredError="You must agree to the terms and conditions to proceed" Class="custom-checkbox" InputAttributes="@(new Dictionary<string, object>
+             {
+                 ["aria-label"] = "Agree to Terms and Conditions",
+                 ["data-testid"] = "agree-to-terms-checkbox"
+             })">
         <LabelContent>
             <span class="label-text">
             I agree to the
@@ -416,14 +517,22 @@
         </LabelContent>
         </MudCheckBox>
     
-<MudCheckBox @bind-Value="EnableTwoFactor" Label=""   Class="custom-checkbox" >
+<MudCheckBox @bind-Value="EnableTwoFactor" Label=""   Class="custom-checkbox"  InputAttributes="@(new Dictionary<string, object>
+             {
+                 ["aria-label"] = "Enable Two Factor Authentication",
+                 ["data-testid"] = "enable-two-factor-checkbox"
+             })" >
         <LabelContent>
             <span class="label-text">
             Enable Two-Factor Authentication
             </span>
         </LabelContent>
         </MudCheckBox>
-    <MudCheckBox @bind-Value="MarketingOptIn" Label=""   Class="custom-checkbox" >
+    <MudCheckBox @bind-Value="MarketingOptIn" Label=""   Class="custom-checkbox" InputAttributes="@(new Dictionary<string, object>
+             {
+                 ["aria-label"] = "Marketing Opt-In",
+                 ["data-testid"] = "marketing-opt-in-checkbox"
+             })">
         <LabelContent>
             <span class="label-text">
             I want to receive marketing emails and offers
@@ -437,7 +546,10 @@
     Disabled="_loading"
     Loading="_loading"
     OnClick="@SubmitSignup"
-    Class="mt-4" />
+    Class="mt-4"
+    aria-label="Sign Up Button"
+    data-testid="sign-up-button"
+ />
     <div class="d-flex align-center my-4">
         <div class="divider-line"></div>
         <MudText Typo="Typo.caption" Class="mx-2">Or continue with</MudText>
@@ -445,22 +557,38 @@
     </div>
     <MudGrid Justify="Justify.SpaceEvenly" GutterSize="12px">
     <MudItem xs="2">
-                <MudButton Variant="Variant.Outlined" Class="social-login-button">
+                <MudButton Variant="Variant.Outlined" Class="social-login-button" InputAttributes="@(new Dictionary<string, object>
+    {
+        ["aria-label"] = "Google Login Button",
+        ["data-testid"] = "google-login-button"
+    })">
             <img src="/images/google.svg" alt="Google" style="height: 24px;" />
         </MudButton>
     </MudItem>
     <MudItem xs="2">
-                <MudButton Variant="Variant.Outlined" Class="social-login-button">
+                <MudButton Variant="Variant.Outlined" Class="social-login-button" InputAttributes="@(new Dictionary<string, object>
+    {
+        ["aria-label"] = "Apple Login Button",
+        ["data-testid"] = "apple-login-button"
+    })">
             <img src="/images/apple.svg" alt="Google" style="height: 24px;" />
         </MudButton>
     </MudItem>
     <MudItem xs="2">
-                <MudButton Variant="Variant.Outlined" Class="social-login-button">
+                <MudButton Variant="Variant.Outlined" Class="social-login-button" InputAttributes="@(new Dictionary<string, object>
+    {
+        ["aria-label"] = "Microsoft Login Button",
+        ["data-testid"] = "microsoft-login-button"
+    })">
             <img src="/images/microsoft.svg" alt="Microsoft" style="height: 24px;" />
         </MudButton>
     </MudItem>
     <MudItem xs="2">
-                <MudButton Variant="Variant.Outlined" Class="social-login-button">
+                <MudButton Variant="Variant.Outlined" Class="social-login-button" InputAttributes="@(new Dictionary<string, object>
+    {
+        ["aria-label"] = "Facebook Login Button",
+        ["data-testid"] = "facebook-login-button"
+    })">
  
             <img src="/images/facebook.svg" alt="Facebook" />
         </MudButton>
@@ -469,7 +597,11 @@
  
     <MudText Align="Align.Center" Class="mt-4 d-flex justify-center">
     <span>Already have an account?</span>&nbsp;
-    <NavLink href="/login" class="terms-link">Sign In</NavLink>
+    <NavLink href="/login" class="terms-link" InputAttributes="@(new Dictionary<string, object>
+    {
+        ["aria-label"] = "Sign In Link",
+        ["data-testid"] = "sign-in-link"
+    })">Sign In</NavLink>
 </MudText>
 </MudForm>
 </div>
@@ -614,7 +746,7 @@
         _loading = false;
         hasError = true;
     }
-    
+
     if (!_form.IsValid)
     {
         hasError = true;
@@ -643,21 +775,12 @@
  
     try
     {
-        var response = await Api.PostAsync<object, ResponseModel<object>>("auth/register", payload);
-        if (response.StatusCode == 200)
-        {
-            UserState.Email = _model.EmailAddress;
-            UserState.mobileNumber = _model.MobileNumber;
-            signUpSucesss = true;
-        }
-        else
-        {
-            Snackbar.Add(response.Message, Severity.Error);
-        }
+        var response = await Api.PostAsync<object, object>("auth/register", payload);
+        signUpSucesss = true;
     }
-    catch (Exception ex)
+    catch (HttpRequestException ex)
     {
-        Snackbar.Add($"An error occurred: {ex.Message}", Severity.Error);
+            HttpErrorHelper.HandleHttpException(ex, Snackbar);
     }
     finally
     {
@@ -674,21 +797,14 @@
         };
         try
         {
-            var response = await Api.PostAsync<object, object >("auth/verify-email-request", payload);
-             if (response?.StatusCode == 200)
-            {
-                Snackbar.Add(response?.Message, Severity.Success);
+                var response = await Api.PostAsync<object, object >("auth/verify-email-request", payload);
+                Snackbar.Add("OTP Sent to your mail", Severity.Success);
                 showEmailVerificationBox = true;
                  await InvokeAsync(StateHasChanged);
-            }
-            else
-            {
-                Snackbar.Add(response?.Message, Severity.Error);
-            }  
         }
-        catch (Exception ex)
+        catch (HttpRequestException ex)
         {
-            Snackbar.Add($"Verification failed: {ex.Message}");
+            HttpErrorHelper.HandleHttpException(ex, Snackbar);
         }
         finally{
             _emailVerifying = false;
@@ -705,20 +821,13 @@
         try
         {
             var response = await Api.PostAsync<object, object>("auth/verify-phone-request", payload);
-            if (response?.StatusCode == 200)
-            {
-                Snackbar.Add(response?.Message, Severity.Success);
-                showPhoneVerificationBox = true;
-                await InvokeAsync(StateHasChanged);
-            }
-            else
-            {
-                    Snackbar.Add(response?.Message, Severity.Error);
-            }
+            Snackbar.Add("OTP sent to your Mobile Number", Severity.Success);
+            showPhoneVerificationBox = true;
+            await InvokeAsync(StateHasChanged);
         }
-        catch (Exception ex)
+        catch (HttpRequestException ex)
         {
-            Snackbar.Add($"Verification failed: {ex.Message}");
+            HttpErrorHelper.HandleHttpException(ex, Snackbar);
         }
         finally{
              _phoneVerifying = false;
@@ -759,12 +868,13 @@
     private async Task<List<CountryModel>> FetchCountriesAsync()
 {
     var countryList = new List<CountryModel>();
+
     try
     {
-        var filePath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "data", "countries.json");
+       var filePath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "data", "countries.json");
         var json = await File.ReadAllTextAsync(filePath);
         var countriesJson = JsonSerializer.Deserialize<List<JsonElement>>(json);
- 
+
         foreach (var country in countriesJson!)
         {
             if (country.TryGetProperty("name", out var nameDict) &&
@@ -773,7 +883,7 @@
                 string name = nameElement.GetString() ?? "Unknown";
                 string code = "N/A";
                 string flag = "";
- 
+
                 if (country.TryGetProperty("idd", out var idd))
                 {
                     if (idd.TryGetProperty("root", out var rootElement) &&
@@ -789,13 +899,13 @@
                         }
                     }
                 }
- 
+
                 if (country.TryGetProperty("flags", out var flags) &&
                     flags.TryGetProperty("png", out var flagElement))
                 {
                     flag = flagElement.GetString() ?? "";
                 }
- 
+
                 countryList.Add(new CountryModel
                 {
                     Name = name,
@@ -809,7 +919,7 @@
     {
         Console.WriteLine($"Error loading countries: {ex.Message}");
     }
- 
+
     return countryList;
 }
     private string ValidatePhoneFormat(string value)
@@ -854,27 +964,21 @@ private void OnAgreeToTermsChanged(bool value)
         showAgreeTermsError = false;
     }
 }
+
     private async Task VerifyEmailCode()
     {
         _emailCodeVerifying = true;
         try
         {   
-              var payload = new { email = _model.EmailAddress, otp = _emailVerificationCode };
+                var payload = new { email = _model.EmailAddress, otp = _emailVerificationCode };
                 var response = await Api.PostAsync<object, object>("auth/verify-email-otp", payload);
-                if (response?.StatusCode == 200)
-                {
-                    showVerificationSuccess =  true;
-                    showEmailVerificationBox = false;
-                    Snackbar.Add(response?.Message, Severity.Success);
-                }
-                else
-                {
-                    Snackbar.Add(response?.Message, Severity.Warning);
-                }
+                showVerificationSuccess =  true;
+                showEmailVerificationBox = false;
+                Snackbar.Add("Email Verified successfully.", Severity.Success);
         }
-        catch (Exception ex)
+        catch (HttpRequestException ex)
         {
-            Snackbar.Add(ex.Message, Severity.Error);
+            HttpErrorHelper.HandleHttpException(ex, Snackbar);
         }
         finally
         {
@@ -886,26 +990,15 @@ private void OnAgreeToTermsChanged(bool value)
         _phoneCodeVerifying = true;
         try
         {   
-              var body = new { phoneNumber = _model.MobileNumber, otp = _phoneVerificationCode };
-                var response = await Api.PostAsync<object, object>("auth/verify-phone-otp", body);
-                    Console.Write("api hitted");
-                    Console.Write(response.Message);
-                    Console.Write(response.StatusCode);
-                if (response?.StatusCode == 200)
-                {
-                    showMobileVerificationSuccess = true;
-                    showPhoneVerificationBox = false;
-                    Console.Write(response);
-                    Snackbar.Add(response?.Message, Severity.Success);
-                }
-                else
-                {
-                    Snackbar.Add(response?.Message, Severity.Warning);
-                }
+                var body = new { phoneNumber = _model.MobileNumber, otp = _phoneVerificationCode };
+                var response = await Api.PostAsync<object, object>("auth/verify-phone-otp", body);     
+                showMobileVerificationSuccess = true;
+                showPhoneVerificationBox = false;
+                Snackbar.Add("Mobile number verified successfully", Severity.Success);
         }
-        catch (Exception ex)
+        catch (HttpRequestException ex)
         {
-            Snackbar.Add(ex.Message, Severity.Error);
+            HttpErrorHelper.HandleHttpException(ex, Snackbar);
         }
         finally
         {
@@ -1121,7 +1214,7 @@ private void StartResendTimer()
 }
 .divider-line {
     flex-grow: 1;
-    height: 1px;
+    height: 1px; 
     background-color: #ccc;
 }
 .label-text {

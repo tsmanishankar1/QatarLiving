@@ -14,6 +14,7 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["QLN.Blazor.Base/QLN.Blazor.Base.csproj", "QLN.Blazor.Base/"]
 COPY ["QLN.Web.Shared/QLN.Web.Shared.csproj", "QLN.Web.Shared/"]
+COPY ["QLN.Common/QLN.Common.csproj", "QLN.Common/"]
 RUN dotnet restore "./QLN.Blazor.Base/QLN.Blazor.Base.csproj"
 COPY . .
 WORKDIR "/src/QLN.Blazor.Base"

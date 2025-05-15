@@ -1,0 +1,166 @@
+<MudPaper Elevation="0" Class="px-4 py-2 d-flex justify-center tab-bar-wrapper" 
+          Style="background-color: var(--color-background);">
+    @foreach (var item in tabItems)
+    {
+        <MudButton Variant="Variant.Text"
+                   Class=@($"tab-button d-flex flex-column align-center justify-center {(item.IsActive ? "selected-tab" : "")}")
+                   DisableElevation="true"
+                   DisableRipple="true"
+                   Style="background-color: transparent;"
+                   OnClick="@(() => OnTabSelected(item))">
+            <div class="tab-button-inner">
+                <img src="@item.ImagePath"
+                     class="tab-icon @(item.IsActive ? "active-orange" : "default-gray")" />
+
+                <MudText Typo="Typo.body2"
+                         Class=@($"tab-label {(item.IsActive ? "active-tab" : "")}")>
+                    @item.Text
+                </MudText>
+            </div>
+        </MudButton>
+    }
+</MudPaper>
+
+@code {
+    [Parameter] public EventCallback<string> OnTabChanged { get; set; }
+
+    private TabItem? activeTab;
+
+    private List<TabItem> tabItems = new()
+    {
+        new TabItem {
+            Text = "Items",
+            Key = "items",
+            ImagePath = "/images/classifieds/tab/classifieds_items.svg"
+        },
+        new TabItem {
+            Text = "Deals",
+            Key = "deals",
+            ImagePath = "/images/classifieds/tab/classifieds_deals.svg"
+        },
+        new TabItem {
+            Text = "Stores",
+            Key = "stores", 
+            ImagePath = "/images/classifieds/tab/classifieds_store.svg"
+        },
+        new TabItem {
+            Text = "Preloved",
+            Key = "preloved",
+            ImagePath = "/images/classifieds/tab/classifieds_preloved.svg"
+        },
+        new TabItem {
+            Text = "Collectibles",
+            Key = "collectibles",
+            ImagePath = "/images/classifieds/tab/classifieds_collectibles.svg"
+        }
+    };
+
+    private async Task OnTabSelected(TabItem selected)
+    {
+        if (activeTab == selected)
+        {
+            selected.IsActive = false;
+            activeTab = null;
+            await OnTabChanged.InvokeAsync(null);
+        }
+        else
+        {
+            foreach (var item in tabItems)
+                item.IsActive = item == selected;
+
+            selected.IsActive = true;
+            activeTab = selected;
+            await OnTabChanged.InvokeAsync(selected.Key);
+        }
+    }
+
+    public class TabItem
+    {
+        public string Text { get; set; }
+        public string Key { get; set; }
+        public string ImagePath { get; set; }
+        public bool IsActive { get; set; }
+    }
+}
+
+  <style>
+.tab-bar-wrapper {
+    overflow-x: auto;
+    gap: 16px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.tab-bar-wrapper::-webkit-scrollbar {
+    display: none;
+}
+
+.tab-button {
+    min-width: 80px;
+    padding: 8px;
+    height: auto;
+    background-color: transparent;
+    transition: background-color 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
+    border-radius: 8px;
+}
+.tab-button:hover {
+    opacity: 0.85;
+}
+.tab-button-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: transform 0.3s ease;
+}
+.tab-button.selected-tab .tab-button-inner {
+    transform: scale(1.05);
+}
+
+.tab-icon {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 4px;
+    transition: filter 0.3s ease;
+}
+
+.active-orange {
+    filter: brightness(0) saturate(100%) invert(64%) sepia(94%) saturate(1386%) hue-rotate(334deg) brightness(102%) contrast(97%);
+}
+
+
+.default-gray {
+    filter: brightness(0) saturate(100%) invert(53%) sepia(0%) saturate(1031%) hue-rotate(176deg) brightness(93%) contrast(91%);
+}
+
+.tab-label {
+    font-weight: 400;
+    color: var(--color-text-descripton);
+    transition: color 0.3s ease, border-bottom 0.3s ease;
+}
+.tab-label.active-tab {
+    color: var(--color-accent);
+    font-weight: 400;
+    border-bottom: 3px solid var(--color-accent);
+}
+
+@@media (max-width: 768px) {
+    .tab-bar-wrapper {
+        gap: 8px;
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+    .tab-button {
+        min-width: 60px;
+        padding: 4px;
+    }
+    .tab-icon {
+        width: 20px;
+        height: 20px;
+        margin-bottom: 2px;
+    }
+    .tab-label {
+        font-size: 0.65rem;
+    }
+}
+</style>
+
+

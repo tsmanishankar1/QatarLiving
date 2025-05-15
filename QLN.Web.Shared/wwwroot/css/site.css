@@ -14,6 +14,8 @@
     --color-text-heading: #242424;     /* For use on heading text */
     --color-text-gray: #454545;       /*For use on the subtitle text */
     --color-text-green: #079455;      /* For the success green text */
+    --color-category-text: #2A6BA0;    /* For the category text */
+    --color-text-heading-rgb: 18, 52, 86;
  
     /* Backgrounds and Containers */
     --color-background: #FFFFFF;      /* white background */
@@ -25,6 +27,8 @@
     --color-background-secondary-grey-light: #FAFAFA;
     --color-header-button: #E8F2FE;    /* For the icon button in header */
     --color-captcha-box: #D0D5DD; /* For the border of the captcha box */
+    --color-whatsapp-outline: #5BD066; /* For the border of the whatsapp box */
+    --color-category-outline: #E8F2FE;
 }
  
 .subscription-card {
@@ -150,7 +154,7 @@
         color: #00426D; /* Blue text for active tab */
         font-weight: 600;
     }
-
+ 
 .tab-icon {
     width: 24px;
     height: 24px;
@@ -181,4 +185,15 @@
 
 .tab-text {
     margin-top: 4px;
+}
+
+/*header style*/
+.heading-style {
+    font-family: 'Public Sans', sans-serif;
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 26px;
+    letter-spacing: 0;
+    vertical-align: middle;
+    color: #00426D;
 }

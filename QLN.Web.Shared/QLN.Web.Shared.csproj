@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
@@ -34,8 +34,13 @@
 		<PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="8.0.15" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
 		<PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="8.0.15" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.3.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.15" />
 		<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
 	</ItemGroup>
+
+	<ItemGroup>
+    <ProjectReference Include="..\QLN.Common\QLN.Common.csproj" />
+  </ItemGroup>
 
 </Project>
