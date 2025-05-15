@@ -7,12 +7,14 @@ using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Common.Infrastructure.TokenProvider;
 using System.Text;
+using Dapr.Client;
+using QLN.Common.Infrastructure.IService;
 using Microsoft.OpenApi.Models;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+// builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 
@@ -29,7 +31,7 @@ builder.Services.AddSwaggerGen(options =>
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
-        Type = SecuritySchemeType.Http, 
+        Type = SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
@@ -62,7 +64,7 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.Configure<DataProtectionTokenProviderOptions>(opt =>
 {
-    opt.TokenLifespan = TimeSpan.FromMinutes(30);
+    opt.TokenLifespan = TimeSpan.FromDays(1);
 });
 
 
@@ -134,6 +136,20 @@ builder.Services.AddAuthorization();
 
 
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
+
+// adding DAPR support
+var daprClient = new DaprClientBuilder().Build();
+builder.Services.AddSingleton<DaprClient>(daprClient);
+
+
+builder.Services.AddActors(options =>
+{
+    options.Actors.RegisterActor<SubscriptionActor>();
+});
+
+// Adding Company Service
+builder.Services.AddSingleton<ISubscriptionService,ExternalSubscriptionService>();
+
 builder.Services.ServicesConfiguration(builder.Configuration);
 
 
@@ -154,8 +170,14 @@ if (app.Environment.IsDevelopment())
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
 
+var subscriptionGroup = app.MapGroup("/subscription");
+subscriptionGroup.MapSubscriptionEndpoints();
+
+
+
+
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
+// app.MapControllers();
 app.Run();

@@ -1,0 +1,6 @@
+@QLN.Subscriptions.Actor_HostAddress = http://localhost:5048
+
+GET {{QLN.Subscriptions.Actor_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

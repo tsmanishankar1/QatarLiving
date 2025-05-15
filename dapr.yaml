@@ -1,0 +1,29 @@
+common: # optional section for variables shared across apps
+  resourcesPath: ./components # any dapr resources to be shared across apps
+apps:
+- appDirPath: QLN.Backend.API
+  appID: qln-backend-api
+  appPort: 5200
+  command:
+  - dotnet
+  - run
+- appDirPath: QLN.BusinessProfile.MS
+  appID: qln-businessprofile-ms
+  appPort: 5027
+  command:
+  - dotnet
+  - run
+- appDirPath: QLN.Subscriptions.Actor
+  appID: qln-subscriptions-actor
+  appPort: 5028
+  command:
+  - dotnet
+  - run
+# - appDirPath: QLN.Blazor.Base
+#   appID: qln-blazor-base
+#   appPort: 5047
+#   command:
+#   - dotnet
+#   - run
+
+version: 1
