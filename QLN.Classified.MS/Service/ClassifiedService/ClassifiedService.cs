@@ -13,7 +13,7 @@ namespace QLN.Classified.MS.Service
     public class ClassifiedService : IClassifiedService
     {
         private readonly DaprClient _dapr;
-        private const string SearchAppId = "searchservice";
+        private const string SearchAppId = "qln-search-ms";
 
         public ClassifiedService(DaprClient dapr)
         {
