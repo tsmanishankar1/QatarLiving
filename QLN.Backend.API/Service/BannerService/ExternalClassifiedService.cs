@@ -11,7 +11,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 {
     public class ExternalClassifiedService : IClassifiedService
     {
-        private const string SERVICE_APP_ID = "qln-classifieds-ms";
+        private const string SERVICE_APP_ID = "qln-classified-ms";
         private readonly DaprClient _dapr;
         private readonly IEventlogger _log;
 
