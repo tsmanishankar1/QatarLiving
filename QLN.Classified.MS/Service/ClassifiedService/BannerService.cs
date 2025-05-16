@@ -128,8 +128,7 @@ namespace QLN.Classified.MS.Service.BannerService
                 var imageList = (await GetAllImages() ?? Enumerable.Empty<BannerImage>()).ToList();
 
                 var result = new List<Banner>();
-
-                Console.WriteLine("== BANNER == Processing each banner...");
+                
 
                 foreach (var entry in bannerBulk)
                 {

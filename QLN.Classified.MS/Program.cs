@@ -9,6 +9,11 @@ using QLN.Classified.MS.Service;
 using QLN.Common.Swagger;
 using QLN.Classified.MS.Service.BannerService;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
+using Microsoft.EntityFrameworkCore;
+using System;
+using QLN.Common.Infrastructure.DbContext;
+using Microsoft.AspNetCore.Identity;
+using QLN.Common.Infrastructure.Model;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,8 +63,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
       opt.TokenValidationParameters.NameClaimType = "name";
   });
 builder.Services.AddAuthorization();
-
 builder.Services.AddDaprClient();
+
+#region database context
+builder.Services.AddDbContext<QatarlivingDevContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+#endregion
+
+builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>()
+    .AddEntityFrameworkStores<QatarlivingDevContext>()
+    .AddDefaultTokenProviders();
 
 builder.Services.AddScoped<IBannerService, BannerService>();
 builder.Services.AddScoped<IClassifiedService, ClassifiedService>();
