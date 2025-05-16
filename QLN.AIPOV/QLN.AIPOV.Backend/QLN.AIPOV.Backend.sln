@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QLN.AIPOV.Backend.API", "QLN.AIPOV.Backend.API\QLN.AIPOV.Backend.API.csproj", "{4D0FAA8F-8D2B-A8A6-CCFA-648141755DE2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QLN.AIPOV.Backend.AppHost", "QLN.AIPOV.Backend.AppHost\QLN.AIPOV.Backend.AppHost.csproj", "{BAFAB0C4-13EF-4F4B-B42D-95A7CF679312}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QLN.AIPOV.Backend.ServiceDefaults", "QLN.AIPOV.Backend.ServiceDefaults\QLN.AIPOV.Backend.ServiceDefaults.csproj", "{F40314DA-D3D0-F70E-39E6-5F597DB1E6E6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QLN.AIPOV.Backend.Infrastructure", "QLN.AIPOV.Backend.Infrastructure\QLN.AIPOV.Backend.Infrastructure.csproj", "{3415539E-A383-4014-A6C6-227B4FEB3F40}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QLN.AIPOV.Backend.Application", "QLN.AIPOV.Backend.Application\QLN.AIPOV.Backend.Application.csproj", "{33093CB7-90EA-443B-ADB5-92730398F6EB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QLN.AIPOV.Backend.Domain", "QLN.AIPOV.Backend.Domain\QLN.AIPOV.Backend.Domain.csproj", "{EF486261-FB71-43A6-B64C-6F3EF6F34B44}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4D0FAA8F-8D2B-A8A6-CCFA-648141755DE2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D0FAA8F-8D2B-A8A6-CCFA-648141755DE2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D0FAA8F-8D2B-A8A6-CCFA-648141755DE2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D0FAA8F-8D2B-A8A6-CCFA-648141755DE2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BAFAB0C4-13EF-4F4B-B42D-95A7CF679312}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BAFAB0C4-13EF-4F4B-B42D-95A7CF679312}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BAFAB0C4-13EF-4F4B-B42D-95A7CF679312}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BAFAB0C4-13EF-4F4B-B42D-95A7CF679312}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F40314DA-D3D0-F70E-39E6-5F597DB1E6E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F40314DA-D3D0-F70E-39E6-5F597DB1E6E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F40314DA-D3D0-F70E-39E6-5F597DB1E6E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F40314DA-D3D0-F70E-39E6-5F597DB1E6E6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3415539E-A383-4014-A6C6-227B4FEB3F40}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3415539E-A383-4014-A6C6-227B4FEB3F40}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3415539E-A383-4014-A6C6-227B4FEB3F40}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3415539E-A383-4014-A6C6-227B4FEB3F40}.Release|Any CPU.Build.0 = Release|Any CPU
+		{33093CB7-90EA-443B-ADB5-92730398F6EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{33093CB7-90EA-443B-ADB5-92730398F6EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{33093CB7-90EA-443B-ADB5-92730398F6EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{33093CB7-90EA-443B-ADB5-92730398F6EB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF486261-FB71-43A6-B64C-6F3EF6F34B44}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF486261-FB71-43A6-B64C-6F3EF6F34B44}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF486261-FB71-43A6-B64C-6F3EF6F34B44}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF486261-FB71-43A6-B64C-6F3EF6F34B44}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0381E924-0E12-4152-B0D5-5337BB1805E6}
+	EndGlobalSection
+EndGlobal
