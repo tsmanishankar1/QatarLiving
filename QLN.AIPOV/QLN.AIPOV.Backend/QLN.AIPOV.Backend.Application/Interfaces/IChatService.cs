@@ -2,6 +2,6 @@
 {
     public interface IChatService
     {
-        Task<string> GetChatResponseAsync(string prompt, CancellationToken cancellationToken = default);
+        Task<List<string>> GetChatResponseAsync(string prompt, CancellationToken cancellationToken);
     }
 }

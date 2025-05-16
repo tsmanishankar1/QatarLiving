@@ -1,41 +1,28 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Azure.AI.OpenAI;
+using Microsoft.Extensions.Options;
+using OpenAI.Chat;
 using QLN.AIPOV.Backend.Application.Interfaces;
 using QLN.AIPOV.Backend.Application.Models.Config;
-using System.Net.Http.Json;
-using System.Text.Json;
 
 namespace QLN.AIPOV.Backend.Domain.HttpClients
 {
-    public class ChatGPTClient(HttpClient httpClient,
-        IOptions<OpenAISettingsModel> openAISettings) : IChatGPTClient
+    public class ChatGPTClient(AzureOpenAIClient openAIClient, IOptions<OpenAISettingsModel> openAISettings) : IChatGPTClient
     {
         private readonly OpenAISettingsModel _openAISettings = openAISettings.Value;
-        public async Task<string> GetChatResponseAsync(string prompt, CancellationToken cancellationToken = default)
+
+        public async Task<List<string>> GetChatResponseAsync(string prompt, CancellationToken cancellationToken = default)
         {
-            var requestBody = new
+            var chatClient = openAIClient.GetChatClient(_openAISettings.Model);
+
+            var messages = new List<ChatMessage>()
             {
-                model = _openAISettings.Model,
-                messages = new[]
-                {
-                    new { role = "system", content = "You are a helpful assistant that creates job specs." },
-                    new { role = "user", content = prompt }
-                },
-                max_tokens = 200
+                new SystemChatMessage(_openAISettings.SystemPrompt),
+                new UserChatMessage(prompt)
             };
 
-            var response = await httpClient.PostAsJsonAsync("", requestBody, cancellationToken);
-            response.EnsureSuccessStatusCode();
+            var chatCompletion = await chatClient.CompleteChatAsync(messages.ToArray());
 
-            var responseJson = await response.Content.ReadFromJsonAsync<JsonDocument>(cancellationToken: cancellationToken);
-
-            var assistantMessage = responseJson!
-                .RootElement
-                .GetProperty("choices")[0]
-                .GetProperty("message")
-                .GetProperty("content")
-                .GetString() ?? string.Empty;
-
-            return assistantMessage;
+            return chatCompletion.Value.Content.Select(x => x.Text).ToList();
         }
     }
 }

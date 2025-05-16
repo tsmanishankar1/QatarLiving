@@ -1,4 +1,5 @@
 using QLN.AIPOV.Backend.API;
+using QLN.AIPOV.Backend.API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,9 +15,12 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi()
     .AddApiConfig(configuration)
     .AddApiServices()
-    .AddHttpClients(); ;
+    .AddHttpClients()
+    .AddAzureOpenAIClient(configuration);
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.MapDefaultEndpoints();
 

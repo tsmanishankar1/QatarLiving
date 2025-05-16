@@ -11,7 +11,7 @@ namespace QLN.AIPOV.Backend.API.Controllers
         [HttpPost]
         public async Task<IActionResult> SendMessage([FromBody] ChatRequest request)
         {
-            var response = await chatService.GetChatResponseAsync(request.Message);
+            var response = await chatService.GetChatResponseAsync(request.Message, new CancellationToken());
             return Ok(new { message = response });
         }
     }
