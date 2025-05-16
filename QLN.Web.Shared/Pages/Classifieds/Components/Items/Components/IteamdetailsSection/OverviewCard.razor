@@ -1,0 +1,63 @@
+@using MudBlazor
+
+<MudPaper Class="pa-4" Elevation="0" Style="background-color:#f7f8fa;">
+    <MudText Typo="Typo.h6" Class="mb-4 overview-heading">Overview</MudText>
+
+    <MudGrid GutterSize="16px">
+        @foreach (var item in OverviewData)
+        {
+            <MudItem xs="12" sm="6" md="4">
+                <MudPaper Class="custom-mudpaper" Elevation="0">
+                    <img src="@item.Icon" class="icon-img" />
+                    <MudText Class="overview-text">@item.Label</MudText>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+</MudPaper>
+
+@code {
+    private record OverviewItem(string Icon, string Label);
+    private List<OverviewItem> OverviewData = new()
+{
+new("/images/classifieds/brand_icons.svg", "Brand: Google"),
+new("/images/classifieds/model_icons.svg", "Model: Pixel 9 Pro XL"),
+new("/images/classifieds/colour_icon.svg", "Colour: White"),
+new("/images/classifieds/storage_icon.svg", "Storage: 256GB"),
+new("/images/classifieds/battery_icons.svg", "Battery: 86%"),
+new("/images/classifieds/chip_icons.svg", "Chip: Tensor 4"),
+new("/images/classifieds/wireless_icon.svg", "Wireless Charging"),
+new("/images/classifieds/warranty_icon.svg", "Under Warranty")
+};
+}
+
+<style>
+    .custom-mudpaper {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: white;
+        padding: 16px !important;
+        border-radius: 8px;
+    }
+
+    .icon-img {
+        width: 24px;
+        height: 24px;
+        object-fit: contain;
+    }
+
+    .overview-text {
+        font-family: 'Public Sans', sans-serif !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        color: var(--color-text-heading) !important;
+    }
+
+    .overview-heading {
+        font-family: 'Public Sans', sans-serif !important;
+        font-size: 25px !important;
+        font-weight: 600 !important;
+        color: var(--color-text-heading) !important;
+    }
+</style>

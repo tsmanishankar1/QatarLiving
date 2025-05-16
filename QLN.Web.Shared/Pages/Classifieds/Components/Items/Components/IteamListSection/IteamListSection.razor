@@ -1,0 +1,248 @@
+@using MudBlazor
+@using QLN.Web.Shared.Components.Classifieds.PromotedItemCards
+@using QLN.Web.Shared.Models
+@using QLN.Web.Shared.Components.BreadCrumb
+@using QLN.Web.Shared.Components.PaginationFooter
+@implements IDisposable
+@inject NavigationManager NavigationManager
+
+<Breadcrumb Items="breadcrumbItems" />
+<div class="item-list">
+    <div class="item-list-header">
+        <div class="item-list-left">
+            <h3 class="results-count">@($"Items in Qatar ({items.Count} results)")</h3>
+        </div>
+
+        <div class="sort-section">
+            <MudSelect T="string" @bind-Value="selectedSort" Dense="true" Variant="Variant.Outlined"
+                style="background-color: var(--color-background)">
+                @foreach (var option in sortOptions)
+                {
+                    <MudSelectItem Value="@option.Key">@option.Value</MudSelectItem>
+                }
+            </MudSelect>
+        </div>
+    </div>
+
+
+    @if (ViewMode == "grid")
+    {
+        <MudGrid GutterSize="16px" style="padding: 0 40px;">
+            @foreach (var item in items)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <PromotedItemGridCard Item="item" />
+                </MudItem>
+            }
+        </MudGrid>
+    }
+    else if (ViewMode == "list")
+    {
+        <div class="list-view-wrapper">
+            <div class="list-view-left">
+                @foreach (var item in items)
+                {
+                    <PromotedItemListCard Item="item" />
+                }
+            </div>
+
+            <div class="list-view-right">
+                <img src="/images/classifieds/ad_image.svg" alt="Ad Banner" class="ad-image" />
+            </div>
+        </div>
+
+    }
+
+
+    <!-- Pagination -->
+    <PaginationFooter TotalItems="items.Count" CurrentPage="currentPage" PageSize="pageSize"
+        OnPageChange="HandlePageChange" OnPageSizeChange="HandlePageSizeChange" />
+
+</div>
+
+@code {
+    private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
+    private string selectedSort = "default";
+    [Parameter]
+    public string ViewMode { get; set; } = "grid";
+    private int currentPage = 1;
+    private int pageSize = 12;
+
+    private void HandlePageChange(int newPage)
+    {
+        currentPage = newPage;
+    }
+
+    private void HandlePageSizeChange(int newSize)
+    {
+        pageSize = newSize;
+    }
+
+    private bool IsFirstPage => currentPage == 1;
+    private bool IsLastPage => currentPage * pageSize >= items.Count;
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += OnLocationChanged;
+        UpdateBreadcrumb(NavigationManager.Uri);
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        UpdateBreadcrumb(e.Location);
+        StateHasChanged(); // Force UI to refresh after breadcrumb change
+    }
+
+    private void UpdateBreadcrumb(string uri)
+    {
+        var lowerUri = uri.ToLower();
+
+        string routeSegment = lowerUri switch
+        {
+            var x when x.Contains("/classifieds/preloved") => "Preloved",
+            var x when x.Contains("/classifieds/collectibles") => "Collectibles",
+            _ => "Items"
+        };
+
+        string routeUrl = routeSegment.ToLower();
+
+        breadcrumbItems = new()
+{
+new() { Label = "Classifieds", Url = "/classifieds" },
+new() { Label = routeSegment, Url = $"/classifieds/{routeUrl}", IsLast = true }
+};
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+
+    private List<KeyValuePair<string, string>> sortOptions = new()
+{
+new("default", "Default"),
+new("priceLow", "Price: Low to High"),
+new("priceHigh", "Price: High to Low")
+};
+
+
+
+    private List<PromotedItem> items = new()
+{
+new PromotedItem { Title = "Pixel 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {
+"/images/classifieds/google_image1.svg",
+"/images/classifieds/google_image2.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg"},
+Color = "White", Storage = "256GB", Battery = "85%", Processor = "Tensor 4", CompanyLogoUrl =
+"/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
+new PromotedItem { Title = "goggle 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {
+"/images/classifieds/item_one.svg",
+"/images/classifieds/item_one.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg"},
+Color = "White", Storage = "256GB", Battery = "85%", Processor = "Tensor 4", CompanyLogoUrl =
+"/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
+
+new PromotedItem { Title = "Pixel 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {
+"/images/classifieds/google_image1.svg",
+"/images/classifieds/google_image2.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg"},
+Color = "White", Storage = "256GB", Battery = "85%", Processor = "Tensor 4", CompanyLogoUrl =
+"/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
+new PromotedItem { Title = "goggle 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {
+"/images/classifieds/item_one.svg",
+"/images/classifieds/item_one.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg"},
+Color = "White", Storage = "256GB", Battery = "85%", Processor = "Tensor 4", CompanyLogoUrl =
+"/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
+
+new PromotedItem { Title = "Pixel 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {
+"/images/classifieds/google_image1.svg",
+"/images/classifieds/google_image2.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg"},
+Color = "White", Storage = "256GB", Battery = "85%", Processor = "Tensor 4", CompanyLogoUrl =
+"/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
+new PromotedItem { Title = "goggle 9 Pro XL", Price = "$3,400", Company = "QLN", Location = "Doha", Images = new() {
+"/images/classifieds/item_one.svg",
+"/images/classifieds/item_one.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg"},
+Color = "White", Storage = "256GB", Battery = "85%", Processor = "Tensor 4", CompanyLogoUrl =
+"/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
+};
+
+}
+
+<style>
+    .footer-pagination-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 32px 40px 0;
+    }
+
+    .pagination-center {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .pagination-button {
+        background-color: var(--color-background);
+        color: #475467;
+        text-transform: capitalize;
+    }
+
+    .pagination-icon {
+        color: #475467;
+    }
+
+    .item-list-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+    }
+
+    .item-list-left {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .results-count {
+        color: #212529;
+        /* Adjust this to match the heading color in your image */
+        font-weight: 500;
+    }
+
+    .sort-section {
+        min-width: 200px;
+    }
+
+    .list-view-wrapper {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+    }
+
+    .list-view-left {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .list-view-right {
+        width: 340px;
+        flex-shrink: 0;
+        position: sticky;
+        top: 16px;
+    }
+
+    .ad-image {
+        width: 100%;
+        height: 384px;
+        object-fit: cover;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+
+    .pagination-container {
+        margin-top: 24px;
+    }
+</style>

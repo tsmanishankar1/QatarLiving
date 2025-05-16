@@ -1,4 +1,7 @@
-<MudPaper Elevation="0" Class="px-4 py-2 d-flex justify-center tab-bar-wrapper" 
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+<MudPaper Elevation="0" Class="px-4 py-2 d-flex justify-center tab-bar-wrapper"
           Style="background-color: var(--color-background);">
     @foreach (var item in tabItems)
     {
@@ -22,62 +25,71 @@
 </MudPaper>
 
 @code {
-    [Parameter] public EventCallback<string> OnTabChanged { get; set; }
-
-    private TabItem? activeTab;
-
     private List<TabItem> tabItems = new()
     {
         new TabItem {
             Text = "Items",
-            Key = "items",
+            Route = "/classifieds/items",
             ImagePath = "/images/classifieds/tab/classifieds_items.svg"
         },
         new TabItem {
             Text = "Deals",
-            Key = "deals",
+            Route = "/classifieds/deals",
             ImagePath = "/images/classifieds/tab/classifieds_deals.svg"
         },
         new TabItem {
             Text = "Stores",
-            Key = "stores", 
+            Route = "/classifieds/stores",
             ImagePath = "/images/classifieds/tab/classifieds_store.svg"
         },
         new TabItem {
             Text = "Preloved",
-            Key = "preloved",
+            Route = "/classifieds/preloved",
             ImagePath = "/images/classifieds/tab/classifieds_preloved.svg"
         },
         new TabItem {
             Text = "Collectibles",
-            Key = "collectibles",
+            Route = "/classifieds/collectibles",
             ImagePath = "/images/classifieds/tab/classifieds_collectibles.svg"
         }
     };
 
-    private async Task OnTabSelected(TabItem selected)
+    protected override void OnInitialized()
     {
-        if (activeTab == selected)
-        {
-            selected.IsActive = false;
-            activeTab = null;
-            await OnTabChanged.InvokeAsync(null);
-        }
-        else
-        {
-            foreach (var item in tabItems)
-                item.IsActive = item == selected;
+        NavigationManager.LocationChanged += HandleLocationChanged;
+        UpdateActiveTab(NavigationManager.Uri);
+    }
 
-            selected.IsActive = true;
-            activeTab = selected;
-            await OnTabChanged.InvokeAsync(selected.Key);
+    private void HandleLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        UpdateActiveTab(e.Location);
+        StateHasChanged(); // Force UI update after route change
+    }
+
+    private void UpdateActiveTab(string currentUri)
+    {
+        var uri = currentUri.ToLower();
+
+        foreach (var item in tabItems)
+        {
+            item.IsActive = uri.Contains(item.Route.ToLower());
         }
+    }
+
+    private void OnTabSelected(TabItem selected)
+    {
+        NavigationManager.NavigateTo(selected.Route);
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= HandleLocationChanged;
     }
 
     public class TabItem
     {
         public string Text { get; set; }
-        public string Key { get; set; }
+        public string Route { get; set; }
         public string ImagePath { get; set; }
         public bool IsActive { get; set; }
     }

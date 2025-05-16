@@ -1,3 +1,4 @@
+@inherits QLN.Web.Shared.Components.Classifieds.PromotedItemCards.PromotedItemCardBase
 @using MudBlazor
 @using QLN.Web.Shared.Models
 
@@ -31,7 +32,7 @@
         }
     </div>
 
-    <div class="list-card-info" @onclick="() => OnSelect.InvokeAsync(Item)">
+    <div class="list-card-info" @onclick="() => HandleSelect(Item)">
         <div class="list-card-category">@Item.Category</div>
         <h3 class="list-card-title">@Item.Title</h3>
 
@@ -54,25 +55,6 @@
         </div>
     </div>
 </div>
-
-@code {
-    [Parameter] public PromotedItem Item { get; set; } = new();
-    [Parameter] public EventCallback<PromotedItem> OnSelect { get; set; }
-    [Parameter] public EventCallback<PromotedItem> OnHeartClick { get; set; }
-
-    private bool isHovered = false;
-    private bool isFavorite = false;
-    private int activeIndex = 0;
-
-    private async Task ToggleFavorite(PromotedItem item)
-    {
-        isFavorite = !isFavorite;
-        await OnHeartClick.InvokeAsync(item);
-    }
-    private string heartIconListClass => isFavorite ? "heart-icon-fav filled" : "heart-icon-fav outlined";
-    private void PrevImage() => activeIndex = (activeIndex - 1 + Item.Images.Count) % Item.Images.Count;
-    private void NextImage() => activeIndex = (activeIndex + 1) % Item.Images.Count;
-}
 
 <style>
     .list-card {

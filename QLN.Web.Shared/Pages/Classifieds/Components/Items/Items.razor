@@ -1,27 +1,22 @@
 @using MudBlazor
 @using QLN.Web.Shared.Models
-@using QLN.Web.Shared.Pages.Classifieds.Components.Items.Components
+@using QLN.Web.Shared.Pages.Classifieds.Components.Items.Components.SearchSection
+@using QLN.Web.Shared.Pages.Classifieds.Components.Items.Components.IteamListSection
+@using QLN.Web.Shared.Pages.Classifieds.Components.Items.Components.IteamdetailsSection
+@layout ClassifiedsLayout
 
 <div style="width: 100%; background-color: var(--color-secondary-background);">
 
-    @if (SelectedItem is null)
-    {
-        <SearchSection OnViewModeChanged="HandleViewModeChange" />
-    }
+    <SearchSection OnViewModeChanged="HandleViewModeChange" />
 
     <div style="width: 100%; padding: 0px 40px;">
         <div class="category-banner-wrapper">
             <img src="/images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
         </div>
 
-        @if (SelectedItem is null)
-        {
-            <IteamList OnItemSelected="HandleItemSelected" ViewMode="@currentViewMode" />
-        }
-        else
-        {
-            <Iteamdetails Item="SelectedItem" />
-        }
+
+        <IteamListSection ViewMode="@currentViewMode" />
+
     </div>
 </div>
 
@@ -32,12 +27,7 @@
     {
         currentViewMode = newMode;
     }
-    private PromotedItem? SelectedItem;
 
-    private void HandleItemSelected(PromotedItem item)
-    {
-        SelectedItem = item;
-    }
 }
 
 <style>

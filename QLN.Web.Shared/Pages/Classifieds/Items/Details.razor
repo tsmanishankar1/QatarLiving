@@ -1,0 +1,147 @@
+@page "/classifieds/items/details"
+@page "/classifieds/preloved/details"
+@page "/classifieds/collectibles/details"
+
+@using System.Text.Json
+@using Microsoft.AspNetCore.WebUtilities
+@using QLN.Web.Shared.Models
+@using QLN.Web.Shared.Pages.Classifieds.Components.Items.Components.IteamdetailsSection
+@using QLN.Web.Shared.Components.Classifieds.PromotedItemCards
+@inject NavigationManager NavigationManager
+@layout ClassifiedsLayout
+
+<div style="width: 100%; background-color: var(--color-secondary-background);">
+    <div style="width: 100%; padding: 0px 40px;">
+        <div class="category-banner-wrapper">
+            <img src="/images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
+        </div>
+
+        @if (Item is not null)
+        {
+            <Iteamdetails Item="Item" />
+            <div style="margin: 40px 0 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin: 40px 0 16px;">
+                    <span class="similar-items-title">Similar Items</span>
+                    <a class="view-all-link" href="@viewAllUrl">View All</a>
+                </div>
+                <MudGrid GutterSize="16px">
+                    @foreach (var item in items)
+                    {
+                        <MudItem xs="12" sm="6" md="4">
+                            <PromotedItemGridCard Item="item" />
+                        </MudItem>
+                    }
+                </MudGrid>
+            </div>
+        }
+        else
+        {
+            <p class="no-selection">Invalid or missing item data.</p>
+        }
+    </div>
+</div>
+
+@code {
+    private PromotedItem? Item;
+    private string category = "items"; // default
+    private string viewAllUrl => $"/classifieds/{category}";
+
+    protected override void OnInitialized()
+    {
+        var uri = new Uri(NavigationManager.Uri);
+        var queryParams = QueryHelpers.ParseQuery(uri.Query);
+
+        // Detect category from path
+        var pathSegments = uri.AbsolutePath.Split("/", StringSplitOptions.RemoveEmptyEntries);
+        if (pathSegments.Length >= 2)
+            category = pathSegments[1]; // "items", "preloved", or "collectibles"
+
+        if (queryParams.TryGetValue("data", out var encodedJson))
+        {
+            var json = Uri.UnescapeDataString(encodedJson!);
+            Item = JsonSerializer.Deserialize<PromotedItem>(json);
+        }
+    }
+
+    private List<PromotedItem> items = new()
+{
+new PromotedItem
+{
+Title = "Pixel 9 Pro XL",
+Price = "$3,400",
+Company = "QLN",
+Location = "Doha",
+Images = new() {
+"/images/classifieds/google_image1.svg",
+"/images/classifieds/google_image2.svg",
+"/images/classifieds/google_image3.svg"
+},
+Color = "White",
+Storage = "256GB",
+Battery = "85%",
+Processor = "Tensor 4",
+CompanyLogoUrl = "/images/classifieds/item_logo.svg",
+Category = "Smartphone",
+IsPromoted = true,
+Condition = "Brand New"
+},
+new PromotedItem
+{
+Title = "Google 9 Pro XL",
+Price = "$3,400",
+Company = "QLN",
+Location = "Doha",
+Images = new() {
+"/images/classifieds/item_one.svg"
+},
+Color = "White",
+Storage = "256GB",
+Battery = "85%",
+Processor = "Tensor 4",
+CompanyLogoUrl = "/images/classifieds/item_logo.svg",
+Category = "Smartphone",
+IsPromoted = true,
+Condition = "Brand New"
+}
+};
+}
+
+
+
+
+<style>
+    .category-banner-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    .category-banner-image {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        object-fit: cover;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+
+    .similar-items-title {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--color-text-heading);
+    }
+
+    .view-all-link {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        color: #ff6600;
+        /* Match the orange tone in the image */
+        text-decoration: none;
+    }
+
+    .view-all-link:hover {
+        text-decoration: underline;
+    }
+</style>

@@ -1,5 +1,4 @@
-/* PromotedItem.cs */
-namespace  QLN.Web.Shared.Models
+namespace QLN.Web.Shared.Models
 {
     public class PromotedItem
     {

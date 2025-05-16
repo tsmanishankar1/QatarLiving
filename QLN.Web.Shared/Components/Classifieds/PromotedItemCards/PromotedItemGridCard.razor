@@ -1,3 +1,4 @@
+@inherits QLN.Web.Shared.Components.Classifieds.PromotedItemCards.PromotedItemCardBase
 @using MudBlazor
 @using QLN.Web.Shared.Models
 
@@ -10,10 +11,9 @@
         </div>
     }
 
-    <MudIconButton Icon="@(isFavorite ? Icons.Material.Filled.Favorite : Icons.Material.Outlined.FavoriteBorder)"
-                   Color="@(isFavorite ? Color.Error : Color.Inherit)"
-                   OnClick="@(() => HandleHeartClick(Item))"
-                   Class="@heartIconClass" />
+    <MudIconButton Icon="@(isFavorite? Icons.Material.Filled.Favorite : Icons.Material.Outlined.FavoriteBorder)"
+        Color="@(isFavorite? Color.Error: Color.Inherit)" OnClick="@(() => HandleHeartClick(Item))"
+        Class="@heartIconClass" />
 
     <div class="carousel-container" @onmouseover="() => isHovered = true" @onmouseout="() => isHovered = false">
         <img src="@Item.Images[activeIndex]" alt="@Item.Title" class="card-image" />
@@ -32,7 +32,7 @@
         }
     </div>
 
-    <div class="card-content"  @onclick="() => OnSelect.InvokeAsync(Item)">
+    <div class="card-content" @onclick="() => HandleSelect(Item)">
         <div class="category">@Item.Category</div>
         <h3 class="title">@Item.Title</h3>
         <div class="features">
@@ -55,33 +55,7 @@
     </div>
 </div>
 
-@code {
-    [Parameter] public PromotedItem Item { get; set; } = new();
-    [Parameter] public EventCallback<PromotedItem> OnSelect { get; set; }
-    [Parameter] public EventCallback<PromotedItem> OnHeartClick { get; set; }
 
-    private bool isFavorite = false;
-    private bool isHovered = false;
-    private int activeIndex = 0;
-
-    private string heartIconClass => isFavorite ? "heart-icon filled" : "heart-icon outlined";
-
-    private async Task HandleHeartClick(PromotedItem item)
-    {
-        isFavorite = !isFavorite;
-        await OnHeartClick.InvokeAsync(item);
-    }
-
-    private void PrevImage()
-    {
-        activeIndex = (activeIndex - 1 + Item.Images.Count) % Item.Images.Count;
-    }
-
-    private void NextImage()
-    {
-        activeIndex = (activeIndex + 1) % Item.Images.Count;
-    }
-}
 <style>
     .card {
         position: relative;
@@ -91,7 +65,7 @@
         font-family: 'Public Sans', sans-serif;
         transition: transform 0.3s ease;
         flex: 1 1 auto;
-    max-width: 100%;
+        max-width: 100%;
     }
 
     .card:hover {
@@ -124,12 +98,13 @@
         box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
         z-index: 2;
     }
-     .heart-icon.filled {
+
+    .heart-icon.filled {
         color: #FF7F38 !important;
         background: white !important;
     }
 
-     .heart-icon.outlined {
+    .heart-icon.outlined {
         color: #FF7F38 !important;
         background: white !important;
     }
