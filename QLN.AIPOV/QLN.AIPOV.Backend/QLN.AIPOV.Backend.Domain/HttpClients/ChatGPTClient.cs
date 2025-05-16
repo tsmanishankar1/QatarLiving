@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Options;
 using OpenAI.Chat;
 using QLN.AIPOV.Backend.Application.Interfaces;
+using QLN.AIPOV.Backend.Application.Models.Chat;
 using QLN.AIPOV.Backend.Application.Models.Config;
 
 namespace QLN.AIPOV.Backend.Domain.HttpClients
@@ -10,7 +11,7 @@ namespace QLN.AIPOV.Backend.Domain.HttpClients
     {
         private readonly OpenAISettingsModel _openAISettings = openAISettings.Value;
 
-        public async Task<List<string>> GetChatResponseAsync(string prompt, CancellationToken cancellationToken = default)
+        public async Task<ChatSessionModel> GetChatResponseAsync(string prompt, CancellationToken cancellationToken = default)
         {
             var chatClient = openAIClient.GetChatClient(_openAISettings.Model);
 
@@ -22,7 +23,21 @@ namespace QLN.AIPOV.Backend.Domain.HttpClients
 
             var chatCompletion = await chatClient.CompleteChatAsync(messages.ToArray());
 
-            return chatCompletion.Value.Content.Select(x => x.Text).ToList();
+            var session = new ChatSessionModel();
+            // Add user message
+            session.Messages.Add(new ChatMessageModel { Role = "user", Content = prompt });
+
+            // Add assistant responses
+            foreach (var choice in chatCompletion.Value.Content)
+            {
+                session.Messages.Add(new ChatMessageModel
+                {
+                    Role = "assistant",
+                    Content = choice.Text
+                });
+            }
+
+            return session;
         }
     }
 }

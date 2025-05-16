@@ -1,7 +1,9 @@
-﻿namespace QLN.AIPOV.Backend.Application.Interfaces
+﻿using QLN.AIPOV.Backend.Application.Models.Chat;
+
+namespace QLN.AIPOV.Backend.Application.Interfaces
 {
     public interface IChatService
     {
-        Task<List<string>> GetChatResponseAsync(string prompt, CancellationToken cancellationToken);
+        Task<ChatSessionModel> GetChatResponseAsync(string prompt, CancellationToken cancellationToken);
     }
 }

@@ -1,9 +1,9 @@
-﻿using Azure.AI.OpenAI;
+﻿using Azure;
+using Azure.AI.OpenAI;
 using QLN.AIPOV.Backend.Application.Interfaces;
 using QLN.AIPOV.Backend.Application.Models.Config;
 using QLN.AIPOV.Backend.Domain.HttpClients;
 using QLN.AIPOV.Backend.Domain.Services;
-using System.ClientModel;
 
 namespace QLN.AIPOV.Backend.API
 {
@@ -35,7 +35,11 @@ namespace QLN.AIPOV.Backend.API
             if (config == null || string.IsNullOrEmpty(config.ApiKey) || string.IsNullOrEmpty(config.Endpoint))
                 throw new ArgumentException("OpenAI API Key and Endpoint must be provided.");
 
-            services.AddSingleton(new AzureOpenAIClient(new Uri(config.Endpoint), new ApiKeyCredential(config.ApiKey)));
+            if (string.IsNullOrEmpty(config.Endpoint) || string.IsNullOrEmpty(config.ApiKey))
+                throw new ArgumentException("Azure OpenAI configuration is missing.");
+
+            services.AddSingleton(new AzureOpenAIClient(new Uri(config.Endpoint),
+                new AzureKeyCredential(config.ApiKey)));
 
             return services;
         }
