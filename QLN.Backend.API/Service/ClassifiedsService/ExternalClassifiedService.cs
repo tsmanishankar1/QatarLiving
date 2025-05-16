@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Dapr.Client;
+using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService.BannerService;
@@ -11,7 +13,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
 {
     public class ExternalClassifiedService : IClassifiedService
     {
-        private const string SERVICE_APP_ID = "qln-classified-ms";
+        private const string SERVICE_APP_ID = ConstantValues.ClassifiedServiceApp;
+        private const string Vertical = ConstantValues.ClassifiedsVertical;
+
         private readonly DaprClient _dapr;
         private readonly IEventlogger _log;
 
@@ -21,10 +25,10 @@ namespace QLN.Backend.API.Service.ClassifiedService
             _log = log ?? throw new ArgumentNullException(nameof(log));
         }
 
-        public async Task<IEnumerable<ClassifiedIndexDto>> SearchAsync(
-            string vertical,
-            ClassifiedSearchRequest request)
+        public async Task<IEnumerable<ClassifiedIndexDto>> Search(ClassifiedSearchRequest request)
         {
+            if (request is null) throw new ArgumentNullException(nameof(request));
+
             try
             {
                 var result = await _dapr.InvokeMethodAsync<
@@ -32,7 +36,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     ClassifiedIndexDto[]>(
                         HttpMethod.Post,
                         SERVICE_APP_ID,
-                        $"api/{vertical}/search",
+                        $"/api/{Vertical}/search",
                         request
                     );
 
@@ -45,16 +49,16 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<ClassifiedIndexDto?> GetByIdAsync(
-            string vertical,
-            string id)
+        public async Task<ClassifiedIndexDto?> GetById(string id)
         {
+            if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException("Id is required", nameof(id));
+
             try
             {
                 return await _dapr.InvokeMethodAsync<ClassifiedIndexDto>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"api/{vertical}/{id}"
+                    $"/api/{Vertical}/{id}"
                 );
             }
             catch (Exception ex)
@@ -64,37 +68,44 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<string> UploadAsync(
-            string vertical,
-            ClassifiedIndexDto document)
+        public async Task<string> Upload(ClassifiedIndexDto document)
         {
+            if (document is null) throw new ArgumentNullException(nameof(document));
+
+/*            var req = new CommonIndexRequest
+            {
+                VerticalName = Vertical,
+                ClassifiedsItem = document
+            };*/
+
             try
             {
-                return await _dapr.InvokeMethodAsync<
-                    ClassifiedIndexDto,
-                    string>(
-                        HttpMethod.Post,
-                        SERVICE_APP_ID,
-                        $"api/{vertical}/upload",
-                        document
-                    );
+                return await _dapr.InvokeMethodAsync<ClassifiedIndexDto, string>(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    $"/api/{Vertical}/upload",
+                    document,
+                    CancellationToken.None
+                );
             }
             catch (Exception ex)
             {
                 _log.LogException(ex);
-                throw;
+                throw new InvalidOperationException(
+                    $"Dapr invoke to '/api/{Vertical}/upload' failed: {ex.Message}",
+                    ex
+                );
             }
         }
 
-        public async Task<ClassifiedLandingPageResponse> GetLandingPageAsync(
-            string vertical)
+        public async Task<ClassifiedLandingPageResponse> GetLandingPage()
         {
             try
             {
                 return await _dapr.InvokeMethodAsync<ClassifiedLandingPageResponse>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"api/{vertical}/landing"
+                    $"/api/{Vertical}/landing"
                 );
             }
             catch (Exception ex)

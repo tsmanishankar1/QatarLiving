@@ -9,19 +9,9 @@ namespace QLN.Common.Infrastructure.IService.BannerService
 {
     public interface IClassifiedService
     {
-        Task<ClassifiedLandingPageResponse> GetLandingPageAsync(string vertical);
-        Task<IEnumerable<ClassifiedIndexDto>> SearchAsync(
-            string vertical,
-            ClassifiedSearchRequest request
-        );
-
-        Task<ClassifiedIndexDto?> GetByIdAsync(
-            string vertical,
-            string id
-        );
-        Task<string> UploadAsync(
-            string vertical,
-            ClassifiedIndexDto document
-        );
+        Task<IEnumerable<ClassifiedIndexDto>> Search(ClassifiedSearchRequest request);
+        Task<ClassifiedIndexDto?> GetById(string id);
+        Task<string> Upload(ClassifiedIndexDto document);
+        Task<ClassifiedLandingPageResponse> GetLandingPage();
     }
 }
