@@ -1,12 +1,16 @@
-﻿@using QLN.AIPOV.Frontend.ChatBot.Models.Chat
-<MudList Dense="true" T="ChatMessageModel">
+﻿<MudList Dense="true" T="ChatMessageModel">
     @if (Messages != null)
     {
         @foreach (var msg in Messages)
         {
             <MudListItem>
-                <MudPaper Class="pa-2 mb-2" Elevation="1" Style=@($"background:{GetRoleColor(msg.Role)}")>
-                    <b>@msg.Role:</b> @msg.Content
+                <MudPaper Class="pa-2 mb-2" 
+                          Elevation="1" 
+                          Style=@($"max-width: 70%; background:{GetRoleColor(msg.Role.ToLower())}; margin-left: {(msg.Role.ToLower() == "user" ? "auto" : "0")}; margin-right: {(msg.Role.ToLower() == "user" ? "0" : "auto")};")>
+                    <b>@msg.Role:</b>
+                    <MudText Typo="Typo.body1">
+                        @((MarkupString)FormatContent(msg.Content))
+                    </MudText>
                 </MudPaper>
             </MudListItem>
         }

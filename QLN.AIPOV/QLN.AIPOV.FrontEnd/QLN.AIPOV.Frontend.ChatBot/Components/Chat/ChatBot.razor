@@ -1,4 +1,10 @@
 ﻿<MudPaper Class="pa-4" Elevation="2">
     <MessageList Messages="Messages" />
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="my-2" />
+    }
+
     <MessageInput OnSend="SendMessageAsync" />
 </MudPaper>

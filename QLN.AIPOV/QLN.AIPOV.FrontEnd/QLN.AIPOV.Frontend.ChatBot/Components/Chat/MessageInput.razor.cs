@@ -14,8 +14,10 @@ namespace QLN.AIPOV.Frontend.ChatBot.Components.Chat
         {
             if (!string.IsNullOrWhiteSpace(Message))
             {
-                await OnSend.InvokeAsync(Message);
+                var message = Message;
                 Message = string.Empty;
+                StateHasChanged();
+                await OnSend.InvokeAsync(message);
             }
         }
 
