@@ -1,4 +1,6 @@
 @using MudBlazor
+@inject ApiService Api
+@using QLN.Web.Shared.Services
 @using QLN.Web.Shared.Components.Carousel
 @using QLN.Web.Shared.Components.Classifieds.FeaturedItemCard
 @using QLN.Web.Shared.Components.Classifieds.FeaturedCategoryCard
@@ -15,6 +17,7 @@
 @using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.SocialMediaSection
 @using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.FAQsSection
 @using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.PopularSearchesSection
+
 <!-- Page: Classifieds -->
 
 <!-- Main Container -->
@@ -26,13 +29,15 @@
             Transition="Transition.Slide" />
 
         <!-- Search Bar Section -->
-        <SearchBarSection   OnSearchCompleted="HandleSearchResults" />
+        <SearchBarSection OnSearchCompleted="HandleSearchResults" />
 
         <!-- Featured item -->
-        <FeaturedItemSection  FeaturedItems="featuredItemData" />
+
+        <FeaturedItemSection FeaturedItems="featuredItemData" Loading="isLoading" />
+
     </div>
     <!-- Featured Categories -->
-    <FeaturedCategorySection FeaturedCategories="featuredCategoryData"/>
+    <FeaturedCategorySection FeaturedCategories="featuredCategoryData" Loading="isLoading" />
 
     <!-- Subscription Card -->
     <SubscriptionSection />
@@ -50,9 +55,9 @@
         </div>
 
         <!-- Category Card 2 -->
-       <CategoryAdSection Categories="@categoryListDataTwo" />
+        <CategoryAdSection Categories="@categoryListDataTwo" />
 
-       <!-- Seasonal Section -->
+        <!-- Seasonal Section -->
         <SeasonalSection />
 
     </div>
@@ -76,55 +81,88 @@
 };
 
     private List<FeaturedItemCard.FeaturedItem> SearchResults = new();
+    private bool isLoading = true;
 
-    private void HandleSearchResults(List<FeaturedItemCard.FeaturedItem> results)
+    private async Task HandleSearchResults(List<FeaturedItemCard.FeaturedItem> results)
     {
-        SearchResults = results;
+        StateHasChanged();
+
+        // Map each result item manually (e.g. if `results` are of a raw DTO type)
+        featuredItemData = results.Select(item => new FeaturedItemCard.FeaturedItem
+        {
+            Title = item.Title,
+            Category = item.Category,
+            Location = item.Location,
+            ImageUrls = item.ImageUrls?.ToList() ?? new List<string>(),
+            IsFeatured = true
+        }).ToList();
+
     }
-     private List<FeaturedItemCard.FeaturedItem> featuredItemData = new()
+
+    private List<FeaturedItemCard.FeaturedItem> featuredItemData = new();
+    private List<FeaturedCategoryCard.CategoryItem> featuredCategoryData = new();
+    private List<StoreCard.StoreItem> storeData = new();
+    private List<CategoryAdCard.CategoryItem> categoryListDataOne = new();
+    private List<CategoryAdCard.CategoryItem> categoryListDataTwo = new();
+    public class LandingResponse
     {
-        new() { ImageUrl = "/images/categories/game_image.svg", Category = "Xbox Controller", Title = "Microsoft Xbox Series X|S Wireless Controller - White", Price = "2,100 QAR", Location = "The Pearl, Doha", IsFeatured = true },
-        new() { ImageUrl = "/images/categories/cycle_image.svg", Category = "Mountain Bike", Title = "Bentley Continental GT Coupe 2023", Price = "2,100 QAR", Location = "The Pearl, Doha", IsFeatured = true },
-        new() { ImageUrl = "/images/categories/phone_image.svg", Category = "iPhone 16 Pro", Title = "Apple iPhone 16 Pro - 128GB Desert Titanium", Price = "12,900 QAR", Location = "West Bay, Doha", IsFeatured = true },
-        new() { ImageUrl = "/images/categories/cycle_image.svg", Category = "Mountain Bike", Title = "Bentley Continental GT Coupe 2023", Price = "2,100 QAR", Location = "The Pearl, Doha", IsFeatured = true },
-        new() { ImageUrl = "/images/categories/phone_image.svg", Category = "iPhone 16 Pro", Title = "Apple iPhone 16 Pro - 128GB Desert Titanium", Price = "12,900 QAR", Location = "West Bay, Doha", IsFeatured = true },
-        new() { ImageUrl = "/images/categories/card_image.svg", Category = "Trading Cards", Title = "Topos Chrome Charizard Tekno #06", Price = "2,100 QAR", Location = "Al Sadd, Doha", IsFeatured = false },
-    };
-   private List<FeaturedCategoryCard.CategoryItem> featuredCategoryData = new()
+        public List<FeaturedItemCard.FeaturedItem> FeaturedItems { get; set; } = new();
+        public List<FeaturedCategoryCard.CategoryItem> FeaturedCategories { get; set; } = new();
+        public List<StoreCard.StoreItem> FeaturedStores { get; set; } = new();
+        public List<CategoryAdCard.CategoryItem> CategoryAdCounts { get; set; } = new();
+    }
+    protected override async Task OnInitializedAsync()
     {
-        new() { Name = "Ramadan Essentials", ImageUrl = "/images/categories/new1.svg" },
-        new() { Name = "Back to School", ImageUrl = "/images/categories/new2.svg" },
-        new() { Name = "Gym Motivation", ImageUrl = "/images/categories/new3.svg" },
-        new() { Name = "Outdoors & Camping", ImageUrl = "/images/categories/new4.svg" },
-        new() { Name = "Electronics Rush", ImageUrl = "/images/categories/new5.svg" },
-        new() { Name = "Cats & Dogs", ImageUrl = "/images/categories/new6.svg" }
-    };
-private List<StoreCard.StoreItem> storeData = new()
-{
-    new() { Name = "AIRBNB", LogoUrl = "images/stores/vector.svg", ItemCount = "2,152" },
-    new() { Name = "Starlink", LogoUrl = "images/stores/starlink.svg", ItemCount = "2,152" },
-    new() { Name = "MICROSOFT", LogoUrl = "images/stores/microsoft.svg", ItemCount = "2,152" },
-    new() { Name = "Lulu Hypermarket", LogoUrl = "images/stores/hypermarket.svg", ItemCount = "2,152" },
-    new() { Name = "City Hypermarket", LogoUrl = "images/stores/hypermarket_city.svg", ItemCount = "1,845" },
-    new() { Name = "Al Meera", LogoUrl = "images/stores/meera.svg", ItemCount = "3,021" },
-    // ...add more as needed
-};
-  private List<CategoryAdCard.CategoryItem> categoryListDataOne = new()
+        {
+            await LoadLandingData();
+            StateHasChanged(); // trigger UI update after async fetch
+        }
+    }
+    private async Task LoadLandingData()
     {
-        new() { Title = "Furniture & Decor", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image1.svg" },
-        new() { Title = "Electronics", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image2.svg" },
-        new() { Title = "Phones & Tablets", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image3.svg" },
-        new() { Title = "Home & Office", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image4.svg" },
-        new() { Title = "Fashion & Beauty", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image5.svg" },
-        new() { Title = "Kids & Toys", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image6.svg" },
-    };
-      private List<CategoryAdCard.CategoryItem> categoryListDataTwo = new()
-    {
-        new() { Title = "Pets & Pets Care", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image7.svg" },
-        new() { Title = "Business & Industrial", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image8.svg" },
-        new() { Title = "Gym & Fitness", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image9.svg" },
-        new() { Title = "Other", Subtitle = "19,958 ads", ImageUrl = "/images/categories/image10.svg" },
-    };
+        isLoading = true;
+        try
+        {
+            var response = await Api.GetAsync<LandingResponse>("classified/landing");
+            if (response is null) return;
+
+            featuredItemData = response.FeaturedItems.Select(item => new FeaturedItemCard.FeaturedItem
+            {
+                Title = item.Title,
+                Category = item.Category,
+                Location = item.Location,
+                ImageUrls = item.ImageUrls?.ToList() ?? new List<string>(),
+                IsFeatured = true
+            }).ToList();
+
+            featuredCategoryData = response.FeaturedCategories.Select(cat => new FeaturedCategoryCard.CategoryItem
+            {
+                Category = cat.Category,
+                ImageUrl = cat.ImageUrl
+            }).ToList();
+
+            storeData = response.FeaturedStores.Select(store => new StoreCard.StoreItem
+            {
+                StoreName = store.StoreName,
+                LogoUrl = store.LogoUrl,
+                ItemCount = store.ItemCount
+            }).ToList();
+
+            var categoryAds = response.CategoryAdCounts.Select(cat => new CategoryAdCard.CategoryItem
+            {
+                Category = cat.Category,
+                Count = cat.Count,
+                ImageUrl = $"/images/categories/card_image.svg"
+            }).ToList();
+
+            categoryListDataOne = categoryAds.Take(4).ToList();
+            categoryListDataTwo = categoryAds.Skip(4).ToList();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
 }
 
 <style>

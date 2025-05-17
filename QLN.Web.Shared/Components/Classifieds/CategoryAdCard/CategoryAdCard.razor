@@ -3,15 +3,15 @@
 
 <div class="category-card">
     <div class="category-content">
-        <div class="category-title">@Item.Title</div>
+        <div class="category-title">@Item.Category</div>
         <MudButton Variant="Variant.Text"
             Style="color: var(--color-accent); text-transform: none; justify-content: flex-start;  font-weight: 400; font-size: 14px;"
             Size="Size.Small" FullWidth="true" EndIcon="@Icons.Material.Filled.ArrowForward">
-            @Item.Subtitle
+            @Item.Count
         </MudButton>
     </div>
     <div class="category-img">
-        <img src="@Item.ImageUrl" alt="@Item.Title" />
+        <img src="@Item.ImageUrl" alt="@Item.Category" />
     </div>
 </div>
 

@@ -2,6 +2,8 @@
 @page "/classifieds/preloved/details"
 @page "/classifieds/collectibles/details"
 
+@inject ApiService Api
+@using QLN.Web.Shared.Services
 @using System.Text.Json
 @using Microsoft.AspNetCore.WebUtilities
 @using QLN.Web.Shared.Models
@@ -16,7 +18,17 @@
             <img src="/images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
         </div>
 
-        @if (Item is not null)
+        @if (isLoading)
+        {
+            <div class="loading-container">
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <MudAlert Severity="Severity.Error">@errorMessage</MudAlert>
+        }
+        else if (Item != null)
         {
             <Iteamdetails Item="Item" />
             <div style="margin: 40px 0 16px;">
@@ -44,65 +56,70 @@
 @code {
     private PromotedItem? Item;
     private string category = "items"; // default
+    private bool isLoading = true;
+    private string? errorMessage;
+
     private string viewAllUrl => $"/classifieds/{category}";
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         var uri = new Uri(NavigationManager.Uri);
         var queryParams = QueryHelpers.ParseQuery(uri.Query);
 
         // Detect category from path
-        var pathSegments = uri.AbsolutePath.Split("/", StringSplitOptions.RemoveEmptyEntries);
-        if (pathSegments.Length >= 2)
-            category = pathSegments[1]; // "items", "preloved", or "collectibles"
+        var segments = uri.AbsolutePath.Split("/", StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length >= 2)
+            category = segments[1];
 
-        if (queryParams.TryGetValue("data", out var encodedJson))
+        if (queryParams.TryGetValue("id", out var id))
         {
-            var json = Uri.UnescapeDataString(encodedJson!);
-            Item = JsonSerializer.Deserialize<PromotedItem>(json);
+            await FetchItemDetailsAsync(id!);
+        }
+        else
+        {
+            isLoading = false;
+            errorMessage = "Item ID is missing in the URL.";
+        }
+    }
+
+    private async Task FetchItemDetailsAsync(string id)
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+
+            Item = await Api.GetAsync<PromotedItem>($"classified/{id}");
+            if (Item == null)
+            {
+                errorMessage = "Item not found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error fetching item: {ex.Message}");
+            errorMessage = "An error occurred while loading the item.";
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 
     private List<PromotedItem> items = new()
 {
-new PromotedItem
-{
-Title = "Pixel 9 Pro XL",
-Price = "$3,400",
-Company = "QLN",
-Location = "Doha",
-Images = new() {
+
+new PromotedItem { Title = "Pixel 9 Pro XL", Price = 3400, Company = "QLN", Location = "Doha", ImageUrls = new() {
 "/images/classifieds/google_image1.svg",
-"/images/classifieds/google_image2.svg",
-"/images/classifieds/google_image3.svg"
-},
-Color = "White",
-Storage = "256GB",
-Battery = "85%",
-Processor = "Tensor 4",
-CompanyLogoUrl = "/images/classifieds/item_logo.svg",
-Category = "Smartphone",
-IsPromoted = true,
-Condition = "Brand New"
-},
-new PromotedItem
-{
-Title = "Google 9 Pro XL",
-Price = "$3,400",
-Company = "QLN",
-Location = "Doha",
-Images = new() {
-"/images/classifieds/item_one.svg"
-},
-Color = "White",
-Storage = "256GB",
-Battery = "85%",
-Processor = "Tensor 4",
-CompanyLogoUrl = "/images/classifieds/item_logo.svg",
-Category = "Smartphone",
-IsPromoted = true,
-Condition = "Brand New"
-}
+"/images/classifieds/google_image2.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg"},
+Colour = "White", Storage = "256GB", BatteryPercentage = 85, Processor = "Tensor 4", CompanyLogoUrl =
+"/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
+new PromotedItem { Title = "goggle 9 Pro XL", Price = 3400, Company = "QLN", Location = "Doha", ImageUrls = new() {
+"/images/classifieds/item_one.svg",
+"/images/classifieds/item_one.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg"},
+Colour = "White", Storage = "256GB", BatteryPercentage = 85, Processor = "Tensor 4", CompanyLogoUrl =
+"/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
+
 };
 }
 

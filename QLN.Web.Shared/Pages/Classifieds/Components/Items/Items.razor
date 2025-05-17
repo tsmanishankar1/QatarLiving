@@ -7,7 +7,7 @@
 
 <div style="width: 100%; background-color: var(--color-secondary-background);">
 
-    <SearchSection OnViewModeChanged="HandleViewModeChange" />
+    <SearchSection OnSearchCompleted="HandleSearchResults" OnViewModeChanged="HandleViewModeChange" />
 
     <div style="width: 100%; padding: 0px 40px;">
         <div class="category-banner-wrapper">
@@ -22,7 +22,11 @@
 
 @code {
     private string currentViewMode = "grid";
-
+    private List<dynamic> _items = new();
+    private void HandleSearchResults(List<dynamic> result)
+    {
+        _items = result;
+    }
     private void HandleViewModeChange(string newMode)
     {
         currentViewMode = newMode;

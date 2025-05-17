@@ -4,9 +4,9 @@
 
 <div class="list-card">
     <div class="list-card-img-wrapper" @onmouseover="() => isHovered = true" @onmouseout="() => isHovered = false">
-        <img src="@Item.Images[activeIndex]" class="list-card-img" alt="@Item.Title" />
+        <img src="@Item.ImageUrls[activeIndex]" class="list-card-img" alt="@Item.Title" />
 
-        @if (isHovered && Item.Images.Count > 1)
+        @if (isHovered && Item.ImageUrls.Count > 1)
         {
             <button class="list-card-img-nav left" @onclick="PrevImage">&#10094;</button>
             <button class="list-card-img-nav right" @onclick="NextImage">&#10095;</button>
@@ -24,7 +24,7 @@
             </div>
         }
 
-        <div class="list-card-img-count">@($"{activeIndex + 1}/{Item.Images.Count}")</div>
+        <div class="list-card-img-count">@($"{activeIndex + 1}/{Item.ImageUrls.Count}")</div>
 
         @if (!string.IsNullOrEmpty(Item.Condition))
         {

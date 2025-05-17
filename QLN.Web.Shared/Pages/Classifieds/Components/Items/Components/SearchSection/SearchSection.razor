@@ -1,50 +1,86 @@
 @using MudBlazor
 @using QLN.Web.Shared.Components.ViewToggleButtons
+@using QLN.Web.Shared.Components.CustomSelect
+@inject ApiService Api
+@using QLN.Web.Shared.Services
+@inject ISnackbar Snackbar
+@using QLN.Web.Shared.Helpers
+
 
 <MudPaper Class="search-container" Elevation="0">
     <div class="search-row">
-        <div class="search-col search-input-box">
-            <MudTextField @bind-Value="_searchText" Placeholder="Search" Adornment="Adornment.Start"
-                AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Class="search-input" />
+
+        <!-- Search Input -->
+        <div class="search-bar" @onfocusin="() => _isSearchFocused = true" @onfocusout="() => _isSearchFocused = false">
+            <!-- Left icon (only visible when not focused) -->
+            @if (!_isSearchFocused)
+            {
+                <div class="search-icon-left">
+                    <MudIcon Icon="@Icons.Material.Filled.Search" />
+                </div>
+            }
+
+            <!-- Search input -->
+            <input type="text" class="search-input" placeholder="Search..." @bind="_searchText" @bind:event="oninput" />
+
+            <!-- Right actions (clear and search buttons) -->
+            @if (!string.IsNullOrWhiteSpace(_searchText))
+            {
+                <div class="search-actions">
+                    <MudIconButton OnClick="PerformSearch" Class="search-action-btn search-btn">
+                        <div class="search-icon-container">
+                            <img src="/images/classifieds/search_icon.svg" alt="Search" class="action-icon-img" />
+                        </div>
+                    </MudIconButton>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="ClearSearch"
+                        Class="search-action-btn" />
+                </div>
+            }
         </div>
 
-        <div class="search-col">
-            <MudSelect T="string" @bind-Value="_category" Placeholder="Category" Variant="Variant.Outlined" Dense="true"
-                Class="search-input">
-                @foreach (var item in _categories)
-                {
-                    <MudSelectItem Value="@item">@item</MudSelectItem>
-                }
-            </MudSelect>
+        @if (!_isSearchFocused)
+        {
+            <!-- Category -->
+            <div class="short-select">
+                <CustomSelect TItem="string" Options="_categories" SelectedItem="_category"
+                    SelectedItemChanged="@(v => _category = v)" Placeholder="Category" Padding="14px 10px" />
+            </div>
+
+            <!-- Brand -->
+            <div class="short-select">
+                <CustomSelect TItem="string" Options="_brands" SelectedItem="_brand"
+                    SelectedItemChanged="@(v => _brand = v)" Placeholder="Brand" Padding="14px 10px"
+                    IsDisabled="@string.IsNullOrWhiteSpace(_category)" />
+            </div>
+
+            <!-- Price -->
+            <div class="short-select">
+                <CustomSelect TItem="string" Options="_prices.Select(p => p.Label).ToList()" SelectedItem="_price"
+                    SelectedItemChanged="@(v => _price = v)" Placeholder="Price" Padding="14px 10px"
+                    IsDisabled="@string.IsNullOrWhiteSpace(_category)" />
+            </div>
+
+            <!-- More -->
+            <div class="short-select">
+                <MudButton Variant="Variant.Outlined" Color="Color.Default" Class="more-button"
+                    Style="text-transform: none;">
+                    <span style="margin-right: 8px;">More</span>
+                    <MudIcon Icon="@Icons.Material.Filled.Tune" Class="more-icon" />
+                </MudButton>
+            </div>
+
+
+            <!-- Save Search -->
+            <div class="save-search">
+                <button class="save-search-btn">Save Search</button>
+            </div>
+        }
+
+
+        <!-- View Toggle Buttons -->
+        <div class=" right-actions">
+            <ViewToggleButtons Items="@_viewOptions" SelectedValue="@_selectedView" OnSelected="SetViewMode" />
         </div>
-
-        <div class="search-col">
-            <MudSelect T="string" @bind-Value="_brand" Placeholder="Brand" Variant="Variant.Outlined" Dense="true"
-                Class="search-input">
-                @foreach (var item in _brands)
-                {
-                    <MudSelectItem Value="@item">@item</MudSelectItem>
-                }
-            </MudSelect>
-        </div>
-
-        <div class="search-col">
-            <MudSelect T="string" @bind-Value="_price" Placeholder="Price" Variant="Variant.Outlined" Dense="true"
-                Class="search-input">
-                @foreach (var item in _prices)
-                {
-                    <MudSelectItem Value="@item.Value">@item.Label</MudSelectItem>
-                }
-            </MudSelect>
-        </div>
-
-        <div class="search-col icon-col">
-            <MudIconButton Icon="@Icons.Material.Filled.Tune" Title="More Filters" Color="Color.Default"
-                Class="action-icon" />
-        </div>
-
-        <ViewToggleButtons Items="@_viewOptions" SelectedValue="@_selectedView" OnSelected="SetViewMode" />
-
     </div>
 </MudPaper>
 
@@ -53,6 +89,8 @@
     private string _category;
     private string _brand;
     private string _price;
+    private bool _isSearchFocused = false;
+
     [Parameter]
     public EventCallback<string> OnViewModeChanged { get; set; }
 
@@ -62,6 +100,37 @@
     {
         _selectedView = view;
         await OnViewModeChanged.InvokeAsync(view);
+    }
+    [Parameter]
+    public EventCallback<List<dynamic>> OnSearchCompleted { get; set; }
+    private async Task PerformSearch()
+    {
+        var payload = new
+        {
+            text = _searchText,
+            top = 0,
+            filters = new
+            {
+                Category = _category,
+                Brand = _brand,
+                Price = _price
+            },
+            orderBy = "relevance"
+        };
+
+        try
+        {
+            var result = await Api.PostAsync<object, List<dynamic>>("classifeds/search", payload);
+            await OnSearchCompleted.InvokeAsync(result);
+        }
+        catch (HttpRequestException ex)
+        {
+            HttpErrorHelper.HandleHttpException(ex, Snackbar);
+        }
+    }
+    private void ClearSearch()
+    {
+        _searchText = string.Empty;
     }
 
     private List<ViewToggleButtons.ViewToggleOption> _viewOptions = new()
@@ -80,67 +149,166 @@ new() { ImageUrl = "/images/grid_icon.svg", Label = "Grid", Value = "grid" }
 };
 }
 
+
 <style>
     .search-container {
         width: 100%;
         background-color: #f9f9f9;
-        padding: 10px 16px;
+        padding: 12px 40px;
+        border-radius: 6px;
     }
 
+    /* Main layout row */
     .search-row {
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         gap: 8px;
         align-items: center;
-    }
-
-    .search-col {
-        display: flex;
-        align-items: center;
-    }
-
-    .search-input-box {
-        flex: 1 1 180px;
-        min-width: 180px;
-    }
-
-    .search-input {
-        background-color: #fff;
-        font-size: 14px;
         width: 100%;
     }
 
-    .icon-col {
-        flex-shrink: 0;
+    .search-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 320px;
+        background-color: white;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        padding: 8px 12px;
+        transition: width 0.3s ease;
     }
 
+    .search-bar:focus-within {
+        width: 100%;
+    }
+
+    /* Search input */
+    .search-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        font-size: 14px;
+        padding: 6px 0;
+        min-width: 0;
+        /* Prevent flex overflow */
+    }
+
+    /* Left icon */
+    .search-icon-left {
+        display: flex;
+        align-items: center;
+        color: #888;
+    }
+
+    /* Right actions container */
+    .search-actions {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        margin-left: auto;
+    }
+
+    .search-btn {
+        padding: 1px 8px;
+        min-width: auto;
+        background: linear-gradient(90deg, #0A426B 0%, #35B7EF 100%);
+        border-radius: 50px;
+        width: 32px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .search-icon-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+    }
+
+    .action-icon-img {
+        width: 16px;
+        height: 16px;
+        filter: brightness(0) invert(1);
+        /* Makes the icon white */
+    }
+
+    .search-btn:hover {
+        background: linear-gradient(90deg, #0A426B 0%, #35B7EF 80%);
+        transform: scale(1.05);
+    }
+
+    .search-btn:active {
+        transform: scale(0.95);
+    }
+
+    /* Dropdowns / Selects */
+    .short-select {
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    /* More button */
+    .more-button {
+        background-color: #fff;
+        border: 1px solid #ccc;
+        padding: 12px 10px;
+        min-height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    .more-icon {
+        font-size: 20px;
+    }
+
+    /* Save Search */
+    .save-search-btn {
+        font-size: 14px;
+        font-weight: 500;
+        color: #f67218;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px 8px;
+        text-transform: capitalize;
+    }
+
+    /* Right-side container: Save Search + Toggle buttons */
     .right-actions {
         margin-left: auto;
         display: flex;
-        gap: 8px;
         align-items: center;
+        gap: 8px;
     }
 
-    .save-search {
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 500;
-        color: #ff7f2a;
-        white-space: nowrap;
-    }
+    /* Optional: responsive tweaks */
+    @@media (max-width: 992px) {
+        .search-row {
+            flex-wrap: wrap;
+            gap: 12px;
+        }
 
-    .action-icon {
-        color: #666;
-    }
+        .right-actions {
+            width: 100%;
+            justify-content: flex-end;
+            margin-left: 0;
+        }
 
-    .view-toggle {
-        background-color: #f2f2f2;
-        border-radius: 6px;
-        padding: 4px;
-    }
+        .search-bar {
+            width: 100%;
+        }
 
-    .view-toggle.active {
-        background-color: #ff7f2a;
-        color: white;
+        .short-select {
+            width: 100%;
+        }
     }
 </style>

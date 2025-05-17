@@ -1,0 +1,194 @@
+@typeparam TItem
+
+<div class="custom-select @(IsDisabled ? "disabled" : "")" tabindex="0" @onfocusout="HandleFocusOut">
+
+    <div class="selected-value @(HasError ? "error-border" : "")"
+        style="padding:@Padding; height:@Height; border-radius:@BorderRadius;"
+        @onclick="() => { if (!IsDisabled) ToggleDropdown(); }">
+        <div class="select-label-row">
+
+            @if (!string.IsNullOrEmpty(Label))
+            {
+                <div class="select-label">@Label</div>
+            }
+            @if (SelectedItem != null)
+            {
+                @SelectedItem.ToString()
+            }
+            else
+            {
+                <span class="placeholder">@Placeholder</span>
+            }
+        </div>
+        <span class="arrow">@((IsOpen) ? "▲" : "▼")</span>
+    </div>
+
+    @if (HasError && !string.IsNullOrEmpty(ErrorText))
+    {
+        <div class="error-text">@ErrorText</div>
+    }
+
+    @if (IsOpen && !IsDisabled)
+    {
+        <div class="dropdown" @onkeydown="HandleKeyDown">
+            @foreach (var option in Options)
+            {
+                <div class="dropdown-item @(option?.Equals(SelectedItem) == true ? "selected" : "")"
+                    @onclick="() => SelectOption(option)">
+                    @option.ToString()
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<TItem> Options { get; set; }
+    [Parameter] public TItem SelectedItem { get; set; }
+    [Parameter] public EventCallback<TItem> SelectedItemChanged { get; set; }
+    [Parameter] public string Label { get; set; }
+    [Parameter] public string Padding { get; set; } = "10px 12px";
+    [Parameter] public string Height { get; set; } = "auto";
+    [Parameter] public string BorderRadius { get; set; } = "6px";
+    [Parameter] public bool IsDisabled { get; set; } = false;
+    [Parameter] public string Placeholder { get; set; } = "Select an option";
+
+    [Parameter] public bool HasError { get; set; } = false;
+    [Parameter] public string ErrorText { get; set; } = string.Empty;
+
+    private bool IsOpen { get; set; } = false;
+
+    private void ToggleDropdown()
+    {
+        IsOpen = !IsOpen;
+    }
+
+    private async Task SelectOption(TItem option)
+    {
+        SelectedItem = option;
+        IsOpen = false;
+        HasError = false; // Clear error on valid selection
+        await SelectedItemChanged.InvokeAsync(option);
+    }
+
+    private void HandleFocusOut(FocusEventArgs e)
+    {
+        IsOpen = false;
+        StateHasChanged();
+    }
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            IsOpen = false;
+            StateHasChanged();
+        }
+    }
+}
+
+
+<style>
+    .custom-select {
+        position: relative;
+        width: 100%;
+        font-family: 'Public Sans', sans-serif;
+        user-select: none;
+    }
+
+    .custom-select.disabled {
+        pointer-events: none;
+        opacity: 0.6;
+    }
+
+    .custom-select.disabled .selected-value {
+        background-color: var(--color-background-secondary-grey-light);
+        cursor: not-allowed;
+    }
+
+    .select-label-row {
+        display: flex;
+        justify-content: flex-start;
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .select-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--color-text-descripton);
+    }
+
+    .selected-value {
+        border: 1px solid var(--color-captcha-box);
+        background: var(--color-background);
+        color: var(--color-text-heading);
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .placeholder {
+        color: #A1A1A1;
+    }
+
+    .selected-value.error-border {
+        border: 1px solid red;
+        box-shadow: 0 0 0 1px rgba(255, 0, 0, 0.15);
+    }
+
+    .error-text {
+        color: red;
+        font-size: 12px;
+        margin-top: 4px;
+        padding-left: 4px;
+    }
+
+    .arrow {
+        font-size: 12px;
+        margin-left: 8px;
+    }
+
+    .dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--color-background);
+        border: 1px solid var(--color-captcha-box);
+        border-radius: 0 0 6px 6px;
+        margin-top: 2px;
+        max-height: 200px;
+        overflow-y: auto;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        animation: fadeIn 0.25s ease forwards;
+        z-index: 1000;
+    }
+
+    .dropdown-item {
+        padding: 8px 12px;
+        cursor: pointer;
+    }
+
+    .dropdown-item:hover {
+        background-color: var(--color-grey-container);
+    }
+
+    .dropdown-item.selected {
+        background-color: var(--color-accent);
+        color: var(--color-background);
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>

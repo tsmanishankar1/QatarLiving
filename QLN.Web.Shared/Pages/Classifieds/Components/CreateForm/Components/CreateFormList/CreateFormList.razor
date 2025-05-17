@@ -1,0 +1,148 @@
+@using MudBlazor
+@using QLN.Web.Shared.Components.CustomSelect
+@using QLN.Web.Shared.Components.CustomInput
+
+@typeparam TItem
+
+<div class="form-section">
+    <h3 class="form-heading">Ad Category</h3>
+    <div class="form-group">
+        <CustomSelect TItem="string" Label="Subvertical" Placeholder="Choose" Options="categoryOptions"
+            SelectedItem="selectedCategory" SelectedItemChanged="OnCategoryChanged" />
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(selectedCategory))
+{
+    <div class=" form-section">
+        <h6 class="form-heading">Ad Information</h6>
+
+        <div class="form-group">
+            <CustomSelect TItem="string" Label="Subcategory" Placeholder="Choose" Options="subcategoryOptions"
+                SelectedItem="subcategory" />
+        </div>
+        <div class="form-group">
+            <CustomSelect TItem="string" Label="Brand" Placeholder="Choose" Options="brandOptions" SelectedItem="brand" />
+        </div>
+        <div class="form-group">
+            <CustomSelect TItem="string" Label="Model" Placeholder="Choose" Options="modelOptions" SelectedItem="model" />
+        </div>
+        <div class="form-group">
+            <CustomInput TItem="string" Placeholder="Title" @bind-Value="title" />
+        </div>
+        <div class="form-group">
+            <CustomInput TItem="string" Placeholder="Description" @bind-Value="description" />
+        </div>
+
+        <div class="form-group">
+            <CustomSelect TItem="string" Label="Color" Placeholder="Choose" Options="colorOptions" SelectedItem="color" />
+        </div>
+        <div class="form-group">
+            <CustomSelect TItem="string" Label="Capacity" Placeholder="Choose" Options="capacityOptions"
+                SelectedItem="capacity" />
+        </div>
+        <div class="form-group">
+            <CustomSelect TItem="string" Label="Processor" Placeholder="Choose" Options="processorOptions"
+                SelectedItem="processor" />
+        </div>
+        <div class="form-group">
+            <CustomSelect TItem="string" Label="Coverage" Placeholder="Choose" Options="coverageOptions"
+                SelectedItem="coverage" />
+        </div>
+        <div class="form-group">
+            <CustomSelect TItem="string" Label="Ram" Placeholder="Choose" Options="ramOptions" SelectedItem="ram" />
+        </div>
+        <div class="form-group">
+            <CustomSelect TItem="string" Label="Resolution" Placeholder="Choose" Options="resolutionOptions"
+                SelectedItem="resolution" />
+        </div>
+        <div class="form-group">
+            <CustomInput TItem="string" Placeholder="Battery Percentage" @bind-Value="batteryPercentage" TextRight="%" />
+        </div>
+        <div class="form-group">
+            <CustomSelect TItem="string" Label="Size" Placeholder="Choose" Options="sizeOptions" SelectedItem="size" />
+        </div>
+        <div class="form-group">
+            <CustomInput TItem="string" Placeholder="Certificate / Warranty" @bind-Value="certificate" />
+
+        </div>
+    </div>
+
+    <div class="form-section">
+        <h6 class="form-heading">Contact Details</h6>
+        <div class="form-group">
+            <CustomInput TItem="string" Placeholder="Phone Number" @bind-Value="phone" />
+        </div>
+        <div class="form-group">
+            <CustomInput TItem="string" Placeholder="WhatsApp Number" @bind-Value="whatsapp" />
+        </div>
+    </div>
+
+    <div class="form-section">
+        <h6 class="form-heading">Location</h6>
+        <div class="form-group">
+            <CustomSelect TItem="string" Label="Zone" Placeholder="Choose" Options="zoneOptions" SelectedItem="zone" />
+        </div>
+        <div class="form-group">
+            <CustomInput TItem="string" Placeholder="Street Number" @bind-Value="streetNumber" />
+        </div>
+        <div class="form-group">
+            <CustomInput TItem="string" Placeholder="Building Number" @bind-Value="buildingNumber" />
+
+        </div>
+    </div>
+}
+
+
+@code {
+    public string selectedCategory, subcategory, brand, model, title, description, color, capacity,
+    processor, coverage, ram, resolution, batteryPercentage, size, certificate,
+    phone, whatsapp, zone, streetNumber, buildingNumber;
+
+    [Parameter] public EventCallback<string> CategoryChanged { get; set; }
+
+    private async Task OnCategoryChanged(string newValue)
+    {
+        selectedCategory = newValue;
+        await CategoryChanged.InvokeAsync(newValue);
+    }
+    public List<string> categoryOptions = new() { "Items", "Preloved", "Collectables", "Deals" };
+    public List<string> subcategoryOptions = new() { "Phones", "Laptops" };
+    public List<string> brandOptions = new() { "Apple", "Samsung" };
+    public List<string> modelOptions = new() { "iPhone 13", "Galaxy S22" };
+    public List<string> colorOptions = new() { "Black", "White" };
+    public List<string> capacityOptions = new() { "64GB", "128GB" };
+    public List<string> processorOptions = new() { "A15", "Snapdragon" };
+    public List<string> coverageOptions = new() { "Local", "International" };
+    public List<string> ramOptions = new() { "4GB", "6GB" };
+    public List<string> resolutionOptions = new() { "1080p", "4K" };
+    public List<string> sizeOptions = new() { "5.5\"", "6.1\"" };
+    public List<string> zoneOptions = new() { "Zone A", "Zone B" };
+
+    public object GetFormData() => this;
+}
+
+<style>
+    .form-section {
+        margin-bottom: 2rem;
+        font-family: public-sans, sans-serif;
+    }
+
+    .form-heading {
+        color: var(--color-primary);
+        font-size: 18px;
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    /* Optional: Responsive spacing or alignment */
+    @@media (min-width: 768px) {
+        .form-group {
+            max-width: 500px;
+        }
+    }
+</style>

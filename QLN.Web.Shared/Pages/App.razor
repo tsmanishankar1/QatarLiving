@@ -60,6 +60,22 @@
         };
     </script>
 
+    <script>
+        window.registerImageLoadCallback = (imageId, dotNetRef) => {
+            const img = document.getElementById(imageId);
+            if (!img) return;
+
+            img.onload = () => {
+                dotNetRef.invokeMethodAsync("OnImageLoaded");
+            };
+        };
+
+    </script>
+    <script>
+        window.triggerFileInputClick = (element) => {
+            if (element) element.click();
+        };
+    </script>
 
 </body>
 

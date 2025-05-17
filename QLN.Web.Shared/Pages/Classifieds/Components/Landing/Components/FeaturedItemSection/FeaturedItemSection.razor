@@ -1,19 +1,24 @@
 @using MudBlazor
 @using QLN.Web.Shared.Components.Classifieds.FeaturedItemCard
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.Skeletons.FeaturedItemSkeleton
 
 
-@if (FeaturedItems?.Any() != true)
-{
-    <MudText>No featured items found.</MudText>
-}
-else
-{
     <div class="featured-cards-section">
         <div class="featured-header">
             <h3 class="featured-title">Featured Items</h3>
             <h4 class="featured-title-one">Don’t miss out on these deals</h4>
         </div>
 
+@if (Loading)
+{
+    <FeaturedItemSkeleton />
+}
+else if (FeaturedItems?.Any() != true)
+{
+    <MudText>No featured items found.</MudText>
+}
+else
+{
         <div class="carousel-container2">
             <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" Disabled="@(_startIndex == 0)" OnClick="MovePrevious"
                 Class="arrow-button left" />
@@ -39,10 +44,13 @@ else
                 <span class="dot @(i == _startIndex ? "active" : "")"></span>
             }
         </div>
-    </div>
 }
 
+    </div>
+
 @code {
+    [Parameter]
+    public bool Loading { get; set; } = false;
     private int _startIndex = 0;
     private int VisibleCount => isMobile ? 1 : 4;
     private bool isMobile => windowWidth <= 768;

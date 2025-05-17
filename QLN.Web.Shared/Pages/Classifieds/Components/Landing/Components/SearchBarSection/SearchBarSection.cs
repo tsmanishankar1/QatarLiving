@@ -40,7 +40,7 @@ public class SearchBarSectionBase : ComponentBase
 
         try
         {
-            var result = await Api.PostAsync<object, List<FeaturedItemCard.FeaturedItem>>("classifeds/search", payload);
+            var result = await Api.PostAsync<object, List<FeaturedItemCard.FeaturedItem>>("classifed/search", payload);
 
             Snackbar.Add("Search successful", Severity.Success);
             await OnSearchCompleted.InvokeAsync(result);

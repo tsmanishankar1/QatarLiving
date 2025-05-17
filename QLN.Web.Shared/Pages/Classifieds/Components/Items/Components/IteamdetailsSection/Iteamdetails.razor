@@ -9,7 +9,7 @@
 
 <div class="main-layout">
     <div class="row-container">
-        <MudText Typo="Typo.h5">@Item.Title</MudText>
+        <MudText Typo="Typo.h5">@Item?.Title</MudText>
         <div class="icon-label-container">
             <div class="icon-label">
                 <img src="/images/classifieds/share.svg" alt="Share Icon" class="icon-image" />
@@ -23,11 +23,11 @@
     </div>
     <MudGrid AlignItems="Center" Justify="Justify.FlexStart" GutterSize="GutterSize.Small">
         <MudItem xs="12" md="8">
-            <ItemDetailsImage Images="Item.Images" SelectedImageIndex="selectedImageIndex" OnImageSelected="SelectImage"
-                OnPrevSlide="PrevSlide" OnNextSlide="NextSlide" />
+            <ItemDetailsImage Images="Item?.ImageUrls" SelectedImageIndex="selectedImageIndex"
+                OnImageSelected="SelectImage" OnPrevSlide="PrevSlide" OnNextSlide="NextSlide" />
 
 
-            <OverviewCard />
+            <OverviewCard Item="Item" />
             <DescriptionBox />
         </MudItem>
 
@@ -37,9 +37,9 @@
                 <MudPaper Elevation="1" Class="custom-card">
                     <MudText Typo="Typo.caption" Class="status-text">Brand New</MudText>
 
-                    <MudText Typo="Typo.h6" Class="title-text">@Item.Title</MudText>
+                    <MudText Typo="Typo.h6" Class="title-text">@Item?.Title</MudText>
 
-                    <MudText Typo="Typo.h5" Class="price-text">@($"{Item.Price:N0} QAR")</MudText>
+                    <MudText Typo="Typo.h5" Class="price-text">@($"{Item?.Price:N0} QAR")</MudText>
 
                     <div class="button-group">
                         <div class="button-wrapper">
@@ -63,14 +63,14 @@
                             <div class="user-info">
                                 <img src="/images/classifieds/personIcon.svg" class="person-icon" />
                                 <div class="user-text">
-                                    <div class="username">@Item.Company</div>
+                                    <div class="username">@Item?.Company</div>
                                     <div class="updated-time">Updated 1 hour ago</div>
                                 </div>
                             </div>
 
                             <div class="location-info">
                                 <img src="/images/classifieds/location.svg" class="location-icon" />
-                                <span class="location-text">@Item.Location</span>
+                                <span class="location-text">@Item?.Location</span>
                             </div>
                         </div>
                     </div>
@@ -90,6 +90,13 @@
     private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
     private int _startIndex = 0;
     [Parameter] public PromotedItem? Item { get; set; }
+    protected override void OnParametersSet()
+    {
+        if (Item == null)
+        {
+            throw new InvalidOperationException("Item is null. The component cannot render.");
+        }
+    }
     private int selectedImageIndex = 0;
     private string categorySegment = "items"; // Default
 
@@ -123,21 +130,21 @@ new() { Label = Item?.Title ?? "Details", Url = NavigationManager.Uri, IsLast = 
 
     private void NextSlide()
     {
-        if (selectedImageIndex < Item.Images.Count - 1)
+        if (selectedImageIndex < Item.ImageUrls.Count - 1)
             selectedImageIndex++;
     }
 
     private void SelectImage(int index)
     {
         Console.WriteLine($"Selected image index: {index}");
-        if (Item?.Images != null && index >= 0 && index < Item.Images.Count)
+        if (Item?.ImageUrls != null && index >= 0 && index < Item.ImageUrls.Count)
         {
             selectedImageIndex = index;
         }
     }
 
     private bool IsFirstSlide => selectedImageIndex == 0;
-    private bool IsLastSlide => selectedImageIndex == Item.Images.Count - 1;
+    private bool IsLastSlide => selectedImageIndex == Item.ImageUrls.Count - 1;
 
     private string TrackOffset => $"translateX(-{selectedImageIndex * 144}px)";
     private void OnSaveClicked()

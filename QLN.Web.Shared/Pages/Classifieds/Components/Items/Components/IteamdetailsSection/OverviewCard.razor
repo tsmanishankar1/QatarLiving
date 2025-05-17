@@ -1,3 +1,4 @@
+@using QLN.Web.Shared.Models
 @using MudBlazor
 
 <MudPaper Class="pa-4" Elevation="0" Style="background-color:#f7f8fa;">
@@ -17,19 +18,34 @@
 </MudPaper>
 
 @code {
+    [Parameter]
+    public PromotedItem? Item { get; set; }
+
     private record OverviewItem(string Icon, string Label);
-    private List<OverviewItem> OverviewData = new()
+    private List<OverviewItem> OverviewData = new();
+
+    protected override void OnParametersSet()
+    {
+        if (Item == null)
+        {
+            OverviewData.Clear();
+            return;
+        }
+    string Fallback(string value, string fallback) => string.IsNullOrWhiteSpace(value) ? fallback : value;
+        OverviewData = new()
 {
-new("/images/classifieds/brand_icons.svg", "Brand: Google"),
-new("/images/classifieds/model_icons.svg", "Model: Pixel 9 Pro XL"),
-new("/images/classifieds/colour_icon.svg", "Colour: White"),
-new("/images/classifieds/storage_icon.svg", "Storage: 256GB"),
-new("/images/classifieds/battery_icons.svg", "Battery: 86%"),
-new("/images/classifieds/chip_icons.svg", "Chip: Tensor 4"),
-new("/images/classifieds/wireless_icon.svg", "Wireless Charging"),
-new("/images/classifieds/warranty_icon.svg", "Under Warranty")
+ new("/images/classifieds/brand_icons.svg", $"Brand: {Fallback(Item.Brand, "Not specified")}"),
+            new("/images/classifieds/model_icons.svg", $"Model: {Fallback(Item.Model, "Unknown")}"),
+            new("/images/classifieds/colour_icon.svg", $"Colour: {Fallback(Item.Colour, "N/A")}"),
+            new("/images/classifieds/storage_icon.svg", $"Storage: {Fallback(Item.Storage, "N/A")}"),
+            new("/images/classifieds/battery_icons.svg", $"Battery: {(Item.BatteryPercentage > 0 ? $"{Item.BatteryPercentage}%" : "Unknown")}"),
+            new("/images/classifieds/chip_icons.svg", $"Chip: {Fallback(Item.Processor, "Not mentioned")}"),
+            new("/images/classifieds/wireless_icon.svg", "Wireless Charging"), // Keep static unless logic exists
+            new("/images/classifieds/warranty_icon.svg", $"Warranty: {Fallback(Item.Coverage, "No Warranty")}")
 };
+    }
 }
+
 
 <style>
     .custom-mudpaper {

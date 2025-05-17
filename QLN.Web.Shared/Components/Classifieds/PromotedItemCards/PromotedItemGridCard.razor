@@ -16,7 +16,7 @@
         Class="@heartIconClass" />
 
     <div class="carousel-container" @onmouseover="() => isHovered = true" @onmouseout="() => isHovered = false">
-        <img src="@Item.Images[activeIndex]" alt="@Item.Title" class="card-image" />
+        <img src="@Item.ImageUrls[activeIndex]" alt="@Item.Title" class="card-image" />
 
         @if (isHovered)
         {
@@ -24,7 +24,7 @@
             <button class="nav-arrow right" @onclick="NextImage">&#10095;</button>
         }
 
-        <div class="image-counter">@(activeIndex + 1)/@Item.Images.Count</div>
+        <div class="image-counter">@(activeIndex + 1)/@Item.ImageUrls.Count</div>
 
         @if (!string.IsNullOrEmpty(Item.Condition))
         {
@@ -36,10 +36,12 @@
         <div class="category">@Item.Category</div>
         <h3 class="title">@Item.Title</h3>
         <div class="features">
-            <span>@Item.Color</span>
+            <span>@Item.Colour</span>
             <span>@Item.Storage</span>
-            <span>@Item.Battery</span>
+            <span>@Item.BatteryPercentage</span>
             <span>@Item.Processor</span>
+            <span>@Item.RAM</span>
+            <span>@Item.Resolution</span>
         </div>
         <div class="price">@Item.Price</div>
         <div class="company-details">

@@ -8,11 +8,17 @@
             <span>Featured</span>
         </div>
     }
-    <MudIconButton Icon="@(IsFavorite ? Icons.Material.Filled.Favorite : Icons.Material.Outlined.FavoriteBorder)"
-                   Color="@(IsFavorite ? Color.Error : Color.Inherit)"
-                   OnClick="@(() => HandleHeartClick(Item))"
-                   Class="@HeartIconClass" />
-    <img src="@Item.ImageUrl" alt="@Item.Title" class="card-image" />
+    <MudIconButton Icon="@(IsFavorite? Icons.Material.Filled.Favorite : Icons.Material.Outlined.FavoriteBorder)"
+        Color="@(IsFavorite? Color.Error: Color.Inherit)" OnClick="@(() => HandleHeartClick(Item))"
+        Class="@HeartIconClass" />
+    @if (Item.ImageUrls?.Any() == true)
+    {
+        <img src="@Item.ImageUrls.First()" alt="@Item.Title" class="card-image" />
+    }
+    else
+    {
+        <img src="/images/categories/game_image.svg" alt="Default" class="card-image" />
+    }
     <div class="card-content">
         <div class="category">@Item.Category</div>
         <div class="price">@Item.Price QAR</div>
@@ -95,7 +101,7 @@
 
     .card-image {
         width: 100%;
-        height: 180px;
+        height: 170px;
         object-fit: cover;
     }
 

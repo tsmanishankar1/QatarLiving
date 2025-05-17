@@ -28,16 +28,13 @@ namespace QLN.Web.Shared.Components.Classifieds.PromotedItemCards
 
         protected Task HandleSelect(PromotedItem item)
 {
-    var json = JsonSerializer.Serialize(item);
-    var encoded = Uri.EscapeDataString(json);
-
     // Get the current base route like /classifieds/items
     var uri = new Uri(NavigationManager.Uri);
     var path = uri.AbsolutePath;
     var segments = path.Split("/", StringSplitOptions.RemoveEmptyEntries);
 
     string category = segments.Length >= 2 ? segments[1] : "items"; // fallback to "items"
-    NavigationManager.NavigateTo($"/classifieds/{category}/details?data={encoded}");
+    NavigationManager.NavigateTo($"/classifieds/{category}/details?id={item.Id}");
     return Task.CompletedTask;
 }
 
@@ -47,14 +44,14 @@ namespace QLN.Web.Shared.Components.Classifieds.PromotedItemCards
 
         protected void PrevImage()
         {
-            if (Item.Images.Count == 0) return;
-            activeIndex = (activeIndex - 1 + Item.Images.Count) % Item.Images.Count;
+            if (Item.ImageUrls.Count == 0) return;
+            activeIndex = (activeIndex - 1 + Item.ImageUrls.Count) % Item.ImageUrls.Count;
         }
 
         protected void NextImage()
         {
-            if (Item.Images.Count == 0) return;
-            activeIndex = (activeIndex + 1) % Item.Images.Count;
+            if (Item.ImageUrls.Count == 0) return;
+            activeIndex = (activeIndex + 1) % Item.ImageUrls.Count;
         }
     }
 }

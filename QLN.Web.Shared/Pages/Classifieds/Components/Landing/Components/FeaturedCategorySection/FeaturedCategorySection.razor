@@ -1,19 +1,24 @@
 @using MudBlazor
 @using QLN.Web.Shared.Components.Classifieds.FeaturedCategoryCard
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.Skeletons.FeaturedCategorySkeleton
 
-@if (FeaturedCategories?.Any() != true)
-{
-    <MudText>No featured categories found.</MudText>
-}
-else
-{
+
     <div class="categories-wrapper">
         <div class="categories-header">
             <MudContainer MaxWidth="MaxWidth.False">
                 <h3 class="section-header">Featured Categories</h3>
             </MudContainer>
         </div>
-
+@if (Loading)
+{
+    <FeaturedCategorySkeleton />
+}
+else if  (FeaturedCategories?.Any() != true)
+{
+    <MudText>No featured categories found.</MudText>
+}
+else
+{
         <div class="categories-section">
             <div class="carousel-container1">
                 <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" Disabled="@(_startIndex == 0)"
@@ -41,10 +46,13 @@ else
                 }
             </div>
         </div>
-    </div>
 }
 
+    </div>
+
 @code {
+     [Parameter]
+    public bool Loading { get; set; } = false;
     private int _startIndex = 0;
     private const int VisibleCount = 5;
 
@@ -73,7 +81,7 @@ else
 
     private void HandleCategoryClick(FeaturedCategoryCard.CategoryItem item)
     {
-        Console.WriteLine($"Clicked category: {item.Name}");
+        Console.WriteLine($"Clicked category: {item.Category}");
     }
 }
 
