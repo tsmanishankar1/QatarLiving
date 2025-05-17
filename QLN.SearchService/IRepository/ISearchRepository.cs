@@ -1,16 +1,13 @@
-﻿using Azure.Search.Documents.Models;
-using QLN.SearchService.IndexModels;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using QLN.SearchService.Models;
 
 namespace QLN.SearchService.IRepository
 {
     public interface ISearchRepository
     {
-        Task<IEnumerable<T>> SearchAsync<T>(string vertical, SearchRequest req);
-        Task<string> UploadAsync<T>(string vertical, T doc);
-
-        Task<string> UploadAsync(string vertical, SearchDocument doc)
-            => UploadAsync<SearchDocument>(vertical, doc);
-        Task<T> GetByIdAsync<T>(string vertical, string key);
+        Task<IEnumerable<T>> Search<T>(string vertical, SearchRequest req);
+        Task<string> Upload<T>(string vertical, T doc);
+        Task<T?> GetById<T>(string vertical, string key);
     }
 }
