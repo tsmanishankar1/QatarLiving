@@ -1,116 +1,252 @@
-﻿using System;
-using System.Linq;
+﻿// QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints.cs
+using System;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Logging;
 using QLN.Common.Infrastructure.DTO_s;
-using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.IService.BannerService;
 using System.Security.Claims;
+using QLN.Common.Infrastructure.Model;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 {
     public static class ClassifiedEndpoints
     {
-        /// <summary>
-        /// Maps Classified endpoints: search, detail, upload, and landing.
-        /// </summary>
-        public static RouteGroupBuilder MapClassifiedEndpoints(this RouteGroupBuilder group)
+        private const string Vertical = Constants.ConstantValues.ClassifiedsVertical;
+
+        public static RouteGroupBuilder MapClassifiedLandingEndpoints(this RouteGroupBuilder group)
         {
-            // POST /api/{vertical}/search
+            // SEARCH
             group.MapPost("/search", async (
-                    [FromRoute] string vertical,
                     [FromBody] ClassifiedSearchRequest req,
-                    [FromServices] IClassifiedService svc)
-                =>
+                    [FromServices] IClassifiedService svc,
+                    [FromServices] ILoggerFactory logFac
+                ) =>
             {
-                if (string.IsNullOrWhiteSpace(vertical))
-                    return Results.BadRequest(new { Message = "Vertical is required in route." });
+                var logger = logFac.CreateLogger("ClassifiedEndpoints");
+                if (req is null)
+                {
+                    logger.LogWarning("Search called with null payload");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Bad Request",
+                        Detail = "Search payload is required.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/{Vertical}/search"
+                    });
+                }
 
                 try
                 {
-                    var results = await svc.SearchAsync(vertical, req);
+                    var results = await svc.Search(req);
                     return Results.Ok(results);
                 }
                 catch (ArgumentException ex)
                 {
-                    return Results.BadRequest(new { Message = ex.Message });
+                    logger.LogWarning(ex, "Invalid search request");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/{Vertical}/search"
+                    });
                 }
                 catch (Exception ex)
                 {
+                    logger.LogError(ex, "Search error");
                     return Results.Problem(
                         title: "Search Error",
                         detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: $"/api/{Vertical}/search"
+                    );
                 }
             })
             .WithName("SearchClassified")
-            .WithTags("Classified");
+            .WithTags("Classified")
+            .WithSummary("Search classifieds")
+            .Produces<IEnumerable<ClassifiedIndexDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
-            // GET /api/{vertical}/{id}
+            // GET BY ID
             group.MapGet("/{id}", async (
-                    [FromRoute] string vertical,
                     [FromRoute] string id,
-                    [FromServices] IClassifiedService svc)
-                =>
+                    [FromServices] IClassifiedService svc,
+                    [FromServices] ILoggerFactory logFac
+                ) =>
             {
-                if (string.IsNullOrWhiteSpace(vertical) || string.IsNullOrWhiteSpace(id))
-                    return Results.BadRequest(new { Message = "Vertical and Id are required." });
+                var logger = logFac.CreateLogger("ClassifiedEndpoints");
+                if (string.IsNullOrWhiteSpace(id))
+                {
+                    logger.LogWarning("GetById called with empty id");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Bad Request",
+                        Detail = "Document ID is required.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/{Vertical}/{id}"
+                    });
+                }
 
                 try
                 {
-                    var ad = await svc.GetByIdAsync(vertical, id);
-                    return ad is null ? Results.NotFound() : Results.Ok(ad);
+                    var ad = await svc.GetById(id);
+                    if (ad is null)
+                        return Results.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"No document '{id}' in '{Vertical}'.",
+                            Status = StatusCodes.Status404NotFound,
+                            Instance = $"/api/{Vertical}/{id}"
+                        });
+                    return Results.Ok(ad);
                 }
                 catch (ArgumentException ex)
                 {
-                    return Results.BadRequest(new { Message = ex.Message });
+                    logger.LogWarning(ex, "Invalid GetById request");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/{Vertical}/{id}"
+                    });
                 }
                 catch (Exception ex)
                 {
+                    logger.LogError(ex, "GetById error");
                     return Results.Problem(
                         title: "Lookup Error",
                         detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: $"/api/{Vertical}/{id}"
+                    );
                 }
             })
             .WithName("GetClassifiedById")
-            .WithTags("Classified");
+            .WithTags("Classified")
+            .WithSummary("Get a classified by its ID")
+            .Produces<ClassifiedIndexDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
-            // POST /api/{vertical}/upload
+            // UPLOAD
             group.MapPost("/upload", async (
-                    [FromRoute] string vertical,
                     [FromBody] ClassifiedIndexDto doc,
-                    [FromServices] IClassifiedService svc)
-                =>
+                    [FromServices] IClassifiedService svc,
+                    [FromServices] ILoggerFactory logFac
+                ) =>
             {
-                if (string.IsNullOrWhiteSpace(vertical) || doc == null)
-                    return Results.BadRequest(new { Message = "Vertical and document payload are required." });
+                var logger = logFac.CreateLogger("ClassifiedEndpoints");
+                if (doc is null)
+                {
+                    logger.LogWarning("Upload called with null document");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Bad Request",
+                        Detail = "Document payload is required.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/{Vertical}/upload"
+                    });
+                }
 
                 try
                 {
-                    var msg = await svc.UploadAsync(vertical, doc);
-                    return Results.Ok(new { Message = msg });
+                    var msg = await svc.Upload(doc);
+                    return Results.Ok(msg);
                 }
                 catch (ArgumentException ex)
                 {
-                    return Results.BadRequest(new { Message = ex.Message });
+                    logger.LogWarning(ex, "Invalid upload request");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/{Vertical}/upload"
+                    });
                 }
                 catch (Exception ex)
                 {
+                    logger.LogError(ex, "Upload error");
                     return Results.Problem(
                         title: "Upload Error",
                         detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: $"/api/{Vertical}/upload"
+                    );
                 }
             })
             .WithName("UploadClassified")
-            .WithTags("Classified");
+            .WithTags("Classified")
+            .WithSummary("Upload or create a classified item")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+            // UPDATE
+            group.MapPut("/update", async (
+                    [FromBody] ClassifiedIndexDto doc,
+                    [FromServices] IClassifiedService svc,
+                    [FromServices] ILoggerFactory logFac
+                ) =>
+            {
+                var logger = logFac.CreateLogger("ClassifiedEndpoints");
+                if (doc is null || string.IsNullOrWhiteSpace(doc.Id))
+                {
+                    logger.LogWarning("Update called with invalid payload");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Bad Request",
+                        Detail = "Document payload with valid Id is required.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/{Vertical}/update"
+                    });
+                }
+
+                try
+                {
+                    var msg = await svc.Upload(doc);
+                    return Results.Ok(msg);
+                }
+                catch (ArgumentException ex)
+                {
+                    logger.LogWarning(ex, "Invalid update request");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/{Vertical}/update"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Update error");
+                    return Results.Problem(
+                        title: "Update Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: $"/api/{Vertical}/update"
+                    );
+                }
+            })
+            .WithName("UpdateClassified")
+            .WithTags("Classified")
+            .WithSummary("Update an existing classified item")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
             //adding category
 
-            group.MapPost("/api/category", async Task<IResult> (
+            group.MapPost("/category", async Task<IResult> (
                 AdCategory category,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -148,7 +284,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // fetching categories
 
-            group.MapGet("/api/categories", async Task<IResult> (
+            group.MapGet("/categories", async Task<IResult> (
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -175,7 +311,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
 
             // adding subcategory
-            group.MapPost("/api/subcategory", async Task<IResult> (
+            group.MapPost("/subcategory", async Task<IResult> (
                 AdSubCategory subCategory,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -214,7 +350,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // fetching subcategories
 
-            group.MapGet("/api/subcategory", async Task<IResult> (
+            group.MapGet("/subcategory", async Task<IResult> (
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -241,7 +377,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // fetching subcategories by category id
 
-            group.MapGet("/api/subcategory/by-category/{categoryId:guid}", async Task<IResult> (
+            group.MapGet("/subcategory/by-category/{categoryId:guid}", async Task<IResult> (
                 Guid categoryId,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -269,7 +405,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // adding brand
 
-            group.MapPost("/api/brand", async Task<IResult> (
+            group.MapPost("/brand", async Task<IResult> (
                 AdBrand brand,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -297,7 +433,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // fetching all brands
 
-            group.MapGet("/api/brand", async Task<IResult> (
+            group.MapGet("/brand", async Task<IResult> (
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -325,7 +461,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // fetching brands by subcategory id
 
-            group.MapGet("/api/brand/by-subcategory/{subCategoryId:guid}", async Task<IResult> (
+            group.MapGet("/brand/by-subcategory/{subCategoryId:guid}", async Task<IResult> (
                 Guid subCategoryId,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -354,7 +490,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // adding model
 
-            group.MapPost("/api/model", async Task<IResult> (
+            group.MapPost("/model", async Task<IResult> (
                 AdModel model,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -382,7 +518,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // fetching all models
 
-            group.MapGet("/api/model", async Task<IResult> (
+            group.MapGet("/model", async Task<IResult> (
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -409,7 +545,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // fetching models by brand id
 
-            group.MapGet("/api/model/by-brand/{brandId:guid}", async Task<IResult> (
+            group.MapGet("/model/by-brand/{brandId:guid}", async Task<IResult> (
                 Guid brandId,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -437,7 +573,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // Adding condition
 
-            group.MapPost("/api/condition", async Task<IResult> (
+            group.MapPost("/condition", async Task<IResult> (
                 AdCondition condition,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -464,7 +600,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // Get all Condition
-            group.MapGet("/api/condition", async Task<IResult> (
+            group.MapGet("/condition", async Task<IResult> (
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -491,7 +627,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // adding color
 
-            group.MapPost("/api/color", async Task<IResult> (
+            group.MapPost("/color", async Task<IResult> (
                 AdColor color,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -519,7 +655,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // get all color
 
-            group.MapGet("/api/color", async Task<IResult> (
+            group.MapGet("/color", async Task<IResult> (
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -545,7 +681,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // adding capacity
-            group.MapPost("/api/capacity", async Task<IResult> (
+            group.MapPost("/capacity", async Task<IResult> (
                 AdCapacity capacity,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -572,7 +708,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // get all capacity
-            group.MapGet("/api/capacity", async Task<IResult> (
+            group.MapGet("/capacity", async Task<IResult> (
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -598,7 +734,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // adding processor
-            group.MapPost("/api/processor", async Task<IResult> (
+            group.MapPost("/processor", async Task<IResult> (
                 AdProcessor processor,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -625,7 +761,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             //get processorby id 
-            group.MapGet("/api/processor/by-model/{modelId:guid}", async Task<IResult> (
+            group.MapGet("/processor/by-model/{modelId:guid}", async Task<IResult> (
                 Guid modelId,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -652,7 +788,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // get all processor 
-            group.MapGet("/api/processor", async Task<IResult> (
+            group.MapGet("/processor", async Task<IResult> (
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -678,7 +814,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // adding coverage
-            group.MapPost("/api/coverage", async Task<IResult> (
+            group.MapPost("/coverage", async Task<IResult> (
                 AdCoverage coverage,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -706,7 +842,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // Get coverage list
 
-            group.MapGet("/api/coverage", async Task<IResult> (
+            group.MapGet("/coverage", async Task<IResult> (
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -732,7 +868,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // adding ram
-            group.MapPost("/api/ram", async Task<IResult> (
+            group.MapPost("/ram", async Task<IResult> (
                 AdRam ram,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -760,7 +896,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
 
             // Get all RAMs
-            group.MapGet("/api/ram", async Task<IResult> (
+            group.MapGet("/ram", async Task<IResult> (
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -786,7 +922,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // Get RAMs by model
-            group.MapGet("/api/ram/by-model/{modelId:guid}", async Task<IResult> (
+            group.MapGet("/ram/by-model/{modelId:guid}", async Task<IResult> (
                 Guid modelId,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -813,7 +949,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // Add Resolution
-            group.MapPost("/api/resolution", async Task<IResult> (
+            group.MapPost("/resolution", async Task<IResult> (
                 AdResolution resolution,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -840,7 +976,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // Get all Resolutions
-            group.MapGet("/api/resolution", async Task<IResult> (
+            group.MapGet("/resolution", async Task<IResult> (
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -866,7 +1002,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // Get Resolutions by model
-            group.MapGet("/api/resolution/by-model/{modelId:guid}", async Task<IResult> (
+            group.MapGet("/resolution/by-model/{modelId:guid}", async Task<IResult> (
                 Guid modelId,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -893,8 +1029,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            // POST /api/size-type
-            group.MapPost("/api/size-type", async Task<IResult> (
+            // POST /size-type
+            group.MapPost("/size-type", async Task<IResult> (
                 AdSizeType sizeType,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -921,8 +1057,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            // GET /api/size-type
-            group.MapGet("/api/size-type", async Task<IResult> (
+            // GET /size-type
+            group.MapGet("/size-type", async Task<IResult> (
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -947,8 +1083,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<List<AdSizeType>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            // POST /api/gender
-            group.MapPost("/api/gender", async Task<IResult> (
+            // POST /gender
+            group.MapPost("/gender", async Task<IResult> (
                 AdGender gender,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -974,8 +1110,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<AdGender>(StatusCodes.Status201Created)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            // GET /api/gender
-            group.MapGet("/api/gender", async Task<IResult> (
+            // GET /gender
+            group.MapGet("/gender", async Task<IResult> (
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -1000,8 +1136,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<List<AdGender>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            // POST /api/zone
-            group.MapPost("/api/zone", async Task<IResult> (
+            // POST /zone
+            group.MapPost("/zone", async Task<IResult> (
                 AdZone zone,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -1027,8 +1163,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<AdZone>(StatusCodes.Status201Created)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            // GET /api/zone
-            group.MapGet("/api/zone", async Task<IResult> (
+            // GET /zone
+            group.MapGet("/zone", async Task<IResult> (
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -1056,7 +1192,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // create Ad 
             group.MapPost("/ad", async Task<IResult> (
-                [FromRoute] string vertical,
                 [FromForm] AdInformation ad,
                 HttpContext context,
                 IClassifiedService service,
@@ -1068,7 +1203,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     if (string.IsNullOrWhiteSpace(userId))
                         return Results.Unauthorized();
 
-                    var adKey = await service.CreateAd(ad, vertical, userId, token);
+
+                    if (string.IsNullOrWhiteSpace(ad.SubVertical))
+                    {
+                        return Results.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Request",
+                            Detail = "SubVertical is required in the form data.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var adKey = await service.CreateAd(ad, userId, token);
 
                     return TypedResults.Ok(new
                     {
@@ -1099,40 +1245,74 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .DisableAntiforgery();
+                .DisableAntiforgery()
+                .RequireAuthorization();
+
+            // get user ad's
+            group.MapGet("/ad/user", async Task<IResult> (
+                HttpContext context,
+                [FromQuery] bool? isPublished,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrWhiteSpace(userId))
+                    return Results.Unauthorized();
+
+                var ads = await service.GetUserAds(userId, isPublished, token);
+                return TypedResults.Ok(ads);
+            })
+                .WithName("GetUserAds")
+                .WithTags("Ad")
+                .WithSummary("Get user ads")
+                .WithDescription("Returns ads created by the logged-in user filtered by IsPublished status")
+                .Produces<List<AdResponse>>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status401Unauthorized)
+                .RequireAuthorization();
 
 
             // GET /api/{vertical}/landing
             group.MapGet("/landing", async (
-                    [FromRoute] string vertical,
-                    [FromServices] IClassifiedService svc)
-                =>
+                    [FromServices] IClassifiedService svc,
+                    [FromServices] ILoggerFactory logFac
+                ) =>
             {
-                if (string.IsNullOrWhiteSpace(vertical))
-                    return Results.BadRequest(new { Message = "Vertical is required in route." });
-
+                var logger = logFac.CreateLogger("ClassifiedEndpoints");
                 try
                 {
-                    var model = await svc.GetLandingPageAsync(vertical);
+                    var model = await svc.GetLandingPage();
                     return Results.Ok(model);
                 }
                 catch (ArgumentException ex)
                 {
-                    return Results.BadRequest(new { Message = ex.Message });
+                    logger.LogWarning(ex, "Invalid landing request");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/{Vertical}/landing"
+                    });
                 }
                 catch (Exception ex)
                 {
+                    logger.LogError(ex, "Landing error");
                     return Results.Problem(
                         title: "Landing Error",
                         detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: $"/api/{Vertical}/landing"
+                    );
                 }
             })
             .WithName("GetClassifiedLanding")
-            .WithTags("Classified");
+            .WithTags("Classified")
+            .WithSummary("Get landing-page data for classifieds")
+            .Produces<ClassifiedLandingPageResponse>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
             return group;
         }
     }
 }
-

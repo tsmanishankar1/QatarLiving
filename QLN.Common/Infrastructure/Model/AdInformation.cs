@@ -11,6 +11,8 @@ namespace QLN.Common.Infrastructure.Model
     public class AdInformation
     {
         public Guid Id { get; set; }
+        public string SubVertical { get; set; } = default!;
+
         public string Category { get; set; }
         public string SubCategory { get; set; }
         public string Brand { get; set; }
@@ -29,19 +31,20 @@ namespace QLN.Common.Infrastructure.Model
         public string? SizeType { get; set; }
         public string? Size { get; set; }
         public string Gender { get; set; }
-        public IFormFile WarrantyCertificate { get; set; }
+        public IFormFile WarrantyCertificate { get; set; } = default!;
         public string PhoneNumber { get; set; }
         public string WhatsappNumber { get; set; }
         public string zone { get; set; }
         public string streetNumber { get; set; }
         public string buildingNumber { get; set; }
-        public IFormFile UploadPhotos { get; set; }
+        public IFormFile UploadPhotos { get; set; } = default!;
         public bool Ispublished { get; set; }
     }
 
     public class AdResponse
     {
         public Guid Id { get; set; }
+        public string SubVertical { get; set; } = default!;
         public string Title { get; set; }
         public string Description { get; set; }
         public string Category { get; set; }

@@ -157,6 +157,8 @@ builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
 
+builder.Services.AddHttpContextAccessor();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -175,9 +177,7 @@ var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
 
 var classifiedGroup = app.MapGroup("/api/classified");
-classifiedGroup.MapClassifiedLandingEndpoints();
-var Classifiedandinggroup = app.MapGroup("/api/{vertical}");
-Classifiedandinggroup.MapClassifiedEndpoints();
+classifiedGroup.MapClassifiedsEndpoints();
 
 app.UseHttpsRedirection();
 app.UseAuthentication();

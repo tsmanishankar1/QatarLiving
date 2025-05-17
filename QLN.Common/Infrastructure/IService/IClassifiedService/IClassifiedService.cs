@@ -10,20 +10,10 @@ namespace QLN.Common.Infrastructure.IService.BannerService
 {
     public interface IClassifiedService
     {
-        Task<ClassifiedLandingPageResponse> GetLandingPageAsync(string vertical);
-        Task<IEnumerable<ClassifiedIndexDto>> SearchAsync(
-            string vertical,
-            ClassifiedSearchRequest request
-        );
-
-        Task<ClassifiedIndexDto?> GetByIdAsync(
-            string vertical,
-            string id
-        );
-        Task<string> UploadAsync(
-            string vertical,
-            ClassifiedIndexDto document
-        );
+        Task<IEnumerable<ClassifiedIndexDto>> Search(ClassifiedSearchRequest request);
+        Task<ClassifiedIndexDto?> GetById(string id);
+        Task<string> Upload(ClassifiedIndexDto document);
+        Task<ClassifiedLandingPageResponse> GetLandingPage();       
         Task<AdCategory> AddCategory(AdCategory adCategory, CancellationToken cancellationToken = default);
         Task<List<AdCategory>> GetAllCategories(CancellationToken cancellationToken = default);
         Task<AdSubCategory> AddSubCategory(AdSubCategory subCategory, CancellationToken cancellationToken = default);
@@ -58,6 +48,8 @@ namespace QLN.Common.Infrastructure.IService.BannerService
         Task<List<AdGender>> GetAllGenders(CancellationToken cancellationToken = default);
         Task<AdZone> AddZone(AdZone zone, CancellationToken cancellationToken = default);
         Task<List<AdZone>> GetAllZones(CancellationToken cancellationToken = default);
-        Task<string> CreateAd(AdInformation ad, string verticalName, string userId, CancellationToken token = default);
+        Task<string> CreateAd(AdInformation ad, string userId, CancellationToken token = default);
+        Task<List<AdResponse>> GetUserAds(string userId, bool? isPublished, CancellationToken token = default);
+
     }
 }

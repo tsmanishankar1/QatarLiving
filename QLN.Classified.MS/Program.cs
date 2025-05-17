@@ -92,11 +92,8 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGroup("/api/classified")
-   .MapClassifiedLandingEndpoints();
-
-app.MapGroup("/api/{vertical}")
-   .MapClassifiedEndpoints();
+app.MapGroup("/api/classifieds")
+   .MapClassifiedsEndpoints();
 
 app.MapControllers();
 

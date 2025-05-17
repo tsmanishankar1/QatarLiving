@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Dapr.Client;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.BannerService;
 using QLN.Common.Infrastructure.Model;
@@ -15,9 +18,11 @@ namespace QLN.Classified.MS.Service
 {
     public class ClassifiedService : IClassifiedService
     {
+        private const string SERVICE_APP_ID = ConstantValues.SearchServiceApp;
+        private const string Vertical = ConstantValues.ClassifiedsVertical;
+
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly DaprClient _dapr;
-        private const string SearchAppId = "qln-search-ms";
+        private readonly DaprClient _dapr;        
         private readonly IBannerService _bannerService;
         private const string AdStore = "adcategorystore";
         private const string IndexKey = "ad-category-index";
@@ -50,92 +55,103 @@ namespace QLN.Classified.MS.Service
         private const string verticalAd = "adstore";
         private const string AdIndexKey = "ad-index";
         private readonly IWebHostEnvironment _env;
+
         
-        public ClassifiedService(DaprClient dapr, IBannerService bannerService, IWebHostEnvironment env, UserManager<ApplicationUser> userManager)
+        private readonly ILogger<ClassifiedService> _logger;
+
+        public ClassifiedService(DaprClient dapr, ILogger<ClassifiedService> logger, IBannerService bannerService, IWebHostEnvironment env, UserManager<ApplicationUser> userManager)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _bannerService = bannerService ?? throw new ArgumentNullException(nameof(bannerService));
             _env = env ?? throw new ArgumentNullException(nameof(env));
             _userManager = userManager;
         }
 
-        /// <summary>
-        /// Executes a search on the external SearchService via Dapr.
-        /// </summary>
-        public async Task<IEnumerable<ClassifiedIndexDto>> SearchAsync(
-            string vertical,
-            ClassifiedSearchRequest request)
+        public async Task<IEnumerable<ClassifiedIndexDto>> Search(ClassifiedSearchRequest request)
         {
-            if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical cannot be null or empty.", nameof(vertical));
+            if (request is null)
+                throw new ArgumentNullException(nameof(request));
 
-            var path = $"api/{vertical}/search";
-            var raw = await _dapr.InvokeMethodAsync<ClassifiedSearchRequest, object>(
-                SearchAppId,
-                path,
-                request);
+            _logger.LogInformation("SearchAsync start");
+            try
+            {
+                var common = await _dapr.InvokeMethodAsync<ClassifiedSearchRequest, SearchResponse>(
+                    SERVICE_APP_ID,
+                    $"api/{Vertical}/search",
+                    request
+                );
 
-            var items = JsonSerializer.Deserialize<ClassifiedIndexDto[]>(
-                JsonSerializer.Serialize(raw),
-                new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                }
-            );
+                var items = common?.ClassifiedsItems?? Enumerable.Empty<ClassifiedIndexDto>();
+                var json = JsonSerializer.Serialize(items);
+                var dto = JsonSerializer.Deserialize<ClassifiedIndexDto[]>(
+                                json,
+                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                            );
 
-            return items ?? Array.Empty<ClassifiedIndexDto>();
+                return dto ?? Array.Empty<ClassifiedIndexDto>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in SearchAsync");
+                throw;
+            }
         }
 
-        /// <summary>
-        /// Retrieves a single ad by its ID.
-        /// </summary>
-        public async Task<ClassifiedIndexDto?> GetByIdAsync(
-                   string vertical,
-                   string id)
+        public async Task<ClassifiedIndexDto?> GetById(string id)
         {
-            if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical cannot be null or empty", nameof(vertical));
             if (string.IsNullOrWhiteSpace(id))
-                throw new ArgumentException("Id cannot be null or empty", nameof(id));
+                throw new ArgumentException("Id must be provided", nameof(id));
 
-            // no leading slash, GET path
-            var path = $"api/{vertical}/{id}";
+            _logger.LogInformation("GetByIdAsync start: id={Id}", id);
+            try
+            {
+                var raw = await _dapr.InvokeMethodAsync<object>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/{Vertical}/{id}"
+                );
 
-            // ← Use the GET overload
-            var raw = await _dapr.InvokeMethodAsync<object>(
-                HttpMethod.Get,
-                SearchAppId,
-                path
-            );
-
-            // re-serialize into your DTO
-            return JsonSerializer.Deserialize<ClassifiedIndexDto>(
-                JsonSerializer.Serialize(raw),
-                new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                }
-            );
+                var json = JsonSerializer.Serialize(raw);
+                return JsonSerializer.Deserialize<ClassifiedIndexDto>(
+                    json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in GetByIdAsync for id={Id}", id);
+                throw;
+            }
         }
 
-        /// <summary>
-        /// Uploads or updates an ad in the SearchService index.
-        /// </summary>
-        public async Task<string> UploadAsync(
-            string vertical,
-            ClassifiedIndexDto document)
+        public async Task<string> Upload(ClassifiedIndexDto document)
         {
-            if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical cannot be null or empty.", nameof(vertical));
-            if (document == null)
-                throw new ArgumentNullException(nameof(document));
+            if (document is null) throw new ArgumentNullException(nameof(document));
 
-            var path = $"api/{vertical}/upload";
-            return await _dapr.InvokeMethodAsync<ClassifiedIndexDto, string>(
-                SearchAppId,
-                path,
-                document
-            );
+            if (string.IsNullOrWhiteSpace(document.Id))
+                document.Id = Guid.NewGuid().ToString();
+
+            var req = new CommonIndexRequest
+            {
+                VerticalName = Vertical,
+                ClassifiedsItem = document
+            };
+
+            try
+            {
+                return await _dapr.InvokeMethodAsync<CommonIndexRequest, string>(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    $"/api/{Vertical}/upload",
+                    req
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UploadAsync failed for id={Id}", document.Id);
+                throw;
+            }
         }
 
         public async Task<AdCategory> AddCategory(AdCategory adCategory, CancellationToken cancellationToken = default)
@@ -817,30 +833,39 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<string> CreateAd(AdInformation ad, string verticalName, string userId, CancellationToken token = default)
+        public async Task<string> CreateAd(AdInformation ad, string userId, CancellationToken token = default)
         {
             try
             {
                 var user = await _userManager.Users
-            .FirstOrDefaultAsync(u => u.Id.ToString() == userId && u.IsActive, cancellationToken: token);
+                    .FirstOrDefaultAsync(u => u.Id.ToString() == userId && u.IsActive, cancellationToken: token);
 
                 if (user == null)
                     throw new UnauthorizedAccessException("User is not registered or inactive.");
 
-                var adId = Guid.NewGuid();                
+                if (ad.WarrantyCertificate == null || ad.WarrantyCertificate.Length == 0)
+                    throw new ArgumentException("Warranty certificate is required.");
 
+                if (ad.UploadPhotos == null || ad.UploadPhotos.Length == 0)
+                    throw new ArgumentException("At least one photo is required.");
+
+                var adId = Guid.NewGuid();
+
+                // Create sub directory
+                var subDir = Path.Combine(_env.WebRootPath, "images", "ads", ad.SubVertical);
+                Directory.CreateDirectory(subDir);
+
+                // Save warranty certificate
                 var licenseFileName = $"{adId}_license{Path.GetExtension(ad.WarrantyCertificate.FileName)}";
-                var licensePath = Path.Combine(_env.WebRootPath, "images", "licenses", licenseFileName);
-
-                Directory.CreateDirectory(Path.GetDirectoryName(licensePath)!);
+                var licensePath = Path.Combine(subDir, licenseFileName);
                 using (var stream = new FileStream(licensePath, FileMode.Create))
                 {
                     await ad.WarrantyCertificate.CopyToAsync(stream, token);
                 }
 
+                // Save photo
                 var photoFileName = $"{adId}_photo{Path.GetExtension(ad.UploadPhotos.FileName)}";
-                var photoPath = Path.Combine(_env.WebRootPath, "images", "ads", photoFileName);
-                Directory.CreateDirectory(Path.GetDirectoryName(photoPath)!);
+                var photoPath = Path.Combine(subDir, photoFileName);
                 using (var stream = new FileStream(photoPath, FileMode.Create))
                 {
                     await ad.UploadPhotos.CopyToAsync(stream, token);
@@ -849,6 +874,7 @@ namespace QLN.Classified.MS.Service
                 var model = new AdResponse
                 {
                     Id = adId,
+                    SubVertical = ad.SubVertical,
                     Title = ad.Title,
                     Description = ad.Description,
                     Category = ad.Category,
@@ -867,8 +893,8 @@ namespace QLN.Classified.MS.Service
                     Size = ad.Size,
                     SizeType = ad.SizeType,
                     Gender = ad.Gender,
-                    WarrantyCertificateUrl = $"/images/licenses/{licenseFileName}",
-                    ImageUrl = $"/images/ads/{photoFileName}",
+                    WarrantyCertificateUrl = $"/images/ads/{ad.SubVertical}/{licenseFileName}",
+                    ImageUrl = $"/images/ads/{ad.SubVertical}/{photoFileName}",
                     PhoneNumber = ad.PhoneNumber,
                     WhatsappNumber = ad.WhatsappNumber,
                     Zone = ad.zone,
@@ -879,7 +905,7 @@ namespace QLN.Classified.MS.Service
                     IsPublished = ad.Ispublished
                 };
 
-                string stateKey = $"ad-{adId}";
+                var stateKey = $"ad-{adId}";
                 await _dapr.SaveStateAsync("adstore", stateKey, model, cancellationToken: token);
 
                 var keys = await _dapr.GetStateAsync<List<string>>("adstore", "ad-index", cancellationToken: token) ?? new();
@@ -887,63 +913,94 @@ namespace QLN.Classified.MS.Service
                 await _dapr.SaveStateAsync("adstore", "ad-index", keys, cancellationToken: token);
 
                 return stateKey;
-
             }
             catch (Exception ex)
             {
                 throw new Exception("Error while Ad posting", ex);
             }
-
         }
 
-        /// <summary>
-        /// Builds the landing-page model by querying all items and grouping.
-        /// </summary>
-        public async Task<ClassifiedLandingPageResponse> GetLandingPageAsync(
-            string vertical)
+        public async Task<List<AdResponse>> GetUserAds(string userId, bool? isPublished, CancellationToken token = default)
         {
-            if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical cannot be null or empty.", nameof(vertical));            
-            var banners = await _bannerService.GetAllBanners();            
-            // Fetch up to 1000 items
-            var all = await SearchAsync(vertical, new ClassifiedSearchRequest { Text = "*", Top = 1000 });
-
-            var featuredItems = all.Where(i => i.IsFeaturedItem);
-            var featuredCategories = all
-                .Where(i => i.IsFeaturedCategory)
-                .GroupBy(i => i.Category)
-                .Select(g => new LandingCategoryInfo
-                {
-                    Category = g.Key,
-                    ImageUrl = g.First().StoreLogoUrl
-                });
-
-            var featuredStores = all
-                .Where(i => i.IsFeaturedStore)
-                .GroupBy(i => i.StoreName)
-                .Select(g => new LandingStoreInfo
-                {
-                    StoreName = g.Key,
-                    LogoUrl = g.First().StoreLogoUrl,
-                    ItemCount = g.Count()
-                });
-
-            var categoryCounts = all
-                .GroupBy(i => i.Category)
-                .Select(g => new CategoryAdCount
-                {
-                    Category = g.Key,
-                    Count = g.Count()
-                });
-
-            return new ClassifiedLandingPageResponse
+            try
             {
-                Banners = banners ?? Enumerable.Empty<Banner>(),
-                FeaturedItems = featuredItems,
-                FeaturedCategories = featuredCategories,
-                FeaturedStores = featuredStores,
-                CategoryAdCounts = categoryCounts
-            };
+                var allKeys = await _dapr.GetStateAsync<List<string>>("adstore", "ad-index") ?? new();
+                var result = new List<AdResponse>();
+
+                foreach (var key in allKeys)
+                {
+                    var ad = await _dapr.GetStateAsync<AdResponse>("adstore", key);
+                    if (ad?.CreatedBy == userId && (isPublished == null || ad.IsPublished == isPublished))
+                    {
+                        result.Add(ad);
+                    }
+                }
+
+                return result;
+
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error while getting user ads", ex);
+            }
+        }
+
+        public async Task<ClassifiedLandingPageResponse> GetLandingPage()
+        {
+            _logger.LogInformation("GetLandingPageAsync start");
+            try
+            {
+                var banners = await _bannerService.GetAllBanners();
+
+                var all = await Search(new ClassifiedSearchRequest { Text = "*", Top = 1000 });
+
+                var featuredItems = all.Where(i => i.IsFeaturedItem);
+
+                var featuredCategories = all
+                    .Where(i => i.IsFeaturedCategory
+                             && !string.IsNullOrWhiteSpace(i.Category)
+                             && !string.IsNullOrWhiteSpace(i.CategoryImageUrl))
+                    .GroupBy(i => i.Category)
+                    .Select(g => new LandingCategoryInfo
+                    {
+                        Category = g.Key,
+                        ImageUrl = g.Select(x => x.CategoryImageUrl!).First(url => !string.IsNullOrWhiteSpace(url))
+                    });
+
+                var featuredStores = all
+                    .Where(i => i.IsFeaturedStore
+                             && !string.IsNullOrWhiteSpace(i.StoreName)
+                             && !string.IsNullOrWhiteSpace(i.StoreLogoUrl))
+                    .GroupBy(i => i.StoreName)
+                    .Select(g => new LandingStoreInfo
+                    {
+                        StoreName = g.Key!,
+                        LogoUrl = g.Select(x => x.StoreLogoUrl!).First(url => !string.IsNullOrWhiteSpace(url)),
+                        ItemCount = g.Count()
+                    });
+
+                var categoryCounts = all
+                    .GroupBy(i => i.Category)
+                    .Select(g => new CategoryAdCount
+                    {
+                        Category = g.Key,
+                        Count = g.Count()
+                    });
+
+                return new ClassifiedLandingPageResponse
+                {
+                    Banners = banners ?? Enumerable.Empty<Banner>(),
+                    FeaturedItems = featuredItems,
+                    FeaturedCategories = featuredCategories,
+                    FeaturedStores = featuredStores,
+                    CategoryAdCounts = categoryCounts
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in GetLandingPageAsync");
+                throw;
+            }
         }
     }
 }
