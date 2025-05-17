@@ -12,5 +12,10 @@ namespace QLN.Common.Infrastructure.Constants
         public const string ByPassEmail = "testuser@qatarliving.com";
         public const string ByPassMobile = "0000000000";
         public const string ByPass2FA = "000000";
+
+        // Classifieds Constants
+        public const string ClassifiedsVertical = "classifieds";
+        public const string ClassifiedServiceApp = "qln-classified-ms";
+        public const string SearchServiceApp = "qln-search-ms";
     }
 }

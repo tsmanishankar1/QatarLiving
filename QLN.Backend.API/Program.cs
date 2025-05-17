@@ -170,9 +170,7 @@ var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
 
 var classifiedGroup = app.MapGroup("/api/classified");
-classifiedGroup.MapClassifiedLandingEndpoints();
-var Classifiedandinggroup = app.MapGroup("/api/{vertical}");
-Classifiedandinggroup.MapClassifiedEndpoints();
+classifiedGroup.MapClassifiedsEndpoints();
 
 app.UseHttpsRedirection();
 app.UseAuthentication();

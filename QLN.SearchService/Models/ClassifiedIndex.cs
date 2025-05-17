@@ -26,6 +26,9 @@ namespace QLN.SearchService.IndexModels
         [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string? Category { get; set; } = string.Empty;
 
+        [SearchableField(IsFilterable = true)]
+        public string? CategoryImageUrl { get; set; }
+
         [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string? Subcategory { get; set; } = string.Empty;
 
@@ -131,5 +134,29 @@ namespace QLN.SearchService.IndexModels
 
         [SimpleField(IsFilterable = false, IsFacetable = false)]
         public List<string>? ImageUrls { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public string UserId { get; set; } = string.Empty;
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public bool IsPublished { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public long Impressions { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public long Views { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public long Calls { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public long WhatsAppClicks { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public long Shares { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public long Saves { get; set; }
     }
 }
