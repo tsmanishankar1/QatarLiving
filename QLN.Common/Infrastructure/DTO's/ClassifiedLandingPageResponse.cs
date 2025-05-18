@@ -1,4 +1,4 @@
-﻿// QLN.Common.Infrastructure.DTO_s/ClassifiedModels.cs
+﻿using QLN.Common.Infrastructure.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
