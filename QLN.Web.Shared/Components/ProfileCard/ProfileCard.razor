@@ -1,79 +1,57 @@
 @using MudBlazor
+@using QLN.Web.Shared.Components.CustomButton
 @inject NavigationManager Navigation
 
-<MudPaper Class="profile-container mx-auto " Elevation="1" Style="max-width: 400px; background-color: white;">
-    <MudGrid Justify="Justify.Center" Class="text-center" Style="gap: 0">
-    <MudItem xs="12" Class="mb-0">  <!-- Reduced margin-bottom -->
-        <MudAvatar Size="Size.Large" Class="responsive-avatar" Style="margin-bottom: 1px">  <!-- Custom small margin -->
-            @if (string.IsNullOrEmpty(ProfileImageUrl))
-            {
-                <MudIcon Icon="@Icons.Material.Filled.AccountCircle" Size="Size.Large" Color="Color.Default" />
-            }
-            else
-            {
-                <img src="@ProfileImageUrl" class="responsive-avatar" />
-            }
-        </MudAvatar>
-    </MudItem>
+<MudPaper Elevation="1" Class="pa-6 rounded d-flex flex-column align-center" Style="max-width: 350px; margin: auto;">
 
-    <MudItem xs="12" Class="mb-0">  <!-- Reduced margin-bottom -->
-        <MudText Typo="Typo.h6" Class="text-style" Style="margin-bottom: 1px">@Name</MudText>  <!-- Custom small margin -->
-    </MudItem>
+    <!-- Profile Image -->
+    <MudAvatar Size="Size.Large" Image="@ProfileImageUrl" Class="mb-3" Style="width:100px; height:100px;" />
 
+    <!-- Name -->
+    <MudText Typo="Typo.h6" Class="user-name mb-1" Align="Align.Center">@Name</MudText>
+
+    <!-- Premium Badge -->
     @if (IsPremium)
     {
-        <MudItem xs="12" Class="mb-0"> 
-            <MudChip T="string"
-                     Style="background-color: #e3f2fd; color: #1976d2; font-weight:600; margin-top: 1px"
-                     Class="premium-chip">
-                Premium User
-            </MudChip>
-        </MudItem>
+        <MudChip T="object"  Variant="Variant.Outlined" Class="premium-chip mb-3">
+            Premium User
+        </MudChip>
     }
-</MudGrid>
 
+    <!-- Personal Info Header -->
+    <MudText Typo="Typo.subtitle1" Class="info-heading mb-2" Align="Align.Left">Personal Information</MudText>
 
-    <MudText Typo="Typo.subtitle2" Class="heading-style mb-2 px-4">Personal Information</MudText>
-
-    <MudGrid Class="px-4">
-        @foreach (var item in InfoItems)
+    <!-- Personal Info Items -->
+    <div style="width: 100%;">
+        @foreach (var field in InfoItems)
         {
-            @if (!string.IsNullOrEmpty(item.Value))
-            {
-                <MudItem xs="12" Class="d-flex align-items-start">
-                    <MudText Class="label-text">@item.Key:</MudText>
-                    <MudText Class="value-text">@item.Value</MudText>
-                </MudItem>
-            }
+            <div class="d-flex justify-space-between mb-1">
+                <MudText Class="label-text">@field.Key</MudText>
+                <MudText Class="value-text">@field.Value</MudText>
+            </div>
         }
-    </MudGrid>
-
-    <div class="text-center mt-4">
-        <MudButton T="string" Variant="Variant.Filled"
-                   Color="Color.Primary"
-                   Class="edit-button"
-                    OnClick="@(() => Navigation.NavigateTo("/edit-profile"))"
-                   Style="background-color: #1976d2; text-transform: none; font-weight: 600;">
-            Edit Profile
-        </MudButton>
     </div>
 
-    <MudDivider Class="my-4" />
+    <!-- Edit Button -->
+    <div style="width: 100%; margin-top: 20px;">
+        <CustomButton 
+            BackgroundColor="#00426D"
+            TextColor="var(--color-text-white)"
+            Text="Edit Profile"
+            OnClick="@OnEditProfileClicked"
+            Class="edit-button" />
+    </div>
 
-    <MudText Typo="Typo.caption" Class="help-resources-title mb-2 mx-4">HELP RESOURCES</MudText>
-    <MudList Dense="true" T="string" Class="mx-2">
-        <MudListItem>
-            <MudText T="string" Class="help-item">Help Center</MudText>
-        </MudListItem>
-        <MudListItem>
-            <MudText T="string" Class="help-item">Contact Support</MudText>
-        </MudListItem>
-        <MudListItem>
-            <MudText T="string" Class="help-item">Safety Tips</MudText>
-        </MudListItem>
-    </MudList>
+    <!-- Divider -->
+    <MudDivider Class="mb-3 mt-4" />
+
+    <!-- Help Resources -->
+    <MudText Class="help-resources-title mb-2">HELP RESOURCES</MudText>
+    <MudText Class="help-item mb-1">Help Center</MudText>
+    <MudText Class="help-item mb-1">Contact Support</MudText>
+    <MudText Class="help-item" Style="padding-bottom: 800px;">Safety Tips</MudText>
+
 </MudPaper>
-
 <style>
     .profile-container {
         padding: 5px;
@@ -138,6 +116,65 @@
     .premium-chip {
         font-family: 'Public Sans', sans-serif;
         font-size: 14px;
+        background-color: var(--color-primary-container);
+        color: var(--color-primary);
+    }
+    .user-name {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--color-text-primary);
+    }
+
+    .premium-chip {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .info-heading {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--color-text-primary);
+    }
+
+    .label-text {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 12px;
+        font-weight: 500;
+        color: #757575; /* Gray for label */
+    }
+
+    .value-text {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 12px;
+        font-weight: 400;
+        color: var(--color-primary);
+        word-break: break-word;
+        text-align: right;
+        max-width: 60%;
+    }
+
+    .edit-button {
+        width: 100%;
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .help-resources-title {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--color-text-primary);
+    }
+
+    .help-item {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--color-primary);
     }
 </style>
 
@@ -150,7 +187,7 @@
     [Parameter] public string Location { get; set; } = string.Empty;
     [Parameter] public string Gender { get; set; } = string.Empty;
     [Parameter] public string Nationality { get; set; } = string.Empty;
-    [Parameter] public List<string> Languages { get; set; } = new();
+    [Parameter] public string Languages { get; set; } = string.Empty;
 
     [Parameter] public EventCallback OnEditClicked { get; set; }
 
@@ -161,6 +198,12 @@
         { "Location", Location },
         { "Gender", Gender },
         { "Nationality", Nationality },
-        { "Languages", string.Join(", ", Languages) }
+        { "Languages", Languages }
     };
+     private void OnEditProfileClicked()
+    {
+        Console.WriteLine("Edit Profile button clicked");
+    }
+
 }
+
