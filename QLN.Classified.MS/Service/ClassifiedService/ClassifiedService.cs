@@ -35,7 +35,7 @@ namespace QLN.Classified.MS.Service
             _bannerService = bannerService ?? throw new ArgumentNullException(nameof(bannerService));
         }
 
-        public async Task<IEnumerable<ClassifiedIndexDto>> Search(ClassifiedSearchRequest request)
+        public async Task<IEnumerable<ClassifiedIndexDto>> Search(CommonSearchRequest request)
         {
             if (request is null)
                 throw new ArgumentNullException(nameof(request));
@@ -43,20 +43,22 @@ namespace QLN.Classified.MS.Service
             _logger.LogInformation("SearchAsync start");
             try
             {
-                var common = await _dapr.InvokeMethodAsync<ClassifiedSearchRequest, SearchResponse>(
+                var common = await _dapr.InvokeMethodAsync<CommonSearchRequest, SearchResponse>(
                     SERVICE_APP_ID,
                     $"api/{Vertical}/search",
                     request
                 );
 
                 var items = common?.ClassifiedsItems?? Enumerable.Empty<ClassifiedIndexDto>();
-                var json = JsonSerializer.Serialize(items);
-                var dto = JsonSerializer.Deserialize<ClassifiedIndexDto[]>(
-                                json,
-                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                            );
 
-                return dto ?? Array.Empty<ClassifiedIndexDto>();
+                var adsOnly = items
+                    .Where(i => string.Equals(
+                        i.DocType,
+                        ConstantValues.DocTypeAd,
+                        StringComparison.OrdinalIgnoreCase
+                    ));
+
+                return adsOnly;
             }
             catch (Exception ex)
             {
@@ -792,44 +794,95 @@ namespace QLN.Classified.MS.Service
             _logger.LogInformation("GetLandingPageAsync start");
             try
             {
-                
-                var all = await Search(new ClassifiedSearchRequest { Text = "*", Top = 1000 });
-
-                var featuredItems = all.Where(i => i.IsFeaturedItem);
+                var all = await GetAllItems(new CommonSearchRequest { Text = "*", Top = 1000 });
+                var banners = all
+                    .Where(i => string.Equals(i.DocType, ConstantValues.DocTypeBanner, StringComparison.OrdinalIgnoreCase)
+                             && !string.IsNullOrWhiteSpace(i.BannerTitle)
+                             && !string.IsNullOrWhiteSpace(i.BannerImageUrl))
+                    .Select(i => new LandingBannerInfo
+                    {
+                        BannerTitle = i.BannerTitle!,
+                        bannerUrl = i.BannerImageUrl!
+                    })
+                    .Distinct();
+                var featuredItems = all
+                    .Where(i => string.Equals(i.DocType, ConstantValues.DocTypeAd, StringComparison.OrdinalIgnoreCase)
+                             && i.IsFeaturedItem == true);
 
                 var featuredCategories = all
-                    .Where(i => i.IsFeaturedCategory
+                    .Where(i => string.Equals(i.DocType, ConstantValues.DocTypeCategory, StringComparison.OrdinalIgnoreCase)
+                             && i.IsFeaturedCategory == true
                              && !string.IsNullOrWhiteSpace(i.Category)
                              && !string.IsNullOrWhiteSpace(i.CategoryImageUrl))
                     .GroupBy(i => i.Category)
                     .Select(g => new LandingCategoryInfo
                     {
                         Category = g.Key,
-                        ImageUrl = g.Select(x => x.CategoryImageUrl!).First(url => !string.IsNullOrWhiteSpace(url))
+                        ImageUrl = g.Select(x => x.CategoryImageUrl!)
+                                    .First(url => !string.IsNullOrWhiteSpace(url))
                     });
 
-                var featuredStores = all
-                    .Where(i => i.IsFeaturedStore
-                             && !string.IsNullOrWhiteSpace(i.StoreName)
-                             && !string.IsNullOrWhiteSpace(i.StoreLogoUrl))
-                    .GroupBy(i => i.StoreName)
-                    .Select(g => new LandingStoreInfo
+                var featuredStoreGroups = all
+                    .Where(i =>
+                        string.Equals(i.DocType, ConstantValues.DocTypeStore, StringComparison.OrdinalIgnoreCase)
+                        && i.IsFeaturedStore == true
+                        && !string.IsNullOrWhiteSpace(i.StoreName)
+                        && !string.IsNullOrWhiteSpace(i.StoreLogoUrl)
+                    )
+                    .GroupBy(i => i.StoreName!, StringComparer.OrdinalIgnoreCase);
+
+                var featuredStores = featuredStoreGroups
+                    .Select(g =>
                     {
-                        StoreName = g.Key!,
-                        LogoUrl = g.Select(x => x.StoreLogoUrl!).First(url => !string.IsNullOrWhiteSpace(url)),
-                        ItemCount = g.Count()
+                        var storeName = g.Key;
+                        var logoUrl = g
+                            .Select(x => x.StoreLogoUrl!)
+                            .First(url => !string.IsNullOrWhiteSpace(url));
+
+                        var itemCount = all.Count(i =>
+                            string.Equals(i.DocType, ConstantValues.DocTypeAd, StringComparison.OrdinalIgnoreCase)
+                            && string.Equals(i.StoreName, storeName, StringComparison.OrdinalIgnoreCase)
+                        );
+
+                        return new LandingStoreInfo
+                        {
+                            StoreName = storeName,
+                            LogoUrl = logoUrl,
+                            ItemCount = itemCount
+                        };
                     });
 
                 var categoryCounts = all
-                    .GroupBy(i => i.Category)
-                    .Select(g => new CategoryAdCount
+                    .Where(i =>
+                        string.Equals(i.DocType, ConstantValues.DocTypeCategory, StringComparison.OrdinalIgnoreCase)
+                        && i.IsFeaturedCategory == false
+                        && !string.IsNullOrWhiteSpace(i.Category)
+                    )
+                    .GroupBy(i => i.Category!, StringComparer.OrdinalIgnoreCase)
+                    .Select(g =>
                     {
-                        Category = g.Key,
-                        Count = g.Count()
+                        var catName = g.Key;
+                        var imageUrl = g
+                            .Select(x => x.CategoryImageUrl)
+                            .FirstOrDefault(url => !string.IsNullOrWhiteSpace(url));
+
+                        var adCount = all
+                            .Count(i =>
+                                string.Equals(i.DocType, ConstantValues.DocTypeAd, StringComparison.OrdinalIgnoreCase)
+                                && string.Equals(i.Category, catName, StringComparison.OrdinalIgnoreCase)
+                            );
+
+                        return new CategoryAdCount
+                        {
+                            Category = catName,
+                            ImageUrl = imageUrl,
+                            Count = adCount
+                        };
                     });
 
                 return new ClassifiedLandingPageResponse
                 {
+                    ClassifiedBanners = banners,
                     FeaturedItems = featuredItems,
                     FeaturedCategories = featuredCategories,
                     FeaturedStores = featuredStores,
@@ -839,6 +892,35 @@ namespace QLN.Classified.MS.Service
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in GetLandingPageAsync");
+                throw;
+            }
+        }
+        private async Task<IEnumerable<ClassifiedIndexDto>> GetAllItems(CommonSearchRequest request)
+        {
+            if (request is null)
+                throw new ArgumentNullException(nameof(request));
+
+            _logger.LogInformation("SearchAsync start");
+            try
+            {
+                var common = await _dapr.InvokeMethodAsync<CommonSearchRequest, SearchResponse>(
+                    SERVICE_APP_ID,
+                    $"api/{Vertical}/search",
+                    request
+                );
+
+                var items = common?.ClassifiedsItems ?? Enumerable.Empty<ClassifiedIndexDto>();
+                var json = JsonSerializer.Serialize(items);
+                var dto = JsonSerializer.Deserialize<ClassifiedIndexDto[]>(
+                                json,
+                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                            );
+
+                return dto ?? Array.Empty<ClassifiedIndexDto>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in SearchAsync");
                 throw;
             }
         }

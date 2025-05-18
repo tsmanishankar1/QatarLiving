@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.DTO_s
 {
-    public class ClassifiedSearchRequest
+    public class CommonSearchRequest
     {
         public string Text { get; set; } = "*";
         public int Top { get; set; } = 50;

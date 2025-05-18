@@ -21,7 +21,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
         {
             // SEARCH
             group.MapPost("/search", async (
-                    [FromBody] ClassifiedSearchRequest req,
+                    [FromBody] CommonSearchRequest req,
                     [FromServices] IClassifiedService svc,
                     [FromServices] ILoggerFactory logFac
                 ) =>
