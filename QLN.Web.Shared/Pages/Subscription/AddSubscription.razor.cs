@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
+using QLN.Web.Shared.Helpers;
 using QLN.Web.Shared.Models;
+using QLN.Web.Shared.Services;
 using System.ComponentModel;
 using System.Text.Json;
 
@@ -11,12 +13,14 @@ public partial class AddSubscription : ComponentBase
 {
     [Inject] protected IJSRuntime _jsRuntime { get; set; }
     [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private ApiService Api { get; set; } = default!;
 
 
     private MudForm _form;
     private SubscriptionModel _model = new();
     private bool _showSubCategory = false;
     private string _authToken;
+    private bool _isLoading = false;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -50,6 +54,8 @@ public partial class AddSubscription : ComponentBase
 
     private async Task SaveSubscription()
     {
+
+        _isLoading = true;
         await _form.Validate();
         if (_form.IsValid)
         {
@@ -58,31 +64,27 @@ public partial class AddSubscription : ComponentBase
 
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Post, "api/subscription/add")
+                var payload = new
                 {
-                    Content = new StringContent(JsonSerializer.Serialize(_model), System.Text.Encoding.UTF8, "application/json")
+                    SubscriptionName = _model.SubscriptionName,
+                    Price = _model.Price,
+                    Currency = _model.Currency,
+                    Duration = _model.Duration,
+                    VerticalType = _model.VerticalType,
+                    SubCategory = _model.SubCategory,
+                    Description = _model.Description
                 };
-
-                if (!string.IsNullOrEmpty(_authToken))
-                {
-                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _authToken);
-                }
-
-                var response = await Http.SendAsync(request);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    Snackbar.Add("Subscription added successfully!", Severity.Success);
-                }
-                else
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    Snackbar.Add($"Error: {response.StatusCode} - {errorContent}", Severity.Error);
-                }
+                Console.WriteLine(JsonSerializer.Serialize(payload));
+                var response = await Api.PostAsync<object, object>("api/subscription/add", payload, _authToken);
+                Snackbar.Add("Subscription added!", Severity.Success);
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
-                Snackbar.Add("Error occurred while saving subscription: " + ex.Message, Severity.Error);
+                HttpErrorHelper.HandleHttpException(ex, Snackbar);
+            }
+            finally
+            {
+                _isLoading = false;
             }
         }
     }
