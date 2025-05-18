@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Windows.Input;
 using Dapr.Client;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.IService.IFileStorage;
 
 namespace QLN.Company.MS.Service
 {
@@ -12,11 +13,13 @@ namespace QLN.Company.MS.Service
         private readonly DaprClient _dapr;
         private readonly IWebHostEnvironment _env;
         private readonly ILogger<InternalCompanyService> _logger;
-        public InternalCompanyService(DaprClient dapr, IWebHostEnvironment env, ILogger<InternalCompanyService> logger)
+        private readonly IFileStorageService _fileStorage;
+        public InternalCompanyService(DaprClient dapr, IWebHostEnvironment env, ILogger<InternalCompanyService> logger, IFileStorageService fileStorage)
         {
             _dapr = dapr;
             _env = env;
             _logger = logger;
+            _fileStorage = fileStorage;
         }
         public async Task<CompanyProfileEntity> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
@@ -127,11 +130,11 @@ namespace QLN.Company.MS.Service
                 Directory.CreateDirectory(root);
 
                 var logoPath = dto.CompanyLogo is not null
-                    ? await SaveFile(dto.CompanyLogo, Path.Combine(root, "logo"))
+                    ? await _fileStorage.SaveFile(dto.CompanyLogo, Path.Combine(root, "logo", dto.CompanyLogo.FileName))
                     : null;
 
                 var crPath = dto.CRDocument is not null
-                    ? await SaveFile(dto.CRDocument, Path.Combine(root, "cr"))
+                    ? await _fileStorage.SaveFile(dto.CRDocument, Path.Combine(root, "cr", dto.CompanyLogo.FileName))
                     : null;
 
                 return new CompanyProfileEntity
@@ -170,21 +173,21 @@ namespace QLN.Company.MS.Service
             }
         }
 
-        private async Task<string> SaveFile(IFormFile file, string directory)
-        {
-            try
-            {
-                Directory.CreateDirectory(directory);
-                var filePath = Path.Combine(directory, file.FileName);
-                using var stream = new FileStream(filePath, FileMode.Create);
-                await file.CopyToAsync(stream);
-                return filePath;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while saving file {FileName} to {Directory}", file.FileName, directory);
-                throw;
-            }
-        }
+        //private async Task<string> SaveFile(IFormFile file, string directory)
+        //{
+        //    try
+        //    {
+        //        Directory.CreateDirectory(directory);
+        //        var filePath = Path.Combine(directory, file.FileName);
+        //        using var stream = new FileStream(filePath, FileMode.Create);
+        //        await file.CopyToAsync(stream);
+        //        return filePath;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error while saving file {FileName} to {Directory}", file.FileName, directory);
+        //        throw;
+        //    }
+        //}
     }
 }

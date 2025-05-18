@@ -157,10 +157,8 @@ builder.Services.AddDaprClient();
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
-
 builder.Services.AddHttpContextAccessor();
-
-builder.Services.ExternalCompanyProfileServiceConfiguration(builder.Configuration);
+builder.Services.CompanyConfiguration(builder.Configuration);
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

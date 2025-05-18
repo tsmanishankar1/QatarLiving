@@ -6,7 +6,7 @@ namespace QLN.Backend.API.ServiceConfiguration
 {
     public static class ExternalCompanyServiceConfiguration
     {
-        public static IServiceCollection ExternalCompanyProfileServiceConfiguration(this IServiceCollection services, IConfiguration config)
+        public static IServiceCollection CompanyConfiguration(this IServiceCollection services, IConfiguration config)
         {
             services.AddTransient<ICompanyService, ExternalCompanyService>();
             return services;
