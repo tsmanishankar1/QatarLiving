@@ -8,6 +8,7 @@ using QLN.SearchService.IRepository;
 using QLN.SearchService.IService;
 using QLN.SearchService.Repository;
 using QLN.SearchService.Service;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +30,11 @@ builder.Services.AddSingleton<ISearchIndexInitializer, SearchIndexInitializer>()
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.PropertyNameCaseInsensitive = true;
+    options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+});
 
 var app = builder.Build();
 
@@ -43,7 +49,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapCommonIndexingEndpoints();
+var common = app.MapGroup("/api/{vertical}");
+common.MapCommonIndexingEndpoints();
 
 app.UseHttpsRedirection();
 app.Run();

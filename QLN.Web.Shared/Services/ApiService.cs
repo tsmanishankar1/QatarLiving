@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using System.Text.Json;
 using QLN.Web.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
+using System.Net.Http.Headers;
 
 namespace QLN.Web.Shared.Services
 {
@@ -15,6 +16,7 @@ namespace QLN.Web.Shared.Services
         {
             _http = http;
             _baseUrl = options.Value.BaseUrl.TrimEnd('/');
+            Console.WriteLine($"[ApiService] Base URL: {_baseUrl}");
         }
 
         public async Task<T?> GetAsync<T>(string endpoint)
@@ -34,21 +36,34 @@ namespace QLN.Web.Shared.Services
             return default!;
         }
 
-
-        public async Task<T?> PostAsync<TRequest, T>(string endpoint, TRequest data)
+        public async Task<T?> PostAsync<TRequest, T>(string endpoint, TRequest data, string? accessToken = null)
         {
-            var response = await _http.PostAsJsonAsync($"{_baseUrl}/{endpoint}", data);
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/{endpoint}")
+            {
+                Content = JsonContent.Create(data)
+            };
+
+            if (!string.IsNullOrWhiteSpace(accessToken))
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            }
+
+            var response = await _http.SendAsync(request);
             var responseContent = await response.Content.ReadAsStringAsync();
-            if (response.IsSuccessStatusCode){
+
+            if (response.IsSuccessStatusCode)
+            {
                 var jsonOptions = new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 };
                 return await response.Content.ReadFromJsonAsync<T>(jsonOptions);
             }
+
             await HandleError(response);
             return default!;
         }
+
 
         public async Task<TResponse?> PatchAsync<TRequest, TResponse>(string endpoint, TRequest data)
         {

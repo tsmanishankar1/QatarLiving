@@ -6,7 +6,10 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Azure;
 using Azure.Search.Documents;
+using Azure.Search.Documents.Indexes;
+using Azure.Search.Documents.Indexes.Models;
 using Azure.Search.Documents.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using QLN.SearchService.IndexModels;
 using QLN.SearchService.IRepository;
@@ -17,14 +20,18 @@ namespace QLN.SearchService.Repository
     public class SearchRepository : ISearchRepository
     {
         private readonly AzureSearchSettings _settings;
-        private readonly AzureKeyCredential _cred;
+        private readonly AzureKeyCredential _credential;
         private readonly Uri _endpoint;
+        private readonly ILogger<SearchRepository> _logger;
 
-        public SearchRepository(IOptions<AzureSearchSettings> opts)
+        public SearchRepository(
+            IOptions<AzureSearchSettings> opts,
+            ILogger<SearchRepository> logger)
         {
             _settings = opts.Value;
             _endpoint = new Uri(_settings.Endpoint);
-            _cred = new AzureKeyCredential(_settings.ApiKey);
+            _credential = new AzureKeyCredential(_settings.ApiKey);
+            _logger = logger;
         }
 
         private SearchClient GetClient(string vertical)
@@ -32,10 +39,10 @@ namespace QLN.SearchService.Repository
             if (!_settings.Indexes.TryGetValue(vertical, out var indexName))
                 throw new ArgumentException($"No index configured for '{vertical}'");
 
-            return new SearchClient(_endpoint, indexName, _cred);
+            return new SearchClient(_endpoint, indexName, _credential);
         }
 
-        public async Task<IEnumerable<T>> SearchAsync<T>(string vertical, SearchRequest req)
+        public async Task<IEnumerable<T>> Search<T>(string vertical, SearchRequest req)
         {
             var client = GetClient(vertical);
             var options = new SearchOptions
@@ -43,13 +50,19 @@ namespace QLN.SearchService.Repository
                 Size = req.Top > 0 ? req.Top : 50
             };
 
+            // filters
             if (req.Filters != null && req.Filters.Any())
             {
                 var clauses = new List<string>();
-                foreach (var kv in req.Filters)
+                foreach (var keyvalue in req.Filters)
                 {
-                    var field = kv.Key;
-                    var val = kv.Value;
+                    var fieldKey = keyvalue.Key;
+                    var prop = typeof(T)
+                        .GetProperties()
+                        .FirstOrDefault(p => p.Name.Equals(fieldKey, StringComparison.OrdinalIgnoreCase));
+                    var field = prop?.Name ?? fieldKey;
+
+                    var val = keyvalue.Value;
                     string clause;
 
                     if (val is JsonElement je)
@@ -57,36 +70,33 @@ namespace QLN.SearchService.Repository
                         switch (je.ValueKind)
                         {
                             case JsonValueKind.String:
-                                var s = je.GetString();
-                                clause = $"{field} eq '{s?.Replace("'", "''")}'";
+                                var s = je.GetString()?.Replace("'", "''");
+                                clause = $"{field} eq '{s}'";
                                 break;
                             case JsonValueKind.True:
                             case JsonValueKind.False:
-                                var b = je.GetBoolean();
-                                clause = $"{field} eq {b.ToString().ToLower()}";
+                                clause = $"{field} eq {je.GetBoolean().ToString().ToLower()}";
                                 break;
                             case JsonValueKind.Number:
-                                // preserve numeric format
-                                var numText = je.GetRawText();
-                                clause = $"{field} eq {numText}";
+                                clause = $"{field} eq {je.GetRawText()}";
                                 break;
                             default:
                                 throw new NotSupportedException(
-                                    $"Filter on JSON element kind '{je.ValueKind}' not supported");
+                                    $"Filter on JSON kind '{je.ValueKind}' not supported");
                         }
                     }
                     else
                     {
                         clause = val switch
                         {
-                            string s => $"{field} eq '{s.Replace("'", "''")}'",
+                            string str => $"{field} eq '{str.Replace("'", "''")}'",
                             bool b => $"{field} eq {b.ToString().ToLower()}",
                             int i => $"{field} eq {i}",
                             long l => $"{field} eq {l}",
                             double d => $"{field} eq {d.ToString(CultureInfo.InvariantCulture)}",
                             decimal m => $"{field} eq {m.ToString(CultureInfo.InvariantCulture)}",
                             _ => throw new NotSupportedException(
-                                $"Filter on type {val.GetType().Name} not supported")
+                                    $"Filter on type {val.GetType().Name} not supported")
                         };
                     }
 
@@ -94,30 +104,99 @@ namespace QLN.SearchService.Repository
                 }
 
                 options.Filter = string.Join(" and ", clauses);
-                Console.WriteLine($"[SearchRepository] OData filter: {options.Filter}");
+                _logger.LogInformation("Applied OData filter: {Filter}", options.Filter);
             }
 
+            // orderby
             if (!string.IsNullOrWhiteSpace(req.OrderBy))
             {
-                options.OrderBy.Add(req.OrderBy);
+                var parts = req.OrderBy.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                var key = parts[0];
+                var dir = parts.Length > 1 ? parts[1] : null;
+
+                var prop = typeof(T)
+                    .GetProperties()
+                    .FirstOrDefault(p => p.Name.Equals(key, StringComparison.OrdinalIgnoreCase));
+
+                var field = prop?.Name ?? key;
+                var orderExpr = dir != null
+                    ? $"{field} {dir}"
+                    : field;
+
+                options.OrderBy.Add(orderExpr);
+                _logger.LogInformation("Applying OrderBy: {OrderBy}", orderExpr);
             }
 
-            var response = await client.SearchAsync<T>(req.Text ?? "*", options);
-            return response.Value.GetResults().Select(r => r.Document!);
+            try
+            {
+                _logger.LogInformation("Executing search on '{Vertical}' with text='{Text}'", vertical, req.Text);
+                var response = await client.SearchAsync<T>(req.Text ?? "*", options);
+
+                var results = response.Value.GetResults()
+                    .Select(r => r.Document!)
+                    .ToList();
+
+                _logger.LogInformation("Found {Count} documents in '{Vertical}'", results.Count, vertical);
+                return results;
+            }
+            catch (RequestFailedException ex)
+            {
+                _logger.LogError(ex, "Azure Search request failed for vertical '{Vertical}'", vertical);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during SearchAsync('{Vertical}')", vertical);
+                throw;
+            }
         }
 
-        public async Task<string> UploadAsync<T>(string vertical, T doc)
+        public async Task<string> Upload<T>(string vertical, T doc)
         {
             var client = GetClient(vertical);
-            var batch = IndexDocumentsBatch.Upload(new[] { doc! });
-            await client.IndexDocumentsAsync(batch);
-            return $"Document indexed to '{vertical}'";
+
+            try
+            {
+                _logger.LogInformation("Indexing document into '{Vertical}'", vertical);
+                var batch = IndexDocumentsBatch.Upload(new[] { doc! });
+                await client.IndexDocumentsAsync(batch);
+
+                _logger.LogInformation("Successfully indexed document into '{Vertical}'", vertical);
+                return $"Document indexed to '{vertical}'";
+            }
+            catch (RequestFailedException ex)
+            {
+                _logger.LogError(ex, "Azure Search failed to index document into '{Vertical}'", vertical);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during UploadAsync('{Vertical}')", vertical);
+                throw;
+            }
         }
-        public async Task<T> GetByIdAsync<T>(string vertical, string key)
+
+        public async Task<T?> GetById<T>(string vertical, string key)
         {
             var client = GetClient(vertical);
-            var resp = await client.GetDocumentAsync<T>(key);
-            return resp.Value;
+
+            try
+            {
+                _logger.LogInformation("Retrieving document '{Key}' from '{Vertical}'", key, vertical);
+                var resp = await client.GetDocumentAsync<T>(key);
+                _logger.LogInformation("Successfully retrieved document '{Key}'", key);
+                return resp.Value;
+            }
+            catch (RequestFailedException ex) when (ex.Status == 404)
+            {
+                _logger.LogWarning("Document '{Key}' not found in '{Vertical}'", key, vertical);
+                return default;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during GetByIdAsync('{Key}')", key);
+                throw;
+            }
         }
     }
 }

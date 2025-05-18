@@ -11,7 +11,7 @@ namespace QLN.Common.Infrastructure.DTO_s
         public string Name { get; set; } = string.Empty; 
         public Guid? UserId { get; set; } 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public ClassifiedSearchRequest SearchQuery { get; set; } = new();
+        public CommonSearchRequest SearchQuery { get; set; } = new();
     }
 
 

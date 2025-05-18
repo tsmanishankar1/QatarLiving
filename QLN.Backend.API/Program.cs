@@ -13,6 +13,7 @@ using Dapr.Client;
 using QLN.Backend.API.ServiceConfiguration;
 using QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints;
 using QLN.Common.Swagger;
+using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.SaveSearchEndPoints;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.Service.SaveSearch;
@@ -148,16 +149,13 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 
-builder.Services.AddDaprClient(clientBuilder =>
-{
-    clientBuilder
-        .UseHttpEndpoint("http://localhost:63231 ")
-        .UseGrpcEndpoint("http://localhost:50003");
-});
+builder.Services.AddDaprClient();
 
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
+
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
@@ -176,12 +174,11 @@ if (app.Environment.IsDevelopment())
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
 
-var bannerGroup = app.MapGroup("/api/banner");
-bannerGroup.MapBannerEndpoints();
-
+var classifiedGroup = app.MapGroup("/api/classified");
+classifiedGroup.MapClassifiedsEndpoints();
 
 var searchGroup = app.MapGroup("/api");
-bannerGroup.MapSearchEndpoints();
+searchGroup.MapSearchEndpoints();
 
 app.UseHttpsRedirection();
 app.UseAuthentication();

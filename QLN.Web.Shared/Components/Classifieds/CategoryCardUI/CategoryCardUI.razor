@@ -8,7 +8,7 @@
                 <div class="category-content">
                     <div class="category-title">@category.Title</div>
                     <MudButton Variant="Variant.Text"
-                               Style="color: var(--color-accent); text-transform: none; justify-content: flex-start"
+                               Style="color: var(--color-accent); text-transform: none; justify-content: flex-start;  font-weight: 400; font-size: 14px;"
                                Size="Size.Small"
                                FullWidth="true"
                                EndIcon="@Icons.Material.Filled.ArrowForward">
@@ -26,6 +26,7 @@
 <style>
 .featured-categories-section {
     padding: 3rem 2rem;
+    font-family: 'Public Sans', sans-serif;
 }
 
 .category-card {
@@ -54,7 +55,7 @@
 
 .category-title {
     font-size: 20px;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--color-text-primary);
     margin-bottom: 6px;
 }
@@ -73,6 +74,13 @@
     object-fit: contain;
     -webkit-mask-image: linear-gradient(to right, rgba(255,255,255,0.2), rgba(255,255,255,0.8));
 }
+@@media (max-width: 600px) {
+   
+   .featured-categories-section {
+    padding: 1rem;
+}
+}
+
 </style>
 
 @code {

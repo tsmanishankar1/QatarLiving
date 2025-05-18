@@ -1,5 +1,6 @@
 @page "/user-profile"
 @using MudBlazor
+@using QLN.Web.Shared.Pages.Subscription
 @using QLN.Web.Shared.Pages.UserProfile
 
 <MudContainer MaxWidth="MaxWidth.False">
@@ -7,64 +8,64 @@
         <MudItem xs="12" md="3">
             <MudNavMenu>
                 @foreach (var item in SidebarItems)
-            {
-                <MudPaper 
+                {
+                    <MudPaper 
                     Elevation="0"
                     Class="pa-2 mb-1 d-flex justify-space-between align-center rounded cursor-pointer"
                     Style="@((item == SelectedItem) 
                     ? "background-color: var(--color-accent); color: var(--color-text-white);" 
                     : "background-color: transparent; color: black;")"
-                        @onclick="() => SelectedItem = item">
-                         <MudText Class="m-0" Typo="Typo.body2">@item.Label</MudText>
+                    @onclick="() => SelectedItem = item">
+                        <MudText Class="m-0" Typo="Typo.body2">@item.Label</MudText>
                         <MudText Class="m-0 font-weight-bold" Typo="Typo.body2">@item.Count</MudText>
-                </MudPaper>
-   
-            }
+                    </MudPaper>
+
+                }
                 <MudDivider Class="my-2" />
 
 
 
                 <MudPaper 
-    Elevation="0"
-    Class="pa-2 mb-1 d-flex justify-space-between align-center rounded cursor-pointer"
-    Style="@((SelectedItem == Messages) 
+                Elevation="0"
+                Class="pa-2 mb-1 d-flex justify-space-between align-center rounded cursor-pointer"
+                Style="@((SelectedItem == Messages) 
         ? "background-color: #003A63; color: white;" 
         : "background-color: transparent; color: black;")"
-    @onclick="@(() => SelectedItem = Messages)">
-    <MudText Class="m-0" Typo="Typo.body2">@Messages.Label</MudText>
-    <MudText Class="m-0 font-weight-bold" Typo="Typo.body2">@Messages.Count</MudText>
-</MudPaper>
-<MudPaper 
-    Elevation="0"
-    Class="pa-2 mb-1 d-flex justify-space-between align-center rounded cursor-pointer"
-    Style="@((SelectedItem == ProfileSettings) 
+                @onclick="@(() => SelectedItem = Messages)">
+                    <MudText Class="m-0" Typo="Typo.body2">@Messages.Label</MudText>
+                    <MudText Class="m-0 font-weight-bold" Typo="Typo.body2">@Messages.Count</MudText>
+                </MudPaper>
+                <MudPaper 
+                Elevation="0"
+                Class="pa-2 mb-1 d-flex justify-space-between align-center rounded cursor-pointer"
+                Style="@((SelectedItem == ProfileSettings) 
         ? "background-color: #003A63; color: white;" 
         : "background-color: transparent; color: black;")"
-    @onclick="@(() => SelectedItem = ProfileSettings)">
-    <MudText Class="m-0" Typo="Typo.body2">@ProfileSettings.Label</MudText>
-</MudPaper>
-<MudPaper 
-    Elevation="0"
-    Class="pa-2 mb-1 d-flex justify-space-between align-center rounded cursor-pointer"
-    Style="@((SelectedItem == VerifyAccount) 
+                @onclick="@(() => SelectedItem = ProfileSettings)">
+                    <MudText Class="m-0" Typo="Typo.body2">@ProfileSettings.Label</MudText>
+                </MudPaper>
+                <MudPaper 
+                Elevation="0"
+                Class="pa-2 mb-1 d-flex justify-space-between align-center rounded cursor-pointer"
+                Style="@((SelectedItem == VerifyAccount) 
         ? "background-color: #003A63; color: white;" 
         : "background-color: transparent; color: black;")"
-    @onclick="@(() => SelectedItem = VerifyAccount)">
-    
-    <MudText Class="m-0" Typo="Typo.body2">@VerifyAccount.Label</MudText>
-</MudPaper>
+                @onclick="@(() => SelectedItem = VerifyAccount)">
 
- <MudDivider Class="my-2" />
-<MudPaper 
-    Elevation="0"
-    Class="pa-2 mb-1 d-flex justify-space-between align-center rounded cursor-pointer"
-    Style="@((SelectedItem == Subscriptions) 
+                    <MudText Class="m-0" Typo="Typo.body2">@VerifyAccount.Label</MudText>
+                </MudPaper>
+
+                <MudDivider Class="my-2" />
+                <MudPaper 
+                Elevation="0"
+                Class="pa-2 mb-1 d-flex justify-space-between align-center rounded cursor-pointer"
+                Style="@((SelectedItem == Subscriptions) 
         ? "background-color: #003A63; color: white;" 
         : "background-color: transparent; color: black;")"
-    @onclick="@(() => SelectedItem = Subscriptions)">
-    
-    <MudText Class="m-0" Typo="Typo.body2">@Subscriptions.Label</MudText>
-</MudPaper>
+                @onclick="@(() => SelectedItem = Subscriptions)">
+
+                    <MudText Class="m-0" Typo="Typo.body2">@Subscriptions.Label</MudText>
+                </MudPaper>
             </MudNavMenu>
         </MudItem>
 
@@ -130,7 +131,7 @@
         new SidebarItem { Label = "Jobseeker profile", Count = 0, ComponentType = typeof(JobseekerProfileComponent) },
         new SidebarItem { Label = "Freelancer profile", Count = 0, ComponentType = typeof(FreelancerProfileComponent) },
         new SidebarItem { Label = "Favourite Items", Count = 0, ComponentType = typeof(FavouriteItemsComponent) }, 
-        new SidebarItem { Label = "Subscription", Count = 0, ComponentType = typeof(Supscriptions) }
+        new SidebarItem { Label = "Subscription", Count = 0, ComponentType = typeof(Subscription) }
 
     };
 
