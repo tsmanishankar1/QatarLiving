@@ -169,7 +169,7 @@ if (app.Environment.IsDevelopment())
 
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
-var companyGroup = app.MapGroup("/companyprofile");
+var companyGroup = app.MapGroup("/api/companyprofile");
 companyGroup.MapCompanyEndpoints();
 var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedLandingEndpoints();

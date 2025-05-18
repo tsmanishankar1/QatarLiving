@@ -42,7 +42,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-var companyGroup = app.MapGroup("/companyprofile");
+var companyGroup = app.MapGroup("/api/companyprofile");
 companyGroup.MapCompanyEndpoints();
 app.UseHttpsRedirection();
 

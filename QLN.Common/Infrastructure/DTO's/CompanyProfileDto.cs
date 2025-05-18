@@ -10,38 +10,44 @@ namespace QLN.Common.Infrastructure.DTO_s
 {
     public class CompanyProfileDto
     {
+        [Required]
         public int VerticalId { get; set; }
+        public Guid UserId { get; set; }
         public IFormFile? CompanyLogo { get; set; }
+        public string? BusinessName { get; set; }
         [Required]
-        public string BusinessName { get; set; }
+        public string Country { get; set; } = string.Empty;
         [Required]
-        public string Country { get; set; }
+        public string City { get; set; } = string.Empty;
+        public string? Branches { get; set; }
         [Required]
-        public string City { get; set; }
-        public List<string>? BranchLocations { get; set; }
+        public string PhoneNumber { get; set; } = string.Empty;
         [Required]
-        public string PhoneNumber { get; set; }
-        public string? WhatsAppNumber { get; set; }
-        [Required, EmailAddress]
-        public string Email { get; set; }
-        public string? WebsiteUrl { get; set; }
-        public string? FacebookUrl { get; set; }
-        public string? InstagramUrl { get; set; }
+        public string WhatsAppNumber { get; set; } = string.Empty;
+        [EmailAddress]
+        public string? Email { get; set; }
+        [Required]
+        public string WebsiteUrl { get; set; } = string.Empty;
+        [Required]
+        public string FacebookUrl { get; set; } = string.Empty;
+        [Required]
+        public string InstagramUrl { get; set; } = string.Empty;
         public string? StartDay { get; set; }
         public string? EndDay { get; set; }
         public string? StartHour { get; set; }
         public string? EndHour { get; set; }
         [Required]
-        public string NatureOfBusiness { get; set; }
+        public string NatureOfBusiness { get; set; } = string.Empty;
         [Required]
-        public string CompanySize { get; set; }
+        public string CompanySize { get; set; } = string.Empty;
         [Required]
-        public string CompanyType { get; set; }
-        public string? UserDesignation { get; set; }
-        [MaxLength(300)]
-        public string? BusinessDescription { get; set; }
+        public string CompanyType { get; set; } = string.Empty;
         [Required]
-        public string CRNumber { get; set; }
+        public string UserDesignation { get; set; } = string.Empty;
+        [Required, MaxLength(300)]
+        public string BusinessDescription { get; set; } = string.Empty;
+        [Required]
+        public string CRNumber { get; set; } = string.Empty;
         [Required]
         public IFormFile CRDocument { get; set; }
     }
@@ -49,27 +55,28 @@ namespace QLN.Common.Infrastructure.DTO_s
     {
         public Guid Id { get; set; }
         public int VerticalId { get; set; }
+        public Guid UserId { get; set; }
         public string? CompanyLogo { get; set; }
-        public string BusinessName { get; set; }
-        public string Country { get; set; }
-        public string City { get; set; }
-        public List<string>? BranchLocations { get; set; }
-        public string PhoneNumber { get; set; }
-        public string? WhatsAppNumber { get; set; }
-        public string Email { get; set; }
-        public string? WebsiteUrl { get; set; }
-        public string? FacebookUrl { get; set; }
-        public string? InstagramUrl { get; set; }
+        public string? BusinessName { get; set; }
+        public string Country { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string? Branches { get; set; }
+        public string PhoneNumber { get; set; } = string.Empty;
+        public string WhatsAppNumber { get; set; } = string.Empty;
+        public string? Email { get; set; }
+        public string WebsiteUrl { get; set; } = string.Empty;
+        public string FacebookUrl { get; set; } = string.Empty;
+        public string InstagramUrl { get; set; } = string.Empty;
         public string? StartDay { get; set; }
         public string? EndDay { get; set; }
         public string? StartHour { get; set; }
         public string? EndHour { get; set; }
-        public string NatureOfBusiness { get; set; }
-        public string CompanySize { get; set; }
-        public string CompanyType { get; set; }
-        public string? UserDesignation { get; set; }
-        public string? BusinessDescription { get; set; }
-        public string CRNumber { get; set; }
-        public string? CRDocumentPath { get; set; }
+        public string NatureOfBusiness { get; set; } = string.Empty;
+        public string CompanySize { get; set; } = string.Empty;
+        public string CompanyType { get; set; } = string.Empty;
+        public string UserDesignation { get; set; } = string.Empty;
+        public string BusinessDescription { get; set; } = string.Empty;
+        public string CRNumber { get; set; } = string.Empty;
+        public string CRDocument { get; set; } = string.Empty;
     }
 }

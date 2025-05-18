@@ -2,7 +2,8 @@
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using System.Text.Json;
 using System.Windows.Input;
-using Dapr.Client; 
+using Dapr.Client;
+using QLN.Common.Infrastructure.Constants;
 
 namespace QLN.Company.MS.Service
 {
@@ -11,32 +12,25 @@ namespace QLN.Company.MS.Service
         private readonly DaprClient _dapr;
         private readonly IWebHostEnvironment _env;
         private readonly ILogger<InternalCompanyService> _logger;
-        private const string StoreName = "companystatestore";
-        private const string IndexKey = "company-index";
-
         public InternalCompanyService(DaprClient dapr, IWebHostEnvironment env, ILogger<InternalCompanyService> logger)
         {
             _dapr = dapr;
             _env = env;
             _logger = logger;
         }
-
-        public async Task<CompanyProfileEntity> CreateAsync(CompanyProfileDto dto, CancellationToken cancellationToken = default)
+        public async Task<CompanyProfileEntity> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
                 var id = Guid.NewGuid();
-                var entity = await ConvertDtoToEntityAsync(dto, id, cancellationToken);
-
-                await _dapr.SaveStateAsync(StoreName, id.ToString(), entity);
-
-                var keys = await GetIndexAsync();
+                var entity = await ConvertDtoToEntity(dto, id, cancellationToken);
+                await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, id.ToString(), entity);
+                var keys = await GetIndex();
                 if (!keys.Contains(id.ToString()))
                 {
                     keys.Add(id.ToString());
-                    await _dapr.SaveStateAsync(StoreName, IndexKey, keys);
+                    await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, ConstantValues.CompanyIndexKey, keys);
                 }
-
                 return entity;
             }
             catch (Exception ex)
@@ -46,11 +40,11 @@ namespace QLN.Company.MS.Service
             }
         }
 
-        public async Task<CompanyProfileEntity?> GetAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<CompanyProfileEntity?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
-                return await _dapr.GetStateAsync<CompanyProfileEntity>(StoreName, id.ToString(), cancellationToken: cancellationToken);
+                return await _dapr.GetStateAsync<CompanyProfileEntity>(ConstantValues.CompanyStoreName, id.ToString(), cancellationToken: cancellationToken);
             }
             catch (Exception ex)
             {
@@ -59,14 +53,14 @@ namespace QLN.Company.MS.Service
             }
         }
 
-        public async Task<IEnumerable<CompanyProfileEntity>> GetAllAsync()
+        public async Task<IEnumerable<CompanyProfileEntity>> GetAllCompanies()
         {
             try
             {
-                var keys = await GetIndexAsync();
+                var keys = await GetIndex();
                 if (!keys.Any()) return Enumerable.Empty<CompanyProfileEntity>();
 
-                var items = await _dapr.GetBulkStateAsync(StoreName, keys, parallelism: 10);
+                var items = await _dapr.GetBulkStateAsync(ConstantValues.CompanyStoreName, keys, parallelism: 10);
 
                 return items
                     .Where(i => !string.IsNullOrWhiteSpace(i.Value))
@@ -80,12 +74,12 @@ namespace QLN.Company.MS.Service
             }
         }
 
-        public async Task<CompanyProfileEntity> UpdateAsync(Guid id, CompanyProfileDto dto, CancellationToken cancellationToken = default)
+        public async Task<CompanyProfileEntity> UpdateCompany(Guid id, CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                var entity = await ConvertDtoToEntityAsync(dto, id, cancellationToken);
-                await _dapr.SaveStateAsync(StoreName, id.ToString(), entity);
+                var entity = await ConvertDtoToEntity(dto, id, cancellationToken);
+                await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, id.ToString(), entity);
                 return entity;
             }
             catch (Exception ex)
@@ -95,15 +89,15 @@ namespace QLN.Company.MS.Service
             }
         }
 
-        public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task DeleteCompany(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
-                await _dapr.DeleteStateAsync(StoreName, id.ToString(), cancellationToken: cancellationToken);
+                await _dapr.DeleteStateAsync(ConstantValues.CompanyStoreName, id.ToString(), cancellationToken: cancellationToken);
 
-                var keys = await GetIndexAsync();
+                var keys = await GetIndex();
                 keys.Remove(id.ToString());
-                await _dapr.SaveStateAsync(StoreName, IndexKey, keys);
+                await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, ConstantValues.CompanyIndexKey, keys);
             }
             catch (Exception ex)
             {
@@ -112,11 +106,11 @@ namespace QLN.Company.MS.Service
             }
         }
 
-        private async Task<List<string>> GetIndexAsync()
+        private async Task<List<string>> GetIndex()
         {
             try
             {
-                var result = await _dapr.GetStateAsync<List<string>>(StoreName, IndexKey);
+                var result = await _dapr.GetStateAsync<List<string>>(ConstantValues.CompanyStoreName, ConstantValues.CompanyIndexKey);
                 return result ?? new List<string>();
             }
             catch (Exception ex)
@@ -125,8 +119,7 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-
-        private async Task<CompanyProfileEntity> ConvertDtoToEntityAsync(CompanyProfileDto dto, Guid id, CancellationToken cancellationToken = default)
+        private async Task<CompanyProfileEntity> ConvertDtoToEntity(CompanyProfileDto dto, Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -134,21 +127,22 @@ namespace QLN.Company.MS.Service
                 Directory.CreateDirectory(root);
 
                 var logoPath = dto.CompanyLogo is not null
-                    ? await SaveFileAsync(dto.CompanyLogo, Path.Combine(root, "logo"))
+                    ? await SaveFile(dto.CompanyLogo, Path.Combine(root, "logo"))
                     : null;
 
                 var crPath = dto.CRDocument is not null
-                    ? await SaveFileAsync(dto.CRDocument, Path.Combine(root, "cr"))
+                    ? await SaveFile(dto.CRDocument, Path.Combine(root, "cr"))
                     : null;
 
                 return new CompanyProfileEntity
                 {
                     Id = id,
                     VerticalId = dto.VerticalId,
+                    UserId = dto.UserId,
                     BusinessName = dto.BusinessName,
                     Country = dto.Country,
                     City = dto.City,
-                    BranchLocations = dto.BranchLocations,
+                    Branches = dto.Branches,
                     PhoneNumber = dto.PhoneNumber,
                     WhatsAppNumber = dto.WhatsAppNumber,
                     Email = dto.Email,
@@ -166,7 +160,7 @@ namespace QLN.Company.MS.Service
                     BusinessDescription = dto.BusinessDescription,
                     CRNumber = dto.CRNumber,
                     CompanyLogo = logoPath,
-                    CRDocumentPath = crPath
+                    CRDocument = crPath
                 };
             }
             catch (Exception ex)
@@ -176,7 +170,7 @@ namespace QLN.Company.MS.Service
             }
         }
 
-        private async Task<string> SaveFileAsync(IFormFile file, string directory)
+        private async Task<string> SaveFile(IFormFile file, string directory)
         {
             try
             {

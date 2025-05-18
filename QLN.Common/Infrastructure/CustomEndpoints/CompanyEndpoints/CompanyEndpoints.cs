@@ -19,7 +19,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
         public static RouteGroupBuilder MapCreateCompanyProfile(this RouteGroupBuilder group)
         {
             group.MapPost("/create", async Task<Results<
-                Ok<CompanyProfileEntity>,
+                Ok<string>,
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
             (
@@ -29,8 +29,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             {
                 try
                 {
-                    var entity = await service.CreateAsync(dto, cancellationToken);
-                    return TypedResults.Ok(entity);
+                    var entity = await service.CreateCompany(dto, cancellationToken);
+                    return TypedResults.Ok("Company Profile created successfully");
                 }
                 catch (InvalidDataException ex)
                 {
@@ -57,7 +57,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .Produces<CompanyProfileEntity>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-            //.RequireAuthorization()
+            .RequireAuthorization()
             .DisableAntiforgery();
 
             return group;
@@ -65,12 +65,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
         public static RouteGroupBuilder MapGetCompanyProfile(this RouteGroupBuilder group)
         {
             group.MapGet("/getById", async Task<IResult> (
-                [FromQuery] Guid id,
-                [FromServices] ICompanyService service) =>
+            [FromQuery] Guid id,
+            [FromServices] ICompanyService service) =>
             {
                 try
                 {
-                    var result = await service.GetAsync(id);
+                    var result = await service.GetCompanyById(id);
+                    if (result is null)
+                        throw new KeyNotFoundException($"Company with id '{id}' was not found.");
+
                     return TypedResults.Ok(result);
                 }
                 catch (KeyNotFoundException ex)
@@ -111,7 +114,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             {
                 try
                 {
-                    var result = await service.GetAllAsync();
+                    var result = await service.GetAllCompanies();
                     var castedResult = result.Cast<object>();
                     return TypedResults.Ok(castedResult);
                 }
@@ -148,8 +151,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             {
                 try
                 {
-                    var result = await service.UpdateAsync(id, dto, cancellationToken);
-                    return TypedResults.Ok<object>(result); 
+                    var result = await service.UpdateCompany(id, dto, cancellationToken);
+                    return TypedResults.Ok<object>(result);
                 }
                 catch (InvalidDataException ex)
                 {
@@ -176,22 +179,25 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .Produces<object>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .DisableAntiforgery()
             .RequireAuthorization();
             return group;
         }
         public static RouteGroupBuilder MapDeleteCompanyProfile(this RouteGroupBuilder group)
         {
             group.MapDelete("/delete", async Task<Results<
-                NoContent,
-                NotFound<ProblemDetails>,
-                ProblemHttpResult>>
-            (
+                    NoContent,
+                    NotFound<ProblemDetails>,
+                    ProblemHttpResult>> (
                 [FromQuery] Guid id,
                 [FromServices] ICompanyService service) =>
             {
                 try
                 {
-                    await service.DeleteAsync(id);
+                    var result = await service.GetCompanyById(id);
+                    if (result is null)
+                        throw new KeyNotFoundException($"Company with id '{id}' was not found.");
+                    await service.DeleteCompany(id);
                     return TypedResults.NoContent();
                 }
                 catch (KeyNotFoundException ex)
@@ -206,9 +212,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 catch (Exception)
                 {
                     return TypedResults.Problem(
-                          title: "Internal Server Error",
-                          detail: "An unexpected error occurred.",
-                          statusCode: StatusCodes.Status500InternalServerError
+                        title: "Internal Server Error",
+                        detail: "An unexpected error occurred.",
+                        statusCode: StatusCodes.Status500InternalServerError
                     );
                 }
             })

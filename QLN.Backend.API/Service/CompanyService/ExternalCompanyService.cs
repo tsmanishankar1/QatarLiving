@@ -1,31 +1,28 @@
 ﻿using Dapr.Client;
+using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
-using System.Windows.Input;
-
 namespace QLN.Backend.API.Service.CompanyService
 {
     public class ExternalCompanyService : ICompanyService
     {
         private readonly DaprClient _dapr;
-        private const string SERVICE_APP_ID = "qln-company-ms";
         private readonly ILogger<ExternalCompanyService> _logger;
-
         public ExternalCompanyService(DaprClient dapr, ILogger<ExternalCompanyService> logger)
         {
             _dapr = dapr;
             _logger = logger;
         }
-
-        public async Task<CompanyProfileEntity> CreateAsync(CompanyProfileDto dto, CancellationToken cancellationToken = default)
+        public async Task<CompanyProfileEntity> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                return await _dapr.InvokeMethodAsync<CompanyProfileDto, CompanyProfileEntity>(
-                   SERVICE_APP_ID, 
-                   "companyprofile/create", 
-                   dto, 
+                var response = await _dapr.InvokeMethodAsync<CompanyProfileDto, CompanyProfileEntity>(
+                   ConstantValues.CompanyServiceAppId,
+                   "/api/companyprofile/create",
+                   dto,
                    cancellationToken);
+                return response;
             }
             catch (Exception ex)
             {
@@ -33,15 +30,15 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-
-        public async Task<CompanyProfileEntity?> GetAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<CompanyProfileEntity?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
-                return await _dapr.InvokeMethodAsync<CompanyProfileEntity>(
-                    HttpMethod.Get, 
-                    SERVICE_APP_ID, 
-                    "companyprofile/getById", cancellationToken);
+                var response = await _dapr.InvokeMethodAsync<CompanyProfileEntity>(
+                    HttpMethod.Get,
+                    ConstantValues.CompanyServiceAppId,
+                    "/api/companyprofile/getById", cancellationToken);
+                return response;
             }
             catch (Exception ex)
             {
@@ -49,15 +46,15 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-
-        public async Task<IEnumerable<CompanyProfileEntity>> GetAllAsync()
+        public async Task<IEnumerable<CompanyProfileEntity>> GetAllCompanies()
         {
             try
             {
-                return await _dapr.InvokeMethodAsync<IEnumerable<CompanyProfileEntity>>(
-                    HttpMethod.Get, 
-                    SERVICE_APP_ID, 
-                    "companyprofile/getAll");
+                var response = await _dapr.InvokeMethodAsync<IEnumerable<CompanyProfileEntity>>(
+                    HttpMethod.Get,
+                    ConstantValues.CompanyServiceAppId,
+                    "/api/companyprofile/getAll");
+                return response;
             }
             catch (Exception ex)
             {
@@ -65,16 +62,17 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-
-        public async Task<CompanyProfileEntity> UpdateAsync(Guid id, CompanyProfileDto dto, CancellationToken cancellationToken = default)
+        public async Task<CompanyProfileEntity> UpdateCompany(Guid id, CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                return await _dapr.InvokeMethodAsync<CompanyProfileDto, CompanyProfileEntity>(
-                    HttpMethod.Put, 
-                    SERVICE_APP_ID, 
-                    "companyprofile/update", 
-                    dto, cancellationToken);
+                var response = await _dapr.InvokeMethodAsync<CompanyProfileDto, CompanyProfileEntity>(
+                    HttpMethod.Put,
+                    ConstantValues.CompanyServiceAppId,
+                    "/api/companyprofile/update",
+                    dto,
+                    cancellationToken);
+                return response;
             }
             catch (Exception ex)
             {
@@ -82,15 +80,15 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-
-        public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task DeleteCompany(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
                 await _dapr.InvokeMethodAsync(
-                    HttpMethod.Delete, 
-                    SERVICE_APP_ID, 
-                    "companyprofile/delete", cancellationToken);
+                    HttpMethod.Delete,
+                    ConstantValues.CompanyServiceAppId,
+                    "/api/companyprofile/delete",
+                    cancellationToken);
             }
             catch (Exception ex)
             {
@@ -100,3 +98,4 @@ namespace QLN.Backend.API.Service.CompanyService
         }
     }
 }
+
