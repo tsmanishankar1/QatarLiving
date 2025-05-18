@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using QLN.Common.Infrastructure.DTO_s;
@@ -15,47 +16,210 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 {
     public static class CompanyEndpoints
     {
-        public static RouteGroupBuilder MapCompanyProfileEndpoints(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapCreateCompanyProfile(this RouteGroupBuilder group)
         {
-            group.MapPost("/create", async (
+            group.MapPost("/create", async Task<Results<
+                Ok<CompanyProfileEntity>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
                 [FromForm] CompanyProfileDto dto,
                 [FromServices] ICompanyService service,
-                HttpContext ctx) =>
+                CancellationToken cancellationToken = default) =>
             {
-                var entity = await service.CreateAsync(dto, ctx);
-                return Results.Ok(entity);
-            }).DisableAntiforgery();
+                try
+                {
+                    var entity = await service.CreateAsync(dto, cancellationToken);
+                    return TypedResults.Ok(entity);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception)
+                {
+                    return TypedResults.Problem(
+                           title: "Internal Server Error",
+                           detail: "An unexpected error occurred.",
+                           statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("CreateCompanyProfile")
+            .WithTags("Company")
+            .WithSummary("Create a company profile")
+            .WithDescription("Creates a new company profile.")
+            .Produces<CompanyProfileEntity>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            //.RequireAuthorization()
+            .DisableAntiforgery();
 
-            group.MapGet("/get", async (Guid id, [FromServices] ICompanyService service) =>
-            {
-                var result = await service.GetAsync(id);
-                return result is null ? Results.NotFound() : Results.Ok(result);
-            });
-
-            group.MapGet("/all", async ([FromServices] ICompanyService service) =>
-            {
-                var list = await service.GetAllAsync();
-                return Results.Ok(list);
-            });
-
-            group.MapPut("/update", async (
-                Guid id,
-                [FromForm] CompanyProfileDto dto,
-                [FromServices] ICompanyService service,
-                HttpContext ctx) =>
-            {
-                var entity = await service.UpdateAsync(id, dto, ctx);
-                return Results.Ok(entity);
-            });
-
-            group.MapDelete("/delete", async (
-                Guid id,
+            return group;
+        }
+        public static RouteGroupBuilder MapGetCompanyProfile(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getById", async Task<IResult> (
+                [FromQuery] Guid id,
                 [FromServices] ICompanyService service) =>
             {
-                await service.DeleteAsync(id);
-                return Results.NoContent();
-            });
+                try
+                {
+                    var result = await service.GetAsync(id);
+                    return TypedResults.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception)
+                {
+                    return TypedResults.Problem(
+                          title: "Internal Server Error",
+                          detail: "An unexpected error occurred.",
+                          statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetCompanyProfile")
+            .WithTags("Company")
+            .WithSummary("Get a company profile")
+            .WithDescription("Retrieves a company profile by ID.")
+            .Produces<object>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
 
+            return group;
+        }
+        public static RouteGroupBuilder MapGetAllCompanyProfiles(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getAll", async Task<Results<
+                Ok<IEnumerable<object>>,
+                ProblemHttpResult>>
+            ([FromServices] ICompanyService service) =>
+            {
+                try
+                {
+                    var result = await service.GetAllAsync();
+                    var castedResult = result.Cast<object>();
+                    return TypedResults.Ok(castedResult);
+                }
+                catch (Exception)
+                {
+                    return TypedResults.Problem(
+                          title: "Internal Server Error",
+                          detail: "An unexpected error occurred.",
+                          statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetAllCompanyProfiles")
+            .WithTags("Company")
+            .WithSummary("Get all company profiles")
+            .WithDescription("Fetches all company profiles.")
+            .Produces<IEnumerable<object>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
+            return group;
+        }
+
+        public static RouteGroupBuilder MapUpdateCompanyProfile(this RouteGroupBuilder group)
+        {
+            group.MapPut("/update", async Task<Results<
+                Ok<object>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                [FromQuery] Guid id,
+                [FromForm] CompanyProfileDto dto,
+                [FromServices] ICompanyService service,
+                CancellationToken cancellationToken = default) =>
+            {
+                try
+                {
+                    var result = await service.UpdateAsync(id, dto, cancellationToken);
+                    return TypedResults.Ok<object>(result); 
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception)
+                {
+                    return TypedResults.Problem(
+                          title: "Internal Server Error",
+                          detail: "An unexpected error occurred.",
+                          statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("UpdateCompanyProfile")
+            .WithTags("Company")
+            .WithSummary("Update a company profile")
+            .WithDescription("Updates an existing company profile.")
+            .Produces<object>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
+            return group;
+        }
+        public static RouteGroupBuilder MapDeleteCompanyProfile(this RouteGroupBuilder group)
+        {
+            group.MapDelete("/delete", async Task<Results<
+                NoContent,
+                NotFound<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                [FromQuery] Guid id,
+                [FromServices] ICompanyService service) =>
+            {
+                try
+                {
+                    await service.DeleteAsync(id);
+                    return TypedResults.NoContent();
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception)
+                {
+                    return TypedResults.Problem(
+                          title: "Internal Server Error",
+                          detail: "An unexpected error occurred.",
+                          statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("DeleteCompanyProfile")
+            .WithTags("Company")
+            .WithSummary("Delete a company profile")
+            .WithDescription("Deletes the specified company profile.")
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
             return group;
         }
     }

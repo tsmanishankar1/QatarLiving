@@ -49,6 +49,7 @@ namespace QLN.Common.Infrastructure.DTO_s
     {
         public Guid Id { get; set; }
         public int VerticalId { get; set; }
+        public string? CompanyLogo { get; set; }
         public string BusinessName { get; set; }
         public string Country { get; set; }
         public string City { get; set; }

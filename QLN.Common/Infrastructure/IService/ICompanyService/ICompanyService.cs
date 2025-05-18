@@ -10,10 +10,10 @@ namespace QLN.Common.Infrastructure.IService.ICompanyService
 {
     public interface ICompanyService
     {
-        Task<CompanyProfileEntity> CreateAsync(CompanyProfileDto dto, HttpContext context);
-        Task<CompanyProfileEntity?> GetAsync(Guid id);
+        Task<CompanyProfileEntity> CreateAsync(CompanyProfileDto dto, CancellationToken cancellationToken = default);
+        Task<CompanyProfileEntity?> GetAsync(Guid id, CancellationToken cancellationToken = default);
         Task<IEnumerable<CompanyProfileEntity>> GetAllAsync();
-        Task<CompanyProfileEntity> UpdateAsync(Guid id, CompanyProfileDto dto, HttpContext context);
-        Task DeleteAsync(Guid id);
+        Task<CompanyProfileEntity> UpdateAsync(Guid id, CompanyProfileDto dto, CancellationToken cancellationToken = default);
+        Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     }
 }
