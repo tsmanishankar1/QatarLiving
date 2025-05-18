@@ -631,13 +631,6 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                         Constants.ConstantValues.RefreshTokenExpiry,
                         DateTime.UtcNow.AddDays(7).ToString("o"));
 
-                    //return TypedResults.Ok(ApiResponse<RefreshTokenResponse>.Success(
-                    //    "Token refreshed successfully",
-                    //    new RefreshTokenResponse
-                    //    {
-                    //        AccessToken = newAccessToken,
-                    //        RefreshToken = newRefreshToken
-                    //    }));
                     return TypedResults.Ok(new RefreshTokenResponse
                     {
                         AccessToken = newAccessToken,

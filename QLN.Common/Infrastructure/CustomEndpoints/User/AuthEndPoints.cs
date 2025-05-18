@@ -262,14 +262,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.User
                         statusCode: StatusCodes.Status500InternalServerError);
                 }
             })
-  .WithName("VerifyPhoneOtp")
-  .WithTags("Authentication")
-  .WithSummary("Verify Phone OTP")
-  .WithDescription("Verifies the OTP entered by the user for their phone number.")
-  .Produces<string>(StatusCodes.Status200OK)
-  .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-  .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
+            .WithName("VerifyPhoneOtp")
+            .WithTags("Authentication")
+            .WithSummary("Verify Phone OTP")
+            .WithDescription("Verifies the OTP entered by the user for their phone number.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
         }
@@ -426,7 +425,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.User
                         IsTwoFactorEnabled = true
                     };
 
-                    // ✅ Direct object result without ApiResponse wrapper
                     return TypedResults.Ok(response);
                 }
                 catch (Exception ex)
