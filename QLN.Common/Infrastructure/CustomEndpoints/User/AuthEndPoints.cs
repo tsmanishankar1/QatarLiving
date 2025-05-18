@@ -195,8 +195,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.User
             .WithSummary("Verify Email OTP")
             .WithDescription("Verifies the OTP entered by the user for their email address.")
             .Produces<string>(StatusCodes.Status200OK)
-            .Produces<string>(StatusCodes.Status400BadRequest)
-            .Produces<string>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
