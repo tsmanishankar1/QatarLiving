@@ -1190,85 +1190,75 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            // create Ad 
-            //group.MapPost("/ad", async Task<IResult> (
-            //    [FromForm] AdInformation ad,
-            //    HttpContext context,
-            //    IClassifiedService service,
-            //    CancellationToken token) =>
-            //{
-            //    try
-            //    {
-            //        var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            //        if (string.IsNullOrWhiteSpace(userId))
-            //            return Results.Unauthorized();
+            //create Ad
+            group.MapPost("/ad", async Task<IResult> (
+                [FromForm] AdInformation ad,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(ad.UserId))
+                    {
+                        return Results.BadRequest(new ProblemDetails
+                        {
+                            Title = "Missing UserId",
+                            Detail = "UserId must be provided in the form data.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
 
+                    if (string.IsNullOrWhiteSpace(ad.SubVertical))
+                    {
+                        return Results.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Request",
+                            Detail = "SubVertical is required in the form data.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
 
-            //        if (string.IsNullOrWhiteSpace(ad.SubVertical))
-            //        {
-            //            return Results.BadRequest(new ProblemDetails
-            //            {
-            //                Title = "Invalid Request",
-            //                Detail = "SubVertical is required in the form data.",
-            //                Status = StatusCodes.Status400BadRequest
-            //            });
-            //        }
+                    var adKey = await service.CreateAd(ad, token);
 
-            //        var adKey = await service.CreateAd(ad, userId, token);
-
-            //        return TypedResults.Ok(new
-            //        {
-            //            Message = "Ad created successfully.",
-            //            Key = adKey
-            //        });
-            //    }
-            //    catch (UnauthorizedAccessException ex)
-            //    {
-            //        return TypedResults.Problem(
-            //            title: "Unauthorized",
-            //            detail: ex.Message,
-            //            statusCode: StatusCodes.Status401Unauthorized);
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        return TypedResults.Problem(
-            //            title: "Ad Creation Error",
-            //            detail: ex.Message,
-            //            statusCode: StatusCodes.Status500InternalServerError);
-            //    }
-            //})
-            //    .WithName("CreateAd")
-            //    .WithTags("Ad")
-            //    .WithSummary("Create new classified ad")
-            //    .WithDescription("Creates a new classified ad, validates user, stores ad in Dapr, and uploads files.")
-            //    .Accepts<AdInformation>("multipart/form-data")
-            //    .Produces(StatusCodes.Status200OK)
-            //    .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
-            //    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-            //    .DisableAntiforgery()
-            //    .RequireAuthorization();
-
-            // get user ad's
-            //group.MapGet("/ad/user", async Task<IResult> (
-            //    HttpContext context,
-            //    [FromQuery] bool? isPublished,
-            //    IClassifiedService service,
-            //    CancellationToken token) =>
-            //{
-            //    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            //    if (string.IsNullOrWhiteSpace(userId))
-            //        return Results.Unauthorized();
-
-            //    var ads = await service.GetUserAds(userId, isPublished, token);
-            //    return TypedResults.Ok(ads);
-            //})
-            //    .WithName("GetUserAds")
-            //    .WithTags("Ad")
-            //    .WithSummary("Get user ads")
-            //    .WithDescription("Returns ads created by the logged-in user filtered by IsPublished status")
-            //    .Produces<List<AdResponse>>(StatusCodes.Status200OK)
-            //    .Produces(StatusCodes.Status401Unauthorized)
-            //    .RequireAuthorization();
+                    return TypedResults.Ok(new
+                    {
+                        Message = "Ad created successfully.",
+                        Key = adKey
+                    });
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Unauthorized",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status401Unauthorized);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Validation Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Ad Creation Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+   .WithName("CreateAd")
+   .WithTags("Ad")
+   .WithSummary("Create new classified ad")
+   .WithDescription("Creates a new ad using Dapr state store with file uploads.")
+   .Accepts<AdInformation>("multipart/form-data")
+   .Produces(StatusCodes.Status200OK)
+   .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+   .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+   .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+   .DisableAntiforgery();
+          
 
 
             // GET /api/{vertical}/landing

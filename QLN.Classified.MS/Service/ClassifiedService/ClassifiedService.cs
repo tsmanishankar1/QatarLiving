@@ -20,7 +20,7 @@ namespace QLN.Classified.MS.Service
     {
         private const string SERVICE_APP_ID = ConstantValues.SearchServiceApp;
         private const string Vertical = ConstantValues.ClassifiedsVertical;
-        
+        private readonly IWebHostEnvironment _env;
         private readonly DaprClient _dapr;        
         private readonly IBannerService _bannerService;
 
@@ -28,11 +28,12 @@ namespace QLN.Classified.MS.Service
         private const string UnifiedIndexKey = "ad-index";               
         private readonly ILogger<ClassifiedService> _logger;
 
-        public ClassifiedService(DaprClient dapr, ILogger<ClassifiedService> logger, IBannerService bannerService)
+        public ClassifiedService(DaprClient dapr, ILogger<ClassifiedService> logger, IWebHostEnvironment env, IBannerService bannerService)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _bannerService = bannerService ?? throw new ArgumentNullException(nameof(bannerService));
+            _env = env;
         }
 
         public async Task<IEnumerable<ClassifiedIndexDto>> Search(CommonSearchRequest request)
@@ -677,117 +678,134 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        //public async Task<string> CreateAd(AdInformation ad, string userId, CancellationToken token = default)
-        //{
-        //    try
-        //    {
-        //        var user = await _userManager.Users
-        //            .FirstOrDefaultAsync(u => u.Id.ToString() == userId && u.IsActive, cancellationToken: token);
+        public async Task<string> CreateAd(AdInformation ad, CancellationToken token = default)
+        {
+            try
+            {
+                var user = ad.UserId;
+                if (user == null)
+                    throw new UnauthorizedAccessException("User is not registered or inactive.");
 
-        //        if (user == null)
-        //            throw new UnauthorizedAccessException("User is not registered or inactive.");
+                if (ad.WarrantyCertificate == null || ad.WarrantyCertificate.Length == 0)
+                    throw new ArgumentException("Warranty certificate is required.");
 
-        //        if (ad.WarrantyCertificate == null || ad.WarrantyCertificate.Length == 0)
-        //            throw new ArgumentException("Warranty certificate is required.");
+                if (ad.UploadPhotos == null || ad.UploadPhotos.Length == 0)
+                    throw new ArgumentException("At least one photo is required.");
 
-        //        if (ad.UploadPhotos == null || ad.UploadPhotos.Length == 0)
-        //            throw new ArgumentException("At least one photo is required.");
+                var adId = Guid.NewGuid();
 
-        //        var adId = Guid.NewGuid();
+                // Create sub directory
+                var subDir = Path.Combine(_env.WebRootPath, "images", "ads", ad.SubVertical);
+                Directory.CreateDirectory(subDir);
 
-        //        // Create sub directory
-        //        var subDir = Path.Combine(_env.WebRootPath, "images", "ads", ad.SubVertical);
-        //        Directory.CreateDirectory(subDir);
+                // Save warranty certificate
+                var licenseFileName = $"{adId}_license{Path.GetExtension(ad.WarrantyCertificate.FileName)}";
+                var licensePath = Path.Combine(subDir, licenseFileName);
+                using (var stream = new FileStream(licensePath, FileMode.Create))
+                {
+                    await ad.WarrantyCertificate.CopyToAsync(stream, token);
+                }
 
-        //        // Save warranty certificate
-        //        var licenseFileName = $"{adId}_license{Path.GetExtension(ad.WarrantyCertificate.FileName)}";
-        //        var licensePath = Path.Combine(subDir, licenseFileName);
-        //        using (var stream = new FileStream(licensePath, FileMode.Create))
-        //        {
-        //            await ad.WarrantyCertificate.CopyToAsync(stream, token);
-        //        }
+                // Save photo
+                var photoFileName = $"{adId}_photo{Path.GetExtension(ad.UploadPhotos.FileName)}";
+                var photoPath = Path.Combine(subDir, photoFileName);
+                using (var stream = new FileStream(photoPath, FileMode.Create))
+                {
+                    await ad.UploadPhotos.CopyToAsync(stream, token);
+                }
 
-        //        // Save photo
-        //        var photoFileName = $"{adId}_photo{Path.GetExtension(ad.UploadPhotos.FileName)}";
-        //        var photoPath = Path.Combine(subDir, photoFileName);
-        //        using (var stream = new FileStream(photoPath, FileMode.Create))
-        //        {
-        //            await ad.UploadPhotos.CopyToAsync(stream, token);
-        //        }
+                var model = new AdResponse
+                {
+                    Id = adId,
+                    SubVertical = ad.SubVertical,
+                    DocType = ad.DocType,
+                    Title = ad.Title,
+                    Description = ad.Description,
+                    Category = ad.Category,
+                    SubCategory = ad.SubCategory,
+                    Brand = ad.Brand,
+                    Model = ad.Model,
+                    Condition = ad.Condition,
+                    Price = ad.Price,
+                    Color = ad.Color,
+                    Capacity = ad.Capacity,
+                    Processor = ad.Processor,
+                    Coverage = ad.Coverage,
+                    Ram = ad.Ram,
+                    Resolution = ad.Resolution,
+                    BatteryPercentage = ad.BatteryPercentage,
+                    Size = ad.Size,
+                    SizeType = ad.SizeType,
+                    Gender = ad.Gender,
+                    WarrantyCertificateUrl = $"/images/ads/{ad.SubVertical}/{licenseFileName}",
+                    ImageUrl = $"/images/ads/{ad.SubVertical}/{photoFileName}",
+                    PhoneNumber = ad.PhoneNumber,
+                    WhatsappNumber = ad.WhatsappNumber,
+                    Zone = ad.zone,
+                    StreetNumber = ad.streetNumber,
+                    BuildingNumber = ad.buildingNumber,
+                    CreatedBy = ad.UserId,
+                    CreatedDate = DateTime.UtcNow,
+                    IsPublished = ad.Ispublished
+                };
 
-        //        var model = new AdResponse
-        //        {
-        //            Id = adId,
-        //            SubVertical = ad.SubVertical,
-        //            Title = ad.Title,
-        //            Description = ad.Description,
-        //            Category = ad.Category,
-        //            SubCategory = ad.SubCategory,
-        //            Brand = ad.Brand,
-        //            Model = ad.Model,
-        //            Condition = ad.Condition,
-        //            Price = ad.Price,
-        //            Color = ad.Color,
-        //            Capacity = ad.Capacity,
-        //            Processor = ad.Processor,
-        //            Coverage = ad.Coverage,
-        //            Ram = ad.Ram,
-        //            Resolution = ad.Resolution,
-        //            BatteryPercentage = ad.BatteryPercentage,
-        //            Size = ad.Size,
-        //            SizeType = ad.SizeType,
-        //            Gender = ad.Gender,
-        //            WarrantyCertificateUrl = $"/images/ads/{ad.SubVertical}/{licenseFileName}",
-        //            ImageUrl = $"/images/ads/{ad.SubVertical}/{photoFileName}",
-        //            PhoneNumber = ad.PhoneNumber,
-        //            WhatsappNumber = ad.WhatsappNumber,
-        //            Zone = ad.zone,
-        //            StreetNumber = ad.streetNumber,
-        //            BuildingNumber = ad.buildingNumber,
-        //            CreatedBy = userId,
-        //            CreatedAt = DateTime.UtcNow,
-        //            IsPublished = ad.Ispublished
-        //        };
+                var stateKey = $"ad-{adId}";
+                await _dapr.SaveStateAsync(UnifiedStore, stateKey, model, cancellationToken: token);
 
-        //        var stateKey = $"ad-{adId}";
-        //        await _dapr.SaveStateAsync("adstore", stateKey, model, cancellationToken: token);
 
-        //        var keys = await _dapr.GetStateAsync<List<string>>("adstore", "ad-index", cancellationToken: token) ?? new();
-        //        keys.Add(stateKey);
-        //        await _dapr.SaveStateAsync("adstore", "ad-index", keys, cancellationToken: token);
+                var keys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey, cancellationToken: token) ?? new();
+                keys.Add(stateKey);
+                await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, keys, cancellationToken: token);
 
-        //        return stateKey;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw new Exception("Error while Ad posting", ex);
-        //    }
-        //}
+                var indexDocument = new ClassifiedIndexDto
+                {
+                    Id = adId.ToString(),
+                    SubVertical = ad.SubVertical,
+                    DocType = ad.DocType,
+                    Title = ad.Title,
+                    Description = ad.Description,
+                    Category = ad.Category,
+                    L1Category = ad.SubCategory,
+                    Brand = ad.Brand,
+                    Model = ad.Model,
+                    Condition = ad.Condition,
+                    Price = ad.Price,
+                    Colour = ad.Color,
+                    Capacity = ad.Capacity,                    
+                    Processor = ad.Processor,
+                    Coverage = ad.Coverage,
+                    Ram = ad.Ram,
+                    Resolution = ad.Resolution,
+                    BatteryPercentage = ad.BatteryPercentage,
+                    Size = ad.Size,
+                    SizeType = ad.SizeType,                    
+                    Gender = ad.Gender,
+                    ImageUrls = new List<string> { $"/images/ads/{ad.SubVertical}/{photoFileName}" },
+                    WarrantyCertificateUrl = $"/images/ads/{ad.SubVertical}/{licenseFileName}",
+                    PhoneNumber = ad.PhoneNumber,
+                    WhatsappNumber = ad.WhatsappNumber,
+                    Zone = ad.zone,
+                    StreetNumber = ad.streetNumber,
+                    BuildingNumber = ad.buildingNumber,                    
+                    CreatedDate = DateTime.UtcNow,
+                    IsPublished = ad.Ispublished,
+                    IsFeaturedItem = false,
+                    IsFeaturedStore = false,
+                    IsFeaturedCategory = false,
+                    HasWarrantyCertificate = true
+                };
 
-        //public async Task<List<AdResponse>> GetUserAds(string userId, bool? isPublished, CancellationToken token = default)
-        //{
-        //    try
-        //    {
-        //        var allKeys = await _dapr.GetStateAsync<List<string>>("adstore", "ad-index") ?? new();
-        //        var result = new List<AdResponse>();
+                await Upload(indexDocument);
 
-        //        foreach (var key in allKeys)
-        //        {
-        //            var ad = await _dapr.GetStateAsync<AdResponse>("adstore", key);
-        //            if (ad?.CreatedBy == userId && (isPublished == null || ad.IsPublished == isPublished))
-        //            {
-        //                result.Add(ad);
-        //            }
-        //        }
+                return stateKey;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error while Ad posting", ex);
+            }
+        }
 
-        //        return result;
-
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw new Exception("Error while getting user ads", ex);
-        //    }
-        //}
+      
 
         public async Task<ClassifiedLandingPageResponse> GetLandingPage()
         {
@@ -895,6 +913,7 @@ namespace QLN.Classified.MS.Service
                 throw;
             }
         }
+
         private async Task<IEnumerable<ClassifiedIndexDto>> GetAllItems(CommonSearchRequest request)
         {
             if (request is null)

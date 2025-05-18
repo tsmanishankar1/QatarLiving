@@ -49,8 +49,8 @@ namespace QLN.Common.Infrastructure.IService.BannerService
         Task<List<AdGender>> GetAllGenders(CancellationToken cancellationToken = default);
         Task<AdZone> AddZone(string name, CancellationToken cancellationToken = default);
         Task<List<AdZone>> GetAllZones(CancellationToken cancellationToken = default);
-        //Task<string> CreateAd(AdInformation ad, string userId, CancellationToken token = default);
-        //Task<List<AdResponse>> GetUserAds(string userId, bool? isPublished, CancellationToken token = default);
+        Task<string> CreateAd(AdInformation ad, CancellationToken token = default);
+       
 
     }
 }
