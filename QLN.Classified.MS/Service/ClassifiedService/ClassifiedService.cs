@@ -792,8 +792,7 @@ namespace QLN.Classified.MS.Service
             _logger.LogInformation("GetLandingPageAsync start");
             try
             {
-                var banners = await _bannerService.GetAllBanners();
-
+                
                 var all = await Search(new ClassifiedSearchRequest { Text = "*", Top = 1000 });
 
                 var featuredItems = all.Where(i => i.IsFeaturedItem);
@@ -831,7 +830,6 @@ namespace QLN.Classified.MS.Service
 
                 return new ClassifiedLandingPageResponse
                 {
-                    Banners = banners ?? Enumerable.Empty<Banner>(),
                     FeaturedItems = featuredItems,
                     FeaturedCategories = featuredCategories,
                     FeaturedStores = featuredStores,

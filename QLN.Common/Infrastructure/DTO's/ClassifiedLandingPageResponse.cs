@@ -7,7 +7,6 @@ namespace QLN.Common.Infrastructure.DTO_s
 {
     public class ClassifiedLandingPageResponse
     {
-        public IEnumerable<Banner> Banners { get; set; } = Enumerable.Empty<Banner>();
         public IEnumerable<ClassifiedIndexDto> FeaturedItems { get; set; } = Enumerable.Empty<ClassifiedIndexDto>();
         public IEnumerable<LandingCategoryInfo> FeaturedCategories { get; set; } = Enumerable.Empty<LandingCategoryInfo>();
         public IEnumerable<LandingStoreInfo> FeaturedStores { get; set; } = Enumerable.Empty<LandingStoreInfo>();
