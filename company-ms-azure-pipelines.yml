@@ -1,0 +1,35 @@
+trigger:
+  branches:
+    include:
+    - qln-dev
+  paths:
+    include:
+    - company-ms-azure-pipelines.yml
+    - QLN.Company.MS/*
+    - QLN.Common/*
+
+variables:
+ - name: acrRegistry
+   value: qlnv2-ezftf8ehejdadpfn
+ - name: appName
+   value: QLN.Company.MS
+ - name: appShortName
+   value: company-ms
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: AzureContainerApps@1
+  inputs:
+    workingDirectory: '$(Build.SourcesDirectory)'
+    appSourcePath: '$(Build.SourcesDirectory)'
+    azureSubscription: 'dev-qlnext'
+    acrName: '$(acrRegistry)'
+    acrUsername: 'qlnv2'
+    acrPassword: 'jxmPri2GCql4OHO5Fl+3C0Bii3fmUbsrEZ1EHDbx/y+ACRDo/bQ0'
+    dockerfilePath: '$(appName)/Dockerfile'
+    imageToBuild: 'qlnv2-ezftf8ehejdadpfn.azurecr.io/qlnv2/$(appShortName):$(Build.BuildId).$(Build.BuildNumber)'
+    containerAppName: 'capp-$(appShortName)'
+    resourceGroup: 'rg-containerapps-dev'
+    runtimeStack: 'dotnetcore:8.0'
