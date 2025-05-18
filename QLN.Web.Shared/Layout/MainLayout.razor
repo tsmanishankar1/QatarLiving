@@ -23,13 +23,13 @@
     </div>
     <div class="@($"nav-container {(showMobileMenu ? "mobile-menu-open" : "")}")">
         <nav class="nav-links">
-            <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Daily</NavLink>
-            <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Properties</NavLink>
-            <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Vehicles</NavLink>
-            <NavLink href="/classifieds" style="color: white;" class="nav-link active">Classifieds</NavLink>
-            <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Services</NavLink>
-            <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Jobs</NavLink>
-            <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Rewards</NavLink>
+         
+            <NavLink href="/properties" class="nav-link ">Properties</NavLink>
+            <NavLink href="/vehicles" class="nav-link ">Vehicles</NavLink>
+            <NavLink href="/classifieds" class="nav-link ">Classifieds</NavLink>
+            <NavLink href="/services" class="nav-link ">Services</NavLink>
+            <NavLink href="/jobs" class="nav-link ">Jobs</NavLink>
+            <NavLink href="/rewards" class="nav-link ">Rewards</NavLink>
         </nav>
 
     </div>
@@ -121,6 +121,17 @@
         height: 32px;
         cursor: pointer;
     }
+
+
+    .nav-link {
+        color: white;
+        text-decoration: none;
+    }
+
+        .nav-link.active {
+            color: #FF7F38;
+        }
+
 
     @@media (max-width: 1024px) {
         .desktop-post-btn {
