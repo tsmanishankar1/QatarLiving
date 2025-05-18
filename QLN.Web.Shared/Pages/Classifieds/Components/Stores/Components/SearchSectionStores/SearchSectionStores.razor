@@ -1,0 +1,77 @@
+<div class="search-stores-section">
+    <!-- Search Input -->
+    <MudTextField @bind-Value="searchText" Placeholder="Search" Adornment="Adornment.Start"
+        AdornmentIcon="@Icons.Material.Filled.Search" Class="search-input" HideSpinButtons="true" Immediate="true"
+        Variant="Variant.Outlined" Style="background-color: var(--color-background);" />
+
+    <!-- Location Input -->
+    <MudTextField @bind-Value="locationText" Placeholder="Location" Adornment="Adornment.End"
+        AdornmentIcon="@Icons.Material.Filled.LocationOn" Class="location-input" HideSpinButtons="true"
+        Variant="Variant.Outlined" Style="background-color: var(--color-background);" />
+
+    <!-- Search Button -->
+    <MudButton Variant="Variant.Filled" Class="search-button-store" OnClick="OnSearch">
+        Search
+    </MudButton>
+</div>
+
+
+
+@code {
+    private string searchText = "";
+    private string locationText = "";
+
+    private void OnSearch()
+    {
+        Console.WriteLine($"Searching: {searchText}, Location: {locationText}");
+    }
+}
+
+
+
+<style>
+    .search-stores-section {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 40px;
+        background-color: var(--color-background-secondary-grey-medium);
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .search-input,
+    .location-input,
+    .search-button-store {
+        min-width: 0;
+    }
+
+    .search-input {
+        flex: 0 0 60%;
+    }
+
+    .location-input {
+        flex: 0 0 25%;
+    }
+
+    .search-button-store {
+        flex: 0 0 15%;
+        height: 56px;
+        min-width: 100px;
+        color: var(--color-text-white);
+        border-radius: 5px;
+        background-color: var(--color-accent);
+        text-transform: capitalize;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    /* Optional: make the inputs fill their flex containers */
+    .search-input .mud-input,
+    .location-input .mud-input {
+        width: 100%;
+    }
+
+    .mud-input-adornment .mud-icon-root {
+        color: var(--color-accent);
+    }
+</style>

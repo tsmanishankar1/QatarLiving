@@ -1,0 +1,58 @@
+@using MudBlazor
+@using QLN.Web.Shared.Models
+@using QLN.Web.Shared.Pages.Classifieds.Components.Items.Components
+
+<div style="width: 100%; background-color: var(--color-secondary-background);">
+
+    @if (SelectedItem is null)
+    {
+        <SearchSection OnViewModeChanged="HandleViewModeChange" />
+    }
+
+    <div style="width: 100%; padding: 0px 40px;">
+        <div class="category-banner-wrapper">
+            <img src="/images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
+        </div>
+
+        @if (SelectedItem is null)
+        {
+            <IteamList OnItemSelected="HandleItemSelected" ViewMode="@currentViewMode" />
+        }
+        else
+        {
+            <Iteamdetails Item="SelectedItem" />
+        }
+    </div>
+</div>
+
+@code {
+    private string currentViewMode = "grid";
+
+    private void HandleViewModeChange(string newMode)
+    {
+        currentViewMode = newMode;
+    }
+    private PromotedItem? SelectedItem;
+
+    private void HandleItemSelected(PromotedItem item)
+    {
+        SelectedItem = item;
+    }
+}
+
+<style>
+    .category-banner-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    .category-banner-image {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        object-fit: cover;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+</style>

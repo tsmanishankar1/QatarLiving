@@ -1,0 +1,54 @@
+@using MudBlazor
+
+<div class="search-section">
+    <div class="search-input-wrapper">
+        <MudTextField @bind-Value="searchText" Placeholder="Search" Adornment="Adornment.Start"
+            style="background-color: var(--color-background)" AdornmentIcon="@Icons.Material.Filled.Search"
+            Variant="Variant.Outlined" Class="search-input" HideSpinButtons="true" Immediate="true" />
+    </div>
+
+    <MudButton Variant="Variant.Filled" Class="search-button" OnClick="OnSearch">
+        Search
+    </MudButton>
+</div>
+
+@code {
+    private string searchText = "";
+
+    private void OnSearch()
+    {
+        // You can emit an event or handle search logic here
+        Console.WriteLine($"Searching for: {searchText}");
+    }
+}
+
+<style>
+    .search-section {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        max-width: 100%;
+        padding: 12px 40px;
+        background-color: var(--color-background-secondary-grey-medium);
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .search-input-wrapper {
+        flex: 1;
+    }
+
+    .search-input input {
+        padding-left: 36px !important;
+        /* space for icon */
+    }
+
+    .search-button {
+        min-width: 160px;
+        height: 56px;
+        color: var(--color-text-white);
+        border-radius: 5px;
+        background-color: var(--color-accent);
+        text-transform: capitalize;
+        font-weight: 600;
+    }
+</style>

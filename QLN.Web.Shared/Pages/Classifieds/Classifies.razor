@@ -1,0 +1,46 @@
+@page "/classifieds"
+
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing
+@using QLN.Web.Shared.Pages.Classifieds.Components.Items
+@using QLN.Web.Shared.Pages.Classifieds.Components.Deals
+@using QLN.Web.Shared.Pages.Classifieds.Components.Stores
+
+<NavigationTabs OnTabChanged="HandleTabChanged" />
+
+@if (string.IsNullOrEmpty(selectedKey))
+{
+    <Landing />
+}
+else
+{
+    @switch (selectedKey)
+    {
+        case "items":
+            <Items />
+            break;
+        case "deals":
+            <Deals />
+            break;
+        case "stores":
+            <Stores />
+            break;
+        case "preloved":
+            <Items />
+            break;
+        case "collectibles":
+            <Items />
+            break;
+    }
+}
+
+@code {
+    private string? selectedKey = null;
+
+    private Task HandleTabChanged(string? key)
+    {
+        selectedKey = key;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+}
