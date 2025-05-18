@@ -16,6 +16,6 @@ namespace QLN.Common.Infrastructure.Model
         public string HeightMobile { get; set; } = null!;
         public string? Text { get; set; }
         public string Rotation { get; set; } = null!;
-        public List<BannerImage> Images { get; set; } = new();
+        public List<BannerImage>? Images { get; set; } = new();
     }
 }
