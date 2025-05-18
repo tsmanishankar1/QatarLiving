@@ -19,7 +19,8 @@
                                   For="@(() => _model.SubscriptionName)"
                                   Immediate="true"
                                   Style="color: #242424;"
-                                  Class="mb-4" />
+                                  Class="mb-4"
+                                  id="subscriptionName"/>
                 </MudItem>
 
                 <MudItem xs="12" md="3" Class="pa-2">
@@ -29,7 +30,8 @@
                                   For="@(() => _model.Price)"
                                   Immediate="true"
                                   Style="color: #242424;"
-                                  Class="mb-4" />
+                                  Class="mb-4"
+                                  id="price" />
                 </MudItem>
 
                 <MudItem xs="12" md="3" Class="pa-2">
@@ -39,7 +41,8 @@
                                For="@(() => _model.Currency)"
                                Immediate="true"
                                Style="color: #242424;"
-                               Class="mb-4">
+                               Class="mb-4"
+                               id="subscriptionCurrency">
                         <MudSelectItem Value="@("QAR")">QAR</MudSelectItem>
                         <MudSelectItem Value="@("USD")">USD</MudSelectItem>
                         <MudSelectItem Value="@("EUR")">EUR</MudSelectItem>
@@ -53,7 +56,7 @@
                                For="@(() => _model.Duration)"
                                Immediate="true"
                                Style="color: #242424;"
-                               Class="mb-4">
+                               Class="mb-4" id="subscriptionDuration">
                         <MudSelectItem Value="@("Month")">1 Month</MudSelectItem>
                         <MudSelectItem Value="@("threeMonths")">3 Months</MudSelectItem>
                         <MudSelectItem Value="@("sixMonths")">6 Months</MudSelectItem>
@@ -68,7 +71,8 @@
                                @bind-Value="_model.VerticalType"
                                Immediate="true"
                                Style="color: #242424;"
-                               Class="mb-4">
+                               Class="mb-4"
+                               id="subscriptionVerticalType">
                         <MudSelectItem Value="@("Classified")">Classified</MudSelectItem>
                         <MudSelectItem Value="@("Properties")">Properties</MudSelectItem>
                         <MudSelectItem Value="@("Vehicles")">Vehicles</MudSelectItem>
@@ -88,7 +92,8 @@
                                    For="@(() => _model.SubCategory)"
                                    Immediate="true"
                                    Style="color: #242424;"
-                                   Class="mb-4">
+                                   Class="mb-4"
+                                   id="subscriptionSubCategory">
                             @foreach (var item in GetSubCategories())
                             {
                                 <MudSelectItem Value="@item">@item</MudSelectItem>
@@ -103,12 +108,13 @@
                                   Variant="Variant.Outlined"
                                   Lines="3"
                                   Style="color: #242424;"
-                                  Class="mb-4" />
+                                  Class="mb-4"
+                                  id="subscriptionDescription" />
                 </MudItem>
             </MudGrid>
 
             <div class="mt-6" style="display: flex; justify-content: flex-end;">
-                <MudButton Variant="Variant.Filled"
+                <MudButton id="saveSubscriptionBtn" Variant="Variant.Filled"
                            Style="background-color: #FF7F38 ;color: white;"
                            OnClick="SaveSubscription">
                     Save

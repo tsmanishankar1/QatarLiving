@@ -213,6 +213,7 @@
 
                                     <MudTextField T="string"
                                                   Label="Card Number"
+                                                  id="cardNumber"
                                                   Variant="Variant.Outlined"
                                                   Placeholder="1234 5678 9012 3456"
                                                   Style="border-radius: 8px;"
@@ -224,6 +225,7 @@
                                         <MudItem xs="6">
                                                 <MudTextField T="string"
                                                               Label="Expiry"
+                                                              id="expiry"
                                                               Variant="Variant.Outlined"
                                                               Placeholder="MM/YY"
                                                               Style="border-radius: 8px;"
@@ -236,6 +238,7 @@
                                         <MudItem xs="6">
                                             <MudTextField T="string"
                                                           Label="CVV"
+                                                              id="cvv"
                                                           Variant="Variant.Outlined"
                                                           Placeholder="123"
                                                               MaxLength="3"
@@ -248,6 +251,7 @@
 
                                     <MudTextField T="string"
                                                   Label="Card Holder Name"
+                                                      id="name"
                                                   Variant="Variant.Outlined"
                                                   Placeholder="John Doe"
                                                   Style="border-radius: 8px;"
@@ -257,12 +261,13 @@
 
                                     <MudStack Row Spacing="2" Class="justify-end mt-4">
                                         <MudButton Variant="Variant.Outlined"
+                                                       id="cancelBtn"
                                                    Color="Color.Default"
                                                    OnClick="() => _isPaymentDialogOpen = false">
                                             Cancel
                                         </MudButton>
 
-                                        <MudButton Variant="Variant.Filled"
+                                        <MudButton id="paymentBtn" Variant="Variant.Filled"
                                                    Style="background-color: #41979a; color: white;"
                                                    OnClick="SubmitMockCardPayment">
                                             Pay ₹@_selectedPlan?.Price
