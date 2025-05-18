@@ -65,14 +65,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 builder.Services.AddDaprClient();
 
-#region database context
-builder.Services.AddDbContext<QatarlivingDevContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-#endregion
-
-builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>()
-    .AddEntityFrameworkStores<QatarlivingDevContext>()
-    .AddDefaultTokenProviders();
 
 builder.Services.AddScoped<IBannerService, BannerService>();
 builder.Services.AddScoped<IClassifiedService, ClassifiedService>();

@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Query.Expressions.Internal;
+using QLN.Common.Infrastructure.DTO_s;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +8,11 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.Model
 {
+    public class Adcateg : BaseItem
+    {
+
+    }
+
     public class AdInformation
     {
         public Guid Id { get; set; }
@@ -65,8 +70,8 @@ namespace QLN.Common.Infrastructure.Model
         public string? Size { get; set; }
         public string Gender { get; set; }
 
-        public string WarrantyCertificateUrl { get; set; } 
-        public string ImageUrl { get; set; } 
+        public string WarrantyCertificateUrl { get; set; }
+        public string ImageUrl { get; set; }
 
         public string PhoneNumber { get; set; }
         public string WhatsappNumber { get; set; }
@@ -80,90 +85,134 @@ namespace QLN.Common.Infrastructure.Model
         public DateTime CreatedAt { get; set; }
     }
 
-    public class AdCategory
+    public class AdSubCategory : BaseItem
     {
-        public Guid Id { get; set; }
-        public string CatogoryName { get; set; }
-    }
-
-    public class AdSubCategory
-    {
-        public Guid Id { get; set; }
-        public string SubCategoryName { get; set; }
         public Guid CategoryId { get; set; }
     }
 
-    public class AdBrand
+    public class AddSubCategoryRequest
     {
-        public Guid Id { get; set; }
-        public Guid SubCategoryId { get; set; } 
-        public string BrandName { get; set; } = string.Empty;
+        public string Name { get; set; } = default!;
+        public Guid CategoryId { get; set; }
     }
 
-    public class AdModel
+    public class AdBrand : BaseItem
     {
-        public Guid Id { get; set; }
-        public Guid BrandId { get; set; } 
-        public string ModelName { get; set; } = string.Empty;
+        public string Name { get; set; } = default!;
+        public Guid SubCategoryId { get; set; }
     }
 
-    public class AdCondition
+    public class AddBrandRequest
     {
-        public Guid Id { get; set; }
-        public string ConditionName { get; set; } = string.Empty;
-    }
-    public class AdColor
-    {
-        public Guid Id { get; set; }
-        public string ColorName { get; set; } = string.Empty;
+        public string Name { get; set; }
+        public Guid SubCategoryId { get; set; }
     }
 
-    public class AdCapacity
+    public class AdModel : BaseItem
     {
-        public Guid Id { get; set; }
-        public string CapacityValue { get; set; } = string.Empty;
+        public string Name { get; set; }
+        public Guid BrandId { get; set; }
     }
 
-    public class AdProcessor
+    public class AddModelRequest
     {
-        public Guid Id { get; set; }
-        public Guid ModelId { get; set; } 
-        public string ProcessorName { get; set; } = string.Empty;
+        public string Name { get; set; }
+        public Guid BrandId { get; set; }
+    }
+    public class AdCondition : BaseItem
+    {
+        public string Name { get; set; }
     }
 
-    public class AdCoverage
+    public class AddConditionRequest
     {
-        public Guid Id { get; set; }
-        public string CoverageName { get; set; } = string.Empty;
+        public string Name { get; set; }
     }
 
-    public class AdRam
+    public class AdColor : BaseItem
     {
-        public Guid Id { get; set; }
+        public string Name { get; set; }
+    }
+
+    public class AdColorRequest
+    {
+        public string Name { get; set; }
+    }
+    public class AdCapacity : BaseItem
+    {
+        public string Name { get; set; }
+    }
+
+    public class AdCapacityRequest
+    {
+        public string Name { get; set; }
+    }
+    public class AdProcessor : BaseItem
+    {
+        public string Name { get; set; }
         public Guid ModelId { get; set; }
-        public string RamSize { get; set; } = string.Empty; 
     }
-
-    public class AdResolution
+    public class AdProcessorRequest
     {
-        public Guid Id { get; set; }
+        public string Name { get; set; }
         public Guid ModelId { get; set; }
-        public string ResolutionValue { get; set; } = string.Empty; 
+    }
+    public class AdCoverage : BaseItem
+    {
+        public string Name { get; set; }
+    }
+    public class AdCoverageRequest
+    {
+        public string Name { get; set; }
+    }
+    public class AdRam : BaseItem
+    {
+        public string Name { get; set; }
+        public Guid ModelId { get; set; }
+    }
+    public class AdRamRequest
+    {
+        public string Name { get; set; }
+        public Guid ModelId { get; set; }
     }
 
-    public class AdSizeType
+    public class AdResolution : BaseItem
     {
-        public Guid Id { get; set; }
-        public string SizeName { get; set; } = string.Empty;
+        public string Name { get; set; }
+        public Guid ModelId { get; set; }
     }
-    public class AdGender
+    public class AdResolutionRequest
     {
-        public Guid Id { get; set; }
-        public string GenderName { get; set; } = string.Empty;
+        public string Name { get; set; }
+        public Guid ModelId { get; set; }
     }
-    public class AdZone
+
+    public class AdSizeType : BaseItem
     {
-        public Guid Id { get; set; }
-        public string ZoneNumber { get; set; } = string.Empty;
+        public string Name { get; set; }
     }
+    public class AdSizeRequest
+    {
+        public string Name { get; set; }
+    }
+
+    public class AdGender : BaseItem
+    {
+        public string Name { get; set; }
+    }
+    public class AdGenderRequest
+    {
+        public string Name { get; set; }
+    }
+
+    public class AdZone : BaseItem
+    {
+        public string Name { get; set; }
+    }
+
+    public class AdZoneRequest
+    {
+        public string Name { get; set; }
+    }
+
 }

@@ -247,14 +247,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             //adding category
 
             group.MapPost("/category", async Task<IResult> (
-                AdCategory category,
+                [FromBody] string categoryName,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    var created = await service.AddCategory(category, token);
-                    return TypedResults.Created($"/api/category/{created.Id}", created);
+                    var created = await service.AddCategory(categoryName, token);
+                    return TypedResults.Created($"/api/classified/category/{created.Id}", created);
                 }
                 catch (InvalidDataException ex)
                 {
@@ -277,8 +277,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .WithName("AddCategory")
                 .WithTags("Category")
                 .WithSummary("Create a new ad category")
-                .WithDescription("Adds a new ad category")
-                .Produces<AdCategory>(StatusCodes.Status201Created)
+                .WithDescription("Adds a new ad category into the unified adstore")
+                .Produces<Adcateg>(StatusCodes.Status201Created)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -306,20 +306,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .WithTags("Category")
                 .WithSummary("Get all ad categories")
                 .WithDescription("Fetches all available ad categories from Dapr store")
-                .Produces<List<AdCategory>>(StatusCodes.Status200OK)
+                .Produces<List<Adcateg>>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
             // adding subcategory
             group.MapPost("/subcategory", async Task<IResult> (
-                AdSubCategory subCategory,
+                [FromBody] AddSubCategoryRequest dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    var created = await service.AddSubCategory(subCategory, token);
-                    return TypedResults.Created($"/api/subcategory/{created.Id}", created);
+                    var created = await service.AddSubCategory(dto.Name, dto.CategoryId, token);
+                    return TypedResults.Created($"/api/classified/subcategory/{created.Id}", created);
                 }
                 catch (InvalidDataException ex)
                 {
@@ -384,7 +384,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    var subCategories = await service.GetSubCategoriesByCategoryId(categoryId, token);
+                    var subCategories = await service.GetSubCategoriesByCategoryId(categoryId);
                     return TypedResults.Ok(subCategories);
                 }
                 catch(Exception ex)
@@ -406,13 +406,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             // adding brand
 
             group.MapPost("/brand", async Task<IResult> (
-                AdBrand brand,
+                [FromBody] AddBrandRequest dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    var result = await service.AddBrand(brand);
+                    var result = await service.AddBrand(dto.Name, dto.SubCategoryId);
                     return TypedResults.Created($"/api/brand/{result.Id}", result);
                 }
                 catch (Exception ex)
@@ -491,13 +491,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             // adding model
 
             group.MapPost("/model", async Task<IResult> (
-                AdModel model,
+                [FromBody] AddModelRequest dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    var result = await service.AddModel(model, token);
+                    var result = await service.AddModel(dto.Name, dto.BrandId);
                     return TypedResults.Created($"/api/model/{result.Id}", result);
                 }
                 catch (Exception ex)
@@ -574,13 +574,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             // Adding condition
 
             group.MapPost("/condition", async Task<IResult> (
-                AdCondition condition,
+                [FromBody] AddConditionRequest dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    var result = await service.AddCondition(condition, token);
+                    var result = await service.AddCondition(dto.Name, token);
                     return TypedResults.Created($"/api/condition/{result.Id}", result);
                 }
                 catch (Exception ex)
@@ -628,13 +628,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             // adding color
 
             group.MapPost("/color", async Task<IResult> (
-                AdColor color,
+                [FromBody] AdColorRequest dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    var result = await service.AddColor(color, token);
+                    var result = await service.AddColor(dto.Name, token);
                     return TypedResults.Created($"/api/color/{result.Id}", result);
                 }
                 catch (Exception ex)
@@ -682,13 +682,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // adding capacity
             group.MapPost("/capacity", async Task<IResult> (
-                AdCapacity capacity,
+                [FromBody] AdCapacityRequest dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    var result = await service.AddCapacity(capacity, token);
+                    var result = await service.AddCapacity(dto.Name, token);
                     return TypedResults.Created($"/api/capacity/{result.Id}", result);
                 }
                 catch (Exception ex)
@@ -735,13 +735,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // adding processor
             group.MapPost("/processor", async Task<IResult> (
-                AdProcessor processor,
+                [FromBody] AdProcessorRequest dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    var result = await service.AddProcessor(processor, token);
+                    var result = await service.AddProcessor(dto.Name, dto.ModelId, token);
                     return TypedResults.Created($"/api/processor/{result.Id}", result);
                 }
                 catch (Exception ex)
@@ -815,13 +815,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // adding coverage
             group.MapPost("/coverage", async Task<IResult> (
-                AdCoverage coverage,
+                [FromBody] AdCoverageRequest dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    var result = await service.AddCoverage(coverage, token);
+                    var result = await service.AddCoverage(dto.Name);
                     return TypedResults.Created($"/api/coverage/{result.Id}", result);
                 }
                 catch (Exception ex)
@@ -869,13 +869,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // adding ram
             group.MapPost("/ram", async Task<IResult> (
-                AdRam ram,
+                [FromBody] AdRamRequest dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    var result = await service.AddRam(ram, token);
+                    var result = await service.AddRam(dto.Name, dto.ModelId);
                     return TypedResults.Created($"/api/ram/{result.Id}", result);
                 }
                 catch (Exception ex)
@@ -950,13 +950,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // Add Resolution
             group.MapPost("/resolution", async Task<IResult> (
-                AdResolution resolution,
+                [FromBody] AdResolutionRequest dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    var result = await service.AddResolution(resolution, token);
+                    var result = await service.AddResolution(dto.Name, dto.ModelId, token);
                     return TypedResults.Created($"/api/resolution/{result.Id}", result);
                 }
                 catch (Exception ex)
@@ -1031,13 +1031,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // POST /size-type
             group.MapPost("/size-type", async Task<IResult> (
-                AdSizeType sizeType,
+                [FromBody] AdSizeRequest dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    var result = await service.AddSizeType(sizeType, token);
+                    var result = await service.AddSizeType(dto.Name, token);
                     return TypedResults.Created($"/api/size-type/{result.Id}", result);
                 }
                 catch (Exception ex)
@@ -1085,13 +1085,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // POST /gender
             group.MapPost("/gender", async Task<IResult> (
-                AdGender gender,
+                [FromBody] AdGenderRequest dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    var result = await service.AddGender(gender, token);
+                    var result = await service.AddGender(dto.Name, token);
                     return TypedResults.Created($"/api/gender/{result.Id}", result);
                 }
                 catch (Exception ex)
@@ -1138,13 +1138,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // POST /zone
             group.MapPost("/zone", async Task<IResult> (
-                AdZone zone,
+                [FromBody] AdZoneRequest dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    var result = await service.AddZone(zone, token);
+                    var result = await service.AddZone(dto.Name, token);
                     return TypedResults.Created($"/api/zone/{result.Id}", result);
                 }
                 catch (Exception ex)
@@ -1191,84 +1191,84 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
 
             // create Ad 
-            group.MapPost("/ad", async Task<IResult> (
-                [FromForm] AdInformation ad,
-                HttpContext context,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                try
-                {
-                    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-                    if (string.IsNullOrWhiteSpace(userId))
-                        return Results.Unauthorized();
+            //group.MapPost("/ad", async Task<IResult> (
+            //    [FromForm] AdInformation ad,
+            //    HttpContext context,
+            //    IClassifiedService service,
+            //    CancellationToken token) =>
+            //{
+            //    try
+            //    {
+            //        var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            //        if (string.IsNullOrWhiteSpace(userId))
+            //            return Results.Unauthorized();
 
 
-                    if (string.IsNullOrWhiteSpace(ad.SubVertical))
-                    {
-                        return Results.BadRequest(new ProblemDetails
-                        {
-                            Title = "Invalid Request",
-                            Detail = "SubVertical is required in the form data.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
+            //        if (string.IsNullOrWhiteSpace(ad.SubVertical))
+            //        {
+            //            return Results.BadRequest(new ProblemDetails
+            //            {
+            //                Title = "Invalid Request",
+            //                Detail = "SubVertical is required in the form data.",
+            //                Status = StatusCodes.Status400BadRequest
+            //            });
+            //        }
 
-                    var adKey = await service.CreateAd(ad, userId, token);
+            //        var adKey = await service.CreateAd(ad, userId, token);
 
-                    return TypedResults.Ok(new
-                    {
-                        Message = "Ad created successfully.",
-                        Key = adKey
-                    });
-                }
-                catch (UnauthorizedAccessException ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Unauthorized",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status401Unauthorized);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Ad Creation Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("CreateAd")
-                .WithTags("Ad")
-                .WithSummary("Create new classified ad")
-                .WithDescription("Creates a new classified ad, validates user, stores ad in Dapr, and uploads files.")
-                .Accepts<AdInformation>("multipart/form-data")
-                .Produces(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .DisableAntiforgery()
-                .RequireAuthorization();
+            //        return TypedResults.Ok(new
+            //        {
+            //            Message = "Ad created successfully.",
+            //            Key = adKey
+            //        });
+            //    }
+            //    catch (UnauthorizedAccessException ex)
+            //    {
+            //        return TypedResults.Problem(
+            //            title: "Unauthorized",
+            //            detail: ex.Message,
+            //            statusCode: StatusCodes.Status401Unauthorized);
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        return TypedResults.Problem(
+            //            title: "Ad Creation Error",
+            //            detail: ex.Message,
+            //            statusCode: StatusCodes.Status500InternalServerError);
+            //    }
+            //})
+            //    .WithName("CreateAd")
+            //    .WithTags("Ad")
+            //    .WithSummary("Create new classified ad")
+            //    .WithDescription("Creates a new classified ad, validates user, stores ad in Dapr, and uploads files.")
+            //    .Accepts<AdInformation>("multipart/form-data")
+            //    .Produces(StatusCodes.Status200OK)
+            //    .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+            //    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            //    .DisableAntiforgery()
+            //    .RequireAuthorization();
 
             // get user ad's
-            group.MapGet("/ad/user", async Task<IResult> (
-                HttpContext context,
-                [FromQuery] bool? isPublished,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (string.IsNullOrWhiteSpace(userId))
-                    return Results.Unauthorized();
+            //group.MapGet("/ad/user", async Task<IResult> (
+            //    HttpContext context,
+            //    [FromQuery] bool? isPublished,
+            //    IClassifiedService service,
+            //    CancellationToken token) =>
+            //{
+            //    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            //    if (string.IsNullOrWhiteSpace(userId))
+            //        return Results.Unauthorized();
 
-                var ads = await service.GetUserAds(userId, isPublished, token);
-                return TypedResults.Ok(ads);
-            })
-                .WithName("GetUserAds")
-                .WithTags("Ad")
-                .WithSummary("Get user ads")
-                .WithDescription("Returns ads created by the logged-in user filtered by IsPublished status")
-                .Produces<List<AdResponse>>(StatusCodes.Status200OK)
-                .Produces(StatusCodes.Status401Unauthorized)
-                .RequireAuthorization();
+            //    var ads = await service.GetUserAds(userId, isPublished, token);
+            //    return TypedResults.Ok(ads);
+            //})
+            //    .WithName("GetUserAds")
+            //    .WithTags("Ad")
+            //    .WithSummary("Get user ads")
+            //    .WithDescription("Returns ads created by the logged-in user filtered by IsPublished status")
+            //    .Produces<List<AdResponse>>(StatusCodes.Status200OK)
+            //    .Produces(StatusCodes.Status401Unauthorized)
+            //    .RequireAuthorization();
 
 
             // GET /api/{vertical}/landing

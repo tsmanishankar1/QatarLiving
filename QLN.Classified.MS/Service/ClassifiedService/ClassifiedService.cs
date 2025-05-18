@@ -20,52 +20,19 @@ namespace QLN.Classified.MS.Service
     {
         private const string SERVICE_APP_ID = ConstantValues.SearchServiceApp;
         private const string Vertical = ConstantValues.ClassifiedsVertical;
-
-        private readonly UserManager<ApplicationUser> _userManager;
+        
         private readonly DaprClient _dapr;        
         private readonly IBannerService _bannerService;
-        private const string AdStore = "adcategorystore";
-        private const string IndexKey = "ad-category-index";
-        private const string SubCategoryStore = "adsubcategorystore";
-        private const string SubCategoryIndexKey = "ad-subcategory-index";
-        private const string BrandStore = "adbrandstore";
-        private const string BrandIndexKey = "ad-brand-index";
-        private const string ModelStore = "admodelstore";
-        private const string ModelIndexKey = "ad-model-index";
-        private const string ConditionStore = "adconditionstore";
-        private const string ConditionIndexKey = "ad-condition-index";
-        private const string ColorStore = "adcolorstore";
-        private const string ColorIndexKey = "ad-color-index";
-        private const string CapacityStore = "adcapacitystore";
-        private const string CapacityIndexKey = "ad-capacity-index";
-        private const string ProcessorStore = "adprocessorstore";
-        private const string ProcessorIndexKey = "ad-processor-index";
-        private const string CoverageStore = "adcoveragestore";
-        private const string CoverageIndexKey = "ad-coverage-index";
-        private const string RamStore = "adramstore";
-        private const string RamIndexKey = "ad-ram-index";
-        private const string ResolutionStore = "adresolutionstore";
-        private const string ResolutionIndexKey = "ad-resolution-index";
-        private const string SizeTypeStore = "adsizetypestore";
-        private const string SizeTypeIndexKey = "ad-size-type-index";
-        private const string GenderStore = "adgenderstore";
-        private const string GenderIndexKey = "ad-gender-index";
-        private const string ZoneStore = "adzonestore";
-        private const string ZoneIndexKey = "ad-zone-index";        
-        private const string verticalAd = "adstore";
-        private const string AdIndexKey = "ad-index";
-        private readonly IWebHostEnvironment _env;
 
-        
+        private const string UnifiedStore = "adstore";
+        private const string UnifiedIndexKey = "ad-index";               
         private readonly ILogger<ClassifiedService> _logger;
 
-        public ClassifiedService(DaprClient dapr, ILogger<ClassifiedService> logger, IBannerService bannerService, IWebHostEnvironment env, UserManager<ApplicationUser> userManager)
+        public ClassifiedService(DaprClient dapr, ILogger<ClassifiedService> logger, IBannerService bannerService)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _bannerService = bannerService ?? throw new ArgumentNullException(nameof(bannerService));
-            _env = env ?? throw new ArgumentNullException(nameof(env));
-            _userManager = userManager;
         }
 
         public async Task<IEnumerable<ClassifiedIndexDto>> Search(ClassifiedSearchRequest request)
@@ -154,24 +121,46 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdCategory> AddCategory(AdCategory adCategory, CancellationToken cancellationToken = default)
+        public async Task<T> AddItem<T>(T item) where T : BaseItem
+        {
+            item.Id = Guid.NewGuid();
+            var key = $"{item.Type.ToString().ToLowerInvariant()}-{item.Id}";
+
+            var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+            await _dapr.SaveStateAsync(UnifiedStore, key, item);
+
+            index.Add(key);
+            await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, index);
+
+            return item;
+        }
+
+        public async Task<List<T>> GetItemsByType<T>(AdItemType type) where T : BaseItem
+        {
+            var keys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+            var result = new List<T>();
+
+            foreach (var key in keys)
+            {
+                if (!key.StartsWith($"{type.ToString().ToLowerInvariant()}-")) continue;
+
+                var item = await _dapr.GetStateAsync<T>(UnifiedStore, key);
+                if (item != null) result.Add(item);
+            }
+
+            return result;
+        }
+
+        public async Task<Adcateg> AddCategory(string categoryName, CancellationToken cancellationToken = default)
         {
             try
             {
-                var existingKeys = await _dapr.GetStateAsync<List<string>>(AdStore, IndexKey) ?? new();
-
-                var id = Guid.NewGuid();
-                adCategory.Id = id;
-
-                var key = $"category-{id}";
-
-                await _dapr.SaveStateAsync(AdStore, key, adCategory);
-
-                existingKeys.Add(key);
-
-                await _dapr.SaveStateAsync(AdStore, IndexKey, existingKeys);
-
-                return adCategory;
+                var category = new Adcateg
+                {
+                    Name = categoryName,
+                    Type = AdItemType.Category
+                };
+                return await AddItem(category);
             }
             catch (Exception ex)
             {
@@ -179,23 +168,11 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<List<AdCategory>> GetAllCategories(CancellationToken cancellationToken = default)
+        public async Task<List<Adcateg>> GetAllCategories(CancellationToken cancellationToken = default)
         {
             try
             {
-                var keys = await _dapr.GetStateAsync<List<string>>(AdStore, IndexKey) ?? new();
-                var result = new List<AdCategory>();
-
-                foreach (var key in keys)
-                {
-                    var category = await _dapr.GetStateAsync<AdCategory>(AdStore, key);
-                    if (category != null)
-                    {
-                        result.Add(category);
-                    }
-                }
-
-                return result;
+                return await GetItemsByType<Adcateg>(AdItemType.Category);
             }
             catch (Exception ex)
             {
@@ -203,21 +180,27 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdSubCategory> AddSubCategory(AdSubCategory subCategory, CancellationToken cancellationToken = default)
+        public async Task<AdSubCategory> AddSubCategory(string name, Guid categoryId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var id = Guid.NewGuid();
-                subCategory.Id = id;
-                var key = $"subcategory-{id}";
+                var subcategory = new AdSubCategory
+                {
+                    Id = Guid.NewGuid(),
+                    Name = name,
+                    CategoryId = categoryId,
+                    Type = AdItemType.SubCategory
+                };
 
-                var existingKeys = await _dapr.GetStateAsync<List<string>>(SubCategoryStore, SubCategoryIndexKey) ?? new();
-                await _dapr.SaveStateAsync(SubCategoryStore, key, subCategory);
+                var key = $"subcategory-{subcategory.Id}";
 
-                existingKeys.Add(key);
-                await _dapr.SaveStateAsync(SubCategoryStore, SubCategoryIndexKey, existingKeys);
+                await _dapr.SaveStateAsync(UnifiedStore, key, subcategory);
 
-                return subCategory;
+                var keys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+                keys.Add(key);
+                await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, keys);
+
+                return subcategory;
             }
             catch (Exception ex)
             {
@@ -229,18 +212,21 @@ namespace QLN.Classified.MS.Service
         {
             try
             {
-                var keys = await _dapr.GetStateAsync<List<string>>(SubCategoryStore, SubCategoryIndexKey) ?? new();
+                var keys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
                 var result = new List<AdSubCategory>();
 
                 foreach (var key in keys)
                 {
-                    var sub = await _dapr.GetStateAsync<AdSubCategory>(SubCategoryStore, key);
-                    if (sub != null)
-                        result.Add(sub);
+                    if (!key.StartsWith("subcategory-")) continue;
+
+                    var item = await _dapr.GetStateAsync<AdSubCategory>(UnifiedStore, key);
+                    if (item != null && item.Type == AdItemType.SubCategory)
+                    {
+                        result.Add(item);
+                    }
                 }
 
                 return result;
-
             }
             catch (Exception ex)
             {
@@ -248,11 +234,11 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<List<AdSubCategory>> GetSubCategoriesByCategoryId(Guid categoryId, CancellationToken cancellationToken = default)
+        public async Task<List<AdSubCategory>> GetSubCategoriesByCategoryId(Guid categoryId)
         {
             try
             {
-                var all = await GetAllSubCategories(cancellationToken);
+                var all = await GetItemsByType<AdSubCategory>(AdItemType.SubCategory);
                 return all.Where(s => s.CategoryId == categoryId).ToList();
             }
             catch(Exception ex)
@@ -261,19 +247,18 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdBrand> AddBrand(AdBrand brand)
+        public async Task<AdBrand> AddBrand(string name, Guid subCategoryId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var id = Guid.NewGuid();
-                brand.Id = id;
-                var key = $"brand-{id}";
-                var index = await _dapr.GetStateAsync<List<string>>(BrandStore, BrandIndexKey) ?? new();
-                await _dapr.SaveStateAsync(BrandStore, key, brand);
-                index.Add(key);
-                await _dapr.SaveStateAsync(BrandStore, BrandIndexKey, index);
+                var brand = new AdBrand
+                {
+                    Name = name,
+                    SubCategoryId = subCategoryId,
+                    Type = AdItemType.Brand
+                };
 
-                return brand;
+                return await AddItem(brand);
             }
             catch(Exception ex)
             {
@@ -281,19 +266,11 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<List<AdBrand>> GetAllBrands()
+        public async Task<List<AdBrand>> GetAllBrands(CancellationToken cancellationToken = default)
         {
             try
             {
-                var keys = await _dapr.GetStateAsync<List<string>>(BrandStore, BrandIndexKey) ?? new();
-                var result = new List<AdBrand>();
-                foreach (var key in keys)
-                {
-                    var brand = await _dapr.GetStateAsync<AdBrand>(BrandStore, key);
-                    if (brand != null)
-                        result.Add(brand);
-                }
-                return result;
+                return await GetItemsByType<AdBrand>(AdItemType.Brand);
             }
             catch (Exception ex)
             {
@@ -301,12 +278,12 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<List<AdBrand>> GetBrandsBySubCategoryId(Guid subCategoryId)
+        public async Task<List<AdBrand>> GetBrandsBySubCategoryId(Guid subCategoryId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var data = await GetAllBrands();
-                return data.Where(b => b.SubCategoryId == subCategoryId).ToList();
+                var allBrands = await GetItemsByType<AdBrand>(AdItemType.Brand);
+                return allBrands.Where(b => b.SubCategoryId == subCategoryId).ToList();
             }
             catch(Exception ex)
             {
@@ -314,21 +291,18 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdModel> AddModel(AdModel model, CancellationToken cancellationToken = default)
+        public async Task<AdModel> AddModel(string name, Guid brandId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var id = Guid.NewGuid();
-                model.Id = id;
-                var key = $"model-{id}";
+                var model = new AdModel
+                {
+                    Name = name,
+                    BrandId = brandId,
+                    Type = AdItemType.Model
+                };
 
-                var index = await _dapr.GetStateAsync<List<string>>(ModelStore, ModelIndexKey) ?? new();
-                await _dapr.SaveStateAsync(ModelStore, key, model);
-
-                index.Add(key);
-                await _dapr.SaveStateAsync(ModelStore, ModelIndexKey, index);
-
-                return model;
+                return await AddItem(model);
             }
             catch (Exception ex)
             {
@@ -340,17 +314,7 @@ namespace QLN.Classified.MS.Service
         {
             try
             {
-                var keys = await _dapr.GetStateAsync<List<string>>(ModelStore, ModelIndexKey) ?? new();
-                var result = new List<AdModel>();
-
-                foreach (var key in keys)
-                {
-                    var model = await _dapr.GetStateAsync<AdModel>(ModelStore, key);
-                    if (model != null)
-                        result.Add(model);
-                }
-
-                return result;
+                return await GetItemsByType<AdModel>(AdItemType.Model);
             }
             catch (Exception ex)
             {
@@ -362,8 +326,8 @@ namespace QLN.Classified.MS.Service
         {
             try
             {
-                var all = await GetAllModels(cancellationToken);
-                return all.Where(m => m.BrandId == brandId).ToList();
+                var allModels = await GetItemsByType<AdModel>(AdItemType.Model);
+                return allModels.Where(m => m.BrandId == brandId).ToList();
             }
             catch (Exception ex)
             {
@@ -371,21 +335,17 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdCondition> AddCondition(AdCondition condition, CancellationToken cancellationToken = default)
+        public async Task<AdCondition> AddCondition(string name, CancellationToken cancellationToken = default)
         {
             try
             {
-                var id = Guid.NewGuid();
-                condition.Id = id;
-                var key = $"condition-{id}";
+                var condition = new AdCondition
+                {
+                    Name = name,
+                    Type = AdItemType.Condition
+                };
 
-                var index = await _dapr.GetStateAsync<List<string>>(ConditionStore, ConditionIndexKey) ?? new();
-                await _dapr.SaveStateAsync(ConditionStore, key, condition);
-
-                index.Add(key);
-                await _dapr.SaveStateAsync(ConditionStore, ConditionIndexKey, index);
-
-                return condition;
+                return await AddItem(condition);
             }
             catch (Exception ex)
             {
@@ -397,17 +357,7 @@ namespace QLN.Classified.MS.Service
         {
             try
             {
-                var keys = await _dapr.GetStateAsync<List<string>>(ConditionStore, ConditionIndexKey) ?? new();
-                var result = new List<AdCondition>();
-
-                foreach (var key in keys)
-                {
-                    var condition = await _dapr.GetStateAsync<AdCondition>(ConditionStore, key);
-                    if (condition != null)
-                        result.Add(condition);
-                }
-
-                return result;
+                return await GetItemsByType<AdCondition>(AdItemType.Condition);
             }
             catch (Exception ex)
             {
@@ -415,21 +365,17 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdColor> AddColor(AdColor color, CancellationToken cancellationToken = default)
+        public async Task<AdColor> AddColor(string name, CancellationToken cancellationToken = default)
         {
             try
             {
-                var id = Guid.NewGuid();
-                color.Id = id;
-                var key = $"color-{id}";
+                var color = new AdColor
+                {
+                    Name = name,
+                    Type = AdItemType.Color
+                };
 
-                var index = await _dapr.GetStateAsync<List<string>>(ColorStore, ColorIndexKey) ?? new();
-                await _dapr.SaveStateAsync(ColorStore, key, color);
-
-                index.Add(key);
-                await _dapr.SaveStateAsync(ColorStore, ColorIndexKey, index);
-
-                return color;
+                return await AddItem(color);
             }
             catch(Exception ex)
             {
@@ -441,17 +387,7 @@ namespace QLN.Classified.MS.Service
         {
             try
             {
-                var keys = await _dapr.GetStateAsync<List<string>>(ColorStore, ColorIndexKey) ?? new();
-                var result = new List<AdColor>();
-
-                foreach (var key in keys)
-                {
-                    var color = await _dapr.GetStateAsync<AdColor>(ColorStore, key);
-                    if (color != null)
-                        result.Add(color);
-                }
-
-                return result;
+                return await GetItemsByType<AdColor>(AdItemType.Color);
             }
             catch (Exception ex)
             {
@@ -459,21 +395,17 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdCapacity> AddCapacity(AdCapacity capacity, CancellationToken cancellationToken = default)
+        public async Task<AdCapacity> AddCapacity(string name, CancellationToken cancellationToken = default)
         {
             try
             {
-                var id = Guid.NewGuid();
-                capacity.Id = id;
-                var key = $"capacity-{id}";
+                var capacity = new AdCapacity
+                {
+                    Name = name,
+                    Type = AdItemType.Capacity
+                };
 
-                var index = await _dapr.GetStateAsync<List<string>>(CapacityStore, CapacityIndexKey) ?? new();
-                await _dapr.SaveStateAsync(CapacityStore, key, capacity);
-
-                index.Add(key);
-                await _dapr.SaveStateAsync(CapacityStore, CapacityIndexKey, index);
-
-                return capacity;
+                return await AddItem(capacity);
             }
             catch (Exception ex)
             {
@@ -485,17 +417,7 @@ namespace QLN.Classified.MS.Service
         {
             try
             {
-                var keys = await _dapr.GetStateAsync<List<string>>(CapacityStore, CapacityIndexKey) ?? new();
-                var result = new List<AdCapacity>();
-
-                foreach (var key in keys)
-                {
-                    var item = await _dapr.GetStateAsync<AdCapacity>(CapacityStore, key);
-                    if (item != null)
-                        result.Add(item);
-                }
-
-                return result;
+                return await GetItemsByType<AdCapacity>(AdItemType.Capacity);
             }
             catch (Exception ex)
             {
@@ -503,20 +425,18 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdProcessor> AddProcessor(AdProcessor processor, CancellationToken cancellationToken = default)
+        public async Task<AdProcessor> AddProcessor(string name, Guid modelId, CancellationToken cancellationToken = default)
         {
             try
             {
-                processor.Id = Guid.NewGuid();
-                var key = $"processor-{processor.Id}";
+                var processor = new AdProcessor
+                {
+                    Name = name,
+                    ModelId = modelId,
+                    Type = AdItemType.Processor
+                };
 
-                var index = await _dapr.GetStateAsync<List<string>>(ProcessorStore, ProcessorIndexKey) ?? new();
-                await _dapr.SaveStateAsync(ProcessorStore, key, processor);
-
-                index.Add(key);
-                await _dapr.SaveStateAsync(ProcessorStore, ProcessorIndexKey, index);
-
-                return processor;
+                return await AddItem(processor);
             }
             catch (Exception ex)
             {
@@ -528,17 +448,7 @@ namespace QLN.Classified.MS.Service
         {
             try
             {
-                var keys = await _dapr.GetStateAsync<List<string>>(ProcessorStore, ProcessorIndexKey) ?? new();
-                var result = new List<AdProcessor>();
-
-                foreach (var key in keys)
-                {
-                    var item = await _dapr.GetStateAsync<AdProcessor>(ProcessorStore, key);
-                    if (item != null)
-                        result.Add(item);
-                }
-
-                return result;
+                return await GetItemsByType<AdProcessor>(AdItemType.Processor);
             }
             catch (Exception ex)
             {
@@ -550,7 +460,7 @@ namespace QLN.Classified.MS.Service
         {
             try
             {
-                var all = await GetAllProcessors(cancellationToken);
+                var all = await GetItemsByType<AdProcessor>(AdItemType.Processor);
                 return all.Where(p => p.ModelId == modelId).ToList();
             }
             catch (Exception ex)
@@ -559,20 +469,17 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdCoverage> AddCoverage(AdCoverage coverage, CancellationToken cancellationToken = default)
+        public async Task<AdCoverage> AddCoverage(string name, CancellationToken cancellationToken = default)
         {
             try
             {
-                coverage.Id = Guid.NewGuid();
-                var key = $"coverage-{coverage.Id}";
+                var coverage = new AdCoverage
+                {
+                    Name = name,
+                    Type = AdItemType.Coverage
+                };
 
-                var index = await _dapr.GetStateAsync<List<string>>(CoverageStore, CoverageIndexKey) ?? new();
-                await _dapr.SaveStateAsync(CoverageStore, key, coverage);
-
-                index.Add(key);
-                await _dapr.SaveStateAsync(CoverageStore, CoverageIndexKey, index);
-
-                return coverage;
+                return await AddItem(coverage);
             }
             catch (Exception ex)
             {
@@ -583,37 +490,25 @@ namespace QLN.Classified.MS.Service
         {
             try
             {
-                var keys = await _dapr.GetStateAsync<List<string>>(CoverageStore, CoverageIndexKey) ?? new();
-                var result = new List<AdCoverage>();
-
-                foreach (var key in keys)
-                {
-                    var item = await _dapr.GetStateAsync<AdCoverage>(CoverageStore, key);
-                    if (item != null)
-                        result.Add(item);
-                }
-
-                return result;
+                return await GetItemsByType<AdCoverage>(AdItemType.Coverage);
             }
             catch (Exception ex)
             {
                 throw new Exception("Error while getting all coverages", ex);
             }
         }
-        public async Task<AdRam> AddRam(AdRam ram, CancellationToken cancellationToken = default)
+        public async Task<AdRam> AddRam(string name, Guid modelId, CancellationToken cancellationToken = default)
         {
             try
             {
-                ram.Id = Guid.NewGuid();
-                var key = $"ram-{ram.Id}";
+                var ram = new AdRam
+                {
+                    Name = name,
+                    ModelId = modelId,
+                    Type = AdItemType.Ram
+                };
 
-                var index = await _dapr.GetStateAsync<List<string>>(RamStore, RamIndexKey) ?? new();
-                await _dapr.SaveStateAsync(RamStore, key, ram);
-
-                index.Add(key);
-                await _dapr.SaveStateAsync(RamStore, RamIndexKey, index);
-
-                return ram;
+                return await AddItem(ram);
             }
             catch(Exception ex)
             {
@@ -625,14 +520,7 @@ namespace QLN.Classified.MS.Service
         {
             try
             {
-                var keys = await _dapr.GetStateAsync<List<string>>(RamStore, RamIndexKey) ?? new();
-                var result = new List<AdRam>();
-                foreach (var key in keys)
-                {
-                    var item = await _dapr.GetStateAsync<AdRam>(RamStore, key);
-                    if (item != null) result.Add(item);
-                }
-                return result;
+                return await GetItemsByType<AdRam>(AdItemType.Ram);
             }
             catch(Exception ex)
             {
@@ -644,8 +532,8 @@ namespace QLN.Classified.MS.Service
         {
             try
             {
-                var all = await GetAllRams(cancellationToken);
-                return all.Where(x => x.ModelId == modelId).ToList();
+                var all = await GetItemsByType<AdRam>(AdItemType.Ram);
+                return all.Where(r => r.ModelId == modelId).ToList();
             }
             catch(Exception ex)
             {
@@ -653,20 +541,18 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdResolution> AddResolution(AdResolution resolution, CancellationToken cancellationToken = default)
+        public async Task<AdResolution> AddResolution(string name, Guid modelId, CancellationToken cancellationToken = default)
         {
             try
             {
-                resolution.Id = Guid.NewGuid();
-                var key = $"resolution-{resolution.Id}";
+                var resolution = new AdResolution
+                {
+                    Name = name,
+                    ModelId = modelId,
+                    Type = AdItemType.Resolution
+                };
 
-                var index = await _dapr.GetStateAsync<List<string>>(ResolutionStore, ResolutionIndexKey) ?? new();
-                await _dapr.SaveStateAsync(ResolutionStore, key, resolution);
-
-                index.Add(key);
-                await _dapr.SaveStateAsync(ResolutionStore, ResolutionIndexKey, index);
-
-                return resolution;
+                return await AddItem(resolution);
             }
             catch(Exception ex)
             {
@@ -678,18 +564,11 @@ namespace QLN.Classified.MS.Service
         {
             try
             {
-                var keys = await _dapr.GetStateAsync<List<string>>(ResolutionStore, ResolutionIndexKey) ?? new();
-                var result = new List<AdResolution>();
-                foreach (var key in keys)
-                {
-                    var item = await _dapr.GetStateAsync<AdResolution>(ResolutionStore, key);
-                    if (item != null) result.Add(item);
-                }
-                return result;
+                return await GetItemsByType<AdResolution>(AdItemType.Resolution);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                throw new Exception("Error while getting all Resolution", ex);
+                throw new Exception("Error while getting all resolutions", ex);
             }
         }
 
@@ -697,8 +576,8 @@ namespace QLN.Classified.MS.Service
         {
             try
             {
-                var all = await GetAllResolutions(cancellationToken);
-                return all.Where(x => x.ModelId == modelId).ToList();
+                var all = await GetItemsByType<AdResolution>(AdItemType.Resolution);
+                return all.Where(r => r.ModelId == modelId).ToList();
             }
             catch(Exception ex)
             {
@@ -706,20 +585,17 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdSizeType> AddSizeType(AdSizeType sizeType, CancellationToken cancellationToken = default)
+        public async Task<AdSizeType> AddSizeType(string name, CancellationToken cancellationToken = default)
         {
             try
             {
-                sizeType.Id = Guid.NewGuid();
-                var key = $"sizetype-{sizeType.Id}";
+                var sizeType = new AdSizeType
+                {
+                    Name = name,
+                    Type = AdItemType.SizeType
+                };
 
-                var index = await _dapr.GetStateAsync<List<string>>(SizeTypeStore, SizeTypeIndexKey) ?? new();
-                await _dapr.SaveStateAsync(SizeTypeStore, key, sizeType);
-
-                index.Add(key);
-                await _dapr.SaveStateAsync(SizeTypeStore, SizeTypeIndexKey, index);
-
-                return sizeType;
+                return await AddItem(sizeType);
             }
             catch (Exception ex)
             {
@@ -731,37 +607,25 @@ namespace QLN.Classified.MS.Service
         {
             try
             {
-                var keys = await _dapr.GetStateAsync<List<string>>(SizeTypeStore, SizeTypeIndexKey) ?? new();
-                var result = new List<AdSizeType>();
-
-                foreach (var key in keys)
-                {
-                    var item = await _dapr.GetStateAsync<AdSizeType>(SizeTypeStore, key);
-                    if (item != null)
-                        result.Add(item);
-                }
-
-                return result;
+                return await GetItemsByType<AdSizeType>(AdItemType.SizeType);
             }
             catch (Exception ex)
             {
                 throw new Exception("Error while fetching all size types", ex);
             }
         }
-        public async Task<AdGender> AddGender(AdGender gender, CancellationToken cancellationToken = default)
+
+        public async Task<AdGender> AddGender(string name, CancellationToken cancellationToken = default)
         {
             try
             {
-                gender.Id = Guid.NewGuid();
-                var key = $"gender-{gender.Id}";
+                var gender = new AdGender
+                {
+                    Name = name,
+                    Type = AdItemType.Gender
+                };
 
-                var index = await _dapr.GetStateAsync<List<string>>(GenderStore, GenderIndexKey) ?? new();
-                await _dapr.SaveStateAsync(GenderStore, key, gender);
-
-                index.Add(key);
-                await _dapr.SaveStateAsync(GenderStore, GenderIndexKey, index);
-
-                return gender;
+                return await AddItem(gender);
             }
             catch (Exception ex)
             {
@@ -773,17 +637,7 @@ namespace QLN.Classified.MS.Service
         {
             try
             {
-                var keys = await _dapr.GetStateAsync<List<string>>(GenderStore, GenderIndexKey) ?? new();
-                var result = new List<AdGender>();
-
-                foreach (var key in keys)
-                {
-                    var gender = await _dapr.GetStateAsync<AdGender>(GenderStore, key);
-                    if (gender != null)
-                        result.Add(gender);
-                }
-
-                return result;
+                return await GetItemsByType<AdGender>(AdItemType.Gender);
             }
             catch (Exception ex)
             {
@@ -791,41 +645,29 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdZone> AddZone(AdZone zone, CancellationToken cancellationToken = default)
+        public async Task<AdZone> AddZone(string name, CancellationToken cancellationToken = default)
         {
             try
             {
-                zone.Id = Guid.NewGuid();
-                var key = $"zone-{zone.Id}";
+                var zone = new AdZone
+                {
+                    Name = name,
+                    Type = AdItemType.Zone
+                };
 
-                var index = await _dapr.GetStateAsync<List<string>>(ZoneStore, ZoneIndexKey) ?? new();
-                await _dapr.SaveStateAsync(ZoneStore, key, zone);
-
-                index.Add(key);
-                await _dapr.SaveStateAsync(ZoneStore, ZoneIndexKey, index);
-
-                return zone;
+                return await AddItem(zone);
             }
             catch (Exception ex)
             {
                 throw new Exception("Error while adding zone", ex);
             }
         }
+
         public async Task<List<AdZone>> GetAllZones(CancellationToken cancellationToken = default)
         {
             try
             {
-                var keys = await _dapr.GetStateAsync<List<string>>(ZoneStore, ZoneIndexKey) ?? new();
-                var result = new List<AdZone>();
-
-                foreach (var key in keys)
-                {
-                    var zone = await _dapr.GetStateAsync<AdZone>(ZoneStore, key);
-                    if (zone != null)
-                        result.Add(zone);
-                }
-
-                return result;
+                return await GetItemsByType<AdZone>(AdItemType.Zone);
             }
             catch (Exception ex)
             {
@@ -833,117 +675,117 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<string> CreateAd(AdInformation ad, string userId, CancellationToken token = default)
-        {
-            try
-            {
-                var user = await _userManager.Users
-                    .FirstOrDefaultAsync(u => u.Id.ToString() == userId && u.IsActive, cancellationToken: token);
+        //public async Task<string> CreateAd(AdInformation ad, string userId, CancellationToken token = default)
+        //{
+        //    try
+        //    {
+        //        var user = await _userManager.Users
+        //            .FirstOrDefaultAsync(u => u.Id.ToString() == userId && u.IsActive, cancellationToken: token);
 
-                if (user == null)
-                    throw new UnauthorizedAccessException("User is not registered or inactive.");
+        //        if (user == null)
+        //            throw new UnauthorizedAccessException("User is not registered or inactive.");
 
-                if (ad.WarrantyCertificate == null || ad.WarrantyCertificate.Length == 0)
-                    throw new ArgumentException("Warranty certificate is required.");
+        //        if (ad.WarrantyCertificate == null || ad.WarrantyCertificate.Length == 0)
+        //            throw new ArgumentException("Warranty certificate is required.");
 
-                if (ad.UploadPhotos == null || ad.UploadPhotos.Length == 0)
-                    throw new ArgumentException("At least one photo is required.");
+        //        if (ad.UploadPhotos == null || ad.UploadPhotos.Length == 0)
+        //            throw new ArgumentException("At least one photo is required.");
 
-                var adId = Guid.NewGuid();
+        //        var adId = Guid.NewGuid();
 
-                // Create sub directory
-                var subDir = Path.Combine(_env.WebRootPath, "images", "ads", ad.SubVertical);
-                Directory.CreateDirectory(subDir);
+        //        // Create sub directory
+        //        var subDir = Path.Combine(_env.WebRootPath, "images", "ads", ad.SubVertical);
+        //        Directory.CreateDirectory(subDir);
 
-                // Save warranty certificate
-                var licenseFileName = $"{adId}_license{Path.GetExtension(ad.WarrantyCertificate.FileName)}";
-                var licensePath = Path.Combine(subDir, licenseFileName);
-                using (var stream = new FileStream(licensePath, FileMode.Create))
-                {
-                    await ad.WarrantyCertificate.CopyToAsync(stream, token);
-                }
+        //        // Save warranty certificate
+        //        var licenseFileName = $"{adId}_license{Path.GetExtension(ad.WarrantyCertificate.FileName)}";
+        //        var licensePath = Path.Combine(subDir, licenseFileName);
+        //        using (var stream = new FileStream(licensePath, FileMode.Create))
+        //        {
+        //            await ad.WarrantyCertificate.CopyToAsync(stream, token);
+        //        }
 
-                // Save photo
-                var photoFileName = $"{adId}_photo{Path.GetExtension(ad.UploadPhotos.FileName)}";
-                var photoPath = Path.Combine(subDir, photoFileName);
-                using (var stream = new FileStream(photoPath, FileMode.Create))
-                {
-                    await ad.UploadPhotos.CopyToAsync(stream, token);
-                }
+        //        // Save photo
+        //        var photoFileName = $"{adId}_photo{Path.GetExtension(ad.UploadPhotos.FileName)}";
+        //        var photoPath = Path.Combine(subDir, photoFileName);
+        //        using (var stream = new FileStream(photoPath, FileMode.Create))
+        //        {
+        //            await ad.UploadPhotos.CopyToAsync(stream, token);
+        //        }
 
-                var model = new AdResponse
-                {
-                    Id = adId,
-                    SubVertical = ad.SubVertical,
-                    Title = ad.Title,
-                    Description = ad.Description,
-                    Category = ad.Category,
-                    SubCategory = ad.SubCategory,
-                    Brand = ad.Brand,
-                    Model = ad.Model,
-                    Condition = ad.Condition,
-                    Price = ad.Price,
-                    Color = ad.Color,
-                    Capacity = ad.Capacity,
-                    Processor = ad.Processor,
-                    Coverage = ad.Coverage,
-                    Ram = ad.Ram,
-                    Resolution = ad.Resolution,
-                    BatteryPercentage = ad.BatteryPercentage,
-                    Size = ad.Size,
-                    SizeType = ad.SizeType,
-                    Gender = ad.Gender,
-                    WarrantyCertificateUrl = $"/images/ads/{ad.SubVertical}/{licenseFileName}",
-                    ImageUrl = $"/images/ads/{ad.SubVertical}/{photoFileName}",
-                    PhoneNumber = ad.PhoneNumber,
-                    WhatsappNumber = ad.WhatsappNumber,
-                    Zone = ad.zone,
-                    StreetNumber = ad.streetNumber,
-                    BuildingNumber = ad.buildingNumber,
-                    CreatedBy = userId,
-                    CreatedAt = DateTime.UtcNow,
-                    IsPublished = ad.Ispublished
-                };
+        //        var model = new AdResponse
+        //        {
+        //            Id = adId,
+        //            SubVertical = ad.SubVertical,
+        //            Title = ad.Title,
+        //            Description = ad.Description,
+        //            Category = ad.Category,
+        //            SubCategory = ad.SubCategory,
+        //            Brand = ad.Brand,
+        //            Model = ad.Model,
+        //            Condition = ad.Condition,
+        //            Price = ad.Price,
+        //            Color = ad.Color,
+        //            Capacity = ad.Capacity,
+        //            Processor = ad.Processor,
+        //            Coverage = ad.Coverage,
+        //            Ram = ad.Ram,
+        //            Resolution = ad.Resolution,
+        //            BatteryPercentage = ad.BatteryPercentage,
+        //            Size = ad.Size,
+        //            SizeType = ad.SizeType,
+        //            Gender = ad.Gender,
+        //            WarrantyCertificateUrl = $"/images/ads/{ad.SubVertical}/{licenseFileName}",
+        //            ImageUrl = $"/images/ads/{ad.SubVertical}/{photoFileName}",
+        //            PhoneNumber = ad.PhoneNumber,
+        //            WhatsappNumber = ad.WhatsappNumber,
+        //            Zone = ad.zone,
+        //            StreetNumber = ad.streetNumber,
+        //            BuildingNumber = ad.buildingNumber,
+        //            CreatedBy = userId,
+        //            CreatedAt = DateTime.UtcNow,
+        //            IsPublished = ad.Ispublished
+        //        };
 
-                var stateKey = $"ad-{adId}";
-                await _dapr.SaveStateAsync("adstore", stateKey, model, cancellationToken: token);
+        //        var stateKey = $"ad-{adId}";
+        //        await _dapr.SaveStateAsync("adstore", stateKey, model, cancellationToken: token);
 
-                var keys = await _dapr.GetStateAsync<List<string>>("adstore", "ad-index", cancellationToken: token) ?? new();
-                keys.Add(stateKey);
-                await _dapr.SaveStateAsync("adstore", "ad-index", keys, cancellationToken: token);
+        //        var keys = await _dapr.GetStateAsync<List<string>>("adstore", "ad-index", cancellationToken: token) ?? new();
+        //        keys.Add(stateKey);
+        //        await _dapr.SaveStateAsync("adstore", "ad-index", keys, cancellationToken: token);
 
-                return stateKey;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error while Ad posting", ex);
-            }
-        }
+        //        return stateKey;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw new Exception("Error while Ad posting", ex);
+        //    }
+        //}
 
-        public async Task<List<AdResponse>> GetUserAds(string userId, bool? isPublished, CancellationToken token = default)
-        {
-            try
-            {
-                var allKeys = await _dapr.GetStateAsync<List<string>>("adstore", "ad-index") ?? new();
-                var result = new List<AdResponse>();
+        //public async Task<List<AdResponse>> GetUserAds(string userId, bool? isPublished, CancellationToken token = default)
+        //{
+        //    try
+        //    {
+        //        var allKeys = await _dapr.GetStateAsync<List<string>>("adstore", "ad-index") ?? new();
+        //        var result = new List<AdResponse>();
 
-                foreach (var key in allKeys)
-                {
-                    var ad = await _dapr.GetStateAsync<AdResponse>("adstore", key);
-                    if (ad?.CreatedBy == userId && (isPublished == null || ad.IsPublished == isPublished))
-                    {
-                        result.Add(ad);
-                    }
-                }
+        //        foreach (var key in allKeys)
+        //        {
+        //            var ad = await _dapr.GetStateAsync<AdResponse>("adstore", key);
+        //            if (ad?.CreatedBy == userId && (isPublished == null || ad.IsPublished == isPublished))
+        //            {
+        //                result.Add(ad);
+        //            }
+        //        }
 
-                return result;
+        //        return result;
 
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error while getting user ads", ex);
-            }
-        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw new Exception("Error while getting user ads", ex);
+        //    }
+        //}
 
         public async Task<ClassifiedLandingPageResponse> GetLandingPage()
         {
