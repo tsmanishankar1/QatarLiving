@@ -101,11 +101,23 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SaveSearchEndPoints
                 ISaveSearchService service
             ) =>
             {
+                var userIdObj = context.User.GetId();
+                if (userIdObj == null)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid User",
+                        Detail = "User ID could not be determined.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+
+                var userId = userIdObj.ToString().ToLower();
+
                 try
                 {
-                    var userId = context.User.GetId().ToString().ToLower();
                     var searches = await service.GetSearchesAsync(userId);
-
                     return TypedResults.Ok(searches);
                 }
                 catch (GetSearchesException ex)
@@ -133,11 +145,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SaveSearchEndPoints
             .WithSummary("Get saved searches")
             .WithDescription("Get all saved searches for the current user.")
             .RequireAuthorization()
-            .Produces<List<SavedSearchResponseDto>>(StatusCodes.Status200OK) // <-- Updated type
+            .Produces<List<SavedSearchResponseDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
         }
+
     }
 }
+
