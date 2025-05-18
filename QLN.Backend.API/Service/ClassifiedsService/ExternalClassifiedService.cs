@@ -25,14 +25,14 @@ namespace QLN.Backend.API.Service.ClassifiedService
             _log = log ?? throw new ArgumentNullException(nameof(log));
         }
 
-        public async Task<IEnumerable<ClassifiedIndexDto>> Search(ClassifiedSearchRequest request)
+        public async Task<IEnumerable<ClassifiedIndexDto>> Search(CommonSearchRequest request)
         {
             if (request is null) throw new ArgumentNullException(nameof(request));
 
             try
             {
                 var result = await _dapr.InvokeMethodAsync<
-                    ClassifiedSearchRequest,
+                    CommonSearchRequest,
                     ClassifiedIndexDto[]>(
                         HttpMethod.Post,
                         SERVICE_APP_ID,
@@ -71,12 +71,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
         public async Task<string> Upload(ClassifiedIndexDto document)
         {
             if (document is null) throw new ArgumentNullException(nameof(document));
-
-/*            var req = new CommonIndexRequest
-            {
-                VerticalName = Vertical,
-                ClassifiedsItem = document
-            };*/
 
             try
             {

@@ -9,7 +9,7 @@ namespace QLN.Common.Infrastructure.IService.BannerService
 {
     public interface IClassifiedService
     {
-        Task<IEnumerable<ClassifiedIndexDto>> Search(ClassifiedSearchRequest request);
+        Task<IEnumerable<ClassifiedIndexDto>> Search(CommonSearchRequest request);
         Task<ClassifiedIndexDto?> GetById(string id);
         Task<string> Upload(ClassifiedIndexDto document);
         Task<ClassifiedLandingPageResponse> GetLandingPage();
