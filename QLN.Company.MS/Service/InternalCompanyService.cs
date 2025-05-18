@@ -122,19 +122,27 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        private async Task<CompanyProfileEntity> ConvertDtoToEntity(CompanyProfileDto dto, Guid id, CancellationToken cancellationToken = default)
+        private async Task<CompanyProfileEntity> ConvertDtoToEntity(
+            CompanyProfileDto dto,
+            Guid id,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                var root = Path.Combine(_env.WebRootPath ?? "wwwroot", "uploads", "company", id.ToString());
+                var webRoot = _env.WebRootPath ?? "wwwroot";
+                var root = Path.Combine(webRoot, "uploads", "company", id.ToString());
                 Directory.CreateDirectory(root);
 
                 var logoPath = dto.CompanyLogo is not null
-                    ? await _fileStorage.SaveFile(dto.CompanyLogo, Path.Combine(root, "logo", dto.CompanyLogo.FileName))
+                    ? await _fileStorage.SaveFile(
+                        dto.CompanyLogo,
+                        Path.Combine(root, "logo", dto.CompanyLogo.FileName))
                     : null;
 
                 var crPath = dto.CRDocument is not null
-                    ? await _fileStorage.SaveFile(dto.CRDocument, Path.Combine(root, "cr", dto.CompanyLogo.FileName))
+                    ? await _fileStorage.SaveFile(
+                        dto.CRDocument,
+                        Path.Combine(root, "cr", dto.CRDocument.FileName))
                     : null;
 
                 return new CompanyProfileEntity
@@ -162,8 +170,8 @@ namespace QLN.Company.MS.Service
                     UserDesignation = dto.UserDesignation,
                     BusinessDescription = dto.BusinessDescription,
                     CRNumber = dto.CRNumber,
-                    CompanyLogo = logoPath,
-                    CRDocument = crPath
+                    CompanyLogo = ToRelative(logoPath),
+                    CRDocument = ToRelative(crPath)
                 };
             }
             catch (Exception ex)
@@ -172,22 +180,17 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
+        private string? ToRelative(string? physicalPath)
+        {
+            if (string.IsNullOrWhiteSpace(physicalPath))
+                return null;
 
-        //private async Task<string> SaveFile(IFormFile file, string directory)
-        //{
-        //    try
-        //    {
-        //        Directory.CreateDirectory(directory);
-        //        var filePath = Path.Combine(directory, file.FileName);
-        //        using var stream = new FileStream(filePath, FileMode.Create);
-        //        await file.CopyToAsync(stream);
-        //        return filePath;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error while saving file {FileName} to {Directory}", file.FileName, directory);
-        //        throw;
-        //    }
-        //}
+            var webRoot = _env.WebRootPath ?? "wwwroot";
+            var rel = Path
+                .GetRelativePath(webRoot, physicalPath)
+                .Replace(Path.DirectorySeparatorChar, '/');
+
+            return "/" + rel;
+        }
     }
 }

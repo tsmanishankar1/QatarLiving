@@ -1,6 +1,8 @@
 using Microsoft.OpenApi.Models;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.IService.ICompanyService;
+using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.Service.FileStorage;
 using QLN.Common.Swagger;
 using QLN.Company.MS.Service;
 
@@ -35,6 +37,7 @@ builder.Services.AddSwaggerGen(opts => {
 });
 
 builder.Services.AddScoped<ICompanyService, InternalCompanyService>();
+builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

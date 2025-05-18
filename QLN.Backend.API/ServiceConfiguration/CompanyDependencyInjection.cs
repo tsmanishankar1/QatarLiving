@@ -4,7 +4,7 @@ using System.Windows.Input;
 
 namespace QLN.Backend.API.ServiceConfiguration
 {
-    public static class ExternalCompanyServiceConfiguration
+    public static class CompanyDependencyInjection
     {
         public static IServiceCollection CompanyConfiguration(this IServiceCollection services, IConfiguration config)
         {
