@@ -118,21 +118,20 @@ namespace QLN.Web.Shared.Models
             }
         }
 
-        private string _features;
-        public string Features
-        {
-            get => _features;
-            set
-            {
-                if (_features != value)
-                {
-                    _features = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
+        //private string _features;
+        //public string Features
+        //{
+        //    get => _features;
+        //    set
+        //    {
+        //        if (_features != value)
+        //        {
+        //            _features = value;
+        //            OnPropertyChanged();
+        //        }
+        //    }
+        //}
 
-        public bool IsActive { get; set; } = true;
 
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
