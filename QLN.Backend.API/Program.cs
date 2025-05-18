@@ -14,6 +14,7 @@ using QLN.Backend.API.ServiceConfiguration;
 using QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints;
 using QLN.Common.Swagger;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -151,7 +152,7 @@ builder.Services.AddDaprClient();
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
-
+builder.Services.ExternalCompanyProfileServiceConfiguration(builder.Configuration);
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -168,7 +169,8 @@ if (app.Environment.IsDevelopment())
 
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
-
+var companyGroup = app.MapGroup("/companyprofile");
+companyGroup.MapCompanyProfileEndpoints();
 var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedLandingEndpoints();
 var Classifiedandinggroup = app.MapGroup("/api/{vertical}");
