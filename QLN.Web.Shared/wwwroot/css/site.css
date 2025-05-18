@@ -14,6 +14,8 @@
     --color-text-heading: #242424;     /* For use on heading text */
     --color-text-gray: #454545;       /*For use on the subtitle text */
     --color-text-green: #079455;      /* For the success green text */
+    --color-category-text: #2A6BA0;    /* For the category text */
+    --color-text-heading-rgb: 18, 52, 86;
  
     /* Backgrounds and Containers */
     --color-background: #FFFFFF;      /* white background */
@@ -25,6 +27,8 @@
     --color-background-secondary-grey-light: #FAFAFA;
     --color-header-button: #E8F2FE;    /* For the icon button in header */
     --color-captcha-box: #D0D5DD; /* For the border of the captcha box */
+    --color-whatsapp-outline: #5BD066; /* For the border of the whatsapp box */
+    --color-category-outline: #E8F2FE;
 }
  
 .subscription-card {
@@ -113,18 +117,11 @@
     display: flex;
     width: 100%;
     padding: 0;
-    background-color: #f5f5f5; /* Grey background for toolbar */
+    background-color: #f5f5f5; 
     border-radius: 4px 4px 0 0;
     overflow: hidden;
 }
-.vertical-tabs-toolbar {
-    display: flex;
-    width: 100%;
-    padding: 0;
-    background-color: white; 
-    border-radius: 4px 4px 0 0;
-    overflow: hidden;
-}
+
 
 .tab {
     flex: 1;
@@ -180,6 +177,78 @@
 }
 
 .tab-text {
+    margin-top: 4px;
+}
+
+.vertical-tabs {
+    width: 100%;
+    margin: 0 auto;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.vertical-tabs-toolbar {
+    display: flex;
+    width: 100%;
+    border-radius: 4px 4px 0 0;
+    overflow: hidden;
+    height: 70px;
+}
+
+.vertical-tab {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    color: #666;
+    text-transform: none;
+    padding: 8px 0;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    justify-content: center;
+    background-color: white;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+    .vertical-tab.active {
+        background-color: #00426D; /* Active background */
+        color: white;
+        font-weight: 600;
+        border-radius: 8px;
+    }
+
+.vertical-tab-icon {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 6px;
+    /* Default grey color for inactive icons */
+    filter: brightness(0) saturate(100%) invert(40%) sepia(0%) saturate(747%) hue-rotate(149deg) brightness(93%) contrast(87%);
+}
+
+
+.vertical-tab.active .vertical-tab-icon {
+    filter: brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(201deg) brightness(102%) contrast(102%);
+}
+
+.vertical-tab-indicator {
+    position: absolute;
+    bottom: 0;
+    height: 3px;
+    background-color: white;
+    width: 100%;
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.vertical-tab.active .tab-indicator {
+    transform: scaleX(1);
+}
+
+.vertical-tab-text {
     margin-top: 4px;
 }
 

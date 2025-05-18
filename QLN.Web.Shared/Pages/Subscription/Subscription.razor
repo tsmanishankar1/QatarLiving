@@ -1,14 +1,13 @@
 ﻿@page "/subscription"
-@page "/subscription/{type}"
-@inject IDialogService DialogService
 @using QLN.Web.Shared.Components.ModalDialog
 @using QLN.Web.Shared.Components.BreadCrumb
 @using QLN.Web.Shared.Models
 @using MudBlazor
 
-@if (signUpSucesss){
+
+@if (_actionSucess){
     <div class="popup-overlay">
-       <ModalDialog
+        <ModalDialog
         Title="Payment Success!"
         Description="Payment was successful"
         ButtonName="Continue"
@@ -17,106 +16,102 @@
     </div>
 }
 <MudContainer MaxWidth="MaxWidth.Large" Class="py-6 px-4" Style="background-color: #F2F4F7;">
-    <!-- Breadcrumb + Title -->
     <Breadcrumb Items="breadcrumbItems" />
 
-    <div style="width: 100%;">
-        <div style="width: 80%;justify-content:center;align-items:center;margin-left:4%">
+    <div style="width: 100%;display:flex;justify-content:center;align-items:center;">
+        <div style="width: 90%;display:flex;justify-content:center;align-items:center;">
             <div style="text-align: center; margin-bottom: 24px;">
                 <MudText Typo="Typo.h5" Class="font-semibold mb-1" Style="color:#242424;">
-                    Classifieds Subscriptions
+                    Subscription Packages
                 </MudText>
                 <MudText Typo="Typo.subtitle1" Class="mb-4" Style="color:#646464;">
-                We offer tailored subscription packages for every need, Whether you're listing a property, selling a vehicle, or promoting a service. Choose a category to get started
+                    We offer tailored subscription packages for every need, Whether you're listing a property, selling a vehicle, or promoting a service. Choose a category to get started
                 </MudText>
-                <div class="custom-tabs">
-                    <div class="tabs-toolbar">
-                        <div class="tab @( _activeVerticalTabIndex == 0 ? "active" : "" )" @onclick="() => SetVeritcalTab(0)">
-                            <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+                <div class="vertical-tabs">
+                    <div class="vertical-tabs-toolbar">
+                        <div class="vertical-tab @( _activeVerticalTabIndex == 0 ? "active" : "" )" @onclick="() => SetVeritcalTab(0)">
 
-                                <img src="/images/subscription/Properties.svg" class="tab-icon" alt="Deals">
-                                <span class="tab-text">Properties</span>
-                            </div>
-                            <div class="tab-indicator"></div>
+                                <img src="/images/subscription/Properties.svg" class="vertical-tab-icon" alt="Deals">
+                                <span class="vertical-tab-text">Properties</span>
+                            <div class="vertical-tab-indicator"></div>
                         </div>
-                        <div class="tab @( _activeVerticalTabIndex == 1 ? "active" : "" )" @onclick="() => SetVeritcalTab(1)">
-                            <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+                        <div class="vertical-tab @( _activeVerticalTabIndex == 1 ? "active" : "" )" @onclick="() => SetVeritcalTab(1)">
 
-                                <img src="/images/subscription/Vehicles.svg" class="tab-icon" alt="Stores">
-                                <span class="tab-text">Vehicles</span>
-                            </div>
-                            <div class="tab-indicator"></div>
+                                <img src="/images/subscription/Vehicles.svg" class="vertical-tab-icon" alt="Stores">
+                                <span class="vertical-tab-text">Vehicles</span>
+                            <div class="vertical-tab-indicator"></div>
                         </div>
-                        <div class="tab @( _activeVerticalTabIndex == 2 ? "active" : "" )" @onclick="() => SetVeritcalTab(2)">
-                            <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+                        <div class="vertical-tab @( _activeVerticalTabIndex == 2 ? "active" : "" )" @onclick="() => SetVeritcalTab(2)">
 
-                                <img src="/images/subscription/Classifieds.svg" class="tab-icon" alt="Preloved">
-                                <span class="tab-text">Classified</span>
-                            </div>
-                            <div class="tab-indicator"></div>
+                                <img src="/images/subscription/Classifieds.svg" class="vertical-tab-icon" alt="Preloved">
+                                <span class="vertical-tab-text">Classified</span>
+                            <div class="vertical-tab-indicator"></div>
                         </div>
-                        <div class="tab @( _activeVerticalTabIndex == 3 ? "active" : "" )" @onclick="() => SetVeritcalTab(3)">
-                            <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+                        <div class="vertical-tab @( _activeVerticalTabIndex == 3 ? "active" : "" )" @onclick="() => SetVeritcalTab(3)">
 
-                                <img src="/images/subscription/Services.svg" class="tab-icon" alt="Preloved">
-                                <span class="tab-text">Services</span>
-                            </div>
-                            <div class="tab-indicator"></div>
+                                <img src="/images/subscription/Services.svg" class="vertical-tab-icon" alt="Preloved">
+                                <span class="vertical-tab-text">Services</span>
+                            <div class="vertical-tab-indicator"></div>
                         </div>
-                        <div class="tab @( _activeVerticalTabIndex == 4 ? "active" : "" )" @onclick="() => SetVeritcalTab(4)">
-                            <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+                        <div class="vertical-tab @( _activeVerticalTabIndex == 4 ? "active" : "" )" @onclick="() => SetVeritcalTab(4)">
 
-                                <img src="/images/subscription/Jobs.svg" class="tab-icon" alt="Preloved">
-                                <span class="tab-text">Jobs</span>
-                            </div>
-                            <div class="tab-indicator"></div>
+                                <img src="/images/subscription/Jobs.svg" class="vertical-tab-icon" alt="Preloved">
+                                <span class="vertical-tab-text">Jobs</span>
+                            <div class="vertical-tab-indicator"></div>
                         </div>
-                        <div class="tab @( _activeVerticalTabIndex == 5 ? "active" : "" )" @onclick="() => SetVeritcalTab(5)">
-                            <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+                        <div class="vertical-tab  @( _activeVerticalTabIndex == 5 ? "active" : "" )" @onclick="() => SetVeritcalTab(5)">
 
-                                <img src="/images/subscription/Rewards.svg" class="tab-icon" alt="Preloved">
-                                <span class="tab-text">Rewards</span>
-                            </div>
-                            <div class="tab-indicator"></div>
+                                <img src="/images/subscription/Rewards.svg" class="vertical-tab-icon" alt="Preloved">
+                                <span class="vertical-tab-text">Rewards</span>
+                            <div class="vertical-tab-indicator"></div>
                         </div>
                     </div>
                 </div>
             </div>
-            </div>
-            </div>
+        </div>
+    </div>
 
-       
+
 
     <MudGrid GutterSize="4">
 
         <!-- LEFT SECTION -->
         <MudItem xs="12" md="9">
             <div style="max-width: 800px; margin: 0 auto;">
-             
-
+                 <div style="width: 100%;display:flex;justify-content:center;align-items:center;">
+        <div style="width: 90%;display:flex;justify-content:center;align-items:center;">
+            <div style="text-align: center; margin-bottom: 24px;">
+                <MudText Typo="Typo.h5" Class="font-semibold mb-1" Style="color:#242424;">
+                    Classifieds Subscriptions
+                </MudText>
+                <MudText Typo="Typo.subtitle1" Class="mb-4" Style="color:#646464;">
+                    Promote smarter. Sell quicker. Stay visible longer
+                </MudText>
+              </div></div>
+              </div>
                 <div class="custom-tabs">
                     <div class="tabs-toolbar">
                         <div class="tab @( _activeTabIndex == 0 ? "active" : "" )" @onclick="() => SetTab(0)">
                             <div style="display:flex;flex-direction:row;gap:10px">
-                                
-                            <img src="/images/subscription/Deals.svg" class="tab-icon" alt="Deals">
-                            <span class="tab-text">Deals</span>
+
+                                <img src="/images/subscription/Deals.svg" class="tab-icon" alt="Deals">
+                                <span class="tab-text">Deals</span>
                             </div>
                             <div class="tab-indicator"></div>
                         </div>
                         <div class="tab @( _activeTabIndex == 1 ? "active" : "" )" @onclick="() => SetTab(1)">
                             <div style="display:flex;flex-direction:row;gap:10px">
 
-                            <img src="/images/subscription/Stores.svg" class="tab-icon" alt="Stores">
-                            <span class="tab-text">Stores</span>
-                           </div>
+                                <img src="/images/subscription/Stores.svg" class="tab-icon" alt="Stores">
+                                <span class="tab-text">Stores</span>
+                            </div>
                             <div class="tab-indicator"></div>
                         </div>
                         <div class="tab @( _activeTabIndex == 2 ? "active" : "" )" @onclick="() => SetTab(2)">
                             <div style="display:flex;flex-direction:row;gap:10px">
 
-                            <img src="/images/subscription/PreLoved.svg" class="tab-icon" alt="Preloved">
-                            <span class="tab-text">Preloved</span>
+                                <img src="/images/subscription/Preloved.svg" class="tab-icon" alt="Preloved">
+                                <span class="tab-text">Preloved</span>
                             </div>
                             <div class="tab-indicator"></div>
                         </div>
@@ -124,20 +119,55 @@
                 </div>
 
 
-                <!-- In subscription.razor (parent) -->
-                <MudGrid GutterSize="4">
-                    @foreach (var p in GetFilteredPlans())
+                <MudGrid GutterSize="4" Style="margin-top: 16px;">
+
+                    @if (_isLoadingPlans)
                     {
-                        var plan = p; 
-                        <MudItem Style="margin-top:20px" xs="12" sm="6" md="4">
-                            <SubscriptionCard Plan="plan"
-                                              IsSelected="_selectedPlan?.Flyers == plan.Flyers &&
-            _selectedPlan?.Price == plan.Price &&
-            _selectedPlan?.Duration == plan.Duration"
-                                              OnSelect="() => SelectPlan(plan)" />
+                        <MudItem xs="12" >
+                            <div style="display: flex; justify-content: center; align-items: center; height: 200px; text-align: center;">
+                                <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+                            </div>
                         </MudItem>
                     }
+                    else if (_isError)
+                    {
+                        <MudItem xs="12">
+                            <div style="display: flex; justify-content: center; align-items: center; height: 200px; text-align: center;">
+                                <MudText Color="Color.Error" Typo="Typo.subtitle1">
+                                    No subscription plans available at the moment.
+                                </MudText>
+                            </div>
+                        </MudItem>
+                    }
+                    else if (_plans != null && _plans.Any())
+                    {
+                        @foreach (var plan in _plans)
+                        {
+                            <MudItem  xs="12" sm="6" md="4" lg="4">
+                                                <div style="height: 100%; display: flex; flex-direction: column;">
+
+                                <SubscriptionCard Plan="plan"
+                                                  IsSelected="_selectedPlan?.SubscriptionName == plan.SubscriptionName &&
+                                              _selectedPlan?.Price == plan.Price &&
+                                              _selectedPlan?.Duration == plan.Duration"
+                                                  OnSelect="() => SelectPlan(plan)" />
+                                </div>
+
+                            </MudItem>
+                        }
+                    }
+                    else
+                    {
+                        <MudItem xs="12">
+                            <MudText Color="Color.Info" Typo="Typo.subtitle1">
+                                No subscription plans available at the moment.
+                            </MudText>
+                        </MudItem>
+                    }
+
                 </MudGrid>
+
+ 
             </div>
         </MudItem>
 
@@ -157,18 +187,18 @@
                 }
 
                 <MudDivider Class="my-2" />
-                <MudText Class="font-bold mt-2">Total: @(_selectedPlan?.Price ?? "0")</MudText>
+                <MudText Class="font-bold mt-2">Total: @(_selectedPlan?.Price ?? 0)</MudText>
 
-        <MudBox Class="mt-4" Style="width: 100%;display: flex; justify-content:center;align-items:center">
+                <MudBox Class="mt-4" Style="width: 100%;display: flex; justify-content:center;align-items:center">
                     <MudButton Disabled="_selectedPlan == null"
-                               OnClick="OpenPaymentDialog"
-                               Class="font-semibold"
-                               Style="@(_selectedPlan == null ?
+                    OnClick="OpenPaymentDialog"
+                    Class="font-semibold"
+                    Style="@(_selectedPlan == null ?
                "background-color: #E0E0E0; color: white; width: 200px;" :
                "background-color: #F26D1E; color: white; width: 200px;")">
                         Pay Now
                     </MudButton>
-            </MudBox>
+                </MudBox>
 
                 @if (_isPaymentDialogOpen)
                 {
@@ -176,47 +206,68 @@
                         <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
                             <MudPaper Elevation="8"
                                       Style="width: 100%; max-width: 480px; background-color: white; border-radius: 16px; padding: 32px;">
+                                <MudForm Model="@_model" @ref="_form">
 
                                 <MudStack Spacing="3">
                                     <MudText Typo="Typo.h6" Style="color: #242424;">Card Details</MudText>
 
                                     <MudTextField T="string"
                                                   Label="Card Number"
+                                                  id="cardNumber"
                                                   Variant="Variant.Outlined"
                                                   Placeholder="1234 5678 9012 3456"
-                                                  Style="border-radius: 8px;" />
+                                                  Style="border-radius: 8px;"
+                                                      @bind-Value="_model.CardNumber"
+                                                      Immediate="true"
+                                                      For="@(() => _model.CardNumber)" />
 
                                     <MudGrid GutterSize="2">
                                         <MudItem xs="6">
-                                            <MudTextField T="string"
-                                                          Label="Expiry"
-                                                          Variant="Variant.Outlined"
-                                                          Placeholder="MM/YY"
-                                                          Style="border-radius: 8px;" />
+                                                <MudTextField T="string"
+                                                              Label="Expiry"
+                                                              id="expiry"
+                                                              Variant="Variant.Outlined"
+                                                              Placeholder="MM/YY"
+                                                              Style="border-radius: 8px;"
+                                                              Immediate="true"
+                                                              MaxLength="5"
+                                                              @bind-Value="_model.Expiry"
+                                                              @bind-Value:event="oninput"
+                                                              For="@(() => _model.Expiry)" />
                                         </MudItem>
                                         <MudItem xs="6">
                                             <MudTextField T="string"
                                                           Label="CVV"
+                                                              id="cvv"
                                                           Variant="Variant.Outlined"
                                                           Placeholder="123"
-                                                          Style="border-radius: 8px;" />
+                                                              MaxLength="3"
+                                                              Style="border-radius: 8px;"
+                                                              @bind-Value="_model.CVV"
+                                                              Immediate="true"
+                                                              For="@(() => _model.CVV)" />
                                         </MudItem>
                                     </MudGrid>
 
                                     <MudTextField T="string"
                                                   Label="Card Holder Name"
+                                                      id="name"
                                                   Variant="Variant.Outlined"
                                                   Placeholder="John Doe"
-                                                  Style="border-radius: 8px;" />
+                                                  Style="border-radius: 8px;"
+                                                      @bind-Value="_model.CardHolderName"
+                                                      Immediate="true"
+                                                      For="@(() => _model.CardHolderName)" />
 
                                     <MudStack Row Spacing="2" Class="justify-end mt-4">
                                         <MudButton Variant="Variant.Outlined"
+                                                       id="cancelBtn"
                                                    Color="Color.Default"
                                                    OnClick="() => _isPaymentDialogOpen = false">
                                             Cancel
                                         </MudButton>
 
-                                        <MudButton Variant="Variant.Filled"
+                                        <MudButton id="paymentBtn" Variant="Variant.Filled"
                                                    Style="background-color: #41979a; color: white;"
                                                    OnClick="SubmitMockCardPayment">
                                             Pay ₹@_selectedPlan?.Price
@@ -224,126 +275,33 @@
                                     </MudStack>
                                     <MudText Typo="Typo.body2" Class="text-center mt-4">
                                         GURANTEED SAFE CHECKOUT
-
-
                                     </MudText>
                                 </MudStack>
+                                </MudForm>
                             </MudPaper>
                         </div>
                     </MudOverlay>
-                }
-
-
+              }
             </MudPaper>
-
-         
         </MudItem>
     </MudGrid>
 </MudContainer>
 
-@code {
-    private int _activeTabIndex;
-    private int _activeVerticalTabIndex;
 
-    private SubscriptionPlan? _selectedPlan;
-    private bool _isPaymentDialogOpen = false;
-    private bool signUpSucesss = false;
 
-    [Parameter]
-    [SupplyParameterFromQuery]
-    public string? Type { get; set; }
-    private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
-    private void SetVeritcalTab(int index)
-    {
-        _activeVerticalTabIndex = index;
+
+<style>
+    .popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(120, 120, 120, 1);
+        backdrop-filter: blur(8px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
     }
-    private void SetTab(int index)
-    {
-        _activeTabIndex = index;
-        _selectedPlan = null; 
-    }
-    private void OpenPaymentDialog()
-    {
-        _isPaymentDialogOpen = true;
-        StateHasChanged();
-
-    }
-
-    protected override void OnInitialized()
-    {
-        breadcrumbItems = new()
-        {
-      new() {   Label = Type ?? "Classifieds",Url = Type != null ? $"/{Type}" : "classifieds" },
-            new() { Label = "Subscriptions", Url = "/Subscriptions", IsLast = true },
-        };
-
-    }
-
-
-   
-    private List<SubscriptionPlan> _plans = new()
-    {
-        new() { Flyers = 1, Price = "50", Duration = "1 day" },
-        new() { Flyers = 2, Price = "150", Duration = "1 Week" },
-
-        new() { Flyers = 3, Price = "250", Duration = "2 Week" },
-        new() { Flyers = 4, Price = "1,500", Duration = "1 Month" },
-        new() { Flyers = 12, Price = "3,500", Duration = "3 Months" },
-        new() { Flyers = 24, Price = "6,000", Duration = "6 Months" },
-        new() { Flyers = 48, Price = "10,000", Duration = "12 Months" },
-    };
-
-    private IEnumerable<SubscriptionPlan> GetFilteredPlans()
-    {
-        return _activeTabIndex switch
-        {
-            0 => _plans.Take(3),     // Deals
-            1 => _plans.Skip(3).Take(1), // Stores
-            2 => _plans.Skip(4),     // Preloved
-            _ => _plans
-        };
-    }
-    private void CloseSuccessPopup()
-    {
-        signUpSucesss = false;
-    }
-
-    private void SelectPlan(SubscriptionPlan plan)
-    {
-        // Find matching plan from the main list
-        _selectedPlan = _plans.FirstOrDefault(p =>
-            p.Duration == plan.Duration &&
-            p.Price == plan.Price &&
-            p.Flyers == plan.Flyers);
-
-        Console.WriteLine($"Selected: {_selectedPlan?.Duration}");
-        StateHasChanged();
-    }
-
-   
-    private void SubmitMockCardPayment()
-    {
-        // Hardcoded value test
-        Console.WriteLine("Mock payment submitted with hardcoded card details.");
-        signUpSucesss = true;
-
-        _isPaymentDialogOpen = false;
-
-    }
-
-    private void ConfirmPayment()
-    {
-        _isPaymentDialogOpen = false;
-
-        // TODO: Redirect or trigger payment logic
-        Console.WriteLine($"Proceeding with payment for: {_selectedPlan?.Duration}, Price: {_selectedPlan?.Price}");
-    }
-    private string CardStyle =>
-       $"width: 258px; height: 200px; border-radius: 8px; padding: 12px 20px; border: 1px solid #E0E0E0; background-color: white;";
-    private string CardStyle1 =>
-       $"width: 258px; height: 160px; border-radius: 8px; padding: 12px 20px; border: 1px solid #E0E0E0; background-color: white;";
-}
-
-
-
-
+</style>

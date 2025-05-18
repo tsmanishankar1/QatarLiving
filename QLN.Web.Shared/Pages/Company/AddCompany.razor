@@ -235,15 +235,18 @@
                                 <MudSelectItem Value="@("Dubai")">Dubai</MudSelectItem>
                             </MudSelect>
                         </div>
-                        <MudTextField Label="Branch’s Locations" For="@(() => company.Location)"
+                        <MudTextField Label="Branch’s Locations"
                                       Class="form-input"
-                                      Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.LocationOn" />
-                        <MudTextField Label="Phone Number" For="@(() => company.Phone)"
+                                      @bind-Value="branchLocationsInput"
+                                      Adornment="Adornment.End"
+                                      AdornmentIcon="@Icons.Material.Filled.LocationOn" />
+
+                        <MudTextField Label="Phone Number" For="@(() => company.PhoneNumber)"
                                       Class="form-input"
                                       Required
                                       Adornment="Adornment.Start" AdornmentIcon="mdi-phone" />
                         <MudTextField Label="WhatsApp Number"
-                                      For="@(() => company.Whatsapp)"
+                                      For="@(() => company.WhatsAppNumber)"
                                       Class="form-input"
                                       Required
                                       Adornment="Adornment.Start" AdornmentIcon="mdi-whatsapp" />
@@ -251,13 +254,13 @@
                                       Class="form-input"
                                       Required />
                         <MudTextField Label="Website URL" Class="form-input"
-                                      For="@(() => company.Website)" />
+                                      For="@(() => company.WebsiteUrl)" />
 
                         <MudTextField Label="Facebook URL" Class="form-input"
-                                      For="@(() => company.Facebook)" />
+                                      For="@(() => company.FacebookUrl)" />
 
                         <MudTextField Label="Instagram URL" Class="form-input"
-                                      For="@(() => company.Instagram)" />
+                                      For="@(() => company.InstagramUrl)" />
                         <!-- Operating Hours -->
                         <MudItem xs="12" Style="width:400px">
                             <MudText Typo="Typo.subtitle1" Class="mb-2" Style="font-weight:600;">Operating Hours</MudText>
@@ -278,7 +281,7 @@
                         <MudItem xs="12">
                             <MudText Class="section-header">Company Profile</MudText>
                             <div class="selector-wrapper">
-                                <MudSelect T="string" Label="Nature of Business" class="form-input" For="@(() => company.BusinessNature)" Required>
+                                <MudSelect T="string" Label="Nature of Business" class="form-input" For="@(() => company.NatureOfBusiness)" Required>
                                     <MudSelectItem Value="@("Retail")">Retail</MudSelectItem>
                                     <MudSelectItem Value="@("Wholesale")">Wholesale</MudSelectItem>
                                 </MudSelect>
@@ -297,10 +300,10 @@
                                 </MudSelect>
                             </div>
                             <div style="margin-top:10px">
-                                <MudTextField Class="form-input" Label="User Designation" For="@(() => company.Designation)" />
+                                <MudTextField Class="form-input" Label="User Designation" For="@(() => company.UserDesignation)" />
 
                             </div>
-                            <MudTextField Class="form-input" Label="Description" For="@(() => company.Description)" Lines="4"
+                            <MudTextField Class="form-input" Label="Description" For="@(() => company.BusinessDescription)" Lines="4"
                                           MaxLength="300" />
 
 
@@ -351,7 +354,11 @@
     private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
     private string logoPreviewUrl;
     private InputFile? hiddenFileInput;
-
+    private string branchLocationsInput
+    {
+        get => string.Join(", ", company.BranchLocations);
+        set => company.BranchLocations = value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+    }
     private void TriggerFileUpload()
     {
         Console.WriteLine("clicked");
@@ -429,22 +436,22 @@
         [Required] public string BusinessName { get; set; }
         [Required] public string Country { get; set; }
         [Required] public string City { get; set; }
-        public string Location { get; set; }
-        [Required] public string Phone { get; set; }
-        [Required] public string Whatsapp { get; set; }
+        public List<string> BranchLocations { get; set; } = new();
+        [Required] public string PhoneNumber { get; set; }
+        [Required] public string WhatsAppNumber { get; set; }
         [Required, EmailAddress] public string Email { get; set; }
-        public string Website { get; set; }
-        public string Facebook { get; set; }
-        public string Instagram { get; set; }
+        public string WebsiteUrl { get; set; }
+        public string FacebookUrl { get; set; }
+        public string InstagramUrl { get; set; }
         public string StartDay { get; set; }
         public string EndDay { get; set; }
         public string StartHour { get; set; }
         public string EndHour { get; set; }
-        [Required] public string BusinessNature { get; set; }
+        [Required] public string NatureOfBusiness { get; set; }
         [Required] public string CompanySize { get; set; }
         [Required] public string CompanyType { get; set; }
-        public string Designation { get; set; }
-        public string Description { get; set; }
+        public string UserDesignation { get; set; }
+        public string BusinessDescription { get; set; }
         public string CRNumber { get; set; }
     }
 }

@@ -1,4 +1,6 @@
 ﻿@page "/subscription-details"
+@inject ISnackbar Snackbar;
+
 @using MudBlazor
 @using QLN.Web.Shared.Components.BreadCrumb
 
@@ -49,7 +51,7 @@
 
             </div>
 
-            <MudGrid Class="mt-3">
+          @*   <MudGrid Class="mt-3">
                 @foreach (var stat in stats)
                 {
                     <MudItem xs="6" sm="4" md="3">
@@ -65,7 +67,36 @@
                         </MudPaper>
                     </MudItem>
                 }
-            </MudGrid>
+            </MudGrid> *@
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <MudText Color="Color.Error" Class="mt-4">@_errorMessage</MudText>
+            }
+            else if (stats != null && stats.Any())
+            {
+                <MudGrid Class="mt-3">
+                    @foreach (var stat in stats)
+                    {
+                        <MudItem xs="6" sm="4" md="3">
+                            <MudPaper Class="p-3 d-flex align-items-center" Style="justify-content:center;align-items:center;gap: 20px; border-radius: 12px;height:100px; background-color: #F9FAFB;">
+                                <img src="/images/subscription/@stat.Icon" style="width: 24px;" />
+                                <div>
+                                    <MudText Typo="Typo.caption" Style="font-family: 'Public Sans'; font-weight: 600; font-size: 14px; line-height: 24px;  color: #242424;">@stat.Title</MudText>
+                                    <MudText Typo="Typo.subtitle2"
+                                             Style="font-family: 'Public Sans'; font-weight: 500; font-size: 14px;  text-align: center; color: #004F9A;">
+                                        @stat.Value
+                                    </MudText>
+                                </div>
+                            </MudPaper>
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
+            else
+            {
+                <MudText Color="Color.Error" Class="mt-4">Subscription statistics not found.</MudText>
+            }
+
         </div>
     </MudPaper>
 
@@ -272,110 +303,3 @@
   
 </MudContainer>
 
-@code {
-    private int _activeTabIndex;
-    private bool _isChecked = false;
-    private int _selectedAdsTab = 0;
-    private void SetTab(int index)
-    {
-        _activeTabIndex = index;
-    }
-    private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
-
-    private List<StatItem> stats = new()
-    {
-        new() { Title = "Published Ads", Value = "5 out of 15", Icon = "PublishedAds.svg" },
-        new() { Title = "Promoted Ads", Value = "1 out of 2", Icon = "PromotedAds.svg" },
-        new() { Title = "Featured Ads", Value = "2 out of 2", Icon = "FeaturedAds.svg" },
-        new() { Title = "Refreshes", Value = "5 out on 75", Icon = "Refreshes.svg" },
-        new() { Title = "Impressions", Value = "52,034", Icon = "Impressions.svg" },
-        new() { Title = "Views", Value = "52,034", Icon = "Views.svg" },
-        new() { Title = "WhatsApp", Value = "52,034", Icon = "WhatsApp.svg" },
-        new() { Title = "Calls", Value = "52,034", Icon = "Calls.svg" },
-    };
-
-    protected override void OnInitialized()
-    {
-        breadcrumbItems = new()
-        {
-            new() { Label = "Classifieds", Url = "classifieds" },
-            new() { Label = "Dashboard", Url = "/subscription-details",IsLast=true }
-        };
-    }
-
-    public class StatItem
-    {
-        public string Title { get; set; }
-        public string Value { get; set; }
-        public string Icon { get; set; }
-    }
-
-
-    private List<AdItem> publishedAds = new()
-    {
-        new() {
-            Category = "Pre-loved / Bags",
-            Title = "Used Gucci bag authentic",
-            Location = "Westbay",
-            Price = "5,000 QAR",
-            ExpiryDate = "04/12/25 - 3:15 PM",
-            IsFeatured = true,
-            Impressions = "1,034",
-            Views = "42",
-            Calls = "40",
-            WhatsApp = "40",
-            Shares = "40",
-            Saves = "40",
-            ImageUrl = ".images/subscription/Gucci.jpg"
-        },
-        new() {
-            Category = "Pre-loved / Bags",
-            Title = "Used Gucci bag authentic",
-            Location = "Westbay",
-            Price = "5,000 QAR",
-            ExpiryDate = "04/12/25 - 3:15 PM",
-            IsFeatured = false,
-            Impressions = "1,034",
-            Views = "42",
-            Calls = "40",
-            WhatsApp = "40",
-            Shares = "40",
-            Saves = "40",
-            ImageUrl = "images/subscription/Gucci.jpg"
-        }
-    };
-    private List<AdItem> unpublishedAds = new()
-    {
-        new() {
-            Category = "Pre-loved / Bags",
-            Title = "Used Gucci bag authentic",
-            Location = "Westbay",
-            Price = "5,000 QAR",
-            ImageUrl = "images/subscription/Gucci.jpg"
-        },
-        new() {
-            Category = "Pre-loved / Bags",
-            Title = "Used Gucci bag authentic",
-            Location = "Westbay",
-            Price = "5,000 QAR",
-            ImageUrl = "images/subscription/Gucci.jpg"
-        },
-    };
- public class AdItem
-    {
-        public string Category { get; set; }
-        public string Title { get; set; }
-        public string Location { get; set; }
-        public string Price { get; set; }
-        public string ExpiryDate { get; set; }
-        public bool IsFeatured { get; set; }
-        public string Impressions { get; set; }
-        public string Views { get; set; }
-        public string Calls { get; set; }
-        public string WhatsApp { get; set; }
-        public string Shares { get; set; }
-        public string Saves { get; set; }
-        public string ImageUrl { get; set; }
-    }
-    
-}

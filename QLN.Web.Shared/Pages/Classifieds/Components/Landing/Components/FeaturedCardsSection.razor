@@ -1,0 +1,275 @@
+@using MudBlazor
+
+<div class="categories-wrapper">
+    <div class="categories-header">
+        <MudContainer MaxWidth="MaxWidth.False">
+            <h3 class="section-header">Featured Categories</h3>
+        </MudContainer>
+    </div>
+
+    <div class="categories-section">
+        <div class="carousel-container1">
+            <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" Disabled="@(_startIndex == 0)"
+                OnClick="MovePrevious" Class="custom-arrow-buttons left" />
+
+            <div class="carousel-wrapper">
+                <div class="carousel-track" style="transform: translateX(@TrackOffset);">
+                    @foreach (var category in categories)
+                    {
+                        <div class="category-card-section" @onclick="() => HandleCategoryClick(category)">
+                            <div class="card-contents">
+                                <img src="@category.ImageUrl" alt="@category.Name" class="category-image" />
+                                <h4 class="category-titles">@category.Name</h4>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                Disabled="@(_startIndex >= categories.Count - VisibleCount)" OnClick="MoveNext"
+                Class="custom-arrow-buttons right" />
+        </div>
+
+        <!-- Pagination dots -->
+        <div class="pagination-dots">
+            @for (int i = 0; i <= categories.Count - VisibleCount; i++)
+            {
+                <span class="dot @(i == _startIndex ? "active" : "")" ></span>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private int _startIndex = 0;
+    private const int VisibleCount = 5;
+
+    public class CategoryItem
+    {
+        public string Name { get; set; }
+        public string ImageUrl { get; set; }
+    }
+
+    private List<CategoryItem> categories = new()
+{
+new() { Name = "Ramadan Essentials", ImageUrl = "/images/categories/new1.svg" },
+new() { Name = "Back to School", ImageUrl = "/images/categories/new2.svg" },
+new() { Name = "Gym Motivation", ImageUrl = "/images/categories/new3.svg" },
+new() { Name = "Outdoors & Camping", ImageUrl = "/images/categories/new4.svg" },
+new() { Name = "Electronics Rush", ImageUrl = "/images/categories/new5.svg" },
+new() { Name = "Cats & Dogs", ImageUrl = "/images/categories/new6.svg" },
+new() { Name = "Books & Stationery", ImageUrl = "/images/categories/new2.svg" },
+new() { Name = "Home Essentials", ImageUrl = "/images/categories/new3.svg" },
+new() { Name = "Fashion Deals", ImageUrl = "/images/categories/new4.svg" },
+new() { Name = "Beauty & Care", ImageUrl = "/images/categories/new5.svg" },
+};
+
+    private string TrackOffset => $"-{_startIndex * (100.0 / VisibleCount)}%";
+
+    private void MoveNext()
+    {
+        if (_startIndex < categories.Count - VisibleCount)
+            _startIndex++;
+    }
+
+    private void MovePrevious()
+    {
+        if (_startIndex > 0)
+            _startIndex--;
+    }
+
+    private void GoToPage(int index)
+    {
+        _startIndex = index;
+    }
+
+    private void HandleCategoryClick(CategoryItem category)
+    {
+        Console.WriteLine($"Clicked: {category.Name}");
+    }
+}
+
+
+<style>
+    .categories-wrapper {
+        width: 100%;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .categories-header {
+        background-color: var(--color-secondary-background);
+        padding: 2rem 0 1rem;
+    }
+
+    .section-header {
+        font-weight: 600;
+        text-align: center;
+        font-size: 25px;
+        color: var(--color-text-heading);
+    }
+
+    .categories-section {
+        background-color: var(--color-background-secondary-grey-light);
+        width: 100%;
+        padding: 2rem 0;
+        position: relative;
+    }
+
+    .carousel-container1 {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
+        overflow: hidden;
+        padding: 0 1rem;
+    }
+
+    .carousel-track {
+        display: flex;
+        transition: transform 0.5s ease;
+        width: max-content;
+    }
+
+    .category-card-section {
+        flex: 0 0 calc(100% / 5 - 1rem);
+        margin-right: 1rem;
+        border-radius: 12px;
+        transition: transform 0.3s ease;
+        cursor: pointer;
+        padding: 0;
+    }
+
+    .category-card-section:hover {
+        transform: scale(1.03);
+    }
+
+    .card-contents {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .category-image {
+        width: 100%;
+        max-height: 300px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 8px;
+    }
+
+    .category-titles {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--color-text-heading);
+    }
+
+    .custom-arrow-buttons {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+        background-color: white;
+        border-radius: 50%;
+        box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Moved more inside */
+    .custom-arrow-buttons.left {
+        left: 40px;
+    }
+
+    .custom-arrow-buttons.right {
+        right: 40px;
+    }
+
+    .pagination-dots {
+        text-align: center;
+        margin-top: 1rem;
+    }
+
+    .dot {
+        display: inline-block;
+        height: 10px;
+        width: 10px;
+        margin: 0 5px;
+        background-color: #bbb;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .dot.active {
+        background-color: #333;
+    }
+
+    @@media (max-width: 768px) {
+        .custom-arrow-buttons {
+            display: none !important;
+        }
+
+        .pagination-dots {
+            display: none;
+        }
+
+        .carousel-wrapper {
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .carousel-wrapper::-webkit-scrollbar {
+            display: none;
+        }
+
+        .carousel-track {
+            display: flex;
+            transform: none !important;
+            width: max-content;
+            gap: 0.75rem;
+        }
+
+        .category-card-section {
+            flex: 0 0 auto;
+            width: 120px;
+            border-radius: 12px;
+            scroll-snap-align: start;
+            margin-right: 0.5rem;
+        }
+
+        .category-image {
+            max-height: 250px;
+            object-fit: cover;
+        }
+
+        .card-contents {
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        .category-titles {
+            font-size: 0.85rem;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+        .categories-section {
+            padding: 1rem 0;
+        }
+
+        .categories-header {
+            padding: 1rem 0 0.5rem;
+        }
+    }
+</style>
+

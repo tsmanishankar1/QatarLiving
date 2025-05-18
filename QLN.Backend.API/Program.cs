@@ -141,7 +141,12 @@ builder.Services.AddAuthentication(options =>
 
 #endregion
 
-
+builder.Services.AddDaprClient(clientBuilder =>
+{
+    clientBuilder
+        .UseHttpEndpoint("http://localhost:3500")
+        .UseGrpcEndpoint("http://localhost:58796");
+});
 
 builder.Services.AddAuthorization();
 
@@ -151,6 +156,8 @@ builder.Services.AddDaprClient();
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
+
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
