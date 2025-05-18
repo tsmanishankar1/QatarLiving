@@ -13,6 +13,9 @@ using Dapr.Client;
 using QLN.Backend.API.ServiceConfiguration;
 using QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints;
 using QLN.Common.Swagger;
+using QLN.Common.Infrastructure.CustomEndpoints.SaveSearchEndPoints;
+using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.Service.SaveSearch;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -148,8 +151,8 @@ builder.Services.AddAuthorization();
 builder.Services.AddDaprClient(clientBuilder =>
 {
     clientBuilder
-        .UseHttpEndpoint("http://localhost:3500")
-        .UseGrpcEndpoint("http://localhost:58796"); 
+        .UseHttpEndpoint("http://localhost:63231 ")
+        .UseGrpcEndpoint("http://localhost:50003");
 });
 
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
@@ -175,6 +178,10 @@ authGroup.MapAuthEndpoints();
 
 var bannerGroup = app.MapGroup("/api/banner");
 bannerGroup.MapBannerEndpoints();
+
+
+var searchGroup = app.MapGroup("/api");
+bannerGroup.MapSearchEndpoints();
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
