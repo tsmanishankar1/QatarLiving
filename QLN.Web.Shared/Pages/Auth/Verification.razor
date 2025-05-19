@@ -108,7 +108,7 @@ Description = "Use the code from your authenticator app"
         {
             var payload = new
             {
-                usernameOrEmailOrPhone = _selectedMethod == "email" ? AppState?.Email : AppState?.MobileNumber,
+                usernameOrEmailOrPhone = _selectedMethod == "email" ? email : mobile,
                 method = _selectedMethod == "sms" ? "phone" : _selectedMethod
             };
             var response = await Api.PostAsync<object, object>("auth/send-2fa", payload);
