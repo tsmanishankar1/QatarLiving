@@ -1,0 +1,15 @@
+﻿@using QLN.AIPOV.Frontend.Blazor.Client.Models
+
+<MudList Dense="true" T="ChatMessageModel">
+    @if (Messages != null)
+    {
+        @foreach (var msg in Messages)
+        {
+            <MudListItem>
+                <MudPaper Class="pa-2 mb-2" Elevation="1" Style=@($"background:{GetRoleColor(msg.Role)}")>
+                    <b>@msg.Role:</b> @msg.Content
+                </MudPaper>
+            </MudListItem>
+        }
+    }
+</MudList>

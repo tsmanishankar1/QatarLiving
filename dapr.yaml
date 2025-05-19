@@ -24,4 +24,9 @@ apps:
     command:
       - dotnet
       - run
-
+  - appID: qln-company-ms
+    appDirPath: QLN.Company.MS
+    appPort: 5139
+    command:
+      - dotnet
+      - run

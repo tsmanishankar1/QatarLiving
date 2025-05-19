@@ -4,17 +4,17 @@
 
 
 <MudPaper Class="p-4 hover:shadow-lg cursor-pointer transition-all duration-200 relative"
-          Style="width: 258px; height: 162px; border-radius: 8px; padding: 12px 20px; background-color: white"
+          Style=" height: 162px; border-radius: 8px; padding: 12px 20px; background-color: white"
           OnClick="HandleSelect">
 
     <!-- Delete Icon Top Left -->
-    <div style="position: absolute; top: 12px; left: 12px;" @onclick:stopPropagation>
+  @*   <div style="position: absolute; top: 12px; left: 12px;" @onclick:stopPropagation>
         <MudIconButton Icon="@Icons.Material.Filled.Delete"
                        Color="Color.Error"
                        OnClick="ShowDeleteConfirm"
                        Size="Size.Small" />
     </div>
-
+ *@
 
     <!-- Radio Button Top Right -->
     <div style="position: absolute; top: 12px; right: 12px;">
@@ -26,7 +26,7 @@
     <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1" Class="mb-4">
         <MudText Class="font-semibold text-center"
                  Style="font-family: 'Public Sans'; font-size: 15px; line-height: 26px; color: #242424;">
-            @($"{Plan.Flyers} Flyer{(Plan.Flyers > 1 ? "s" : "")}")
+            @($"{Plan.SubscriptionName}")
         </MudText>
 
         <MudText Class="font-semibold text-center"
@@ -106,7 +106,7 @@
     }
     private async Task HandleSelect()
     {
-        Console.WriteLine($"[SELECT] Plan clicked: {Plan?.Flyers} flyers - {Plan?.Price} QAR - Duration: {Plan?.Duration}");
+        Console.WriteLine($"[SELECT] Plan Id: {Plan?.Id} Plan clicked: {Plan?.SubscriptionName} SubscriptionName - {Plan?.Price} QAR - Duration: {Plan?.Duration}");
 
         await OnSelect.InvokeAsync(Plan);
     }
