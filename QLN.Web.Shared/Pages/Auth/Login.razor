@@ -31,11 +31,8 @@
         <MudTextField T="string" Label="Email or Phone number" Variant="Variant.Outlined" FullWidth="true"
             InputType="InputType.Text" style="background-color: var(--color-background)" MaxLength="50" Required="true"
             Error="@(!string.IsNullOrEmpty(_usernameError))" ErrorText="@_usernameError" Immediate="true"
-            ValueChanged="OnEmailChanged" ValueExpression="(() => _username)" OnBlur="@ValidateUsername" InputAttributes="@(new Dictionary<string, object>
-              {
-                  ["aria-label"] = "Email",
-                  ["data-testid"] = "email-input"
-              })"/>
+            ValueChanged="OnEmailChanged" ValueExpression="(() => _username)" OnBlur="@ValidateUsername" id="loginEmailInput
+"/>
         <MudText Typo="Typo.body1" Class="label-text">
             Password
         </MudText>
@@ -45,25 +42,16 @@
             AdornmentIcon="@(_showPassword? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
             OnAdornmentClick="TogglePasswordVisibility" AdornmentColor="Color.Default"
             Error="@(!string.IsNullOrEmpty(_passwordError))" ErrorText="@_passwordError" Immediate="true"
-            ValueChanged="OnPasswordChanged" ValueExpression="(() => _password)" OnBlur="ValidatePassword" InputAttributes="@(new Dictionary<string, object>
-              {
-                  ["aria-label"] = "password",
-                  ["data-testid"] = "password-input"
-              })" />
+            ValueChanged="OnPasswordChanged" ValueExpression="(() => _password)" OnBlur="ValidatePassword" id="loginPasswordInput" />
 
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
-            <MudCheckBox T="bool" Label="Remember me" DisableMargins="true"  InputAttributes="@(new Dictionary<string, object>
-             {
-                 { "id", "remember-me-checkbox" },
-                 { "data-testid", "remember-me-checkbox" }
-             })"/>
-            <NavLink href="/forgot-password" style="color: var(--color-accent)"> Forgot Password?</NavLink>
+            <MudCheckBox T="bool" Label="Remember me" DisableMargins="true" id="rememberMeCheckBox"/>
+            <NavLink href="/forgot-password" style="color: var(--color-accent)" id="forgetPasswordLink"> Forgot Password?</NavLink>
         </div>
 
         <CustomButton BackgroundColor="var(--color-accent)" TextColor="#FFFFFF" Text="Sign In" Disabled="_isLoading"
-            Loading="_isLoading" OnClick="@PerformLogin" Class="mt-4" aria-label="Sign In Button"
-    data-testid="sign-in-button"/>
+            Loading="_isLoading" OnClick="@PerformLogin" Class="mt-4" id="signInButton"/>
 
 
         <div class="d-flex align-center my-4">
@@ -74,38 +62,22 @@
 
         <MudGrid Justify="Justify.SpaceEvenly" GutterSize="12px">
     <MudItem xs="2">
-                <MudButton Variant="Variant.Outlined" Class="social-login-button" InputAttributes="@(new Dictionary<string, object>
-    {
-        ["aria-label"] = "Google Login Button",
-        ["data-testid"] = "google-login-button"
-    })">
+                <MudButton Variant="Variant.Outlined" Class="social-login-button" id="googleLoginButton">
             <img src="/images/google.svg" alt="Google" style="height: 24px;" />
         </MudButton>
     </MudItem>
     <MudItem xs="2">
-                <MudButton Variant="Variant.Outlined" Class="social-login-button" InputAttributes="@(new Dictionary<string, object>
-    {
-        ["aria-label"] = "Apple Login Button",
-        ["data-testid"] = "apple-login-button"
-    })">
+                <MudButton Variant="Variant.Outlined" Class="social-login-button" id="appleLoginButton">
             <img src="/images/apple.svg" alt="Google" style="height: 24px;" />
         </MudButton>
     </MudItem>
     <MudItem xs="2">
-                <MudButton Variant="Variant.Outlined" Class="social-login-button" InputAttributes="@(new Dictionary<string, object>
-    {
-        ["aria-label"] = "Microsoft Login Button",
-        ["data-testid"] = "microsoft-login-button"
-    })">
+                <MudButton Variant="Variant.Outlined" Class="social-login-button" id="microsoftLoginButton">
             <img src="/images/microsoft.svg" alt="Microsoft" style="height: 24px;" />
         </MudButton>
     </MudItem>
     <MudItem xs="2">
-                <MudButton Variant="Variant.Outlined" Class="social-login-button" InputAttributes="@(new Dictionary<string, object>
-    {
-        ["aria-label"] = "Facebook Login Button",
-        ["data-testid"] = "facebook-login-button"
-    })">
+                <MudButton Variant="Variant.Outlined" Class="social-login-button" id="facebookLoginButton">
  
             <img src="/images/facebook.svg" alt="Facebook" />
         </MudButton>
@@ -114,15 +86,13 @@
         <MudStack AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
             <MudText Align="Align.Start" Class="mt-4 label-text">
                 Don't have an account?
-                <NavLink href="/signup" style="color: var(--color-accent)">Sign Up</NavLink>
+                <NavLink href="/signup" id="signUpLink" style="color: var(--color-accent)">Sign Up</NavLink>
             </MudText>
         </MudStack>
     </div>
 </div>
 
 @code {
-    [CascadingParameter] 
-    public HttpContext? HttpContext { get; set; } 
     public string Name{ get; set; }
     private string _username = string.Empty;
     private string _password = string.Empty;
