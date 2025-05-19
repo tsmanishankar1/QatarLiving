@@ -3,7 +3,8 @@ namespace QLN.Web.Shared.Models
     public class PromotedItem
     {
         public string Id { get; set; } = string.Empty;
-       public List<string> ImageUrls { get; set; } = new();
+        public List<string> ImageUrls { get; set; } = new();
+
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
 
@@ -16,7 +17,8 @@ namespace QLN.Web.Shared.Models
         public string StreetNumber { get; set; } = string.Empty;
         public string BuildingNumber { get; set; } = string.Empty;
 
-        public int Price { get; set; } = new();
+        public decimal? Price { get; set; }
+
         public string Make { get; set; } = string.Empty;
         public string Model { get; set; } = string.Empty;
         public string Condition { get; set; } = string.Empty;
@@ -26,7 +28,9 @@ namespace QLN.Web.Shared.Models
         public string RAM { get; set; } = string.Empty;
         public string Processor { get; set; } = string.Empty;
         public string Resolution { get; set; } = string.Empty;
-        public int BatteryPercentage { get; set; } = new();
+
+        // ✅ Nullable to handle nulls from JSON
+        public int? BatteryPercentage { get; set; }
 
         public string Coverage { get; set; } = string.Empty;
         public string WarrantyCertificateUrl { get; set; } = string.Empty;
@@ -44,7 +48,9 @@ namespace QLN.Web.Shared.Models
         public bool IsFeatured { get; set; }
 
         public DateTime CreatedDate { get; set; }
-        public DateTime ExpiryDate { get; set; }
+
+        // ✅ Nullable to prevent crash on null
+        public DateTime? ExpiryDate { get; set; }
 
         public string FlyerCoverImageUrl { get; set; } = string.Empty;
         public string FlyerXmlLink { get; set; } = string.Empty;

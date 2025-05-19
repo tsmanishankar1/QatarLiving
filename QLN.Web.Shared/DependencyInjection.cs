@@ -17,6 +17,7 @@ namespace QLN.Web.Shared
         {
             services.AddMudServices();
             services.AddScoped<GlobalAppState>();
+             services.AddScoped<SearchStateService>();
             var section = configuration.GetSection("ApiSettings");
             services.Configure<ApiSettings>(configuration.GetSection("ApiSettings"));
             services.AddHttpClient<ApiService>();

@@ -10,7 +10,15 @@
 }
 <div class="item-details-image-wrapper">
     <div class="image-container">
-        <img src="@Images[SelectedImageIndex]" alt="Main Image" class="main-image" />
+        @if (Images != null && Images.Count > 0 && SelectedImageIndex >= 0 && SelectedImageIndex < Images.Count)
+        {
+            <img src="@Images[SelectedImageIndex]" alt="Main Image" class="main-image" />
+        }
+        else
+        {
+            <img src="/images/categories/game_image.svg" alt="No image available" class="main-image" />
+        }
+
 
         <div class="Promoted-badge">
             <MudIcon Icon="@Icons.Material.Filled.FlashOn" Size="Size.Small" Class="Promoted-icon" />

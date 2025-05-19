@@ -17,32 +17,36 @@ public class SearchBarSectionBase : ComponentBase
 
     protected List<string> categoryOptions = new()
     {
-        "Electronics", "Accessories", "Fashion", "Toys"
+        "Mobile Phones & Tablets", "Accessories", "Fashion", "Toys"
     };
 
     protected async Task PerformSearch()
     {
-        if (string.IsNullOrWhiteSpace(searchText))
-        {
-            Snackbar.Add("Please enter search text", Severity.Warning);
-            return;
-        }
+        if (string.IsNullOrWhiteSpace(searchText) && string.IsNullOrWhiteSpace(selectedCategory))
+    {
+        Snackbar.Add("Please enter search text or select a category", Severity.Warning);
+        return;
+    }
 
         loading = true;
 
-        var payload = new
+       var payload = new Dictionary<string, object>
+    {
+        ["text"] = searchText
+    };
+
+    if (!string.IsNullOrWhiteSpace(selectedCategory))
+    {
+        payload["filters"] = new Dictionary<string, object>
         {
-            text = searchText,
-            top = 0,
-            filters = new { Category = selectedCategory },
-            orderBy = "relevance"
+            ["Category"] = selectedCategory
         };
+    }
 
         try
         {
-            var result = await Api.PostAsync<object, List<FeaturedItemCard.FeaturedItem>>("classifed/search", payload);
+            var result = await Api.PostAsync<object, List<FeaturedItemCard.FeaturedItem>>("api/classified/search", payload);
 
-            Snackbar.Add("Search successful", Severity.Success);
             await OnSearchCompleted.InvokeAsync(result);
         }
         catch (HttpRequestException ex)

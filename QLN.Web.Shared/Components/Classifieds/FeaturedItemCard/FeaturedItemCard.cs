@@ -47,7 +47,7 @@ namespace QLN.Web.Shared.Components.Classifieds.FeaturedItemCard
             public List<string> ImageUrls { get; set; } = new();
             public string Category { get; set; } = string.Empty;
             public string Title { get; set; } = string.Empty;
-            public decimal Price { get; set; }
+            public decimal? Price { get; set; }
             public string Location { get; set; } = string.Empty;
             public bool IsFeatured { get; set; }
         }

@@ -1,8 +1,11 @@
 @using MudBlazor
 @using QLN.Web.Shared.Components.Classifieds.PromotedItemCards
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.Skeletons.FeaturedItemSkeleton
+@using QLN.Web.Shared.Components.EmptyCard
 @using QLN.Web.Shared.Models
 @using QLN.Web.Shared.Components.BreadCrumb
 @using QLN.Web.Shared.Components.PaginationFooter
+@using QLN.Web.Shared.Components.CustomSelect
 @implements IDisposable
 @inject NavigationManager NavigationManager
 
@@ -10,76 +13,103 @@
 <div class="item-list">
     <div class="item-list-header">
         <div class="item-list-left">
-            <h3 class="results-count">@($"Items in Qatar ({items.Count} results)")</h3>
+            <h3 class="results-count">@($"Items in Qatar ({Items.Count} results)")</h3>
         </div>
 
         <div class="sort-section">
-            <MudSelect T="string" @bind-Value="selectedSort" Dense="true" Variant="Variant.Outlined"
-                style="background-color: var(--color-background)">
-                @foreach (var option in sortOptions)
-                {
-                    <MudSelectItem Value="@option.Key">@option.Value</MudSelectItem>
-                }
-            </MudSelect>
+            <h3 class="sort-name">Sort by</h3>
+            <CustomSelect TItem="string" Options="sortOptions.Select(x => x.Key).ToList()" SelectedItem="selectedSort"
+                SelectedItemChanged="value => OnFilterChanged(nameof(selectedSort), value)" Placeholder="Sort by" />
         </div>
     </div>
 
-
-    @if (ViewMode == "grid")
+    @if (Loading)
     {
-        <MudGrid GutterSize="16px" style="padding: 0 40px;">
-            @foreach (var item in items)
+        <MudGrid GutterSize="16px">
+            @for (int i = 0; i < 9; i++)
             {
                 <MudItem xs="12" sm="6" md="4">
-                    <PromotedItemGridCard Item="item" />
+                    <ItemSkeletonCard />
                 </MudItem>
             }
         </MudGrid>
     }
-    else if (ViewMode == "list")
+    else if (PagedItems == null || !PagedItems.Any())
     {
-        <div class="list-view-wrapper">
-            <div class="list-view-left">
-                @foreach (var item in items)
+        <div class="empty-wrapper">
+            <EmptyCard Title="No items found." Subtitle="Try adjusting your filters or search keywords." />
+        </div>
+    }
+    else
+    {
+        @if (ViewMode == "grid")
+        {
+            <MudGrid GutterSize="16px" style="padding: 0 40px;">
+                @foreach (var item in PagedItems)
                 {
-                    <PromotedItemListCard Item="item" />
+                    <MudItem xs="12" sm="6" md="4">
+                        <PromotedItemGridCard Item="item" />
+                    </MudItem>
                 }
+            </MudGrid>
+        }
+        else if (ViewMode == "list")
+        {
+            <div class="list-view-wrapper">
+                <div class="list-view-left">
+                    @foreach (var item in PagedItems)
+                    {
+                        <PromotedItemListCard Item="item" />
+                    }
+                </div>
+
+                <div class="list-view-right">
+                    <img src="/images/classifieds/ad_image.svg" alt="Ad Banner" class="ad-image" />
+                </div>
             </div>
 
-            <div class="list-view-right">
-                <img src="/images/classifieds/ad_image.svg" alt="Ad Banner" class="ad-image" />
-            </div>
-        </div>
+        }
+        <!-- Pagination -->
+        <PaginationFooter TotalItems="@Items.Count" CurrentPage="@currentPage" PageSize="@pageSize"
+            OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
 
     }
 
 
-    <!-- Pagination -->
-    <PaginationFooter TotalItems="items.Count" CurrentPage="currentPage" PageSize="pageSize"
-        OnPageChange="HandlePageChange" OnPageSizeChange="HandlePageSizeChange" />
 
 </div>
 
 @code {
+    [Parameter] public string ViewMode { get; set; } = "grid";
+    [Parameter] public bool Loading { get; set; } = false;
+    [Parameter] public List<PromotedItem> Items { get; set; } = new();
+    private IEnumerable<PromotedItem> PagedItems =>
+    Items.Skip((currentPage - 1) * pageSize).Take(pageSize);
+
     private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
     private string selectedSort = "default";
-    [Parameter]
-    public string ViewMode { get; set; } = "grid";
+
     private int currentPage = 1;
     private int pageSize = 12;
 
     private void HandlePageChange(int newPage)
     {
         currentPage = newPage;
+        StateHasChanged();
     }
 
     private void HandlePageSizeChange(int newSize)
     {
         pageSize = newSize;
+        currentPage = 1;
+        StateHasChanged();
     }
 
+
+
+
     private bool IsFirstPage => currentPage == 1;
-    private bool IsLastPage => currentPage * pageSize >= items.Count;
+    private bool IsLastPage => currentPage * pageSize >= Items.Count;
     protected override void OnInitialized()
     {
         NavigationManager.LocationChanged += OnLocationChanged;
@@ -91,6 +121,17 @@
         UpdateBreadcrumb(e.Location);
         StateHasChanged(); // Force UI to refresh after breadcrumb change
     }
+    private void OnFilterChanged(string filterName, string? value)
+    {
+        if (filterName == nameof(selectedSort))
+        {
+            selectedSort = value ?? "default";
+            currentPage = 1;
+            StateHasChanged();
+            // Optional: Apply sorting logic here if needed
+        }
+    }
+
 
     private void UpdateBreadcrumb(string uri)
     {
@@ -125,44 +166,6 @@ new("priceHigh", "Price: High to Low")
 };
 
 
-
-    private List<PromotedItem> items = new()
-{
-new PromotedItem { Id="208d26a7-cf18-4673-9510-30e31f7532ba",Title = "Pixel 9 Pro XL", Price = 3400, Company =
-"QLN", Location = "Doha", ImageUrls = new() {
-"/images/classifieds/google_image1.svg",
-"/images/classifieds/google_image2.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg"},
-Colour = "White", Storage = "256GB", BatteryPercentage = 85, Processor = "Tensor 4", CompanyLogoUrl =
-"/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
-new PromotedItem { Title = "goggle 9 Pro XL", Price = 3400, Company = "QLN", Location = "Doha", ImageUrls = new() {
-"/images/classifieds/item_one.svg",
-"/images/classifieds/item_one.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg"},
-Colour = "White", Storage = "256GB", BatteryPercentage = 85, Processor = "Tensor 4", CompanyLogoUrl =
-"/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
-
-new PromotedItem { Title = "Pixel 9 Pro XL", Price = 3400, Company = "QLN", Location = "Doha", ImageUrls = new() {
-"/images/classifieds/google_image1.svg",
-"/images/classifieds/google_image2.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg"},
-Colour = "White", Storage = "256GB", BatteryPercentage = 85, Processor = "Tensor 4", CompanyLogoUrl =
-"/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
-new PromotedItem { Title = "goggle 9 Pro XL", Price = 3400, Company = "QLN", Location = "Doha", ImageUrls = new() {
-"/images/classifieds/item_one.svg",
-"/images/classifieds/item_one.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg"},
-Colour = "White", Storage = "256GB", BatteryPercentage = 85, Processor = "Tensor 4", CompanyLogoUrl =
-"/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
-
-new PromotedItem { Title = "Pixel 9 Pro XL", Price = 3400, Company = "QLN", Location = "Doha", ImageUrls = new() {
-"/images/classifieds/google_image1.svg",
-"/images/classifieds/google_image2.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg"},
-Colour = "White", Storage = "256GB", BatteryPercentage = 85, Processor = "Tensor 4", CompanyLogoUrl =
-"/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
-new PromotedItem { Title = "goggle 9 Pro XL", Price = 3400, Company = "QLN", Location = "Doha", ImageUrls = new() {
-"/images/classifieds/item_one.svg",
-"/images/classifieds/item_one.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg","/images/classifieds/google_image3.svg"},
-Colour = "White", Storage = "256GB", BatteryPercentage = 85, Processor = "Tensor 4", CompanyLogoUrl =
-"/images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
-};
-
 }
 
 <style>
@@ -180,15 +183,15 @@ Colour = "White", Storage = "256GB", BatteryPercentage = 85, Processor = "Tensor
         align-items: center;
     }
 
-    .pagination-button {
-        background-color: var(--color-background);
-        color: #475467;
-        text-transform: capitalize;
+    .empty-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 300px;
+        padding: 40px 20px;
     }
 
-    .pagination-icon {
-        color: #475467;
-    }
+
 
     .item-list-header {
         display: flex;
@@ -211,7 +214,18 @@ Colour = "White", Storage = "256GB", BatteryPercentage = 85, Processor = "Tensor
     }
 
     .sort-section {
-        min-width: 200px;
+        display: flex;
+        align-items: center;
+        flex-direction: row;
+        gap: 6px;
+        max-width: 300px;
+    }
+
+    .sort-name {
+        font-size: 13px;
+        font-weight: 500;
+        width: 100%;
+        color: #242424;
     }
 
     .list-view-wrapper {

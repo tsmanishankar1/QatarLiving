@@ -1,5 +1,6 @@
 @using MudBlazor
 @using QLN.Web.Shared.Components.Classifieds.FeaturedItemCard
+@using QLN.Web.Shared.Components.EmptyCard
 @using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.Skeletons.FeaturedItemSkeleton
 
 
@@ -15,7 +16,10 @@
 }
 else if (FeaturedItems?.Any() != true)
 {
-    <MudText>No featured items found.</MudText>
+  <EmptyCard
+    Title="No featured items found."
+    Subtitle="Please check back later or explore other categories." />
+
 }
 else
 {

@@ -1,11 +1,13 @@
+@inject SearchStateService SearchState
 @using MudBlazor
 @using QLN.Web.Shared.Components.ViewToggleButtons
 @using QLN.Web.Shared.Components.CustomSelect
+@using QLN.Web.Shared.Components.MoreFilters
 @inject ApiService Api
 @using QLN.Web.Shared.Services
 @inject ISnackbar Snackbar
 @using QLN.Web.Shared.Helpers
-
+@using QLN.Web.Shared.Pages.Classifieds.Components.Items.Components.PriceRangeSelect
 
 <MudPaper Class="search-container" Elevation="0">
     <div class="search-row">
@@ -29,7 +31,14 @@
                 <div class="search-actions">
                     <MudIconButton OnClick="PerformSearch" Class="search-action-btn search-btn">
                         <div class="search-icon-container">
-                            <img src="/images/classifieds/search_icon.svg" alt="Search" class="action-icon-img" />
+                            @if (_isSearching)
+                            {
+                                <MudProgressCircular Indeterminate="true" Style="color: white;width: 20px; height: 20px;" />
+                            }
+                            else
+                            {
+                                <img src="/images/classifieds/search_icon.svg" alt="Search" class="action-icon-img" />
+                            }
                         </div>
                     </MudIconButton>
                     <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="ClearSearch"
@@ -43,30 +52,29 @@
             <!-- Category -->
             <div class="short-select">
                 <CustomSelect TItem="string" Options="_categories" SelectedItem="_category"
-                    SelectedItemChanged="@(v => _category = v)" Placeholder="Category" Padding="14px 10px" />
+                    SelectedItemChanged="value => OnFilterChanged(nameof(_category), value)" Placeholder="Category"
+                    Padding="14px 10px" />
             </div>
 
             <!-- Brand -->
             <div class="short-select">
                 <CustomSelect TItem="string" Options="_brands" SelectedItem="_brand"
-                    SelectedItemChanged="@(v => _brand = v)" Placeholder="Brand" Padding="14px 10px"
-                    IsDisabled="@string.IsNullOrWhiteSpace(_category)" />
+                    SelectedItemChanged="value => OnFilterChanged(nameof(_brand), value)" Placeholder="Brand"
+                    Padding="14px 10px" IsDisabled="@string.IsNullOrWhiteSpace(_category)" />
             </div>
 
             <!-- Price -->
             <div class="short-select">
-                <CustomSelect TItem="string" Options="_prices.Select(p => p.Label).ToList()" SelectedItem="_price"
-                    SelectedItemChanged="@(v => _price = v)" Placeholder="Price" Padding="14px 10px"
-                    IsDisabled="@string.IsNullOrWhiteSpace(_category)" />
+                <PriceRangeSelect SelectedMin="@SelectedMin" SelectedMax="@SelectedMax"
+                    SelectedMinChanged="@((value) => SelectedMin = value)"
+                    SelectedMaxChanged="@((value) => SelectedMax = value)" OnApplyClicked="@ApplyPriceFilter"
+                    OnResetClicked="@ResetPriceFilter" IsDisabled="@string.IsNullOrWhiteSpace(_category)" />
             </div>
 
             <!-- More -->
             <div class="short-select">
-                <MudButton Variant="Variant.Outlined" Color="Color.Default" Class="more-button"
-                    Style="text-transform: none;">
-                    <span style="margin-right: 8px;">More</span>
-                    <MudIcon Icon="@Icons.Material.Filled.Tune" Class="more-icon" />
-                </MudButton>
+
+                <MoreFilters />
             </div>
 
 
@@ -85,14 +93,48 @@
 </MudPaper>
 
 @code {
+    private long? SelectedMin;
+    private long? SelectedMax;
     private string _searchText;
     private string _category;
     private string _brand;
-    private string _price;
     private bool _isSearchFocused = false;
+    private bool _isSearching = false;
 
     [Parameter]
     public EventCallback<string> OnViewModeChanged { get; set; }
+    private async Task ApplyPriceFilter()
+    {
+        SearchState.MinPrice = SelectedMin;
+        SearchState.MaxPrice = SelectedMax;
+
+        await PerformSearch();
+    }
+
+    private async Task ResetPriceFilter()
+    {
+        SelectedMin = null;
+        SelectedMax = null;
+        SearchState.MinPrice = null;
+        SearchState.MaxPrice = null;
+
+        await PerformSearch();
+    }
+    private async Task OnFilterChanged(string field, string value)
+    {
+        if (field == nameof(_category))
+        {
+            _category = value;
+            _brand = null; // Reset brand when category changes
+        }
+        else if (field == nameof(_brand))
+        {
+            _brand = value;
+        }
+
+        await PerformSearch();
+        StateHasChanged();
+    }
 
     private string _selectedView = "grid";
 
@@ -101,33 +143,78 @@
         _selectedView = view;
         await OnViewModeChanged.InvokeAsync(view);
     }
+    [Parameter] public EventCallback OnSearchStarted { get; set; }
     [Parameter]
-    public EventCallback<List<dynamic>> OnSearchCompleted { get; set; }
+    public EventCallback<List<PromotedItem>> OnSearchCompleted { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Restore UI fields from service
+        _searchText = SearchState.SearchText;
+        _category = SearchState.Category;
+        _brand = SearchState.Brand;
+        _selectedView = SearchState.ViewMode;
+        if (SearchState.Results == null || !SearchState.Results.Any())
+        {
+            await PerformSearch();
+        }
+    }
+
     private async Task PerformSearch()
     {
-        var payload = new
-        {
-            text = _searchText,
-            top = 0,
-            filters = new
-            {
-                Category = _category,
-                Brand = _brand,
-                Price = _price
-            },
-            orderBy = "relevance"
-        };
-
+        _isSearching = true;
+        await OnSearchStarted.InvokeAsync();
         try
         {
-            var result = await Api.PostAsync<object, List<dynamic>>("classifeds/search", payload);
+            // Sync local values to service
+            SearchState.SearchText = _searchText;
+            SearchState.Category = _category;
+            SearchState.Brand = _brand;
+
+            var filters = new Dictionary<string, object>();
+
+            if (!string.IsNullOrWhiteSpace(SearchState.Category))
+                filters["Category"] = SearchState.Category;
+            if (!string.IsNullOrWhiteSpace(SearchState.Brand))
+                filters["Brand"] = SearchState.Brand;
+            if (SearchState.MinPrice.HasValue)
+                filters["minPrice"] = SearchState.MinPrice.Value;
+
+            if (SearchState.MaxPrice.HasValue)
+                filters["maxPrice"] = SearchState.MaxPrice.Value;
+
+            object payload;
+
+            if (filters.Any())
+            {
+                payload = new { text = SearchState.SearchText, filters };
+            }
+            else if (!string.IsNullOrWhiteSpace(SearchState.SearchText))
+            {
+                payload = new { text = SearchState.SearchText };
+            }
+            else
+            {
+                payload = new { }; // Fetch all
+            }
+
+            var result = await Api.PostAsync<object, List<PromotedItem>>("api/classified/search", payload);
+            SearchState.Results = result;
             await OnSearchCompleted.InvokeAsync(result);
+
         }
         catch (HttpRequestException ex)
         {
             HttpErrorHelper.HandleHttpException(ex, Snackbar);
         }
+        finally
+        {
+            _isSearching = false;
+        }
     }
+
+
+
     private void ClearSearch()
     {
         _searchText = string.Empty;
@@ -139,8 +226,8 @@ new() { ImageUrl = "/images/list_icon.svg", Label = "List", Value = "list" },
 new() { ImageUrl = "/images/grid_icon.svg", Label = "Grid", Value = "grid" }
 };
 
-    private List<string> _categories = new() { "Books", "Electronics", "Furniture" };
-    private List<string> _brands = new() { "Apple", "Samsung", "Sony" };
+    private List<string> _categories = new() { "Mobile Phones & Tablets", "Electronics", "Furniture", };
+    private List<string> _brands = new() { "Google", "Apple", "Sony" };
     private List<(string Label, string Value)> _prices = new()
 {
 ("$0 - $100", "0-100"),
@@ -163,6 +250,7 @@ new() { ImageUrl = "/images/grid_icon.svg", Label = "Grid", Value = "grid" }
         display: flex;
         flex-wrap: nowrap;
         gap: 8px;
+        flex-direction: row;
         align-items: center;
         width: 100%;
     }
@@ -171,7 +259,7 @@ new() { ImageUrl = "/images/grid_icon.svg", Label = "Grid", Value = "grid" }
         display: flex;
         align-items: center;
         gap: 8px;
-        width: 320px;
+        width: 360px;
         background-color: white;
         border: 1px solid #ccc;
         border-radius: 6px;
@@ -268,6 +356,12 @@ new() { ImageUrl = "/images/grid_icon.svg", Label = "Grid", Value = "grid" }
 
     .more-icon {
         font-size: 20px;
+    }
+
+    .save-search {
+        display: flex;
+        align-items: center;
+        width: 100%;
     }
 
     /* Save Search */

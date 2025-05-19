@@ -13,7 +13,10 @@
             }
             @if (SelectedItem != null)
             {
-                @SelectedItem.ToString()
+                <div class="selected-text-wrapper">
+                    @SelectedItem.ToString()
+                </div>
+
             }
             else
             {
@@ -127,6 +130,18 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        padding-right: 12px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .selected-text-wrapper {
+        flex: 1;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        display: block;
     }
 
     .placeholder {

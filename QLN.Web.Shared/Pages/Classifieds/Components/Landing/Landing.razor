@@ -123,7 +123,7 @@
         isLoading = true;
         try
         {
-            var response = await Api.GetAsync<LandingResponse>("classified/landing");
+            var response = await Api.GetAsync<LandingResponse>("api/classified/landing");
             if (response is null) return;
 
             featuredItemData = response.FeaturedItems.Select(item => new FeaturedItemCard.FeaturedItem
@@ -131,6 +131,7 @@
                 Title = item.Title,
                 Category = item.Category,
                 Location = item.Location,
+                Price = item.Price,
                 ImageUrls = item.ImageUrls?.ToList() ?? new List<string>(),
                 IsFeatured = true
             }).ToList();
@@ -152,7 +153,7 @@
             {
                 Category = cat.Category,
                 Count = cat.Count,
-                ImageUrl = $"/images/categories/card_image.svg"
+                ImageUrl = cat.ImageUrl
             }).ToList();
 
             categoryListDataOne = categoryAds.Take(4).ToList();

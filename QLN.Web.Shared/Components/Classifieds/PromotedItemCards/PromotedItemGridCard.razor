@@ -3,28 +3,67 @@
 @using QLN.Web.Shared.Models
 
 <div class="card">
-    @if (Item.IsPromoted)
-    {
+  
         <div class="Promoted-badge">
             <MudIcon Icon="@Icons.Material.Filled.FlashOn" Size="Size.Small" Class="Promoted-icon" />
             <span>Promoted</span>
         </div>
-    }
 
     <MudIconButton Icon="@(isFavorite? Icons.Material.Filled.Favorite : Icons.Material.Outlined.FavoriteBorder)"
         Color="@(isFavorite? Color.Error: Color.Inherit)" OnClick="@(() => HandleHeartClick(Item))"
         Class="@heartIconClass" />
 
     <div class="carousel-container" @onmouseover="() => isHovered = true" @onmouseout="() => isHovered = false">
-        <img src="@Item.ImageUrls[activeIndex]" alt="@Item.Title" class="card-image" />
-
-        @if (isHovered)
+        @if (Item.ImageUrls != null && Item.ImageUrls.Count > 0)
         {
+            <img src="@Item.ImageUrls[activeIndex]" alt="@Item.Title" class="card-image" />
+        }
+        else
+        {
+            <img src="/images/categories/game_image.svg" alt="No image available" class="card-image" />
+        }
+
+        @if (isHovered && Item.ImageUrls.Count > 1)
+        {
+
             <button class="nav-arrow left" @onclick="PrevImage">&#10094;</button>
             <button class="nav-arrow right" @onclick="NextImage">&#10095;</button>
         }
 
-        <div class="image-counter">@(activeIndex + 1)/@Item.ImageUrls.Count</div>
+        @if (Item.ImageUrls != null && Item.ImageUrls.Count > 0)
+        {
+            <div class="image-counter">@(activeIndex + 1)/@Item.ImageUrls.Count</div>
+        }
+
+        @if (Item.ImageUrls != null && Item.ImageUrls.Count > 1)
+        {
+            <div class="carousel-dots">
+                @{
+                    var maxDots = 5;
+                    var total = Item.ImageUrls.Count;
+                    var start = 0;
+
+                    if (total > maxDots)
+                    {
+                        if (activeIndex < 2)
+                            start = 0;
+                        else if (activeIndex > total - 3)
+                            start = total - maxDots;
+                        else
+                            start = activeIndex - 2;
+                    }
+
+                    var visibleDots = Item.ImageUrls.Skip(start).Take(Math.Min(maxDots, total)).ToList();
+                }
+
+                @for (int i = 0; i < visibleDots.Count; i++)
+                {
+                    var actualIndex = start + i;
+                    <span class="dot @(actualIndex == activeIndex ? "active" : "")"
+                        @onclick="(() => SetImageIndex(actualIndex))"></span>
+                }
+            </div>
+        }
 
         @if (!string.IsNullOrEmpty(Item.Condition))
         {
@@ -36,16 +75,47 @@
         <div class="category">@Item.Category</div>
         <h3 class="title">@Item.Title</h3>
         <div class="features">
-            <span>@Item.Colour</span>
-            <span>@Item.Storage</span>
-            <span>@Item.BatteryPercentage</span>
-            <span>@Item.Processor</span>
-            <span>@Item.RAM</span>
-            <span>@Item.Resolution</span>
+            @if (!string.IsNullOrEmpty(Item.Colour))
+            {
+                <div class="feature-item">
+                    <img src="/images/classifieds/colour_icon.svg" alt="Color" class="feature-icon" />
+                    <span class="feature-name">@Item.Colour</span>
+                </div>
+                <div class="divider"></div>
+            }
+
+            @if (!string.IsNullOrEmpty(Item.Storage))
+            {
+                <div class="feature-item">
+                    <img src="/images/classifieds/storage_icon.svg" alt="Storage" class="feature-icon" />
+                    <span class="feature-name">@Item.Storage</span>
+                </div>
+                <div class="divider"></div>
+            }
+
+            @if (Item.BatteryPercentage.HasValue)
+            {
+                <div class="feature-item">
+                    <img src="/images/classifieds/battery_icons.svg" alt="Battery" class="feature-icon" />
+                    <span class="feature-name">@($"{Item.BatteryPercentage.Value}%")</span>
+                </div>
+                <div class="divider"></div>
+            }
+
+            @if (!string.IsNullOrEmpty(Item.Processor))
+            {
+                <div class="feature-item">
+                    <img src="/images/classifieds/chip_icons.svg" alt="Processor" class="feature-icon" />
+                    <span class="feature-name">@Item.Processor</span>
+                </div>
+            }
         </div>
+
+
         <div class="price">@Item.Price</div>
         <div class="company-details">
-            <img src="@Item.CompanyLogoUrl" alt="logo" class="company-logo" />
+            <img src="@(!string.IsNullOrEmpty(Item.CompanyLogoUrl) ? Item.CompanyLogoUrl : "/images/classifieds/item_logo.svg")"
+                alt="logo" class="company-logo" />
             <div class="company-info">
                 <span class="company-name">@Item.Company</span>
                 <div class="location">
@@ -68,6 +138,7 @@
         transition: transform 0.3s ease;
         flex: 1 1 auto;
         max-width: 100%;
+        max-height: 402px;
     }
 
     .card:hover {
@@ -167,6 +238,7 @@
 
     .card-content {
         padding: 15px;
+        cursor: pointer;
     }
 
     .category {
@@ -180,15 +252,46 @@
         margin: 8px 0;
         font-weight: 600;
         line-height: 1.3;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .features {
         display: flex;
-        gap: 10px;
-        font-size: 13px;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: nowrap;
+        /* Ensure one line only */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+
+    }
+
+    .feature-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .feature-name {
+        font-size: 14px;
         font-weight: 500;
         color: #242424;
-        flex-wrap: wrap;
+    }
+
+    .feature-icon {
+        width: 14px;
+        height: 14px;
+        object-fit: contain;
+    }
+
+    .divider {
+        width: 1px;
+        height: 16px;
+        background-color: #ccc;
     }
 
     .price {
@@ -200,7 +303,7 @@
 
     .company-details {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         gap: 8px;
         margin-top: 8px;
     }
@@ -215,6 +318,7 @@
     .company-info {
         display: flex;
         flex-direction: column;
+        align-items: center;
         justify-content: center;
     }
 
@@ -231,5 +335,30 @@
         display: flex;
         align-items: center;
         gap: 4px;
+    }
+
+    .carousel-dots {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 4px;
+        z-index: 4;
+    }
+
+    .dot {
+        width: 6px;
+        height: 6px;
+        background-color: rgba(255, 255, 255, 0.6);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .dot.active {
+        background-color: white;
+        width: 8px;
+        height: 8px;
     }
 </style>

@@ -8,6 +8,7 @@
 @using Microsoft.AspNetCore.WebUtilities
 @using QLN.Web.Shared.Models
 @using QLN.Web.Shared.Pages.Classifieds.Components.Items.Components.IteamdetailsSection
+@using QLN.Web.Shared.Pages.Classifieds.Components.Items.Components.Skeletons.IteamdetailsSkeletons
 @using QLN.Web.Shared.Components.Classifieds.PromotedItemCards
 @inject NavigationManager NavigationManager
 @layout ClassifiedsLayout
@@ -21,7 +22,7 @@
         @if (isLoading)
         {
             <div class="loading-container">
-                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                <IteamdetailsSkeletons />
             </div>
         }
         else if (!string.IsNullOrEmpty(errorMessage))
@@ -89,7 +90,7 @@
             isLoading = true;
             errorMessage = null;
 
-            Item = await Api.GetAsync<PromotedItem>($"classified/{id}");
+            Item = await Api.GetAsync<PromotedItem>($"api/classified/{id}");
             if (Item == null)
             {
                 errorMessage = "Item not found.";

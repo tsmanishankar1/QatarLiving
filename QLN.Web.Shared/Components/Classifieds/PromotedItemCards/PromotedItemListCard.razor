@@ -4,7 +4,15 @@
 
 <div class="list-card">
     <div class="list-card-img-wrapper" @onmouseover="() => isHovered = true" @onmouseout="() => isHovered = false">
-        <img src="@Item.ImageUrls[activeIndex]" class="list-card-img" alt="@Item.Title" />
+        @if (Item.ImageUrls != null && Item.ImageUrls.Count > 0)
+        {
+            <img src="@Item.ImageUrls[activeIndex]" alt="@Item.Title" class="list-card-img" />
+        }
+        else
+        {
+            <img src="/images/categories/game_image.svg" alt="No image available" class="list-card-img" />
+        }
+
 
         @if (isHovered && Item.ImageUrls.Count > 1)
         {
@@ -16,15 +24,16 @@
             Color="@(isFavorite? Color.Error: Color.Inherit)" OnClick="@(() => ToggleFavorite(Item))"
             Class="@heartIconListClass" />
 
-        @if (Item.IsPromoted)
+        <div class="list-card-promoted">
+            <MudIcon Icon="@Icons.Material.Filled.FlashOn" Size="Size.Small" />
+            Promoted
+        </div>
+
+        @if (Item.ImageUrls != null && Item.ImageUrls.Count > 0)
         {
-            <div class="list-card-promoted">
-                <MudIcon Icon="@Icons.Material.Filled.FlashOn" Size="Size.Small" />
-                Promoted
-            </div>
+            <div class="image-counter">@(activeIndex + 1)/@Item.ImageUrls.Count</div>
         }
 
-        <div class="list-card-img-count">@($"{activeIndex + 1}/{Item.ImageUrls.Count}")</div>
 
         @if (!string.IsNullOrEmpty(Item.Condition))
         {
@@ -40,20 +49,56 @@
             <MudIcon Icon="@Icons.Material.Filled.Verified" Size="Size.Small" />
             Authenticated
         </div>
+        <div class="features">
+            @if (!string.IsNullOrEmpty(Item.Colour))
+            {
+                <div class="feature-item">
+                    <img src="/images/classifieds/colour_icon.svg" alt="Color" class="feature-icon" />
+                    <span class="feature-name">@Item.Colour</span>
+                </div>
+                <div class="divider"></div>
+            }
+
+            @if (!string.IsNullOrEmpty(Item.Storage))
+            {
+                <div class="feature-item">
+                    <img src="/images/classifieds/storage_icon.svg" alt="Storage" class="feature-icon" />
+                    <span class="feature-name">@Item.Storage</span>
+                </div>
+                <div class="divider"></div>
+            }
+
+            @if (Item.BatteryPercentage.HasValue)
+            {
+                <div class="feature-item">
+                    <img src="/images/classifieds/battery_icons.svg" alt="Battery" class="feature-icon" />
+                    <span class="feature-name">@($"{Item.BatteryPercentage.Value}%")</span>
+                </div>
+                <div class="divider"></div>
+            }
+
+            @if (!string.IsNullOrEmpty(Item.Processor))
+            {
+                <div class="feature-item">
+                    <img src="/images/classifieds/chip_icons.svg" alt="Processor" class="feature-icon" />
+                    <span class="feature-name">@Item.Processor</span>
+                </div>
+            }
+        </div>
 
         <div class="list-card-price">@($"{Item.Price:N0} QAR")</div>
 
         <div class="list-card-company">
-            <img src="@Item.CompanyLogoUrl" alt="logo" class="list-card-company-logo" />
-            <div>
-                <div class="list-card-company-name">@Item.Company</div>
-                <div class="list-card-location">
-                    <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" />
-                    @Item.Location
-                </div>
+            <img src="@(!string.IsNullOrEmpty(Item.CompanyLogoUrl) ? Item.CompanyLogoUrl : "/images/classifieds/item_logo.svg")"
+                <div>
+            <div class="list-card-company-name">@Item.Company</div>
+            <div class="list-card-location">
+                <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" />
+                @Item.Location
             </div>
         </div>
     </div>
+</div>
 </div>
 
 <style>
@@ -168,6 +213,37 @@
         padding: 4px;
         z-index: 2;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    .features {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .feature-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .feature-name {
+        font-size: 14px;
+        font-weight: 500;
+        color: #242424;
+    }
+
+    .feature-icon {
+        width: 14px;
+        height: 14px;
+        object-fit: contain;
+    }
+
+    .divider {
+        width: 1px;
+        height: 16px;
+        background-color: #ccc;
     }
 
     .list-card-info {
