@@ -6,8 +6,12 @@
 @using static QLN.Web.Shared.Helpers.HttpErrorHelper;
 @using QLN.Web.Shared.Models;
 @using QLN.Web.Shared.Services;
+@inject NavigationManager NavManager
+@using Microsoft.JSInterop;
+@using static System.Runtime.InteropServices.JavaScript.JSType;
 @inject ApiService Api;
 @inject ISnackbar Snackbar
+@inject IJSRuntime _jsRuntime
 
     <MudGrid Style="padding: 16px;">
         <MudItem xs="12" sm="4" md="3">
@@ -92,12 +96,22 @@
             July 28, 2023 to July 28, 2024
         </MudText>
 
+        @if (@item.Name == "Subscription"){
         <!-- Button -->
         <MudButton Variant="Variant.Outlined"
+           Class="public-sans"
+           Style="border: 2px solid var(--color-primary); color: var(--color-primary); padding: 8px 16px;"
+           OnClick="@ViewSubscriptionDetails">
+            View Subscription Details
+        </MudButton>
+        }
+        else{
+            <MudButton Variant="Variant.Outlined"
                    Class="public-sans"
                    Style="border: 2px solid var(--color-primary); color: var(--color-primary); padding: 8px 16px;">
             Edit Company Profile
         </MudButton>
+        }
 
     </MudPaper>
 </MudItem>
@@ -159,7 +173,7 @@
         </div>
                                 
                             </MudItem>
-                            
+    
                              <MudDivider Class="my-2 p-5 mx-4" />
                         </MudGrid>
                     }
@@ -170,11 +184,12 @@
 
 @code {
     private QLN.Web.Shared.Models.UserProfile? user = new();
+    private string _authToken;
     private List<CompanyProfile> CompanyProfiles = new()
     {
-        new CompanyProfile { Name = "Capstone Property", Plan = "Real estate 20 - 12 months", ValidFrom = "July 28, 2023", ValidTo = "July 28, 2024" },
-        new CompanyProfile { Name = "Pay To Publish", Plan = "Real estate 20 - 12 months", ValidFrom = "July 28, 2023", ValidTo = "July 28, 2024" },
-        new CompanyProfile { Name = "Pay To Publish", Plan = "Real estate 20 - 12 months", ValidFrom = "July 28, 2023", ValidTo = "July 28, 2024" }
+        new CompanyProfile { Name = "Capstone Property", Plan = "Real estate 12 - 20 months", ValidFrom = "July 28, 2023", ValidTo = "July 28, 2024" },
+        new CompanyProfile { Name = "Pay To Publish", Plan = "Real estate 12 - 20 months", ValidFrom = "July 28, 2023", ValidTo = "July 28, 2024" },
+        new CompanyProfile { Name = "Subscription", Plan = "Real estate 12 - 20 months", ValidFrom = "July 28, 2023", ValidTo = "July 28, 2024" }
     };
 
     private List<ActivityItem> RecentActivities = new()
@@ -205,7 +220,7 @@
 
      protected override async Task OnInitializedAsync()
     {
-       await fetchProfile();
+       @* await fetchProfile(); *@
     } 
      private void OnEditProfileClicked()
     {
@@ -213,17 +228,41 @@
         Console.WriteLine("Edit Profile button clicked");
 
     }
+    private void ViewSubscriptionDetails()
+    {
+
+        NavManager.NavigateTo("/subscription-details");
+    }
+
     private async Task fetchProfile()
         {
             try
             {
-                user = await Api.GetAsync<QLN.Web.Shared.Models.UserProfile>("auth/manage/info");
+                 @* _authToken = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "authToken"); *@
+                user = await Api.GetAsyncWithToken<QLN.Web.Shared.Models.UserProfile>("auth/manage/info", _authToken);
             }
             catch (HttpRequestException ex)
             {
                 HandleHttpException(ex, Snackbar);
             }
         }
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                _authToken = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+                if (string.IsNullOrWhiteSpace(_authToken))
+                {
+                    _authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjU0NTZhZTY0LTNjMGMtNDJjYS04MGIxLTBjOWQ2YjBkYmY5MiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJqYXNyMjciLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJqYXN3YW50aC5yQGtyeXB0b3NpbmZvc3lzLmNvbSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL21vYmlsZXBob25lIjoiKzkxOTAwMzczODEzOCIsIlVzZXJJZCI6IjU0NTZhZTY0LTNjMGMtNDJjYS04MGIxLTBjOWQ2YjBkYmY5MiIsIlVzZXJOYW1lIjoiamFzcjI3IiwiRW1haWwiOiJqYXN3YW50aC5yQGtyeXB0b3NpbmZvc3lzLmNvbSIsIlBob25lTnVtYmVyIjoiKzkxOTAwMzczODEzOCIsImV4cCI6MTc0NjY5NTE0NywiaXNzIjoiUWF0YXIgTGl2aW5nIiwiYXVkIjoiUWF0YXIgTGl2aW5nIn0.KYxgzCBr5io7jm9SDzh2GE7GADKZ38k3kivgx6gC3PQ";
+                }
+                 await fetchProfile();
+                StateHasChanged();
+
+            }
+
+            await base.OnAfterRenderAsync(firstRender);
+        }
+
 
 }
 

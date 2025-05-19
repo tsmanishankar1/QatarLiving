@@ -69,6 +69,7 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
 
     public void LogoutUser()
     {
+        _user = new ClaimsPrincipal(new ClaimsIdentity());
         NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(_user)));
     }
 
