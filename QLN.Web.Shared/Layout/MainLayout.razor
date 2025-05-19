@@ -240,7 +240,38 @@ Route = "/more-features-coming-soon"
         cursor: pointer;
     }
 
+ .menu-item {
+        padding: 0;
+        min-height: 40px;
+    }
 
+    .menu-item-content {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 16px;
+        font-family: public-sans, sans-serif;
+        border-bottom: 1px solid #EAECF0;
+        padding: 8px 30px;
+        width: 100%;
+    }
+
+    .menu-item:last-child .menu-item-content {
+        border-bottom: none;
+    }
+
+    .menu-item-icon {
+        width: 22px;
+        height: 22px;
+        object-fit: contain;
+    }
+
+    .menu-item-text {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--color-text-heading);
+        flex-grow: 1;
+    }
     .nav-link {
         color: white;
         text-decoration: none;

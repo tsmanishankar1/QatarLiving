@@ -19,7 +19,7 @@
     {
         <img src="/images/categories/game_image.svg" alt="Default" class="card-image" />
     }
-    <div class="card-content">
+    <div class="card-content" @onclick="() => HandleSelect(Item)">
         <div class="category">@Item.Category</div>
         <div class="price">@Item.Price QAR</div>
         <h3 class="title">@Item.Title</h3>
@@ -108,6 +108,7 @@
     .card-content {
         display: flex;
         flex-direction: column;
+        cursor: pointer;
         justify-content: space-between;
         padding: 15px;
     }

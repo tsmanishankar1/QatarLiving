@@ -90,6 +90,7 @@
         // Map each result item manually (e.g. if `results` are of a raw DTO type)
         featuredItemData = results.Select(item => new FeaturedItemCard.FeaturedItem
         {
+            Id = item.Id,
             Title = item.Title,
             Category = item.Category,
             Location = item.Location,
@@ -128,6 +129,7 @@
 
             featuredItemData = response.FeaturedItems.Select(item => new FeaturedItemCard.FeaturedItem
             {
+                Id = item.Id,
                 Title = item.Title,
                 Category = item.Category,
                 Location = item.Location,
