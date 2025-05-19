@@ -1,0 +1,112 @@
+<div class="custom-pagination-bar">
+    @if (TotalPages >= 1)
+
+    {
+        @foreach (var p in VisiblePages)
+        {
+            if (p == -1)
+            {
+                <span class="pagination-ellipsis">...</span>
+            }
+            else
+            {
+                <button class="pagination-page-button @(CurrentPage == p ? "active" : "")" @onclick="() => HandlePageClick(p)">
+                    @p
+                </button>
+            }
+        }
+        <span class="pagination-total">/ @TotalPages</span>
+    }
+</div>
+
+@code {
+    [Parameter] public int TotalItems { get; set; }
+    [Parameter] public int PageSize { get; set; }
+    [Parameter] public int CurrentPage { get; set; }
+    [Parameter] public EventCallback<int> OnPageChange { get; set; }
+
+    private int TotalPages => PageSize > 0 ? Math.Max(1, (int)Math.Ceiling((double)TotalItems / PageSize)) : 1;
+
+    private List<int> VisiblePages => GeneratePageRange();
+
+    private List<int> GeneratePageRange()
+    {
+        var pages = new List<int>();
+
+        if (TotalPages <= 7)
+        {
+            for (int i = 1; i <= TotalPages; i++)
+                pages.Add(i);
+        }
+        else
+        {
+            pages.Add(1); // Always show first page
+
+            if (CurrentPage > 4)
+                pages.Add(-1); // Left ellipsis
+
+            for (int i = Math.Max(2, CurrentPage - 1); i <= Math.Min(CurrentPage + 1, TotalPages - 1); i++)
+                pages.Add(i);
+
+            if (CurrentPage < TotalPages - 3)
+                pages.Add(-1); // Right ellipsis
+
+            pages.Add(TotalPages); // Always show last page
+        }
+
+        return pages;
+    }
+
+    private async Task HandlePageClick(int selectedPage)
+    {
+        if (selectedPage != CurrentPage && selectedPage > 0 && selectedPage <= TotalPages)
+        {
+            await OnPageChange.InvokeAsync(selectedPage);
+        }
+    }
+}
+
+<style>
+    .custom-pagination-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: center;
+        padding: 16px 0;
+    }
+
+    .pagination-page-button {
+        min-width: 36px;
+        height: 36px;
+        font-weight: 500;
+        color: #475467;
+        border: none;
+        border-radius: 8px;
+        background-color: transparent;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .pagination-page-button:hover {
+        background-color: #F2F4F7;
+        color: #344054;
+    }
+
+    .pagination-page-button.active {
+        background-color: #FFFFFF;
+        font-weight: 600;
+        color: #242424;
+    }
+
+    .pagination-ellipsis {
+        color: #475467;
+        padding: 0 6px;
+        font-weight: bold;
+    }
+
+    .pagination-total {
+        margin-left: 12px;
+        color: #475467;
+        font-size: 14px;
+    }
+</style>

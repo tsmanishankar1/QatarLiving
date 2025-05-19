@@ -1,0 +1,193 @@
+@using MudBlazor
+@code {
+    [Parameter] public List<string> Images { get; set; } = new();
+    [Parameter] public int SelectedImageIndex { get; set; }
+    [Parameter] public EventCallback<int> OnImageSelected { get; set; }
+    [Parameter] public EventCallback OnPrevSlide { get; set; }
+    [Parameter] public EventCallback OnNextSlide { get; set; }
+
+    private string TrackOffset => $"translateX(-{SelectedImageIndex * 144}px)";
+}
+<div class="item-details-image-wrapper">
+    <div class="image-container">
+        @if (Images != null && Images.Count > 0 && SelectedImageIndex >= 0 && SelectedImageIndex < Images.Count)
+        {
+            <img src="@Images[SelectedImageIndex]" alt="Main Image" class="main-image" />
+        }
+        else
+        {
+            <img src="/images/categories/game_image.svg" alt="No image available" class="main-image" />
+        }
+
+
+        <div class="Promoted-badge">
+            <MudIcon Icon="@Icons.Material.Filled.FlashOn" Size="Size.Small" Class="Promoted-icon" />
+            <span>Promoted</span>
+        </div>
+
+        <div class="photo-count">@($"{SelectedImageIndex + 1}/{Images.Count}")</div>
+
+        <div class="dots">
+            @for (int i = 0; i < Images.Count; i++)
+            {
+                <span class="dot @(i == SelectedImageIndex ? "active" : "")"></span>
+            }
+        </div>
+
+        <button class="view-photos-btn">📷 View all @Images.Count photos</button>
+    </div>
+
+    <div class="carousel-container">
+        <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" OnClick="@OnPrevSlide"
+            Disabled="@(SelectedImageIndex == 0)" Class="custom-arrow-details-button left" />
+
+        <div class="carousel-viewport">
+            <div class="carousel-track" style="transform:@TrackOffset">
+                @for (int i = 0; i < Images.Count; i++)
+                {
+                    <div class="seasonal-card @(SelectedImageIndex == i ? "selected-card" : "")"
+                        @onclick="() => OnImageSelected.InvokeAsync(i)">
+                        <img src="@Images[i]" alt="Carousel Image" />
+                    </div>
+                }
+            </div>
+        </div>
+
+        <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" OnClick="@OnNextSlide"
+            Disabled="@(SelectedImageIndex >= Images.Count - 1)" Class="custom-arrow-details-button right" />
+    </div>
+</div>
+
+<style>
+    .item-details-image-wrapper {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .image-container {
+        position: relative;
+        width: 100%;
+    }
+
+    .main-image {
+        width: 100%;
+        border-radius: 8px;
+    }
+
+    .Promoted-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background-color: orange;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .photo-count {
+        position: absolute;
+        bottom: 45px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        padding: 4px 8px;
+        font-size: 0.8rem;
+        border-radius: 4px;
+    }
+
+    .dots {
+        position: absolute;
+        bottom: 15px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .dot {
+        height: 8px;
+        width: 8px;
+        margin: 0 3px;
+        background-color: lightgray;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .dot.active {
+        background-color: #0033cc;
+    }
+
+    .view-photos-btn {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        background-color: white;
+        border: none;
+        border-radius: 20px;
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .carousel-container {
+        position: relative;
+        width: 100%;
+        display: flex;
+        align-items: center;
+    }
+
+    .carousel-viewport {
+        overflow: hidden;
+        flex-grow: 1;
+    }
+
+    .carousel-track {
+        display: flex;
+        transition: transform 0.5s ease;
+        gap: 10px;
+    }
+
+    .seasonal-card img {
+        width: 134px;
+        height: 90px;
+        object-fit: cover;
+        display: block;
+    }
+
+    .seasonal-card {
+        transition: border 0.3s ease;
+    }
+
+    .selected-card {
+        border: 2px solid var(--color-accent);
+    }
+
+    .custom-arrow-details-button {
+        border-radius: 0;
+        width: 40px;
+        height: 100px;
+        background-color: var(--color-text-heading);
+        color: var(--color-background);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .custom-arrow-details-button.left {
+        left: 0;
+    }
+
+    .custom-arrow-details-button.right {
+        right: 0;
+    }
+</style>

@@ -1,0 +1,209 @@
+@using MudBlazor
+@using QLN.Web.Shared.Components.Classifieds.FeaturedCategoryCard
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.Skeletons.FeaturedCategorySkeleton
+
+
+    <div class="categories-wrapper">
+        <div class="categories-header">
+            <MudContainer MaxWidth="MaxWidth.False">
+                <h3 class="section-header">Featured Categories</h3>
+            </MudContainer>
+        </div>
+@if (Loading)
+{
+    <FeaturedCategorySkeleton />
+}
+else if  (FeaturedCategories?.Any() != true)
+{
+    <MudText>No featured categories found.</MudText>
+}
+else
+{
+        <div class="categories-section">
+            <div class="carousel-container1">
+                <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" Disabled="@(_startIndex == 0)"
+                    OnClick="MovePrevious" Class="custom-arrow-buttons left" />
+
+                <div class="carousel-wrapper">
+                    <div class="carousel-track" style="transform: translateX(@TrackOffset);">
+                        @foreach (var category in FeaturedCategories)
+                        {
+                            <FeaturedCategoryCard Item="category" OnClick="HandleCategoryClick" />
+                        }
+                    </div>
+                </div>
+
+                <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                    Disabled="@(_startIndex >= FeaturedCategories.Count - VisibleCount)" OnClick="MoveNext"
+                    Class="custom-arrow-buttons right" />
+            </div>
+
+            <!-- Pagination dots -->
+            <div class="pagination-dots">
+                @for (int i = 0; i <= FeaturedCategories.Count - VisibleCount; i++)
+                {
+                    <span class="dot @(i == _startIndex ? "active" : "")"></span>
+                }
+            </div>
+        </div>
+}
+
+    </div>
+
+@code {
+     [Parameter]
+    public bool Loading { get; set; } = false;
+    private int _startIndex = 0;
+    private const int VisibleCount = 5;
+
+    [Parameter]
+    public List<FeaturedCategoryCard.CategoryItem> FeaturedCategories { get; set; } = new();
+
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+    private string TrackOffset => $"-{_startIndex * (100.0 / VisibleCount)}%";
+
+    private void MoveNext()
+    {
+        if (_startIndex < FeaturedCategories.Count - VisibleCount)
+            _startIndex++;
+    }
+
+    private void MovePrevious()
+    {
+        if (_startIndex > 0)
+            _startIndex--;
+    }
+
+    private void GoToPage(int index)
+    {
+        _startIndex = index;
+    }
+
+    private void HandleCategoryClick(FeaturedCategoryCard.CategoryItem item)
+    {
+        Console.WriteLine($"Clicked category: {item.Category}");
+    }
+}
+
+
+<style>
+    .categories-wrapper {
+        width: 100%;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .categories-header {
+        background-color: var(--color-secondary-background);
+        padding: 2rem 0 1rem;
+    }
+
+    .section-header {
+        font-weight: 600;
+        text-align: center;
+        font-size: 25px;
+        color: var(--color-text-heading);
+    }
+
+    .categories-section {
+        background-color: var(--color-background-secondary-grey-light);
+        width: 100%;
+        padding: 2rem 0;
+        position: relative;
+    }
+
+    .carousel-container1 {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
+        overflow: hidden;
+        padding: 0 1rem;
+    }
+
+    .carousel-track {
+        display: flex;
+        transition: transform 0.5s ease;
+        width: max-content;
+    }
+
+    .custom-arrow-buttons {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+        background-color: white;
+        border-radius: 50%;
+        box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Moved more inside */
+    .custom-arrow-buttons.left {
+        left: 40px;
+    }
+
+    .custom-arrow-buttons.right {
+        right: 40px;
+    }
+
+    .pagination-dots {
+        text-align: center;
+        margin-top: 1rem;
+    }
+
+    .dot {
+        display: inline-block;
+        height: 10px;
+        width: 10px;
+        margin: 0 5px;
+        background-color: #bbb;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .dot.active {
+        background-color: #333;
+    }
+
+    @@media (max-width: 768px) {
+        .custom-arrow-buttons {
+            display: none !important;
+        }
+
+        .pagination-dots {
+            display: none;
+        }
+
+        .carousel-wrapper {
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .carousel-wrapper::-webkit-scrollbar {
+            display: none;
+        }
+
+        .carousel-track {
+            display: flex;
+            transform: none !important;
+            width: max-content;
+            gap: 0.75rem;
+        }
+
+        .categories-section {
+            padding: 1rem 0;
+        }
+
+        .categories-header {
+            padding: 1rem 0 0.5rem;
+        }
+    }
+</style>

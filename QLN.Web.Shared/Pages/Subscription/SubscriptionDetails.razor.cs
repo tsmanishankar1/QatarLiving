@@ -88,6 +88,10 @@ namespace QLN.Web.Shared.Pages.Subscription
         {
             Navigation.NavigateTo("/edit-company");
         }
+ private void NavigateToAdPost()
+        {
+            Navigation.NavigateTo("/classifieds/createform");
+        }
 
         private async Task LoadBusinessProfileAsync()
         {

@@ -26,7 +26,7 @@ builder.Services.Configure<ApiSettings>(
     builder.Configuration.GetSection("ApiSettings"));
 
 builder.Services.AddHttpClient<ApiService>();
-// builder.Services.AddWebSharedServices(builder.Configuration);
+builder.Services.AddWebSharedServices(builder.Configuration);
 
 var app = builder.Build();
 

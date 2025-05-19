@@ -1,0 +1,93 @@
+@inherits LayoutComponentBase;
+@using MudBlazor;
+@using QLN.Web.Shared.Components.CustomButton
+
+<div class="popup-overlay">
+    <MudPaper Class="pa-6 mx-auto mt-10"
+              Style="max-width: 500px; border-radius: 12px; position: relative;">
+        <MudStack Spacing="2" AlignItems="AlignItems.Center">
+            <img src="/images/search.svg" alt="Search" style="width: 48px; height: 48px;" />
+
+        <MudText Typo="Typo.h6" Align="Align.Center"
+         Class="mt-2 public-sans title-style"
+         Style="font-size: 18px;">
+        @Title
+        </MudText>
+
+        <MudText Typo="Typo.body2" Align="Align.Center"
+         Class="mb-2 public-sans fw-normal"
+         Style="font-size: 14px;">
+        @Description
+        </MudText>
+        @if (ShowTextField)
+        {
+        <MudTextField @bind-Value="SearchName"
+              Variant="Variant.Outlined"
+              Adornment="Adornment.End"
+              MaxLength="30"
+              AdornmentText="@($"{SearchName.Length}/30")"
+               FullWidth="true"
+              Class="mx-8"
+              Style="background-color: var(--color-text-white)" />
+              }
+
+        <CustomButton 
+    BackgroundColor="var(--color-accent)"
+    TextColor="var(--color-text-white)"
+    Text="@PrimaryButtonText"
+    OnClick="@OnPrimaryClick"
+    Class="mt-4 public-sans fw-bold"
+    Style="font-size: 16px; text-transform: none;" />
+
+<MudButton 
+    Variant="Variant.Outlined"
+    FullWidth="true"
+    Class="custom-outline-button public-sans fw-bold"
+    Style="border-radius: 8px; border: 1px solid var(--color-light-gray); font-size: 16px; text-transform: none;"
+    OnClick="@OnSecondaryClick">
+    <span class="custom-outline-text"> @SecondaryButtonText </span>
+</MudButton>
+        </MudStack>
+    </MudPaper>
+</div>
+
+<style>
+    .public-sans {
+    font-family: 'Public Sans', sans-serif;
+}
+
+.fw-bold {
+    font-weight: 600;
+}
+.public-sans {
+    font-family: 'Public Sans', sans-serif;
+}
+
+.title-style {
+    font-weight: 600;
+
+}
+
+.fw-normal {
+    color: var(--color-text-descripton);
+    font-weight: 400;
+}
+.full-width {
+        width: 100%;
+    }
+</style>
+
+@code {
+    private string SearchName { get; set; } = string.Empty;
+    [Parameter] public bool ShowTextField { get; set; } = false;
+    [Parameter] public string Title { get; set; } = "Save this Search";
+    [Parameter] public string Description { get; set; } = "Please select filters to save";
+    [Parameter] public string ImageUrl { get; set; } = "/images/search.svg";
+
+    [Parameter] public string PrimaryButtonText { get; set; } = "Close";
+    [Parameter] public string SecondaryButtonText { get; set; } = "View Saved Searches";
+
+    [Parameter] public EventCallback OnPrimaryClick { get; set; }
+    [Parameter] public EventCallback OnSecondaryClick { get; set; }
+}
+
