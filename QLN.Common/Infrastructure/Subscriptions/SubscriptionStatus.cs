@@ -9,6 +9,7 @@
         Cancelled = 4,
         OnHold = 5,
         Ready = 6,
-        PendingActivation = 7
+        PendingActivation = 7,
+        Deleted = 8
     }
 }

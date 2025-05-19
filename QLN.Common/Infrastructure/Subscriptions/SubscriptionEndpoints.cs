@@ -1,40 +1,158 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using QLN.Common.DTO_s;
 using System;
 
 public static class SubscriptionEndpoints
-{
-    public static IEndpointRouteBuilder MapSubscriptionEndpoints(this IEndpointRouteBuilder endpoints, bool enableAuthorization = true)
     {
-        var group = endpoints.MapGroup("/subscriptions");
-
-
-        group.MapPost("/", async (SubscriptionDto subscription, ISubscriptionService service) =>
+        public static RouteGroupBuilder MapSubscriptionEndpoints(this RouteGroupBuilder group)
         {
-            await service.CreateSubscriptionAsync(subscription);
-            return Results.Created($"/subscriptions/{subscription.Id}", subscription);
-        })
-        .WithName("CreateSubscription")
-        .WithSummary("Create or update a subscription");
+            group.MapPost("/create", async (
+                [FromBody] SubscriptionDto dto,
+                [FromServices] ISubscriptionService service,
+                HttpContext ctx,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    Console.WriteLine("📥 Received request: " + System.Text.Json.JsonSerializer.Serialize(dto));
+                    
+                    // Set ID if not provided
+                    if (dto.Id == Guid.Empty)
+                    {
+                        dto.Id = Guid.NewGuid();
+                    }
+                    
+                    // Set start date if not provided
+                    if (dto.StartDate == null)
+                    {
+                        dto.StartDate = DateTime.UtcNow;
+                    }
+                    
+                    var result = await service.CreateSubscriptionAsync(dto, cancellationToken);
+                    if (!result)
+                    {
+                        return Results.Problem("Failed to create subscription");
+                    }
+                    
+                    return Results.Created($"/api/subscriptions/getById?id={dto.Id}", dto);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("❌ Error: " + ex.Message);
+                    return Results.Problem("💥 Internal server error: " + ex.Message);
+                }
+            });
 
-        group.MapGet("/{id:guid}", async (Guid id, ISubscriptionService service) =>
-        {
-            var subscription = await service.GetSubscriptionByIdAsync(id);
-            return subscription is not null ? Results.Ok(subscription) : Results.NotFound();
-        })
-        .WithName("GetSubscriptionById")
-        .WithSummary("Fetch subscription by ID");
+            group.MapGet("/getById", async (
+                Guid id,
+                [FromServices] ISubscriptionService service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    var result = await service.GetSubscriptionAsync(id, cancellationToken);
+                    return result is null ? Results.NotFound() : Results.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("❌ Error: " + ex.Message);
+                    return Results.Problem("💥 Internal server error: " + ex.Message);
+                }
+            });
 
-        group.MapPost("/{id:guid}/expire", async (Guid id, ISubscriptionService service) =>
-        {
-            await service.ExpireSubscriptionAsync(id);
-            return Results.Ok(new { message = $"Subscription {id} expired." });
-        })
-        .WithName("ExpireSubscription")
-        .WithSummary("Expire a subscription");
+            group.MapGet("/getAll", async (
+                [FromServices] ISubscriptionService service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    // Since actors are individual instances, we need a separate implementation 
+                    // to get all subscriptions. This is a placeholder that would need to be 
+                    // implemented in the service layer.
+                    return Results.BadRequest("Getting all subscriptions is not directly supported with actors. Please use a specific ID.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("❌ Error: " + ex.Message);
+                    return Results.Problem("💥 Internal server error: " + ex.Message);
+                }
+            });
 
-        return endpoints;
+            group.MapPut("/update", async (
+                [FromBody] SubscriptionDto dto,
+                [FromServices] ISubscriptionService service,
+                HttpContext ctx,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    if (dto.Id == Guid.Empty)
+                    {
+                        return Results.BadRequest("Subscription ID is required");
+                    }
+                    
+                    var result = await service.UpdateSubscriptionAsync(dto, cancellationToken);
+                    if (!result)
+                    {
+                        return Results.NotFound($"Subscription with ID {dto.Id} not found");
+                    }
+                    
+                    return Results.Ok(dto);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("❌ Error: " + ex.Message);
+                    return Results.Problem("💥 Internal server error: " + ex.Message);
+                }
+            });
+
+            group.MapDelete("/delete", async (
+                Guid id,
+                [FromServices] ISubscriptionService service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    var result = await service.DeleteSubscriptionAsync(id, cancellationToken);
+                    if (!result)
+                    {
+                        return Results.NotFound($"Subscription with ID {id} not found");
+                    }
+                    
+                    return Results.NoContent();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("❌ Error: " + ex.Message);
+                    return Results.Problem("💥 Internal server error: " + ex.Message);
+                }
+            });
+
+            group.MapPost("/expire", async (
+                Guid id,
+                [FromServices] ISubscriptionService service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    var result = await service.ExpireSubscriptionAsync(id, cancellationToken);
+                    if (!result)
+                    {
+                        return Results.NotFound($"Subscription with ID {id} not found");
+                    }
+                    
+                    return Results.Ok($"Subscription {id} expired successfully");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("❌ Error: " + ex.Message);
+                    return Results.Problem("💥 Internal server error: " + ex.Message);
+                }
+            });
+
+            return group;
+        }
     }
-}

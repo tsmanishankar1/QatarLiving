@@ -6,6 +6,10 @@ namespace QLN.Common.DTO_s
 {
     public class SubscriptionDto
     {
+        public object LastUpdated;
+        public bool Expired;
+        internal bool IsActive;
+
         [Required]
         public Guid Id { get; set; }
 

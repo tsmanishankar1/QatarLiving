@@ -11,14 +11,28 @@ using Dapr.Client;
 using QLN.Common.Infrastructure.IService;
 using Microsoft.OpenApi.Models;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
+using QLN.Common.Infrastructure.Subscriptions;
+using QLN.Subscriptions;
+;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add controller support if needed
 // builder.Services.AddControllers();
+
 builder.Services.AddEndpointsApiExplorer();
 
+#region Configure HttpClient with increased timeout for Dapr
+builder.Services.AddHttpClient("DaprClient")
+    .ConfigureHttpClient(client =>
+    {
+        client.Timeout = TimeSpan.FromMinutes(5); // increased timeout to 5 minutes
+    });
 
-#region swagger configuration
+#endregion
+
+#region Swagger configuration
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1.1.1", new OpenApiInfo
@@ -67,8 +81,7 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(opt =>
     opt.TokenLifespan = TimeSpan.FromDays(1);
 });
 
-
-#region password identity options
+#region Identity password options
 builder.Services.Configure<IdentityOptions>(options =>
 {
     options.Password.RequireDigit = true;
@@ -80,12 +93,12 @@ builder.Services.Configure<IdentityOptions>(options =>
 });
 #endregion
 
-#region database context
+#region Database context
 builder.Services.AddDbContext<QatarlivingDevContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 
-#region verification
+#region Identity configuration
 builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
 {
     options.SignIn.RequireConfirmedEmail = true;
@@ -100,7 +113,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
 .AddDefaultTokenProviders();
 #endregion
 
-#region authentication
+#region Authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -125,33 +138,33 @@ builder.Services.AddAuthentication(options =>
 
     options.TokenValidationParameters.RoleClaimType = "role";
     options.TokenValidationParameters.NameClaimType = "name";
-
 });
-
 #endregion
-
-
 
 builder.Services.AddAuthorization();
 
-
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 
-// adding DAPR support
-var daprClient = new DaprClientBuilder().Build();
-builder.Services.AddSingleton<DaprClient>(daprClient);
+#region Dapr client & actors 
+builder.Services.AddSingleton<DaprClient>(_ =>
+{
+    return new DaprClientBuilder()
+        .Build();
+});
 
 
 builder.Services.AddActors(options =>
 {
+   
     options.Actors.RegisterActor<SubscriptionActor>();
 });
+#endregion
 
-// Adding Company Service
-builder.Services.AddSingleton<ISubscriptionService,ExternalSubscriptionService>();
+// Register your subscription service
+builder.Services.AddSingleton<ISubscriptionService, SubscriptionService>();
 
+// This looks like a custom extension method? Adjust if needed
 builder.Services.ServicesConfiguration(builder.Configuration);
-
 
 var app = builder.Build();
 
@@ -166,18 +179,19 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// Uncomment if you want to enforce HTTPS in Production only
+// app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Enable controller endpoints if you use controllers
+// app.MapControllers();
 
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
 
-var subscriptionGroup = app.MapGroup("/subscription");
-subscriptionGroup.MapSubscriptionEndpoints();
+app.MapGroup("/api/subscriptions")
+   .MapSubscriptionEndpoints();
 
-
-
-
-app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
-// app.MapControllers();
 app.Run();

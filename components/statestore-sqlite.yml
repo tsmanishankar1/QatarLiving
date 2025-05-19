@@ -1,0 +1,21 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: statestore
+  namespace: default
+spec:
+  type: state.sqlite
+  version: v1
+  metadata:
+  - name: actorStateStore
+    value: "true"
+  - name: tableName
+    value: "subscriptions"
+  - name: timeout
+    value: "10s"  # Reduced from default to avoid timeouts
+  - name: databaseName
+    value: "subscriptions.db"
+  - name: connectionString  # Explicitly set connection string
+    value: "Data Source=subscriptions.db"
+  - name: maxOpenConnections  # Limit connections to avoid resource exhaustion
+    value: "10"

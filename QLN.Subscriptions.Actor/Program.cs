@@ -1,5 +1,8 @@
 using Dapr.Client;
 using Google.Api;
+using QLN.Common.Infrastructure.Service;
+using QLN.Subscriptions;
+
 
 
 
@@ -14,16 +17,16 @@ builder.Services.AddSwaggerGen();
 //var daprClient = new DaprClientBuilder().Build();
 //builder.Services.AddSingleton<DaprClient>(daprClient);
 
+
 builder.Services.AddActors(options =>
 {
-    // Register actor types and configure actor settings
     options.Actors.RegisterActor<SubscriptionActor>();
 
-    // Configure default settings
-    // options.ActorIdleTimeout = TimeSpan.FromMinutes(10);
-    // options.ActorScanInterval = TimeSpan.FromSeconds(35);
-    // options.DrainOngoingCallTimeout = TimeSpan.FromSeconds(35);
-    // options.DrainRebalancedActors = true;
+    options.ActorIdleTimeout = TimeSpan.FromMinutes(60);
+    options.ActorScanInterval = TimeSpan.FromSeconds(30);
+    options.DrainOngoingCallTimeout = TimeSpan.FromSeconds(60);
+    options.DrainRebalancedActors = true;
+    options.RemindersStoragePartitions = 1;
 });
 
 var app = builder.Build();
