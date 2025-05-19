@@ -8,8 +8,8 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Search.Documents" Version="11.6.0" />
-    <PackageReference Include="Dapr.Actors" Version="1.15.4" />
-    <PackageReference Include="Dapr.Actors.AspNetCore" Version="1.15.4" />
+    <PackageReference Include="Dapr.Actors" Version="1.13.1" />
+    <PackageReference Include="Dapr.Actors.AspNetCore" Version="1.13.1" />
     <PackageReference Include="FirebaseAdmin" Version="3.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.15" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.15" />

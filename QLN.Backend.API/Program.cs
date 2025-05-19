@@ -12,9 +12,6 @@ using QLN.Common.Infrastructure.IService;
 using Microsoft.OpenApi.Models;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
 using QLN.Common.Infrastructure.Subscriptions;
-using QLN.Subscriptions;
-;
-
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -150,13 +147,6 @@ builder.Services.AddSingleton<DaprClient>(_ =>
 {
     return new DaprClientBuilder()
         .Build();
-});
-
-
-builder.Services.AddActors(options =>
-{
-   
-    options.Actors.RegisterActor<SubscriptionActor>();
 });
 #endregion
 

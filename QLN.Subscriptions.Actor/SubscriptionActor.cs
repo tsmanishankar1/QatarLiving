@@ -34,12 +34,6 @@ namespace QLN.Subscriptions
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
-        private ISubscriptionActor GetActorProxy(Guid subscriptionId)
-        {
-            var actorId = new ActorId(subscriptionId.ToString());
-
-            return ActorProxy.Create<ISubscriptionActor>(actorId, nameof(SubscriptionActor));
-        }
 
         public async Task<bool> FastSetDataAsync(SubscriptionDto data, CancellationToken cancellationToken = default)
         {
