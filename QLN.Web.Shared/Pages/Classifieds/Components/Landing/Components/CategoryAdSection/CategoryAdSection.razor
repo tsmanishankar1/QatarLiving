@@ -1,0 +1,41 @@
+@using MudBlazor
+@using QLN.Web.Shared.Components.Classifieds.CategoryAdCard
+
+<div class="category-wrapper">
+    <MudGrid GutterSize="GutterSize.Medium">
+        @foreach (var category in Categories)
+        {
+            <MudItem xs="12" sm="6">
+                <CategoryAdCard Item="@category" OnClick="HandleClick" />
+            </MudItem>
+        }
+    </MudGrid>
+</div>
+
+@code {
+    [Parameter]
+    public List<CategoryAdCard.CategoryItem> Categories { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<CategoryAdCard.CategoryItem> OnCategoryClick { get; set; }
+
+    private Task HandleClick(CategoryAdCard.CategoryItem item)
+    {
+        return OnCategoryClick.InvokeAsync(item);
+    }
+}
+
+
+<style>
+    .category-wrapper {
+        padding: 4rem 2rem;
+        font-family: 'Public Sans', sans-serif;
+
+    }
+
+    @@media (max-width: 600px) {
+
+        .category-wrapper {
+            padding: 1rem;
+        }
+</style>

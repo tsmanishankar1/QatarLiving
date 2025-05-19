@@ -1,4 +1,6 @@
 @using MudBlazor
+@using QLN.Web.Shared.Components.CustomSelect
+@using QLN.Web.Shared.Components.CustomPagination
 
 <div class="footer-pagination-container">
     <div class="pagination-row">
@@ -9,10 +11,10 @@
             Previous
         </MudButton>
 
-        <!-- Pagination -->
-        <MudPagination @bind-SelectedPage="CurrentPage" ShowPreviousButton="false" ShowNextButton="false"
-            PageSize="@PageSize" TotalItems="@TotalItems" Rounded="true" HideFirstLastPage="true" BoundaryCount="1"
-            SiblingCount="1" Class="custom-pagination" OnPageChanged="HandlePageChanged" />
+        <!-- Custom Pagination -->
+        <CustomPagination TotalItems="TotalItems" PageSize="PageSize" CurrentPage="CurrentPage"
+            OnPageChange="HandlePageChanged" />
+
 
         <!-- Next Button -->
         <MudButton Variant="Variant.Outlined" Disabled="@IsLastPage" OnClick="@GoToNextPage" Class="pagination-button">
@@ -23,13 +25,10 @@
 
     <!-- Page Size Dropdown Centered Below -->
     <div class="page-size-container">
-        <MudSelect T="int" Dense="true" Variant="Variant.Outlined" @bind-Value="PageSize"
-            OnValueChanged="HandlePageSizeChanged" Class="page-size-dropdown">
-            @foreach (var size in PageSizeOptions)
-            {
-                <MudSelectItem Value="@size">@($"{size} results per page")</MudSelectItem>
-            }
-        </MudSelect>
+        <div class="page-size-dropdown">
+            <CustomSelect TItem="int" Options="PageSizeOptions" SelectedItem="PageSize"
+                SelectedItemChanged="@(v => HandlePageSizeChanged(v))" Placeholder="Select page size" />
+        </div>
     </div>
 </div>
 
@@ -62,11 +61,18 @@
         await OnPageChange.InvokeAsync(page);
     }
 
+
     private async Task HandlePageSizeChanged(int newSize)
     {
-        await OnPageSizeChange.InvokeAsync(newSize);
-        await OnPageChange.InvokeAsync(1); // Reset to first page
+        if (newSize != PageSize)
+        {
+            PageSize = newSize; // Keep local state updated
+            await OnPageSizeChange.InvokeAsync(newSize);
+            CurrentPage = 1;
+            await OnPageChange.InvokeAsync(1);
+        }
     }
+
 }
 <style>
     .footer-pagination-container {
@@ -136,6 +142,8 @@
     .page-size-container {
         display: flex;
         justify-content: center;
+        max-width: 100%;
+
     }
 
     .page-size-dropdown {

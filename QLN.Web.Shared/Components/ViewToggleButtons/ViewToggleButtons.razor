@@ -11,25 +11,13 @@
 </div>
 
 
-@code {
-    [Parameter] public List<ViewToggleOption> Items { get; set; }
-    [Parameter] public string SelectedValue { get; set; }
-    [Parameter] public EventCallback<string> OnSelected { get; set; }
-
-    public class ViewToggleOption
-    {
-        public string ImageUrl { get; set; }
-        public string Label { get; set; }
-        public string Value { get; set; }
-    }
-}
-
 <style>
     .view-toggle-wrapper {
         display: flex;
-        padding: 4px;
-        border-radius: 8px;
+        padding: 6px;
+        border-radius: 6px;
         gap: 4px;
+        border: 1px solid var(--color-captcha-box);
         background-color: var(--color-background);
     }
 
@@ -37,7 +25,7 @@
         display: flex;
         align-items: center;
         gap: 6px;
-        padding: 6px 12px;
+        padding: 8px 12px;
         border-radius: 6px;
         background-color: var(--color-background);
         cursor: pointer;

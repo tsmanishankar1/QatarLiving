@@ -5,14 +5,300 @@
 @using QLN.Web.Shared.Components.BreadCrumb
 @using System.ComponentModel.DataAnnotations
 
+
+<div style=" background-color: #F2F4F7; height: 100%;width:100%;padding: 24px;">
+    <div Class=" mt-1 ml-10">
+        <Breadcrumb Items="breadcrumbItems" />
+
+    </div>
+
+    <MudText Class="heading-style mt-2 ml-14">Contact Information</MudText>
+
+    <MudForm @ref="_form" Model="@_model" Validation="true" Class="mt-6">
+        <MudGrid GutterSize="3">
+            <!-- Company Logo Upload -->
+            <MudGrid GutterSize="3">
+                <MudItem xs="12" sm="4">
+                    <div Class="image-upload-container" Style="height: 100%; display: flex; justify-content: center;">
+                        <div class="upload-wrapper">
+                            <div class="upload-content-container">
+                                <MudText Typo="Typo.subtitle2" Class="upload-title">Company Logo</MudText>
+
+                                <label for="logo-upload" class="upload-box">
+                                    @if (logoPreviewUrl != null)
+                                    {
+                                        <img src="@logoPreviewUrl" class="logo-preview" alt="Company logo preview" />
+                                    }
+                                    else
+                                    {
+                                        <div class="upload-container" style="text-align: center; cursor: pointer;">
+                                            <img src="images/Upload.svg" alt="Upload" style="height: 48px; color: #FF7F38; fill: #FF7F38;" />
+                                            <div style="margin-top: 8px; color: #FF7F38; font-size: 14px; font-weight: 500;">Upload Image</div>
+                                        </div>
+                                    }
+                                </label>
+
+                                <MudText Typo="Typo.caption" Class="upload-subtitle">Recommended size: 1920×1200 pixels</MudText>
+                            </div>
+
+                            <InputFile id="logo-upload" OnChange="HandleLogoUpload" accept="image/*" style="display: none;" />
+
+                       
+                        </div>
+                    </div>
+                </MudItem>
+
+
+                <!-- Form Fields -->
+                <MudItem xs="12" sm="8">
+                    <MudStack Spacing="2">
+                                                <div class="selector-wrapper">
+
+                        <MudTextField
+                            id="businessName"
+
+                                      @bind-Value="_model.BusinessName"
+                                      Immediate="true"
+                                      Label="Business Name"
+                                      For="@(() => _model.BusinessName)"
+                                      Class="form-input no-underline"
+                                      Required />
+                                      </div>
+                        <div class="selector-wrapper">
+
+                            <MudSelect id="country"
+                                       @bind-Value="_model.Country"
+                                      Immediate="true"
+                                      T="string" Label="Country" For="@(() => _model.Country)"
+                                       Class="form-input no-underline"
+                                       Required>
+                                <MudSelectItem Value="@("Qatar")">Qatar</MudSelectItem>
+                                <MudSelectItem Value="@("UAE")">UAE</MudSelectItem>
+                            </MudSelect>
+                        </div>
+                        <div class ="selector-wrapper">
+
+                            <MudSelect T="string" Label="City" For="@(() => _model.City)"
+                                       Class="form-input no-underline"
+                                       id="City"
+                                       @bind-Value="_model.City"
+                                       Immediate="true"
+                                       Required>
+                                <MudSelectItem Value="@("Doha")">Doha</MudSelectItem>
+                                <MudSelectItem Value="@("Dubai")">Dubai</MudSelectItem>
+                            </MudSelect>
+                        </div>
+                                                <div class="selector-wrapper">
+
+                        <MudTextField Label="Branch’s Location"
+                                          Class="form-input no-underline"
+                                          @bind-Value="_model.BranchLocations"
+                                      id="BranchLocations"
+                                      Immediate="true"
+                                      Adornment="Adornment.End"
+                                      AdornmentIcon="@Icons.Material.Filled.LocationOn"
+                                          />
+                                      </div>
+                                                              <div class="selector-wrapper">
+
+                        <MudTextField Label="Phone Number" For="@(() => _model.PhoneNumber)"
+                                          Class="form-input no-underline"
+                                          Required
+                                      id="PhoneNumber"
+                                      @bind-Value="_model.PhoneNumber"
+                                      Immediate="true"
+                                      />
+                                      </div>
+                                                                                      <div class="selector-wrapper">
+
+                        <MudTextField Label="WhatsApp Number"
+                                      For="@(() => _model.WhatsAppNumber)"
+                                      Class="form-input no-underline"
+                                      id="WhatsAppNumber"
+                                      @bind-Value="_model.WhatsAppNumber"
+                                      Immediate="true"
+                                      Required
+                                      />
+                                      </div>
+                                                                                      <div class="selector-wrapper">
+
+                        <MudTextField Label="Email" For="@(() => _model.Email)"
+                                      Class="form-input no-underline"
+                                      id="Email"
+                                      @bind-Value="_model.Email"
+                                      Immediate="true"
+                                      Required />
+                                      </div>
+                                                                                      <div class="selector-wrapper">
+
+                        <MudTextField Label="Website URL" Class="form-input no-underline"
+                                      For="@(() => _model.WebsiteUrl)"
+                                      id="WebsiteUrl"
+                                      @bind-Value="_model.WebsiteUrl"
+                                      Immediate="true"
+                                      Required/>
+                                      </div>
+
+                                                <div class="selector-wrapper">
+                        <MudTextField Label="Facebook URL" Class="form-input no-underline"
+                                      For="@(() => _model.FacebookUrl)"
+                                      id="FacebookUrl"
+                                      @bind-Value="_model.FacebookUrl"
+                                      Immediate="true"
+                                          Required />
+                                      </div>
+                                                                                      <div class="selector-wrapper">
+
+                        <MudTextField Label="Instagram URL" Class="form-input no-underline"
+                                      For="@(() => _model.InstagramUrl)"
+                                      id="InstagramUrl"
+                                      @bind-Value="_model.InstagramUrl"
+                                      Immediate="true"
+                                          Required />
+                                      </div>
+                        <!-- Operating Hours -->
+                        <MudItem xs="12" Style="width:472px">
+                            <MudText Typo="Typo.subtitle1" Class="mb-2" Style="font-weight:600;">Operating Hours</MudText>
+
+                            <div class="row-flex">
+                                <MudTextField Class="grid-input no-underline" Label="Start Day" Placeholder="e.g. Sunday"
+                                For="@(() => _model.StartDay)"
+                                              id="StartDay"
+                                              @bind-Value="_model.StartDay"
+                                              Immediate="true"
+                                              OpenTo="OpenTo.Day"
+                                              DateFormat="dddd" 
+                                              Adornment="Adornment.End"
+                                              AdornmentIcon="@Icons.Material.Filled.CalendarToday" />
+                                
+                                <MudTextField Class="grid-input no-underline" Label="End Day" Placeholder="e.g. Thursday"
+                                              For="@(() => _model.EndDay)"
+                                              id="EndDay"
+                                              @bind-Value="_model.EndDay"
+                                              Immediate="true"
+                                              OpenTo="OpenTo.Day"
+                                              DateFormat="dddd"
+                                              Adornment="Adornment.End"
+                                              AdornmentIcon="@Icons.Material.Filled.CalendarToday" />
+                            </div>
+
+                            <div class="row-flex">
+                                <MudTextField Class="grid-input no-underline" Label="Start Hour" Placeholder="e.g. 8:00 AM" For="@(() => _model.StartHour)"
+                                              id="StartHour"
+                                              @bind-Value="_model.StartHour"
+                                              Immediate="true"
+                                              AmPm="true"
+                                              Adornment="Adornment.End"
+                                              AdornmentIcon="@Icons.Material.Filled.AccessTime" />
+                                <MudTextField Class="grid-input no-underline" Label="End Hour" Placeholder="e.g. 5:00 PM" For="@(() => _model.EndHour)"
+                                              id="EndHour"
+                                              @bind-Value="_model.EndHour"
+                                              Immediate="true"
+                                              AmPm="true"
+                                              Adornment="Adornment.End"
+                                              AdornmentIcon="@Icons.Material.Filled.AccessTime" />
+                            </div>
+                        </MudItem>
+
+
+                        <!-- Company Profile -->
+                        <MudItem xs="12">
+                            <MudText Class="section-header">Company Profile</MudText>
+                            <div class="selector-wrapper">
+                                <MudSelect T="string"
+                                    Label="Nature of Business"
+                                           id="NatureOfBusiness"
+                                           @bind-Value="_model.NatureOfBusiness"
+                                           Immediate="true"
+                                           Class="form-input no-underline"
+                                           For="@(() => _model.NatureOfBusiness)" Required>
+                                    <MudSelectItem Value="@("Retail")">Retail</MudSelectItem>
+                                    <MudSelectItem Value="@("Wholesale")">Wholesale</MudSelectItem>
+                                </MudSelect>
+                            </div>
+                            <div class="selector-wrapper">
+                                <MudSelect T="string"
+                                           id="CompanySize"
+                                           @bind-Value="_model.CompanySize"
+                                      Immediate="true"
+                                           Label="Company Size" For="@(() => _model.CompanySize)"
+                                           Class="form-input no-underline"
+                                           Required>
+                                    <MudSelectItem Value="@("1-10")">1-10</MudSelectItem>
+                                    <MudSelectItem Value="@("11-50")">11-50</MudSelectItem>
+                                    <MudSelectItem Value="@("51-200")">51-200</MudSelectItem>
+                                </MudSelect>
+                            </div>
+                            <div class="selector-wrapper">
+                                <MudSelect T="string"
+                                           id="CompanyType"
+                                      @bind-Value="_model.CompanyType"
+                                      Immediate="true"
+                                           Label="Company Type" For="@(() => _model.CompanyType)" Class="form-input no-underline"
+                                           Required>
+                                    <MudSelectItem Value="@("Private")">Private</MudSelectItem>
+                                    <MudSelectItem Value="@("Public")">Public</MudSelectItem>
+                                </MudSelect>
+                            </div>
+                            <div class="selector-wrapper">
+
+                                <MudTextField id="UserDesignation"
+                                              @bind-Value="_model.UserDesignation"
+                                      Immediate="true"
+                                              Class="form-input no-underline"
+                                              Label="User Designation" For="@(() => _model.UserDesignation)" />
+
+                            </div>
+                                                                            <div class="selector-wrapper">
+
+                            <MudTextField Class="form-input no-underline"
+                                          id="BusinessDescription"
+                                          @bind-Value="_model.BusinessDescription"
+                                          Immediate="true" Label="Description" For="@(() => _model.BusinessDescription)" Lines="4"
+                                          MaxLength="300" />
+
+</div>
+
+                        </MudItem>
+
+                        <!-- License -->
+                        <MudItem xs="12">
+                            <MudText Class="section-header">License & Visibility</MudText>
+                                                                            <div class="selector-wrapper">
+
+                            <MudTextField T="string"
+                                          Label="CR Number"
+                                              Class="form-input no-underline"
+                                          Adornment="Adornment.End"
+                                          AdornmentIcon="@Icons.Material.Filled.Upload"
+                                          OnAdornmentClick="TriggerFileUpload" />
+                            <InputFile id="doc-upload" OnChange="HandleDocumentUpload" style="display: none;" />
+                            </div>
+                            <div class="input-caption mt-2">
+                                Supported file formats: PDF, PNG, JPEG. Max: 10MB
+                            </div>
+
+
+                        </MudItem>
+
+                    </MudStack>
+                    <!-- Submit Button -->
+                    <MudItem xs="12">
+                        <MudButton Variant="Variant.Filled" OnClick="SubmitForm" Class="mt-4 px-8" Style="background-color: #F26D1E;color:white">
+                            Save
+                        </MudButton>
+
+                    </MudItem>
+                </MudItem>
+
+            </MudGrid>
+        </MudGrid>
+    </MudForm>
+
+</div>
+
+
 <style>
-    .dashed-box {
-        border: 2px dashed #E0E0E0;
-        padding: 1.5rem;
-        text-align: center;
-        background-color: #FAFAFA;
-        border-radius: 0.5rem;
-    }
 
     .input-caption {
         font-size: 0.75rem;
@@ -20,42 +306,21 @@
         margin-top: 0.25rem;
     }
 
+    .heading-style {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 18px;
+        line-height: 26px;
+        letter-spacing: 0;
+        vertical-align: middle;
+        color: #00426D;
+    }
+
     .section-header {
         font-weight: 600;
         font-size: 1.125rem;
         margin: 1.5rem 0 0.75rem 0;
         color: #333;
-    }
-
-    .file-upload-button {
-        display: inline-block;
-        margin-top: 0.5rem;
-        padding: 0.4rem 1rem;
-        background-color: #F26D1E;
-        color: white;
-        border-radius: 4px;
-        font-size: 0.875rem;
-        cursor: pointer;
-    }
-
-        .file-upload-button:hover {
-            background-color: #d45c15;
-        }
-
-    .icon-inside {
-        position: relative;
-    }
-
-        .icon-inside input {
-            padding-left: 2rem;
-        }
-
-    .input-icon {
-        position: absolute;
-        top: 50%;
-        left: 0.5rem;
-        transform: translateY(-50%);
-        color: gray;
     }
 
     .image-upload-container {
@@ -106,9 +371,12 @@
     }
 
     .logo-preview {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
+        width: 100%;
+        height: 100%;
+        max-width: 100%; 
+        max-height: 100%; 
+        object-fit: fill;
+        display: block;
     }
 
     .upload-actions {
@@ -123,18 +391,33 @@
 
     .selector-wrapper {
         width: 472px;
-        height: 60px;
-        margin-top: 10px;
+        margin-top: 14px;
+        background-color: #FFFFFF;
+        border-radius: 6px;
+        padding: 10px;
+        position: relative;
+    }
+
+   
+    /* Target MudBlazor's error message container */
+    .mud-input-helper-text {
+        position: absolute;
+        bottom: -30px; 
+        left: 8px;
+        color: red ;
+        font-size: 0.75rem;
     }
 
     .form-input {
-        width: 472px;
-        height: 60px;
-        background-color: #FFFFFF;
-        border-radius: 6px;
-        padding: 14px;
-        margin-top: 10px;
+      
+        
+        justify-content:center;
     }
+
+        .form-input input {
+            padding-left:15px;
+        }
+
 
         .form-input .mud-input-control {
             width: 100%;
@@ -145,306 +428,39 @@
             width: 100% !important;
         }
 
+        .form-input .mud-input-slot {
+            border-bottom: none !important;
+        }
+
+        .form-input .mud-input-control {
+            border-bottom: none !important;
+        }
+
     .row-flex {
         display: flex;
-        gap: 6px;
+        gap: 40px;
     }
 
     .grid-input {
-        width: 130px !important;
-        height: 60px;
+        width: 180px !important;
         background-color: #FFFFFF;
         padding: 14px;
         margin-top: 10px;
     }
 
+        .grid-input .mud-input-slot {
+        border-bottom: none !important;
+    }
+
+        .grid-input .mud-input-control {
+        border-bottom: none !important;
+    }
+    .no-underline .mud-input-underline::before,
+    .no-underline .mud-input-underline::after {
+        border-bottom: none !important;
+    }
+    .custom-icon-color .mud-input-adornment-end .mud-icon-root {
+        color: #FF7F38 !important;
+    }
+
 </style>
-<div style=" background-color: #F2F4F7; height: 100%;width:100%;padding: 24px;">
-
-    <Breadcrumb Items="breadcrumbItems" />
-
-    <MudText Class="heading-style mt-4 ml-4">Contact Information</MudText>
-
-    <MudForm @ref="_form" Model="@company" Validated="OnValidSubmit" Class="mt-6">
-        <MudGrid GutterSize="3">
-            <!-- Company Logo Upload -->
-            <MudGrid GutterSize="3">
-                <MudItem xs="12" sm="4">
-                    <div Class="image-upload-container" Style="height: 100%; display: flex; justify-content: center;">
-                        <div class="upload-wrapper">
-                            <div class="upload-content-container">
-                                <MudText Typo="Typo.subtitle2" Class="upload-title">Company Logo</MudText>
-
-                                <label for="logo-upload" class="upload-box">
-                                    @if (logoPreviewUrl != null)
-                                    {
-                                        <img src="@logoPreviewUrl" class="logo-preview" alt="Company logo preview" />
-                                    }
-                                    else
-                                    {
-                                        <MudIcon Icon="@Icons.Material.Filled.AddPhotoAlternate" Size="Size.Large" Class="upload-icon" />
-                                    }
-                                </label>
-
-                                <MudText Typo="Typo.caption" Class="upload-subtitle">Recommended size: 1920×1200 pixels</MudText>
-                            </div>
-
-                            <InputFile id="logo-upload" OnChange="HandleLogoUpload" accept="image/*" style="display: none;" />
-
-                            @*  @if (logoPreviewUrl != null)
-                            {
-                                <div class="upload-actions">
-                                    <MudButton Variant="Variant.Text" Color="Color.Error"
-                                               OnClick="RemoveLogo" StartIcon="@Icons.Material.Filled.Delete"
-                                               Class="action-button">
-                                        Remove
-                                    </MudButton>
-                                    <MudButton Variant="Variant.Text" Color="Color.Primary"
-                                               OnClick="TriggerFileInput" StartIcon="@Icons.Material.Filled.Edit"
-                                               Class="action-button">
-                                        Change
-                                    </MudButton>
-                                </div>
-                            } *@
-                        </div>
-                    </div>
-                </MudItem>
-
-
-                <!-- Form Fields -->
-                <MudItem xs="12" sm="8">
-                    <MudStack Spacing="2">
-                        <MudTextField Label="Business Name" For="@(() => company.BusinessName)"
-                                      Class="form-input"
-                                      Required />
-                        <div class="selector-wrapper">
-
-                            <MudSelect T="string" Label="Country" For="@(() => company.Country)"
-                                       Class="form-input"
-                                       Required>
-                                <MudSelectItem Value="@("Qatar")">Qatar</MudSelectItem>
-                                <MudSelectItem Value="@("UAE")">UAE</MudSelectItem>
-                            </MudSelect>
-                        </div>
-                        <div class="selector-wrapper">
-
-                            <MudSelect T="string" Label="City" For="@(() => company.City)"
-                                       Class="form-input"
-                                       Required>
-                                <MudSelectItem Value="@("Doha")">Doha</MudSelectItem>
-                                <MudSelectItem Value="@("Dubai")">Dubai</MudSelectItem>
-                            </MudSelect>
-                        </div>
-                        <MudTextField Label="Branch’s Locations" For="@(() => company.Location)"
-                                      Class="form-input"
-                                      Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.LocationOn" />
-                        <MudTextField Label="Phone Number" For="@(() => company.Phone)"
-                                      Class="form-input"
-                                      Required
-                                      Adornment="Adornment.Start" AdornmentIcon="mdi-phone" />
-                        <MudTextField Label="WhatsApp Number"
-                                      For="@(() => company.Whatsapp)"
-                                      Class="form-input"
-                                      Required
-                                      Adornment="Adornment.Start" AdornmentIcon="mdi-whatsapp" />
-                        <MudTextField Label="Email" For="@(() => company.Email)"
-                                      Class="form-input"
-                                      Required />
-                        <MudTextField Label="Website URL" Class="form-input"
-                                      For="@(() => company.Website)" />
-
-                        <MudTextField Label="Facebook URL" Class="form-input"
-                                      For="@(() => company.Facebook)" />
-
-                        <MudTextField Label="Instagram URL" Class="form-input"
-                                      For="@(() => company.Instagram)" />
-                        <!-- Operating Hours -->
-                        <MudItem xs="12" Style="width:400px">
-                            <MudText Typo="Typo.subtitle1" Class="mb-2" Style="font-weight:600;">Operating Hours</MudText>
-
-                            <div class="row-flex">
-                                <MudTextField Class="grid-input" Label="Start Day" Placeholder="e.g. Sunday" For="@(() => company.StartDay)" />
-                                <MudTextField Class="grid-input" Label="End Day" Placeholder="e.g. Thursday" For="@(() => company.EndDay)" />
-                            </div>
-
-                            <div class="row-flex">
-                                <MudTextField Class="grid-input" Label="Start Hour" Placeholder="e.g. 8:00 AM" For="@(() => company.StartHour)" />
-                                <MudTextField Class="grid-input" Label="End Hour" Placeholder="e.g. 5:00 PM" For="@(() => company.EndHour)" />
-                            </div>
-                        </MudItem>
-
-
-                        <!-- Company Profile -->
-                        <MudItem xs="12">
-                            <MudText Class="section-header">Company Profile</MudText>
-                            <div class="selector-wrapper">
-                                <MudSelect T="string" Label="Nature of Business" class="form-input" For="@(() => company.BusinessNature)" Required>
-                                    <MudSelectItem Value="@("Retail")">Retail</MudSelectItem>
-                                    <MudSelectItem Value="@("Wholesale")">Wholesale</MudSelectItem>
-                                </MudSelect>
-                            </div>
-                            <div class="selector-wrapper">
-                                <MudSelect T="string" Label="Company Size" For="@(() => company.CompanySize)" class="form-input" Required>
-                                    <MudSelectItem Value="@("1-10")">1-10</MudSelectItem>
-                                    <MudSelectItem Value="@("11-50")">11-50</MudSelectItem>
-                                    <MudSelectItem Value="@("51-200")">51-200</MudSelectItem>
-                                </MudSelect>
-                            </div>
-                            <div class="selector-wrapper">
-                                <MudSelect T="string" Label="Company Type" For="@(() => company.CompanyType)" class="form-input" Required>
-                                    <MudSelectItem Value="@("Private")">Private</MudSelectItem>
-                                    <MudSelectItem Value="@("Public")">Public</MudSelectItem>
-                                </MudSelect>
-                            </div>
-                            <div style="margin-top:10px">
-                                <MudTextField Class="form-input" Label="User Designation" For="@(() => company.Designation)" />
-
-                            </div>
-                            <MudTextField Class="form-input" Label="Description" For="@(() => company.Description)" Lines="4"
-                                          MaxLength="300" />
-
-
-
-                        </MudItem>
-
-                        <!-- License -->
-                        <MudItem xs="12">
-                            <MudText Class="section-header">License & Visibility</MudText>
-                            <MudTextField T="string"
-                                          Label="CR Number"
-                                          Class="form-input"
-                                          Adornment="Adornment.End"
-                                          AdornmentIcon="@Icons.Material.Filled.Upload"
-                                          OnAdornmentClick="TriggerFileUpload" />
-
-                            <InputFile @ref="hiddenFileInput" style="display: none;" />
-
-                            <div class="input-caption mt-2">
-                                Supported file formats: PDF, PNG, JPEG. Max: 10MB
-                            </div>
-
-
-                        </MudItem>
-
-                    </MudStack>
-                    <!-- Submit Button -->
-                    <MudItem xs="12">
-                        <MudButton Variant="Variant.Filled" OnClick="SubmitForm" Class="mt-4 px-8" Style="background-color: #F26D1E;color:white">
-                            Save
-                        </MudButton>
-
-                    </MudItem>
-                </MudItem>
-
-
-
-
-            </MudGrid>
-        </MudGrid>
-    </MudForm>
-
-</div>
-
-@code {
-    private MudForm _form;
-    private CompanyModel company = new();
-    private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
-    private string logoPreviewUrl;
-    private InputFile? hiddenFileInput;
-
-    private void TriggerFileUpload()
-    {
-        Console.WriteLine("clicked");
-    }
-    private async Task UploadCRDocument(InputFileChangeEventArgs e)
-    {
-        // Handle the uploaded file
-        var file = e.File;
-        if (file != null)
-        {
-            // Do something with the file (e.g., upload, read)
-        }
-    }
-
-    private async Task HandleLogoUpload(InputFileChangeEventArgs e)
-    {
-        try
-        {
-            var file = e.File;
-            var format = "image/png";
-            var resizedImage = await file.RequestImageFileAsync(format, 1200, 1200);
-            var buffer = new byte[resizedImage.Size];
-            await resizedImage.OpenReadStream().ReadAsync(buffer);
-            logoPreviewUrl = $"data:{format};base64,{Convert.ToBase64String(buffer)}";
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error uploading logo: {ex.Message}");
-        }
-    }
-
-    private async Task TriggerFileInput()
-    {
-        await JSRuntime.InvokeVoidAsync("eval", "document.getElementById('logo-upload').click()");
-    }
-
-    private void RemoveLogo()
-    {
-        logoPreviewUrl = null;
-    }
-
-    protected override void OnInitialized()
-    {
-        breadcrumbItems = new()
-        {
-            new() {   Label = "Classifieds",Url ="classifieds" },
-             new() { Label = "Company", Url = "/company"},
-
-            new() { Label = "Add Company", Url = "/add-company", IsLast = true },
-        };
-
-    }
-    private async Task UploadLogo(InputFileChangeEventArgs e)
-    {
-        // Handle logo file
-    }
-
-    private async Task UploadCRDocument()
-    {
-        // Handle CR file
-    }
-
-    private async Task SubmitForm()
-    {
-        await _form.Validate();
-    }
-
-    private void OnValidSubmit()
-    {
-        Snackbar.Add("Company profile submitted successfully!", Severity.Success);
-    }
-
-    public class CompanyModel
-    {
-        [Required] public string BusinessName { get; set; }
-        [Required] public string Country { get; set; }
-        [Required] public string City { get; set; }
-        public string Location { get; set; }
-        [Required] public string Phone { get; set; }
-        [Required] public string Whatsapp { get; set; }
-        [Required, EmailAddress] public string Email { get; set; }
-        public string Website { get; set; }
-        public string Facebook { get; set; }
-        public string Instagram { get; set; }
-        public string StartDay { get; set; }
-        public string EndDay { get; set; }
-        public string StartHour { get; set; }
-        public string EndHour { get; set; }
-        [Required] public string BusinessNature { get; set; }
-        [Required] public string CompanySize { get; set; }
-        [Required] public string CompanyType { get; set; }
-        public string Designation { get; set; }
-        public string Description { get; set; }
-        public string CRNumber { get; set; }
-    }
-}

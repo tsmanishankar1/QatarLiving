@@ -11,6 +11,12 @@ namespace QLN.SearchService.IndexModels
         [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string? Title { get; set; } = string.Empty;
 
+        [SearchableField(IsFilterable = true)]
+        public string? DocType { get; set; }
+
+        [SearchableField(IsFilterable = true, IsFacetable = true)]
+        public string? SubVertical { get; set; }
+
         [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string Description { get; set; } = string.Empty;
 
@@ -26,8 +32,8 @@ namespace QLN.SearchService.IndexModels
         [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string? Category { get; set; } = string.Empty;
 
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? Subcategory { get; set; } = string.Empty;
+        [SimpleField(IsFilterable = false)]
+        public string? CategoryImageUrl { get; set; }
 
         [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string? Brand { get; set; } = string.Empty;
@@ -44,10 +50,16 @@ namespace QLN.SearchService.IndexModels
         [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string? Location { get; set; } = string.Empty;
 
+        [SimpleField(IsFilterable = true)]
+        public string? BannerTitle { get; set; }
+
+        [SimpleField(IsFilterable = false)]
+        public string? BannerImageUrl { get; set; }
+
         [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string? StoreName { get; set; }
 
-        [SearchableField(IsFilterable = true)]
+        [SimpleField(IsFilterable = false)]
         public string? StoreLogoUrl { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true, IsFacetable = true)]
@@ -96,7 +108,7 @@ namespace QLN.SearchService.IndexModels
         [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string? FlyerFileName { get; set; }
 
-        [SearchableField(IsFilterable = true)]
+        [SimpleField(IsFilterable = false)]
         public string? FlyerCoverImageUrl { get; set; }
 
         [SearchableField(IsFilterable = true)]
@@ -111,7 +123,7 @@ namespace QLN.SearchService.IndexModels
         [SimpleField(IsFilterable = true)]
         public bool? HasWarrantyCertificate { get; set; }
 
-        [SimpleField(IsFilterable = true)]
+        [SimpleField(IsFilterable = false)]
         public string? WarrantyCertificateUrl { get; set; }
 
         [SearchableField(IsFilterable = true)]
@@ -131,5 +143,29 @@ namespace QLN.SearchService.IndexModels
 
         [SimpleField(IsFilterable = false, IsFacetable = false)]
         public List<string>? ImageUrls { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public string UserId { get; set; } = string.Empty;
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public bool IsPublished { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public long Impressions { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public long Views { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public long Calls { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public long WhatsAppClicks { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public long Shares { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public long Saves { get; set; }
     }
 }

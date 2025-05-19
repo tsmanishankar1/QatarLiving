@@ -118,14 +118,17 @@ namespace QLN.Classified.MS.Service.BannerService
         public async Task<IEnumerable<Banner>> GetAllBanners()
         {
             try
-            {
+            {                
                 var bannerKeys = await _dapr.GetStateAsync<List<string>>(BannerStore, BannerIndexKey) ?? new();
+
                 if (bannerKeys.Count == 0) return Enumerable.Empty<Banner>();
 
                 var bannerBulk = await _dapr.GetBulkStateAsync(BannerStore, bannerKeys, parallelism: 10);
-                var imageList = (await GetAllImages()).ToList();
+                
+                var imageList = (await GetAllImages() ?? Enumerable.Empty<BannerImage>()).ToList();
 
                 var result = new List<Banner>();
+                
 
                 foreach (var entry in bannerBulk)
                 {
@@ -138,11 +141,13 @@ namespace QLN.Classified.MS.Service.BannerService
 
                         if (banner != null)
                         {
-                            banner.Images = imageList.Where(img => img.BannerId == banner.Id).ToList();
+                            banner.Images = imageList
+                                .Where(img => img != null && img.BannerId == banner.Id)
+                                .ToList();
                             result.Add(banner);
-                        }
+                        }                       
                     }
-                }
+                }               
                 return result;
             }
             catch (Exception ex)
@@ -226,10 +231,10 @@ namespace QLN.Classified.MS.Service.BannerService
         public async Task<IEnumerable<BannerImage>> GetAllImages()
         {
             try
-            {
+            {             
                 var keys = await _dapr.GetStateAsync<List<string>>(ImageStore, ImageIndexKey) ?? new();
-                if (keys.Count == 0) return Enumerable.Empty<BannerImage>();
-                var bulk = await _dapr.GetBulkStateAsync(ImageStore, keys, parallelism: 10);
+                if (keys.Count == 0) return Enumerable.Empty<BannerImage>();                
+                var bulk = await _dapr.GetBulkStateAsync(ImageStore, keys, parallelism: 10);                
                 var result = new List<BannerImage>();
 
                 foreach (var entry in bulk)
@@ -244,7 +249,7 @@ namespace QLN.Classified.MS.Service.BannerService
                         if (image != null)
                             result.Add(image);
                     }
-                }
+                }                
                 return result;
             }
             catch (Exception ex)
