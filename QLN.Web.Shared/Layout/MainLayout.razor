@@ -23,13 +23,13 @@
     </div>
     <div class="@($"nav-container {(showMobileMenu ? "mobile-menu-open" : "")}")">
         <nav class="nav-links">
-            <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Daily</NavLink>
-            <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Properties</NavLink>
-            <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Vehicles</NavLink>
-            <NavLink href="/classifieds" style="color: white;" class="nav-link active">Classifieds</NavLink>
-            <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Services</NavLink>
-            <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Jobs</NavLink>
-            <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Rewards</NavLink>
+         
+            <NavLink href="/properties" class="nav-link ">Properties</NavLink>
+            <NavLink href="/vehicles" class="nav-link ">Vehicles</NavLink>
+            <NavLink href="/classifieds" class="nav-link ">Classifieds</NavLink>
+            <NavLink href="/services" class="nav-link ">Services</NavLink>
+            <NavLink href="/jobs" class="nav-link ">Jobs</NavLink>
+            <NavLink href="/rewards" class="nav-link ">Rewards</NavLink>
         </nav>
 
     </div>
@@ -239,38 +239,18 @@ Route = "/more-features-coming-soon"
         height: 32px;
         cursor: pointer;
     }
-      .menu-item {
-        padding: 0;
-        min-height: 40px;
+
+
+    .nav-link {
+        color: white;
+        text-decoration: none;
     }
 
-    .menu-item-content {
-        display: flex;
-        justify-content: flex-start;
-        align-items: center;
-        gap: 16px;
-        font-family: public-sans, sans-serif;
-        border-bottom: 1px solid #EAECF0;
-        padding: 8px 30px;
-        width: 100%;
-    }
+        .nav-link.active {
+            color: #FF7F38;
+        }
 
-    .menu-item:last-child .menu-item-content {
-        border-bottom: none;
-    }
 
-    .menu-item-icon {
-        width: 22px;
-        height: 22px;
-        object-fit: contain;
-    }
-
-    .menu-item-text {
-        font-size: 13px;
-        font-weight: 500;
-        color: var(--color-text-heading);
-        flex-grow: 1;
-    }
     @@media (max-width: 1024px) {
         .desktop-post-btn {
             display: none !important;

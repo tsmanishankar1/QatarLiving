@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using QLN.Web.Shared.Services;
 using QLN.Common.DTO_s;
 using QLN.Web.Shared.Models;
+using Microsoft.JSInterop;
 
 
 public class CustomAuthStateProvider : AuthenticationStateProvider
@@ -14,9 +15,13 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
     private readonly ApiService Api;
 
     private ClaimsPrincipal _user = new ClaimsPrincipal(new ClaimsIdentity());
-    public CustomAuthStateProvider(ApiService apiService, NavigationManager navigationManager)
+    private readonly IJSRuntime _jsRuntime;
+
+    public CustomAuthStateProvider(ApiService apiService, NavigationManager navigationManager, IJSRuntime jsRuntime)
     {
         Api = apiService;
+        NavigationManager = navigationManager;
+        _jsRuntime = jsRuntime;
     }
 
     public override Task<AuthenticationState> GetAuthenticationStateAsync()
@@ -29,6 +34,7 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         _user = new ClaimsPrincipal(new ClaimsIdentity());
         var payload = new { usernameOrEmailOrPhone = Username, password = password };
         var response = await Api.PostAsync<object, LoginResponse>("auth/login", payload);
+        Console.WriteLine("Login Response",response);
         if (response == null)
         {
             NavigationManager.NavigateTo("/login");
@@ -41,6 +47,12 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
             }
             else
             {
+                if (!string.IsNullOrEmpty(response.AccessToken))
+                {
+                    Console.WriteLine($"Token: {response.AccessToken}");
+                    await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "authToken", response.AccessToken);
+                    await _jsRuntime.InvokeVoidAsync("console.log", $"Token stored: {response.AccessToken}");
+                }
                 var identity = new ClaimsIdentity(new[]
                 {
                     new Claim(ClaimTypes.Name, response.Username),

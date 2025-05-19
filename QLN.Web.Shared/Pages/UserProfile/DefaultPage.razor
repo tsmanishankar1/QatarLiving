@@ -1,4 +1,3 @@
-@page "/more-features-coming-soon"
 @inject ISnackbar Snackbar
 @using MudBlazor
 
@@ -17,18 +16,12 @@
             </MudText>
 
             <!-- Button to notify user or navigate -->
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" OnClick="NotifyUser">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" >
                 Notify Me When Available
             </MudButton>
         </MudStack>
     </MudPaper>
 </MudContainer>
 
-@code {
-    // Optional method if you want to trigger some action (like a notification or email sign-up) when the user clicks the button
-    private void NotifyUser()
-    {
-        // Here you can implement any logic, like showing a notification or storing the user's email for future updates
-        Snackbar.Add("You will be notified when new features are available!", Severity.Info);
-    }
+
 }
