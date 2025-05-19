@@ -28,7 +28,7 @@ namespace QLN.AIPOV.Frontend.ChatBot.Components.Chat
                 });
 
                 var chatCompletionResponse = await ChatService.GetMessagesAsync(message);
-                Messages = chatCompletionResponse.Message.Messages;
+                Messages.AddRange(chatCompletionResponse.Message.Messages.Where(m => m.Role != "user"));
             }
             catch (Exception ex)
             {
@@ -40,6 +40,15 @@ namespace QLN.AIPOV.Frontend.ChatBot.Components.Chat
             {
                 _isLoading = false;
             }
+        }
+
+        private void ClearConversation()
+        {
+            // Clear the messages collection
+            Messages.Clear();
+
+            // Force UI update
+            StateHasChanged();
         }
     }
 }

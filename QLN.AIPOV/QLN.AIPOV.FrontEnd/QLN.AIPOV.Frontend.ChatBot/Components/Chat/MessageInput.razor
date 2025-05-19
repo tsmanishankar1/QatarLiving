@@ -5,8 +5,9 @@
                   Class="flex-grow-1"
                   Adornment="Adornment.Start"
                   AdornmentIcon="@Icons.Material.Filled.Message"
-                  OnKeyDown="HandleKeyDown" />
-    <MudButton Color="Color.Primary"
+                  OnKeyDown="HandleKeyDown"
+                  Disabled="DisableChatInput"/>
+    <MudButton Color="Color.Secondary"
                Variant="Variant.Filled"
                Disabled="@string.IsNullOrWhiteSpace(Message)"
                OnClick="Send"
