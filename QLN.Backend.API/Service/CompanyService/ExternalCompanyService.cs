@@ -14,15 +14,18 @@ namespace QLN.Backend.API.Service.CompanyService
             _dapr = dapr;
             _logger = logger;
         }
-        public async Task<CompanyProfileEntity> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                var response = await _dapr.InvokeMethodAsync<CompanyProfileDto, CompanyProfileEntity>(
-                   ConstantValues.CompanyServiceAppId,
-                   "/api/companyprofile/create",
-                   dto,
-                   cancellationToken);
+                var url = "/api/companyprofile/create";
+                var response = await _dapr.InvokeMethodAsync<CompanyProfileDto, string>(
+                    HttpMethod.Post,
+                    ConstantValues.CompanyServiceAppId,
+                    url,
+                    dto,
+                    cancellationToken);
+
                 return response;
             }
             catch (Exception ex)
@@ -35,15 +38,16 @@ namespace QLN.Backend.API.Service.CompanyService
         {
             try
             {
-                var response = await _dapr.InvokeMethodAsync<CompanyProfileEntity>(
+                var url = $"/api/companyprofile/getById?id={id}";
+                return await _dapr.InvokeMethodAsync<CompanyProfileEntity>(
                     HttpMethod.Get,
                     ConstantValues.CompanyServiceAppId,
-                    "/api/companyprofile/getById", cancellationToken);
-                return response;
+                    url,
+                    cancellationToken);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while retrieving company profile for ID: {Id}", id);
+                _logger.LogError(ex, "Error retrieving company profile for ID: {Id}", id);
                 throw;
             }
         }
@@ -69,17 +73,19 @@ namespace QLN.Backend.API.Service.CompanyService
         {
             try
             {
+                var url = $"/api/companyprofile/update?id={id}";
                 var response = await _dapr.InvokeMethodAsync<CompanyProfileDto, CompanyProfileEntity>(
                     HttpMethod.Put,
                     ConstantValues.CompanyServiceAppId,
-                    "/api/companyprofile/update",
+                    url,
                     dto,
                     cancellationToken);
+
                 return response;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while updating company profile with ID: {Id}", id);
+                _logger.LogError(ex, "Error updating company profile with ID: {Id}", id);
                 throw;
             }
         }
@@ -87,15 +93,16 @@ namespace QLN.Backend.API.Service.CompanyService
         {
             try
             {
+                var url = $"/api/companyprofile/delete?id={id}";
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Delete,
                     ConstantValues.CompanyServiceAppId,
-                    "/api/companyprofile/delete",
+                    url,
                     cancellationToken);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while deleting company profile with ID: {Id}", id);
+                _logger.LogError(ex, "Error deleting company profile with ID: {Id}", id);
                 throw;
             }
         }

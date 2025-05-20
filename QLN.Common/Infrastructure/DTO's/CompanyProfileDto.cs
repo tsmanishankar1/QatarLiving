@@ -13,7 +13,7 @@ namespace QLN.Common.Infrastructure.DTO_s
         [Required]
         public int VerticalId { get; set; }
         public Guid UserId { get; set; }
-        public IFormFile? CompanyLogo { get; set; }
+        //public IFormFile? CompanyLogo { get; set; }
         public string? BusinessName { get; set; }
         [Required]
         public string Country { get; set; } = string.Empty;
@@ -48,8 +48,8 @@ namespace QLN.Common.Infrastructure.DTO_s
         public string BusinessDescription { get; set; } = string.Empty;
         [Required]
         public string CRNumber { get; set; } = string.Empty;
-        [Required]
-        public IFormFile CRDocument { get; set; } = default!;
+        //[Required]
+        //public IFormFile CRDocument { get; set; } = default!;
     }
     public class CompanyProfileEntity
     {

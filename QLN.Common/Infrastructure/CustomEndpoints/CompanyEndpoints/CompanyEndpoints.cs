@@ -18,15 +18,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
             (
-                HttpContext context,
-                [FromForm] CompanyProfileDto dto,
-                [FromServices] ICompanyService service,
+                CompanyProfileDto dto,
+                ICompanyService service,
                 CancellationToken cancellationToken = default) =>
             {
                 try
                 {
-                    var userId = context.User.GetId();
-                    dto.UserId = userId;
                     var entity = await service.CreateCompany(dto, cancellationToken);
                     return TypedResults.Ok("Company Profile created successfully");
                 }
@@ -137,16 +134,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
             (
-                HttpContext context,
-                [FromQuery] Guid id,
-                [FromForm] CompanyProfileDto dto,
-                [FromServices] ICompanyService service,
+                Guid id,
+                CompanyProfileDto dto,
+                ICompanyService service,
                 CancellationToken cancellationToken = default) =>
             {
                 try
                 {
-                    var userId = context.User.GetId();
-                    dto.UserId = userId;
                     var result = await service.UpdateCompany(id, dto, cancellationToken);
                     return TypedResults.Ok<object>(result);
                 }

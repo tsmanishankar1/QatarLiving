@@ -21,7 +21,7 @@ namespace QLN.Company.MS.Service
             _logger = logger;
             _fileStorage = fileStorage;
         }
-        public async Task<CompanyProfileEntity> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -34,7 +34,7 @@ namespace QLN.Company.MS.Service
                     keys.Add(id.ToString());
                     await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, ConstantValues.CompanyIndexKey, keys);
                 }
-                return entity;
+                return "Company Created successfully";
             }
             catch (Exception ex)
             {
@@ -153,7 +153,7 @@ namespace QLN.Company.MS.Service
                 var root = Path.Combine(webRoot, "uploads", "company", id.ToString());
                 Directory.CreateDirectory(root);
 
-                var logoPath = dto.CompanyLogo is not null
+                /*var logoPath = dto.CompanyLogo is not null
                     ? await _fileStorage.SaveFile(
                         dto.CompanyLogo,
                         Path.Combine(root, "logo", dto.CompanyLogo.FileName))
@@ -163,7 +163,7 @@ namespace QLN.Company.MS.Service
                     ? await _fileStorage.SaveFile(
                         dto.CRDocument,
                         Path.Combine(root, "cr", dto.CRDocument.FileName))
-                    : null;
+                    : null;*/
 
                 return new CompanyProfileEntity
                 {
@@ -190,8 +190,8 @@ namespace QLN.Company.MS.Service
                     UserDesignation = dto.UserDesignation,
                     BusinessDescription = dto.BusinessDescription,
                     CRNumber = dto.CRNumber,
-                    CompanyLogo = ToRelative(logoPath),
-                    CRDocument = ToRelative(crPath)
+                   /* CompanyLogo = ToRelative(logoPath),
+                    CRDocument = ToRelative(crPath)*/
                 };
             }
             catch (Exception ex)
