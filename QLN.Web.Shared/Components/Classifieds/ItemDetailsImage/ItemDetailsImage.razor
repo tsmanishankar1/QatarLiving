@@ -38,7 +38,7 @@
     </div>
 
     <div class="carousel-container">
-        <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" OnClick="@OnPrevSlide"
+        <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" id="prevSlideButton" OnClick="@OnPrevSlide" 
             Disabled="@(SelectedImageIndex == 0)" Class="custom-arrow-details-button left" />
 
         <div class="carousel-viewport">
@@ -53,7 +53,7 @@
             </div>
         </div>
 
-        <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" OnClick="@OnNextSlide"
+        <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" id="nextSlideButton" OnClick="@OnNextSlide"
             Disabled="@(SelectedImageIndex >= Images.Count - 1)" Class="custom-arrow-details-button right" />
     </div>
 </div>

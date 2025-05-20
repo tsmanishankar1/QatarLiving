@@ -71,7 +71,7 @@
         }
     </div>
 
-    <div class="card-content" @onclick="() => HandleSelect(Item)">
+    <div id="@Item.Id" class="card-content" @onclick="() => HandleSelect(Item)">
         <div class="category">@Item.Category</div>
         <h3 class="title">@Item.Title</h3>
         <div class="features">
