@@ -7,15 +7,6 @@
           Style=" height: 162px; border-radius: 8px; padding: 12px 20px; background-color: white"
           OnClick="HandleSelect">
 
-    <!-- Delete Icon Top Left -->
-  @*   <div style="position: absolute; top: 12px; left: 12px;" @onclick:stopPropagation>
-        <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                       Color="Color.Error"
-                       OnClick="ShowDeleteConfirm"
-                       Size="Size.Small" />
-    </div>
- *@
-
     <!-- Radio Button Top Right -->
     <div style="position: absolute; top: 12px; right: 12px;">
         <MudIcon Icon="@(IsSelected ? Icons.Material.Filled.RadioButtonChecked : Icons.Material.Filled.RadioButtonUnchecked)"

@@ -52,7 +52,7 @@ namespace QLN.Web.Shared.Pages.Subscription
         private List<BreadcrumbItem> breadcrumbItems = new();
         private List<SubscriptionPlan> _plans = new();
 
-       protected override async Task OnAfterRenderAsync(bool firstRender)
+        protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
             {
@@ -158,12 +158,12 @@ namespace QLN.Web.Shared.Pages.Subscription
                 p.Duration == plan.Duration &&
                 p.Price == plan.Price &&
                 p.SubscriptionName == plan.SubscriptionName &&
-                p.Id ==plan.Id);
+                p.Id == plan.Id);
         }
 
         private async Task SubmitMockCardPayment()
         {
-           
+
             _isLoading = true;
             await _form.Validate();
             if (_form.IsValid)

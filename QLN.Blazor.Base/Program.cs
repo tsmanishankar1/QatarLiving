@@ -7,6 +7,7 @@ using MudBlazor;
 using MudBlazor.Services;
 using QLN.Web.Shared.Services;
 using Microsoft.AspNetCore.Components.Authorization;
+using QLN.Web.Shared.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
@@ -26,6 +27,7 @@ builder.Services.Configure<ApiSettings>(
     builder.Configuration.GetSection("ApiSettings"));
 
 builder.Services.AddHttpClient<ApiService>();
+builder.Services.AddScoped<ISubscriptionService,SubscriptionService>();
 // builder.Services.AddWebSharedServices(builder.Configuration);
 
 var app = builder.Build();
@@ -47,7 +49,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 // app.UseAuthentication();
 // app.UseAuthorization();
- app.UseAntiforgery();
+app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 

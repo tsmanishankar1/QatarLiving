@@ -1,5 +1,6 @@
-﻿@page "/add-subscription"
-@inject ISnackbar Snackbar;
+﻿@page "/subscription/add"
+<PageTitle>Add Subscription</PageTitle>
+@inherits AddSubscriptionBase
 
 @using MudBlazor
 @using QLN.Web.Shared.Models
@@ -10,38 +11,35 @@
             Add Subscription
         </MudText>
 
-        <MudForm Model="@_model" @ref="_form">
+        <MudForm Model="@_subscriptionModel" @ref="_form">
             <MudGrid>
                 <MudItem xs="12" md="6" Class="pa-2">
                     <MudTextField Label="Subscription Name*"
-                                  @bind-Value="_model.SubscriptionName"
+                                  @bind-Value="_subscriptionModel.SubscriptionName"
                                   Variant="Variant.Outlined"
-                                  For="@(() => _model.SubscriptionName)"
+                                  For="@(() => _subscriptionModel.SubscriptionName)"
                                   Immediate="true"
-                                  Style="color: #242424;"
-                                  Class="mb-4"
+                                  Class="mb-4 text-field-color"
                                   id="subscriptionName"/>
                 </MudItem>
 
                 <MudItem xs="12" md="3" Class="pa-2">
                     <MudTextField Label="Price*"
-                                  @bind-Value="_model.Price"
+                                  @bind-Value="_subscriptionModel.Price"
                                   Variant="Variant.Outlined"
-                                  For="@(() => _model.Price)"
+                                  For="@(() => _subscriptionModel.Price)"
                                   Immediate="true"
-                                  Style="color: #242424;"
-                                  Class="mb-4"
+                                  Class="mb-4 text-field-color"
                                   id="price" />
                 </MudItem>
 
                 <MudItem xs="12" md="3" Class="pa-2">
                     <MudSelect Label="Currency*"
-                               @bind-Value="_model.Currency"
+                               @bind-Value="_subscriptionModel.Currency"
                                Variant="Variant.Outlined"
-                               For="@(() => _model.Currency)"
+                               For="@(() => _subscriptionModel.Currency)"
                                Immediate="true"
-                               Style="color: #242424;"
-                               Class="mb-4"
+                               Class="mb-4 text-field-color"
                                id="subscriptionCurrency">
                         <MudSelectItem Value="@("QAR")">QAR</MudSelectItem>
                         <MudSelectItem Value="@("USD")">USD</MudSelectItem>
@@ -51,12 +49,11 @@
 
                 <MudItem xs="12" md="6" Class="pa-2">
                     <MudSelect Label="Duration*"
-                               @bind-Value="_model.Duration"
+                               @bind-Value="_subscriptionModel.Duration"
                                Variant="Variant.Outlined"
-                               For="@(() => _model.Duration)"
+                               For="@(() => _subscriptionModel.Duration)"
                                Immediate="true"
-                               Style="color: #242424;"
-                               Class="mb-4" id="subscriptionDuration">
+                               Class="mb-4 text-field-color" id="subscriptionDuration">
                         <MudSelectItem Value="@("Month")">1 Month</MudSelectItem>
                         <MudSelectItem Value="@("threeMonths")">3 Months</MudSelectItem>
                         <MudSelectItem Value="@("sixMonths")">6 Months</MudSelectItem>
@@ -67,11 +64,10 @@
                 <MudItem xs="12" md="6" Class="pa-2">
                     <MudSelect Label="Vertical Type*"
                                Variant="Variant.Outlined"
-                               For="@(() => _model.VerticalType)"
-                               @bind-Value="_model.VerticalType"
+                               For="@(() => _subscriptionModel.VerticalType)"
+                               @bind-Value="_subscriptionModel.VerticalType"
                                Immediate="true"
-                               Style="color: #242424;"
-                               Class="mb-4"
+                               Class="mb-4 text-field-color"
                                id="subscriptionVerticalType">
                         <MudSelectItem Value="@("Classified")">Classified</MudSelectItem>
                         <MudSelectItem Value="@("Properties")">Properties</MudSelectItem>
@@ -87,12 +83,11 @@
                 {
                     <MudItem xs="12" md="6" Class="pa-2">
                         <MudSelect Label="Sub Category*"
-                                   @bind-Value="_model.SubCategory"
+                                   @bind-Value="_subscriptionModel.SubCategory"
                                    Variant="Variant.Outlined"
-                                   For="@(() => _model.SubCategory)"
+                                   For="@(() => _subscriptionModel.SubCategory)"
                                    Immediate="true"
-                                   Style="color: #242424;"
-                                   Class="mb-4"
+                                   Class="mb-4 text-field-color"
                                    id="subscriptionSubCategory">
                             @foreach (var item in GetSubCategories())
                             {
@@ -104,20 +99,29 @@
 
                 <MudItem xs="12" Class="pa-2">
                     <MudTextField Label="Description"
-                                  @bind-Value="_model.Description"
+                                  @bind-Value="_subscriptionModel.Description"
                                   Variant="Variant.Outlined"
                                   Lines="3"
-                                  Style="color: #242424;"
-                                  Class="mb-4"
+                                  Class="mb-4 text-field-color"
                                   id="subscriptionDescription" />
                 </MudItem>
             </MudGrid>
 
-            <div class="mt-6" style="display: flex; justify-content: flex-end;">
+            <div class="mt-6 btn-container" >
                 <MudButton id="saveSubscriptionBtn" Variant="Variant.Filled"
-                           Style="background-color: #FF7F38 ;color: white;"
-                           OnClick="SaveSubscription">
-                    Save
+                           Class="btn-color"
+                           OnClick="SaveSubscription"
+                           Disabled="_isLoading"
+                           Loading="_isLoading">
+                    @if (_isLoading)
+                    {
+                        <MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Inherit" />
+                        <span>Saving...</span>
+                    }
+                    else
+                    {
+                        <span>Save</span>
+                    }
                 </MudButton>
             </div>
         </MudForm>
@@ -298,5 +302,21 @@
 
     .resend-code:hover {
         color: var(--color-accent);
+    }
+
+    .text-field-color
+    {
+        color: #242424;
+
+    }
+
+    .btn-color {
+        background-color: #FF7F38;
+        color: white;
+    }
+
+    .btn-container {
+        display: flex;
+        justify-content: flex-end;
     }
 </style>

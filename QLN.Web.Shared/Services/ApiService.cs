@@ -5,18 +5,28 @@ using System.Text.Json;
 using QLN.Web.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
+using Microsoft.JSInterop;
 
 namespace QLN.Web.Shared.Services
 {
     public class ApiService
     {
         private readonly HttpClient _http;
+        private readonly IJSRuntime _jsRuntime;
+
         private readonly string _baseUrl;
-          public ApiService(HttpClient http, IOptions<ApiSettings> options)
+        private readonly string _authToken;
+
+        public ApiService(HttpClient http, IOptions<ApiSettings> options, IJSRuntime jsRuntime)
         {
             _http = http;
             _baseUrl = options.Value.BaseUrl.TrimEnd('/');
-            Console.WriteLine($"[ApiService] Base URL: {_baseUrl}");
+            _jsRuntime = jsRuntime;
+
+        }
+        private async Task<string?> GetTokenAsync()
+        {
+            return await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
         }
 
         public async Task<T?> GetAsync<T>(string endpoint)
@@ -38,6 +48,8 @@ namespace QLN.Web.Shared.Services
 
         public async Task<T?> PostAsync<TRequest, T>(string endpoint, TRequest data, string? accessToken = null)
         {
+            var token = await GetTokenAsync();
+
             var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/{endpoint}")
             {
                 Content = JsonContent.Create(data)
