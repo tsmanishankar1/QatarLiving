@@ -8,6 +8,7 @@ namespace QLN.Backend.API.Service.CompanyService
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<ExternalCompanyService> _logger;
+
         public ExternalCompanyService(DaprClient dapr, ILogger<ExternalCompanyService> logger)
         {
             _dapr = dapr;
@@ -46,15 +47,17 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<IEnumerable<CompanyProfileEntity>> GetAllCompanies()
+
+        public async Task<List<CompanyProfileEntity>> GetAllCompanies(CancellationToken cancellationToken = default)
         {
             try
             {
-                var response = await _dapr.InvokeMethodAsync<IEnumerable<CompanyProfileEntity>>(
+                var response = await _dapr.InvokeMethodAsync<List<CompanyProfileEntity>>(
                     HttpMethod.Get,
                     ConstantValues.CompanyServiceAppId,
-                    "/api/companyprofile/getAll");
-                return response;
+                    "api/companyprofile/getAll",
+                    cancellationToken);
+                return response ?? new List<CompanyProfileEntity>();
             }
             catch (Exception ex)
             {
@@ -98,4 +101,3 @@ namespace QLN.Backend.API.Service.CompanyService
         }
     }
 }
-

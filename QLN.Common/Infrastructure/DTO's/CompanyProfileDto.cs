@@ -21,17 +21,17 @@ namespace QLN.Common.Infrastructure.DTO_s
         public string City { get; set; } = string.Empty;
         public string? Branches { get; set; }
         [Required]
+        [Phone]
         public string PhoneNumber { get; set; } = string.Empty;
-        [Required]
-        public string WhatsAppNumber { get; set; } = string.Empty;
+        public string? WhatsAppNumber { get; set; }
         [EmailAddress]
         public string? Email { get; set; }
-        [Required]
-        public string WebsiteUrl { get; set; } = string.Empty;
-        [Required]
-        public string FacebookUrl { get; set; } = string.Empty;
-        [Required]
-        public string InstagramUrl { get; set; } = string.Empty;
+        [Url]
+        public string? WebsiteUrl { get; set; }
+        [Url]
+        public string? FacebookUrl { get; set; } 
+        [Url]
+        public string? InstagramUrl { get; set; }
         public string? StartDay { get; set; }
         public string? EndDay { get; set; }
         public string? StartHour { get; set; }
@@ -49,7 +49,7 @@ namespace QLN.Common.Infrastructure.DTO_s
         [Required]
         public string CRNumber { get; set; } = string.Empty;
         [Required]
-        public IFormFile CRDocument { get; set; }
+        public IFormFile CRDocument { get; set; } = default!;
     }
     public class CompanyProfileEntity
     {
@@ -62,11 +62,11 @@ namespace QLN.Common.Infrastructure.DTO_s
         public string City { get; set; } = string.Empty;
         public string? Branches { get; set; }
         public string PhoneNumber { get; set; } = string.Empty;
-        public string WhatsAppNumber { get; set; } = string.Empty;
+        public string? WhatsAppNumber { get; set; }
         public string? Email { get; set; }
-        public string WebsiteUrl { get; set; } = string.Empty;
-        public string FacebookUrl { get; set; } = string.Empty;
-        public string InstagramUrl { get; set; } = string.Empty;
+        public string? WebsiteUrl { get; set; }
+        public string? FacebookUrl { get; set; } 
+        public string? InstagramUrl { get; set; } 
         public string? StartDay { get; set; }
         public string? EndDay { get; set; }
         public string? StartHour { get; set; }

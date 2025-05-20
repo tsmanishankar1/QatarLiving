@@ -113,7 +113,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
 #endregion
 
 #region authentication
-builder.Services.AddAuthentication(options =>
+/*builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -138,22 +138,31 @@ builder.Services.AddAuthentication(options =>
     options.TokenValidationParameters.RoleClaimType = "role";
     options.TokenValidationParameters.NameClaimType = "name";
 
-});
+});*/
 
 #endregion
 
-builder.Services.AddDaprClient(clientBuilder =>
+builder.Services.AddDaprClient();
+builder.Services.AddAuthentication(options =>
 {
-    clientBuilder
-        .UseHttpEndpoint("http://localhost:3500")
-        .UseGrpcEndpoint("http://localhost:58796");
+    options.DefaultScheme = "Authentication";
+    options.DefaultChallengeScheme = "Authentication";
+})
+.AddJwtBearer("Authentication", options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+    };
 });
 
 builder.Services.AddAuthorization();
-
-
-builder.Services.AddDaprClient();
-
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
@@ -181,7 +190,7 @@ var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedsEndpoints();
 
 app.UseHttpsRedirection();
-app.UseAuthentication();
+/*app.UseAuthentication();*/
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

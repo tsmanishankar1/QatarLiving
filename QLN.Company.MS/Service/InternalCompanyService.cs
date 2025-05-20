@@ -56,19 +56,40 @@ namespace QLN.Company.MS.Service
             }
         }
 
-        public async Task<IEnumerable<CompanyProfileEntity>> GetAllCompanies()
+        //public async Task<IEnumerable<CompanyProfileEntity>> GetAllCompanies(CancellationToken)
+        //{
+        //    try
+        //    {
+        //        var keys = await GetIndex();
+        //        if (!keys.Any()) return Enumerable.Empty<CompanyProfileEntity>();
+
+        //        var items = await _dapr.GetBulkStateAsync(ConstantValues.CompanyStoreName, keys, parallelism: 10);
+
+        //        return items
+        //            .Where(i => !string.IsNullOrWhiteSpace(i.Value))
+        //            .Select(i => JsonSerializer.Deserialize<CompanyProfileEntity>(i.Value!, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!)
+        //            .Where(e => e.Id != Guid.Empty);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error while retrieving all company profiles.");
+        //        throw;
+        //    }
+        //}
+        public async Task<List<CompanyProfileEntity>> GetAllCompanies(CancellationToken cancellationToken = default)
         {
             try
             {
                 var keys = await GetIndex();
-                if (!keys.Any()) return Enumerable.Empty<CompanyProfileEntity>();
+                if (!keys.Any()) return new List<CompanyProfileEntity>();
 
                 var items = await _dapr.GetBulkStateAsync(ConstantValues.CompanyStoreName, keys, parallelism: 10);
 
                 return items
                     .Where(i => !string.IsNullOrWhiteSpace(i.Value))
                     .Select(i => JsonSerializer.Deserialize<CompanyProfileEntity>(i.Value!, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!)
-                    .Where(e => e.Id != Guid.Empty);
+                    .Where(e => e.Id != Guid.Empty)
+                    .ToList();
             }
             catch (Exception ex)
             {
@@ -76,7 +97,6 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-
         public async Task<CompanyProfileEntity> UpdateCompany(Guid id, CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
             try

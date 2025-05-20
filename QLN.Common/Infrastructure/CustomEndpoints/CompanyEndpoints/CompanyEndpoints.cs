@@ -5,12 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Input;
+using QLN.Common.Infrastructure.Utilities;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 {
@@ -23,12 +18,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
             (
+                HttpContext context,
                 [FromForm] CompanyProfileDto dto,
                 [FromServices] ICompanyService service,
                 CancellationToken cancellationToken = default) =>
             {
                 try
                 {
+                    var userId = context.User.GetId();
+                    dto.UserId = userId;
                     var entity = await service.CreateCompany(dto, cancellationToken);
                     return TypedResults.Ok("Company Profile created successfully");
                 }
@@ -57,7 +55,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .Produces<CompanyProfileEntity>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-            .RequireAuthorization()
             .DisableAntiforgery();
 
             return group;
@@ -100,23 +97,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .WithDescription("Retrieves a company profile by ID.")
             .Produces<object>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-            .RequireAuthorization();
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
         }
         public static RouteGroupBuilder MapGetAllCompanyProfiles(this RouteGroupBuilder group)
         {
-            group.MapGet("/getAll", async Task<Results<
-                Ok<IEnumerable<object>>,
-                ProblemHttpResult>>
+            group.MapGet("/getAll", async Task<IResult>
             ([FromServices] ICompanyService service) =>
             {
                 try
                 {
                     var result = await service.GetAllCompanies();
-                    var castedResult = result.Cast<object>();
-                    return TypedResults.Ok(castedResult);
+                    /*var castedResult = result.Cast<object>();*/
+                    return TypedResults.Ok(result);
                 }
                 catch (Exception)
                 {
@@ -131,9 +125,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .WithTags("Company")
             .WithSummary("Get all company profiles")
             .WithDescription("Fetches all company profiles.")
-            .Produces<IEnumerable<object>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-            .RequireAuthorization();
+            .Produces<IEnumerable<CompanyProfileEntity>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
 
@@ -144,6 +137,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
             (
+                HttpContext context,
                 [FromQuery] Guid id,
                 [FromForm] CompanyProfileDto dto,
                 [FromServices] ICompanyService service,
@@ -151,6 +145,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             {
                 try
                 {
+                    var userId = context.User.GetId();
+                    dto.UserId = userId;
                     var result = await service.UpdateCompany(id, dto, cancellationToken);
                     return TypedResults.Ok<object>(result);
                 }
@@ -179,8 +175,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .Produces<object>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-            .DisableAntiforgery()
-            .RequireAuthorization();
+            .DisableAntiforgery();
             return group;
         }
         public static RouteGroupBuilder MapDeleteCompanyProfile(this RouteGroupBuilder group)
@@ -224,8 +219,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .WithDescription("Deletes the specified company profile.")
             .Produces(StatusCodes.Status204NoContent)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-            .RequireAuthorization();
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
     }
