@@ -42,8 +42,7 @@
         </div>
 
         <CustomButton BackgroundColor="#FF7F38" TextColor="#FFFFFF" Text="Verify" Disabled="_isLoading"
-            Loading="_isLoading" OnClick="@VerifyCode" Class="verify-btn" aria-label="Verify Button"
-    data-testid="verify-button" />
+            Loading="_isLoading" OnClick="@VerifyCode" Class="verify-btn" id="twoFactorVerifyButton"/>
 
         <p class="resend">
             Didn't receive a code?
@@ -53,11 +52,11 @@
             }
             else
             {
-                <span style="color:var(--color-accent); cursor:pointer;" @onclick="ResendCode" id="resend-code" data-testid="resend-code-button">Resend</span>
+                <span style="color:var(--color-accent); cursor:pointer;" @onclick="ResendCode" id="twoFactorResend">Resend</span>
             }
         </p>
 
-        <p class="alternative" @onclick="NavigateToForgotPassword">Use another verification method</p>
+        <p id="useAnotherVerification" class="alternative" @onclick="NavigateToForgotPassword">Use another verification method</p>
     </div>
 </div>
 
