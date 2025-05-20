@@ -22,11 +22,11 @@ public class SearchBarSectionBase : ComponentBase
 
     protected async Task PerformSearch()
     {
-        if (string.IsNullOrWhiteSpace(searchText) && string.IsNullOrWhiteSpace(selectedCategory))
-    {
-        Snackbar.Add("Please enter search text or select a category", Severity.Warning);
-        return;
-    }
+    //    if (string.IsNullOrWhiteSpace(searchText) && string.IsNullOrWhiteSpace(selectedCategory))
+    //{
+    //    Snackbar.Add("Please enter search text or select a category", Severity.Warning);
+    //    return;
+    //}
 
         loading = true;
 
