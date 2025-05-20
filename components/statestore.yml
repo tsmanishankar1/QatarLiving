@@ -12,18 +12,4 @@ spec:
     - name: redisPassword
       value: ""                   # If no password, keep empty
     - name: actorStateStore
-      value: "true"               # Required for Dapr actors state management
-    - name: keyPrefix
-      value: "subscription-data-" # Matches the prefix used in your actor
-    - name: operationTimeout
-      value: "15s"                # Generous timeout (actor uses 1-2s timeouts internally)
-    - name: connectionTimeout
-      value: "5s"                 # Reasonable connection timeout
-    - name: maxRetries
-      value: "3"                  # Retry count on failures
-    - name: maxRetryBackoff
-      value: "5s"                 # Backoff duration between retries
-    - name: enableTLS
-      value: "false"              # Match your environment
-    - name: requestTimeout
-      value: "10s"                # Request timeout for Redis calls
+      value: "true"            # Set to true if using actors

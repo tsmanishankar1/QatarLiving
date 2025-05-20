@@ -14,19 +14,19 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // adding DAPR support
-//var daprClient = new DaprClientBuilder().Build();
-//builder.Services.AddSingleton<DaprClient>(daprClient);
+var daprClient = new DaprClientBuilder().Build();
+builder.Services.AddSingleton<DaprClient>(daprClient);
 
 
 builder.Services.AddActors(options =>
 {
     options.Actors.RegisterActor<SubscriptionActor>();
 
-    options.ActorIdleTimeout = TimeSpan.FromMinutes(60);
-    options.ActorScanInterval = TimeSpan.FromSeconds(30);
-    options.DrainOngoingCallTimeout = TimeSpan.FromSeconds(60);
-    options.DrainRebalancedActors = true;
-    options.RemindersStoragePartitions = 1;
+    //options.ActorIdleTimeout = TimeSpan.FromMinutes(60);
+    //options.ActorScanInterval = TimeSpan.FromSeconds(30);
+    //options.DrainOngoingCallTimeout = TimeSpan.FromSeconds(60);
+    //options.DrainRebalancedActors = true;
+    //options.RemindersStoragePartitions = 1;
 });
 
 var app = builder.Build();

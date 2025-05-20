@@ -10,10 +10,7 @@
 	  <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Dapr.Actors" Version="1.15.4" />
-    <PackageReference Include="Dapr.Actors.AspNetCore" Version="1.15.4" />
-    <PackageReference Include="Dapr.AspNetCore" Version="1.15.4" />
-    <PackageReference Include="Dapr.Client" Version="1.15.4" />
+    <PackageReference Include="Dapr.Client" Version="1.13.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.15" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.15" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.15" />
@@ -38,7 +35,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\QLN.Common\QLN.Common.csproj" />
-    <ProjectReference Include="..\QLN.Subscriptions.Actor\QLN.Subscriptions.Actor.csproj" />
   </ItemGroup>
 
 </Project>
