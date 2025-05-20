@@ -28,30 +28,29 @@
         </MudStack>
         <MudText Typo="Typo.body1" Class="label-text">
             Email or Phone number </MudText>
-        <MudTextField T="string" Label="Email or Phone number" Variant="Variant.Outlined" FullWidth="true"
+        <MudTextField id="loginEmailInput" T="string" Label="Email or Phone number" Variant="Variant.Outlined" FullWidth="true"
             InputType="InputType.Text" style="background-color: var(--color-background)" MaxLength="50" Required="true"
             Error="@(!string.IsNullOrEmpty(_usernameError))" ErrorText="@_usernameError" Immediate="true"
-            ValueChanged="OnEmailChanged" ValueExpression="(() => _username)" OnBlur="@ValidateUsername" id="loginEmailInput
-"/>
+            ValueChanged="OnEmailChanged" ValueExpression="(() => _username)" OnBlur="@ValidateUsername"/>
         <MudText Typo="Typo.body1" Class="label-text">
             Password
         </MudText>
-        <MudTextField T="string" Label="Password" MaxLength="50" Variant="Variant.Outlined"
+        <MudTextField id="loginPasswordInput" T="string" Label="Password" MaxLength="50" Variant="Variant.Outlined"
             InputType="@(_showPassword? InputType.Text: InputType.Password)" FullWidth="true" Class="mt-4"
             style="background-color: var(--color-background)" Required="true" Adornment="Adornment.End"
             AdornmentIcon="@(_showPassword? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
             OnAdornmentClick="TogglePasswordVisibility" AdornmentColor="Color.Default"
             Error="@(!string.IsNullOrEmpty(_passwordError))" ErrorText="@_passwordError" Immediate="true"
-            ValueChanged="OnPasswordChanged" ValueExpression="(() => _password)" OnBlur="ValidatePassword" id="loginPasswordInput" />
+            ValueChanged="OnPasswordChanged" ValueExpression="(() => _password)" OnBlur="ValidatePassword"/>
 
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
             <MudCheckBox T="bool" Label="Remember me" DisableMargins="true" id="rememberMeCheckBox"/>
-            <NavLink href="/forgot-password" style="color: var(--color-accent)" id="forgetPasswordLink"> Forgot Password?</NavLink>
+            <NavLink id="forgetPasswordLink" href="/forgot-password" style="color: var(--color-accent)"> Forgot Password?</NavLink>
         </div>
 
-        <CustomButton BackgroundColor="var(--color-accent)" TextColor="#FFFFFF" Text="Sign In" Disabled="_isLoading"
-            Loading="_isLoading" OnClick="@PerformLogin" Class="mt-4" id="signInButton"/>
+        <CustomButton id="signInButton" BackgroundColor="var(--color-accent)" TextColor="#FFFFFF" Text="Sign In" Disabled="_isLoading"
+            Loading="_isLoading" OnClick="@PerformLogin" Class="mt-4"/>
 
 
         <div class="d-flex align-center my-4">
@@ -62,22 +61,22 @@
 
         <MudGrid Justify="Justify.SpaceEvenly" GutterSize="12px">
     <MudItem xs="2">
-                <MudButton Variant="Variant.Outlined" Class="social-login-button" id="googleLoginButton">
+                <MudButton id="googleLoginButton" Variant="Variant.Outlined" Class="social-login-button">
             <img src="/images/google.svg" alt="Google" style="height: 24px;" />
         </MudButton>
     </MudItem>
     <MudItem xs="2">
-                <MudButton Variant="Variant.Outlined" Class="social-login-button" id="appleLoginButton">
+                <MudButton id="appleLoginButton" Variant="Variant.Outlined" Class="social-login-button">
             <img src="/images/apple.svg" alt="Google" style="height: 24px;" />
         </MudButton>
     </MudItem>
     <MudItem xs="2">
-                <MudButton Variant="Variant.Outlined" Class="social-login-button" id="microsoftLoginButton">
+                <MudButton id="microsoftLoginButton" Variant="Variant.Outlined" Class="social-login-button">
             <img src="/images/microsoft.svg" alt="Microsoft" style="height: 24px;" />
         </MudButton>
     </MudItem>
     <MudItem xs="2">
-                <MudButton Variant="Variant.Outlined" Class="social-login-button" id="facebookLoginButton">
+                <MudButton id="facebookLoginButton" Variant="Variant.Outlined" Class="social-login-button" >
  
             <img src="/images/facebook.svg" alt="Facebook" />
         </MudButton>

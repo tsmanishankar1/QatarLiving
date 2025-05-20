@@ -5,13 +5,15 @@
           Style="background-color: var(--color-background);">
     @foreach (var item in tabItems)
     {
-        <MudButton Variant="Variant.Text"
+        <MudButton  
+                   Variant="Variant.Text"
+                   id="@item.Text"
                    Class=@($"tab-button d-flex flex-column align-center justify-center {(item.IsActive ? "selected-tab" : "")}")
                    DisableElevation="true"
                    DisableRipple="true"
                    Style="background-color: transparent;"
                    OnClick="@(() => OnTabSelected(item))">
-            <div class="tab-button-inner">
+            <div id="classifieds-@item.Text" class="tab-button-inner">
                 <img src="@item.ImagePath"
                      class="tab-icon @(item.IsActive ? "active-orange" : "default-gray")" />
 
