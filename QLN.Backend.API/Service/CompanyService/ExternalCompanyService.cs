@@ -14,6 +14,7 @@ namespace QLN.Backend.API.Service.CompanyService
             _dapr = dapr;
             _logger = logger;
         }
+        public const string CompanyServiceAppId = ConstantValues.CompanyServiceAppId;
         public async Task<string> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
             try
@@ -21,7 +22,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 var url = "/api/companyprofile/create";
                 var response = await _dapr.InvokeMethodAsync<CompanyProfileDto, string>(
                     HttpMethod.Post,
-                    ConstantValues.CompanyServiceAppId,
+                    CompanyServiceAppId,
                     url,
                     dto,
                     cancellationToken);
@@ -41,7 +42,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 var url = $"/api/companyprofile/getById?id={id}";
                 return await _dapr.InvokeMethodAsync<CompanyProfileEntity>(
                     HttpMethod.Get,
-                    ConstantValues.CompanyServiceAppId,
+                    CompanyServiceAppId,
                     url,
                     cancellationToken);
             }
@@ -58,7 +59,7 @@ namespace QLN.Backend.API.Service.CompanyService
             {
                 var response = await _dapr.InvokeMethodAsync<List<CompanyProfileEntity>>(
                     HttpMethod.Get,
-                    ConstantValues.CompanyServiceAppId,
+                    CompanyServiceAppId,
                     "api/companyprofile/getAll",
                     cancellationToken);
                 return response ?? new List<CompanyProfileEntity>();
@@ -76,7 +77,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 var url = $"/api/companyprofile/update?id={id}";
                 var response = await _dapr.InvokeMethodAsync<CompanyProfileDto, CompanyProfileEntity>(
                     HttpMethod.Put,
-                    ConstantValues.CompanyServiceAppId,
+                    CompanyServiceAppId,
                     url,
                     dto,
                     cancellationToken);
@@ -96,7 +97,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 var url = $"/api/companyprofile/delete?id={id}";
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Delete,
-                    ConstantValues.CompanyServiceAppId,
+                    CompanyServiceAppId,
                     url,
                     cancellationToken);
             }

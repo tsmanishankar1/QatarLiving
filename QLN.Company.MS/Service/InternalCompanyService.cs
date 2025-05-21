@@ -5,6 +5,8 @@ using System.Windows.Input;
 using Dapr.Client;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IFileStorage;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp;
 
 namespace QLN.Company.MS.Service
 {
@@ -55,27 +57,6 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-
-        //public async Task<IEnumerable<CompanyProfileEntity>> GetAllCompanies(CancellationToken)
-        //{
-        //    try
-        //    {
-        //        var keys = await GetIndex();
-        //        if (!keys.Any()) return Enumerable.Empty<CompanyProfileEntity>();
-
-        //        var items = await _dapr.GetBulkStateAsync(ConstantValues.CompanyStoreName, keys, parallelism: 10);
-
-        //        return items
-        //            .Where(i => !string.IsNullOrWhiteSpace(i.Value))
-        //            .Select(i => JsonSerializer.Deserialize<CompanyProfileEntity>(i.Value!, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!)
-        //            .Where(e => e.Id != Guid.Empty);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error while retrieving all company profiles.");
-        //        throw;
-        //    }
-        //}
         public async Task<List<CompanyProfileEntity>> GetAllCompanies(CancellationToken cancellationToken = default)
         {
             try
@@ -153,17 +134,13 @@ namespace QLN.Company.MS.Service
                 var root = Path.Combine(webRoot, "uploads", "company", id.ToString());
                 Directory.CreateDirectory(root);
 
-                /*var logoPath = dto.CompanyLogo is not null
-                    ? await _fileStorage.SaveFile(
-                        dto.CompanyLogo,
-                        Path.Combine(root, "logo", dto.CompanyLogo.FileName))
+                var logoPath = !string.IsNullOrWhiteSpace(dto.CompanyLogo)
+                    ? await SaveBase64FileAsync(dto.CompanyLogo, Path.Combine(root, "logo", "company-logo.png"), cancellationToken)
                     : null;
 
-                var crPath = dto.CRDocument is not null
-                    ? await _fileStorage.SaveFile(
-                        dto.CRDocument,
-                        Path.Combine(root, "cr", dto.CRDocument.FileName))
-                    : null;*/
+                var crPath = !string.IsNullOrWhiteSpace(dto.CRDocument)
+                    ? await SaveBase64FileAsync(dto.CRDocument, Path.Combine(root, "cr", "cr-document.pdf"), cancellationToken)
+                    : null;
 
                 return new CompanyProfileEntity
                 {
@@ -173,7 +150,7 @@ namespace QLN.Company.MS.Service
                     BusinessName = dto.BusinessName,
                     Country = dto.Country,
                     City = dto.City,
-                    Branches = dto.Branches,
+                    BranchLocations = dto.BranchLocations,
                     PhoneNumber = dto.PhoneNumber,
                     WhatsAppNumber = dto.WhatsAppNumber,
                     Email = dto.Email,
@@ -190,8 +167,10 @@ namespace QLN.Company.MS.Service
                     UserDesignation = dto.UserDesignation,
                     BusinessDescription = dto.BusinessDescription,
                     CRNumber = dto.CRNumber,
-                   /* CompanyLogo = ToRelative(logoPath),
-                    CRDocument = ToRelative(crPath)*/
+                    CompanyLogo = logoPath,
+                    CRDocument = crPath,
+                    IsVerified = dto.IsVerified,
+                    Status = dto.Status
                 };
             }
             catch (Exception ex)
@@ -211,6 +190,45 @@ namespace QLN.Company.MS.Service
                 .Replace(Path.DirectorySeparatorChar, '/');
 
             return "/" + rel;
+        }
+        private async Task<string?> SaveBase64FileAsync(string? base64String, string filePath, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(base64String))
+                return null;
+
+            var base64Parts = base64String.Split(',');
+            var actualBase64 = base64Parts.Length > 1 ? base64Parts[1] : base64Parts[0];
+            var fileBytes = Convert.FromBase64String(actualBase64);
+
+            var extension = Path.GetExtension(filePath).ToLowerInvariant();
+
+            if (filePath.Contains("cr", StringComparison.OrdinalIgnoreCase))
+            {
+                var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png" };
+                if (!allowedExtensions.Contains(extension))
+                    throw new InvalidOperationException("CR Document must be a PDF, JPG, or PNG.");
+
+                var fileSizeInMb = fileBytes.Length / (1024.0 * 1024.0);
+                if (fileSizeInMb > 10)
+                    throw new InvalidOperationException("CR Document must be less than or equal to 10MB.");
+            }
+
+            if (filePath.Contains("logo", StringComparison.OrdinalIgnoreCase))
+            {
+                var allowedImageExtensions = new[] { ".jpg", ".jpeg", ".png" };
+                if (!allowedImageExtensions.Contains(extension))
+                    throw new InvalidOperationException("Logo must be a PNG or JPG file.");
+
+                using var imageStream = new MemoryStream(fileBytes);
+                using var image = await Image.LoadAsync<Rgba32>(imageStream, cancellationToken);
+
+                if (image.Width < 1920 || image.Height < 1200)
+                    throw new InvalidOperationException("Logo image must be at least 1920x1200 pixels.");
+            }
+
+            using var finalStream = new MemoryStream(fileBytes);
+            var savedPath = await _fileStorage.SaveFile(finalStream, filePath, cancellationToken);
+            return ToRelative(savedPath);
         }
     }
 }

@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Routing;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.Utilities;
+using System.Net.Http;
+using System.Security.Claims;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 {
@@ -20,10 +22,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             (
                 CompanyProfileDto dto,
                 ICompanyService service,
+                HttpContext httpContext,
                 CancellationToken cancellationToken = default) =>
             {
                 try
                 {
+
                     var entity = await service.CreateCompany(dto, cancellationToken);
                     return TypedResults.Ok("Company Profile created successfully");
                 }

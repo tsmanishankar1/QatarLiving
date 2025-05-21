@@ -13,26 +13,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddDaprClient();
 builder.Services.AddEndpointsApiExplorer();
-/*builder.Services.AddAuthentication(options =>
-{
-    options.DefaultScheme = "Authentication";
-    options.DefaultChallengeScheme = "Authentication";
-})
-.AddJwtBearer("Authentication", options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
-    };
-
-});*/
-
 builder.Services.AddAuthorization();
 builder.Services.AddSwaggerGen(opts => {
     opts.SwaggerDoc("v1", new OpenApiInfo { Title = "QLN.Company.MS", Version = "v1" });
@@ -71,7 +51,6 @@ if (app.Environment.IsDevelopment())
 var companyGroup = app.MapGroup("/api/companyprofile");
 companyGroup.MapCompanyEndpoints();
 app.UseHttpsRedirection();
-/*app.UseAuthentication();*/
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
