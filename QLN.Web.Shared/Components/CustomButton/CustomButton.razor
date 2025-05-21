@@ -16,7 +16,7 @@
     }
     else
     {
-        <MudText Typo="Typo.button"  Style="text-transform: capitalize;">@Text</MudText>
+        <MudText Typo="Typo.button" Class="button-text" Style="text-transform: capitalize;">@Text</MudText>
     }
 </MudButton>
 
@@ -33,3 +33,10 @@
     public Dictionary<string, object> AdditionalAttributes { get; set; }
 
 }
+<style>
+    .button-text{
+         font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+    }
+</style>
