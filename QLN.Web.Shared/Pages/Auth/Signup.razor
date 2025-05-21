@@ -204,8 +204,11 @@
                    Disabled="@showMobileVerificationSuccess"
                    Searchable="true">
             <MudSelectItem Value="@SelectedCountry" >
+                  <div Class="country-option">
                 <img src="@SelectedCountry.Flag" Class="selected-country-flag" />
-                @SelectedCountry.Code
+               <span Class="country-code-text"> @SelectedCountry.Code </span>
+               </div>
+
             </MudSelectItem>
             @foreach (var country in countryList)
             {
@@ -213,15 +216,15 @@
                 <div Class="country-option">
                     <img src="@country.Flag"
                         alt="flag"
-                        Class="country-flag" />
+                        Class="selected-country-flag" />
                     <span Class="country-code-text">@country.Code</span>
                 </div>
             </MudSelectItem>
             }
         </MudSelect>
  
-        <MudTextField T="string"
-                      id="signInEmailField"
+        <MudNumericField T="string"
+                      id="signInPhoneNumberField"
                       For="@(() => _model.MobileNumber)"
                       ValueChanged="OnMobileNumberChanged"
                        Disabled="showMobileVerificationSuccess"
@@ -229,7 +232,9 @@
                       FullWidth="true"
                       StartAdornment="@SelectedCountry.Code"
                       Immediate="true"
-                      Class="mobile-input"/>
+                                     HideSpinButtons="true"
+                      Class="mobile-input"
+                                     />
         
         @if (showMobileVerificationSuccess)
         {
@@ -548,7 +553,7 @@
     {
         Name = "Qatar",
         Code = "+974",
-        Flag = "https://flagcdn.com/w40/qa.png"
+            Flag = "https://flagcdn.com/qa.svg"
     };
  
     private string EmailVerificationCode
@@ -1060,17 +1065,34 @@ private void StartResendTimer()
     text-transform: capitalize;
 }
 .country-select {
-    width: 120px;
+    width: 100px;
+        display: flex;
+        justify-content:center;
+    align-items:center;
 }
-.selected-country-flag {
-    width: 20px;
-    height: 14px;
-    margin-right: 5px;
-}
+
+    .selected-country-flag {
+        width: 30px;
+        height: 22px; 
+        margin-right: 5px;
+        border-radius: 50%;
+        border: 1px solid #ccc;
+        object-fit: cover; 
+        display: inline-block; 
+    }
 .country-option {
     display: flex;
-    align-items: center;
-}
+        align-items: center;
+        padding: 8px;
+    }
+
+    .country-selected-option {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: 0 8px;
+    }
 .country-flag {
     width: 20px;
     height: 14px;
@@ -1079,7 +1101,8 @@ private void StartResendTimer()
 }
 .country-code-text {
     white-space: nowrap;
-    font-size: 14px;
+    font-size: 18px;
+    margin-bottom:4px;
 }
 .mobile-input {
     text-transform: capitalize;
@@ -1093,6 +1116,17 @@ private void StartResendTimer()
     .mobile-input .mud-input-underline:after {
         display: none !important;
     }
+
+    .mud-select .mud-select-input {
+        cursor: pointer
+    }
+
+        .mud-select .mud-select-input .mud-input-slot {
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            height:30px !important;
+        }
 .date-picker {
     background-color:var(--color-text-white);
 }
