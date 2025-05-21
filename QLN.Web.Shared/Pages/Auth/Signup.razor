@@ -78,6 +78,143 @@
                           FullWidth="true"
                           Immediate="true"
                           style="background-color: var(--color-background)" />
+            <MudText Typo="Typo.body1" Class="label-text mb-1">
+                Phone Number
+            </MudText>
+            <MudPaper Class="@MobileFieldClass" Elevation="0">
+                <div class="phone-flex">
+                    <MudSelect T="CountryModel"
+                               id="countryCodedropdown"
+                               @bind-Value="SelectedCountry"
+                               Class="country-select mobile-input"
+                               DisableUnderline="true"
+                               Disabled="@showMobileVerificationSuccess"
+                               Searchable="true">
+                        <MudSelectItem Value="@SelectedCountry">
+                            <img src="@SelectedCountry.Flag" Class="selected-country-flag" />
+                            @SelectedCountry.Code
+                        </MudSelectItem>
+                        @foreach (var country in countryList)
+                        {
+                            <MudSelectItem Value="@country">
+                                <div Class="country-option">
+                                    <img src="@country.Flag"
+                                         alt="flag"
+                                         Class="country-flag" />
+                                    <span Class="country-code-text">@country.Code</span>
+                                </div>
+                            </MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudTextField T="string"
+                                  id="signInEmailField"
+                                  For="@(() => _model.MobileNumber)"
+                                  ValueChanged="OnMobileNumberChanged"
+                                  Disabled="showMobileVerificationSuccess"
+                                  MaxLength="15"
+                                  FullWidth="true"
+                                  StartAdornment="@SelectedCountry.Code"
+                                  Immediate="true"
+                                  Class="mobile-input" />
+
+                    @if (showMobileVerificationSuccess)
+                    {
+                        <MudText Typo="Typo.body1" Class="success-text">
+                            Verified
+                        </MudText>
+                    }
+                    else
+                    {
+                        <MudButton id="emailVerifyButton"
+                                   Variant="Variant.Filled"
+                                   Loading="@_phoneVerifying"
+                                   Disabled="@(!ValidationHelper.IsValidPhoneNumber(_model.MobileNumber))"
+                                   OnClick="OnVerifyPhoneClicked"
+                                   Class="verify-button">
+                            <div class="verify-container">
+                                @if (_phoneVerifying)
+                                {
+                                    <MudProgressCircular Indeterminate="true"
+                                                         Size="Size.Small"
+                                                         Color="Color.Inherit"
+                                                         Class="mx-3 verify-progress-circular" />
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.button" Class="verify-button-text">Verify</MudText>
+                                }
+                            </div>
+                        </MudButton>
+                    }
+                </div>
+            </MudPaper>
+            <MudText Color="Color.Error" Typo="Typo.caption" Class="mt-1">
+                @phoneErrorMessage
+            </MudText>
+            @if (showPhoneVerificationBox)
+            {
+                <MudPaper Class="@MobileCodeClass" Elevation="0">
+                    <div class="phone-flex">
+                        <MudTextField T="string"
+                                      id="phoneVerifcationCode"
+                                      Label="Phone Verification Code"
+                                      @bind-Value="PhoneVerificationCode"
+                                      MaxLength="6"
+                                      FullWidth="true"
+                                      Immediate="true"
+                                      Class="phone-input mobile-input" />
+                        <div class="verify-container">
+                            @if (_phoneCodeVerifying)
+                            {
+                                <MudProgressCircular Indeterminate="true"
+                                                     Size="Size.Small"
+                                                     Class="mx-3 verify-progress-circular custom-progress-color" />
+                            }
+                            else
+                            {
+                                <MudButton Variant="Variant.Filled"
+                                           id="phoneCodeCheckButton"
+                                           Loading="@_phoneCodeVerifying"
+                                           Disabled="@(!IsCodeValid(_phoneVerificationCode) || !ValidationHelper.IsValidPhoneNumber(_model.MobileNumber))"
+                                           OnClick="VerifyPhoneCode"
+                                           Class="verify-button">
+                                    <MudText Typo="Typo.button"
+                                             Class="verify-button-text">
+                                        Check
+                                    </MudText>
+                                </MudButton>
+                            }
+                        </div>
+
+
+
+                    </div>
+                </MudPaper>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
+                    <MudText Color="Color.Error" Typo="Typo.caption" Class="mt-1">
+                        @phoneCodeErrorMessage
+                    </MudText>
+                    @if (_ResendPhoneCode)
+                    {
+                        <span id="phoneCodeResend"
+                              style="color: var(--color-accent);
+            cursor: @(ValidationHelper.IsValidPhoneNumber(_model.MobileNumber) ? "pointer" : "not-allowed");
+           font-size: 0.8rem;
+           opacity: @(ValidationHelper.IsValidPhoneNumber(_model.MobileNumber) ? "1" : "0.5");"
+                              @onclick="@(ValidationHelper.IsValidPhoneNumber(_model.MobileNumber) ? TriggerPhoneCodeResend : null)"
+                              data-testid="resend-phone-code"
+                              aria-label="Resend Phone Verification Code">
+                            Resend Code
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="ml-1" style="color: var(--color-text-gray); font-size: 0.8rem;">Resend Code in @resendPhoneCountdown s</span>
+                    }
+                </div>
+            }
+
 
             <MudText Typo="Typo.body1" Class="label-text mb-1">
                 Email
@@ -191,159 +328,8 @@
                 </div>
             }
 
-            <MudText Typo="Typo.body1" Class="label-text mb-1">
-                Phone Number
-            </MudText>
-            <MudPaper Class="@MobileFieldClass" Elevation="0">
-                <div class="phone-flex">
-                    <MudSelect T="CountryModel"
-                               id="countryCodedropdown"
-                               @bind-Value="SelectedCountry"
-                               Class="country-select mobile-input"
-                               DisableUnderline="true"
-                               Disabled="@showMobileVerificationSuccess"
-                               Searchable="true">
-                        <MudSelectItem Value="@SelectedCountry">
-                            <div Class="country-option">
-                                <img src="@SelectedCountry.Flag" Class="selected-country-flag" />
-                                <span Class="country-code-text"> @SelectedCountry.Code </span>
-                            </div>
-
-                        </MudSelectItem>
-                        @foreach (var country in countryList)
-                        {
-                            <MudSelectItem Value="@country">
-                                <div Class="country-option">
-                                    <img src="@country.Flag"
-                                         alt="flag"
-                                         Class="selected-country-flag" />
-                                    <span Class="country-code-text">@country.Code</span>
-                                </div>
-                            </MudSelectItem>
-                        }
-                    </MudSelect>
-
-                    <MudNumericField T="string"
-                                     id="signInPhoneNumberField"
-                                     For="@(() => _model.MobileNumber)"
-                                     ValueChanged="OnMobileNumberChanged"
-                                     Disabled="showMobileVerificationSuccess"
-                                     MaxLength="15"
-                                     FullWidth="true"
-                                     StartAdornment="@SelectedCountry.Code"
-                                     Immediate="true"
-                                     HideSpinButtons="true"
-                                     Class="mobile-input" />
-
-                    @if (showMobileVerificationSuccess)
-                    {
-                        <MudText Typo="Typo.body1" Class="success-text">
-                            Verified
-                        </MudText>
-                    }
-                    else
-                    {
-                        <MudButton id="emailVerifyButton"
-                                   Variant="Variant.Filled"
-                                   Loading="@_phoneVerifying"
-                                   Disabled="@(!ValidationHelper.IsValidPhoneNumber(_model.MobileNumber))"
-                                   OnClick="OnVerifyPhoneClicked"
-                                   Class="verify-button">
-                            <div class="verify-container">
-                                @if (_phoneVerifying)
-                                {
-                                    <MudProgressCircular Indeterminate="true"
-                                                         Size="Size.Small"
-                                                         Color="Color.Inherit"
-                                                         Class="mx-3 verify-progress-circular" />
-                                }
-                                else
-                                {
-                                    <MudText Typo="Typo.button" Class="verify-button-text">Verify</MudText>
-                                }
-                            </div>
-                        </MudButton>
-                    }
-                </div>
-            </MudPaper>
-            <MudText Color="Color.Error" Typo="Typo.caption" Class="mt-1">
-                @phoneErrorMessage
-            </MudText>
-            @if (showPhoneVerificationBox)
-            {
-                <MudPaper Class="@MobileCodeClass" Elevation="0">
-                    <div class="phone-flex">
-                        <MudTextField T="string"
-                                      id="phoneVerifcationCode"
-                                      Label="Phone Verification Code"
-                                      @bind-Value="PhoneVerificationCode"
-                                      MaxLength="6"
-                                      FullWidth="true"
-                                      Immediate="true"
-                                      Class="phone-input mobile-input" />
-                        <div class="verify-container">
-                            @if (_phoneCodeVerifying)
-                            {
-                                <MudProgressCircular Indeterminate="true"
-                                                     Size="Size.Small"
-                                                     Class="mx-3 verify-progress-circular custom-progress-color" />
-                            }
-                            else
-                            {
-                                <MudButton Variant="Variant.Filled"
-                                           id="phoneCodeCheckButton"
-                                           Loading="@_phoneCodeVerifying"
-                                           Disabled="@(!IsCodeValid(_phoneVerificationCode) || !ValidationHelper.IsValidPhoneNumber(_model.MobileNumber))"
-                                           OnClick="VerifyPhoneCode"
-                                           Class="verify-button">
-                                    <MudText Typo="Typo.button"
-                                             Class="verify-button-text">
-                                        Check
-                                    </MudText>
-                                </MudButton>
-                            }
-                        </div>
-
-
-
-                    </div>
-                </MudPaper>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
-                    <MudText Color="Color.Error" Typo="Typo.caption" Class="mt-1">
-                        @phoneCodeErrorMessage
-                    </MudText>
-                    @if (_ResendPhoneCode)
-                    {
-                        <span id="phoneCodeResend"
-                              style="color: var(--color-accent);
-            cursor: @(ValidationHelper.IsValidPhoneNumber(_model.MobileNumber) ? "pointer" : "not-allowed");
-           font-size: 0.8rem;
-           opacity: @(ValidationHelper.IsValidPhoneNumber(_model.MobileNumber) ? "1" : "0.5");"
-                              @onclick="@(ValidationHelper.IsValidPhoneNumber(_model.MobileNumber) ? TriggerPhoneCodeResend : null)">
-                            Resend Code
-                        </span>
-                    }
-                    else
-                    {
-                        <span class="ml-1" style="color: var(--color-text-gray); font-size: 0.8rem;">Resend Code in @resendPhoneCountdown s</span>
-                    }
-                </div>
-            }
-
-            <MudText Typo="Typo.body1" Class="label-text">
-                Date of Birth
-            </MudText>
-            <MudDatePicker @bind-Date="_dateOfBirth"
-                           id="dateofBirthPicker"
-                           T="DateTime?"
-                           Label="Date of Birth"
-                           Variant="Variant.Outlined"
-                           Required="true"
-                           style="background-color: var(--color-background)"
-                           RequiredError="Date of Birth is required"
-                           PickerVariant="PickerVariant.Inline"
-                           MaxDate="@DateTime.Today.AddDays(-1)"
-                           Class="mt-1" />
+          
+           
             <MudText Typo="Typo.body1" Class="label-text">
                 Nationality
             </MudText>
@@ -384,7 +370,24 @@
                 }
             </MudSelect>
 
-
+            <MudText Typo="Typo.body1" Class="label-text">
+                Date of Birth
+            </MudText>
+            <MudDatePicker @bind-Date="_dateOfBirth"
+                           T="DateTime?"
+                           Label="Date of Birth"
+                           Variant="Variant.Outlined"
+                           Required="true"
+                           style="background-color: var(--color-background)"
+                           RequiredError="Date of Birth is required"
+                           PickerVariant="PickerVariant.Inline"
+                           MaxDate="@DateTime.Today.AddDays(-1)"
+                           Class="mt-1"
+                           InputAttributes="@(new Dictionary<string, object>
+               {
+                   ["aria-label"] = "Date of Birth",
+                   ["data-testid"] = "date-of-birth-picker"
+               })" />
             <MudText Typo="Typo.body1" Class="label-text">
                 Password
             </MudText>
@@ -550,7 +553,7 @@
         {
             Name = "Qatar",
             Code = "+974",
-            Flag = "https://flagcdn.com/qa.svg"
+            Flag = "https://flagcdn.com/w40/qa.png"
         };
 
     private string EmailVerificationCode
@@ -1084,34 +1087,18 @@
     }
 
     .country-select {
-        width: 100px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        width: 120px;
     }
 
     .selected-country-flag {
-        width: 30px;
-        height: 22px;
+        width: 20px;
+        height: 14px;
         margin-right: 5px;
-        border-radius: 50%;
-        border: 1px solid #ccc;
-        object-fit: cover;
-        display: inline-block;
     }
 
     .country-option {
         display: flex;
         align-items: center;
-        padding: 8px;
-    }
-
-    .country-selected-option {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        padding: 0 8px;
     }
 
     .country-flag {
@@ -1123,8 +1110,7 @@
 
     .country-code-text {
         white-space: nowrap;
-        font-size: 18px;
-        margin-bottom: 4px;
+        font-size: 14px;
     }
 
     .mobile-input {
@@ -1139,17 +1125,6 @@
         .mobile-input .mud-input-underline:before,
         .mobile-input .mud-input-underline:after {
             display: none !important;
-        }
-
-    .mud-select .mud-select-input {
-        cursor: pointer
-    }
-
-        .mud-select .mud-select-input .mud-input-slot {
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            height: 30px !important;
         }
 
     .date-picker {
@@ -1167,7 +1142,7 @@
     .divider-line {
         flex-grow: 1;
         height: 1px;
-          background-color: #ccc;
+        background-color: #ccc;
     }
 
     .label-text {
