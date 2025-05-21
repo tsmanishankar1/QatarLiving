@@ -18,15 +18,15 @@
 @inject CustomAuthStateProvider CustomAuthenticationStateProvider;
 @inject IJSRuntime JS
 
-<div id="login-container" style="width: 100%; background-color: var(--color-secondary-background); padding: 32px 16px;">
+<div id="login-container" style="width: 100%; background-color: var(--color-secondary-background); padding: 100px 16px;">
     <div style="max-width: 400px; margin: 0 auto;">
-        <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-4 login-heading">Log in to your account</MudText>
-        <MudStack AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
-            <MudText Typo="Typo.body1" Align="Align.Center" Class="login-description">
+        <MudText Align="Align.Center" Class="mt-4 login-heading">Log in to your account</MudText>
+        <MudStack AlignItems="AlignItems.Center"  Class="mb-4">
+            <MudText  Align="Align.Center" Class="login-description">
                 Welcome back! Please enter your details.
             </MudText>
         </MudStack>
-        <MudText Typo="Typo.body1" Class="label-text">
+        <MudText Typo="Typo.body1" Class="email-text">
             Email or Phone number </MudText>
         <MudTextField id="loginEmailInput" T="string" Label="Email or Phone number" Variant="Variant.Outlined" FullWidth="true"
             InputType="InputType.Text" style="background-color: var(--color-background)" MaxLength="50" Required="true"
@@ -46,7 +46,7 @@
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
             <MudCheckBox T="bool" Label="Remember me" DisableMargins="true" id="rememberMeCheckBox"/>
-            <NavLink id="forgetPasswordLink" href="/forgot-password" style="color: var(--color-accent)"> Forgot Password?</NavLink>
+            <NavLink id="forgetPasswordLink" href="/forgot-password" class="link-style"> Forgot Password?</NavLink>
         </div>
 
         <CustomButton id="signInButton" BackgroundColor="var(--color-accent)" TextColor="#FFFFFF" Text="Sign In" Disabled="_isLoading"
@@ -59,7 +59,7 @@
             <div style="flex-grow: 1; height: 1px; background-color: var(--color-secondary-grey-container)"></div>
         </div>
 
-        <MudGrid Justify="Justify.SpaceEvenly" GutterSize="12px">
+        <MudGrid Class="social-buttons-container">
     <MudItem xs="2">
                 <MudButton id="googleLoginButton" Variant="Variant.Outlined" Class="social-login-button">
             <img src="/images/google.svg" alt="Google" style="height: 24px;" />
@@ -85,7 +85,7 @@
         <MudStack AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
             <MudText Align="Align.Start" Class="mt-4 label-text">
                 Don't have an account?
-                <NavLink href="/signup" id="signUpLink" style="color: var(--color-accent)">Sign Up</NavLink>
+                <NavLink href="/signup" id="signUpLink" class="link-style">Sign Up</NavLink>
             </MudText>
         </MudStack>
     </div>
@@ -210,7 +210,7 @@
 
 <style>
     .login-heading {
-        font-weight: 500;
+        font-weight: 600;
         font-size: 30px;
         font-family: 'Public Sans', sans-serif;
         margin-bottom: 1.5rem;
@@ -231,5 +231,30 @@
         font-weight: 400;
         font-size: 14px;
         color: var(--color-text-heading);
+        margin-top: 30px;
     }
+
+    .email-text {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 400;
+        font-size: 14px;
+        color: var(--color-text-heading);
+        margin-top: 22px;
+    }
+
+    .link-style {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--color-accent); 
+    }
+
+    .social-buttons-container
+    {
+        gap: 20px;
+        width: 524px;
+        display: flex;
+        flex-direction: row;
+    }
+
 </style>
