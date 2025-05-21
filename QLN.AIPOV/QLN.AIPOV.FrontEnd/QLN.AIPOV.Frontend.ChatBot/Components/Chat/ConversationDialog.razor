@@ -3,11 +3,11 @@
         <MudText Typo="Typo.h6">Chat with AI</MudText>
     </TitleContent>
     <DialogContent>
-        <MessageList Messages="Messages" SelectedValueChanged="OnDescriptionSelected" />
+        <JobDescriptionList JobDescriptions="JobDescriptions" SelectedValueChanged="OnDescriptionSelected" />
     </DialogContent>
     <DialogActions>
         <MudSpacer />
-        <MudButton OnClick="SelectDescription" Disabled="string.IsNullOrEmpty(Description)" Color="Color.Secondary" Variant="Variant.Filled">Choose Selected Value</MudButton>
+        <MudButton OnClick="SelectDescription" Disabled="SelectedJobDescription == null" Color="Color.Secondary" Variant="Variant.Filled">Choose Selected Value</MudButton>
         <MudButton OnClick="Close" Color="Color.Primary" Variant="Variant.Filled">Close</MudButton>
     </DialogActions>
 </MudDialog>

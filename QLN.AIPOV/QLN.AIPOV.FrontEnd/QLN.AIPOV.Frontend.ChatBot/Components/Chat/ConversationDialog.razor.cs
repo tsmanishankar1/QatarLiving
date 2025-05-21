@@ -6,24 +6,23 @@ namespace QLN.AIPOV.Frontend.ChatBot.Components.Chat
 {
     public partial class ConversationDialog
     {
-        [Parameter] public List<ChatMessageModel> Messages { get; set; } = new();
+        [Parameter] public List<JobDescription> JobDescriptions { get; set; } = new();
 
-        [CascadingParameter]
-        IMudDialogInstance? MudDialog { get; set; }
+        [CascadingParameter] IMudDialogInstance? MudDialog { get; set; }
 
-        private string? Description { get; set; }
+        private JobDescription? SelectedJobDescription { get; set; }
 
         private void Close() => MudDialog?.Cancel();
 
         private void SelectDescription()
         {
-            if (!string.IsNullOrEmpty(Description))
-                MudDialog?.Close(DialogResult.Ok(Description));
+            if (SelectedJobDescription != null)
+                MudDialog?.Close(DialogResult.Ok(SelectedJobDescription));
         }
 
-        private void OnDescriptionSelected(ChatMessageModel selectedDescription)
+        private void OnDescriptionSelected(JobDescription selectedDescription)
         {
-            Description = selectedDescription.Content;
+            SelectedJobDescription = selectedDescription;
         }
     }
 }

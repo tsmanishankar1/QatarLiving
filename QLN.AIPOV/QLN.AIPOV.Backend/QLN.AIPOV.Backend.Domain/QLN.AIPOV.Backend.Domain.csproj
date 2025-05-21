@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\QLN.AIPOV.Backend.Application\QLN.AIPOV.Backend.Application.csproj" />
+    <ProjectReference Include="..\QLN.AIPOV.Backend.Infrastructure\QLN.AIPOV.Backend.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
