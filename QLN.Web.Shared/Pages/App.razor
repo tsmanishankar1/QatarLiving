@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="_content/QLN.Web.Shared/css/site.css" />
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;700&display=swap"
         rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
     <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
     <link rel="icon" type="image/png" href="favicon.png" />
     <HeadOutlet />
@@ -19,6 +20,7 @@
 <body>
     <Routes @rendermode="InteractiveServer" />
     <script src="_content/MudBlazor/MudBlazor.min.js?v=8.5.1"></script>
+    <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
     <script src="_framework/blazor.web.js"></script>
     <script src="_content/Extensions.MudBlazor.StaticInput/NavigationObserver.js?v=3.2.0"></script>
     <script>
@@ -75,6 +77,125 @@
             if (element) element.click();
         };
     </script>
+    <script>
+        window.initSeasonalSwiper = () => {
+            new Swiper('.swiper-seasonal', {
+                slidesPerView: 'auto',
+                spaceBetween: 16,
+                navigation: {
+                    nextEl: '.swiper-seasonal-button-next',
+                    prevEl: '.swiper-seasonal-button-prev'
+                },
+                breakpoints: {
+                    640: { slidesPerView: 1 },
+                    768: { slidesPerView: 2 },
+                    1024: { slidesPerView: 3 }
+                }
+            });
+        };
+
+        let featuredSwiperInstance;
+
+        function initFeaturedSwiper() {
+            if (featuredSwiperInstance) {
+                featuredSwiperInstance.destroy(true, true);
+            }
+
+            const swiperEl = document.querySelector('.swiper-featured');
+            if (!swiperEl) {
+                console.warn("Swiper element not found");
+                return;
+            }
+
+            featuredSwiperInstance = new Swiper(swiperEl, {
+                slidesPerView: 'auto',
+                spaceBetween: 10,
+                navigation: {
+                    nextEl: ".swiper-featured-button-next",
+                    prevEl: ".swiper-featured-button-prev",
+                },
+                pagination: {
+                    el: ".swiper-featured-pagination",
+                    clickable: true,
+                },
+                breakpoints: {
+                    // Small devices (phones - landscape)
+                    480: { slidesPerView: 1.2, spaceBetween: 12 },
+                    // Medium devices (small tablets)
+                    640: { slidesPerView: 1.8, spaceBetween: 12 },
+                    // Tablets
+                    768: { slidesPerView: 2.5, spaceBetween: 14 },
+                    // Large tablets or small laptops
+                    860: { slidesPerView: 2.8, spaceBetween: 16 },
+                    // Small laptops
+                    1024: { slidesPerView: 3.2, spaceBetween: 18 },
+                    // Medium laptops
+                    1120: { slidesPerView: 4, spaceBetween: 10 },
+                    // Standard desktops
+                    1280: {
+                        slidesPerView: 4.2, spaceBetween: 15,
+                    },
+                    // Large desktops
+                    1440: {
+                        slidesPerView: 4.8,
+                        spaceBetween: 20,
+                    },
+                    // Extra large screens (4K, ultrawide)
+                    1600: {
+                        slidesPerView: 5.5,
+                        spaceBetween: 24,
+                    },
+                    1920: {
+                        slidesPerView: 6,
+                        spaceBetween: 30,
+                    }
+                }
+
+            });
+        }
+        let categoriesSwiperInstance;
+
+        function initCategoriesSwiper() {
+            if (categoriesSwiperInstance) {
+                categoriesSwiperInstance.destroy(true, true);
+            }
+
+            const swiperEl = document.querySelector('.swiper-categories');
+            if (!swiperEl) {
+                console.warn("Categories swiper element not found");
+                return;
+            }
+
+            categoriesSwiperInstance = new Swiper(swiperEl, {
+                slidesPerView: 'auto',
+                spaceBetween: 10,
+                navigation: {
+                    nextEl: ".swiper-categories-button-next",
+                    prevEl: ".swiper-categories-button-prev",
+                },
+                // No pagination
+                pagination: {
+                    el: '.swiper-categories-pagination',
+                    clickable: true,
+                },
+                breakpoints: {
+                    480: { slidesPerView: 2, spaceBetween: 12 },
+                    640: { slidesPerView: 3.8, spaceBetween: 12 },
+                    768: { slidesPerView: 4, spaceBetween: 14 },
+                    860: { slidesPerView: 4.8, spaceBetween: 16 },
+                    1024: { slidesPerView: 5.2, spaceBetween: 10 },
+                    1120: { slidesPerView: 6, spaceBetween: 5 },
+                    1280: { slidesPerView: 6.5, spaceBetween: 10 },
+                    1440: { slidesPerView: 7, spaceBetween: 15 },
+                    1600: { slidesPerView: 7.5, spaceBetween: 20 },
+                    1920: { slidesPerView: 8, spaceBetween: 25 }
+                }
+            });
+        }
+
+
+    </script>
+
 
 </body>
 

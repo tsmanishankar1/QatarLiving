@@ -3,19 +3,20 @@
 <div class="category-card-section" @onclick="() => OnClick.InvokeAsync(Item)">
     <div class="card-contents">
         <img src="@Item.ImageUrl" alt="@Item.Category" class="category-image" />
-        <h4 class="category-title">@Item.Category</h4>
+        <h4 class="category-card-title">@Item.Category</h4>
     </div>
 </div>
 
 
 <style>
     .category-card-section {
-        flex: 0 0 calc(100% / 5 - 1rem);
         margin-right: 1rem;
         border-radius: 12px;
         transition: transform 0.3s ease;
         cursor: pointer;
         padding: 0;
+        width: 181px;
+        height: 290px
     }
 
     .category-card-section:hover {
@@ -36,10 +37,10 @@
         margin-bottom: 8px;
     }
 
-    .category-titles {
+    .category-card-title {
         font-size: 18px;
         font-weight: 600;
-        color: var(--color-text-heading);
+        color: #242424;
     }
 
     @@media (max-width: 768px) {
@@ -63,8 +64,9 @@
             text-align: left;
         }
 
-        .category-titles {
+        .category-card-title {
             font-size: 0.85rem;
+            color: #242424;
             text-align: center;
             white-space: nowrap;
             overflow: hidden;

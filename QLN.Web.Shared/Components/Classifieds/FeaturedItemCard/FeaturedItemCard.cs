@@ -7,7 +7,6 @@ namespace QLN.Web.Shared.Components.Classifieds.FeaturedItemCard
 {
     public partial class FeaturedItemCard : ComponentBase
     {
-        [Inject] protected NavigationManager NavigationManager { get; set; } = default!;
             [Inject] protected IJSRuntime JS { get; set; }
 
         [Parameter]
@@ -43,13 +42,9 @@ namespace QLN.Web.Shared.Components.Classifieds.FeaturedItemCard
             await OnHeartClick.InvokeAsync(item);
         }
 
-        protected Task HandleSelect(FeaturedItem item)
-        {
-            // Get the current base route like /classifieds/items
+       [Parameter]
+public EventCallback<FeaturedItem> OnSelect { get; set; }
 
-            NavigationManager.NavigateTo($"/classifieds/items/details?id={item.Id}");
-            return Task.CompletedTask;
-        }
         public class FeaturedItem
         {
              public string Id { get; set; } = string.Empty;
