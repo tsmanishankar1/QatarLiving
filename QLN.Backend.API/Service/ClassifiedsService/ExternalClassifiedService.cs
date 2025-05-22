@@ -1,14 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Net.Http;
+using System.Security.Claims;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Dapr;
 using Dapr.Client;
+using Google.Api;
+using Microsoft.Extensions.Hosting;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService.BannerService;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.Utilities;
 
 namespace QLN.Backend.API.Service.ClassifiedService
 {
@@ -804,41 +811,68 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        //public async Task<string> CreateAd(AdInformation ad, string userId, CancellationToken token = default)
-        //{
-        //    try
-        //    {
-        //        var url = $"api/{Vertical}/ad";
-        //        return await _dapr.InvokeMethodAsync<AdInformation, string>(
-        //            HttpMethod.Post,
-        //            SERVICE_APP_ID,
-        //            url,
-        //            ad,
-        //            cancellationToken: token);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _log.LogException(ex);
-        //        throw;
-        //    }
-        //}
 
-        //public async Task<List<AdResponse>> GetUserAds(string userId, bool? isPublished, CancellationToken token = default)
-        //{
-        //    try
-        //    {
-        //        var url = $"api/{Vertical}/ad/user?isPublished={isPublished}";
-        //        return await _dapr.InvokeMethodAsync<List<AdResponse>>(
-        //            HttpMethod.Get,
-        //            SERVICE_APP_ID,
-        //            url,
-        //            cancellationToken: token);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _log.LogException(ex);
-        //        throw;
-        //    }
 
+        public async Task<bool> SaveSearch(SaveSearchRequestDto dto ,Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var requestDto = new SaveSearchRequestByIdDto
+                {
+                UserId = userId,
+                Name = dto.Name,
+                CreatedAt = dto.CreatedAt,
+                SearchQuery = dto.SearchQuery
+                };
+
+                var result = await _dapr.InvokeMethodAsync<SaveSearchRequestByIdDto, string>(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    $"api/{Vertical}/search/by-category-id",
+                    requestDto,
+                    cancellationToken
+                );
+
+                return !string.IsNullOrWhiteSpace(result);
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to save search due to internal error.", ex);
+            }
         }
+
+        public async Task<List<SavedSearchResponseDto>> GetSearches(string userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new ArgumentException("User ID is required", nameof(userId));
+
+                var result = await _dapr.InvokeMethodAsync<List<SavedSearchResponseDto>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/{Vertical}/search/save-by-id?userId={userId}",
+                    cancellationToken
+                );
+
+                return result ?? new List<SavedSearchResponseDto>();
+            }
+            catch (DaprException dex)
+            {
+                _log.LogException(dex);
+                throw new InvalidOperationException("Failed to fetch saved searches due to Dapr error.", dex);
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("An unexpected error occurred while fetching saved searches.", ex);
+            }
+        }       
+
+        public Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }

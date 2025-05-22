@@ -44,24 +44,24 @@ builder.Services.AddSwaggerGen(opts => {
     opts.OperationFilter<SwaggerFileUploadFilter>();
 });
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-  .AddJwtBearer(opt => {
-      opt.RequireHttpsMetadata = true;
-      opt.TokenValidationParameters = new TokenValidationParameters
-      {
-          ValidateIssuer = true,
-          ValidateAudience = true,
-          ValidateLifetime = true,
-          ValidateIssuerSigningKey = true,
-          ValidIssuer = builder.Configuration["Jwt:Issuer"],
-          ValidAudience = builder.Configuration["Jwt:Audience"],
-          IssuerSigningKey = new SymmetricSecurityKey(
-           Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
-      };
-      opt.MapInboundClaims = false;
-      opt.TokenValidationParameters.RoleClaimType = "role";
-      opt.TokenValidationParameters.NameClaimType = "name";
-  });
+//builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+//  .AddJwtBearer(opt => {
+//      opt.RequireHttpsMetadata = true;
+//      opt.TokenValidationParameters = new TokenValidationParameters
+//      {
+//          ValidateIssuer = true,
+//          ValidateAudience = true,
+//          ValidateLifetime = true,
+//          ValidateIssuerSigningKey = true,
+//          ValidIssuer = builder.Configuration["Jwt:Issuer"],
+//          ValidAudience = builder.Configuration["Jwt:Audience"],
+//          IssuerSigningKey = new SymmetricSecurityKey(
+//           Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+//      };
+//      opt.MapInboundClaims = false;
+//      opt.TokenValidationParameters.RoleClaimType = "role";
+//      opt.TokenValidationParameters.NameClaimType = "name";
+//  });
 builder.Services.AddAuthorization();
 builder.Services.AddDaprClient();
 
@@ -81,8 +81,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
+//app.UseAuthentication();
+//app.UseAuthorization();
 
 app.MapGroup("/api/classifieds")
    .MapClassifiedsEndpoints();
