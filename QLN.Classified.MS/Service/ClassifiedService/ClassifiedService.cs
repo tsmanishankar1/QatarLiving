@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Dapr;
 using Dapr.Client;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,7 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.BannerService;
 using QLN.Common.Infrastructure.Model;
+using static Dapr.Client.Autogen.Grpc.v1.Dapr;
 
 namespace QLN.Classified.MS.Service
 {
@@ -21,14 +23,14 @@ namespace QLN.Classified.MS.Service
         private const string SERVICE_APP_ID = ConstantValues.SearchServiceApp;
         private const string Vertical = ConstantValues.ClassifiedsVertical;
         private readonly IWebHostEnvironment _env;
-        private readonly DaprClient _dapr;        
+        private readonly Dapr.Client.DaprClient _dapr;        
         private readonly IBannerService _bannerService;
 
         private const string UnifiedStore = "adstore";
         private const string UnifiedIndexKey = "ad-index";               
         private readonly ILogger<ClassifiedService> _logger;
 
-        public ClassifiedService(DaprClient dapr, ILogger<ClassifiedService> logger, IWebHostEnvironment env, IBannerService bannerService)
+        public ClassifiedService(Dapr.Client.DaprClient dapr, ILogger<ClassifiedService> logger, IWebHostEnvironment env, IBannerService bannerService)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -943,5 +945,84 @@ namespace QLN.Classified.MS.Service
                 throw;
             }
         }
+
+        public async Task<bool> SaveSearchAsync(SaveSearchRequestDto dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto), "Search request cannot be null.");
+
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                throw new ArgumentException("Search name is required.", nameof(dto.Name));
+
+            if (dto.SearchQuery == null)
+                throw new ArgumentException("Search query details are required.", nameof(dto.SearchQuery));
+
+            try
+            {
+                var key = $"search:{dto.UserId}";
+
+                var existing = await _dapr.GetStateAsync<List<SavedSearchResponseDto>>(UnifiedStore, key)
+                               ?? new List<SavedSearchResponseDto>();
+
+                var newSearch = new SavedSearchResponseDto
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = dto.UserId,
+                    Name = dto.Name,
+                    CreatedAt = DateTime.UtcNow,
+                    SearchQuery = dto.SearchQuery
+                };
+
+                existing.Insert(0, newSearch);
+
+                if (existing.Count > 30)
+                    existing = existing.Take(30).ToList();
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, existing);
+
+                var confirm = await _dapr.GetStateAsync<List<SavedSearchResponseDto>>(UnifiedStore, key);
+                if (confirm == null || !confirm.Any(x => x.Id == newSearch.Id))
+                {
+                    throw new InvalidOperationException("Failed to confirm that the search was saved.");
+                }
+
+                return true;
+            }
+            catch (DaprException dex)
+            {
+                Console.WriteLine($"Dapr error while saving search: {dex.Message}");
+                throw new InvalidOperationException("Failed to save search due to Dapr error.", dex);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected error while saving search: {ex.Message}");
+                throw new InvalidOperationException("An unexpected error occurred while saving search.", ex);
+            }
+        }
+
+        public async Task<List<SavedSearchResponseDto>> GetSearchesAsync(string userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new ArgumentException("UserId is required.");
+
+                var key = $"search:{userId}";
+                var result = await _dapr.GetStateAsync<List<SavedSearchResponseDto>>(UnifiedStore, key);
+
+                return result ?? new List<SavedSearchResponseDto>();
+            }
+            catch (DaprException dex)
+            {
+                Console.WriteLine($"Dapr error: {dex.Message}");
+                throw new InvalidOperationException("Failed to retrieve saved searches due to Dapr error.", dex);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected error: {ex.Message}");
+                throw new InvalidOperationException("An unexpected error occurred while retrieving saved searches.", ex);
+            }
+        }
+
     }
 }

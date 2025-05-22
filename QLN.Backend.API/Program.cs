@@ -14,9 +14,7 @@ using QLN.Backend.API.ServiceConfiguration;
 using QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints;
 using QLN.Common.Swagger;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.SaveSearchEndPoints;
 using QLN.Common.Infrastructure.IService;
-using QLN.Common.Infrastructure.Service.SaveSearch;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -174,11 +172,10 @@ if (app.Environment.IsDevelopment())
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
 
-var classifiedGroup = app.MapGroup("/api/classified");
+var classifiedGroup = app.MapGroup("/api/classifieds");
 classifiedGroup.MapClassifiedsEndpoints();
 
-var searchGroup = app.MapGroup("/api");
-searchGroup.MapSearchEndpoints();
+
 
 app.UseHttpsRedirection();
 app.UseAuthentication();

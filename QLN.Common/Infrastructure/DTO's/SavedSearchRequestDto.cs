@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,7 +9,10 @@ namespace QLN.Common.Infrastructure.DTO_s
 {
     public class SaveSearchRequestDto
     {
-        public string Name { get; set; } = string.Empty; 
+
+        [MinLength(1)]
+        [MaxLength]
+        public string Name { get; set; } = string.Empty;
         public Guid? UserId { get; set; } 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public CommonSearchRequest SearchQuery { get; set; } = new();

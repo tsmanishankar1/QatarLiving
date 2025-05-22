@@ -1,15 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Dapr;
 using Dapr.Client;
+using Microsoft.Extensions.Hosting;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService.BannerService;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.Utilities;
 
 namespace QLN.Backend.API.Service.ClassifiedService
 {
@@ -804,6 +808,60 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw;
             }
         }
+
+
+
+        public async Task<bool> SaveSearchAsync(SaveSearchRequestDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<SaveSearchRequestDto, string>(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    $"api/{Vertical}/search/by-category-id",
+                    dto,
+                    cancellationToken
+                );
+
+                return !string.IsNullOrWhiteSpace(result);
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to save search due to internal error.", ex);
+            }
+        }
+
+        public async Task<List<SavedSearchResponseDto>> GetSearchesAsync(string userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new ArgumentException("User ID is required", nameof(userId));
+
+                var result = await _dapr.InvokeMethodAsync<List<SavedSearchResponseDto>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/{Vertical}/search/save-by-id?userId={userId}",
+                    cancellationToken
+                );
+
+                return result ?? new List<SavedSearchResponseDto>();
+            }
+            catch (DaprException dex)
+            {
+                _log.LogException(dex);
+                throw new InvalidOperationException("Failed to fetch saved searches due to Dapr error.", dex);
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("An unexpected error occurred while fetching saved searches.", ex);
+            }
+        }
+
+
+
 
         public async Task<string> CreateAd(AdInformation ad, CancellationToken token = default)
         {
