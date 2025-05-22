@@ -48,9 +48,9 @@ namespace QLN.Common.Infrastructure.IService.BannerService
         Task<AdGender> AddGender(string name, CancellationToken cancellationToken = default);
         Task<List<AdGender>> GetAllGenders(CancellationToken cancellationToken = default);
         Task<AdZone> AddZone(string name, CancellationToken cancellationToken = default);
-        Task<List<AdZone>> GetAllZones(CancellationToken cancellationToken = default);
-        Task<string> CreateAd(AdInformation ad, CancellationToken token = default);
-        Task<bool> SaveSearchAsync(SaveSearchRequestDto dto, CancellationToken cancellationToken = default);
+        Task<List<AdZone>> GetAllZones(CancellationToken cancellationToken = default);       
+        Task<bool> SaveSearchAsync(SaveSearchRequestDto dto, Guid userId, CancellationToken cancellationToken = default);
+        Task<bool> SaveSearchByIdAsync(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default);
         Task<List<SavedSearchResponseDto>> GetSearchesAsync(string userId, CancellationToken cancellationToken = default);
 
     }

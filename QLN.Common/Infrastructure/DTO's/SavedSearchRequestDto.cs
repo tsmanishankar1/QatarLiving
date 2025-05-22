@@ -13,7 +13,16 @@ namespace QLN.Common.Infrastructure.DTO_s
         [MinLength(1)]
         [MaxLength]
         public string Name { get; set; } = string.Empty;
-        public Guid? UserId { get; set; } 
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public CommonSearchRequest SearchQuery { get; set; } = new();
+    }
+    public class SaveSearchRequestByIdDto
+    {
+
+        [MinLength(1)]
+        [MaxLength]
+        public string Name { get; set; } = string.Empty;
+        public Guid? UserId { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public CommonSearchRequest SearchQuery { get; set; } = new();
     }

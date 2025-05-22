@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Net.Http;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Dapr;
 using Dapr.Client;
+using Google.Api;
 using Microsoft.Extensions.Hosting;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
@@ -811,15 +813,23 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
 
 
-        public async Task<bool> SaveSearchAsync(SaveSearchRequestDto dto, CancellationToken cancellationToken = default)
+        public async Task<bool> SaveSearchAsync(SaveSearchRequestDto dto ,Guid userId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<SaveSearchRequestDto, string>(
+                var requestDto = new SaveSearchRequestByIdDto
+                {
+                UserId = userId,
+                Name = dto.Name,
+                CreatedAt = dto.CreatedAt,
+                SearchQuery = dto.SearchQuery
+                };
+
+                var result = await _dapr.InvokeMethodAsync<SaveSearchRequestByIdDto, string>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/search/by-category-id",
-                    dto,
+                    requestDto,
                     cancellationToken
                 );
 
@@ -858,78 +868,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 _log.LogException(ex);
                 throw new InvalidOperationException("An unexpected error occurred while fetching saved searches.", ex);
             }
-        }
+        }       
 
-
-
-
-        public async Task<string> CreateAd(AdInformation ad, CancellationToken token = default)
+        public Task<bool> SaveSearchByIdAsync(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                using var form = new MultipartFormDataContent();
-
-                form.Add(new StringContent(ad.UserId), nameof(ad.UserId));
-                form.Add(new StringContent(ad.SubVertical), nameof(ad.SubVertical));
-                form.Add(new StringContent(ad.Title), nameof(ad.Title));
-                form.Add(new StringContent(ad.Description), nameof(ad.Description));
-                form.Add(new StringContent(ad.Category), nameof(ad.Category));
-                form.Add(new StringContent(ad.SubCategory), nameof(ad.SubCategory));
-                form.Add(new StringContent(ad.Brand), nameof(ad.Brand));
-                form.Add(new StringContent(ad.Model), nameof(ad.Model));
-                form.Add(new StringContent(ad.Condition), nameof(ad.Condition));
-                form.Add(new StringContent(ad.Price.ToString()), nameof(ad.Price));
-                form.Add(new StringContent(ad.Color), nameof(ad.Color));
-                form.Add(new StringContent(ad.Capacity), nameof(ad.Capacity));
-                form.Add(new StringContent(ad.Processor), nameof(ad.Processor));
-                form.Add(new StringContent(ad.Coverage), nameof(ad.Coverage));
-                form.Add(new StringContent(ad.Ram), nameof(ad.Ram));
-                form.Add(new StringContent(ad.Resolution), nameof(ad.Resolution));
-                form.Add(new StringContent(ad.BatteryPercentage.ToString()), nameof(ad.BatteryPercentage));
-                form.Add(new StringContent(ad.Size ?? ""), nameof(ad.Size));
-                form.Add(new StringContent(ad.SizeType ?? ""), nameof(ad.SizeType));
-                form.Add(new StringContent(ad.Gender), nameof(ad.Gender));
-                form.Add(new StringContent(ad.PhoneNumber), nameof(ad.PhoneNumber));
-                form.Add(new StringContent(ad.WhatsappNumber), nameof(ad.WhatsappNumber));
-                form.Add(new StringContent(ad.zone), nameof(ad.zone));
-                form.Add(new StringContent(ad.streetNumber), nameof(ad.streetNumber));
-                form.Add(new StringContent(ad.buildingNumber), nameof(ad.buildingNumber));
-                form.Add(new StringContent(ad.Ispublished.ToString()), nameof(ad.Ispublished));
-
-                if (ad.WarrantyCertificate != null)
-                {
-                    var licenseContent = new StreamContent(ad.WarrantyCertificate.OpenReadStream());
-                    licenseContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(ad.WarrantyCertificate.ContentType);
-                    form.Add(licenseContent, nameof(ad.WarrantyCertificate), ad.WarrantyCertificate.FileName);
-                }
-
-                if (ad.UploadPhotos != null)
-                {
-                    var photoContent = new StreamContent(ad.UploadPhotos.OpenReadStream());
-                    photoContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(ad.UploadPhotos.ContentType);
-                    form.Add(photoContent, nameof(ad.UploadPhotos), ad.UploadPhotos.FileName);
-                }
-
-                // Create Dapr HTTP client without authorization
-                using var httpClient = DaprClient.CreateInvokeHttpClient(SERVICE_APP_ID);
-                using var request = new HttpRequestMessage(HttpMethod.Post, $"/api/{Vertical}/ad")
-                {
-                    Content = form
-                };
-
-                var response = await httpClient.SendAsync(request, token);
-                response.EnsureSuccessStatusCode();
-
-                var result = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: token);
-                return result.GetProperty("Key").GetString() ?? throw new Exception("Ad creation failed.");
-            }
-            catch (Exception ex)
-            {
-                _log?.LogException(ex);
-                throw;
-            }
+            throw new NotImplementedException();
         }
-       
-
     }
 }
