@@ -817,7 +817,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<bool> SaveSearchByIdAsync(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default)
+        public async Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default)
         {
             if (dto == null)
                 throw new ArgumentNullException(nameof(dto), "Search request cannot be null.");
@@ -871,7 +871,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<List<SavedSearchResponseDto>> GetSearchesAsync(string userId, CancellationToken cancellationToken = default)
+        public async Task<List<SavedSearchResponseDto>> GetSearches(string userId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -895,7 +895,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public Task<bool> SaveSearchAsync(SaveSearchRequestDto dto, Guid userId, CancellationToken cancellationToken = default)
+        public Task<bool> SaveSearch(SaveSearchRequestDto dto, Guid userId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

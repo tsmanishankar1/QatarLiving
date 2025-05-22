@@ -10,9 +10,11 @@
 @using QLN.Web.Shared.Components.CustomButton
 @using QLN.Web.Shared.Components.ModalDialog
 @using QLN.Common.DTO_s;
+@using System.Security.Claims;
 @using System.Text.Json
 @using System.Timers;
 @using static QLN.Web.Shared.Helpers.HttpErrorHelper;
+@inject CustomAuthStateProvider CustomAuthenticationStateProvider;
 
 @if (VerificationSucesss)
 {
@@ -40,8 +42,7 @@
         </div>
 
         <CustomButton BackgroundColor="#FF7F38" TextColor="#FFFFFF" Text="Verify" Disabled="_isLoading"
-            Loading="_isLoading" OnClick="@VerifyCode" Class="verify-btn" aria-label="Verify Button"
-    data-testid="verify-button" />
+            Loading="_isLoading" OnClick="@VerifyCode" Class="verify-btn" id="twoFactorVerifyButton"/>
 
         <p class="resend">
             Didn't receive a code?
@@ -51,11 +52,11 @@
             }
             else
             {
-                <span style="color:var(--color-accent); cursor:pointer;" @onclick="ResendCode" id="resend-code" data-testid="resend-code-button">Resend</span>
+                <span style="color:var(--color-accent); cursor:pointer;" @onclick="ResendCode" id="twoFactorResend">Resend</span>
             }
         </p>
 
-        <p class="alternative" @onclick="NavigateToForgotPassword">Use another verification method</p>
+        <p id="useAnotherVerification" class="alternative" @onclick="NavigateToForgotPassword">Use another verification method</p>
     </div>
 </div>
 
@@ -72,14 +73,25 @@
     private bool _isResendDisabled = false;
     private int _resendCountdown = 0;
     private Timer? _resendTimer;
+    public string email{ get; set; }
+    public string mobile{ get; set; }
 
-    protected override void OnInitialized()
+    protected override async void OnInitialized()
     {
         var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
         if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("method", out var method))
         {
             _method = method.ToString();
         }
+        var authState = await CustomAuthenticationStateProvider.GetAuthenticationStateAsync();
+             if (authState != null){
+                var user = authState.User;
+                if (user.Identity != null && user.Identity.IsAuthenticated)
+                {
+                    email = user.FindFirst(ClaimTypes.Email)?.Value;
+                    mobile = user.FindFirst(ClaimTypes.MobilePhone)?.Value;
+                }
+            } 
     }
 
     private async Task OnOtpChanged(string? value, int index)
@@ -117,7 +129,7 @@
         var payload = new
         {
             twoFactorCode = _code,
-            @* usernameOrEmailOrPhone = _method == "email" ? AppState?.Email : AppState?.MobileNumber, *@
+            usernameOrEmailOrPhone = _method == "email" ? email : mobile,
             method = _method == "sms" ? "phone" : _method
         };
 
@@ -151,7 +163,7 @@
         }
         var payload = new
         {
-            @* usernameOrEmailOrPhone = _method == "email" ? AppState?.Email : AppState?.MobileNumber, *@
+           usernameOrEmailOrPhone = _method == "email" ? email : mobile,
             method = _method == "sms" ? "phone" : _method
         };
 

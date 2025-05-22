@@ -813,7 +813,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
 
 
-        public async Task<bool> SaveSearchAsync(SaveSearchRequestDto dto ,Guid userId, CancellationToken cancellationToken = default)
+        public async Task<bool> SaveSearch(SaveSearchRequestDto dto ,Guid userId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -842,7 +842,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<List<SavedSearchResponseDto>> GetSearchesAsync(string userId, CancellationToken cancellationToken = default)
+        public async Task<List<SavedSearchResponseDto>> GetSearches(string userId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -870,7 +870,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }       
 
-        public Task<bool> SaveSearchByIdAsync(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default)
+        public Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

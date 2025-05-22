@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.JSInterop;
 using MudBlazor;
 using QLN.Web.Shared.Helpers;
@@ -10,17 +11,21 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Net.WebRequestMethods;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace QLN.Web.Shared.Pages.Subscription
 {
     public partial class SubscriptionDetails : ComponentBase
     {
+        [Inject] private NavigationManager Navigation { get; set; } = default!;
+
 
         [Inject] protected IJSRuntime _jsRuntime { get; set; }
         [Inject] private HttpClient Http { get; set; } = default!;
         [Inject] private ApiService Api { get; set; } = default!;
 
         private List<StatItem> stats = new();
+        private string _authToken;
 
         private int _activeTabIndex;
         private bool _isChecked = false;
@@ -31,6 +36,7 @@ namespace QLN.Web.Shared.Pages.Subscription
         }
         private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
         private string? _errorMessage;
+        private BusinessProfile? _businessProfile;
 
         //private List<StatItem> stats = new()
         //{
@@ -51,7 +57,24 @@ namespace QLN.Web.Shared.Pages.Subscription
             new() { Label = "Classifieds", Url = "classifieds" },
             new() { Label = "Dashboard", Url = "/subscription-details",IsLast=true }
         };
-            //await LoadSubscriptionDetailsAsync(3);
+          
+        }
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                _authToken = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+                if (string.IsNullOrWhiteSpace(_authToken))
+                {
+                    _authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjU0NTZhZTY0LTNjMGMtNDJjYS04MGIxLTBjOWQ2YjBkYmY5MiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJqYXNyMjciLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJqYXN3YW50aC5yQGtyeXB0b3NpbmZvc3lzLmNvbSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL21vYmlsZXBob25lIjoiKzkxOTAwMzczODEzOCIsIlVzZXJJZCI6IjU0NTZhZTY0LTNjMGMtNDJjYS04MGIxLTBjOWQ2YjBkYmY5MiIsIlVzZXJOYW1lIjoiamFzcjI3IiwiRW1haWwiOiJqYXN3YW50aC5yQGtyeXB0b3NpbmZvc3lzLmNvbSIsIlBob25lTnVtYmVyIjoiKzkxOTAwMzczODEzOCIsImV4cCI6MTc0NjY5NTE0NywiaXNzIjoiUWF0YXIgTGl2aW5nIiwiYXVkIjoiUWF0YXIgTGl2aW5nIn0.KYxgzCBr5io7jm9SDzh2GE7GADKZ38k3kivgx6gC3PQ";
+                }
+                await LoadSubscriptionDetailsAsync(3); // Now moved here
+                await LoadBusinessProfileAsync();      // Token is now ready
+                StateHasChanged();
+
+            }
+
+            await base.OnAfterRenderAsync(firstRender);
         }
 
         public class StatItem
@@ -60,41 +83,84 @@ namespace QLN.Web.Shared.Pages.Subscription
             public string Value { get; set; }
             public string Icon { get; set; }
         }
-        //private async Task LoadSubscriptionDetailsAsync(int verticalId)
-        //{
-        //    try
-        //    {
-        //        var url = $"api/subscription/details?verticalId={verticalId}";
 
-        //        var response = await Api.GetAsync<SubscriptionDetailsResponse>(url);
+        private void NavigateToEditProfile()
+        {
+            Navigation.NavigateTo("/edit-company");
+        }
+ private void NavigateToAdPost()
+        {
+            Navigation.NavigateTo("/classifieds/createform");
+        }
 
-        //        if (response != null)
-        //        {
-        //            _errorMessage = null;
-        //            stats = new List<StatItem>()
-        //    {
-        //        new() { Title = "Published Ads", Value = $"{response.SubscriptionStatistics.PublishedAds.Usage} out of {response.SubscriptionStatistics.PublishedAds.Total}", Icon = "PublishedAds.svg" },
-        //        new() { Title = "Promoted Ads", Value = $"{response.SubscriptionStatistics.PromotedAds.Usage} out of {response.SubscriptionStatistics.PromotedAds.Total}", Icon = "PromotedAds.svg" },
-        //        new() { Title = "Featured Ads", Value = $"{response.SubscriptionStatistics.FeaturedAds.Usage} out of {response.SubscriptionStatistics.FeaturedAds.Total}", Icon = "FeaturedAds.svg" },
-        //        new() { Title = "Refreshes", Value = $"{response.SubscriptionStatistics.Refreshes.Usage} out of {response.SubscriptionStatistics.Refreshes.Total}", Icon = "Refreshes.svg" },
-        //        // Assuming Impressions, Views, WhatsApp, Calls are still static or fetched elsewhere
-        //        new() { Title = "Impressions", Value = "52,034", Icon = "Impressions.svg" },
-        //        new() { Title = "Views", Value = "52,034", Icon = "Views.svg" },
-        //        new() { Title = "WhatsApp", Value = "52,034", Icon = "WhatsApp.svg" },
-        //        new() { Title = "Calls", Value = "52,034", Icon = "Calls.svg" },
-        //    };
-        //        }
-        //        else
-        //        {
-        //            _errorMessage = "No subscription details found.";
-        //            stats = new List<StatItem>();
-        //        }
-        //    }
-        //    catch (HttpRequestException ex)
-        //    {
-        //        HttpErrorHelper.HandleHttpException(ex, Snackbar);
-        //    }
-        //}
+        private async Task LoadBusinessProfileAsync()
+        {
+            try
+            {
+                var response = await Api.GetAsyncWithToken<SubscriptionDetailsResponse>("api/subscription/details?verticalId=3", _authToken);
+                if (response?.BusinessProfile is not null)
+                {
+                    _businessProfile = response.BusinessProfile;
+                }
+                else
+                {
+                    SetHardcodedBusinessProfile();
+                }
+            }
+            catch
+            {
+                SetHardcodedBusinessProfile();
+            }
+            StateHasChanged();
+        }
+
+        private void SetHardcodedBusinessProfile()
+        {
+            _businessProfile = new BusinessProfile
+            {
+                Name = "Luxury Store",
+                CategoryName = "Preloved",
+                Duration = "6 month Plus",
+                ValidFrom = "2025-04-27",
+                ValidTo = "2025-10-27",
+                LogoUrl = "images/subscription/CompanyLogo.svg"
+            };
+            StateHasChanged();
+        }
+        private async Task LoadSubscriptionDetailsAsync(int verticalId)
+        {
+            try
+            {
+                var url = $"api/subscription/details?verticalId={verticalId}";
+
+                var response = await Api.GetAsyncWithToken<SubscriptionDetailsResponse>(url,_authToken);
+
+                if (response != null)
+                {
+                    _errorMessage = null;
+                    stats = new List<StatItem>()
+            {
+                new() { Title = "Published Ads", Value = $"{response.SubscriptionStatistics.PublishedAds.Usage} out of {response.SubscriptionStatistics.PublishedAds.Total}", Icon = "PublishedAds.svg" },
+                new() { Title = "Promoted Ads", Value = $"{response.SubscriptionStatistics.PromotedAds.Usage} out of {response.SubscriptionStatistics.PromotedAds.Total}", Icon = "PromotedAds.svg" },
+                new() { Title = "Featured Ads", Value = $"{response.SubscriptionStatistics.FeaturedAds.Usage} out of {response.SubscriptionStatistics.FeaturedAds.Total}", Icon = "FeaturedAds.svg" },
+                new() { Title = "Refreshes", Value = $"{response.SubscriptionStatistics.Refreshes.Usage} out of {response.SubscriptionStatistics.Refreshes.Total}", Icon = "Refreshes.svg" },
+                new() { Title = "Impressions", Value = "52,034", Icon = "Impressions.svg" },
+                new() { Title = "Views", Value = "52,034", Icon = "Views.svg" },
+                new() { Title = "WhatsApp", Value = "52,034", Icon = "WhatsApp.svg" },
+                new() { Title = "Calls", Value = "52,034", Icon = "Calls.svg" },
+            };
+                }
+                else
+                {
+                    _errorMessage = "No subscription details found.";
+                    stats = new List<StatItem>();
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                HttpErrorHelper.HandleHttpException(ex, Snackbar);
+            }
+        }
 
         private List<AdItem> publishedAds = new()
     {

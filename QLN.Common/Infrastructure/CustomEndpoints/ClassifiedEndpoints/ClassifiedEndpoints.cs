@@ -1285,7 +1285,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var success = await service.SaveSearchAsync(dto,userId);
+                    var success = await service.SaveSearch(dto,userId);
                     if (success)
                     {
                         return TypedResults.Ok("Search saved successfully.");
@@ -1364,7 +1364,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var success = await service.SaveSearchByIdAsync(dto);
+                    var success = await service.SaveSearchById(dto);
                     if (success)
                     {
                         return TypedResults.Ok("Search saved successfully.");
@@ -1392,7 +1392,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
            .WithTags("Searchss")
            .WithSummary("Save user searcssh")
            .WithDescription("Save the search criteria using user ID from frontendss.")
-           //.RequireAuthorization()
+           .ExcludeFromDescription()
            .Produces<string>(StatusCodes.Status200OK)
            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
@@ -1422,7 +1422,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 {
                     try
                     {
-                        var result = await service.GetSearchesAsync(userId.ToString());
+                        var result = await service.GetSearches(userId.ToString());
                         return TypedResults.Ok(result);
                     }
                     catch (Exception ex)
@@ -1469,7 +1469,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 {
                     try
                     {
-                        var result = await service.GetSearchesAsync(userId.ToString());
+                        var result = await service.GetSearches(userId.ToString());
                         return TypedResults.Ok(result);
                     }
                     catch (Exception ex)

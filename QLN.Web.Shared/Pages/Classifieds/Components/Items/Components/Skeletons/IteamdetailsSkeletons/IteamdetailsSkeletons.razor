@@ -1,0 +1,104 @@
+@using MudBlazor
+
+<div class="main-layout">
+    <div class="left-column">
+        <div class="carousel-container">
+            <div class="item-title-container d-flex justify-space-between align-center">
+                <MudSkeleton Height="40px" Width="300px" />
+                <div class="icon-label-container d-flex gap-2">
+                    <MudSkeleton Height="40px" Width="60px" />
+                    <MudSkeleton Height="40px" Width="60px" />
+                </div>
+            </div>
+
+            @* <MudGrid AlignItems="Center" Justify="Justify.FlexStart" GutterSize="3px"> *@
+            @* <MudItem xs="12" md="8"> *@
+            <MudGrid GutterSize="24px" AlignItems="Center">
+                <!-- Left Side: Large Skeleton -->
+                <MudItem xs="12" md="7">
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="490px"
+                        Style="border-radius: 4px;" />
+                </MudItem>
+
+                <!-- Right Side: Details Card -->
+                <MudItem xs="12" md="5">
+                    <MudPaper Elevation="0" Width="300px" Class="custom-card pa-4">
+                        <MudSkeleton Width="80px" Height="16px" />
+                        <MudSkeleton Width="100%" Height="28px" />
+                        <MudSkeleton Width="80px" Height="24px" />
+
+                        <div class="button-group mt-3 d-flex gap-2">
+                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100px" Height="40px" />
+                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100px" Height="40px" />
+                        </div>
+
+                        <div class="posted-by-container mt-4">
+                            <MudSkeleton Width="100px" Height="16px" />
+                            <div class="d-flex gap-2 mt-2">
+                                <MudSkeleton Width="40px" Height="40px" />
+                                <div>
+                                    <MudSkeleton Width="120px" Height="16px" />
+                                    <MudSkeleton Width="100px" Height="12px" />
+                                </div>
+                            </div>
+                        </div>
+                    </MudPaper>
+                    <div class="mt-4">
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="300px" Height="250px"
+                            Style="object-fit: contain;" />
+                    </div>
+                </MudItem>
+            </MudGrid>
+            <div class="carousel-container mt-4 d-flex align-center">
+                @for (int i = 0; i < 5; i++)
+                {
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="145px" Height="90px" Class="me-2" />
+                }
+            </div>
+            <MudPaper Class="pa-4" Elevation="0" Style="background-color:#f7f8fa;">
+                <MudSkeleton Width="150px" Height="50px" Class="mb-4" />
+
+                <MudGrid GutterSize="0" Width="200px">
+                    @for (int i = 0; i < 8; i++)
+                    {
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudSkeleton Width="170px" Height="48px" />
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudPaper>
+
+            <MudSkeleton Width="150px" Height="50px" Class="mb-4" />
+
+
+
+
+
+
+
+
+
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="704px" Height="370px" Class="mt-4" />
+        </div>
+    </div>
+</div>
+
+<MudGrid GutterSize="16px" Class="my-4">
+    @for (int i = 0; i < 4; i++)
+    {
+        <MudItem xs="12" sm="6" md="3">
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="342px" />
+        </MudItem>
+    }
+</MudGrid>
+
+<style>
+    .custom-mudpaper {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: white;
+        padding: 16px !important;
+        border-radius: 8px;
+    }
+</style>

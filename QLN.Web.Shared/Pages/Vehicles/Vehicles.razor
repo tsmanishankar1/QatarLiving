@@ -1,0 +1,30 @@
+﻿@page "/vehicles"
+@using QLN.Web.Shared.Pages.UserProfile
+
+@inject ISnackbar Snackbar
+@using MudBlazor
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="d-flex justify-center align-center" Style="height: 100vh;">
+    <MudPaper Class="pa-6 mx-auto mt-10" Elevation="4" Style="width: 100%; max-width: 500px; text-align: center; background-color: #fff;">
+        <MudStack Spacing="4" AlignItems="AlignItems.Center">
+            <!-- Icon or Image -->
+            <MudIconButton Icon="@Icons.Material.Filled.NewReleases" Color="Color.Info" Size="Size.Large" Class="mb-4" />
+
+            <!-- Title -->
+            <MudText Typo="Typo.h4" Color="Color.Primary">More Features Coming Soon!</MudText>
+
+            <!-- Description -->
+            <MudText Typo="Typo.body1" Color="Color.Default">
+                We're working hard to bring you even more features. Stay tuned for exciting updates.
+            </MudText>
+
+            <!-- Button to notify user or navigate -->
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4">
+                Notify Me When Available
+            </MudButton>
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+
+}

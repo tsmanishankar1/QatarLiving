@@ -31,11 +31,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\QLN.Common\QLN.Common.csproj" />
+    <Folder Include="Controller\" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controller\" />
+    <ProjectReference Include="..\QLN.Common\QLN.Common.csproj" />
   </ItemGroup>
 
 </Project>

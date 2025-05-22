@@ -20,8 +20,8 @@ namespace QLN.Web.Shared.Models
         public int CategoryId { get; set; }
         public string CategoryName { get; set; }
         public string Duration { get; set; }
-        public DateTime ValidFrom { get; set; }
-        public DateTime ValidTo { get; set; }
+        public string ValidFrom { get; set; }
+        public string ValidTo { get; set; }
         public string LogoUrl { get; set; }
     }
 

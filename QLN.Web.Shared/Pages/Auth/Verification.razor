@@ -21,7 +21,7 @@
 
                 <MudPaper Class="@paperClass">
                     <div class="d-flex align-center p-3">
-                        <input type="radio" name="method" class="custom-radio" value="@option.Value"
+                        <input id="radio-@option.Value" type="radio" name="method" class="custom-radio" value="@option.Value"
                             checked="@(_selectedMethod == option.Value)" @onchange="() => SelectOption(option.Value)" />
                         <div class="ml-3"
                             style="display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start;">
@@ -35,7 +35,7 @@
             }
         </MudPaper>
 
-        <CustomButton BackgroundColor="var(--color-accent)" TextColor="#FFFFFF" Text="Continue" Disabled="_isLoading"
+        <CustomButton id="verificationContinue" BackgroundColor="var(--color-accent)" TextColor="#FFFFFF" Text="Continue" Disabled="_isLoading"
             Loading="_isLoading" OnClick="NavigateTo" Class="mt-4" />
     </div>
 </div>
@@ -108,7 +108,7 @@ Description = "Use the code from your authenticator app"
         {
             var payload = new
             {
-                usernameOrEmailOrPhone = _selectedMethod == "email" ? AppState?.Email : AppState?.MobileNumber,
+                usernameOrEmailOrPhone = _selectedMethod == "email" ? email : mobile,
                 method = _selectedMethod == "sms" ? "phone" : _selectedMethod
             };
             var response = await Api.PostAsync<object, object>("auth/send-2fa", payload);
