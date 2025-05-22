@@ -7,6 +7,8 @@ using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Common.Infrastructure.TokenProvider;
 using System.Text;
+using Dapr.Client;
+using QLN.Common.Infrastructure.IService;
 using Microsoft.OpenApi.Models;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
 using Dapr.Client;
@@ -15,14 +17,25 @@ using QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints;
 using QLN.Common.Swagger;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
+using QLN.Common.Infrastructure.Subscriptions;
+using System.Text.Json.Serialization;
+using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
+#region Configure HttpClient with increased timeout for Dapr
+builder.Services.AddHttpClient("DaprClient")
+    .ConfigureHttpClient(client =>
+    {
+        client.Timeout = TimeSpan.FromMinutes(5); // increased timeout to 5 minutes
+    });
 
-#region swagger configuration
+#endregion
+
+#region Swagger configuration
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1.1.1", new OpenApiInfo
@@ -35,7 +48,7 @@ builder.Services.AddSwaggerGen(options =>
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
-        Type = SecuritySchemeType.Http, 
+        Type = SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
@@ -76,11 +89,10 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.Configure<DataProtectionTokenProviderOptions>(opt =>
 {
-    opt.TokenLifespan = TimeSpan.FromMinutes(30);
+    opt.TokenLifespan = TimeSpan.FromDays(1);
 });
 
-
-#region password identity options
+#region Identity password options
 builder.Services.Configure<IdentityOptions>(options =>
 {
     options.Password.RequireDigit = true;
@@ -92,12 +104,12 @@ builder.Services.Configure<IdentityOptions>(options =>
 });
 #endregion
 
-#region database context
+#region Database context
 builder.Services.AddDbContext<QatarlivingDevContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 
-#region verification
+#region Identity configuration
 builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
 {
     options.SignIn.RequireConfirmedEmail = true;
@@ -112,7 +124,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
 .AddDefaultTokenProviders();
 #endregion
 
-#region authentication
+#region Authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -137,24 +149,31 @@ builder.Services.AddAuthentication(options =>
 
     options.TokenValidationParameters.RoleClaimType = "role";
     options.TokenValidationParameters.NameClaimType = "name";
-
 });
-
 #endregion
-
-builder.Services.AddDaprClient(clientBuilder =>
-{
-    clientBuilder
-        .UseHttpEndpoint("http://localhost:3500")
-        .UseGrpcEndpoint("http://localhost:58796");
-});
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
+
+#region Dapr client & actors 
+builder.Services.AddSingleton<DaprClient>(_ =>
+{
+    return new DaprClientBuilder()
+        .Build();
+});
+#endregion
+builder.Services.AddActors(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
+
+// Register your subscription service
+builder.Services.AddSingleton<IExternalSubscriptionService, ExternalSubscriptionService>();
 
 builder.Services.AddDaprClient();
 
-builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
+// This looks like a custom extension method? Adjust if needed
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
@@ -180,8 +199,8 @@ companyGroup.MapCompanyEndpoints();
 var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedsEndpoints();
 
-app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
+app.MapGroup("/api/subscriptions")
+   .MapSubscriptionEndpoints()
+    .RequireAuthorization(); 
+
 app.Run();
