@@ -1,0 +1,13 @@
+@using MudBlazor
+
+<MudCard Style="border-radius: 2px; overflow: hidden; width: 100%; height: 100%;">
+
+    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Animation="Animation.Wave" Height="170px" />
+    <MudCardContent>
+        <MudSkeleton Width="60px" Height="12px" Animation="Animation.Wave" /> <!-- Category -->
+        <MudSkeleton Width="80px" Height="24px" Animation="Animation.Wave" /> <!-- Price -->
+        <MudSkeleton Width="90%" Height="20px" Animation="Animation.Wave" /> <!-- Title -->
+        <MudSkeleton Width="70%" Height="20px" Animation="Animation.Wave" /> <!-- Sub Title / Description -->
+        <MudSkeleton Width="40%" Height="12px" Animation="Animation.Wave" /> <!-- Location -->
+    </MudCardContent>
+</MudCard>

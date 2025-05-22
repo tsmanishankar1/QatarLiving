@@ -1,12 +1,15 @@
-common: # optional section for variables shared across apps
-  resourcesPath: ./components # any dapr resources to be shared across apps
+version: 1
+common:
+  resourcesPaths:
+  - ./Components
+
 apps:
-- appDirPath: QLN.Backend.API
-  appID: qln-backend-api
-  appPort: 5200
-  command:
-  - dotnet
-  - run
+  - appID: qln-backend-api
+    appDirPath: QLN.Backend.API
+    appPort: 5200
+    command:
+      - dotnet
+      - run
 # - appDirPath: QLN.BusinessProfile.MS
 #   appID: qln-businessprofile-ms
 #   appPort: 5027
@@ -16,9 +19,13 @@ apps:
 - appDirPath: QLN.Subscriptions.Actor
   appID: qln-subscriptions-actor
   appPort: 5056
-  command:
-  - dotnet
-  - run
+
+  - appID: qln-classified-ms
+    appDirPath: QLN.Classified.MS
+    appPort: 5276
+    command:
+      - dotnet
+      - run
 # - appDirPath: QLN.Blazor.Base
 #   appID: qln-blazor-base
 #   appPort: 5047
@@ -26,4 +33,15 @@ apps:
 #   - dotnet
 #   - run
 
-version: 1
+  - appID: qln-search-ms
+    appDirPath: QLN.SearchService
+    appPort: 5244
+    command:
+      - dotnet
+      - run
+  - appID: qln-company-ms
+    appDirPath: QLN.Company.MS
+    appPort: 5139
+    command:
+      - dotnet
+      - run

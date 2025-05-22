@@ -1,184 +1,270 @@
 :root {
-    /* Brand Colors */
-    --color-primary: #00426D;         /* Dark Blue */
-    --color-primary-container: #8BC6D2; /* Primary Container */
-    --color-secondary: #414042;       /* Dark Grey */
-    --color-accent: #FF7F38;          /* Accent */
- 
-    /* Text Colors */
-    --color-text-primary: #00426D;      /* For headings or strong text */
-    --color-text-secondary: #414042;    /* For body or secondary text */
-    --color-text-caption: #8C8C8C;      /* For smaller caption or helper text */
-    --color-text-white: #FFFFFF;        /* For use on dark backgrounds */
-    --color-text-descripton: #646464;  /* For use on descripton text */
-    --color-text-heading: #242424;     /* For use on heading text */
-    --color-text-gray: #454545;       /*For use on the subtitle text */
-    --color-text-green: #079455;      /* For the success green text */
- 
-    /* Backgrounds and Containers */
-    --color-background: #FFFFFF;      /* white background */
-    --color-secondary-background:#F5F6FA;
-    --color-grey-container: #D9D9D9;  /* Grey Container */
-    --color-secondary-grey-container: #E3E3E3;  /* secondary Grey Container */
-    --color-background-grey: #787878; /* For the background when popup is displayed. */
-    --color-background-secondary-grey-medium: #F0F0F0; /* light grey */
-    --color-background-secondary-grey-light: #FAFAFA;
-    --color-header-button: #E8F2FE;    /* For the icon button in header */
-    --color-captcha-box: #D0D5DD; /* For the border of the captcha box */
+  /* Brand Colors */
+  --color-primary: #00426d; /* Dark Blue */
+  --color-primary-container: #8bc6d2; /* Primary Container */
+  --color-secondary: #414042; /* Dark Grey */
+  --color-accent: #ff7f38; /* Accent */
+
+  /* Text Colors */
+  --color-text-primary: #00426d; /* For headings or strong text */
+  --color-text-secondary: #414042; /* For body or secondary text */
+  --color-text-caption: #8c8c8c; /* For smaller caption or helper text */
+  --color-text-white: #ffffff; /* For use on dark backgrounds */
+  --color-text-descripton: #646464; /* For use on descripton text */
+  --color-text-heading: #242424; /* For use on heading text */
+  --color-text-gray: #454545; /*For use on the subtitle text */
+  --color-text-green: #079455; /* For the success green text */
+  --color-category-text: #2a6ba0; /* For the category text */
+  --color-text-heading-rgb: 18, 52, 86;
+  --color-light-gray: #d5d7da;
+  /* 
+  border-color */
+
+  --color-border: #eaecf0;
+
+  /* Backgrounds and Containers */
+  --color-background: #ffffff; /* white background */
+  --color-secondary-background: #f5f6fa;
+  --color-grey-container: #d9d9d9; /* Grey Container */
+  --color-secondary-grey-container: #e3e3e3; /* secondary Grey Container */
+  --color-background-grey: #787878; /* For the background when popup is displayed. */
+  --color-background-secondary-grey-medium: #f0f0f0; /* light grey */
+  --color-background-secondary-grey-light: #fafafa;
+  --color-header-button: #e8f2fe; /* For the icon button in header */
+  --color-captcha-box: #d0d5dd; /* For the border of the captcha box */
+  --color-whatsapp-outline: #5bd066; /* For the border of the whatsapp box */
+  --color-category-outline: #e8f2fe;
 }
- 
+
 .subscription-card {
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    height: 100%;
-    border: 1px solid #f4f4f4;
-    border-radius: 8px;
-    transition: box-shadow 0.2s;
-    cursor: pointer;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  border: 1px solid #f4f4f4;
+  border-radius: 8px;
+  transition: box-shadow 0.2s;
+  cursor: pointer;
 }
- 
-    .subscription-card:hover {
-        box-shadow: 0 0 12px rgba(0,0,0,0.1);
-    }
- 
+
+.subscription-card:hover {
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+}
+
 .card-top {
-    text-align: center;
-    margin-bottom: 16px;
+  text-align: center;
+  margin-bottom: 16px;
 }
- 
+
 .title-text {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-top: 8px;
-    color: #172B4D;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 8px;
+  color: #172b4d;
 }
- 
+
 .price-section {
-    background-color: #FBE7C6;
-    text-align: center;
-    padding: 12px 0;
-    border-radius: 4px;
-    margin-bottom: 12px;
+  background-color: #fbe7c6;
+  text-align: center;
+  padding: 12px 0;
+  border-radius: 4px;
+  margin-bottom: 12px;
 }
- 
+
 .from-text {
-    font-size: 0.8rem;
-    color: #999;
+  font-size: 0.8rem;
+  color: #999;
 }
- 
+
 .price-text {
-    color: #F26D1E;
-    font-weight: bold;
+  color: #f26d1e;
+  font-weight: bold;
 }
- 
+
 .duration-text {
-    font-size: 0.75rem;
-    color: #444;
+  font-size: 0.75rem;
+  color: #444;
 }
- 
+
 .feature-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
 }
- 
+
 .feature-item {
-    color: #172B4D;
-    font-size: 0.85rem;
+  color: #172b4d;
+  font-size: 0.85rem;
 }
 .popup-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(255, 255, 255, 0.2); 
-    backdrop-filter: blur(8px); 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
 
 .custom-tabs {
-    width: 100%;
-    margin: 0 auto;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  width: 100%;
+  margin: 0 auto;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .tabs-toolbar {
-    display: flex;
-    width: 100%;
-    padding: 0;
-    background-color: #f5f5f5; /* Grey background for toolbar */
-    border-radius: 4px 4px 0 0;
-    overflow: hidden;
-}
-.vertical-tabs-toolbar {
-    display: flex;
-    width: 100%;
-    padding: 0;
-    background-color: white; 
-    border-radius: 4px 4px 0 0;
-    overflow: hidden;
+  display: flex;
+  width: 100%;
+  padding: 0;
+  background-color: #f5f5f5;
+  border-radius: 4px 4px 0 0;
+  overflow: hidden;
 }
 
 .tab {
-    flex: 1;
-    min-width: 0;
-    text-align: center;
-    color: #666; /* Default text color */
-    padding: 12px 0;
-    margin: 0;
-    text-transform: none;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    background-color: #f5f5f5; /* Grey background for tabs */
-    transition: all 0.3s ease;
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  color: #666; /* Default text color */
+  padding: 12px 0;
+  margin: 0;
+  text-transform: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  background-color: #f5f5f5; /* Grey background for tabs */
+  transition: all 0.3s ease;
 }
 
-    .tab.active {
-        background-color: white; /* White background for active tab */
-        color: #00426D; /* Blue text for active tab */
-        font-weight: 600;
-    }
+.tab.active {
+  background-color: white; /* White background for active tab */
+  color: #00426d; /* Blue text for active tab */
+  font-weight: 600;
+}
 
 .tab-icon {
-    width: 24px;
-    height: 24px;
-    margin-bottom: 6px;
-    /* Default grey color for inactive icons */
-    filter: brightness(0) saturate(100%) invert(40%) sepia(0%) saturate(747%) hue-rotate(149deg) brightness(93%) contrast(87%);
+  width: 24px;
+  height: 24px;
+  margin-bottom: 6px;
+  /* Default grey color for inactive icons */
+  filter: brightness(0) saturate(100%) invert(40%) sepia(0%) saturate(747%)
+    hue-rotate(149deg) brightness(93%) contrast(87%);
 }
 
-
 .tab.active .tab-icon {
-    /* Blue color for active icon */
-    filter: brightness(0) saturate(100%) invert(22%) sepia(98%) saturate(1206%) hue-rotate(176deg) brightness(93%) contrast(101%);
+  /* Blue color for active icon */
+  filter: brightness(0) saturate(100%) invert(22%) sepia(98%) saturate(1206%)
+    hue-rotate(176deg) brightness(93%) contrast(101%);
 }
 
 .tab-indicator {
-    position: absolute;
-    bottom: 0;
-    height: 3px;
-    background-color: #00426D;
-    width: 100%;
-    transform: scaleX(0);
-    transition: transform 0.3s ease;
+  position: absolute;
+  bottom: 0;
+  height: 3px;
+  background-color: #00426d;
+  width: 100%;
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
 }
 
 .tab.active .tab-indicator {
-    transform: scaleX(1);
+  transform: scaleX(1);
 }
 
 .tab-text {
-    margin-top: 4px;
+  margin-top: 4px;
+}
+
+.vertical-tabs {
+  width: 100%;
+  margin: 0 auto;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.vertical-tabs-toolbar {
+  display: flex;
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  overflow: hidden;
+  height: 70px;
+}
+
+.vertical-tab {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  color: #666;
+  text-transform: none;
+  padding: 8px 0;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  justify-content: center;
+  background-color: white;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.vertical-tab.active {
+  background-color: #00426d; /* Active background */
+  color: white;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+.vertical-tab-icon {
+  width: 24px;
+  height: 24px;
+  margin-bottom: 6px;
+  /* Default grey color for inactive icons */
+  filter: brightness(0) saturate(100%) invert(40%) sepia(0%) saturate(747%)
+    hue-rotate(149deg) brightness(93%) contrast(87%);
+}
+
+.vertical-tab.active .vertical-tab-icon {
+  filter: brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%)
+    hue-rotate(201deg) brightness(102%) contrast(102%);
+}
+
+.vertical-tab-indicator {
+  position: absolute;
+  bottom: 0;
+  height: 3px;
+  background-color: white;
+  width: 100%;
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.vertical-tab.active .tab-indicator {
+  transform: scaleX(1);
+}
+
+.vertical-tab-text {
+  margin-top: 4px;
+}
+
+/*header style*/
+.heading-style {
+  font-family: "Public Sans", sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 26px;
+  letter-spacing: 0;
+  vertical-align: middle;
+  color: #00426d;
 }

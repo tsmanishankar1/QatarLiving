@@ -1,0 +1,58 @@
+<div class="view-toggle-wrapper">
+    @foreach (var item in Items)
+    {
+        <div class="view-toggle-item @(SelectedValue == item.Value ? "active" : "")"
+            @onclick="() => OnSelected.InvokeAsync(item.Value)">
+            <img src="@item.ImageUrl" alt="@item.Label"
+                class="toggle-icon @(SelectedValue == item.Value ? "filter-white" : "filter-gray")" />
+            <span>@item.Label</span>
+        </div>
+    }
+</div>
+
+
+<style>
+    .view-toggle-wrapper {
+        display: flex;
+        padding: 6px;
+        border-radius: 6px;
+        gap: 4px;
+        border: 1px solid var(--color-captcha-box);
+        background-color: var(--color-background);
+    }
+
+    .view-toggle-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        background-color: var(--color-background);
+        cursor: pointer;
+        transition: background-color 0.2s;
+        font-weight: 500;
+        font-size: 14px;
+        color: #333;
+    }
+
+    .view-toggle-item.active {
+        background-color: var(--color-accent);
+        color: var(--color-background);
+    }
+
+    .toggle-icon {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* Orange tint for active icon */
+    .filter-white {
+        filter: brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);
+    }
+
+
+    /* Neutral gray tint for inactive icon */
+    .filter-gray {
+        filter: brightness(0) saturate(100%) invert(53%) sepia(0%) saturate(1031%) hue-rotate(176deg) brightness(93%) contrast(91%);
+    }
+</style>

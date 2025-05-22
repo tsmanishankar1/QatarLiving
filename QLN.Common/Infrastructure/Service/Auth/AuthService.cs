@@ -1,5 +1,4 @@
-﻿using Azure.Core;
-using Microsoft.AspNetCore.Authentication;
+﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -137,13 +136,14 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
             return "User registered successfully.";
         }
-        public async Task<Results<Ok<ApiResponse<string>>, ProblemHttpResult, Conflict<ApiResponse<string>>>> SendEmailOtp(string email)
+        public async Task<Results<Ok<string>, ProblemHttpResult, Conflict<ProblemDetails>>> SendEmailOtp(string email)
         {
 
             var isBypassUser = _env.IsDevelopment() && email == ConstantValues.ByPassEmail;
             if (isBypassUser)
             {
-                return TypedResults.Ok(ApiResponse<string>.Success("OTP bypassed."));
+                return TypedResults.Ok(("OTP bypassed."));
+
             }
 
             if (!IsValidEmail(email))
@@ -162,12 +162,12 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
             await _emailSender.SendOtpEmailAsync(email, otp);
 
-            return TypedResults.Ok(ApiResponse<string>.Success("OTP sent to your email."));
+            return TypedResults.Ok("OTP sent to your email.");
 
         }
 
 
-        public async Task<Results<Ok<ApiResponse<string>>, ProblemHttpResult, NotFound<ApiResponse<string>>, BadRequest<ApiResponse<string>>>> VerifyEmailOtp(string email, string otp)
+        public async Task<Results<Ok<string>, ProblemHttpResult, NotFound<string>, BadRequest<string>>> VerifyEmailOtp(string email, string otp)
         {
             try
             {
@@ -176,43 +176,35 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                 if (isBypassUser)
                 {
-                    return TypedResults.Ok(ApiResponse<string>.Success("Email bypassed."));
+                    return TypedResults.Ok("Email bypassed.");
                 }
 
                 if (!TempVerificationStore.EmailOtps.TryGetValue(email, out var storedOtp))
                 {
-                    throw new OtpNotRequestedException();
+                    return TypedResults.NotFound("OTP not requested.");
                 }
 
                 if (storedOtp != otp)
                 {
-                    throw new InvalidOtpException();
+                    return TypedResults.NotFound("Invalid OTP.");
                 }
 
                 TempVerificationStore.VerifiedEmails.Add(email);
                 TempVerificationStore.EmailOtps.Remove(email);
 
-                return TypedResults.Ok(ApiResponse<string>.Success("Email verified successfully."));
-            }
-            catch (OtpNotRequestedException ex)
-            {
-                return TypedResults.NotFound(ApiResponse<string>.Fail(ex.Message));
-            }
-            catch (InvalidOtpException ex)
-            {
-                return TypedResults.NotFound(ApiResponse<string>.Fail(ex.Message));
+                return TypedResults.Ok("Email verified successfully.");
             }
             catch (Exception ex)
             {
                 _log.LogException(ex);
                 return TypedResults.Problem(
-                    detail: ApiResponse<string>.Fail("An unexpected error occurred. Please try again later.").Message,
-                    statusCode: StatusCodes.Status500InternalServerError);
+                    detail: "An unexpected error occurred. Please try again later.",
+                    statusCode: StatusCodes.Status500InternalServerError
+                );
             }
         }
 
-
-        public async Task<Results<Ok<ApiResponse<string>>, ProblemHttpResult, Conflict<ProblemDetails>>> SendPhoneOtp(string phoneNumber)
+        public async Task<Results<Ok<string>, ProblemHttpResult, Conflict<ProblemDetails>>> SendPhoneOtp(string phoneNumber)
         {
             try
             {
@@ -221,13 +213,13 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                 if (isBypassUser)
                 {
-                    return TypedResults.Ok(ApiResponse<string>.Success("OTP bypassed."));
+                    return TypedResults.Ok("OTP bypassed.");
                 }
 
                 var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber && u.IsActive);
                 if (existingUser != null)
                 {
-                    throw new PhoneAlreadyRegisteredException();
+                    throw new PhoneAlreadyRegisteredException("Phone already registered.");
                 }
 
                 var otp = new Random().Next(100000, 999999).ToString();
@@ -244,10 +236,10 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new SmsSendingFailedException();
+                    throw new SmsSendingFailedException("Failed to send SMS.");
                 }
 
-                return TypedResults.Ok(ApiResponse<string>.Success("OTP sent successfully to phone."));
+                return TypedResults.Ok("OTP sent successfully to phone.");
             }
             catch (PhoneAlreadyRegisteredException ex)
             {
@@ -274,7 +266,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
         }
 
 
-        public async Task<Results<Ok<ApiResponse<string>>, ProblemHttpResult, BadRequest<ProblemDetails>>> VerifyPhoneOtp(string phoneNumber, string otp)
+        public async Task<Results<Ok<string>, ProblemHttpResult, BadRequest<ProblemDetails>>> VerifyPhoneOtp(string phoneNumber, string otp)
         {
             try
             {
@@ -283,23 +275,23 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                 if (isBypassUser)
                 {
-                    return TypedResults.Ok(ApiResponse<string>.Success("PhoneNumber bypassed."));
+                    return TypedResults.Ok("PhoneNumber bypassed.");
                 }
 
                 if (!TempVerificationStore.PhoneOtps.TryGetValue(phoneNumber, out var storedOtp))
                 {
-                    throw new PhoneOtpMissingException();
+                    throw new PhoneOtpMissingException("OTP not requested for this phone number.");
                 }
 
                 if (storedOtp != otp)
                 {
-                    throw new InvalidPhoneOtpException();
+                    throw new InvalidPhoneOtpException("Invalid OTP.");
                 }
 
                 TempVerificationStore.VerifiedPhoneNumbers.Add(phoneNumber);
                 TempVerificationStore.PhoneOtps.Remove(phoneNumber);
 
-                return TypedResults.Ok(ApiResponse<string>.Success("Phone number verified successfully."));
+                return TypedResults.Ok("Phone number verified successfully.");
             }
             catch (PhoneOtpMissingException ex)
             {
@@ -328,8 +320,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             }
         }
 
-
-        public async Task<Results<Ok<ApiResponse<string>>, BadRequest<ProblemDetails>, ProblemHttpResult>> ForgotPassword(ForgotPasswordRequest request)
+        public async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> ForgotPassword(ForgotPasswordRequest request)
         {
             try
             {
@@ -345,7 +336,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                 await _emailSender.SendPasswordResetLinkAsync(user, user.Email, resetUrl);
 
-                return TypedResults.Ok(ApiResponse<string>.Success("If your email is registered and confirmed, a password reset link has been sent."));
+                return TypedResults.Ok("If your email is registered and confirmed, a password reset link has been sent.");
             }
             catch (ForgotPasswordUserNotFoundException ex)
             {
@@ -366,7 +357,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             }
         }
 
-        public async Task<Results<Ok<ApiResponse<string>>,BadRequest<ProblemDetails>,NotFound<ProblemDetails>,ValidationProblem,ProblemHttpResult>> ResetPassword(ResetPasswordRequest request)
+        public async Task<Results<Ok<string>, BadRequest<ProblemDetails>, NotFound<ProblemDetails>, ValidationProblem, ProblemHttpResult>> ResetPassword(ResetPasswordRequest request)
         {
             try
             {
@@ -395,7 +386,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     throw new PasswordResetValidationException(errors);
                 }
 
-                return TypedResults.Ok(ApiResponse<string>.Success("Password has been reset successfully"));
+                return TypedResults.Ok("Password has been reset successfully");
             }
             catch (ResetPasswordUserNotFoundException ex)
             {
@@ -497,7 +488,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
         }
 
 
-        public async Task<Results<Ok<ApiResponse<LoginResponse>>, BadRequest<ProblemDetails>, ProblemHttpResult>> Verify2FA(Verify2FARequest request)
+        public async Task<Results<Ok<LoginResponse>, BadRequest<ProblemDetails>, ProblemHttpResult>> Verify2FA(Verify2FARequest request)
         {
             try
             {
@@ -553,7 +544,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     IsTwoFactorEnabled = true
                 };
 
-                return TypedResults.Ok(ApiResponse<LoginResponse>.Success("2FA verified. Login successful.", response));
+                return TypedResults.Ok(response);
             }
             catch (InvalidCredentialsException ex)
             {
@@ -583,7 +574,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             }
         }
 
-        public async Task<Results<Ok<ApiResponse<RefreshTokenResponse>>, BadRequest<ProblemDetails>, ProblemHttpResult, UnauthorizedHttpResult>> RefreshToken(Guid userId,RefreshTokenRequest request)
+        public async Task<Results<Ok<RefreshTokenResponse>, BadRequest<ProblemDetails>, ProblemHttpResult, UnauthorizedHttpResult>> RefreshToken(Guid userId,RefreshTokenRequest request)
         {
             try
             {
@@ -638,13 +629,11 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                         Constants.ConstantValues.RefreshTokenExpiry,
                         DateTime.UtcNow.AddDays(7).ToString("o"));
 
-                    return TypedResults.Ok(ApiResponse<RefreshTokenResponse>.Success(
-                        "Token refreshed successfully",
-                        new RefreshTokenResponse
-                        {
-                            AccessToken = newAccessToken,
-                            RefreshToken = newRefreshToken
-                        }));
+                    return TypedResults.Ok(new RefreshTokenResponse
+                    {
+                        AccessToken = newAccessToken,
+                        RefreshToken = newRefreshToken
+                    });
                 }
                 else
                 {
@@ -666,7 +655,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             }
         }
 
-        public async Task<Results<Ok<ApiResponse<string>>, Accepted<ApiResponse<string>>, BadRequest<ProblemDetails>, ProblemHttpResult>> Toggle2FA(TwoFactorToggleRequest request)
+        public async Task<Results<Ok<string>, Accepted<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> Toggle2FA(TwoFactorToggleRequest request)
         {
             try
             {
@@ -711,8 +700,8 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 var message = $"Two-Factor Authentication has been {status}.";
 
                 return request.Enable
-                    ? TypedResults.Ok(ApiResponse<string>.Success(message))
-                    : TypedResults.Accepted(string.Empty, ApiResponse<string>.Success(message));
+                    ? TypedResults.Ok(message)
+                    : TypedResults.Accepted(string.Empty, message);
             }
             catch (Exception ex)
             {
@@ -724,7 +713,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 );
             }
         }
-        public async Task<Results<Ok<ApiResponse<object>>, BadRequest<ProblemDetails>, NotFound<ProblemDetails>, ProblemHttpResult>> GetProfile(Guid Id)
+        public async Task<Results<Ok<object>, BadRequest<ProblemDetails>, NotFound<ProblemDetails>, ProblemHttpResult>> GetProfile(Guid Id)
         {
             try
             {
@@ -767,7 +756,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     user.TwoFactorEnabled
                 };
 
-                return TypedResults.Ok(ApiResponse<object>.Success("Profile data", profile));
+                return TypedResults.Ok((object)profile); 
             }
             catch (Exception ex)
             {
@@ -778,7 +767,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             }
         }
 
-        public async Task<Results<Ok<ApiResponse<string>>, BadRequest<ProblemDetails>, NotFound<ProblemDetails>, ProblemHttpResult>> UpdateProfile(Guid id, UpdateProfileRequest request)
+        public async Task<Results<Ok<string>, BadRequest<ProblemDetails>, NotFound<ProblemDetails>, ProblemHttpResult>> UpdateProfile(Guid id, UpdateProfileRequest request)
         {
             try
             {
@@ -826,7 +815,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     });
                 }
 
-                return TypedResults.Ok(ApiResponse<string>.Success("Profile updated successfully."));
+                return TypedResults.Ok("Profile updated successfully.");
             }
             catch (Exception ex)
             {
@@ -837,7 +826,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     statusCode: StatusCodes.Status500InternalServerError);
             }
         }
-        public async Task<Results<Ok<ApiResponse<string>>, NotFound<ProblemDetails>, ProblemHttpResult>> Logout(Guid id)
+        public async Task<Results<Ok<string>, NotFound<ProblemDetails>, ProblemHttpResult>> Logout(Guid id)
         {
             try
             {
@@ -858,7 +847,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                 await _httpContextAccessor.HttpContext!.SignOutAsync();
 
-                return TypedResults.Ok(ApiResponse<string>.Success("User logged out successfully."));
+                return TypedResults.Ok("User logged out successfully.");
             }
             catch (Exception ex)
             {
@@ -892,7 +881,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             }
         }
 
-        public async Task<Results<Ok<ApiResponse<string>>, BadRequest<ProblemDetails>, ProblemHttpResult>> SendTwoFactorOtp(Send2FARequest request)
+        public async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> SendTwoFactorOtp(Send2FARequest request)
         {
             try
             {
@@ -928,7 +917,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                 if (isBypassUser)
                 {
-                    return TypedResults.Ok(ApiResponse<string>.Success($"2FA OTP bypassed in development for {method}."));
+                    return TypedResults.Ok($"2FA OTP bypassed in development for {method}.");
                 }
 
                 if (method == Constants.ConstantValues.Phone.ToLowerInvariant())
@@ -955,7 +944,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                         _config["OoredooSmsApi:Originator"]);
 
                     return response.IsSuccessStatusCode
-                        ? TypedResults.Ok(ApiResponse<string>.Success("2FA OTP sent via phone."))
+                        ? TypedResults.Ok("2FA OTP sent via phone.")
                         : TypedResults.Problem(
                             detail: "Failed to send OTP via SMS. Please try again later.",
                             statusCode: StatusCodes.Status500InternalServerError);
@@ -975,7 +964,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     var code = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
                     await _emailSender.SendTwoFactorCode(user, user.Email, code);
 
-                    return TypedResults.Ok(ApiResponse<string>.Success("2FA OTP sent via email."));
+                    return TypedResults.Ok("2FA OTP sent via email.");
                 }
                 else
                 {

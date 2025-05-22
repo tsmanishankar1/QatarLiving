@@ -11,15 +11,19 @@ using Dapr.Client;
 using QLN.Common.Infrastructure.IService;
 using Microsoft.OpenApi.Models;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
+using Dapr.Client;
+using QLN.Backend.API.ServiceConfiguration;
+using QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints;
+using QLN.Common.Swagger;
+using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.Subscriptions;
 using System.Text.Json.Serialization;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add controller support if needed
-// builder.Services.AddControllers();
-
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 #region Configure HttpClient with increased timeout for Dapr
@@ -49,6 +53,14 @@ builder.Services.AddSwaggerGen(options =>
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
         Description = "Enter 'Bearer' followed by your JWT token."
+    });
+
+    options.OperationFilter<SwaggerFileUploadFilter>();
+
+    options.MapType<IFormFile>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Format = "binary"
     });
 
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -159,9 +171,13 @@ builder.Services.AddActors(options =>
 // Register your subscription service
 builder.Services.AddSingleton<IExternalSubscriptionService, ExternalSubscriptionService>();
 
+builder.Services.AddDaprClient();
+
 // This looks like a custom extension method? Adjust if needed
 builder.Services.ServicesConfiguration(builder.Configuration);
-
+builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
+builder.Services.AddHttpContextAccessor();
+builder.Services.CompanyConfiguration(builder.Configuration);
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -175,17 +191,13 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// Uncomment if you want to enforce HTTPS in Production only
-// app.UseHttpsRedirection();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-// Enable controller endpoints if you use controllers
-// app.MapControllers();
 
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
+var companyGroup = app.MapGroup("/api/companyprofile");
+companyGroup.MapCompanyEndpoints();
+var classifiedGroup = app.MapGroup("/api/classified");
+classifiedGroup.MapClassifiedsEndpoints();
 
 app.MapGroup("/api/subscriptions")
    .MapSubscriptionEndpoints()
