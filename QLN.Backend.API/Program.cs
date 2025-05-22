@@ -12,6 +12,8 @@ using QLN.Common.Infrastructure.IService;
 using Microsoft.OpenApi.Models;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
 using QLN.Common.Infrastructure.Subscriptions;
+using System.Text.Json.Serialization;
+using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -149,9 +151,13 @@ builder.Services.AddSingleton<DaprClient>(_ =>
         .Build();
 });
 #endregion
+builder.Services.AddActors(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 // Register your subscription service
-builder.Services.AddSingleton<ISubscriptionService, SubscriptionService>();
+builder.Services.AddSingleton<IExternalSubscriptionService, ExternalSubscriptionService>();
 
 // This looks like a custom extension method? Adjust if needed
 builder.Services.ServicesConfiguration(builder.Configuration);
@@ -182,6 +188,7 @@ var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
 
 app.MapGroup("/api/subscriptions")
-   .MapSubscriptionEndpoints();
+   .MapSubscriptionEndpoints()
+    .RequireAuthorization(); 
 
 app.Run();

@@ -15,11 +15,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\QLN.Common\QLN.Common.csproj" />
+    <Folder Include="Controllers\" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
+    <ProjectReference Include="..\QLN.Common\QLN.Common.csproj" />
   </ItemGroup>
 
 </Project>

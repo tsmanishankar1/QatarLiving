@@ -1,5 +1,8 @@
-﻿namespace QLN.Common.Infrastructure.Subscriptions
+﻿using System.Text.Json.Serialization;
+
+namespace QLN.Common.Infrastructure.Subscriptions
 {
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum SubscriptionStatus
     {
         Active = 1,

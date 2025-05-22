@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace QLN.Common.Infrastructure.Subscriptions
 {
-    public enum SubscriptionName
+    public enum SubscriptionType
     {
         [JsonPropertyName("1 week Subscription")]
         AlayaOneWeek,

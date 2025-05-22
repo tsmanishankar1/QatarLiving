@@ -2,13 +2,14 @@ using System.Text.Json.Serialization;
 
 namespace QLN.Common.Infrastructure.Subscriptions
 {
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum Vertical
     {
         [JsonPropertyName("Vehicles")]
-        Vehicles = 1,
+        Vehicles = 0,
         [JsonPropertyName("Properties")]
-        Properties = 2,
+        Properties = 1,
         [JsonPropertyName("Rewards")]
-        Rewards = 11
+        Rewards = 2
     }
 }

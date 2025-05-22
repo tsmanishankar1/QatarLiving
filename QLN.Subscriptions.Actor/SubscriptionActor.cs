@@ -7,6 +7,7 @@ using QLN.Common.Infrastructure.Subscriptions;
 
 using System.Collections.Concurrent;
 using System.Net.Sockets;
+using QLN.Common.DTOs;
 
 
 namespace QLN.Subscriptions
@@ -16,8 +17,7 @@ namespace QLN.Subscriptions
         private const string StateKey = "subscription-data";
         private readonly ILogger<SubscriptionActor> _logger;
 
-        // Further reduced timeout to avoid waiting too long for state store operations
-        private readonly TimeSpan _stateOperationTimeout = TimeSpan.FromSeconds(2);
+
 
         // In-memory cache to avoid state store operations when possible
         private static readonly ConcurrentDictionary<string, SubscriptionDto> _memoryCache = new ConcurrentDictionary<string, SubscriptionDto>();
@@ -43,10 +43,10 @@ namespace QLN.Subscriptions
 
             try
             {
-                _logger.LogInformation("[Actor {ActorId}] FastSetDataAsync started for subscription {Name}", actorKey, data.Name);
+                _logger.LogInformation("[Actor {ActorId}] FastSetDataAsync started for subscription {Name}", actorKey, data.subscriptionName);
 
                 // Update timestamp
-                data.LastUpdated = DateTime.UtcNow;
+                data.lastUpdated = DateTime.UtcNow;
 
                 // ALWAYS update our in-memory cache first to ensure requests succeed
                 _memoryCache[actorKey] = data;
@@ -211,84 +211,7 @@ namespace QLN.Subscriptions
             }
         }
 
-        public async Task<bool> ExpireSubscription(CancellationToken cancellationToken = default)
-        {
-            var start = DateTime.UtcNow;
-            var actorKey = Id.ToString();
-
-            try
-            {
-                _logger.LogInformation("[Actor {ActorId}] ExpireSubscription started", actorKey);
-
-                // First check memory cache
-                SubscriptionDto? subscription = null;
-                if (_memoryCache.TryGetValue(actorKey, out var cachedData))
-                {
-                    subscription = cachedData;
-                    _logger.LogInformation("[Actor {ActorId}] ExpireSubscription using data from memory cache", actorKey);
-                }
-                else if (!_stateStoreUnstable || DateTime.UtcNow - _lastStateStoreFailure >= _circuitBreakDuration)
-                {
-                    // Only try to get from state store if it's considered stable
-                    // And only if we can acquire the semaphore without waiting too long
-                    if (await _stateStoreThrottle.WaitAsync(TimeSpan.FromMilliseconds(500), cancellationToken))
-                    {
-                        try
-                        {
-                            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
-                            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, cancellationToken);
-
-                            if (await StateManager.ContainsStateAsync(StateKey, linkedCts.Token))
-                            {
-                                subscription = await StateManager.GetStateAsync<SubscriptionDto>(StateKey, linkedCts.Token);
-                                _logger.LogInformation("[Actor {ActorId}] ExpireSubscription loaded data from state store", actorKey);
-                            }
-                        }
-                        catch (Exception ex) when (
-                            ex is OperationCanceledException ||
-                            ex is SocketException ||
-                            ex.InnerException is SocketException)
-                        {
-                            _stateStoreUnstable = true;
-                            _lastStateStoreFailure = DateTime.UtcNow;
-                            _logger.LogWarning(ex, "[Actor {ActorId}] State store operation failed while getting data for ExpireSubscription", actorKey);
-                        }
-                        finally
-                        {
-                            _stateStoreThrottle.Release();
-                        }
-                    }
-                }
-
-                if (subscription == null)
-                {
-                    // If no subscription found, create a minimal one to be more resilient
-                    subscription = new SubscriptionDto
-                    {
-                        Id = Guid.Parse(actorKey),
-                        Name = $"ExpiredSubscription-{actorKey}",
-                        Status = SubscriptionStatus.Active,
-                        StartDate = DateTime.UtcNow.AddDays(-30) // Assume it started a while ago
-                    };
-                    _logger.LogWarning("[Actor {ActorId}] No subscription found, creating minimal one for expiration", actorKey);
-                }
-
-                // Update the subscription
-                subscription.Status = SubscriptionStatus.Expired;
-                subscription.EndDate = DateTime.UtcNow;
-                subscription.LastUpdated = DateTime.UtcNow;
-
-                // Update via FastSetDataAsync to avoid blocking
-                return await FastSetDataAsync(subscription, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                var duration = DateTime.UtcNow - start;
-                _logger.LogError(ex, "[Actor {ActorId}] Critical error in ExpireSubscription after {Duration}ms",
-                    actorKey, duration.TotalMilliseconds);
-                throw;
-            }
-        }
+       
 
         protected override Task OnActivateAsync()
         {

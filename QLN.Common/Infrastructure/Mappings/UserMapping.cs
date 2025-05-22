@@ -35,7 +35,7 @@ namespace QLN.Common.Infrastructure.Mappings
     {
         public Guid Id { get; set; }
 
-        public SubscriptionName SubscriptionTypeId { get; set; }
+        //public SubscriptionName SubscriptionTypeId { get; set; }
         public string Name { get; set; }
     }
 }
