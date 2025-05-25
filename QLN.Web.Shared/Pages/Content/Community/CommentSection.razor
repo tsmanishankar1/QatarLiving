@@ -1,0 +1,141 @@
+﻿@using QLN.Web.Shared.Models
+@inherits LayoutComponentBase
+
+@if (!Comment.isCommented)
+{
+    <div class="comment-section-empty">
+        <div class="comment-input-box">
+            <MudTextField @bind-Value="newComment" Placeholder="What an incredible match..." Lines="3" FullWidth="true" />
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="PostComment">Post</MudButton>
+        </div>
+
+        <div class="empty-state">
+            <MudAvatar Icon="Icons.Material.Filled.ChatBubbleOutline" Class="comment-icon" />
+            <h6>Be the first to comment</h6>
+            <p>Nobody’s responded to this post yet. Add your thoughts and get the conversation going.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="comment-list">
+        <div class="comment-input-box">
+            <MudTextField @bind-Value="newComment" Placeholder="Add a comment..." Lines="3" FullWidth="true" />
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="PostComment">Post</MudButton>
+        </div>
+
+        @foreach (var c in Comment.Comments)
+        {
+            <div class="comment-item @(c.IsByCurrentUser ? "my-comment" : "other-comment")">
+                <img src="/images/content/Sample.svg" alt="User Avatar" class="post-footer-avatar" />
+                <div class="comment-content">
+                    <div class="comment-header">
+                        <strong>@c.CreatedBy  <span>@c.CreatedAt.ToString("g")</span></strong>
+                           <MudMenu Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopRight">
+            <ActivatorContent>
+                <MudIconButton DisableRipple="true" Style="padding: 0; min-width: 0;">
+                    <img src="images/content/Menu.svg" alt="More" style="width: 20px; height: 20px;" />
+                </MudIconButton>
+            </ActivatorContent>
+
+            <ChildContent>
+                <MudMenuItem OnClick="@OnReport">Report</MudMenuItem>
+            </ChildContent>
+        </MudMenu>
+                       
+                    </div>
+                    <div>@c.Description</div>
+                    <div class="post-icons">
+                        <img src="images/content/Like.svg" class="icon" />
+                        <span>@c.LikeCount</span>
+
+                        <img src="images/content/Dislike.svg" class="icon" />
+                        <span>@c.LikeCount</span>
+
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public PostModel Comment { get; set; }
+
+    private string newComment = "";
+
+    private void PostComment()
+    {
+        // Add logic to save new comment
+    }
+    private void OnReport()
+    {
+        // Logic for reporting the post
+        Console.WriteLine($"Reporting Comment");
+    }
+}
+
+<style>
+    .comment-section-empty, .comment-list {
+        padding: 1rem;
+        border-radius: 8px;
+        background-color: #fff;
+        box-shadow: 0 0 4px rgba(0,0,0,0.1);
+        margin-top:10px;
+    }
+
+    .comment-input-box {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        color: #888;
+    }
+
+    .comment-icon {
+        background-color: #eef;
+        margin-bottom: 0.5rem;
+    }
+
+    .comment-item {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .my-comment {
+        background-color: #f4f9ff;
+    }
+
+    .comment-content {
+        flex-grow: 1;
+    }
+
+    .comment-header {
+        font-size: 0.9rem;
+        color: #555;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .comment-actions {
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.8rem;
+    }
+
+    .post-footer-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 200px;
+        border: 1.5px solid #F0F0F0;
+        object-fit: cover;
+    }
+</style>

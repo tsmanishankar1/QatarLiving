@@ -1,14 +1,26 @@
 ﻿@using System.Globalization
+@inject NavigationManager Navigation
+
 @inherits LayoutComponentBase
 @using MudBlazor
 
-<MudPaper Class="post-card" Elevation="0">
+<MudPaper Class="post-card" Elevation="0" @onclick="NavigateToPostDetail">
     <div class="post-header d-flex justify-space-between align-center">
         <div class="post-tag">@Post.Category</div>
 
-        <MudMenu Icon="MoreVert" Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopRight">
-            <MudMenuItem OnClick="@OnReport">Report</MudMenuItem>
+        <MudMenu Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopRight">
+            <ActivatorContent>
+                <MudIconButton DisableRipple="true" Style="padding: 0; min-width: 0;">
+                    <img src="images/content/Menu.svg" alt="More" style="width: 20px; height: 20px;" />
+                </MudIconButton>
+            </ActivatorContent>
+
+            <ChildContent>
+                <MudMenuItem OnClick="@OnReport">Report</MudMenuItem>
+            </ChildContent>
         </MudMenu>
+
+
     </div>
     <div class="post-title">@Post.Title</div>
 
@@ -51,15 +63,19 @@
         // Logic for reporting the post
         Console.WriteLine($"Reporting post: {Post.Title}");
     }
+    private void NavigateToPostDetail()
+    {
+        Navigation.NavigateTo($"/post-detail");
+    }
 }
 
 <style>
     .post-card {
-    border: 1px solid #E0E0E0;
-    border-radius: 12px;
-    padding: 16px;
-    margin-top: 16px;
-}
+        border: 1px solid #E0E0E0;
+        border-radius: 12px;
+        padding: 16px;
+        margin-top: 16px;
+    }
 
     .post-header {
         display: flex;
@@ -68,7 +84,7 @@
     }
 
 
-.post-tag {
+    .post-tag {
         display: inline-block;
         background-color: #FFF0E7;
         color: #FF7F38;
@@ -78,55 +94,55 @@
         font-weight: 500;
         border: 1px solid #FF7F38;
         margin-bottom: 8px;
-}
+    }
 
-.post-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: #1c1c1c;
-    margin-bottom: 10px;
-}
+    .post-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1c1c1c;
+        margin-bottom: 10px;
+    }
 
-.post-image {
-    width: 100%;
-    max-height: 400px;
-    object-fit: cover;
-    border-radius: 8px;
-    margin-bottom: 10px;
-}
+    .post-image {
+        width: 100%;
+        max-height: 400px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
 
-.post-body {
-    font-size: 14px;
-    color: #666;
-    margin-bottom: 12px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2; /* Truncate to 2 lines */
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
+    .post-body {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 12px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2; /* Truncate to 2 lines */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
 
-.post-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 12px;
-    color: #999;
+    .post-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 12px;
+        color: #999;
         border: 1px solid #F0F0F0;
         border-radius: 12px;
         padding: 2px 4px;
-}
+    }
 
-.post-icons {
-    display: flex;
-    align-items: center;
-    gap: 4px;
+    .post-icons {
+        display: flex;
+        align-items: center;
+        gap: 4px;
         padding: 2px 4px;
-}
+    }
 
-.icon {
-    width: 18px;
-    height: 18px;
-}
+    .icon {
+        width: 18px;
+        height: 18px;
+    }
 
     .post-footer-left {
         display: flex;
