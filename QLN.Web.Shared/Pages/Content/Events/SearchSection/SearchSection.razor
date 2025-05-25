@@ -1,0 +1,372 @@
+@using QLN.Web.Shared.Components.CustomSelect2
+@using MudBlazor
+@inherits SearchSectionBase
+
+<div class="search-bar">
+    <div class="search-container">
+        <div class="search-row">
+
+            <!-- Search Field: Icon Left, Input Right -->
+            <div class="search-field search-input">
+                <MudIcon Icon="@Icons.Material.Filled.Search" class="left-icon" />
+                <input type="text" placeholder="Search" class="text-input" />
+            </div>
+
+            <!-- Location Field: Input Left, Icon Right -->
+            <div class="search-field location-input">
+                <input type="text" placeholder="Location" class="text-input" />
+                <MudIcon Icon="@Icons.Material.Filled.LocationOn" class="right-icon" />
+            </div>
+
+            <!-- Property Type Select -->
+            <div class="select-field">
+                <CustomSelect2 TItem="SelectOption" Items="@PropertyTypes" Label="Category" Placeholder="Choose"
+                    SelectedId="@SelectedPropertyTypeId" SelectedIdChanged="id => SelectedPropertyTypeId = id"
+                    GetLabel="x => x.Label" GetId="x => x.Id" BorderRadius="@(IsMobile ? "8px" : "0px")"
+                    Padding="8px 10px" />
+            </div>
+
+            <!-- Date Picker Field -->
+
+            <!-- Date Picker Field -->
+            <div class="select-field date-picker-field" @onclick="ToggleDatePicker">
+                <label class="select-label">Dates</label>
+                <div class="date-choose-wrapper">
+                    <div class="date-labels">
+                        <label
+                            class="select-choose @(string.IsNullOrEmpty(SelectedDateLabel) ? "placeholder" : "selected")">
+                            @(string.IsNullOrEmpty(SelectedDateLabel) ? "Choose" : SelectedDateLabel)
+                        </label>
+                    </div>
+                    <div class="date-icon">
+                        <MudIcon Icon="@Icons.Material.Filled.ArrowDropDown" Class="white-text" />
+                    </div>
+                </div>
+            </div>
+
+            @if (_showDatePicker)
+            {
+                <div class="picker-overlay my-orange-theme" @onclick:stopPropagation>
+                    <MudDateRangePicker @ref="_pickerRef" PickerVariant="PickerVariant.Static" ShowToolbar="false"
+                        Color="Color.Primary" StartText="Start" EndText="End" Class="custom-picker"
+                        @bind-DateRange="_dateRange" />
+
+                    <div class="picker-actions">
+                        <MudButton Class="capitalize-text" OnClick="CancelDatePicker">cancel</MudButton>
+                        <MudButton Class="capitalize-text apply-button" Variant="Variant.Filled"
+                            Disabled="@(_dateRange?.Start == null || _dateRange?.End == null)"
+                            OnClick="async () => await ApplyDatePicker()">apply</MudButton>
+
+                    </div>
+
+                </div>
+            }
+
+
+        </div>
+
+
+        <!-- Toggle Row -->
+        <div class="toggle-row">
+            <label class="toggle-wrapper">
+                <input type="checkbox" checked />
+                <span class="switch"></span>
+                <span class="toggle-label">Show Free Events Only</span>
+            </label>
+        </div>
+    </div>
+</div>
+
+
+
+<style>
+    .picker-overlay {
+        background-color: white;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
+        position: absolute;
+        z-index: 1000;
+    }
+
+    .picker-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding-top: 10px;
+    }
+
+    .my-orange-theme {
+
+        .mud-picker-calendar .mud-day.mud-range-selection:hover,
+        .mud-picker-calendar .mud-day.mud-range-end,
+        .mud-picker-calendar .mud-day.mud-range-start:hover,
+        .mud-picker-calendar .mud-day.mud-range-end:hover {
+            background-color: #ff7f2a !important;
+            color: white !important;
+        }
+
+        .mud-button-outlined.mud-button-outlined-primary {
+            border-color: #ff7f2a !important;
+            color: #ff7f2a !important;
+        }
+
+        .mud-button-outlined.mud-button-outlined-primary:hover {
+            background-color: #ffb366 !important;
+            /* lighter orange on hover */
+            color: white !important;
+            border-color: #ffb366 !important;
+        }
+
+
+        .mud-button-filled.mud-button-filled-primary {
+            background-color: #ff7f2a !important;
+            color: white !important;
+        }
+
+        .mud-primary-text {
+            color: #ff7f2a !important;
+        }
+
+        .mud-theme-primary {
+            background-color: #ff7f2a !important;
+            color: white !important;
+        }
+    }
+
+
+
+    .apply-button {
+        background-color: #ff7f2a !important;
+        color: white !important;
+    }
+
+    .capitalize-text {
+        text-transform: capitalize;
+    }
+
+
+    .search-bar {
+        background-color: #e6e6e6;
+        border-radius: 10px;
+        padding: 60px 10px 40px 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+    }
+
+    .search-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 88%;
+    }
+
+    .search-row {
+        display: flex;
+        justify-content: center;
+        gap: 1.5px;
+        align-items: center;
+    }
+
+    /* Common style for all search fields */
+    .search-field {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        width: 255px;
+        height: 56px;
+        background-color: white;
+        padding: 0 12px;
+    }
+
+    .select-field {
+        width: 255px;
+        height: 56px;
+    }
+
+    /* Text input styles */
+    .text-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        font-size: 14px;
+        background: transparent;
+    }
+
+    /* Search Field: Icon on left */
+    .search-input {
+        border-top-left-radius: 6px;
+        border-bottom-left-radius: 6px;
+        font-size: 20px;
+        color: #888;
+    }
+
+    .left-icon {
+        font-size: 20px;
+        color: #888;
+    }
+
+    /* Location Field: Icon on right */
+    .location-input .right-icon {
+        font-size: 20px;
+        color: #ff7f2a;
+    }
+
+    .date-picker-field {
+        background-color: #ff7f2a;
+        color: white;
+        padding: 8px 10px;
+        flex-direction: column;
+        height: 56px;
+        justify-content: center;
+        border-top-right-radius: 6px;
+        border-bottom-right-radius: 6px;
+
+    }
+
+    .select-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: white;
+    }
+
+    .select-choose.placeholder {
+        color: white;
+        font-size: 14px;
+        font-weight: 400;
+    }
+
+    .select-choose.selected {
+        color: white;
+        font-size: 14px;
+        font-weight: 400;
+    }
+
+    .date-icon {
+        color: white;
+    }
+
+    .date-choose-wrapper {
+        display: flex;
+        justify-content: space-between;
+        /* Align children to the start of the main axis (horizontal) */
+        align-items: center;
+        padding: 0;
+    }
+
+    .date-labels {
+        padding: 0;
+    }
+
+    /* White text used in date picker component */
+    .white-text {
+        color: white;
+        font-weight: bold;
+    }
+
+    /* Toggle row layout */
+    .toggle-row {
+        width: 100%;
+        margin-top: 12px;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    /* Toggle switch styles */
+    .toggle-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .toggle-wrapper input[type="checkbox"] {
+        display: none;
+    }
+
+    .switch {
+        width: 32px;
+        height: 18px;
+        background-color: #ccc;
+        border-radius: 20px;
+        position: relative;
+        display: inline-block;
+    }
+
+    .switch::after {
+        content: "";
+        width: 14px;
+        height: 14px;
+        background: white;
+        border-radius: 50%;
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        transition: 0.3s;
+    }
+
+    .toggle-wrapper input[type="checkbox"]:checked+.switch::after {
+        transform: translateX(14px);
+    }
+
+    .toggle-wrapper input[type="checkbox"]:checked+.switch {
+        background-color: #ff7f2a;
+    }
+
+    .toggle-label {
+        font-size: 0.95rem;
+        color: #333;
+    }
+
+    @@media (max-width: 770px) {
+        .search-container {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .search-bar {
+            padding: 10px;
+            width: 100%;
+        }
+
+        .search-row {
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .search-input,
+        .select-field,
+        .date-picker-field,
+        .location-input {
+            border-radius: 8px !important;
+            width: 100% !important;
+        }
+
+        .toggle-wrapper {
+            justify-content: center;
+            margin-left: 0;
+            margin-top: 12px;
+        }
+    }
+
+
+    @@media (min-width: 770px) and (max-width: 858px) {
+
+        .search-field,
+        .select-field {
+            width: 150px !important;
+        }
+    }
+
+    @@media (min-width: 858px) and (max-width: 1024px) {
+
+        .search-field,
+        .select-field {
+            width: 200px !important;
+        }
+    }
+</style>

@@ -1,19 +1,15 @@
-﻿@page "/"
-@using MudBlazor
+﻿@using MudBlazor
 @using QLN.Web.Shared.Components.Carousel
 
 <div style="width: 100%;">
- <CarouselBanner ImageUrls="carouselImages"
-               ShowArrows="true"
-               EnableSwipeGesture="false"
-               AutoCycle="true"
-               Transition="Transition.Slide" />
+    <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
+        Transition="Transition.Slide" />
 </div>
 @code {
     private List<string> carouselImages = new()
-    {
-        "/images/image11.jpg",
-        "/images/image22.jpg",
-        "/images/image33.jpg"
-    };
+{
+"/images/image11.jpg",
+"/images/image22.jpg",
+"/images/image33.jpg"
+};
 }

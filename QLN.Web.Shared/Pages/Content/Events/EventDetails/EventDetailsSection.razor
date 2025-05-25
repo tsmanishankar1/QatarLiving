@@ -1,0 +1,135 @@
+@using MudBlazor
+
+<div class="event-card">
+    <div class="event-title">Michael Bublé</div>
+
+    <div class="event-image-container">
+        <img src="/images/event_image.svg" alt="Michael Bublé" class="event-image" />
+
+        <div class="event-info-bar">
+            <div class="location">
+                <MudIcon Icon="@Icons.Material.Filled.LocationOn" class="location-icon" />
+                <span class="location-text">Al Mayassa Hall, QNCC, Doha</span>
+            </div>
+            <div class="icons">
+                <div class="icons-item">
+                    <MudIcon Icon="@Icons.Material.Filled.FavoriteBorder" class="icons-color" />
+                </div>
+                <div class="icons-item">
+                    <MudIcon Icon="@Icons.Material.Filled.Share" class="icons-color" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="event-description">
+        <p>
+            Reigning Qatar Stars League champions Al Sadd clinched their second trophy of the season —
+            the Qatar Cup — after edging arch-enemies Al Duhail 3-2 in a thrilling penalty shoot-out at the
+            Jassim bin Hamad Stadium on Saturday.
+        </p>
+        <p>
+            The two teams had been tied 2-2 at the end of regular time before Sadd went on to clinch their
+            fourth Qatar Cup title in history.
+        </p>
+        <p>
+            Qatar Olympic Committee President HE Sheikh Joaan bin Hamad Al Thani crowned the winners and handed
+            over the coveted trophy to Al Sadd captain Hassan Al Haydos.
+        </p>
+        <p>
+            Al Sadd coach Felix Sanchez praised his players for the tough win.
+        </p>
+        <p>
+            “We played a strong match against a strong team. We were behind twice and came back. I think we
+            deserved the title. It was an enjoyable match for everyone. It went to penalties, and I’m really
+            happy with the players, their performance, and their comeback,” he said.
+        </p>
+        <p>
+            He was all praise for goalkeeper Barsham.
+        </p>
+        <p>
+            “Barsham was a star. We said if it went to penalties, he would help us and he did. He did it with the
+            national team, and now again with Al Sadd,” Sanchez, who trained Qatar during the 2022 FIFA World Cup, said.
+        </p>
+    </div>
+</div>
+
+<style>
+    .event-card {
+        margin: auto;
+        padding: 16px;
+        background-color: white;
+        border-radius: 12px;
+        font-family: 'Public Sans';
+    }
+
+    .event-title {
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 16px;
+    }
+
+    .event-image-container {
+        width: 100%;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #F0F0F0;
+    }
+
+    .event-image {
+        width: 100%;
+        max-height: 421.88px;
+        object-fit: cover;
+        display: block;
+    }
+
+    .event-info-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        background: #ffffff;
+    }
+
+    .location {
+        display: flex;
+        align-items: center;
+        color: var(--color-primary);
+    }
+
+    .icons-item {
+        border-radius: 50px;
+        padding: 10px;
+        border: 1px solid var(--color-secondary-grey-container);
+        color: var(--color-accent)
+    }
+
+    .icons-color {
+        color: var(--color-accent)
+    }
+
+    .location-icon {
+        font-size: 14px;
+        color: var(--color-primary);
+    }
+
+    .location-text {
+        margin-left: 6px;
+        font-weight: 500;
+        font-size: 13px;
+        color: var(--color-primary)
+    }
+
+    .icons {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .event-description {
+        margin-top: 24px;
+        font-size: 15px;
+        color: #333;
+        line-height: 1.6;
+    }
+</style>

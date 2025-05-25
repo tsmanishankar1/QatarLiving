@@ -1,0 +1,328 @@
+@typeparam TItem
+@inject IJSRuntime JSRuntime
+
+<div class="custom-select-wrapper" @onfocusout="HandleFocusOut" tabindex="0" @onkeydown="HandleKeyDown">
+    @if (IsMobile)
+    {
+        <div class="sort-mobile-display" @onclick="ToggleDropdown">
+            <span class="sort-label-mobile">Sort</span>
+            <MudIcon Icon="@Icons.Material.Rounded.SwapVert" Class="sort-icon-mobile" />
+        </div>
+    }
+
+    else
+    {
+
+        <div class="select-display @(IsOpen ? "focused" : "")" @onclick="ToggleDropdown"
+            style="@($"border-radius:{BorderRadius}; border-color:{(IsOpen ? "#FF7F38" : "#D0D5DD")}; padding:{Padding};")">
+            <div class="select-label-column">
+                @if (!string.IsNullOrEmpty(Label))
+                {
+                    <label class="select-label-custom">@Label</label>
+                }
+                @if (Items.FirstOrDefault(x => GetId(x) == SelectedId) is TItem selected)
+                {
+                    <span class="select-value-selected">@GetLabel(selected)</span>
+                }
+                else
+                {
+                    <span class="select-value-placeholder">@Placeholder</span>
+                }
+            </div>
+            <MudIcon Icon="@Icons.Material.Filled.ArrowDropDown" Class="arrow-icon" />
+        </div>
+    }
+
+
+    @if (IsOpen)
+    {
+        @if (IsMobile)
+        {
+            <!-- ✅ BACKDROP -->
+            <div class="bottom-sheet-backdrop" @onclick="ToggleDropdown"></div>
+            <!-- Mobile bottom sheet -->
+            <div class="bottom-sheet">
+                <div class="bottom-sheet-content">
+                    @foreach (var item in Items)
+                    {
+                        <div class="dropdown-item" @onclick="() => SelectItem(item)">
+                            <span>@GetLabel(item)</span>
+                            @if (SelectedId == GetId(item))
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Check" Class="check-icon" />
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- Desktop dropdown -->
+            <div class="select-dropdown animate-dropdown">
+                @foreach (var item in Items)
+                {
+                    <div class="dropdown-item" @onclick="() => SelectItem(item)">
+                        <span>@GetLabel(item)</span>
+                        @if (SelectedId == GetId(item))
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Check" Class="check-icon" />
+                        }
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "Choose";
+    [Parameter] public string Placeholder { get; set; } = "Choose";
+    [Parameter] public List<TItem> Items { get; set; } = new();
+    [Parameter] public string BorderRadius { get; set; } = "8px";
+    [Parameter] public string Padding { get; set; } = "10px";
+    [Parameter] public string SelectedId { get; set; }
+    [Parameter] public EventCallback<string> SelectedIdChanged { get; set; }
+
+    [Parameter] public Func<TItem, string> GetLabel { get; set; }
+    [Parameter] public Func<TItem, string> GetId { get; set; }
+
+    private bool IsOpen = false;
+    private bool IsMobile = false;
+    private int windowWidth;
+    private bool _jsInitialized;
+    private const int MobileBreakpoint = 770;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_jsInitialized)
+        {
+            windowWidth = await JSRuntime.InvokeAsync<int>("getWindowWidth");
+            IsMobile = windowWidth <= MobileBreakpoint;
+
+            await JSRuntime.InvokeVoidAsync("registerResizeHandler",
+            DotNetObjectReference.Create(this));
+
+            _jsInitialized = true;
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public void UpdateWindowWidth(int width)
+    {
+        windowWidth = width;
+        bool newIsMobile = windowWidth <= MobileBreakpoint;
+
+        if (IsMobile != newIsMobile)
+        {
+            IsMobile = newIsMobile;
+            StateHasChanged();
+        }
+    }
+
+    private void ToggleDropdown() => IsOpen = !IsOpen;
+
+    private async Task SelectItem(TItem item)
+    {
+        SelectedId = GetId(item);
+        IsOpen = false;
+        await SelectedIdChanged.InvokeAsync(SelectedId);
+    }
+
+    private void HandleFocusOut(FocusEventArgs e) => IsOpen = false;
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" || e.Key == " " || e.Key == "ArrowDown")
+        {
+            IsOpen = !IsOpen;
+        }
+    }
+}
+
+
+<style>
+    .custom-select-wrapper {
+        position: relative;
+        width: 100%;
+        outline: none;
+        padding: 0;
+    }
+
+    .sort-mobile-display {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .sort-label-mobile {
+        font-weight: 500;
+        font-size: 14px;
+        color: #242424;
+    }
+
+    .sort-icon-mobile {
+        font-size: 20px;
+        color: #242424;
+    }
+
+    .select-label-column {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 0;
+    }
+
+    .select-label-custom {
+        font-size: 12px;
+        font-weight: 500;
+        color: #646464;
+        margin-bottom: 2px;
+    }
+
+    .select-display {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: white;
+        border: 1px solid #ccc;
+        padding: 10px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .select-display.focused {
+        border-color: #FF7F38;
+        /* Fixed focus color */
+    }
+
+    .select-value-placeholder {
+        color: #787878;
+        color: ##242424;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .select-value-selected {
+        color: ##242424;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .arrow-icon {
+        text-align: end;
+        color: #475467;
+    }
+
+    .select-dropdown {
+        position: absolute;
+        width: 100%;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        margin-top: 4px;
+        z-index: 1000;
+        overflow: hidden;
+    }
+
+    .animate-dropdown {
+        animation: slideDown 0.25s ease-out;
+    }
+
+    .bottom-sheet {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: white;
+        box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.2);
+        border-radius: 12px 12px 0 0;
+        z-index: 1000;
+        animation: slideUp 0.3s ease-out;
+    }
+
+    .bottom-sheet-content {
+        max-height: 50vh;
+        overflow-y: auto;
+        padding: 16px;
+    }
+
+    @@keyframes slideUp {
+        from {
+            transform: translateY(100%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    @@keyframes slideDown {
+        from {
+            transform: translateY(-8px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .bottom-sheet-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        backdrop-filter: blur(6px);
+        background: rgba(0, 0, 0, 0.2);
+        z-index: 999;
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+
+    .dropdown-item {
+        padding: 12px 14px;
+        font-size: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    .dropdown-item:hover {
+        border-radius: 4px;
+        background-color: #FAFAFA;
+    }
+
+    .dropdown-item.disabled {
+        color: #aaa;
+        pointer-events: none;
+    }
+
+    .check-icon {
+        color: #242424;
+    }
+</style>

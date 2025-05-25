@@ -1,0 +1,75 @@
+@inherits FeaturedEventCardBase
+
+<div class="category-event-card-section" @onclick="() => OnClick.InvokeAsync(Item)">
+    <div class="card-contents">
+        <div class="image-wrapper">
+            <img src="@Item.ImageUrl" alt="@Item.Category" class="category-event-image" />
+        </div>
+        <h4 class="category-event-card-title">@Item.Category</h4>
+    </div>
+</div>
+
+
+<style>
+    .category-event-card-section {
+        transition: transform 0.3s ease;
+        cursor: pointer;
+        padding: 0;
+        width: 181px;
+        height: 290px;
+        font-family: 'Public Sans';
+    }
+
+    .category-event-card-section:hover {
+        transform: scale(1.03);
+    }
+
+    .card-contents {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .image-wrapper {
+        width: 100%;
+        height: 200px;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 8px;
+    }
+
+    .category-event-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .category-event-card-title {
+        font-size: 18px;
+        font-weight: 500;
+        color: #242424;
+        text-overflow: ellipsis;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+    }
+
+    @@media (max-width: 768px) {
+
+        .card-contents {
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        .category-event-card-title {
+            font-size: 0.85rem;
+            color: #242424;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+    }
+</style>

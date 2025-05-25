@@ -1,6 +1,6 @@
 @using MudBlazor
-@using QLN.Web.Shared.Components.CustomSelect
 @using QLN.Web.Shared.Components.CustomPagination
+@using QLN.Web.Shared.Components.CustomSelect2
 
 <div class="footer-pagination-container">
     <div class="pagination-row">
@@ -8,7 +8,8 @@
         <MudButton Variant="Variant.Outlined" Disabled="@IsFirstPage" OnClick="@GoToPreviousPage"
             Class="pagination-button">
             <MudIcon Icon="@Icons.Material.Filled.ArrowBack" Class="me-1 pagination-icon" />
-            Previous
+            <span class="pagination-text">Previous</span>
+
         </MudButton>
 
         <!-- Custom Pagination -->
@@ -18,7 +19,7 @@
 
         <!-- Next Button -->
         <MudButton Variant="Variant.Outlined" Disabled="@IsLastPage" OnClick="@GoToNextPage" Class="pagination-button">
-            Next
+            <span class="pagination-text">Next</span>
             <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Class="ms-1 pagination-icon" />
         </MudButton>
     </div>
@@ -26,8 +27,9 @@
     <!-- Page Size Dropdown Centered Below -->
     <div class="page-size-container">
         <div class="page-size-dropdown">
-            <CustomSelect TItem="int" Options="PageSizeOptions" SelectedItem="PageSize"
-                SelectedItemChanged="@(v => HandlePageSizeChanged(v))" Placeholder="Select page size" />
+            <CustomSelect2 TItem="int" Label="" Items="PageSizeOptions" SelectedId="@PageSize.ToString()"
+                SelectedIdChanged="OnPageSizeChanged" GetId="item => item.ToString()"
+                GetLabel="@(item => $"{item} results per page")" Placeholder="Select page size" />
         </div>
     </div>
 </div>
@@ -39,7 +41,9 @@
     [Parameter] public int PageSize { get; set; }
     [Parameter] public EventCallback<int> OnPageChange { get; set; }
     [Parameter] public EventCallback<int> OnPageSizeChange { get; set; }
-    [Parameter] public List<int> PageSizeOptions { get; set; } = new() { 12, 24, 36 };
+
+    // Page size options list
+    private List<int> PageSizeOptions = new() { 12, 24, 36 };
 
     private bool IsFirstPage => CurrentPage <= 1;
     private bool IsLastPage => CurrentPage * PageSize >= TotalItems;
@@ -61,18 +65,15 @@
         await OnPageChange.InvokeAsync(page);
     }
 
-
-    private async Task HandlePageSizeChanged(int newSize)
+    // Convert SelectedId string to int and propagate change
+    private async Task OnPageSizeChanged(string selectedId)
     {
-        if (newSize != PageSize)
+        if (int.TryParse(selectedId, out var newSize) && newSize != PageSize)
         {
-            PageSize = newSize; // Keep local state updated
             await OnPageSizeChange.InvokeAsync(newSize);
-            CurrentPage = 1;
-            await OnPageChange.InvokeAsync(1);
+            await OnPageChange.InvokeAsync(1); // reset to page 1 on page size change
         }
     }
-
 }
 <style>
     .footer-pagination-container {
@@ -148,7 +149,26 @@
 
     .page-size-dropdown {
         min-width: 200px;
-        background-color: white;
         color: #344054;
+    }
+
+    .pagination-text {
+        display: inline;
+    }
+
+    @@media (max-width: 600px) {
+        .pagination-text {
+            display: none;
+        }
+
+        .pagination-button {
+            min-width: 40px !important;
+            padding: 0 !important;
+            justify-content: center;
+        }
+
+        .pagination-icon {
+            margin: 0 !important;
+        }
     }
 </style>

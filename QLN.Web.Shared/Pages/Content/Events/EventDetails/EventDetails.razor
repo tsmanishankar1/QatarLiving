@@ -1,0 +1,53 @@
+@page "/events/details"
+@using QLN.Web.Shared.Components.Carousel
+@using MudBlazor
+@using QLN.Web.Shared.Pages.Content.Events.EventDetails
+@layout ContentLayout
+
+<div style="width: 100%; background-color: var(--color-secondary-background);">
+    <div class="responsive-container">
+
+        <!-- Carousel Banner -->
+        <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
+            Transition="Transition.Slide" />
+
+        <MudGrid Class="py-4" GutterSize="16px">
+            <MudItem xs="12" md="8">
+                <EventDetailsSection />
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <EventInfoSection />
+            </MudItem>
+        </MudGrid>
+
+    </div>
+</div>
+
+@code {
+    private List<string> carouselImages = new()
+{
+"/images/banner_image.svg",
+"/images/banner_image.svg",
+"/images/banner_image.svg"
+};
+}
+
+<style>
+    .responsive-container {
+        width: 100%;
+        padding: 0 40px;
+        box-sizing: border-box;
+    }
+
+    @@media (max-width: 768px) {
+        .responsive-container {
+            padding: 0 16px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .responsive-container {
+            padding: 0 5px;
+        }
+    }
+</style>
