@@ -1,5 +1,6 @@
 ﻿using QLN.Backend.API.Service.BannerService;
 using QLN.Backend.API.Service.ClassifiedService;
+using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.BannerService;
 
 namespace QLN.Backend.API.ServiceConfiguration
@@ -13,5 +14,7 @@ namespace QLN.Backend.API.ServiceConfiguration
 
             return services;
         }
+
+
     }
 }

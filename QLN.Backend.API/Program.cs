@@ -20,6 +20,7 @@ using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.Subscriptions;
 using System.Text.Json.Serialization;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
+using QLN.Common.Infrastructure.IService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -203,4 +204,10 @@ app.MapGroup("/api/subscriptions")
    .MapSubscriptionEndpoints()
     .RequireAuthorization(); 
 
+
+
+app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
 app.Run();

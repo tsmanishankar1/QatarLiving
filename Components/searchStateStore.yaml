@@ -1,7 +1,7 @@
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
-  name: bannerimagestore
+  name: searchStateStore
 spec:
   type: state.redis
   version: v1
@@ -10,7 +10,7 @@ spec:
     value: localhost:6379
   - name: redisPassword
     value: ""
-  - name: actorStateStoreId
+  - name: actorsearchStateStore
     value: "true"
   - name: enableQuery
     value: "true"
