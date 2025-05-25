@@ -7,6 +7,7 @@ using MudBlazor;
 using MudBlazor.Services;
 using QLN.Web.Shared.Services;
 using Microsoft.AspNetCore.Components.Authorization;
+using QLN.Web.Shared.Services.Interface;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
@@ -21,6 +22,7 @@ builder.Services.AddMudServices();
 builder.Services.AddScoped<CustomAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<CustomAuthStateProvider>());
 builder.Services.AddAuthorizationCore();
+builder.Services.AddScoped<ICompanyProfileService, CompanyProfileService>();
 // builder.Services.AddCascadingAuthenticationState();
 builder.Services.Configure<ApiSettings>(
     builder.Configuration.GetSection("ApiSettings"));

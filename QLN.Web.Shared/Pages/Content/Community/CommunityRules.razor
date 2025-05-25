@@ -1,0 +1,62 @@
+﻿<MudPaper  Style="border: 1px solid #E0E0E0; border-radius: 8px;padding:20px" Elevation="0">
+    <div style="display: flex; flex-direction: row; align-items: center; gap: 8px;">
+        <div style="width: 6px; height: 26px; background-color: #00426D;"></div>
+        <MudText Class="community-title ">Community Rules</MudText>
+    </div>
+    <div class="d-flex flex-column gap-2 mt-4">
+        @foreach (var rule in rules.Select((text, index) => new { text, index }))
+        {
+            <div class="d-flex flex-row gap-2" style="align-items:center">
+                <div class="rule-index">@((rule.index + 1).ToString())</div>
+                <div class="rule-text">@rule.text</div>
+            </div>
+        }
+    </div>
+</MudPaper>
+
+
+@code {
+    private string[] rules = new[]
+    {
+        "Be Respectful.",
+        "This is not an advertisement platform.",
+        "All content must be related to Qatar.",
+        "Don’t spread misinformation.",
+        "Don’t promote violence.",
+        "Don’t share private information."
+    };
+}
+
+<style>
+
+
+    .community-title {
+        font-family: 'Public Sans';
+        font-weight: 600;
+        font-size: 25px;
+        color: #242424;
+    }
+
+    .rule-index {
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
+        background-color: #FF7F38; /* Updated background color */
+        color: white; /* White text */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-family: 'Public Sans';
+        font-size: 14px;
+        flex-shrink: 0; /* prevent shrinking */
+    }
+
+    .rule-text {
+        font-family: 'Public Sans';
+        font-weight: 500;
+        font-size: 14px;
+        color: #242424;
+        white-space: normal;
+    }
+</style>
