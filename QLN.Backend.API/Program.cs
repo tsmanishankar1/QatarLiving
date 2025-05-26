@@ -207,7 +207,7 @@ classifiedGroup.MapClassifiedLandingEndpoints();
 // classifiedGroup.MapClassifiedsEndpoints();
 
 var Classifiedandinggroup = app.MapGroup("/api/{vertical}");
-Classifiedandinggroup.MapClassifiedEndpoints();
+Classifiedandinggroup.MapClassifiedLandingEndpoints();
 
 var contentGroup = app.MapGroup("/api/content");
 contentGroup.MapContentLandingEndpoints();
