@@ -1,78 +1,99 @@
 @inherits VideoCardsBase
 @using MudBlazor;
 <div class="watch-section">
-    <!-- Left Side: Video List -->
-    <div class="video-list">
-        <h3><span class="accent-bar">|</span>Watch on Qatar Living</h3>
 
-        @foreach (var video in VideoList)
+    <!-- Title block -->
+    <div class="section-title">
+        <h3><span class="accent-bar">|</span>Watch on Qatar Living</h3>
+    </div>
+
+    <!-- Main Video -->
+    <div class="main-video-wrapper video-card"
+         @onclick="() => ToggleVideoPlay(SingleVideoCard)"
+         @onmouseenter="() => ShowPlayButton(SingleVideoCard)"
+         @onmouseleave="() => HidePlayButton(SingleVideoCard)">
+
+        <video width="100%" height="100%" 
+               muted loop
+               style="object-fit: cover;"
+               src="@SingleVideoCard.VideoUrl"
+               @ref="SingleVideoCard.VideoElement">
+        </video>
+
+        @if (SingleVideoCard.ShowPlayButton)
         {
-            <div class="video-card" @onclick="() => SelectVideo(video)">
-                <div class="thumbnail-container">
-                    <img src="@video.ThumbnailUrl" class="thumbnail" />
-                    <div class="play-icon">&#9658;</div>
-                </div>
-                <div class="video-title">
-                    @if (video == SelectedVideo)
-                    {
-                        <span class="selected-title">@video.Title</span>
-                    }
-                    else
-                    {
-                        <a href="#">@video.Title</a>
-                    }
-                </div>
+            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
+                        display: flex; justify-content: center; align-items: center;
+                        background: rgba(0,0,0,0.3);">
+                <MudIcon Icon="@Icons.Material.Filled.PlayCircle" 
+                         Style="color:var(--color-text-white); font-size: 36px;" />
             </div>
         }
+    </div>
 
-        <div class="view-all">
-            <a href="#">View all videos &rarr;</a>
+    <!-- Video List -->
+    <div class="video-list-container">
+        <div class="video-list">
+            @foreach (var video in VideoList)
+            {
+                <div class="video-card" @onclick="() => SelectVideo(video)">
+                    <div class="thumbnail-container">
+                        <img src="@video.ThumbnailUrl" class="thumbnail" />
+                        <div class="play-icon">&#9658;</div>
+                    </div>
+                    <div class="video-title">
+                        @if (video == SelectedVideo)
+                        {
+                            <span class="selected-title">@video.Title</span>
+                        }
+                        else
+                        {
+                            <a href="#">@video.Title</a>
+                        }
+                    </div>
+                </div>
+            }
+
+            <div class="view-all">
+                <a href="#">View all videos &rarr;</a>
+            </div>
         </div>
     </div>
 
-    <!-- Right Side: Main Video Preview -->
-     <div style="position: relative; width: 738px; height: 416px; border-radius: 12px; overflow: hidden; cursor: pointer;"
-                         class="video-card"
-                         @onclick="() => ToggleVideoPlay(SingleVideoCard)"
-                         @onmouseenter="() => ShowPlayButton(SingleVideoCard)"
-                         @onmouseleave="() => HidePlayButton(SingleVideoCard)">
-                        
-                        <!-- Video element -->
-                        <video width="100%" height="100%" 
-                               muted loop
-                               style="object-fit: cover;"
-                               src="@SingleVideoCard.VideoUrl"
-                               @ref="SingleVideoCard.VideoElement">
-                        </video>
-                        
-                        <!-- Play button overlay - shown on hover when not playing -->
-                        @if (SingleVideoCard.ShowPlayButton)
-                        {
-                            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
-                                        display: flex; justify-content: center; align-items: center;
-                                        background: rgba(0,0,0,0.3);">
-                                <MudIcon Icon="@Icons.Material.Filled.PlayCircle" 
-                                         Style="color:var(--color-text-white); font-size: 36px;" />
-                            </div>
-                        }
-                    </div>
 </div>
-
-
 
 
 <style>
     .watch-section {
-        display: flex;
-        gap: 32px;
-        margin: 20px auto;
-        width: 100%;
-        padding: 16px;
-        font-family: 'Public Sans', sans-serif;
-    }
+        align-items: center;
+    display: flex;
+    gap: 32px;
+    margin: 20px auto;
+    width: 100%;
+    padding: 16px;
+    font-family: 'Public Sans', sans-serif;
+    flex-wrap: wrap; 
+}
+    .main-video-wrapper {
+        order: 2;
+    position: relative;
+    width: 100%;
+    max-width: 738px;
+    aspect-ratio: 16 / 9; 
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    flex: 1;
+}
+.main-video-wrapper video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 
     .video-list {
-        width: 35%;
+        width: 100%;
         height: 416px;
     }
 
@@ -90,7 +111,13 @@
         color: #003865;
         font-weight: bold;
         margin-right: 4px;
+        order: 0;
     }
+    .section-title {
+    width: 100%;
+    order: 0;
+}
+
 
     .thumbnail-container {
         position: relative;
@@ -180,14 +207,41 @@
         font-size: 22px;
         font-weight: bold;
     }
+    .video-list-container {
+    width: 35%;
+    order: 1;
+
+}
+
+.video-list {
+    height: 416px;
+}
+
 
     @@media (max-width: 768px) {
         .watch-section {
-            flex-direction: column;
-        }
+        flex-direction: column;
+        padding: 8px;
+    }
 
-        .video-list, .main-video {
-            width: 100%;
-        }
+    .section-title {
+        order: 1;
+    }
+
+    .main-video-wrapper {
+        order: 2;
+        width: 100% !important;
+        max-width: 100%;
+    }
+
+    .video-list-container {
+        order: 3;
+        width: 100% !important;
+    }
+
+    .video-list {
+        height: auto;
+    }
+         
     }
 </style>

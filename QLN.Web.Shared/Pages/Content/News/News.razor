@@ -8,13 +8,16 @@
 @using QLN.Web.Shared.Pages.Content.News.MoreArticle
 @inject IJSRuntime JSRuntime
 @using QLN.Web.Shared.Components.Carousel
-<MudGrid Class="pa-4" Justify="Justify.Center">
-    <MudItem xs="12" sm="10" md="8" lg="8">
-        <!-- Carousel -->
-        <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="true" AutoCycle="true"
+<MudGrid Class="full-width" Justify="Justify.Center" >
+    <MudItem xs="12">
+    <div class="carousel-padding">
+        <CarouselBanner ImageUrls="carouselImages"
+                        ShowArrows="true"
+                        EnableSwipeGesture="true"
+                        AutoCycle="true"
                         Transition="Transition.Slide" />
+    </div>
     </MudItem>
-
     <MudItem xs="12" Class="d-flex justify-center">
         <ViewToggleButtons Items="@_viewOptions" SelectedValue="@_selectedView" OnSelected="SetViewMode" />
     </MudItem>
@@ -37,16 +40,16 @@
                 <div class="main-category">
                     <img src="/images/sample_news.svg" class="main-image" />
                     <h3 class="category-style">Sports</h3>
-                    <h2 class="main-title">Al Sadd lift fourth Qatar Cup title...</h2>
+                    <h2 class="main-title">Al Sadd lift fourth Qatar Cup title with thrilling win over Al Duhail</h2>
                     <div class="author-wrapper">
                         <div class="main-author">
                             Ismat Zerin • <a href="#" class="main-source">Qatar Living</a>  
                             <img src="/images/tick.svg" alt="Qatarliving" />
                         </div>
-                        <div class="comment-badge">
+                         <div class="comment-badge">
                             <img src="/images/comment_icon.svg" alt="Comments" class="comment-icon" />
                             <span class="count">12</span>
-                        </div>
+                        </div> 
                     </div>
                 </div>
             </div>
@@ -68,11 +71,20 @@
         </div>
 </MudItem>
     <!-- Video Cards -->
-    <MudItem xs="12">
-        <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="true" AutoCycle="true"
+     <MudItem xs="12">
+    <div class="carousel-padding">
+        <CarouselBanner ImageUrls="carouselImages"
+                        ShowArrows="true"
+                        EnableSwipeGesture="true"
+                        AutoCycle="true"
                         Transition="Transition.Slide" />
-        @* <VideoCards /> *@
+    </div>
     </MudItem>
+     <MudItem xs="12">
+         <div class="side-padding ">
+       <VideoCards />
+       </div>
+     </MudItem>
 
     <!-- More Cards -->
     <MudItem xs="12">
@@ -110,14 +122,31 @@
 </MudGrid>
 
 <style>
+    .full-width {
+    width: 100%;
+}
+   
     .news-tabs {
+    width: 100%;
     display: flex;
     overflow-x: auto;
-    padding: 8px 16px;
+    @* padding: 8px 16px; *@
     gap: 8px;
-    border-bottom: 1px solid #eee;
     white-space: nowrap;
+    justify-content: space-between;
+    padding: 0px 100px;
 }
+.author-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+.news-tabs-wrapper{
+     width: 100%;
+}
+
+
 
 .news-tab {
     padding: 10px 20px;
@@ -127,11 +156,16 @@
     cursor: pointer;
     flex-shrink: 0;
 }
+.main-category {
+    border: 1px solid #F0F0F0; 
+    border-radius: 8px;     
+    padding: 16px;           
+    box-sizing: border-box; 
+}
 
 .news-tab.active {
     color: var(--color-accent);
     border-bottom: 2px solid var(--color-accent);
-    background-color: white;
 }
 
 .main-article {
@@ -147,11 +181,19 @@
     height: auto;
     border-radius: 8px;
 }
+.carousel-padding {
+    padding-left: 98px;
+    padding-right: 98px;
+}
+.side-padding {
+    padding-left: 98px;
+    padding-right: 98px;
+}
 
 .comment-badge {
     display: flex;
     align-items: center;
-    border: 1px solid #ddd;
+    border: 1px solid #E3E3E3;
     border-radius: 20px;
     padding: 4px 8px;
     gap: 4px;
@@ -188,6 +230,15 @@
         flex-direction: column;
         align-items: center;
     }
+    .carousel-padding {
+    padding-left: 0px;
+    padding-right: 0px;
+}
+.side-padding {
+    padding-left: 30px;
+    padding-right: 30px;
+}
+
 
     @* .news-grid, .newsletter-container {
         width: 100%;
