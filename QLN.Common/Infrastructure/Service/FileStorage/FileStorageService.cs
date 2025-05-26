@@ -28,8 +28,6 @@ namespace QLN.Common.Infrastructure.Service.FileStorage
                 throw;
             }
         }
-
-
         public async Task<byte[]> ReadFile(string path)
         {
             try

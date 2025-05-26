@@ -107,5 +107,39 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
+        public async Task<CompanyProfileCompletionStatusDto?> GetCompanyProfileCompletionStatus(Guid userId, string vertical, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/companyprofile/completion-status?userId={userId}&vertical={vertical}";
+                return await _dapr.InvokeMethodAsync<CompanyProfileCompletionStatusDto>(
+                    HttpMethod.Get,
+                    CompanyServiceAppId,
+                    url,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving profile completion status for user {UserId} and vertical {Vertical}", userId, vertical);
+                throw;
+            }
+        }
+        public async Task<CompanyProfileVerificationStatusDto?> GetVerificationStatus(Guid userId, VerticalType verticalType, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/companyprofile/verification-status?userId={userId}&vertical={verticalType}";
+                return await _dapr.InvokeMethodAsync<CompanyProfileVerificationStatusDto>(
+                    HttpMethod.Get,
+                    CompanyServiceAppId,
+                    url,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving verification status for user {UserId} and vertical {VerticalType}", userId, verticalType);
+                throw;
+            }
+        }
     }
 }

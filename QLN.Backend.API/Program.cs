@@ -15,6 +15,7 @@ using QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints;
 using QLN.Common.Swagger;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -185,6 +186,7 @@ if (app.Environment.IsDevelopment())
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
 var companyGroup = app.MapGroup("/api/companyprofile");
+//.RequireAuthorization(new AuthorizeAttribute { Roles = "Subscriber" });
 companyGroup.MapCompanyEndpoints();
 var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedsEndpoints();

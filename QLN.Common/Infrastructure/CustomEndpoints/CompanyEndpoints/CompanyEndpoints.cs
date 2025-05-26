@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -15,7 +16,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
     {
         public static RouteGroupBuilder MapCreateCompanyProfile(this RouteGroupBuilder group)
         {
-            group.MapPost("/create", async Task<Results<
+            group.MapPost("/create", /*[Authorize(Roles = "Subscriber")]*/ async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
@@ -27,7 +28,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             {
                 try
                 {
-
                     var entity = await service.CreateCompany(dto, cancellationToken);
                     return TypedResults.Ok("Company Profile created successfully");
                 }
@@ -69,22 +69,19 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 try
                 {
                     var result = await service.GetCompanyById(id);
-                    if (result is null)
-                        throw new KeyNotFoundException($"Company with id '{id}' was not found.");
-
                     return TypedResults.Ok(result);
                 }
-                catch (KeyNotFoundException ex)
+                catch (Exception ex)
                 {
-                    return TypedResults.NotFound(new ProblemDetails
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
                     {
-                        Title = "Not Found",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status404NotFound
-                    });
-                }
-                catch (Exception)
-                {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"Company with id '{id}' was not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
                     return TypedResults.Problem(
                           title: "Internal Server Error",
                           detail: "An unexpected error occurred.",
@@ -110,7 +107,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 try
                 {
                     var result = await service.GetAllCompanies();
-                    /*var castedResult = result.Cast<object>();*/
                     return TypedResults.Ok(result);
                 }
                 catch (Exception)
@@ -188,22 +184,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 try
                 {
                     var result = await service.GetCompanyById(id);
-                    if (result is null)
-                        throw new KeyNotFoundException($"Company with id '{id}' was not found.");
                     await service.DeleteCompany(id);
                     return TypedResults.NoContent();
                 }
-                catch (KeyNotFoundException ex)
+                catch (Exception ex)
                 {
-                    return TypedResults.NotFound(new ProblemDetails
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
                     {
-                        Title = "Not Found",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status404NotFound
-                    });
-                }
-                catch (Exception)
-                {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"Company with id '{id}' was not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
                     return TypedResults.Problem(
                         title: "Internal Server Error",
                         detail: "An unexpected error occurred.",
@@ -218,6 +212,91 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .Produces(StatusCodes.Status204NoContent)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            return group;
+        }
+        public static RouteGroupBuilder MapGetCompanyProfileCompletionStatus(this RouteGroupBuilder group)
+        {
+            group.MapGet("/completion-status", async Task<IResult> (
+                [FromQuery] Guid userId,
+                [FromQuery] string vertical,
+                [FromServices] ICompanyService service) =>
+            {
+                try
+                {
+                    var result = await service.GetCompanyProfileCompletionStatus(userId, vertical);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"Company with userid was not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: "An unexpected error occurred.",
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetCompanyProfileCompletionStatus")
+            .WithTags("Company")
+            .WithSummary("Get company profile completion status")
+            .WithDescription("Returns completion percentage and pending fields for company profile, used to block publishing until 100% complete.")
+            .Produces<CompanyProfileCompletionStatusDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+        public static RouteGroupBuilder MapGetVerificationStatus(this RouteGroupBuilder group)
+        {
+            group.MapGet("/verification-status", async Task<IResult> (
+                [FromQuery] Guid userId,
+                [FromQuery] VerticalType vertical,
+                [FromServices] ICompanyService service,
+                HttpContext context) =>
+            {
+
+                //if (!context.User.IsInRole("Admin"))
+                //    return Results.Forbid();
+
+                try
+                {
+                    var result = await service.GetVerificationStatus(userId, vertical);
+                    return Results.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"Company with userid was not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: "An unexpected error occurred.",
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetCompanyProfileVerificationStatus")
+            .WithTags("Company")
+            .WithSummary("Get company profile verification status")
+            .WithDescription("Returns verification status")
+            .Produces<CompanyProfileVerificationStatusDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             return group;
         }
     }
