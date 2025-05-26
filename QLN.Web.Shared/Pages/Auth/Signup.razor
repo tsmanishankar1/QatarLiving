@@ -376,20 +376,22 @@
             <MudText Typo="Typo.body1" Class="label-text">
                 Date of Birth
             </MudText>
-            <MudDatePicker @bind-Date="_dateOfBirth"
-                           T="DateTime?"
-                           Label="Date of Birth"
-                           Variant="Variant.Outlined"
-                           Required="true"
-                           style="background-color: var(--color-accent)"
-                           RequiredError="Date of Birth is required"
-                           PickerVariant="PickerVariant.Inline"
-                           MaxDate="@DateTime.Today.AddDays(-1)"
-                           InputAttributes="@(new Dictionary<string, object>
-               {
-                   ["aria-label"] = "Date of Birth",
-                   ["data-testid"] = "date-of-birth-picker"
-               })" />
+            <MudThemeProvider Theme="@CustomPaletteTheme" />    
+                <MudDatePicker @bind-Date="_dateOfBirth"
+                            T="DateTime?"
+                            Label="Date of Birth"
+                            Variant="Variant.Outlined"
+                            Required="true"
+                            style="background-color: var(--color-background)"
+                            Color="Color.Primary"
+                            RequiredError="Date of Birth is required"
+                            PickerVariant="PickerVariant.Inline"
+                            MaxDate="@DateTime.Today.AddDays(-1)"
+                            InputAttributes="@(new Dictionary<string, object>
+                {
+                    ["aria-label"] = "Date of Birth",
+                    ["data-testid"] = "date-of-birth-picker"
+                })" />
             <MudText Typo="Typo.body1" Class="label-text">
                 Password
             </MudText>
