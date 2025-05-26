@@ -151,6 +151,7 @@ builder.Services.AddDaprClient();
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
+builder.Services.ContentServicesConfiguration(builder.Configuration);
 
 var app = builder.Build();
 
@@ -173,6 +174,8 @@ var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedLandingEndpoints();
 var Classifiedandinggroup = app.MapGroup("/api/{vertical}");
 Classifiedandinggroup.MapClassifiedEndpoints();
+var contentGroup = app.MapGroup("/api/content");
+contentGroup.MapContentLandingEndpoints();
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
