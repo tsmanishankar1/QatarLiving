@@ -178,6 +178,8 @@ builder.Services.AddDaprClient();
 // This looks like a custom extension method? Adjust if needed
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
+builder.Services.ContentServicesConfiguration(builder.Configuration);
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
 var app = builder.Build();
@@ -196,16 +198,23 @@ if (app.Environment.IsDevelopment())
 
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
+
 var companyGroup = app.MapGroup("/api/companyprofile");
 companyGroup.MapCompanyEndpoints();
+
 var classifiedGroup = app.MapGroup("/api/classified");
-classifiedGroup.MapClassifiedsEndpoints();
+classifiedGroup.MapClassifiedLandingEndpoints();
+// classifiedGroup.MapClassifiedsEndpoints();
+
+var Classifiedandinggroup = app.MapGroup("/api/{vertical}");
+Classifiedandinggroup.MapClassifiedEndpoints();
+
+var contentGroup = app.MapGroup("/api/content");
+contentGroup.MapContentLandingEndpoints();
 
 app.MapGroup("/api/subscriptions")
    .MapSubscriptionEndpoints()
     .RequireAuthorization(); 
-
-
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
