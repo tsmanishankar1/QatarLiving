@@ -4,7 +4,7 @@
 @inherits LayoutComponentBase
 @using MudBlazor
 
-<MudPaper Class="post-card" Elevation="0" @onclick="NavigateToPostDetail">
+<MudPaper Class="post-card" Elevation="0" @onclick="() => { if (!IsDetailView) NavigateToPostDetail(); }">
     <div class="post-header d-flex justify-space-between align-center">
         <div class="post-tag">@Post.Category</div>
 
@@ -16,8 +16,12 @@
             </ActivatorContent>
 
             <ChildContent>
-                <MudMenuItem OnClick="@OnReport">Report</MudMenuItem>
+                @if (!IsDetailView)
+                {
+                    <MudMenuItem OnClick="@OnReport">Report</MudMenuItem>
+                }
             </ChildContent>
+
         </MudMenu>
 
 
@@ -41,12 +45,16 @@
         </div>
 
         <div class="post-icons">
+            <div class="like-wrapper">
+
             <img src="images/content/Like.svg" class="icon" />
             <span>@Post.LikeCount</span>
+            </div>
+                <div class="like-wrapper">
 
             <img src="images/content/Dislike.svg" class="icon" />
             <span>@Post.LikeCount</span>
-
+            </div>
 
             <img src="images/content/Share.svg" class="icon" />
 
@@ -58,6 +66,8 @@
 
 @code {
     [Parameter] public PostModel Post { get; set; } = new();
+    [Parameter] public bool IsDetailView { get; set; } = false;
+
     private void OnReport()
     {
         // Logic for reporting the post
@@ -65,7 +75,7 @@
     }
     private void NavigateToPostDetail()
     {
-        Navigation.NavigateTo($"/post-detail");
+        Navigation.NavigateTo($"/content/community/post/detail/{Post.Id}");
     }
 }
 
@@ -158,4 +168,14 @@
         border: 1.5px solid #F0F0F0;
         object-fit: cover;
     }
+
+    .like-wrapper {
+        background-color: #F4F4FA;
+        padding: 8px;
+        display: inline-flex;
+        align-items: center;
+        border-radius: 6px;
+        gap: 6px;
+    }
+
 </style>

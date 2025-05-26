@@ -1,4 +1,4 @@
-﻿@page "/post-detail"
+﻿@page "/content/community/post/detail/{PostId}"
 @inject NavigationManager Navigation
 @using QLN.Web.Shared.Components.BreadCrumb
 
@@ -19,7 +19,7 @@
 
                     @foreach (var post in posts)
                     {
-                        <PostCard Post="post" />
+                        <PostCard Post="post" IsDetailView="true" />
                         <div class="disclaimer-section">
                             <img src="images/content/Warning.svg" alt="Disclaimer Icon" class="disclaimer-icon" />
                             <span class="disclaimer-text">
@@ -33,9 +33,9 @@
 
                 <!-- Right Section -->
                 <MudItem xs="12" md="4">
-                    <MudPaper Class="p-3 mb-4" Elevation="1">
-                        <CommunityRules />
-                    </MudPaper>
+                    <div>
+                        <PostList />
+                    </div>
                     <MudImage Src="/images/content/Ad.png" Alt="Advertisement" Style="width: 340px; height: 402px;margin-top:12px" />
                 </MudItem>
             </MudGrid>
@@ -46,7 +46,7 @@
 
 @code {
     [Parameter]
-    public int PostId { get; set; }
+    public string PostId { get; set; }
     private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
     private string search = string.Empty;
     private string sortOption = "Popular";
@@ -67,7 +67,7 @@
         new CommentModel
         {
             Avatar = "images/avatars/user1.png",
-            CreatedBy = "You",
+            CreatedBy = "Jas",
             CreatedAt = DateTime.Now.AddMinutes(-10),
             Description = "I might be interested, can you DM the price?",
             LikeCount = 2,
@@ -79,7 +79,7 @@
             Avatar = "images/avatars/user2.png",
             CreatedBy = "Alex Morgan",
             CreatedAt = DateTime.Now.AddMinutes(-5),
-            Description = "That’s too expensive for me.",
+            Description = "It was a great game, watched it from the stadium. Go Al Sadd 🏆🎉",
             LikeCount = 0,
             UnlikeCount = 1,
             IsByCurrentUser = false
@@ -115,8 +115,8 @@
     }
 
     .disclaimer-icon {
-        width: 20px;
-        height: 20px;
+        width: 24px;
+        height: 24px;
         margin-right: 12px;
         vertical-align: middle;
     }

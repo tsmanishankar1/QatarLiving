@@ -4,25 +4,48 @@
 @if (!Comment.isCommented)
 {
     <div class="comment-section-empty">
-        <div class="comment-input-box">
-            <MudTextField @bind-Value="newComment" Placeholder="What an incredible match..." Lines="3" FullWidth="true" />
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="PostComment">Post</MudButton>
+        <div class="post-title">Comments</div>
+
+        <div class="comment-input-wrapper @(string.IsNullOrWhiteSpace(newComment) ? "" : "has-text")">
+            <input class="comment-input"
+                   @bind="newComment"
+                   @bind:event="oninput"
+                   placeholder="Add a comment..." />
+
+            @if (!string.IsNullOrWhiteSpace(newComment))
+            {
+                <MudButton Class="comment-post-btn" OnClick="PostComment">Post</MudButton>
+            }
         </div>
 
         <div class="empty-state">
-            <MudAvatar Icon="Icons.Material.Filled.ChatBubbleOutline" Class="comment-icon" />
-            <h6>Be the first to comment</h6>
-            <p>Nobody’s responded to this post yet. Add your thoughts and get the conversation going.</p>
+            <img src="images/content/Message.svg" class="msg-icon" />
+
+            <h6 class="empty-title">Be the first to comment</h6>
+            <p class="empty-description">
+                Nobody’s responded to this post yet. Add your thoughts and get the conversation going.
+            </p>
         </div>
     </div>
 }
 else
 {
     <div class="comment-list">
-        <div class="comment-input-box">
-            <MudTextField @bind-Value="newComment" Placeholder="Add a comment..." Lines="3" FullWidth="true" />
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="PostComment">Post</MudButton>
+        <div class="post-title">Comment</div>
+
+        <div class="comment-input-wrapper @(string.IsNullOrWhiteSpace(newComment) ? "" : "has-text")">
+            <input class="comment-input"
+                   @bind="newComment"
+                   @bind:event="oninput"
+                   placeholder="Add a comment..." />
+
+            @if (!string.IsNullOrWhiteSpace(newComment))
+            {
+                <MudButton Class="comment-post-btn" OnClick="PostComment">Post</MudButton>
+            }
         </div>
+
+
 
         @foreach (var c in Comment.Comments)
         {
@@ -30,28 +53,36 @@ else
                 <img src="/images/content/Sample.svg" alt="User Avatar" class="post-footer-avatar" />
                 <div class="comment-content">
                     <div class="comment-header">
-                        <strong>@c.CreatedBy  <span>@c.CreatedAt.ToString("g")</span></strong>
-                           <MudMenu Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopRight">
-            <ActivatorContent>
-                <MudIconButton DisableRipple="true" Style="padding: 0; min-width: 0;">
-                    <img src="images/content/Menu.svg" alt="More" style="width: 20px; height: 20px;" />
-                </MudIconButton>
-            </ActivatorContent>
+                        <div class="comment-meta">
+                            <span class="created-by">@c.CreatedBy</span>
+                            <span class="created-at">@c.CreatedAt.ToString("g")</span>
+                        </div>
 
-            <ChildContent>
-                <MudMenuItem OnClick="@OnReport">Report</MudMenuItem>
-            </ChildContent>
-        </MudMenu>
-                       
+                        <MudMenu Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopRight">
+                            <ActivatorContent>
+                                <MudIconButton DisableRipple="true" Style="padding: 0; min-width: 0;">
+                                    <img src="images/content/Menu.svg" alt="More" style="width: 20px; height: 20px;" />
+                                </MudIconButton>
+                            </ActivatorContent>
+
+                            <ChildContent>
+                                <MudMenuItem OnClick="@OnReport">Report</MudMenuItem>
+                            </ChildContent>
+                        </MudMenu>
+
                     </div>
                     <div>@c.Description</div>
                     <div class="post-icons">
-                        <img src="images/content/Like.svg" class="icon" />
-                        <span>@c.LikeCount</span>
+                        <div class="like-wrapper">
+                            <img src="images/content/Like.svg" class="icon" />
+                            <span style="margin-left: 4px;">@c.LikeCount</span>
+                        </div>
 
-                        <img src="images/content/Dislike.svg" class="icon" />
-                        <span>@c.LikeCount</span>
+                        <div class="like-wrapper">
 
+                            <img src="images/content/Dislike.svg" class="icon" />
+                            <span style="margin-left: 4px;">@c.LikeCount</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -62,16 +93,18 @@ else
 @code {
     [Parameter]
     public PostModel Comment { get; set; }
+    private string newComment = string.Empty;
 
-    private string newComment = "";
+    private void OnInputChanged(ChangeEventArgs e)
+    {
+        newComment = e.Value?.ToString() ?? string.Empty;
+    }
 
     private void PostComment()
     {
-        // Add logic to save new comment
     }
     private void OnReport()
     {
-        // Logic for reporting the post
         Console.WriteLine($"Reporting Comment");
     }
 }
@@ -82,19 +115,45 @@ else
         border-radius: 8px;
         background-color: #fff;
         box-shadow: 0 0 4px rgba(0,0,0,0.1);
-        margin-top:10px;
+        margin-top: 10px;
     }
 
-    .comment-input-box {
+    .comment-input-wrapper {
         display: flex;
-        flex-direction: column;
+        align-items: center;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        padding: 0.5rem;
         gap: 0.5rem;
-        margin-bottom: 1rem;
+        background-color: #fff;
+        transition: border-color 0.2s ease;
     }
+
+        .comment-input-wrapper.has-text {
+            border-color: #FF7F38;
+        }
+
+    .comment-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        font-size: 1rem;
+    }
+
+    .comment-post-btn {
+        background-color: #FF7F38;
+        color: white;
+        min-width: 70px;
+        height: 36px;
+        padding: 0 1rem;
+    }
+
+
 
     .empty-state {
         text-align: center;
         color: #888;
+        margin-top: 10px;
     }
 
     .comment-icon {
@@ -105,11 +164,15 @@ else
     .comment-item {
         display: flex;
         gap: 0.75rem;
-        margin-bottom: 1rem;
+        margin-top: 10px;
     }
 
     .my-comment {
-        background-color: #f4f9ff;
+        background-color: white;
+    }
+
+    .other-comment {
+        background-color: white;
     }
 
     .comment-content {
@@ -138,4 +201,87 @@ else
         border: 1.5px solid #F0F0F0;
         object-fit: cover;
     }
+
+    .comment-meta {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .created-by {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 15px;
+        line-height: 26px;
+        letter-spacing: 0;
+        color: #00426D;
+    }
+
+    .created-at {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 12px;
+        line-height: 18px;
+        letter-spacing: 0;
+        color: #1C1C1C;
+    }
+
+    .post-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1c1c1c;
+        margin-bottom: 10px;
+    }
+
+    .like-wrapper {
+        background-color: #F4F4FA;
+        padding: 8px;
+        display: inline-flex;
+        align-items: center;
+        border-radius: 6px;
+        gap: 6px;
+    }
+
+    .icon {
+        width: 18px;
+        height: 18px;
+    }
+
+    .msg-icon {
+        width: 48px;
+        height: 48px;
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 2rem;
+        gap: 0.5rem;
+    }
+
+    .empty-title {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 16px;
+        line-height: 20px;
+        letter-spacing: 0%;
+        color: #242424;
+        margin: 0.5rem 0 0;
+    }
+
+    .empty-description {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 400;
+        font-size: 14px;
+        line-height: 22px;
+        letter-spacing: 0%;
+        color: #4B4B4B;
+        max-width: 360px;
+        margin: 0;
+    }
+
 </style>

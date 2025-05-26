@@ -1,18 +1,16 @@
-﻿@page "/community"
+﻿@page "/content/community"
+<PageTitle>Community</PageTitle>
 @inject NavigationManager Navigation
 @using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.SearchBarSection
 @using QLN.Web.Shared.Components.Carousel
 
-<!-- Main Container -->
 <div style="width: 100%; background-color: var(--color-secondary-background);">
     <div style="width: 100%; padding: 0 40px;">
 
-        <!-- Carousel Banner -->
         <div class="category-banner-wrapper">
             <img src="/images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
         </div>
 
-        <!-- Search Bar Section -->
         <SearchBarSection OnSearchCompleted="HandleSearchResults" />
 
         <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-4">
@@ -20,7 +18,7 @@
                 <!-- Left Section -->
                 <MudItem xs="12" md="8">
 
-                    <div class="d-flex flex-row  h-32" style="justify-content:space-between;align-items:center">
+                    <div class="d-flex flex-row h-32" style="justify-content:space-between;align-items:center">
                         <MudText Typo="Typo.h5" Style="font-family: 'Public Sans'; font-weight: 600; font-size: 16px; line-height: 26px;">
                             Community Posts
                         </MudText>
@@ -43,16 +41,11 @@
 
 
                         </div>
-
-
-
                     </div>
-
-
 
                     @foreach (var post in posts)
                     {
-                        <PostCard Post="post" />
+                        <PostCard Post="post" IsDetailView="false" />
                     }
                 </MudItem>
 
@@ -136,7 +129,6 @@
           new PostModel
         {
                         Id="1",
-
             Category = "Visa and Permits",
             Title = "Family Residence Visa status stuck",
             ImageUrl = "images/content/Post2.svg",
@@ -168,7 +160,7 @@
 
     private async Task LoadLandingData()
     {
-        // TODO: Add actual data fetching logic
+        
     }
 }
 

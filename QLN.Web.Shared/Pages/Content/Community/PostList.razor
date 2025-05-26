@@ -1,0 +1,49 @@
+﻿<div style="padding:10px">
+    <div style="display: flex; flex-direction: row; align-items: center; gap: 8px;">
+        <div style="width: 6px; height: 26px; background-color: #00426D;"></div>
+        <MudText Class="more-posts-title">More Posts</MudText>
+    </div>
+
+    <div class="d-flex flex-column gap-3 mt-4">
+        @foreach (var post in posts)
+        {
+            <a href="@post.Url" class="post-link">@post.Title</a>
+            <MudDivider Class="my-1" />
+        }
+    </div>
+</div>
+
+@code {
+    private List<PostItem> posts = new()
+    {
+        new PostItem("Family Residence Visa status stuck \"Under Review\".", "#"),
+        new PostItem("A student raises the Palestinian flag at the graduation ceremony of the 2025 class of Doha University of Science and Technology (UDST) a short while ago 🇵🇸🎓", "#"),
+        new PostItem("FFs Trump Qatar is safe! Your motorcade is causing inconvenience.", "#"),
+        new PostItem("A Strange Experience on the Train. Was I Overthinking or Was She Just Rude?", "#"),
+        new PostItem("Qatar’s $400m \"Gift\" To Trump?", "#")
+    };
+
+    private record PostItem(string Title, string Url);
+}
+<style>
+    .more-posts-title {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 25px;
+        color: #242424;
+    }
+
+    .post-link {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 14px;
+        color: #242424;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+        .post-link:hover {
+            color: #00426D;
+            text-decoration: underline;
+        }
+</style>
