@@ -11,7 +11,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints
 {
     public static class ClassifiedEndPointDependency
     {
-        public static RouteGroupBuilder MapClassifiedLandingEndpoints(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapClassifiedsEndpoints(this RouteGroupBuilder group)
         {
             group.MapCreateBannerEndPoints()
                 .MapUpdateBannerEndPoints()
@@ -22,7 +22,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints
                 .MapGetImageByIdEndPoints()
                 .MapGetAllImageEndPoints()
                 .MapUpdateBannerImageEndpoints()
-                .MapDeleteBannerImageEndpoint();
+                .MapDeleteBannerImageEndpoint()
+                .MapClassifiedLandingEndpoints();
             return group;
         }
 

@@ -9,6 +9,11 @@ using QLN.Classified.MS.Service;
 using QLN.Common.Swagger;
 using QLN.Classified.MS.Service.BannerService;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
+using Microsoft.EntityFrameworkCore;
+using System;
+using QLN.Common.Infrastructure.DbContext;
+using Microsoft.AspNetCore.Identity;
+using QLN.Common.Infrastructure.Model;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,27 +44,27 @@ builder.Services.AddSwaggerGen(opts => {
     opts.OperationFilter<SwaggerFileUploadFilter>();
 });
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-  .AddJwtBearer(opt => {
-      opt.RequireHttpsMetadata = true;
-      opt.TokenValidationParameters = new TokenValidationParameters
-      {
-          ValidateIssuer = true,
-          ValidateAudience = true,
-          ValidateLifetime = true,
-          ValidateIssuerSigningKey = true,
-          ValidIssuer = builder.Configuration["Jwt:Issuer"],
-          ValidAudience = builder.Configuration["Jwt:Audience"],
-          IssuerSigningKey = new SymmetricSecurityKey(
-           Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
-      };
-      opt.MapInboundClaims = false;
-      opt.TokenValidationParameters.RoleClaimType = "role";
-      opt.TokenValidationParameters.NameClaimType = "name";
-  });
+//builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+//  .AddJwtBearer(opt => {
+//      opt.RequireHttpsMetadata = true;
+//      opt.TokenValidationParameters = new TokenValidationParameters
+//      {
+//          ValidateIssuer = true,
+//          ValidateAudience = true,
+//          ValidateLifetime = true,
+//          ValidateIssuerSigningKey = true,
+//          ValidIssuer = builder.Configuration["Jwt:Issuer"],
+//          ValidAudience = builder.Configuration["Jwt:Audience"],
+//          IssuerSigningKey = new SymmetricSecurityKey(
+//           Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+//      };
+//      opt.MapInboundClaims = false;
+//      opt.TokenValidationParameters.RoleClaimType = "role";
+//      opt.TokenValidationParameters.NameClaimType = "name";
+//  });
 builder.Services.AddAuthorization();
-
 builder.Services.AddDaprClient();
+
 
 builder.Services.AddScoped<IBannerService, BannerService>();
 builder.Services.AddScoped<IClassifiedService, ClassifiedService>();
@@ -76,14 +81,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
+//app.UseAuthentication();
+//app.UseAuthorization();
 
-app.MapGroup("/api/classified")
-   .MapClassifiedLandingEndpoints();
-
-app.MapGroup("/api/{vertical}")
-   .MapClassifiedEndpoints();
+app.MapGroup("/api/classifieds")
+   .MapClassifiedsEndpoints();
 
 app.MapControllers();
 

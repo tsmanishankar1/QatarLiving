@@ -1,0 +1,67 @@
+@using MudBlazor
+
+
+<div class="category-card">
+    <div class="category-content">
+        <div class="category-title">@Item.Category</div>
+        <MudButton Variant="Variant.Text"
+            Style="color: var(--color-accent); text-transform: none; justify-content: flex-start;  font-weight: 400; font-size: 14px;"
+            Size="Size.Small" FullWidth="true" EndIcon="@Icons.Material.Filled.ArrowForward">
+            @Item.Count
+        </MudButton>
+    </div>
+    <div class="category-img">
+        <img src="@Item.ImageUrl" alt="@Item.Category" />
+    </div>
+</div>
+
+<style>
+    .category-card {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+        font-family: 'Public Sans', sans-serif;
+        background-color: var(--color-background);
+        padding: 10px 10px 5px 10px;
+        border-radius: 16px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        transition: transform 0.2s ease-in-out;
+    }
+
+    .category-card:hover {
+        transform: translateY(-4px);
+    }
+
+    .category-content {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+        padding: 10px;
+    }
+
+    .category-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+        margin-bottom: 6px;
+    }
+
+    .category-img {
+        flex-shrink: 0;
+        width: 100px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+    }
+
+    .category-img img {
+        height: 100px;
+        width: auto;
+        object-fit: contain;
+        -webkit-mask-image: linear-gradient(to right, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.8));
+    }
+
+    }
+</style>

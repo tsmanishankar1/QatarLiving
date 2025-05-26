@@ -10,6 +10,15 @@ apps:
     command:
       - dotnet
       - run
+# - appDirPath: QLN.BusinessProfile.MS
+#   appID: qln-businessprofile-ms
+#   appPort: 5027
+#   command:
+#   - dotnet
+#   - run
+- appDirPath: QLN.Subscriptions.Actor
+  appID: qln-subscriptions-actor
+  appPort: 5056
 
   - appID: qln-classified-ms
     appDirPath: QLN.Classified.MS
@@ -17,6 +26,12 @@ apps:
     command:
       - dotnet
       - run
+# - appDirPath: QLN.Blazor.Base
+#   appID: qln-blazor-base
+#   appPort: 5047
+#   command:
+#   - dotnet
+#   - run
 
   - appID: qln-search-ms
     appDirPath: QLN.SearchService
@@ -24,4 +39,9 @@ apps:
     command:
       - dotnet
       - run
-
+  - appID: qln-company-ms
+    appDirPath: QLN.Company.MS
+    appPort: 5139
+    command:
+      - dotnet
+      - run

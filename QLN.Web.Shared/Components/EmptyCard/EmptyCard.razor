@@ -1,0 +1,49 @@
+@using Microsoft.AspNetCore.Components
+
+<div class="empty-state-card">
+    <img src="/images/emty_icon.svg" alt="Empty Icon" class="empty-icon" />
+    <h3 class="empty-title">@Title</h3>
+    @if (!string.IsNullOrWhiteSpace(Subtitle))
+    {
+        <p class="empty-subtitle">@Subtitle</p>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; }
+    [Parameter] public string Subtitle { get; set; }
+}
+
+<style>
+    .empty-state-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 40px 20px;
+        border-radius: 8px;
+        max-width: 400px;
+        margin: auto;
+    }
+
+    .empty-icon {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 20px;
+    }
+
+    .empty-title {
+        font-size: 15px;
+        font-weight: 500;
+        color: var(-- --color-text-heading);
+        margin-bottom: 8px;
+    }
+
+    .empty-subtitle {
+        font-size: 14px;
+        font-weight: 400;
+        color: var(--color-text-descripton);
+        max-width: 320px;
+    }
+</style>

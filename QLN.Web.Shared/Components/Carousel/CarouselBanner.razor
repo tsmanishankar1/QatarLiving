@@ -3,6 +3,8 @@
 
 <MudCarousel Class="mud-width-full" Style="height: 230px;"
              ShowArrows="@ShowArrows"
+             @onmouseover="() => OnHoverChanged(true)"
+             @onmouseout="() => OnHoverChanged(false)"
              EnableSwipeGesture="@EnableSwipeGesture"
              AutoCycle="@AutoCycle"
              ShowBullets="false"
@@ -38,4 +40,8 @@
 
     [Parameter]
     public Transition Transition { get; set; } = Transition.Slide;
+    private void OnHoverChanged(bool hoverState)
+    {
+    AutoCycle = !hoverState;
+    }
 }

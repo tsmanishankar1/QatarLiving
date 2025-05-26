@@ -14,6 +14,9 @@ namespace QLN.SearchService
 {
     public interface ISearchIndexInitializer
     {
+        /// <summary>
+        /// Ensures that all configured search indexes are created (recreated if outdated).
+        /// </summary>
         Task InitializeAsync();
     }
 
@@ -29,9 +32,9 @@ namespace QLN.SearchService
             IConfiguration config,
             ILogger<SearchIndexInitializer> logger)
         {
-            _indexClient = indexClient;
-            _config = config;
-            _logger = logger;
+            _indexClient = indexClient ?? throw new ArgumentNullException(nameof(indexClient));
+            _config = config ?? throw new ArgumentNullException(nameof(config));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _modelsAssembly = typeof(ClassifiedIndex).Assembly;
         }
 
@@ -46,71 +49,93 @@ namespace QLN.SearchService
 
         private Dictionary<string, string> LoadIndexConfiguration()
         {
-            var section = _config.GetSection("AzureSearch:Indexes");
-            var dict = section.Get<Dictionary<string, string>>();
-            if (dict is null || dict.Count == 0)
+            try
             {
-                throw new InvalidOperationException(
-                    "Missing or empty AzureSearch:Indexes configuration.");
+                var section = _config.GetSection("AzureSearch:Indexes");
+                var dict = section.Get<Dictionary<string, string>>();
+                if (dict == null || dict.Count == 0)
+                {
+                    var msg = "AzureSearch:Indexes configuration is missing or empty.";
+                    _logger.LogError(msg);
+                    throw new InvalidOperationException(msg);
+                }
+                return dict;
             }
-
-            return dict;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading AzureSearch:Indexes configuration.");
+                throw;
+            }
         }
 
         private async Task EnsureIndexExistsAsync(string vertical, string indexName)
         {
             try
             {
-                _logger.LogInformation("Checking for index {IndexName}", indexName);
+                _logger.LogInformation("Checking for index '{IndexName}'", indexName);
                 await _indexClient.GetIndexAsync(indexName);
-                _logger.LogInformation("Index {IndexName} already exists, skipping creation.", indexName);
+                _logger.LogInformation("Index '{IndexName}' already exists, skipping.", indexName);
                 return;
             }
-            catch (RequestFailedException e) when (e.Status == 404)
+            catch (RequestFailedException ex) when (ex.Status == 404)
             {
-                _logger.LogInformation("Index {IndexName} not found, will create.", indexName);
+                _logger.LogInformation("Index '{IndexName}' not found, creating...", indexName);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                _logger.LogError(e, "Failed while checking existence of index {IndexName}", indexName);
+                _logger.LogError(ex, "Error checking index '{IndexName}'", indexName);
                 throw;
             }
 
-            // If we get here, the index was 404 – so create it.
-            var modelType = ResolveModelType(vertical);
-            var fields = new FieldBuilder().Build(modelType);
-            var definition = new SearchIndex(indexName, fields);
-
             try
             {
-                _logger.LogInformation("Creating index {IndexName} for vertical {Vertical}", indexName, vertical);
+                var modelType = ResolveModelType(vertical);
+                var fields = new FieldBuilder().Build(modelType);
+                var definition = new SearchIndex(indexName, fields);
+
+                _logger.LogInformation("Creating index '{IndexName}' for vertical '{Vertical}'", indexName, vertical);
                 await _indexClient.CreateIndexAsync(definition);
-                _logger.LogInformation("Index {IndexName} created successfully.", indexName);
+                _logger.LogInformation("Index '{IndexName}' created successfully.", indexName);
             }
-            catch (RequestFailedException e)
+            catch (RequestFailedException ex)
             {
-                _logger.LogError(e, "Azure Search failed to create index {IndexName}", indexName);
+                _logger.LogError(ex, "Azure Search failed to create index '{IndexName}'", indexName);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error creating index '{IndexName}'", indexName);
                 throw;
             }
         }
 
         private Type ResolveModelType(string vertical)
         {
-            // Normalize e.g. "classified" => "ClassifiedIndex"
-            var typeName = CultureInfo.InvariantCulture
-                .TextInfo
-                .ToTitleCase(vertical) + "Index";
-
-            var fullName = $"QLN.SearchService.IndexModels.{typeName}";
-            var t = _modelsAssembly.GetType(fullName, throwOnError: false);
-            if (t is null)
+            if (string.IsNullOrWhiteSpace(vertical))
             {
-                throw new InvalidOperationException(
-                    $"No index model type found for vertical '{vertical}'. " +
-                    $"Expected CLR type name: {fullName}");
+                var msg = "Vertical name cannot be null or empty.";
+                _logger.LogError(msg);
+                throw new ArgumentException(msg, nameof(vertical));
             }
 
-            return t;
+            var singular = vertical.EndsWith("s", StringComparison.OrdinalIgnoreCase)
+                ? vertical[..^1]
+                : vertical;
+
+            var typeName = CultureInfo.InvariantCulture
+                .TextInfo.ToTitleCase(singular.Trim()) + "Index";
+
+            var fullName = $"QLN.SearchService.IndexModels.{typeName}";
+            _logger.LogDebug("Resolving CLR type '{FullName}' for vertical '{Vertical}'", fullName, vertical);
+
+            var type = _modelsAssembly.GetType(fullName, throwOnError: false);
+            if (type == null)
+            {
+                var msg = $"No index model found for vertical '{vertical}'. Expected CLR type: {fullName}";
+                _logger.LogError(msg);
+                throw new InvalidOperationException(msg);
+            }
+            return type;
         }
     }
 }
