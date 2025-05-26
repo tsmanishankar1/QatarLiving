@@ -20,6 +20,7 @@ using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.Subscriptions;
 using System.Text.Json.Serialization;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -168,8 +169,7 @@ builder.Services.AddActors(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
-// Register your subscription service
-builder.Services.AddSingleton<IExternalSubscriptionService, ExternalSubscriptionService>();
+
 
 builder.Services.AddDaprClient();
 
@@ -178,6 +178,8 @@ builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
+builder.Services.SubscriptionConfiguration(builder.Configuration);
+builder.Services.PayToPublishConfiguration(builder.Configuration);
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -201,6 +203,10 @@ classifiedGroup.MapClassifiedsEndpoints();
 
 app.MapGroup("/api/subscriptions")
    .MapSubscriptionEndpoints()
-    .RequireAuthorization(); 
+    .RequireAuthorization();
+
+app.MapGroup("/api/PayToPublish") 
+    .MapPayToPublishEndpoints()
+     .RequireAuthorization();
 
 app.Run();

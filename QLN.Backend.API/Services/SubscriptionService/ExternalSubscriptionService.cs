@@ -28,16 +28,17 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
     }
 
 
-    public async Task<SubscriptionResponseDto?> GetSubscriptionByVerticalAndCategoryAsync(int verticalTypeId, int categoryId, CancellationToken cancellationToken = default)
+    public async Task<List<SubscriptionResponseDto>> GetSubscriptionsByVerticalAndCategoryAsync(int verticalTypeId, int categoryId, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Getting subscription with VerticalTypeId: {VerticalTypeId} and CategoryId: {CategoryId}", verticalTypeId, categoryId);
+        _logger.LogInformation("Getting subscriptions with VerticalTypeId: {VerticalTypeId} and CategoryId: {CategoryId}", verticalTypeId, categoryId);
 
         var allIds = _subscriptionIds.Keys.ToList();
+        var matchingSubscriptions = new List<SubscriptionResponseDto>();
 
         if (allIds.Count == 0)
         {
             _logger.LogWarning("No subscriptions available to search");
-            return null;
+            return matchingSubscriptions;
         }
 
         foreach (var id in allIds)
@@ -50,7 +51,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
             if (dto.verticalTypeId == verticalTypeId && dto.categoryId == categoryId && dto.statusId != 3)
             {
-                return new SubscriptionResponseDto
+                matchingSubscriptions.Add(new SubscriptionResponseDto
                 {
                     Id = dto.Id,
                     SubscriptionName = dto.subscriptionName,
@@ -58,12 +59,16 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                     Price = dto.price,
                     Description = dto.description,
                     Currency = dto.currency
-                };
+                });
             }
         }
 
-        _logger.LogWarning("No subscription found for VerticalTypeId {VerticalTypeId} and CategoryId {CategoryId}", verticalTypeId, categoryId);
-        return null;
+        if (matchingSubscriptions.Count == 0)
+        {
+            _logger.LogWarning("No subscriptions found for VerticalTypeId {VerticalTypeId} and CategoryId {CategoryId}", verticalTypeId, categoryId);
+        }
+
+        return matchingSubscriptions;
     }
 
     public async Task CreateSubscriptionAsync(SubscriptionRequestDto request, CancellationToken cancellationToken = default)
@@ -238,12 +243,18 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
         return null;
     }
-    public async Task<Guid> CreatePaymentAsync(PaymentTransactionRequestDto request, CancellationToken cancellationToken = default)
+    public async Task<Guid> CreatePaymentAsync(PaymentTransactionRequestDto request, Guid userId, CancellationToken cancellationToken = default)
     {
         if (request == null) throw new ArgumentNullException(nameof(request));
 
         var id = Guid.NewGuid();
-
+        var startDate = DateTime.UtcNow;
+        var subscriptionactor = GetActorProxy(request.SubscriptionId);
+        var subscriptionData = await subscriptionactor.GetDataAsync(cancellationToken);
+         if (subscriptionData == null)
+                throw new Exception($"PayToPublish data not found for ID: {request.SubscriptionId}");
+            var durationText = subscriptionData.duration;
+            var endDate = ParseDurationAndGetEndDate(startDate, durationText);
         var dto = new PaymentTransactionDto
         {
             Id = id,
@@ -253,6 +264,9 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             CardNumber = request.CardNumber,
             ExpiryMonth = request.ExpiryMonth,
             ExpiryYear = request.ExpiryYear,
+            UserId = userId,
+            StartDate = startDate,
+            EndDate = endDate,
             CardHolderName = request.CardHolderName,
             TransactionDate = DateTime.UtcNow,
             LastUpdated = DateTime.UtcNow,
@@ -270,7 +284,31 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
         throw new Exception("Payment transaction creation failed.");
     }
+    private DateTime ParseDurationAndGetEndDate(DateTime startDate, string duration)
+    {
+        if (string.IsNullOrWhiteSpace(duration))
+            throw new ArgumentException("Duration is empty or null", nameof(duration));
 
+        duration = duration.ToLowerInvariant();
+        var digits = new string(duration.Where(char.IsDigit).ToArray());
+
+        if (string.IsNullOrWhiteSpace(digits))
+            throw new ArgumentException($"No digits found in duration: {duration}");
+
+        int value = int.Parse(digits);
+
+        if (duration.Contains("month"))
+        {
+            return startDate.AddMonths(value);
+        }
+
+        if (duration.Contains("year"))
+        {
+            return startDate.AddYears(value);
+        }
+
+        throw new ArgumentException($"Unsupported duration format: {duration}");
+    }
     private IPaymentTransactionActor GetPaymentTransactionActorProxy(Guid id)
     {
         if (id == Guid.Empty)
@@ -282,5 +320,46 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
        
     }
+    public async Task<SubscriptionDetailsResponseDto?> GetSubscriptionDetailsByVerticalIdAsync(
+    int verticalId,
+    CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Fetching subscription details for verticalId: {VerticalId}", verticalId);
+
+        // Check if verticalId is 3 (or add other valid IDs as needed)
+        if (verticalId == 3)
+        {
+            _logger.LogInformation("Returning mocked subscription details for verticalId: {VerticalId}", verticalId);
+
+            return new SubscriptionDetailsResponseDto
+            {
+                CompanyId = Guid.NewGuid(),
+                CompanyName = "Preloved",
+                BusinessProfile = new BusinessProfileDto
+                {
+                    Name = "Luxury Store",
+                    CompanyId = Guid.NewGuid(),
+                    CompanyName = "Preloved",
+                    Duration = "6 months",
+                    ValidFrom = DateTime.UtcNow.Date,
+                    ValidTo = DateTime.UtcNow.Date.AddMonths(6),
+                    LogoUrl = "images/subscription/CompanyLogo.svg"
+                },
+                SubscriptionStatistics = new SubscriptionStatisticsDto
+                {
+                    PublishedAds = new UsageDto { Usage = 5, Total = 15 },
+                    PromotedAds = new UsageDto { Usage = 1, Total = 2 },
+                    FeaturedAds = new UsageDto { Usage = 2, Total = 2 },
+                    Refreshes = new UsageDto { Usage = 5, Total = 75 }
+                }
+            };
+        }
+
+        _logger.LogWarning("No subscription found for verticalId: {VerticalId}", verticalId);
+        return null;
+    }
+
+
+
 }
 
