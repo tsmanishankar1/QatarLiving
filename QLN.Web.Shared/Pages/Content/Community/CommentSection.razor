@@ -1,5 +1,4 @@
-﻿@using QLN.Web.Shared.Models
-@inherits LayoutComponentBase
+﻿@inherits CommentSectionBase
 
 @if (!Comment.isCommented)
 {
@@ -90,24 +89,6 @@ else
     </div>
 }
 
-@code {
-    [Parameter]
-    public PostModel Comment { get; set; }
-    private string newComment = string.Empty;
-
-    private void OnInputChanged(ChangeEventArgs e)
-    {
-        newComment = e.Value?.ToString() ?? string.Empty;
-    }
-
-    private void PostComment()
-    {
-    }
-    private void OnReport()
-    {
-        Console.WriteLine($"Reporting Comment");
-    }
-}
 
 <style>
     .comment-section-empty, .comment-list {

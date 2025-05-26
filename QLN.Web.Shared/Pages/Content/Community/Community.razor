@@ -1,37 +1,42 @@
 ﻿@page "/content/community"
 <PageTitle>Community</PageTitle>
+@inherits CommunityBase
+
 @inject NavigationManager Navigation
-@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.SearchBarSection
+@using QLN.Web.Shared.Pages.Content.Community.Components.SearchBarSection
 @using QLN.Web.Shared.Components.Carousel
 
-<div style="width: 100%; background-color: var(--color-secondary-background);">
-    <div style="width: 100%; padding: 0 40px;">
+
+
+<div class="container">
+    <div class="container-inner-wrapper">
 
         <div class="category-banner-wrapper">
             <img src="/images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
         </div>
 
-        <SearchBarSection OnSearchCompleted="HandleSearchResults" />
+        <CommunitySearchBarSection OnSearchCompleted="HandleSearchResults" />
 
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-4">
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="section-container">
             <MudGrid>
                 <!-- Left Section -->
                 <MudItem xs="12" md="8">
-
-                    <div class="d-flex flex-row h-32" style="justify-content:space-between;align-items:center">
-                        <MudText Typo="Typo.h5" Style="font-family: 'Public Sans'; font-weight: 600; font-size: 16px; line-height: 26px;">
+                    <div class=" community-header">
+                        <MudText Typo="Typo.h5" Class="community-title">
                             Community Posts
                         </MudText>
-                        <div style="width: 300px;display:flex;flex-direction:row;gap:10px;align-items:center">
-                            <div style="font-family: 'Public Sans'; font-weight: 500; font-size: 13px; line-height: 22px; color: #242424; margin-bottom: 4px;">
+
+                        <div class="sort-section">
+                            <div class="sort-label">
                                 Sort by:
                             </div>
 
                             <MudSelect T="string"
                                        @bind-Value="sortOption"
                                        Variant="Variant.Outlined"
-                                       Style="min-width: 180px; background-color: #FFFFFF;"
-                                       Dense="true">
+                                       Class="sort-select"
+                                       Dense="true"
+                                       MaxHeight="40">
 
                                 <MudSelectItem T="string" Value=@(null)>Default</MudSelectItem>
                                 <MudSelectItem Value=@("Popular")>Most Popular</MudSelectItem>
@@ -39,132 +44,67 @@
                                 <MudSelectItem Value=@("Oldest")>Date :Oldest First</MudSelectItem>
                             </MudSelect>
 
-
                         </div>
                     </div>
 
                     @foreach (var post in posts)
                     {
+                        <div class="postcard-margin-top">
+
                         <PostCard Post="post" IsDetailView="false" />
+                        </div>
+
                     }
                 </MudItem>
 
                 <!-- Right Section -->
                 <MudItem xs="12" md="4">
-                    <MudPaper Class="p-3 mb-4" Elevation="1">
                         <CommunityRules />
-                    </MudPaper>
 
-                    <MudPaper Class="p-4 mt-4" Style="text-align:center; display:flex; flex-direction:column; align-items:center; gap:16px;padding:12px" Elevation="1">
+                    <MudPaper Class="newsletter-box" Elevation="1">
 
                         <img src="/images/content/Mail.svg"
                              alt="mail icon"
-                             style="width: 48px; height: 48px;margin-top:10px" />
-                        <MudText Typo="Typo.body1" Style="
-        font-family: 'Public Sans';
-        font-weight: 600;
-        font-size: 14px;
-        line-height: 24px;
-        letter-spacing: 0%;
-        text-align: center;">
+                             class="newsletter-icon" />
+                        <MudText Typo="Typo.body1" Class="newsletter-text">
                             Get The QL newsletter. Sign up to receive the top stories you need to know right now.
                         </MudText>
 
                         <MudTextField T="string"
                                       Placeholder="Your email"
                                       Variant="Variant.Outlined"
-                                      Style="
-                   width: 292px;" />
+                                      Class="newsletter-input" />
 
                         <MudButton Variant="Variant.Filled"
-                                   Style="
-                   width: 292px;
-                   height: 44px;
-                   gap: 8px;
-                   border-radius: 6px;
-                   padding: 6px 40px;
-                   background-color: #FF7F38;
-                   color: white;">
+                                   Class="newsletter-button">
                             Subscribe
                         </MudButton>
                     </MudPaper>
 
 
-
-                    <MudImage Src="/images/content/Ad.png" Alt="Advertisement" Style="width: 340px; height: 402px;margin-top:12px" />
+                    <MudImage Src="/images/content/Ad.png" Alt="Advertisement" Class="ad-image" />
                 </MudItem>
             </MudGrid>
         </MudContainer>
     </div>
 </div>
 
-@code {
-    private string search = string.Empty;
-    private string sortOption = "Popular";
-
-    private List<PostModel> posts = new()
-    {
-        new PostModel
-        {
-            Id="1",
-            Category = "Advice & Help",
-            Title = "Anyone wanna buy 5x Seated Travis Scott Tickets?",
-            ImageUrl = "images/content/Post1.svg",
-            Author = "Ismat Zerin",
-            Time = DateTime.Now.AddHours(-2),
-            LikeCount = 3,
-            CommentCount = 12
-        },
-         new PostModel
-        {            Id="1",
-
-            Category = "Visa and Permits",
-            Title = "Family Residence Visa status stuck",
-            BodyPreview = "Looking for some advice or similar experiences. 15 April – Applied for Family Residence Visa 16 April – Uploaded missing document and resubmitted Status remained “Under Process” for 3 weeks 5 May – Visited Duhail Immigration office but was told: “Private companies come after 2 weeks” and they didn’t allow me in 7 ...",
-            Author = "Ismat Zerin",
-            Time = DateTime.Now.AddHours(-2),
-            LikeCount = 3,
-            CommentCount = 12
-        },
-          new PostModel
-        {
-                        Id="1",
-            Category = "Visa and Permits",
-            Title = "Family Residence Visa status stuck",
-            ImageUrl = "images/content/Post2.svg",
-            BodyPreview = "Looking for some advice or similar experiences. 15 April – Applied for Family Residence Visa 16 April – Uploaded missing document and resubmitted Status remained “Under Process” for 3 weeks 5 May – Visited Duhail Immigration office but was told: “Private companies come after 2 weeks” and they didn’t allow me in 7 ...",
-            Author = "Ismat Zerin",
-            Time = DateTime.Now.AddHours(-2),
-            LikeCount = 3,
-            CommentCount = 12
-        },
-    };
-
-    private List<string> carouselImages = new()
-    {
-        "/images/category1.png",
-        "/images/category1.png",
-        "/images/category1.png"
-    };
-
-    private async Task HandleSearchResults()
-    {
-        StateHasChanged();
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadLandingData();
-        StateHasChanged();
-    }
-
-    private async Task LoadLandingData()
-    {
-        
-    }
-}
 
 <style>
+    .container {
+        width: 100%;
+        background-color: var(--color-secondary-background);
+    }
+
+    .container-inner-wrapper {
+        width: 100%;
+        padding: 10px 40px;
+    }
+
+    .section-container {
+        margin-top: 40px;
+    }
+
     .category-banner-wrapper {
         width: 100%;
         display: flex;
@@ -180,4 +120,93 @@
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
     }
 
+    .postcard-margin-top {
+        margin-top: 30px;
+    }
+    .community-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 32px;
+    }
+
+    .community-title {
+        font-family: 'Public Sans';
+        font-weight: 600;
+        font-size: 16px;
+        line-height: 26px;
+    }
+
+    .mud-select-input {
+        height: 40px;
+    }
+    .sort-section {
+        width: 300px;
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .sort-label {
+        font-family: 'Public Sans';
+        font-weight: 500;
+        font-size: 13px;
+        line-height: 22px;
+        color: #242424;
+        margin-bottom: 4px;
+    }
+
+    .sort-select {
+        min-width: 180px;
+      
+        background-color: #FFFFFF;
+    }
+
+   
+
+
+    .newsletter-box {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        padding: 12px;
+        margin-top: 1rem;
+    }
+
+    .newsletter-icon {
+        width: 48px;
+        height: 48px;
+        margin-top: 10px;
+    }
+
+    .newsletter-text {
+        font-family: 'Public Sans';
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 24px;
+        letter-spacing: 0%;
+        text-align: center;
+    }
+
+    .newsletter-input {
+        width: 292px;
+    }
+    .newsletter-button {
+        width: 292px;
+        height: 44px;
+        gap: 8px;
+        border-radius: 6px;
+        padding: 6px 40px;
+        background-color: #FF7F38;
+        color: white;
+    }
+
+    .ad-image {
+        width: 340px;
+        height: 402px;
+        margin-top: 18px;
+    }
 </style>

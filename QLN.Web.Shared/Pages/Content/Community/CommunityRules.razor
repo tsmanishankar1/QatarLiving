@@ -1,6 +1,7 @@
-﻿<MudPaper  Style="border: 1px solid #E0E0E0; border-radius: 8px;padding:20px" Elevation="0">
-    <div style="display: flex; flex-direction: row; align-items: center; gap: 8px;">
-        <div style="width: 6px; height: 26px; background-color: #00426D;"></div>
+﻿@inherits CommunityRulesBase
+<MudPaper Class="community-paper" Elevation="0">
+    <div class="header-row">
+        <div class="color-bar"></div>
         <MudText Class="community-title ">Community Rules</MudText>
     </div>
     <div class="d-flex flex-column gap-2 mt-4">
@@ -15,21 +16,27 @@
 </MudPaper>
 
 
-@code {
-    private string[] rules = new[]
-    {
-        "Be Respectful.",
-        "This is not an advertisement platform.",
-        "All content must be related to Qatar.",
-        "Don’t spread misinformation.",
-        "Don’t promote violence.",
-        "Don’t share private information."
-    };
-}
 
 <style>
 
+    .community-paper {
+        border: 1px solid #E0E0E0;
+        border-radius: 8px;
+        padding: 20px;
+    }
 
+    .header-row {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .color-bar {
+        width: 6px;
+        height: 26px;
+        background-color: #00426D;
+    }
     .community-title {
         font-family: 'Public Sans';
         font-weight: 600;
