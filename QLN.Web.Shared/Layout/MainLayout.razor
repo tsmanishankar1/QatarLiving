@@ -24,11 +24,11 @@
     <div class="@($"nav-container {(showMobileMenu ? "mobile-menu-open" : "")}")">
         <nav class="nav-links">
          
-            <NavLink id="propertiesLink" href="/properties" class="nav-link ">Properties</NavLink>
-            <NavLink id="vehiclesLink" href="/vehicles" class="nav-link ">Vehicles</NavLink>
-            <NavLink id="classifiedsLink" href="/classifieds" class="nav-link ">Classifieds</NavLink>
-            <NavLink id="servicesLink" href="/services" class="nav-link ">Services</NavLink>
-            <NavLink id="jobsLink" href="/article/details" class="nav-link ">Jobs</NavLink>
+            <NavLink id="propertiesLink" href="https://qlp.qatarliving.com/en/properties" class="nav-link ">Properties</NavLink>
+            <NavLink id="vehiclesLink" href="https://qlv.qatarliving.com/en/vehicles" class="nav-link ">Vehicles</NavLink>
+            <NavLink id="classifiedsLink" href="https://www.qatarliving.com/classifieds" class="nav-link ">Classifieds</NavLink>
+            <NavLink id="servicesLink" href="https://www.qatarliving.com/services" class="nav-link ">Services</NavLink>
+            <NavLink id="jobsLink" href="https://www.qatarliving.com/jobs" class="nav-link ">Jobs</NavLink>
             <NavLink id="rewardsLink" href="/content/news" class="nav-link ">Rewards</NavLink>
         </nav>
 
@@ -38,12 +38,12 @@
         <div class="post-button-wrapper">
                 <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
                 <ActivatorContent>
-                <MudButton id="headerPostButton" Variant="Variant.Filled" Style="background-color: #FF7F38; color: white;" Size="Size.Small"
+                <MudButton id="headerPostButton" @onclick="OnPostClicked" Variant="Variant.Filled" Style="background-color: #FF7F38; color: white;" Size="Size.Small"
                     StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn desktop-post-btn">
                     Post
                 </MudButton>
            </ActivatorContent>
-                <ChildContent>
+                @* <ChildContent>
                 @foreach (var item in postMenuItems)
                 {
                   <MudMenuItem  OnClick="@(() => NavManager.NavigateTo(item.Route))" Class="menu-item">
@@ -53,7 +53,7 @@
                 </div>
             </MudMenuItem>
                     }
-                </ChildContent>
+                </ChildContent> *@
             </MudMenu>
 
             <img src="/images/header/add_post_svg.svg" alt="Post" class="mobile-post-icon"
@@ -102,13 +102,13 @@
                 {
                     <MudButton id="loginButton" Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Login"
                         Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
-                        OnClick="@(() => NavManager.NavigateTo("/login"))" Class="no-capitalize">
+                        OnClick="@(() => NavManager.NavigateTo("https://www.qatarliving.com/user/login"))" Class="no-capitalize">
                         Login
                     </MudButton>
 
                     <MudButton id="SignupButton" Variant="Variant.Filled" Color="Color.Warning" StartIcon="@Icons.Material.Filled.PersonAdd"
                         Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
-                        OnClick="@(() => NavManager.NavigateTo("/signup"))" Class="no-capitalize">
+                        OnClick="@(() => NavManager.NavigateTo("https://www.qatarliving.com/user/register"))" Class="no-capitalize">
                         Sign Up
                     </MudButton>
                 }
@@ -182,6 +182,10 @@
         Name = string.Empty;
         IsLoggedIn = false;
         NavManager.NavigateTo("/login");
+    }
+    private void OnPostClicked()
+    {
+        NavManager.NavigateTo("https://www.qatarliving.com/node/add/classified");
     }
     private List<MenuItem> postMenuItems = new List<MenuItem>
 {
