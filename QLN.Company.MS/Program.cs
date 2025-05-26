@@ -1,3 +1,4 @@
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.IService.ICompanyService;
@@ -5,12 +6,14 @@ using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.Service.FileStorage;
 using QLN.Common.Swagger;
 using QLN.Company.MS.Service;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddDaprClient();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddAuthorization();
 builder.Services.AddSwaggerGen(opts => {
     opts.SwaggerDoc("v1", new OpenApiInfo { Title = "QLN.Company.MS", Version = "v1" });
     opts.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -48,9 +51,6 @@ if (app.Environment.IsDevelopment())
 var companyGroup = app.MapGroup("/api/companyprofile");
 companyGroup.MapCompanyEndpoints();
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
