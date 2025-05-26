@@ -18,48 +18,71 @@
 
     <div class="header-left">
         <NavLink href="/">
-            <MudImage Src="/images/logo.png" Alt="Qatar Living" Height="30" />
+            <MudImage id="logoImage" Src="/images/Headerlogo.svg" Alt="Qatar Living" Width="126" Height="48" />
         </NavLink>
     </div>
-    <div class="@($"nav-container {(showMobileMenu ? "mobile-menu-open" : "")}")">
-        <nav class="nav-links">
-            <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Daily</NavLink>
-            <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Properties</NavLink>
-            <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Vehicles</NavLink>
-            <NavLink href="/classifieds" style="color: white;" class="nav-link active">Classifieds</NavLink>
-            <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Services</NavLink>
-            <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Jobs</NavLink>
-            <NavLink href="/more-features-coming-soon" style="color: white;" class="nav-link">Rewards</NavLink>
-        </nav>
+    <div style="display: flex; align-items: center; gap: 36px;">
+        <div class="@($"nav-container {(showMobileMenu ? "mobile-menu-open" : "")}")">
+            <nav class="nav-links">
+                <NavLink id="propertiesLink" href="/properties" class="nav-link">Properties</NavLink>
+                <NavLink id="vehiclesLink" href="/vehicles" class="nav-link">Vehicles</NavLink>
+                <NavLink id="classifiedsLink" href="/classifieds" class="nav-link">Classifieds</NavLink>
+                <NavLink id="servicesLink" href="/services" class="nav-link">Services</NavLink>
+                <NavLink id="jobsLink" href="/jobs" class="nav-link">Jobs</NavLink>
+                <NavLink id="rewardsLink" href="/rewards" class="nav-link">Rewards</NavLink>
+                <NavLink id="rewardsLink"  class="nav-link d-flex align-items-center">
+                More
+                <img src="/images/header/arrow_down.svg" alt="Down arrow" style="width: 20px; height: 20px; margin-left: 5px;" />
+                </NavLink>
+            </nav>
+        </div>
 
-    </div>
-
-    <div class="header-right">
         <div class="post-button-wrapper">
-            <MudButton Variant="Variant.Filled" Style="background-color: #FF7F38; color: white;" Size="Size.Small"
-                StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn desktop-post-btn">
-                Post
-            </MudButton>
+                <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                <ActivatorContent>
+                <MudButton id="headerPostButton" Variant="Variant.Filled"
+                    Style="background-color: #FF7F38; color: white;"
+                    Size="Size.Medium"
+                    StartIcon="@Icons.Material.Filled.Add"
+                    Class="post-ad-btn desktop-post-btn">
+                    <span class="post-ad-text">Post Ad</span>
+                </MudButton>
+           </ActivatorContent>
+                <ChildContent>
+                @foreach (var item in postMenuItems)
+                {
+                  <MudMenuItem  OnClick="@(() => NavManager.NavigateTo(item.Route))" Class="menu-item">
+                <div id="options-@item.Text" class="menu-item-content">
+                    <img src="@item.ImageSrc" alt="@item.Text" class="menu-item-icon" />
+                    <span class="menu-item-text">@item.Text</span>
+                </div>
+            </MudMenuItem>
+                    }
+                </ChildContent>
+            </MudMenu>
 
             <img src="/images/header/add_post_svg.svg" alt="Post" class="mobile-post-icon"
                 @onclick="@(() => NavManager.NavigateTo("/"))" />
         </div>
+    </div>
 
-
+    <div class="header-right">
         <MudAvatar Size="Size.Medium" Style="background-color: #E8F2FE;">
-            <img src="/images/header/favourite_icon.svg" alt="Account" style="width: 70%; height: 70%; padding: 4px;" />
+            <img id="favouriteIcon" src="/images/header/favourite_icon.svg" alt="Account" style="width: 70%; height: 70%; padding: 4px;" />
         </MudAvatar>
         <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
             <ActivatorContent>
-                <div style="display: flex; align-items: center; gap: 0.5rem;" class="cursor-pointer">
-                            <MudAvatar Size="Size.Medium" Style="background-color: #D6E8F2;">
-                                <img src="/images/header/account.svg" alt="Account"
-                                    style="width: 70%; height: 70%; padding: 4px;" />
-                            </MudAvatar> 
+                <div id="userIcon" style="display: flex; align-items: center; gap: 0.5rem;" class="cursor-pointer">
+                    <MudAvatar Size="Size.Medium" Style="background-color: #D6E8F2;">
+                        <img src="/images/header/account.svg" alt="Account"
+                            style="width: 70%; height: 70%; padding: 4px;" />
+                    </MudAvatar>
+                    <MudTooltip Text="@Name">
                     <span class="user-name">
                         @((Name?.Length > 10) ? Name.Substring(0, 10) + "..." :
                                                 Name)
                     </span>
+                    </MudTooltip> 
                 </div>
             </ActivatorContent>
 
@@ -67,7 +90,7 @@
             <ChildContent>
                 @if (IsLoggedIn == true)
                 {
-                    <MudButton Variant="Variant.Outlined" Color="Color.Warning"
+                    <MudButton id="profileButton" Variant="Variant.Outlined" Color="Color.Warning"
                         StartIcon="@Icons.Material.Filled.AccountCircle"
                         Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
                         OnClick="@GoToProfile" Class="no-capitalize">
@@ -75,7 +98,7 @@
                         My Profile
                     </MudButton>
 
-                    <MudButton Variant="Variant.Filled" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Logout"
+                    <MudButton id="logoutButton" Variant="Variant.Filled" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Logout"
                         Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
                         OnClick="@logout" Class="no-capitalize">
                         Logout
@@ -83,19 +106,19 @@
                 }
                 else
                 {
-                    <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Login"
+                    <MudButton id="loginButton" Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Login"
                         Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
                         OnClick="@(() => NavManager.NavigateTo("/login"))" Class="no-capitalize">
                         Login
                     </MudButton>
 
-                    <MudButton Variant="Variant.Filled" Color="Color.Warning" StartIcon="@Icons.Material.Filled.PersonAdd"
+                    <MudButton id="SignupButton" Variant="Variant.Filled" Color="Color.Warning" StartIcon="@Icons.Material.Filled.PersonAdd"
                         Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
                         OnClick="@(() => NavManager.NavigateTo("/signup"))" Class="no-capitalize">
                         Sign Up
                     </MudButton>
                 }
-                   
+
             </ChildContent>
         </MudMenu>
     </div>
@@ -105,6 +128,109 @@
     @Body
     <Footer />
 </main>
+
+
+@code {
+    private bool showMobileMenu = false;
+    public string Name { get; set; }
+    public bool IsLoggedIn { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        @* await base.OnInitializedAsync();   *@
+        var authState = await CustomAuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState != null)
+        {
+            var user = authState.User;
+            if (user.Identity != null && user.Identity.IsAuthenticated)
+            {
+                Name = user.FindFirst(ClaimTypes.Name)?.Value;
+                IsLoggedIn = true;
+            }
+        }
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) return;
+        var authState = await CustomAuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState != null)
+        {
+            var user = authState.User;
+            if (user.Identity != null && user.Identity.IsAuthenticated)
+            {
+                Name = user.FindFirst(ClaimTypes.Name)?.Value;
+                IsLoggedIn = true;
+            }
+            else
+            {
+                IsLoggedIn = false;
+            }
+        }
+        else
+        {
+            IsLoggedIn = false;
+        }
+    }
+
+    private void ToggleMobileMenu()
+    {
+        showMobileMenu = !showMobileMenu;
+    }
+
+    private void GoToProfile()
+    {
+        NavManager.NavigateTo("/profilePage");
+    }
+
+    public void logout()
+    {
+        CustomAuthenticationStateProvider.LogoutUser();
+        Name = string.Empty;
+        IsLoggedIn = false;
+        NavManager.NavigateTo("/login");
+    }
+    private List<MenuItem> postMenuItems = new List<MenuItem>
+{
+new MenuItem {
+Text = "Properties",
+ImageSrc = "/images/post-icons/ad_properties.svg",
+Route = "/more-features-coming-soon"
+},
+new MenuItem {
+Text = "Vehicles",
+ImageSrc = "/images/post-icons/ad_vehicles.svg",
+Route = "/more-features-coming-soon"
+},
+new MenuItem {
+Text = "Classifieds",
+ImageSrc = "/images/post-icons/ad_classifieds.svg",
+Route = "/classifieds/createform"
+},
+new MenuItem {
+Text = "Services",
+ImageSrc = "/images/post-icons/ad_services.svg",
+Route = "/more-features-coming-soon"
+},
+new MenuItem {
+Text = "Jobs",
+ImageSrc = "/images/post-icons/ad_jobs.svg",
+Route = "/more-features-coming-soon"
+},
+new MenuItem {
+Text = "Rewards",
+ImageSrc = "/images/post-icons/ad_rewards.svg",
+Route = "/more-features-coming-soon"
+}
+};
+
+    private class MenuItem
+    {
+        public string Text { get; set; }
+        public string ImageSrc { get; set; }
+        public string Route { get; set; }
+    }
+}
+
 <style>
     .mobile-menu-button {
         display: none;
@@ -121,6 +247,58 @@
         height: 32px;
         cursor: pointer;
     }
+
+ .menu-item {
+        padding: 0;
+        min-height: 40px;
+    }
+
+    .menu-item-content {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 16px;
+        font-family: public-sans, sans-serif;
+        border-bottom: 1px solid #EAECF0;
+        padding: 8px 30px;
+        width: 100%;
+    }
+
+    .menu-item:last-child .menu-item-content {
+        border-bottom: none;
+    }
+
+    .menu-item-icon {
+        width: 22px;
+        height: 22px;
+        object-fit: contain;
+    }
+
+    .menu-item-text {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--color-text-heading);
+        flex-grow: 1;
+    }
+    .post-ad-text {
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 14px;
+        letter-spacing: 0.5px;
+        text-transform: none !important;
+    }
+    .nav-link {
+        color: white;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+        .nav-link.active {
+            color: #FF7F38;
+        }
+
 
     @@media (max-width: 1024px) {
         .desktop-post-btn {
@@ -162,62 +340,7 @@
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
+
+       
     }
 </style>
-
-@code {
-    private bool showMobileMenu = false;
-    public string Name{ get; set; }
-    public bool IsLoggedIn { get; set; } = false;
-    
-    protected override async Task OnInitializedAsync()
-	{
-		    @* await base.OnInitializedAsync();   *@
-            var authState = await CustomAuthenticationStateProvider.GetAuthenticationStateAsync();
-             if (authState != null){
-                var user = authState.User;
-                if (user.Identity != null && user.Identity.IsAuthenticated)
-                {
-                    Name = user.FindFirst(ClaimTypes.Name)?.Value;
-                    IsLoggedIn = true;
-                }
-            } 
-	}
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender) return; 
-        var authState = await CustomAuthenticationStateProvider.GetAuthenticationStateAsync();
-             if (authState != null){
-                var user = authState.User;
-                if (user.Identity != null && user.Identity.IsAuthenticated)
-                {
-                    Name = user.FindFirst(ClaimTypes.Name)?.Value;
-                    IsLoggedIn = true;
-                }
-                else{
-                        IsLoggedIn = false;
-                }
-            } 
-            else{
-                        IsLoggedIn = false;
-                    }
-    }
-
-    private void ToggleMobileMenu()
-    {
-        showMobileMenu = !showMobileMenu;
-    }
-
-    private void GoToProfile()
-    {
-        NavManager.NavigateTo("/profilePage");
-    }
-
-    public void logout()
-    {
-         CustomAuthenticationStateProvider.LogoutUser();
-         Name = string.Empty;
-         IsLoggedIn = false;
-         NavManager.NavigateTo("/login");
-    }
-}

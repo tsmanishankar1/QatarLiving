@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,8 @@ namespace QLN.Common.Infrastructure.Model
     public class AdInformation
     {
         public Guid Id { get; set; }
+        public string UserId { get; set; }
+        public string DocType { get; set; } = ConstantValues.DocTypeAd;
         public string SubVertical { get; set; } = default!;
 
         public string Category { get; set; }
@@ -32,7 +35,7 @@ namespace QLN.Common.Infrastructure.Model
         public string Coverage { get; set; }
         public string Ram { get; set; }
         public string Resolution { get; set; }
-        public string BatteryPercentage { get; set; }
+        public int BatteryPercentage { get; set; }
         public string? SizeType { get; set; }
         public string? Size { get; set; }
         public string Gender { get; set; }
@@ -44,11 +47,15 @@ namespace QLN.Common.Infrastructure.Model
         public string buildingNumber { get; set; }
         public IFormFile UploadPhotos { get; set; } = default!;
         public bool Ispublished { get; set; }
+        public bool? IsFeaturedItem { get; set; }
+        public bool? IsFeaturedCategory { get; set; }
+        public bool? IsFeaturedStore { get; set; }
     }
 
     public class AdResponse
     {
         public Guid Id { get; set; }
+        public string DocType { get; set; }
         public string SubVertical { get; set; } = default!;
         public string Title { get; set; }
         public string Description { get; set; }
@@ -65,7 +72,7 @@ namespace QLN.Common.Infrastructure.Model
         public string Coverage { get; set; }
         public string Ram { get; set; }
         public string Resolution { get; set; }
-        public string BatteryPercentage { get; set; }
+        public int BatteryPercentage { get; set; }
         public string? SizeType { get; set; }
         public string? Size { get; set; }
         public string Gender { get; set; }
@@ -82,7 +89,7 @@ namespace QLN.Common.Infrastructure.Model
 
         public bool IsPublished { get; set; }
         public string CreatedBy { get; set; } // The user who created the ad
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreatedDate { get; set; }
     }
 
     public class AdSubCategory : BaseItem

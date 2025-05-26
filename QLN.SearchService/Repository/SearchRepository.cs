@@ -50,27 +50,59 @@ namespace QLN.SearchService.Repository
                 Size = req.Top > 0 ? req.Top : 50
             };
 
-            // filters
             if (req.Filters != null && req.Filters.Any())
             {
                 var clauses = new List<string>();
-                foreach (var keyvalue in req.Filters)
+
+                foreach (var kv in req.Filters)
                 {
-                    var fieldKey = keyvalue.Key;
-                    var prop = typeof(T)
-                        .GetProperties()
-                        .FirstOrDefault(p => p.Name.Equals(fieldKey, StringComparison.OrdinalIgnoreCase));
-                    var field = prop?.Name ?? fieldKey;
+                    var key = kv.Key;
+                    var val = kv.Value;
 
-                    var val = keyvalue.Value;
+                    var isMin = key.Equals("minPrice", StringComparison.OrdinalIgnoreCase);
+                    var isMax = key.Equals("maxPrice", StringComparison.OrdinalIgnoreCase);
+
+                    var field = (isMin || isMax)
+                        ? typeof(T)
+                            .GetProperties()
+                            .FirstOrDefault(p => p.Name.Equals("Price", StringComparison.OrdinalIgnoreCase))
+                            ?.Name
+                          ?? "price"
+                        : typeof(T)
+                            .GetProperties()
+                            .FirstOrDefault(p => p.Name.Equals(key, StringComparison.OrdinalIgnoreCase))
+                            ?.Name
+                          ?? key;
+
                     string clause;
+                    if (isMin || isMax)
+                    {
+                        string raw;
+                        if (val is JsonElement je)
+                        {
+                            if (je.ValueKind == JsonValueKind.Number)
+                                raw = je.GetRawText();        
+                            else if (je.ValueKind == JsonValueKind.String)
+                                raw = je.GetString()!;       
+                            else
+                                throw new NotSupportedException(
+                                    $"Range filter JSON kind '{je.ValueKind}' not supported");
+                        }
+                        else
+                        {
+                            raw = Convert.ToString(val, CultureInfo.InvariantCulture)!;
+                        }
 
-                    if (val is JsonElement je)
+                        clause = isMin
+                            ? $"{field} ge {raw}"
+                            : $"{field} le {raw}";
+                    }
+                    else if (val is JsonElement je)
                     {
                         switch (je.ValueKind)
                         {
                             case JsonValueKind.String:
-                                var s = je.GetString()?.Replace("'", "''");
+                                var s = je.GetString()!.Replace("'", "''");
                                 clause = $"{field} eq '{s}'";
                                 break;
                             case JsonValueKind.True:
@@ -107,7 +139,6 @@ namespace QLN.SearchService.Repository
                 _logger.LogInformation("Applied OData filter: {Filter}", options.Filter);
             }
 
-            // orderby
             if (!string.IsNullOrWhiteSpace(req.OrderBy))
             {
                 var parts = req.OrderBy.Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -115,13 +146,12 @@ namespace QLN.SearchService.Repository
                 var dir = parts.Length > 1 ? parts[1] : null;
 
                 var prop = typeof(T)
-                    .GetProperties()
-                    .FirstOrDefault(p => p.Name.Equals(key, StringComparison.OrdinalIgnoreCase));
-
-                var field = prop?.Name ?? key;
+                                  .GetProperties()
+                                  .FirstOrDefault(p => p.Name.Equals(key, StringComparison.OrdinalIgnoreCase));
+                var fieldExpr = prop?.Name ?? key;
                 var orderExpr = dir != null
-                    ? $"{field} {dir}"
-                    : field;
+                    ? $"{fieldExpr} {dir}"
+                    : fieldExpr;
 
                 options.OrderBy.Add(orderExpr);
                 _logger.LogInformation("Applying OrderBy: {OrderBy}", orderExpr);
@@ -129,14 +159,16 @@ namespace QLN.SearchService.Repository
 
             try
             {
-                _logger.LogInformation("Executing search on '{Vertical}' with text='{Text}'", vertical, req.Text);
+                _logger.LogInformation(
+                    "Executing search on '{Vertical}' with text='{Text}'", vertical, req.Text ?? "*");
                 var response = await client.SearchAsync<T>(req.Text ?? "*", options);
 
                 var results = response.Value.GetResults()
                     .Select(r => r.Document!)
                     .ToList();
 
-                _logger.LogInformation("Found {Count} documents in '{Vertical}'", results.Count, vertical);
+                _logger.LogInformation(
+                    "Found {Count} documents in '{Vertical}'", results.Count, vertical);
                 return results;
             }
             catch (RequestFailedException ex)
@@ -150,7 +182,6 @@ namespace QLN.SearchService.Repository
                 throw;
             }
         }
-
         public async Task<string> Upload<T>(string vertical, T doc)
         {
             var client = GetClient(vertical);

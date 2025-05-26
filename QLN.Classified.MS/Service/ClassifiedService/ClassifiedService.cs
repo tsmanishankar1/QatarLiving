@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Dapr;
 using Dapr.Client;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,7 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.BannerService;
 using QLN.Common.Infrastructure.Model;
+using static Dapr.Client.Autogen.Grpc.v1.Dapr;
 
 namespace QLN.Classified.MS.Service
 {
@@ -20,22 +22,23 @@ namespace QLN.Classified.MS.Service
     {
         private const string SERVICE_APP_ID = ConstantValues.SearchServiceApp;
         private const string Vertical = ConstantValues.ClassifiedsVertical;
-        
-        private readonly DaprClient _dapr;        
+        private readonly IWebHostEnvironment _env;
+        private readonly Dapr.Client.DaprClient _dapr;        
         private readonly IBannerService _bannerService;
 
         private const string UnifiedStore = "adstore";
         private const string UnifiedIndexKey = "ad-index";               
         private readonly ILogger<ClassifiedService> _logger;
 
-        public ClassifiedService(DaprClient dapr, ILogger<ClassifiedService> logger, IBannerService bannerService)
+        public ClassifiedService(Dapr.Client.DaprClient dapr, ILogger<ClassifiedService> logger, IWebHostEnvironment env, IBannerService bannerService)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _bannerService = bannerService ?? throw new ArgumentNullException(nameof(bannerService));
+            _env = env;
         }
 
-        public async Task<IEnumerable<ClassifiedIndexDto>> Search(ClassifiedSearchRequest request)
+        public async Task<IEnumerable<ClassifiedIndexDto>> Search(CommonSearchRequest request)
         {
             if (request is null)
                 throw new ArgumentNullException(nameof(request));
@@ -43,20 +46,22 @@ namespace QLN.Classified.MS.Service
             _logger.LogInformation("SearchAsync start");
             try
             {
-                var common = await _dapr.InvokeMethodAsync<ClassifiedSearchRequest, SearchResponse>(
+                var common = await _dapr.InvokeMethodAsync<CommonSearchRequest, SearchResponse>(
                     SERVICE_APP_ID,
                     $"api/{Vertical}/search",
                     request
                 );
 
                 var items = common?.ClassifiedsItems?? Enumerable.Empty<ClassifiedIndexDto>();
-                var json = JsonSerializer.Serialize(items);
-                var dto = JsonSerializer.Deserialize<ClassifiedIndexDto[]>(
-                                json,
-                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                            );
 
-                return dto ?? Array.Empty<ClassifiedIndexDto>();
+                var adsOnly = items
+                    .Where(i => string.Equals(
+                        i.DocType,
+                        ConstantValues.DocTypeAd,
+                        StringComparison.OrdinalIgnoreCase
+                    ));
+
+                return adsOnly;
             }
             catch (Exception ex)
             {
@@ -674,162 +679,101 @@ namespace QLN.Classified.MS.Service
                 throw new Exception("Error while getting zones", ex);
             }
         }
-
-        //public async Task<string> CreateAd(AdInformation ad, string userId, CancellationToken token = default)
-        //{
-        //    try
-        //    {
-        //        var user = await _userManager.Users
-        //            .FirstOrDefaultAsync(u => u.Id.ToString() == userId && u.IsActive, cancellationToken: token);
-
-        //        if (user == null)
-        //            throw new UnauthorizedAccessException("User is not registered or inactive.");
-
-        //        if (ad.WarrantyCertificate == null || ad.WarrantyCertificate.Length == 0)
-        //            throw new ArgumentException("Warranty certificate is required.");
-
-        //        if (ad.UploadPhotos == null || ad.UploadPhotos.Length == 0)
-        //            throw new ArgumentException("At least one photo is required.");
-
-        //        var adId = Guid.NewGuid();
-
-        //        // Create sub directory
-        //        var subDir = Path.Combine(_env.WebRootPath, "images", "ads", ad.SubVertical);
-        //        Directory.CreateDirectory(subDir);
-
-        //        // Save warranty certificate
-        //        var licenseFileName = $"{adId}_license{Path.GetExtension(ad.WarrantyCertificate.FileName)}";
-        //        var licensePath = Path.Combine(subDir, licenseFileName);
-        //        using (var stream = new FileStream(licensePath, FileMode.Create))
-        //        {
-        //            await ad.WarrantyCertificate.CopyToAsync(stream, token);
-        //        }
-
-        //        // Save photo
-        //        var photoFileName = $"{adId}_photo{Path.GetExtension(ad.UploadPhotos.FileName)}";
-        //        var photoPath = Path.Combine(subDir, photoFileName);
-        //        using (var stream = new FileStream(photoPath, FileMode.Create))
-        //        {
-        //            await ad.UploadPhotos.CopyToAsync(stream, token);
-        //        }
-
-        //        var model = new AdResponse
-        //        {
-        //            Id = adId,
-        //            SubVertical = ad.SubVertical,
-        //            Title = ad.Title,
-        //            Description = ad.Description,
-        //            Category = ad.Category,
-        //            SubCategory = ad.SubCategory,
-        //            Brand = ad.Brand,
-        //            Model = ad.Model,
-        //            Condition = ad.Condition,
-        //            Price = ad.Price,
-        //            Color = ad.Color,
-        //            Capacity = ad.Capacity,
-        //            Processor = ad.Processor,
-        //            Coverage = ad.Coverage,
-        //            Ram = ad.Ram,
-        //            Resolution = ad.Resolution,
-        //            BatteryPercentage = ad.BatteryPercentage,
-        //            Size = ad.Size,
-        //            SizeType = ad.SizeType,
-        //            Gender = ad.Gender,
-        //            WarrantyCertificateUrl = $"/images/ads/{ad.SubVertical}/{licenseFileName}",
-        //            ImageUrl = $"/images/ads/{ad.SubVertical}/{photoFileName}",
-        //            PhoneNumber = ad.PhoneNumber,
-        //            WhatsappNumber = ad.WhatsappNumber,
-        //            Zone = ad.zone,
-        //            StreetNumber = ad.streetNumber,
-        //            BuildingNumber = ad.buildingNumber,
-        //            CreatedBy = userId,
-        //            CreatedAt = DateTime.UtcNow,
-        //            IsPublished = ad.Ispublished
-        //        };
-
-        //        var stateKey = $"ad-{adId}";
-        //        await _dapr.SaveStateAsync("adstore", stateKey, model, cancellationToken: token);
-
-        //        var keys = await _dapr.GetStateAsync<List<string>>("adstore", "ad-index", cancellationToken: token) ?? new();
-        //        keys.Add(stateKey);
-        //        await _dapr.SaveStateAsync("adstore", "ad-index", keys, cancellationToken: token);
-
-        //        return stateKey;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw new Exception("Error while Ad posting", ex);
-        //    }
-        //}
-
-        //public async Task<List<AdResponse>> GetUserAds(string userId, bool? isPublished, CancellationToken token = default)
-        //{
-        //    try
-        //    {
-        //        var allKeys = await _dapr.GetStateAsync<List<string>>("adstore", "ad-index") ?? new();
-        //        var result = new List<AdResponse>();
-
-        //        foreach (var key in allKeys)
-        //        {
-        //            var ad = await _dapr.GetStateAsync<AdResponse>("adstore", key);
-        //            if (ad?.CreatedBy == userId && (isPublished == null || ad.IsPublished == isPublished))
-        //            {
-        //                result.Add(ad);
-        //            }
-        //        }
-
-        //        return result;
-
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw new Exception("Error while getting user ads", ex);
-        //    }
-        //}
-
+           
         public async Task<ClassifiedLandingPageResponse> GetLandingPage()
         {
             _logger.LogInformation("GetLandingPageAsync start");
             try
             {
-                
-                var all = await Search(new ClassifiedSearchRequest { Text = "*", Top = 1000 });
-
-                var featuredItems = all.Where(i => i.IsFeaturedItem);
+                var all = await GetAllItems(new CommonSearchRequest { Text = "*", Top = 1000 });
+                var banners = all
+                    .Where(i => string.Equals(i.DocType, ConstantValues.DocTypeBanner, StringComparison.OrdinalIgnoreCase)
+                             && !string.IsNullOrWhiteSpace(i.BannerTitle)
+                             && !string.IsNullOrWhiteSpace(i.BannerImageUrl))
+                    .Select(i => new LandingBannerInfo
+                    {
+                        BannerTitle = i.BannerTitle!,
+                        bannerUrl = i.BannerImageUrl!
+                    })
+                    .Distinct();
+                var featuredItems = all
+                    .Where(i => string.Equals(i.DocType, ConstantValues.DocTypeAd, StringComparison.OrdinalIgnoreCase)
+                             && i.IsFeaturedItem == true);
 
                 var featuredCategories = all
-                    .Where(i => i.IsFeaturedCategory
+                    .Where(i => string.Equals(i.DocType, ConstantValues.DocTypeCategory, StringComparison.OrdinalIgnoreCase)
+                             && i.IsFeaturedCategory == true
                              && !string.IsNullOrWhiteSpace(i.Category)
                              && !string.IsNullOrWhiteSpace(i.CategoryImageUrl))
                     .GroupBy(i => i.Category)
                     .Select(g => new LandingCategoryInfo
                     {
                         Category = g.Key,
-                        ImageUrl = g.Select(x => x.CategoryImageUrl!).First(url => !string.IsNullOrWhiteSpace(url))
+                        ImageUrl = g.Select(x => x.CategoryImageUrl!)
+                                    .First(url => !string.IsNullOrWhiteSpace(url))
                     });
 
-                var featuredStores = all
-                    .Where(i => i.IsFeaturedStore
-                             && !string.IsNullOrWhiteSpace(i.StoreName)
-                             && !string.IsNullOrWhiteSpace(i.StoreLogoUrl))
-                    .GroupBy(i => i.StoreName)
-                    .Select(g => new LandingStoreInfo
+                var featuredStoreGroups = all
+                    .Where(i =>
+                        string.Equals(i.DocType, ConstantValues.DocTypeStore, StringComparison.OrdinalIgnoreCase)
+                        && i.IsFeaturedStore == true
+                        && !string.IsNullOrWhiteSpace(i.StoreName)
+                        && !string.IsNullOrWhiteSpace(i.StoreLogoUrl)
+                    )
+                    .GroupBy(i => i.StoreName!, StringComparer.OrdinalIgnoreCase);
+
+                var featuredStores = featuredStoreGroups
+                    .Select(g =>
                     {
-                        StoreName = g.Key!,
-                        LogoUrl = g.Select(x => x.StoreLogoUrl!).First(url => !string.IsNullOrWhiteSpace(url)),
-                        ItemCount = g.Count()
+                        var storeName = g.Key;
+                        var logoUrl = g
+                            .Select(x => x.StoreLogoUrl!)
+                            .First(url => !string.IsNullOrWhiteSpace(url));
+
+                        var itemCount = all.Count(i =>
+                            string.Equals(i.DocType, ConstantValues.DocTypeAd, StringComparison.OrdinalIgnoreCase)
+                            && string.Equals(i.StoreName, storeName, StringComparison.OrdinalIgnoreCase)
+                        );
+
+                        return new LandingStoreInfo
+                        {
+                            StoreName = storeName,
+                            LogoUrl = logoUrl,
+                            ItemCount = itemCount
+                        };
                     });
 
                 var categoryCounts = all
-                    .GroupBy(i => i.Category)
-                    .Select(g => new CategoryAdCount
+                    .Where(i =>
+                        string.Equals(i.DocType, ConstantValues.DocTypeCategory, StringComparison.OrdinalIgnoreCase)
+                        && i.IsFeaturedCategory == false
+                        && !string.IsNullOrWhiteSpace(i.Category)
+                    )
+                    .GroupBy(i => i.Category!, StringComparer.OrdinalIgnoreCase)
+                    .Select(g =>
                     {
-                        Category = g.Key,
-                        Count = g.Count()
+                        var catName = g.Key;
+                        var imageUrl = g
+                            .Select(x => x.CategoryImageUrl)
+                            .FirstOrDefault(url => !string.IsNullOrWhiteSpace(url));
+
+                        var adCount = all
+                            .Count(i =>
+                                string.Equals(i.DocType, ConstantValues.DocTypeAd, StringComparison.OrdinalIgnoreCase)
+                                && string.Equals(i.Category, catName, StringComparison.OrdinalIgnoreCase)
+                            );
+
+                        return new CategoryAdCount
+                        {
+                            Category = catName,
+                            ImageUrl = imageUrl,
+                            Count = adCount
+                        };
                     });
 
                 return new ClassifiedLandingPageResponse
                 {
+                    ClassifiedBanners = banners,
                     FeaturedItems = featuredItems,
                     FeaturedCategories = featuredCategories,
                     FeaturedStores = featuredStores,
@@ -841,6 +785,119 @@ namespace QLN.Classified.MS.Service
                 _logger.LogError(ex, "Error in GetLandingPageAsync");
                 throw;
             }
+        }
+
+        private async Task<IEnumerable<ClassifiedIndexDto>> GetAllItems(CommonSearchRequest request)
+        {
+            if (request is null)
+                throw new ArgumentNullException(nameof(request));
+
+            _logger.LogInformation("SearchAsync start");
+            try
+            {
+                var common = await _dapr.InvokeMethodAsync<CommonSearchRequest, SearchResponse>(
+                    SERVICE_APP_ID,
+                    $"api/{Vertical}/search",
+                    request
+                );
+
+                var items = common?.ClassifiedsItems ?? Enumerable.Empty<ClassifiedIndexDto>();
+                var json = JsonSerializer.Serialize(items);
+                var dto = JsonSerializer.Deserialize<ClassifiedIndexDto[]>(
+                                json,
+                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                            );
+
+                return dto ?? Array.Empty<ClassifiedIndexDto>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in SearchAsync");
+                throw;
+            }
+        }
+
+        public async Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto), "Search request cannot be null.");
+
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                throw new ArgumentException("Search name is required.", nameof(dto.Name));
+
+            if (dto.SearchQuery == null)
+                throw new ArgumentException("Search query details are required.", nameof(dto.SearchQuery));
+
+            try
+            {
+                var key = $"search:{dto.UserId}";
+
+                var existing = await _dapr.GetStateAsync<List<SavedSearchResponseDto>>(UnifiedStore, key)
+                               ?? new List<SavedSearchResponseDto>();
+
+                var newSearch = new SavedSearchResponseDto
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = dto.UserId,
+                    Name = dto.Name,
+                    CreatedAt = DateTime.UtcNow,
+                    SearchQuery = dto.SearchQuery
+                };
+
+                existing.Insert(0, newSearch);
+
+                if (existing.Count > 30)
+                    existing = existing.Take(30).ToList();
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, existing);
+
+                var confirm = await _dapr.GetStateAsync<List<SavedSearchResponseDto>>(UnifiedStore, key);
+                if (confirm == null || !confirm.Any(x => x.Id == newSearch.Id))
+                {
+                    throw new InvalidOperationException("Failed to confirm that the search was saved.");
+                }
+
+                return true;
+            }
+            catch (DaprException dex)
+            {
+                Console.WriteLine($"Dapr error while saving search: {dex.Message}");
+                throw new InvalidOperationException("Failed to save search due to Dapr error.", dex);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected error while saving search: {ex.Message}");
+                throw new InvalidOperationException("An unexpected error occurred while saving search.", ex);
+            }
+        }
+
+        public async Task<List<SavedSearchResponseDto>> GetSearches(string userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new ArgumentException("UserId is required.");
+
+                var key = $"search:{userId}";
+                var result = await _dapr.GetStateAsync<List<SavedSearchResponseDto>>(UnifiedStore, key);
+
+                return result ?? new List<SavedSearchResponseDto>();
+            }
+            catch (DaprException dex)
+            {
+                Console.WriteLine($"Dapr error: {dex.Message}");
+                throw new InvalidOperationException("Failed to retrieve saved searches due to Dapr error.", dex);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected error: {ex.Message}");
+                throw new InvalidOperationException("An unexpected error occurred while retrieving saved searches.", ex);
+            }
+        }
+
+        public Task<bool> SaveSearch(SaveSearchRequestDto dto, Guid userId, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
         }
     }
 }

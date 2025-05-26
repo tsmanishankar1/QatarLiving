@@ -10,7 +10,7 @@ spec:
     value: localhost:6379
   - name: redisPassword
     value: ""
-  - name: actorStateStore
+  - name: actorStateStoreId
     value: "true"
   - name: enableQuery
     value: "true"

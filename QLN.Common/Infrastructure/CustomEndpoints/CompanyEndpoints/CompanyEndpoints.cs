@@ -16,7 +16,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
     {
         public static RouteGroupBuilder MapCreateCompanyProfile(this RouteGroupBuilder group)
         {
-            group.MapPost("/create", /*[Authorize(Roles = "Subscriber")]*/ async Task<Results<
+            group.MapPost("/create", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
