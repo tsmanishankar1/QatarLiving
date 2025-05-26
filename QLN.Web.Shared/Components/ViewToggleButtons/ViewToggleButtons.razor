@@ -2,9 +2,13 @@
     @foreach (var item in Items)
     {
         <div class="view-toggle-item @(SelectedValue == item.Value ? "active" : "")"
-            @onclick="() => OnSelected.InvokeAsync(item.Value)">
-            <img src="@item.ImageUrl" alt="@item.Label"
-                class="toggle-icon @(SelectedValue == item.Value ? "filter-white" : "filter-gray")" />
+             @onclick="() => OnSelected.InvokeAsync(item.Value)">
+            
+            @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+            {
+                <img src="@item.ImageUrl" alt="@item.Label"
+                     class="toggle-icon @(SelectedValue == item.Value ? "filter-white" : "filter-gray")" />
+            }
             <span>@item.Label</span>
         </div>
     }

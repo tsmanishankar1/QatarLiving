@@ -1,0 +1,66 @@
+@using System.Globalization
+@using MudBlazor
+<div class="popular-articles">
+    <h3 class="title">Most Popular Articles</h3>
+
+    @for (int i = 0; i < Articles.Count; i++)
+    {
+        <div class="article-item">
+            <div class="circle">@((i + 1).ToString(CultureInfo.InvariantCulture))</div>
+            <div class="article-text">@Articles[i]</div>
+        </div>
+    }
+</div>
+
+<style>
+    .popular-articles {
+        font-family: 'Public Sans', sans-serif;
+        @* max-width: 100%; *@
+        @* margin: 0 auto; *@
+    }
+
+    .title {
+        color: #004374;
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        border-left: 4px solid #004374;
+        padding-left: 8px;
+    }
+
+    .article-item {
+        @* display: flex; *@
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .circle {
+        background-color: #FF7F38;
+        color: white;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 28px;
+        font-weight: bold;
+        margin-right: 12px;
+    }
+
+    .article-text {
+        font-size: 16px;
+        font-weight: 500;
+        color: #222;
+    }
+</style>
+
+@code {
+    private List<string> Articles = new()
+    {
+        "How to spot scam websites & social media accounts in Qatar",
+        "How to spot scam websites & social media accounts in Qatar",
+        "How to spot scam websites & social media accounts in Qatar",
+        "How to spot scam websites & social media accounts in Qatar",
+        "How to spot scam websites & social media accounts in Qatar"
+    };
+}

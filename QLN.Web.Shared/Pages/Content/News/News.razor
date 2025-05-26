@@ -1,0 +1,198 @@
+@page "/content/news"
+@inherits NewsBase
+@using MudBlazor
+@using QLN.Web.Shared.Pages.Content.News.NewsCard
+@using QLN.Web.Shared.Pages.Content.News.NewsLetter
+@using QLN.Web.Shared.Pages.Content.News.PopularArticles
+@using QLN.Web.Shared.Pages.Content.News.VideoCards
+@using QLN.Web.Shared.Pages.Content.News.MoreArticle
+@inject IJSRuntime JSRuntime
+@using QLN.Web.Shared.Components.Carousel
+<MudGrid Class="pa-4" Justify="Justify.Center">
+    <MudItem xs="12" sm="10" md="8" lg="8">
+        <!-- Carousel -->
+        <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="true" AutoCycle="true"
+                        Transition="Transition.Slide" />
+    </MudItem>
+
+    <MudItem xs="12" Class="d-flex justify-center">
+        <ViewToggleButtons Items="@_viewOptions" SelectedValue="@_selectedView" OnSelected="SetViewMode" />
+    </MudItem>
+
+    <MudItem xs="12" Class="news-tabs-wrapper">
+        <div class="news-tabs">
+            @foreach (var tab in Tabs)
+            {
+                <div class="news-tab @(tab == SelectedTab ? "active" : "")" @onclick="() => SelectTab(tab)">
+                    @tab
+                </div>
+            }
+        </div>
+    </MudItem>
+
+    <!-- Main Article and MoreArticles section -->
+    <MudItem xs="12" md="8">
+        <div class="main-article">
+            <div class="main-content">
+                <div class="main-category">
+                    <img src="/images/sample_news.svg" class="main-image" />
+                    <h3 class="category-style">Sports</h3>
+                    <h2 class="main-title">Al Sadd lift fourth Qatar Cup title...</h2>
+                    <div class="author-wrapper">
+                        <div class="main-author">
+                            Ismat Zerin • <a href="#" class="main-source">Qatar Living</a>  
+                            <img src="/images/tick.svg" alt="Qatarliving" />
+                        </div>
+                        <div class="comment-badge">
+                            <img src="/images/comment_icon.svg" alt="Comments" class="comment-icon" />
+                            <span class="count">12</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </MudItem>
+
+    <MudItem xs="12" md="4">
+        <MoreArticle />
+    </MudItem>
+
+    <!-- Recommended Cards -->
+   <MudItem xs="12">
+   <div class="flex-container">
+        @for (int i = 0; i < 3; i++)
+        {
+                <NewsCard Item="GoldNews" IsHorizontal="false" />
+        }
+            <NewsLetter />
+        </div>
+</MudItem>
+    <!-- Video Cards -->
+    <MudItem xs="12">
+        <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="true" AutoCycle="true"
+                        Transition="Transition.Slide" />
+        @* <VideoCards /> *@
+    </MudItem>
+
+    <!-- More Cards -->
+    <MudItem xs="12">
+        <MudGrid>
+            @for (int i = 0; i < 5; i++)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <NewsCard Item="GoldNews" IsHorizontal="false" />
+                </MudItem>
+            }
+        </MudGrid>
+    </MudItem>
+
+    <!-- Popular Articles & Ads -->
+    <MudItem xs="12">
+        <div class="poular-article-container">
+            <PopularArticles />
+            <img src="/images/classifieds/detail_ad.svg" alt="Product Image"
+                 style="width: 100%; max-width: 300px; height: auto; object-fit: contain;" />
+        </div>
+    </MudItem>
+
+    <!-- Even Better -->
+    <MudItem xs="12">
+        <MudText Typo="Typo.h5">Even Better</MudText>
+        <MudGrid>
+            @for (int i = 0; i < 3; i++)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <NewsCard Item="GoldNews" IsHorizontal="true" />
+                </MudItem>
+            }
+        </MudGrid>
+    </MudItem>
+</MudGrid>
+
+<style>
+    .news-tabs {
+    display: flex;
+    overflow-x: auto;
+    padding: 8px 16px;
+    gap: 8px;
+    border-bottom: 1px solid #eee;
+    white-space: nowrap;
+}
+
+.news-tab {
+    padding: 10px 20px;
+    font-weight: 600;
+    color: #444;
+    border-radius: 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.news-tab.active {
+    color: var(--color-accent);
+    border-bottom: 2px solid var(--color-accent);
+    background-color: white;
+}
+
+.main-article {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-image {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+.comment-badge {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    padding: 4px 8px;
+    gap: 4px;
+}
+.news-layout {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 24px;
+    flex-wrap: wrap; /* fallback to wrap if needed */
+}
+.flex-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px; /* 30px gap between items */
+}
+@* .news-grid {
+    flex: 2;
+    max-width: 800px;
+} *@
+
+.newsletter-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    max-width: 400px;
+}
+
+/* Mobile-first responsive behavior */
+@@media (max-width: 600px) {
+    .news-layout {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    @* .news-grid, .newsletter-container {
+        width: 100%;
+        max-width: 100%;
+    } *@
+}
+
+</style>

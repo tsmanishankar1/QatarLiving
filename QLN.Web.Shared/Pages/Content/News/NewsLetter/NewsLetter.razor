@@ -1,0 +1,66 @@
+@inherits NewsLetterBase
+@using QLN.Web.Shared.Components.CustomButton
+<div class="newsletter-container">
+  <h2>Get The QL newsletter. Sign up to receive the top stories you need to know right now.</h2>
+  <input type="email" placeholder="Enter your email" class="email-input" @oninput="() => ErrorMessage = null"/>
+  @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+  {
+      <div class="error-message">@ErrorMessage</div>
+  }
+  <CustomButton id="forgetPasswordButton" BackgroundColor="#FF7F38" TextColor="#FFFFFF" Text="Sign up" Disabled="@IsLoading"
+                    Loading="@IsLoading" OnClick="@HandleResetPassword" Class="reset-button"/>
+</div>
+
+<style>
+  .newsletter-container {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 24px;
+  box-sizing: border-box;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  background-color: #fff;
+  font-family: sans-serif;
+
+  /* Add these to ensure vertical stacking */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+  .newsletter-container h2 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    font-family: 'Public Sans', sans-serif;
+    color: #222;
+  }
+  .error-message {
+    color: red;
+    font-size: 13px;
+    margin-bottom: 12px;
+    text-align: left;
+  }
+
+
+  .email-input {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    box-sizing: border-box;
+  }
+  .email-input:focus {
+    border-color: var(--color-accent); /* Your desired focus color */
+}
+
+
+  .signup-button:hover {
+    background-color: #e56c21;
+  }
+</style>
+
