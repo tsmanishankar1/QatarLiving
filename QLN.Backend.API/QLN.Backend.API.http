@@ -4,3 +4,8 @@ GET {{QLN.Backend.API_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+@QLN.Drupal.API_HostAddress = https://test.qatarliving.com
+
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/landing/qln_contents_daily
+Accept: application/json
