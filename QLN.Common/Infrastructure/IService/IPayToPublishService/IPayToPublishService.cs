@@ -10,8 +10,7 @@ namespace QLN.Common.Infrastructure.IService.IPayToPublishService
     public interface IPayToPublishService
     {
         Task CreatePlanAsync(PayToPublishRequestDto request, CancellationToken cancellationToken = default);
-
-        Task<List<PayToPublishResponseDto>> GetPlansByVerticalAndCategoryAsync(int verticalTypeId, int categoryId, CancellationToken cancellationToken = default);
+        Task<PayToPublishListResponseDto> GetPlansByVerticalAndCategoryAsync(int verticalTypeId,int categoryId,CancellationToken cancellationToken = default);
         Task<List<PayToPublishResponseDto>> GetAllPlansAsync(CancellationToken cancellationToken = default);
         Task<bool> UpdatePlanAsync(Guid id, PayToPublishRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> DeletePlanAsync(Guid id, CancellationToken cancellationToken = default);

@@ -11,7 +11,7 @@ using Dapr.Client;
 using QLN.Common.Infrastructure.IService;
 using Microsoft.OpenApi.Models;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
-using Dapr.Client;
+
 using QLN.Backend.API.ServiceConfiguration;
 using QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints;
 using QLN.Common.Swagger;
@@ -202,11 +202,14 @@ var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedsEndpoints();
 
 app.MapGroup("/api/subscriptions")
-   .MapSubscriptionEndpoints()
+   .MapSubscriptionEndpoints();
+
+   app.MapGroup("/api/payments")
+    .MapPaymentEndpoints()
     .RequireAuthorization();
 
-app.MapGroup("/api/PayToPublish") 
-    .MapPayToPublishEndpoints()
-     .RequireAuthorization();
+app.MapGroup("/api/PayToPublish")
+    .MapPayToPublishEndpoints();
+
 
 app.Run();

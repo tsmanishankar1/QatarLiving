@@ -65,10 +65,11 @@ public static class SubscriptionEndpoints
         {
             try
             {
-               var result = await service.GetSubscriptionsByVerticalAndCategoryAsync(verticalTypeId,categoryId,cancellationToken);
+                var result = await service.GetSubscriptionsByVerticalAndCategoryAsync(verticalTypeId, categoryId, cancellationToken);
 
-                if (result is null)
-                    throw new KeyNotFoundException($"Subscription with VerticalTypeId '{verticalTypeId}' and CategoryId '{categoryId}' was not found.");
+                // Throw if empty to be caught below
+                if (result == null || !result.Subscriptions.Any())
+                    throw new KeyNotFoundException($"No subscriptions found for VerticalTypeId '{verticalTypeId}' and CategoryId '{categoryId}'.");
 
                 return TypedResults.Ok(result);
             }
@@ -92,14 +93,17 @@ public static class SubscriptionEndpoints
         })
         .WithName("GetSubscriptionByVerticalAndCategory")
         .WithTags("Subscription")
-        .WithSummary("Get a subscription by vertical and category")
-        .WithDescription("Retrieves a subscription based on Vertical Type ID and Category ID.")
-        .Produces<SubscriptionResponseDto>(StatusCodes.Status200OK)
+        .WithSummary("Get subscriptions by vertical and category")
+        .WithDescription("Retrieves all subscriptions based on Vertical Type ID and Category ID.")
+        .Produces<List<SubscriptionResponseDto>>(StatusCodes.Status200OK)
         .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         return group;
     }
+
+
+
 
     public static RouteGroupBuilder MapGetAllSubscription(this RouteGroupBuilder group)
     {
@@ -292,43 +296,7 @@ public static class SubscriptionEndpoints
 
         return group;
     }
-    public static RouteGroupBuilder MapClassifieddashboardEndpoint(this RouteGroupBuilder group)
-    {
-        group.MapGet("/details", async Task<Results<
-            Ok<SubscriptionDetailsResponseDto>,
-            NotFound,
-            ProblemHttpResult>>
-        (
-            [FromQuery] int verticalId,
-            IExternalSubscriptionService service,
-            CancellationToken cancellationToken
-        ) =>
-        {
-            try
-            {
-                var result = await service.GetSubscriptionDetailsByVerticalIdAsync(verticalId, cancellationToken);
-                if (result == null)
-                    return TypedResults.NotFound();
-                return TypedResults.Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return TypedResults.Problem(
-                    title: "Internal Server Error",
-                    detail: ex.Message,
-                    statusCode: StatusCodes.Status500InternalServerError);
-            }
-        })
-        .WithName("GetSubscriptionDetails")
-        .WithTags("Subscription")
-        .WithSummary("Get subscription details by vertical ID")
-        .WithDescription("Returns full subscription details including mocked ad usage data.")
-        .Produces<SubscriptionDetailsResponseDto>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound)
-        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-        return group;
-    }
+  
 
 }
 

@@ -4,6 +4,7 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IPayToPublicActor;
 using System.Collections.Concurrent;
 using QLN.Common.Infrastructure.IService.IPayToPublishService;
+using QLN.Common.Infrastructure.Subscriptions;
 
 
 namespace QLN.Backend.API.Service.PayToPublishService
@@ -54,10 +55,16 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 throw new Exception("Pay to publish plan creation failed.");
             }
         }
-        public async Task<List<PayToPublishResponseDto>> GetPlansByVerticalAndCategoryAsync(int verticalTypeId, int categoryId, CancellationToken cancellationToken = default)
+        public async Task<PayToPublishListResponseDto> GetPlansByVerticalAndCategoryAsync(
+            int verticalTypeId,
+            int categoryId,
+            CancellationToken cancellationToken = default)
         {
             var resultList = new List<PayToPublishResponseDto>();
             var ids = _payToPublishIds.Keys.ToList();
+
+            var verticalEnum = (Vertical)verticalTypeId;
+            var categoryEnum = (SubscriptionCategory)categoryId;
 
             foreach (var id in ids)
             {
@@ -65,9 +72,9 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 var data = await actor.GetDataAsync(cancellationToken);
 
                 if (data != null &&
-                    data.VerticalTypeId == verticalTypeId &&
-                    data.CategoryId == categoryId &&
-                    data.StatusId != 3)
+                    data.VerticalTypeId == verticalEnum &&
+                    data.CategoryId == categoryEnum &&
+                    data.StatusId != Status.Expired)
                 {
                     resultList.Add(new PayToPublishResponseDto
                     {
@@ -81,10 +88,15 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 }
             }
 
-            return resultList;
+            return new PayToPublishListResponseDto
+            {
+                VerticalId = verticalTypeId,
+                VerticalName = verticalEnum.ToString(),
+                CategoryId = categoryId,
+                CategoryName = categoryEnum.ToString(),
+                PayToPublish = resultList
+            };
         }
-
-
 
         public async Task<List<PayToPublishResponseDto>> GetAllPlansAsync(CancellationToken cancellationToken = default)
         {
@@ -96,7 +108,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 var actor = GetActorProxy(id);
                 var data = await actor.GetDataAsync(cancellationToken);
 
-                if (data != null && data.StatusId != 3)
+                if (data != null && data.StatusId != Status.Expired)
                 {
                     plans.Add(new PayToPublishResponseDto
                     {
@@ -117,7 +129,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
             var actor = GetActorProxy(id);
             var existingData = await actor.GetDataAsync(cancellationToken);
 
-            if (existingData == null || existingData.StatusId == 3)
+            if (existingData == null || existingData.StatusId == Status.Expired)
             {
                 return false; 
             }
@@ -143,40 +155,42 @@ namespace QLN.Backend.API.Service.PayToPublishService
 
             if (data == null) return false;
 
-            data.StatusId = 3;
+            data.StatusId = Status.Expired;
             data.LastUpdated = DateTime.UtcNow;
             data.PlanName = $"Deleted-{data.PlanName}";
 
             return await actor.SetDataAsync(data, cancellationToken);
         }
         public async Task<Guid> CreatePaymentsAsync(PaymentRequestDto request, Guid userId, CancellationToken cancellationToken = default)
-
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
 
             var id = Guid.NewGuid();
             var startDate = DateTime.UtcNow;
+
             var payToPublishActor = GetActorProxy(request.PayToPublishId);
             var payToPublishData = await payToPublishActor.GetDataAsync(cancellationToken);
 
             if (payToPublishData == null)
                 throw new Exception($"PayToPublish data not found for ID: {request.PayToPublishId}");
+
             var durationText = payToPublishData.Duration;
             var endDate = ParseDurationAndGetEndDate(startDate, durationText);
+
             var dto = new PaymentDto
             {
                 Id = id,
                 PayToPublishId = request.PayToPublishId,
                 VerticalId = request.VerticalId,
                 CategoryId = request.CategoryId,
-                CardNumber = request.CardNumber,
-                ExpiryMonth = request.ExpiryMonth,
-                ExpiryYear = request.ExpiryYear,
+                CardNumber = request.CardDetails.CardNumber,
+                ExpiryMonth = request.CardDetails.ExpiryMonth,
+                ExpiryYear = request.CardDetails.ExpiryYear,
                 UserId = userId,
-                CardHolderName = request.CardHolderName,
+                CardHolderName = request.CardDetails.CardHolderName,
                 StartDate = startDate,
                 EndDate = endDate,
-                LastUpdated = DateTime.UtcNow,
+                LastUpdated = DateTime.UtcNow
             };
 
             var actor = GetPaymentActorProxy(dto.Id);
@@ -191,6 +205,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
 
             throw new Exception("Payment transaction creation failed.");
         }
+
         private DateTime ParseDurationAndGetEndDate(DateTime startDate, string duration)
         {
             if (string.IsNullOrWhiteSpace(duration))

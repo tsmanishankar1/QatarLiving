@@ -1,4 +1,5 @@
-﻿using System;
+﻿using QLN.Common.Infrastructure.Subscriptions;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -16,24 +17,32 @@ namespace QLN.Common.DTO_s
         public decimal Price { get; set; }
         public int TotalCount { get; set; }
         public string Currency { get; set; } = string.Empty;
-        public int VerticalTypeId { get; set; }
-        public int CategoryId { get; set; }
-        public int StatusId { get; set; }
+        public Vertical VerticalTypeId { get; set; }
+        public SubscriptionCategory CategoryId { get; set; }
+        public Status StatusId { get; set; }
 
         public DateTime LastUpdated { get; set; }
     }
     public class PayToPublishRequestDto
     {
-
+        [Required]
         public string PlanName { get; set; } = string.Empty;
+        [Required]
         public int TotalCount { get; set; }
+        [Required]
         public string Description { get; set; } = string.Empty;
+        [Required]
         public string Duration { get; set; } = string.Empty;
+        [Required]
         public decimal Price { get; set; }
+        [Required]
         public string Currency { get; set; } = string.Empty;
-        public int VerticalTypeId { get; set; }
-        public int CategoryId { get; set; }
-        public int StatusId { get; set; }
+        [Required]
+        public Vertical VerticalTypeId { get; set; }
+        [Required]
+        public SubscriptionCategory CategoryId { get; set; }
+        [Required]
+        public Status StatusId { get; set; }
     }
     public class PayToPublishResponseDto
     {
@@ -43,8 +52,17 @@ namespace QLN.Common.DTO_s
         public string Currency { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string Duration { get; set; } = string.Empty;
-
     }
+
+    public class PayToPublishListResponseDto
+    {
+        public int VerticalId { get; set; }
+        public string VerticalName { get; set; } = string.Empty;
+        public int CategoryId { get; set; }
+        public string CategoryName { get; set; } = string.Empty;
+        public List<PayToPublishResponseDto> PayToPublish { get; set; } = new();
+    }
+
     public class PaymentDto
     {
         public Guid Id { get; set; }
@@ -54,10 +72,10 @@ namespace QLN.Common.DTO_s
         public Guid UserId { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public string CardNumber { get; set; } = string.Empty; // In real implementation, this should be encrypted/tokenized
+        public string CardNumber { get; set; } = string.Empty;
         public string ExpiryMonth { get; set; } = string.Empty;
         public string ExpiryYear { get; set; } = string.Empty;
-        public string Cvv { get; set; } = string.Empty; // In real implementation, this should never be stored
+        public string Cvv { get; set; } = string.Empty; 
         public string CardHolderName { get; set; } = string.Empty;
      
         public DateTime LastUpdated { get; set; }
@@ -65,7 +83,6 @@ namespace QLN.Common.DTO_s
     }
     public class PaymentRequestDto
     {
-   
         [Required]
         public int VerticalId { get; set; }
 
@@ -73,28 +90,35 @@ namespace QLN.Common.DTO_s
         public int CategoryId { get; set; }
 
         [Required]
-        [StringLength(19, MinimumLength = 13)]
+        public Guid PayToPublishId { get; set; }
+
+
+        public CardDetailPaymentDto CardDetails { get; set; } = new();
+    }
+
+    public class CardDetailPaymentDto
+    {
+        [Required]
+
         public string CardNumber { get; set; } = string.Empty;
 
         [Required]
-        [StringLength(2, MinimumLength = 2)]
+
         public string ExpiryMonth { get; set; } = string.Empty;
 
         [Required]
-        [StringLength(4, MinimumLength = 4)]
+
         public string ExpiryYear { get; set; } = string.Empty;
 
         [Required]
-        [StringLength(4, MinimumLength = 3)]
+
         public string Cvv { get; set; } = string.Empty;
 
         [Required]
-        [StringLength(100, MinimumLength = 2)]
-        public string CardHolderName { get; set; } = string.Empty;
 
-        [Required]
-        public Guid PayToPublishId { get; set; }
+        public string CardHolderName { get; set; } = string.Empty;
     }
+
 }
 
 

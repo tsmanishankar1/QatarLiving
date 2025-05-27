@@ -12,14 +12,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
     {
         public static RouteGroupBuilder MapSubscriptionEndpoints(this RouteGroupBuilder group)
         {
-            group.RequireAuthorization();
+
             group.MapCreateSubscriptionEndpoints()
                  .MapGetdetails()
                .MapGetAllSubscription()
                .MapUpdateSubscription()
-               .MapdeleteSubscription()
-               .MapProcessPaymentEndpoint()
-               .MapClassifieddashboardEndpoint();
+               .MapdeleteSubscription();
+           
 
             return group;
         }

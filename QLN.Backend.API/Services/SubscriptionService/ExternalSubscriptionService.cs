@@ -1,7 +1,11 @@
 ﻿using Dapr.Actors;
 using Dapr.Actors.Client;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using QLN.Common.DTO_s;
 using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.IService.ISubscriptionService;
+using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Subscriptions;
 using System.Collections.Concurrent;
 
@@ -10,11 +14,16 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
     private readonly ILogger<ExternalSubscriptionService> _logger;
     private static readonly ConcurrentDictionary<Guid, byte> _subscriptionIds = new ConcurrentDictionary<Guid, byte>();
     private static readonly ConcurrentDictionary<Guid, byte> _subscriptionId = new();
+    private readonly RoleManager<IdentityRole<Guid>> _roleManager;
+    private readonly UserManager<ApplicationUser> _userManager;
 
 
-    public ExternalSubscriptionService(ILogger<ExternalSubscriptionService> logger)
+    public ExternalSubscriptionService(ILogger<ExternalSubscriptionService> logger, RoleManager<IdentityRole<Guid>> roleManager,
+     UserManager<ApplicationUser> userManager)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _roleManager = roleManager;
+        _userManager = userManager;
     }
 
     private ISubscriptionActor GetActorProxy(Guid id)
@@ -26,49 +35,47 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             new ActorId(id.ToString()),
             "SubscriptionActor");
     }
-
-
-    public async Task<List<SubscriptionResponseDto>> GetSubscriptionsByVerticalAndCategoryAsync(int verticalTypeId, int categoryId, CancellationToken cancellationToken = default)
+    public async Task<SubscriptionGroupResponseDto> GetSubscriptionsByVerticalAndCategoryAsync(
+           int verticalTypeId,
+           int categoryId,
+           CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Getting subscriptions with VerticalTypeId: {VerticalTypeId} and CategoryId: {CategoryId}", verticalTypeId, categoryId);
+        var resultList = new List<SubscriptionResponseDto>();
+        var ids = _subscriptionIds.Keys.ToList();
 
-        var allIds = _subscriptionIds.Keys.ToList();
-        var matchingSubscriptions = new List<SubscriptionResponseDto>();
+        var verticalEnum = (Vertical)verticalTypeId;
+        var categoryEnum = (SubscriptionCategory)categoryId;
 
-        if (allIds.Count == 0)
-        {
-            _logger.LogWarning("No subscriptions available to search");
-            return matchingSubscriptions;
-        }
-
-        foreach (var id in allIds)
+        foreach (var id in ids)
         {
             var actor = GetActorProxy(id);
-            var dto = await actor.GetDataAsync(cancellationToken);
+            var data = await actor.GetDataAsync(cancellationToken);
 
-            if (dto == null)
-                continue;
-
-            if (dto.verticalTypeId == verticalTypeId && dto.categoryId == categoryId && dto.statusId != 3)
+            if (data != null &&
+                data.VerticalTypeId == verticalEnum &&
+                data.CategoryId == categoryEnum &&
+                data.StatusId != Status.Expired)
             {
-                matchingSubscriptions.Add(new SubscriptionResponseDto
+                resultList.Add(new SubscriptionResponseDto
                 {
-                    Id = dto.Id,
-                    SubscriptionName = dto.subscriptionName,
-                    Duration = dto.duration,
-                    Price = dto.price,
-                    Description = dto.description,
-                    Currency = dto.currency
+                    Id = data.Id,
+                    SubscriptionName = data.subscriptionName,
+                    Price = data.price,
+                    Currency = data.currency,
+                    Description = data.description,
+                    Duration = data.duration
                 });
             }
         }
 
-        if (matchingSubscriptions.Count == 0)
+        return new SubscriptionGroupResponseDto
         {
-            _logger.LogWarning("No subscriptions found for VerticalTypeId {VerticalTypeId} and CategoryId {CategoryId}", verticalTypeId, categoryId);
-        }
-
-        return matchingSubscriptions;
+            VerticalTypeId = verticalTypeId,
+            VerticalName = verticalEnum.ToString(),
+            CategoryId = categoryId,
+            CategoryName = categoryEnum.ToString(),
+            Subscriptions = resultList
+        };
     }
 
     public async Task CreateSubscriptionAsync(SubscriptionRequestDto request, CancellationToken cancellationToken = default)
@@ -88,9 +95,10 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             adsbudget = request.adsbudget,
             promotebudget = request.promotebudget,
             refreshbudget = request.refreshbudget,
-            categoryId = request.CategoryId,
-            verticalTypeId = request.VerticalTypeId,
-            statusId = request.StatusId,
+            CategoryId = request.CategoryId,
+            VerticalTypeId = request.VerticalTypeId,
+            StatusId =request.StatusId,
+
             lastUpdated = DateTime.UtcNow
         };
 
@@ -105,6 +113,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
         throw new Exception("Subscription creation failed.");
     }
+
 
     public async Task<List<SubscriptionResponseDto>> GetAllSubscriptionsAsync(CancellationToken cancellationToken = default)
     {
@@ -135,7 +144,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             if (result == null)
                 continue;
 
-            if (result.statusId == 3)
+            if (result.StatusId == Status.Expired)
             {
                 _subscriptionIds.TryRemove(result.Id, out _);
                 continue;
@@ -168,9 +177,9 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             price = request.Price,
             description = request.Description,
             currency = request.Currency,
-            categoryId = request.CategoryId,
-            verticalTypeId = request.VerticalTypeId,
-            statusId = request.StatusId,
+            CategoryId = request.CategoryId,
+            VerticalTypeId = request.VerticalTypeId,
+            StatusId = request.StatusId,
             lastUpdated = DateTime.UtcNow
         };
 
@@ -191,26 +200,26 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         if (id == Guid.Empty)
             throw new ArgumentException("Subscription ID cannot be empty", nameof(id));
 
-        _logger.LogInformation("Deleting subscription with ID: {Id}", id);
+        _logger.LogInformation("Expiring subscription with ID: {Id}", id);
 
         try
         {
             var existingSubscription = await GetSubscriptionByIdAsync(id, cancellationToken);
             if (existingSubscription == null)
             {
-                _logger.LogWarning("Subscription with ID {Id} not found for deletion", id);
+                _logger.LogWarning("Subscription with ID {Id} not found for expiration", id);
                 return false;
             }
 
-            // Mark as deleted with numeric status
-            existingSubscription.statusId = 3;
+            // Mark as expired
+            existingSubscription.StatusId = Status.Expired;
             existingSubscription.lastUpdated = DateTime.UtcNow;
-            existingSubscription.subscriptionName = $"Deleted-{existingSubscription.subscriptionName ?? id.ToString()}";
+            existingSubscription.subscriptionName = $"Expired-{existingSubscription.subscriptionName ?? id.ToString()}";
 
             var actor = GetActorProxy(id);
             var result = await actor.FastSetDataAsync(existingSubscription, cancellationToken);
 
-            _logger.LogInformation("Subscription with ID {Id} marked as deleted.", id);
+            _logger.LogInformation("Subscription with ID {Id} marked as expired.", id);
             return result;
         }
         catch (KeyNotFoundException knfEx)
@@ -220,10 +229,11 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting subscription with ID: {Id}", id);
+            _logger.LogError(ex, "Error expiring subscription with ID: {Id}", id);
             throw;
         }
     }
+
 
 
     private async Task<SubscriptionDto?> GetSubscriptionByIdAsync(Guid subscriptionId, CancellationToken cancellationToken)
@@ -235,7 +245,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             var actor = GetActorProxy(id);
             var dto = await actor.GetDataAsync(cancellationToken);
 
-            if (dto != null && dto.Id == subscriptionId && dto.statusId != 3)
+            if (dto != null && dto.Id == subscriptionId && dto.StatusId != Status.Expired)
             {
                 return dto;
             }
@@ -243,31 +253,38 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
         return null;
     }
-    public async Task<Guid> CreatePaymentAsync(PaymentTransactionRequestDto request, Guid userId, CancellationToken cancellationToken = default)
+
+    public async Task<Guid> CreatePaymentAsync(
+        PaymentTransactionRequestDto request,
+        Guid userId,
+        CancellationToken cancellationToken = default)
     {
         if (request == null) throw new ArgumentNullException(nameof(request));
 
         var id = Guid.NewGuid();
         var startDate = DateTime.UtcNow;
-        var subscriptionactor = GetActorProxy(request.SubscriptionId);
-        var subscriptionData = await subscriptionactor.GetDataAsync(cancellationToken);
-         if (subscriptionData == null)
-                throw new Exception($"PayToPublish data not found for ID: {request.SubscriptionId}");
-            var durationText = subscriptionData.duration;
-            var endDate = ParseDurationAndGetEndDate(startDate, durationText);
+
+        var subscriptionActor = GetActorProxy(request.SubscriptionId);
+        var subscriptionData = await subscriptionActor.GetDataAsync(cancellationToken);
+
+        if (subscriptionData == null)
+            throw new Exception($"PayToPublish data not found for ID: {request.SubscriptionId}");
+
+        var endDate = ParseDurationAndGetEndDate(startDate, subscriptionData.duration);
+
         var dto = new PaymentTransactionDto
         {
             Id = id,
             SubscriptionId = request.SubscriptionId,
             VerticalId = request.VerticalId,
             CategoryId = request.CategoryId,
-            CardNumber = request.CardNumber,
-            ExpiryMonth = request.ExpiryMonth,
-            ExpiryYear = request.ExpiryYear,
+            CardNumber = request.CardDetails.CardNumber,
+            ExpiryMonth = request.CardDetails.ExpiryMonth,
+            ExpiryYear = request.CardDetails.ExpiryYear,
             UserId = userId,
             StartDate = startDate,
             EndDate = endDate,
-            CardHolderName = request.CardHolderName,
+            CardHolderName = request.CardDetails.CardHolderName,
             TransactionDate = DateTime.UtcNow,
             LastUpdated = DateTime.UtcNow,
         };
@@ -275,15 +292,91 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         var actor = GetPaymentTransactionActorProxy(dto.Id);
         var result = await actor.FastSetDataAsync(dto, cancellationToken);
 
-        if (result)
+        if (!result)
+            throw new Exception("Payment transaction creation failed.");
+
+        _subscriptionIds.TryAdd(dto.Id, 0);
+        _logger.LogInformation("Payment transaction created with ID: {TransactionId}", dto.Id);
+
+        // ROLE LOGIC STARTS HERE
+        const string subscriberRole = "Subscriber";
+
+        // 1. Ensure the role exists
+        var role = await _roleManager.FindByNameAsync(subscriberRole);
+        if (role == null)
         {
-            _subscriptionIds.TryAdd(dto.Id, 0);
-            _logger.LogInformation("Payment transaction created with ID: {TransactionId}", dto.Id);
-            return dto.Id;
+            var createRoleResult = await _roleManager.CreateAsync(new IdentityRole<Guid>(subscriberRole));
+            if (!createRoleResult.Succeeded)
+                throw new Exception("Failed to create Subscriber role.");
         }
 
-        throw new Exception("Payment transaction creation failed.");
+        // 2. Get the user
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user == null)
+            throw new Exception($"User not found with ID: {userId}");
+
+        // 3. Get current roles of the user
+        var currentRoles = await _userManager.GetRolesAsync(user);
+
+        // 4. Replace existing roles with "Subscriber" (if needed)
+        if (!currentRoles.Contains(subscriberRole))
+        {
+            var removeResult = await _userManager.RemoveFromRolesAsync(user, currentRoles);
+            if (!removeResult.Succeeded)
+                throw new Exception("Failed to remove existing roles.");
+
+            var addResult = await _userManager.AddToRoleAsync(user, subscriberRole);
+            if (!addResult.Succeeded)
+                throw new Exception("Failed to add user to Subscriber role.");
+        }
+
+        return dto.Id;
     }
+
+
+
+    //private async Task AssignSubscriberRoleAsync(Guid userId, CancellationToken cancellationToken)
+    //{
+    //    const string subscriberRoleName = "Subscriber";
+
+    //    // Check if role exists
+    //    var subscriberRole = await _dbContext.Roles
+    //        .FirstOrDefaultAsync(r => r.Name == subscriberRoleName, cancellationToken);
+
+    //    if (subscriberRole == null)
+    //    {
+    //        // Create role if it doesn't exist
+    //        subscriberRole = new IdentityRole<Guid>
+    //        {
+    //            Id = Guid.NewGuid(),
+    //            Name = subscriberRoleName,
+    //            NormalizedName = subscriberRoleName.ToUpper(),
+    //            ConcurrencyStamp = Guid.NewGuid().ToString()
+    //        };
+
+    //        await _dbContext.Roles.AddAsync(subscriberRole, cancellationToken);
+    //        await _dbContext.SaveChangesAsync(cancellationToken);
+    //    }
+
+    //    // Check if the user already has the role
+    //    var userRoleExists = await _dbContext.UserRoles
+    //        .AnyAsync(ur => ur.UserId == userId && ur.RoleId == subscriberRole.Id, cancellationToken);
+
+    //    if (!userRoleExists)
+    //    {
+    //        var userRole = new IdentityUserRole<Guid>
+    //        {
+    //            UserId = userId,
+    //            RoleId = subscriberRole.Id
+    //        };
+
+    //        await _dbContext.UserRoles.AddAsync(userRole, cancellationToken);
+    //        await _dbContext.SaveChangesAsync(cancellationToken);
+
+    //        _logger.LogInformation("Assigned Subscriber role to UserId: {UserId}", userId);
+    //    }
+    //}
+
     private DateTime ParseDurationAndGetEndDate(DateTime startDate, string duration)
     {
         if (string.IsNullOrWhiteSpace(duration))
@@ -320,45 +413,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
        
     }
-    public async Task<SubscriptionDetailsResponseDto?> GetSubscriptionDetailsByVerticalIdAsync(
-    int verticalId,
-    CancellationToken cancellationToken = default)
-    {
-        _logger.LogInformation("Fetching subscription details for verticalId: {VerticalId}", verticalId);
-
-        // Check if verticalId is 3 (or add other valid IDs as needed)
-        if (verticalId == 3)
-        {
-            _logger.LogInformation("Returning mocked subscription details for verticalId: {VerticalId}", verticalId);
-
-            return new SubscriptionDetailsResponseDto
-            {
-                CompanyId = Guid.NewGuid(),
-                CompanyName = "Preloved",
-                BusinessProfile = new BusinessProfileDto
-                {
-                    Name = "Luxury Store",
-                    CompanyId = Guid.NewGuid(),
-                    CompanyName = "Preloved",
-                    Duration = "6 months",
-                    ValidFrom = DateTime.UtcNow.Date,
-                    ValidTo = DateTime.UtcNow.Date.AddMonths(6),
-                    LogoUrl = "images/subscription/CompanyLogo.svg"
-                },
-                SubscriptionStatistics = new SubscriptionStatisticsDto
-                {
-                    PublishedAds = new UsageDto { Usage = 5, Total = 15 },
-                    PromotedAds = new UsageDto { Usage = 1, Total = 2 },
-                    FeaturedAds = new UsageDto { Usage = 2, Total = 2 },
-                    Refreshes = new UsageDto { Usage = 5, Total = 75 }
-                }
-            };
-        }
-
-        _logger.LogWarning("No subscription found for verticalId: {VerticalId}", verticalId);
-        return null;
-    }
-
+   
 
 
 }

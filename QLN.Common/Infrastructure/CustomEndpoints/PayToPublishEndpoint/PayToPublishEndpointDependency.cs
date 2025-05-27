@@ -8,13 +8,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint
     {
         public static RouteGroupBuilder MapPayToPublishEndpoints(this RouteGroupBuilder group)
         {
-            group.RequireAuthorization();
+         ;
             group.MapCreatePayToPublishEndpoints()
                   .MapGetAllPayToPublishEndpoints()
                   .MapDeletePayToPublishEndpoints()
                   .MapGetPayToPublishEndpoints()
-                  .MapUpatePayToPublishEndpoints()
-                  .MapProcessPaytoPublishPaymentEndpoint();
+                  .MapUpatePayToPublishEndpoints();
+
                    return group;
         }
     }
