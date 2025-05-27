@@ -1,9 +1,8 @@
 @using MudBlazor;
 @inherits NewsCardBase
-<div class="news-card @(IsHorizontal ? "horizontal" : "vertical")">
+<div class="news-card @(IsHorizontal ? "horizontal" : "")">
     <img src="@Item.ImageUrl" alt="News Image" class="news-image" />
     <div class="news-content">
-        <div class="category">@Item.Category</div>
         <div class="news-title">@Item.Title</div>
     </div>
 </div>
@@ -20,9 +19,9 @@
 }
 
 .news-card.horizontal {
-    flex-direction: row;
-    height: 140px;
-    max-width: 100%;
+    flex-direction: column;
+    height: 100%;
+    max-width: 214px;
 }
 
 .news-image {
@@ -56,18 +55,25 @@
     font-size: 16px;
     font-weight: 600;
 }
+
+/* Responsive: force .news-card to row on mobile */
 @@media (max-width: 768px) {
-    .news-image {
-        width: 177px;
-        height: 100px;
-    }
     .news-card {
-    flex-direction: row;
-    max-width: 100%;
-}
-
-
+        flex-direction: row;
+        max-width: 100%;
+        padding: 10px;
     }
+
+    .news-card.horizontal {
+        flex-direction: column; 
+        height: auto;
+    }
+
+    .news-card.horizontal .news-image {
+        height: 100px;
+         max-width: 70px;
+    }
+}
 </style>
 
 

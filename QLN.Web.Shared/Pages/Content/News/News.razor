@@ -5,6 +5,7 @@
 @using QLN.Web.Shared.Pages.Content.News.NewsLetter
 @using QLN.Web.Shared.Pages.Content.News.PopularArticles
 @using QLN.Web.Shared.Pages.Content.News.VideoCards
+@using QLN.Web.Shared.Components.ViewToggleButtons
 @using QLN.Web.Shared.Pages.Content.News.MoreArticle
 @inject IJSRuntime JSRuntime
 @using QLN.Web.Shared.Components.Carousel
@@ -34,6 +35,8 @@
     </MudItem>
 
     <!-- Main Article and MoreArticles section -->
+      <div class="news-container"> 
+         <div class="side-padding" style="display: flex; flex-wrap: wrap; gap: 0px;">
     <MudItem xs="12" md="8">
         <div class="main-article">
             <div class="main-content">
@@ -59,17 +62,16 @@
     <MudItem xs="12" md="4">
         <MoreArticle />
     </MudItem>
-
+     </div>  
     <!-- Recommended Cards -->
-   <MudItem xs="12">
+   <MudItem xs="12" Class="side-padding py-2">
    <div class="flex-container">
-        @for (int i = 0; i < 3; i++)
+        @for (int i = 0; i < 5; i++)
         {
                 <NewsCard Item="GoldNews" IsHorizontal="false" />
         }
-            <NewsLetter />
         </div>
-</MudItem>
+    </MudItem>
     <!-- Video Cards -->
      <MudItem xs="12">
     <div class="carousel-padding">
@@ -80,50 +82,67 @@
                         Transition="Transition.Slide" />
     </div>
     </MudItem>
+     </div> 
      <MudItem xs="12">
-         <div class="side-padding ">
+         <div class="side-padding">
        <VideoCards />
        </div>
      </MudItem>
 
     <!-- More Cards -->
-    <MudItem xs="12">
-        <MudGrid>
-            @for (int i = 0; i < 5; i++)
-            {
-                <MudItem xs="12" sm="6" md="4">
-                    <NewsCard Item="GoldNews" IsHorizontal="false" />
-                </MudItem>
-            }
-        </MudGrid>
+    <MudItem xs="12" Class="side-padding py-2">
+   <div class="flex-container">
+        @for (int i = 0; i < 3; i++)
+        {
+                <NewsCard Item="GoldNews" IsHorizontal="false" />
+        }
+        </div>
     </MudItem>
-
     <!-- Popular Articles & Ads -->
+        @* <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="section-container">
+<MudGrid Class="poular-article-container">
+    <MudItem xs="12" md="8">
+        <div class="poular-article-container">  
+
+            <PopularArticles />
+         <MudItem/>
+          <MudItem xs="12" md="4">
+            <img src="/images/classifieds/detail_ad.svg" alt="Product Image" />
+                 </MudItem>
+         </div>  
+    </MudItem>
+    </MudGrid>
+    </MudContainer>  *@
+     <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="section-container side-padding">
     <MudItem xs="12">
         <div class="poular-article-container">
             <PopularArticles />
-            <img src="/images/classifieds/detail_ad.svg" alt="Product Image"
-                 style="width: 100%; max-width: 300px; height: auto; object-fit: contain;" />
+            <img src="/images/classifieds/detail_ad.svg" alt="Product Image" />
         </div>
     </MudItem>
+</MudContainer> 
 
     <!-- Even Better -->
-    <MudItem xs="12">
-        <MudText Typo="Typo.h5">Even Better</MudText>
-        <MudGrid>
-            @for (int i = 0; i < 3; i++)
-            {
-                <MudItem xs="12" sm="6" md="4">
-                    <NewsCard Item="GoldNews" IsHorizontal="true" />
-                </MudItem>
-            }
-        </MudGrid>
+    <MudItem xs="12" Class="side-padding py-2">
+         <MudText Typo="Typo.h5">Even Better</MudText>
+   <div class="flex-container">
+        @for (int i = 0; i < 3; i++)
+        {
+                <NewsCard Item="GoldNews" IsHorizontal="false" />
+        }
+            <NewsLetter />
+        </div>
     </MudItem>
 </MudGrid>
 
 <style>
     .full-width {
-    width: 100%;
+    @* width: 100%; *@
+    background-color: var(--color-secondary-background)
+}
+.news-container{
+    background-color: white;
+    @* width: 100%; *@
 }
    
     .news-tabs {
@@ -142,8 +161,16 @@
     align-items: center;
     width: 100%;
 }
+.horizontal-scroll-wrapper {
+    gap: 10px;
+}  
 .news-tabs-wrapper{
      width: 100%;
+}
+.news-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
 }
 
 
@@ -156,6 +183,8 @@
     cursor: pointer;
     flex-shrink: 0;
 }
+
+
 .main-category {
     border: 1px solid #F0F0F0; 
     border-radius: 8px;     
@@ -165,6 +194,7 @@
 
 .news-tab.active {
     color: var(--color-accent);
+    background-color: white;
     border-bottom: 2px solid var(--color-accent);
 }
 
@@ -206,6 +236,10 @@
     gap: 24px;
     flex-wrap: wrap; /* fallback to wrap if needed */
 }
+@* .container-style {
+    display: flex;
+    flex-direction: row;
+} *@
 .flex-container {
     display: flex;
     flex-wrap: wrap;
@@ -223,6 +257,20 @@
     align-items: center;
     max-width: 400px;
 }
+.mud-grid-spacing-xs-6 {
+    width: calc(100% + 24px);
+    margin-left: -24px;
+    margin-top: 0px; 
+}
+.poular-article-container{
+     display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 0px;
+    align-items: flex-start;
+    padding: 0px ;
+    width: 100%;
+}
 
 /* Mobile-first responsive behavior */
 @@media (max-width: 600px) {
@@ -238,12 +286,32 @@
     padding-left: 30px;
     padding-right: 30px;
 }
+ .horizontal-scroll-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
 
+    .news-grid {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 12px;
+        width: max-content;
+    }
 
-    @* .news-grid, .newsletter-container {
-        width: 100%;
-        max-width: 100%;
-    } *@
+    .news-grid > .mud-grid-item {
+        flex: 0 0 auto;
+    }
+    .mud-grid-spacing-xs-6>.mud-grid-item {
+    padding-left: 24px;
+    padding-top: 0px;
+}
+.poular-article-container{
+    display: flex;
+    flex-direction: column;
+    gap: 35px;
+    align-items: center;
+    width: 100%;
+}
 }
 
 </style>
