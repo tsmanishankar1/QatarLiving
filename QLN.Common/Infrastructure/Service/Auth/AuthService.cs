@@ -434,19 +434,24 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     return TypedResults.ValidationProblem(errors, title: "Login validation failed");
                 }
 
-                var user = await _userManager.Users.FirstOrDefaultAsync(u =>
-                    (u.UserName == request.UsernameOrEmailOrPhone ||
-                     u.Email == request.UsernameOrEmailOrPhone ||
-                     u.PhoneNumber == request.UsernameOrEmailOrPhone) &&
-                    u.IsActive == true);
+                var usernameOrEmailOrPhone = request.UsernameOrEmailOrPhone;
 
-                if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
+                var user = await _userManager.FindByNameAsync(usernameOrEmailOrPhone)
+                    ?? await _userManager.FindByEmailAsync(usernameOrEmailOrPhone)
+                    ?? await _userManager.Users.FirstOrDefaultAsync(u =>
+                    u.PhoneNumber == usernameOrEmailOrPhone && u.IsActive);
+
+
+                var isValid = await _userManager.CheckPasswordAsync(user, request.Password);
+                if (!isValid)
+                {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Invalid Credentials",
                         Detail = "Username or password is incorrect.",
                         Status = StatusCodes.Status400BadRequest
                     });
+                }
 
                 if (user.TwoFactorEnabled)
                 {
