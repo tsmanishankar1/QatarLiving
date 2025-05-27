@@ -9,3 +9,11 @@ Accept: application/json
 
 GET {{QLN.Drupal.API_HostAddress}}/qlnapi/landing/qln_contents_daily
 Accept: application/json
+
+###
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/node?slug=forum/news/akram-afif-scores-twice-qatar-beat-lebanon-afc-asian-cup-opener
+Accept: application/json
+
+###
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/node?slug=events/fifa-arab-cup-qatar-2021
+Accept: application/json

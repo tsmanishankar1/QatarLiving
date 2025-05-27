@@ -11,7 +11,7 @@ namespace QLN.Common.Infrastructure.IService.BannerService
     {
         Task<ContentLandingPageResponse?> GetLandingPageAsync();
 
-        Task<ContentItem?> GetContentByIdAsync(string id);
-        Task<ContentEvent?> GetEventByIdAsync(string id);
+        Task<ContentPost?> GetPostBySlugAsync(string slug);
+        Task<ContentEvent?> GetEventBySlugAsync(string slug);
     }
 }

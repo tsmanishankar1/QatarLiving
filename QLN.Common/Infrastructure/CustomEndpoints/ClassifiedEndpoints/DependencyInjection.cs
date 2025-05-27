@@ -30,8 +30,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints
         public static RouteGroupBuilder MapContentLandingEndpoints(this RouteGroupBuilder group)
         {
             group.MapContentLandingEndpoint()
-                .MapGetContentByIdEndpoint()
-                .MapGetEventByIdEndpoint();
+                .MapGetPostBySlugEndpoint()
+                .MapGetEventBySlugEndpoint();
 
             return group;
         }

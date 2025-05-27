@@ -17,13 +17,13 @@ namespace QLN.Common.Infrastructure.DTO_s
     }
     // Unique Queue Responses for Daily Content
     public class DailyEvent : BaseQueueResponse<ContentEvent>;
-    public class DailyFeaturedEvents : BaseQueueResponse<ContentItem>;
+    public class DailyFeaturedEvents : BaseQueueResponse<ContentPost>;
     public class DailyFifaArabCup : BaseQueueResponse<ContentEvent>;
-    public class DailyMoreArticles : BaseQueueResponse<ContentItem>;
-    public class DailyTopStory : BaseQueueResponse<ContentItem>;
-    public class DailyWatchOnQatarLiving : BaseQueueResponse<ContentItem>;
+    public class DailyMoreArticles : BaseQueueResponse<ContentPost>;
+    public class DailyTopStory : BaseQueueResponse<ContentPost>;
+    public class DailyWatchOnQatarLiving : BaseQueueResponse<ContentPost>;
 
-    public class ContentEvent : ContentItem
+    public class ContentEvent : ContentPost
     {
         [JsonPropertyName("entity_organizer")]
         public string EntityOrganizer { get; set; }
@@ -48,7 +48,7 @@ namespace QLN.Common.Infrastructure.DTO_s
     }
 
 
-    public class ContentItem
+    public class ContentPost
     {
         [JsonPropertyName("page_name")]
         public string PageName { get; set; }
@@ -74,8 +74,12 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonPropertyName("title")]
         public string Title { get; set; }
 
+        [JsonPropertyName("slug")]
+        public string Slug { get; set; }
+
         [JsonPropertyName("description")]
         public string Description { get; set; }
+
     }
 
     public class QlnContentsDaily

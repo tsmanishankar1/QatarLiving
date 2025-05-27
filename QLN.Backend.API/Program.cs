@@ -203,8 +203,8 @@ var companyGroup = app.MapGroup("/api/companyprofile");
 companyGroup.MapCompanyEndpoints();
 
 var classifiedGroup = app.MapGroup("/api/classified");
-classifiedGroup.MapClassifiedLandingEndpoints();
-// classifiedGroup.MapClassifiedsEndpoints();
+//classifiedGroup.MapClassifiedLandingEndpoints();
+classifiedGroup.MapClassifiedsEndpoints();
 
 var Classifiedandinggroup = app.MapGroup("/api/{vertical}");
 Classifiedandinggroup.MapClassifiedLandingEndpoints();

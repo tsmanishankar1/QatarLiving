@@ -15,18 +15,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         /// <summary>
         /// Maps Content endpoints: detail and landing.
         /// </summary>
-        public static RouteGroupBuilder MapGetContentByIdEndpoint(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapGetPostBySlugEndpoint(this RouteGroupBuilder group)
         {
             
-            // GET /api/{vertical}/{id}
-            group.MapGet("/content/{id}", async (
-                    [FromRoute] string id,
+            // GET /api/{vertical}/{slug}
+            group.MapGet("/content/{slug}", async (
+                    [FromRoute] string slug,
                     [FromServices] IContentService svc)
                 =>
             {
                 try
                 {
-                    var ad = await svc.GetContentByIdAsync(id);
+                    var ad = await svc.GetPostBySlugAsync(slug);
                     return ad is null ? Results.NotFound() : Results.Ok(ad);
                 }
                 catch (ArgumentException ex)
@@ -41,24 +41,24 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                         statusCode: StatusCodes.Status500InternalServerError);
                 }
             })
-            .WithName("GetContentById")
+            .WithName("GetPostBySlug")
             .WithTags("Content");
 
             return group;
         }
 
-        public static RouteGroupBuilder MapGetEventByIdEndpoint(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapGetEventBySlugEndpoint(this RouteGroupBuilder group)
         {
 
-            // GET /api/event/{id}
-            group.MapGet("/event/{id}", async (
-                    [FromRoute] string id,
+            // GET /api/event/{slug}
+            group.MapGet("/event/{slug}", async (
+                    [FromRoute] string slug,
                     [FromServices] IContentService svc)
                 =>
             {
                 try
                 {
-                    var ad = await svc.GetEventByIdAsync(id);
+                    var ad = await svc.GetEventBySlugAsync(slug);
                     return ad is null ? Results.NotFound() : Results.Ok(ad);
                 }
                 catch (ArgumentException ex)
@@ -73,7 +73,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                         statusCode: StatusCodes.Status500InternalServerError);
                 }
             })
-            .WithName("GetEventById")
+            .WithName("GetEventBySlug")
             .WithTags("Content");
 
             return group;
