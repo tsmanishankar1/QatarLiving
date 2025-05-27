@@ -19,8 +19,8 @@
                         Transition="Transition.Slide" />
     </div>
     </MudItem>
-    <MudItem xs="12" Class="d-flex justify-center">
-        <ViewToggleButtons Items="@_viewOptions" SelectedValue="@_selectedView" OnSelected="SetViewMode" />
+    <MudItem xs="12" Class="d-flex justify-center py-3">
+        <ViewToggleButtons Items="@_viewOptions" SelectedValue="@_selectedView" OnSelected="SetViewMode" TextClass="custom-text"/>
     </MudItem>
 
     <MudItem xs="12" Class="news-tabs-wrapper">
@@ -42,7 +42,7 @@
             <div class="main-content">
                 <div class="main-category">
                     <img src="/images/sample_news.svg" class="main-image" />
-                    <h3 class="category-style">Sports</h3>
+                    <span class="category-style">Sports</span>
                     <h2 class="main-title">Al Sadd lift fourth Qatar Cup title with thrilling win over Al Duhail</h2>
                     <div class="author-wrapper">
                         <div class="main-author">
@@ -66,11 +66,14 @@
     <!-- Recommended Cards -->
    <MudItem xs="12" Class="side-padding py-2">
    <div class="flex-container">
-        @for (int i = 0; i < 5; i++)
+        @for (int i = 0; i < 3; i++)
         {
+              <div class="news-card-wrapper @(i < 4 ? "with-divider" : "")"> 
                 <NewsCard Item="GoldNews" IsHorizontal="false" />
+                 </div> 
         }
-        </div>
+    </div>
+    <NewsLetter />
     </MudItem>
     <!-- Video Cards -->
      <MudItem xs="12">
@@ -90,29 +93,17 @@
      </MudItem>
 
     <!-- More Cards -->
-    <MudItem xs="12" Class="side-padding py-2">
-   <div class="flex-container">
-        @for (int i = 0; i < 3; i++)
+    <MudItem xs="12" Class="py-2 ">
+   <div class="flex-container side-padding">
+        @for (int i = 0; i < 5; i++)
         {
+            <div class="news-card-wrapper @(i < 4 ? "with-divider" : "")">
                 <NewsCard Item="GoldNews" IsHorizontal="false" />
+            </div>
         }
         </div>
     </MudItem>
     <!-- Popular Articles & Ads -->
-        @* <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="section-container">
-<MudGrid Class="poular-article-container">
-    <MudItem xs="12" md="8">
-        <div class="poular-article-container">  
-
-            <PopularArticles />
-         <MudItem/>
-          <MudItem xs="12" md="4">
-            <img src="/images/classifieds/detail_ad.svg" alt="Product Image" />
-                 </MudItem>
-         </div>  
-    </MudItem>
-    </MudGrid>
-    </MudContainer>  *@
      <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="section-container side-padding">
     <MudItem xs="12">
         <div class="poular-article-container">
@@ -123,19 +114,43 @@
 </MudContainer> 
 
     <!-- Even Better -->
-    <MudItem xs="12" Class="side-padding py-2">
-         <MudText Typo="Typo.h5">Even Better</MudText>
-   <div class="flex-container">
-        @for (int i = 0; i < 3; i++)
-        {
-                <NewsCard Item="GoldNews" IsHorizontal="false" />
-        }
-            <NewsLetter />
-        </div>
-    </MudItem>
+     @* <MudItem xs="12">
+        <MudText Typo="Typo.h5">Even Better</MudText>
+        <MudGrid>
+            @for (int i = 0; i < 3; i++)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <NewsCard Item="GoldNews" IsHorizontal="true" />
+                </MudItem>
+            }
+        </MudGrid>
+    </MudItem> *@
+    <MudGrid GutterSize="3" Class="side-padding responsive-grid">
+    @for (int i = 0; i < 9; i++)
+    {
+        <MudItem xs="12" sm="6" md="4"> 
+            <div class="card-wrapper">
+            <NewsCard Item="GoldNews" IsHorizontal="false" />
+            </div>
+        </MudItem>
+    }
+</MudGrid>
 </MudGrid>
 
 <style>
+    .custom-text {
+    font-weight: 600px;
+    font-size: 14px;
+    padding-left: 30px;
+    padding-right: 30px;    
+    font-family: 'Public Sans', sans-serif;
+}
+.count{
+    font-family: 'Public Sans', sans-serif;
+    font-weight: 400;
+    font-size: 12px;
+    color: var(--color-primary);
+}
     .full-width {
     @* width: 100%; *@
     background-color: var(--color-secondary-background)
@@ -172,16 +187,58 @@
     flex-wrap: wrap;
     gap: 16px;
 }
-
+@* .mud-grid-spacing-xs-6>.mud-grid-item {
+    padding-left: 0px; 
+    padding-top: 24px;
+} *@
+.mud-grid-spacing-xs-6>.mud-grid-item {
+    padding-left: 0px;
+    @* padding-top: 0px; *@
+}
 
 
 .news-tab {
-    padding: 10px 20px;
+    padding: 10px 50px 10px 50px;
+    font-family: 'Public Sans', sans-serif;
     font-weight: 600;
-    color: #444;
+    font-size: 14px;
+    color: var(--color-text-heading);
     border-radius: 4px;
     cursor: pointer;
     flex-shrink: 0;
+}
+.category-style{
+     font-family: 'Public Sans', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--color-accent);
+}
+.main-title{
+     font-family: 'Public Sans', sans-serif;
+    font-weight: 600;
+    font-size: 25px;
+    color: var(--color-text-heading);
+}
+.main-author{
+    font-family: 'Public Sans', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--color-text-heading);
+}
+.main-source {
+    font-family: 'Public Sans', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--color-primary);
+}
+.news-card-wrapper {
+    padding-right: 3px;
+}
+
+.news-card-wrapper.with-divider {
+    border-right: 1px solid #F0F0F0;
+    padding-right: 3px;
+    padding-left: 3px;
 }
 
 
@@ -195,7 +252,18 @@
 .news-tab.active {
     color: var(--color-accent);
     background-color: white;
+    padding-right: 50px;
+    padding-left: 50px;
     border-bottom: 2px solid var(--color-accent);
+    font-family: 'Public Sans', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+}
+.multiple-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* responsive columns */
+    gap: 24px;
+    padding: 16px;
 }
 
 .main-article {
@@ -234,22 +302,15 @@
     justify-content: center;
     align-items: flex-start;
     gap: 24px;
-    flex-wrap: wrap; /* fallback to wrap if needed */
+    flex-wrap: wrap; 
 }
-@* .container-style {
-    display: flex;
-    flex-direction: row;
-} *@
+
 .flex-container {
+    justify-content: space-between;
     display: flex;
     flex-wrap: wrap;
-    gap: 30px; /* 30px gap between items */
+    gap: 0px; 
 }
-@* .news-grid {
-    flex: 2;
-    max-width: 800px;
-} *@
-
 .newsletter-container {
     flex: 1;
     display: flex;
@@ -265,30 +326,47 @@
 .poular-article-container{
      display: flex;
     flex-direction: row;
-    justify-content: space-between;
-    gap: 0px;
-    align-items: flex-start;
+    gap: 30px;
+    align-items: center;
     padding: 0px ;
     width: 100%;
 }
+.card-wrapper {
+    display: flex;
+    justify-content: center;
+}
 
-/* Mobile-first responsive behavior */
+
 @@media (max-width: 600px) {
+    .custom-text {
+        font-weight: 600px;
+        font-size: 14px;
+        padding-left: 10px;
+        padding-right: 10px;    
+        font-family: 'Public Sans', sans-serif;
+    }
+    .news-tabs-wrapper{
+     width: 100%;
+     margin-top: 16px;
+}
     .news-layout {
         flex-direction: column;
         align-items: center;
     }
     .carousel-padding {
-    padding-left: 0px;
-    padding-right: 0px;
-}
-.side-padding {
-    padding-left: 30px;
-    padding-right: 30px;
-}
+        padding-left: 0px;
+        padding-right: 0px;
+    }
+    .side-padding {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
  .horizontal-scroll-wrapper {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+    }
+    .news-card-wrapper.with-divider {
+        border-right: none;
     }
 
     .news-grid {
@@ -302,16 +380,22 @@
         flex: 0 0 auto;
     }
     .mud-grid-spacing-xs-6>.mud-grid-item {
-    padding-left: 24px;
-    padding-top: 0px;
+        padding-left: 24px;
+        padding-top: 0px;
+    }
+    .poular-article-container{
+        display: flex;
+        flex-direction: column;
+        gap: 35px;
+        align-items: center;
+        width: 100%;
+    }
+    .multiple-container {
+        grid-template-columns: 1fr;
+    }
+    .responsive-grid {
+        justify-content: center;
+        padding-right: 5px;
+    }
 }
-.poular-article-container{
-    display: flex;
-    flex-direction: column;
-    gap: 35px;
-    align-items: center;
-    width: 100%;
-}
-}
-
 </style>

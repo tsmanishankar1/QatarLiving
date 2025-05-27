@@ -28,25 +28,29 @@ public class MoreArticleBase : ComponentBase
         {
             Category = "International",
             Title = "Saudi Arabia announces Umrah season calendar",
-            Url = "#"
+            Url = "#",
+            ImageUrl = "/images/sample_article.svg"
         },
         new Article
         {
             Category = "Entertainment",
             Title = "Qatar Museums to feature new publications at 34th Doha International Book Fair",
-            Url = "#"
+            Url = "#",
+            ImageUrl = "/images/sample_article.svg"
         },
         new Article
         {
             Category = "Sports",
             Title = "Qatar to play Bahrain in the final of the Arab Handball Cup on Sunday",
-            Url = "#"
+            Url = "#",
+            ImageUrl = "/images/sample_article.svg"
         },
         new Article
         {
             Category = "Sports",
             Title = "Qatar to play Bahrain in the final of the Arab Handball Cup on Sunday",
-            Url = "#"
+            Url = "#",
+            ImageUrl = "/images/sample_article.svg"
         }
     };
 

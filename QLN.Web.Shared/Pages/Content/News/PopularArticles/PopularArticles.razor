@@ -6,7 +6,7 @@
     @for (int i = 0; i < Articles.Count; i++)
     {
         <div class="article-item">
-            <div class="circle">@((i + 1).ToString(CultureInfo.InvariantCulture))</div>
+             <img src="/images/gold.svg" alt="News Image" class="news-image" />
             <div class="article-text">@Articles[i]</div>
         </div>
     }
@@ -22,7 +22,7 @@
     }
 
     .title {
-        color: #004374;
+        color: var(--color-primary);
         font-size: 20px;
         font-weight: 700;
         margin-bottom: 16px;
@@ -31,11 +31,18 @@
     }
 
     .article-item {
-        @* display: flex; *@
-        align-items: center;
-        padding: 8px 0;
-        border-bottom: 1px solid #eee;
-    }
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+}
+
+.news-image {
+    width: 177px;
+    height: 100px;
+    @* object-fit: contain; *@
+}
 
     .circle {
         background-color: #FF7F38;

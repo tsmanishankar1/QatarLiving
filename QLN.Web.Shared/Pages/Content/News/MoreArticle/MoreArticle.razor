@@ -1,12 +1,11 @@
 @inherits MoreArticleBase
-<div class="more-articles">
-    <h3><span class="accent-bar">|</span> More Articles</h3>
+<div class="more-articles side-spacing" style="padding-top: 20px;">
+    <h3 class="heading-style"><span class="accent-bar">|</span> More Articles</h3>
 
     @foreach (var article in Articles)
     {
         <div class="article-entry">
             <div class="article-content">
-                <div class="article-meta">@article.Category</div>
                 <a href="@article.Url" class="article-title">@article.Title</a>
             </div>
             @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
@@ -20,14 +19,22 @@
 <style>
     .more-articles {
         max-width: 600px;
-        margin: 0 auto;
         font-family: 'Public Sans', sans-serif;
     }
 
     .accent-bar {
-        color: #003865;
-        font-weight: bold;
         margin-right: 4px;
+        font-weight: bold;
+        width: 6px;   
+        font-family: 'Public Sans', sans-serif;
+        color: var(--color-primary);
+    }
+    .heading-style {
+        margin-right: 4px;
+        font-size: 25px;
+        font-weight: 600;
+        font-family: 'Public Sans', sans-serif;
+        color: var(--color-text-heading);
     }
 
     h3 {
@@ -58,21 +65,29 @@
     .article-title {
         display: block;
         font-size: 16px;
-        font-weight: 500;
+        font-weight: 600;
+        font-family: 'Public Sans', sans-serif;
         text-decoration: none;
-        color: #000;
+        color: var(--color-text-heading);
         line-height: 1.4;
     }
 
     .article-title:hover {
         text-decoration: underline;
+        color: var(--color-primary);
     }
 
     .article-image {
-        width: 100px;
-        height: auto;
+        width: 124px;
+        height: 70px;
         border-radius: 6px;
         object-fit: cover;
     }
+    @@media (max-width: 768px) {
+        .side-spacing{
+            padding-right: 16px;
+            padding-left: 16px;
+        }
+        }
 </style>
 
