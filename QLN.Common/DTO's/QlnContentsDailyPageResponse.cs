@@ -12,7 +12,7 @@ namespace QLN.Common.Infrastructure.DTO_s
     // Unique Queue Responses for Daily Content
     public class DailyEvent : BaseQueueResponse<ContentEvent>;
     public class DailyFeaturedEvents : BaseQueueResponse<ContentPost>; // think this should be ContentEvent, but keeping it as ContentPost for now to match the original structure
-    public class DailyFifaArabCup : BaseQueueResponse<ContentEvent>;
+    //public class DailyFifaArabCup : BaseQueueResponse<ContentEvent>;
     public class DailyMoreArticles : BaseQueueResponse<ContentPost>;
     public class DailyTopStory : BaseQueueResponse<ContentPost>;
     public class DailyWatchOnQatarLiving : BaseQueueResponse<ContentPost>;
@@ -31,8 +31,8 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonPropertyName("daily_watch_on_qatar_living")]
         public DailyWatchOnQatarLiving DailyWatchOnQatarLiving { get; set; }
 
-        [JsonPropertyName("daily_fifa_arab_cup")]
-        public DailyFifaArabCup DailyFifaArabCup { get; set; }
+        //[JsonPropertyName("daily_fifa_arab_cup")]
+        //public DailyFifaArabCup DailyFifaArabCup { get; set; }
 
         [JsonPropertyName("daily_more_articles")]
         public DailyMoreArticles DailyMoreArticles { get; set; }

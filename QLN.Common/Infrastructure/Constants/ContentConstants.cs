@@ -3,6 +3,7 @@
     public static class ContentConstants
     {
         public const string LandingPath = "/qlnapi/landing";
+        public const string EventsPath = "/qlnapi/events";
 
         // News
         public const string QlnNewsNewsCommunity = "qln_news_news_community";

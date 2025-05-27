@@ -10,16 +10,14 @@ using System.Threading.Tasks;
 namespace QLN.Common.Infrastructure.DTO_s
 {
     // Unique Queue Responses for News Community
-    public class QlnNewsNewsCommunityTopStory : BaseQueueResponse<ContentPost>;
-    public class QlnNewsNewsCommunityMoreArticles : BaseQueueResponse<ContentPost>;
 
     public class QlnNewsNewsCommunity
     {
         [JsonPropertyName("qln_news_news_community_top_story")]
-        public QlnNewsNewsCommunityTopStory QlnNewsNewsCommunityTopStory { get; set; }
+        public TopStory TopStory { get; set; }
 
         [JsonPropertyName("qln_news_news_community_more_articles")]
-        public QlnNewsNewsCommunityMoreArticles QlnNewsNewsCommunityMoreArticles { get; set; }
+        public MoreArticles MoreArticles { get; set; }
     }
 
     public class NewsCommunityPageResponse

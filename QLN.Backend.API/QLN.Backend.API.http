@@ -1,16 +1,24 @@
 @QLN.Backend.API_HostAddress = https://localhost:7161
 
-@DrupalQueue = qln_news_news_qatar
+@DrupalQueue = qln_news_news_law
 
 GET {{QLN.Backend.API_HostAddress}}/api/content/{{DrupalQueue}}/landing
 Accept: application/json
 
+###
+
+GET {{QLN.Backend.API_HostAddress}}/api/content/events
+Accept: application/json
 
 ###
 
 @QLN.Drupal.API_HostAddress = https://test.qatarliving.com
 
-GET {{QLN.Drupal.API_HostAddress}}/qlnapi/landing/qln_contents_daily
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/events
+Accept: application/json
+
+###
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/landing/{{DrupalQueue}}
 Accept: application/json
 
 ###

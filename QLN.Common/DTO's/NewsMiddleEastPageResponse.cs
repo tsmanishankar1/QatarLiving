@@ -9,21 +9,20 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.DTO_s
 {
-    // Unique Queue Responses for New Qatar
+    // Unique Queue Responses for News Middle East
 
-    public class QlnNewsNewsQatar
+    public class QlnNewsNewsMiddleEast
     {
-        [JsonPropertyName("news_news_qatar_top_story")]
+        [JsonPropertyName("news_news_middle_east_topstory")]
         public TopStory TopStory { get; set; }
 
-        [JsonPropertyName("news_news_qatar_more_articles")]
+        [JsonPropertyName("news_news_middle_east_more_articles")]
         public MoreArticles MoreArticles { get; set; }
     }
 
-    public class NewsQatarPageResponse
+    public class NewsMiddleEastPageResponse
     {
-        [JsonPropertyName(ContentConstants.QlnNewsNewsQatar)]
-        public QlnNewsNewsQatar QlnNewsNewsQatar { get; set; }
+        [JsonPropertyName(ContentConstants.QlnNewsNewsMiddleEast)]
+        public QlnNewsNewsMiddleEast QlnNewsNewsMiddleEast { get; set; }
     }
-
 }

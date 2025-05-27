@@ -9,12 +9,10 @@ namespace QLN.Common.Infrastructure.IService.BannerService
 {
     public interface IContentService
     {
-        Task<QlnContentsDailyPageResponse?> GetContentsDailyPageAsync();
 
-        Task<ContentPost?> GetPostBySlugAsync(string slug);
-        Task<ContentEvent?> GetEventBySlugAsync(string slug);
-        Task<dynamic?> GetLandingByQueuePageAsync(string queue_name);
-        Task<NewsCommunityPageResponse?> GetNewsCommunityAsync();
-        Task<NewsQatarPageResponse?> GetNewsQatarAsync();
+        Task<ContentPost?> GetPostBySlugAsync(string slug, CancellationToken cancellationToken);
+        Task<ContentEvent?> GetEventBySlugAsync(string slug, CancellationToken cancellationToken);
+        Task<T?> GetPostsFromDrupalAsync<T>(string queue_name, CancellationToken cancellationToken);
+        Task<List<ContentEvent>?> GetEventsFromDrupalAsync(CancellationToken cancellationToken);
     }
 }

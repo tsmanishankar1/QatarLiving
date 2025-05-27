@@ -7,6 +7,7 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonPropertyName("nid")]
         public string Nid { get; set; }
 
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("date_created")]
         public string DateCreated { get; set; }
 

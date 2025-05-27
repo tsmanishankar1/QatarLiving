@@ -1,59 +1,27 @@
 ﻿using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.BannerService;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace QLN.Backend.API.Service.ContentService
 {
     public class ExternalContentService(HttpClient httpClient) : IContentService
     {
-        public async Task<QlnContentsDailyPageResponse?> GetContentsDailyPageAsync()
+
+        public async Task<T?> GetPostsFromDrupalAsync<T>(string queue_name, CancellationToken cancellationToken)
         {
-            return await httpClient.GetFromJsonAsync<QlnContentsDailyPageResponse>($"{ContentConstants.LandingPath}/{ContentConstants.QlnContentsDaily}");
+            return await httpClient.GetFromJsonAsync<T>($"{ContentConstants.LandingPath}/{queue_name}", cancellationToken);
         }
 
-        public async Task<NewsCommunityPageResponse?> GetNewsCommunityAsync()
+        public async Task<List<ContentEvent>?> GetEventsFromDrupalAsync(CancellationToken cancellationToken)
         {
-            return await httpClient.GetFromJsonAsync<NewsCommunityPageResponse>($"{ContentConstants.LandingPath}/{ContentConstants.QlnNewsNewsCommunity}");
+            return await httpClient.GetFromJsonAsync<List<ContentEvent>>(ContentConstants.EventsPath, cancellationToken);
         }
 
-        public async Task<NewsQatarPageResponse?> GetNewsQatarAsync()
+        public async Task<ContentPost?> GetPostBySlugAsync(string slug, CancellationToken cancellationToken)
         {
-            return await httpClient.GetFromJsonAsync<NewsQatarPageResponse>($"{ContentConstants.LandingPath}/{ContentConstants.QlnNewsNewsQatar}");
-        }
-
-        //public async Task<NewsMiddleEast?> GetNewsMiddleEastAsync()
-        //{
-        //    return await httpClient.GetFromJsonAsync<NewsMiddleEast>($"{ContentConstants.LandingPath}/{ContentConstants.QlnNewsNewsMiddleEast}");
-        //}
-
-        //public async Task<NewsWorld?> GetNewsWorldAsync()
-        //{
-        //    return await httpClient.GetFromJsonAsync<NewsWorld>($"{ContentConstants.LandingPath}/{ContentConstants.QlnNewsNewsWorld}");
-        //}
-
-        //public async Task<NewsHealthEducation?> GetNewsHealthEducationAsync()
-        //{
-        //    return await httpClient.GetFromJsonAsync<NewsHealthEducation>($"{ContentConstants.LandingPath}/{ContentConstants.QlnNewsNewsHealthEducation}");
-        //}
-
-        //public async Task<NewsLaw?> GetNewsLawAsync()
-        //{
-        //    return await httpClient.GetFromJsonAsync<NewsLaw>($"{ContentConstants.LandingPath}/{ContentConstants.QlnNewsNewsLaw}");
-        //}
-
-        /// <summary>
-        /// Tester method for testing out as yet unmapped Drupal queues
-        /// </summary>
-        /// <param name="queue_name">Name of Queue on Drupal System</param>
-        /// <returns>anonymous object, so you can see all that is returned</returns>
-        public async Task<dynamic?> GetLandingByQueuePageAsync(string queue_name)
-        {
-            return await httpClient.GetFromJsonAsync<dynamic>($"{ContentConstants.LandingPath}/{queue_name}");
-        }
-
-        public async Task<ContentPost?> GetPostBySlugAsync(string slug)
-        {
-            var results = await httpClient.GetFromJsonAsync<ContentPost>($"{ContentConstants.GetPostBySlugPath}?slug={slug}");
+            var results = await httpClient.GetFromJsonAsync<ContentPost>($"{ContentConstants.GetPostBySlugPath}?slug={slug}", cancellationToken);
 
             if (results?.NodeType == "post")
             {
@@ -63,9 +31,9 @@ namespace QLN.Backend.API.Service.ContentService
             return null;
         }
 
-        public async Task<ContentEvent?> GetEventBySlugAsync(string slug)
+        public async Task<ContentEvent?> GetEventBySlugAsync(string slug, CancellationToken cancellationToken)
         {
-            var results = await httpClient.GetFromJsonAsync<ContentEvent>($"{ContentConstants.GetEventBySlugPath}?slug={slug}");
+            var results = await httpClient.GetFromJsonAsync<ContentEvent>($"{ContentConstants.GetEventBySlugPath}?slug={slug}", cancellationToken);
 
             if (results?.NodeType == "event")
             {
