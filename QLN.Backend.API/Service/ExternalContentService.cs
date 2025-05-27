@@ -8,21 +8,38 @@ namespace QLN.Backend.API.Service
         const string LandingPath = "/qlnapi/landing/qln_contents_daily";
         const string GetEventBySlugPath = "/qlnapi/node?slug=";
         const string GetPostBySlugPath = "/qlnapi/node?slug=";
-        public async Task<ContentPost?> GetPostBySlugAsync(string slug)
-        {
-            return await httpClient.GetFromJsonAsync<ContentPost>($"{GetPostBySlugPath}{slug}");
-
-        }
-
-        public async Task<ContentEvent?> GetEventBySlugAsync(string slug)
-        {
-            return await httpClient.GetFromJsonAsync<ContentEvent>($"{GetEventBySlugPath}{slug}");
-
-        }
 
         public async Task<ContentLandingPageResponse?> GetLandingPageAsync()
         {
             return await httpClient.GetFromJsonAsync<ContentLandingPageResponse>(LandingPath);
         }
+
+        public async Task<ContentPost?> GetPostBySlugAsync(string slug)
+        {
+            var results = await httpClient.GetFromJsonAsync<ContentPost>($"{GetPostBySlugPath}{slug}");
+
+            if (results?.NodeType == "post")
+            {
+                return results;
+            }
+
+            return null;
+
+        }
+
+        public async Task<ContentEvent?> GetEventBySlugAsync(string slug)
+        {
+            var results = await httpClient.GetFromJsonAsync<ContentEvent>($"{GetEventBySlugPath}{slug}");
+
+            if(results?.NodeType == "event")
+            {
+                return results;
+            }
+
+            return null;
+
+        }
+
+        
     }
 }

@@ -23,6 +23,29 @@ namespace QLN.Common.Infrastructure.DTO_s
     public class DailyTopStory : BaseQueueResponse<ContentPost>;
     public class DailyWatchOnQatarLiving : BaseQueueResponse<ContentPost>;
 
+    public class ContentBase
+    {
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonPropertyName("page_name")]
+        public string PageName { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonPropertyName("queue_name")]
+        public string QueueName { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonPropertyName("queue_label")]
+        public string QueueLabel { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonPropertyName("node_type")]
+        public string NodeType { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonPropertyName("slug")]
+        public string Slug { get; set; }
+    }
+
     public class ContentEvent : ContentPost
     {
         [JsonPropertyName("entity_organizer")]
@@ -48,20 +71,8 @@ namespace QLN.Common.Infrastructure.DTO_s
     }
 
 
-    public class ContentPost
+    public class ContentPost : ContentBase
     {
-        [JsonPropertyName("page_name")]
-        public string PageName { get; set; }
-
-        [JsonPropertyName("queue_name")]
-        public string QueueName { get; set; }
-
-        [JsonPropertyName("queue_label")]
-        public string QueueLabel { get; set; }
-
-        [JsonPropertyName("node_type")]
-        public string NodeType { get; set; }
-
         [JsonPropertyName("nid")]
         public string Nid { get; set; }
 
@@ -73,9 +84,6 @@ namespace QLN.Common.Infrastructure.DTO_s
 
         [JsonPropertyName("title")]
         public string Title { get; set; }
-
-        [JsonPropertyName("slug")]
-        public string Slug { get; set; }
 
         [JsonPropertyName("description")]
         public string Description { get; set; }

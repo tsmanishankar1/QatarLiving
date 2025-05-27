@@ -15,11 +15,42 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         /// <summary>
         /// Maps Content endpoints: detail and landing.
         /// </summary>
+        public static RouteGroupBuilder MapContentLandingEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.MapGet("/landing", async (
+                    [FromServices] IContentService svc)
+                =>
+            {
+                try
+                {
+                    var model = await svc.GetLandingPageAsync();
+                    return Results.Ok(model);
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { Message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Landing Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("GetContentLanding")
+            .WithTags("Content");
+
+            return group;
+        }
+
         public static RouteGroupBuilder MapGetPostBySlugEndpoint(this RouteGroupBuilder group)
         {
-            
-            // GET /api/{vertical}/{slug}
-            group.MapGet("/content/{slug}", async (
+
+            // GET /api/content/post/{slug}
+            group.MapGet("/post/{slug}", async (
                     [FromRoute] string slug,
                     [FromServices] IContentService svc)
                 =>
@@ -50,7 +81,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         public static RouteGroupBuilder MapGetEventBySlugEndpoint(this RouteGroupBuilder group)
         {
 
-            // GET /api/event/{slug}
+            // GET /api/content/event/{slug}
             group.MapGet("/event/{slug}", async (
                     [FromRoute] string slug,
                     [FromServices] IContentService svc)
@@ -79,36 +110,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             return group;
         }
 
-        public static RouteGroupBuilder MapContentLandingEndpoint(this RouteGroupBuilder group)
-        {
-
-            // GET /api/content/landing
-            group.MapGet("/content/landing", async (
-                    [FromServices] IContentService svc)
-                =>
-            {
-                try
-                {
-                    var model = await svc.GetLandingPageAsync();
-                    return Results.Ok(model);
-                }
-                catch (ArgumentException ex)
-                {
-                    return Results.BadRequest(new { Message = ex.Message });
-                }
-                catch (Exception ex)
-                {
-                    return Results.Problem(
-                        title: "Landing Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-            .WithName("GetContentLanding")
-            .WithTags("Content");
-
-            return group;
-        }
     }
 }
 
