@@ -18,8 +18,9 @@
                 }
             }
 
-            <input type="text" class="search-box" value="@SearchTerm" @oninput="OnInputChanged" @onfocus="ShowDropdown"
-                placeholder="@(SelectedItems.Count >= 2 ? "" : "Search location")" />
+            <input @ref="SearchInputRef" type="text" class="search-box" value="@SearchTerm" @oninput="OnInputChanged"
+                @onfocus="ShowDropdown" @onkeydown="HandleKeyDown"
+                placeholder="@(SelectedItems.Count == 0 ? "Search location" : (SelectedItems.Count == 1 ? "+ Add" : ""))" />
         </div>
 
         <div class="location-icon">
@@ -27,12 +28,10 @@
         </div>
     </div>
 
-
     @if (ShowSuggestions && (FilteredItems.Any() || SelectedItems.Any()))
     {
         <div class="dropdown-list" @onmousedown="() => IsClickingDropdown = true"
             @onmouseup="() => IsClickingDropdown = false">
-
             <div class="dropdown-top-fixed">
                 @if (SelectedItems.Any())
                 {
@@ -56,7 +55,6 @@
         </div>
     }
 </div>
-
 @code {
     [Parameter] public List<TItem> Items { get; set; } = new();
     [Parameter] public EventCallback<List<TItem>> SelectedItemsChanged { get; set; }
@@ -69,10 +67,19 @@
     private string SearchTerm = string.Empty;
     private bool ShowSuggestions = false;
     private bool IsClickingDropdown = false;
+    private ElementReference SearchInputRef;
 
     private async Task OnInputChanged(ChangeEventArgs e)
     {
-        SearchTerm = e?.Value?.ToString() ?? "";
+        var newValue = e?.Value?.ToString() ?? "";
+
+        if (string.IsNullOrEmpty(newValue) && string.IsNullOrEmpty(SearchTerm) && SelectedItems.Any())
+        {
+            // Backspace triggers removal of last chip
+            RemoveLocation(SelectedItems.Last());
+        }
+
+        SearchTerm = newValue;
         await SearchLocations();
     }
 
@@ -126,12 +133,25 @@
         }
     }
 
-    private void FocusInput() => ShowDropdown();
+    private async void FocusInput()
+    {
+        ShowDropdown();
+        await Task.Yield(); // wait for DOM render
+        await SearchInputRef.FocusAsync();
+    }
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Backspace" && string.IsNullOrEmpty(SearchTerm) && SelectedItems.Any())
+        {
+            RemoveLocation(SelectedItems.Last());
+        }
+    }
 
     private string ShortLabel(TItem item)
     {
         var full = GetLabel(item);
-        return full.Length > 12 ? full.Substring(0, 12) + "…" : full;
+        return full.Length > 5 ? full.Substring(0, 5) + "…" : full;
     }
 }
 
@@ -169,9 +189,11 @@
         border: none;
         outline: none;
         font-size: 14px;
-        min-width: 120px;
+        min-width: 10px;
         flex: 1;
         background: transparent;
+        width: auto;
+        max-width: 100%;
     }
 
     .location-icon {
@@ -182,8 +204,6 @@
         padding-left: 8px;
         flex-shrink: 0;
     }
-
-
 
     .chip {
         background-color: #f0f0f0;

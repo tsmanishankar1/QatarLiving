@@ -1,15 +1,10 @@
 @using MudBlazor
 @using System.Collections.Generic
 
-<MudCarousel Class="mud-width-full" Style="height: 230px;"
-             ShowArrows="@ShowArrows"
-             @onmouseover="() => OnHoverChanged(true)"
-             @onmouseout="() => OnHoverChanged(false)"
-             EnableSwipeGesture="@EnableSwipeGesture"
-             AutoCycle="@AutoCycle"
-             ShowBullets="false"
-             TData="string">
-             
+<MudCarousel Class="mud-width-full responsive-carousel" ShowArrows="@ShowArrows"
+    @onmouseover="() => OnHoverChanged(true)" @onmouseout="() => OnHoverChanged(false)"
+    EnableSwipeGesture="@EnableSwipeGesture" AutoCycle="@AutoCycle" ShowBullets="false" TData="string">
+
 
     @if (ImageUrls != null)
     {
@@ -42,6 +37,18 @@
     public Transition Transition { get; set; } = Transition.Slide;
     private void OnHoverChanged(bool hoverState)
     {
-    AutoCycle = !hoverState;
+        AutoCycle = !hoverState;
     }
 }
+
+<style>
+    .responsive-carousel {
+        height: 230px;
+    }
+
+    @@media (max-width: 770px) {
+        .responsive-carousel {
+            height: 150px;
+        }
+    }
+</style>

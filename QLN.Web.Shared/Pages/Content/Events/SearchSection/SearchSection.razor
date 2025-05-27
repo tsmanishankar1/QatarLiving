@@ -9,7 +9,7 @@
             <!-- Search Field: Icon Left, Input Right -->
             <div class="search-field search-input">
                 <MudIcon Icon="@Icons.Material.Filled.Search" class="left-icon" />
-                <input type="text" placeholder="Search" class="text-input" />
+                <input type="text" id="event-search-input" placeholder="Search" class="text-input" />
             </div>
 
             <!-- Location Field: Input Left, Icon Right -->
@@ -377,7 +377,7 @@
         background-color: var(--color-accent);
     }
 
-    @@media (max-width: 770px) {
+    @@media (max-width: 1010px) {
         .search-container {
             flex-direction: column;
             align-items: stretch;
@@ -416,20 +416,11 @@
         }
     }
 
-
-    @@media (min-width: 770px) and (max-width: 858px) {
-
-        .search-field,
-        .select-field {
-            width: 150px !important;
-        }
-    }
-
-    @@media (min-width: 858px) and (max-width: 1024px) {
+    @@media (min-width: 1010px) and (max-width: 1024px) {
 
         .search-field,
         .select-field {
-            width: 200px !important;
+            width: 220px !important;
         }
     }
 </style>

@@ -7,22 +7,23 @@
 @using QLN.Web.Shared.Pages.Content.Events.EventsList
 @using QLN.Web.Shared.Components.FeaturedEventCard
 
-<div style="width: 100%; background-color: var(--color-secondary-background);">
-    <div class="carousel-responsive-container">
+<div style="width: 100%;background-color: var(--color-secondary-background);">
+    <div style="max-width: 1200px; margin: 0 auto;">
+        <div class="carousel-responsive-container">
 
-        <!-- Carousel Banner -->
-        <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
-            Transition="Transition.Slide" />
+            <!-- Carousel Banner -->
+            <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
+                Transition="Transition.Slide" />
 
 
+        </div>
+        <FeaturedEvents FeaturedEvent="featuredEeventData" Loading="isLoading" />
+        <div class="responsive-container">
+
+            <SearchSection />
+            <EventsList />
+        </div>
     </div>
-    <FeaturedEvents FeaturedEvent="featuredEeventData" Loading="isLoading" />
-    <div class="responsive-container">
-
-        <SearchSection />
-        <EventsList />
-    </div>
-
 </div>
 
 @code {

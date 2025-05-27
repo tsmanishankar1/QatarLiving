@@ -23,7 +23,7 @@ namespace QLN.Web.Shared.Components.CustomSelect2
         private const int MobileBreakpoint = 770;
 
         protected MudDateRangePicker _pickerRef;
-     protected DateRange _dateRange = new ();
+        protected DateRange _dateRange = new ();
 
 
 

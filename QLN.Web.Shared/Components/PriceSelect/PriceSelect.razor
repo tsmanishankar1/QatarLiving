@@ -5,8 +5,8 @@
     @if (IsMobile)
     {
         <div class="sort-mobile-display" @onclick="ToggleDropdown">
-            <span class="sort-label-mobile">Sort</span>
             <MudIcon Icon="@Icons.Material.Rounded.SwapVert" Class="sort-icon-mobile" />
+            <span class="sort-label-mobile">Sort</span>
         </div>
     }
 
@@ -153,6 +153,7 @@
     .sort-mobile-display {
         display: flex;
         align-items: center;
+        justify-content: flex-end;
         gap: 4px;
     }
 
