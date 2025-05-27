@@ -20,7 +20,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 {
     public static class ClassifiedEndpoints
     {
-        public static RouteGroupBuilder MapClassifiedLandingEndpoints(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapClassifiedEndpoints(this RouteGroupBuilder group)
         {
             // SEARCH
             group.MapPost("/search", async (
