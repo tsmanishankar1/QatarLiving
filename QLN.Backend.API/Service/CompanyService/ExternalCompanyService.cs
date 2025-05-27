@@ -2,6 +2,8 @@
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
+using System.ComponentModel.Design;
+using System.Net;
 namespace QLN.Backend.API.Service.CompanyService
 {
     public class ExternalCompanyService : ICompanyService
@@ -45,6 +47,11 @@ namespace QLN.Backend.API.Service.CompanyService
                     CompanyServiceAppId,
                     url,
                     cancellationToken);
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning(ex, "Company with ID {id} not found.", id);
+                return null;
             }
             catch (Exception ex)
             {
@@ -101,6 +108,11 @@ namespace QLN.Backend.API.Service.CompanyService
                     url,
                     cancellationToken);
             }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning(ex, "Company with ID {id} not found.", id);
+                return;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting company profile with ID: {Id}", id);
@@ -117,6 +129,11 @@ namespace QLN.Backend.API.Service.CompanyService
                     CompanyServiceAppId,
                     url,
                     cancellationToken);
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning(ex, "Company with ID not found.");
+                return null;
             }
             catch (Exception ex)
             {
@@ -135,11 +152,59 @@ namespace QLN.Backend.API.Service.CompanyService
                     url,
                     cancellationToken);
             }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning(ex, "Company with ID not found.");
+                return null;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving verification status for user {UserId} and vertical {VerticalType}", userId, verticalType);
                 throw;
             }
         }
+        public async Task ApproveCompany(CompanyApproveDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "/api/companyprofile/approve";
+                await _dapr.InvokeMethodAsync<CompanyApproveDto>(
+                    HttpMethod.Post,
+                    CompanyServiceAppId,
+                    url,
+                    dto,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving company profile.");
+                throw;
+            }
+        }
+        public async Task<CompanyApprovalResponseDto?> GetCompanyApprovalInfo(Guid companyId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/companyprofile/getApproval?companyId={companyId}";
+                var response = await _dapr.InvokeMethodAsync<CompanyApprovalResponseDto>(
+                    HttpMethod.Get,
+                    CompanyServiceAppId,
+                    url,
+                    cancellationToken);
+
+                return response;
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning(ex, "Company with ID {CompanyId} not found.", companyId);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching approval info for company ID {CompanyId}.", companyId);
+                throw;
+            }
+        }
+
     }
 }

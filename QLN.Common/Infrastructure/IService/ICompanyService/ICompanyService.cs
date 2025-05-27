@@ -17,5 +17,7 @@ namespace QLN.Common.Infrastructure.IService.ICompanyService
         Task DeleteCompany(Guid id, CancellationToken cancellationToken = default);
         Task<CompanyProfileCompletionStatusDto?> GetCompanyProfileCompletionStatus(Guid userId, string vertical, CancellationToken cancellationToken = default);
         Task<CompanyProfileVerificationStatusDto> GetVerificationStatus(Guid userId, VerticalType verticalType, CancellationToken cancellationToken = default);
+        Task ApproveCompany(CompanyApproveDto dto, CancellationToken cancellationToken = default);
+        Task<CompanyApprovalResponseDto?> GetCompanyApprovalInfo(Guid companyId, CancellationToken cancellationToken = default);
     }
 }

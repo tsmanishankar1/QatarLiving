@@ -7,6 +7,7 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp;
+using System.Net;
 
 namespace QLN.Company.MS.Service
 {
@@ -161,6 +162,7 @@ namespace QLN.Company.MS.Service
                 {
                     Id = id,
                     VerticalId = dto.VerticalId,
+                    CategoryId = dto.CategoryId,
                     UserId = dto.UserId,
                     BusinessName = dto.BusinessName,
                     Country = dto.Country,
@@ -273,8 +275,8 @@ namespace QLN.Company.MS.Service
                     { "StartDay", c => !string.IsNullOrWhiteSpace(c.StartDay) },
                     { "EndDay", c => !string.IsNullOrWhiteSpace(c.EndDay) },
                     { "NatureOfBusiness", c => !string.IsNullOrWhiteSpace(c.NatureOfBusiness) },
-                    { "CompanySize", c => !string.IsNullOrWhiteSpace(c.CompanySize) },
-                    { "CompanyType", c => !string.IsNullOrWhiteSpace(c.CompanyType) },
+                    { "CompanySize", c => c.CompanySize != default },
+                    { "CompanyType", c => c.CompanyType != default },
                     { "UserDesignation", c => !string.IsNullOrWhiteSpace(c.UserDesignation) },
                     { "BusinessDescription", c => !string.IsNullOrWhiteSpace(c.BusinessDescription) },
                     { "CRNumber", c => c.CRNumber > 0 },
@@ -326,5 +328,51 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
+        public async Task ApproveCompany(CompanyApproveDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var allCompanies = await GetAllCompanies(cancellationToken);
+                var company = allCompanies.FirstOrDefault(c => c.Id == dto.CompanyId);
+
+                if (company == null)
+                    throw new KeyNotFoundException($"Company with ID {dto.CompanyId} not found.");
+
+                company.IsVerified = dto.IsVerified ?? false;
+                company.Status = dto.Status;
+
+                await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, company.Id.ToString(), company, cancellationToken: cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving company with ID {CompanyId}", dto.CompanyId);
+                throw;
+            }
+        }
+        public async Task<CompanyApprovalResponseDto?> GetCompanyApprovalInfo(Guid companyId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var allCompanies = await GetAllCompanies(cancellationToken);
+                var company = allCompanies.FirstOrDefault(c => c.Id == companyId);
+
+                if (company == null) return null;
+
+                return new CompanyApprovalResponseDto
+                {
+                    CompanyId = company.Id,
+                    Name = company.BusinessName,
+                    IsVerified = company.IsVerified,
+                    StatusId = company.Status,
+                    StatusName = company.Status.ToString()
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching company with ID {CompanyId}");
+                throw;
+            }
+        }
+
     }
 }
