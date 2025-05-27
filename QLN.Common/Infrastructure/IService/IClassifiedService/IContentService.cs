@@ -9,9 +9,12 @@ namespace QLN.Common.Infrastructure.IService.BannerService
 {
     public interface IContentService
     {
-        Task<ContentLandingPageResponse?> GetLandingPageAsync();
+        Task<QlnContentsDailyPageResponse?> GetContentsDailyPageAsync();
 
         Task<ContentPost?> GetPostBySlugAsync(string slug);
         Task<ContentEvent?> GetEventBySlugAsync(string slug);
+        Task<dynamic?> GetLandingByQueuePageAsync(string queue_name);
+        Task<NewsCommunityPageResponse?> GetNewsCommunityAsync();
+        Task<NewsQatarPageResponse?> GetNewsQatarAsync();
     }
 }

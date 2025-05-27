@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Routing;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.IService.BannerService;
+using QLN.Common.Infrastructure.Constants;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
 {
@@ -15,17 +16,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         /// <summary>
         /// Maps Content endpoints: detail and landing.
         /// </summary>
-        public static RouteGroupBuilder MapContentLandingEndpoint(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapContentsDailyEndpoint(this RouteGroupBuilder group)
         {
 
             // GET /api/content/landing
-            group.MapGet("/landing", async (
+            group.MapGet($"{ContentConstants.QlnContentsDaily}/landing", async (
                     [FromServices] IContentService svc)
                 =>
             {
                 try
                 {
-                    var model = await svc.GetLandingPageAsync();
+                    var model = await svc.GetContentsDailyPageAsync();
                     return Results.Ok(model);
                 }
                 catch (ArgumentException ex)
@@ -40,7 +41,102 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                         statusCode: StatusCodes.Status500InternalServerError);
                 }
             })
-            .WithName("GetContentLanding")
+            .WithName("GetContentsDaily")
+            .WithTags("Content");
+
+            return group;
+        }
+
+        public static RouteGroupBuilder MapNewsCommunityEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.MapGet($"{ContentConstants.QlnNewsNewsCommunity}/landing", async (
+                    [FromServices] IContentService svc)
+                =>
+            {
+                try
+                {
+                    var model = await svc.GetNewsCommunityAsync();
+                    return Results.Ok(model);
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { Message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Landing Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("GetNewsCommunity")
+            .WithTags("Content");
+
+            return group;
+        }
+
+        public static RouteGroupBuilder MapNewsQatarEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.MapGet($"{ContentConstants.QlnNewsNewsQatar}/landing", async (
+                    [FromServices] IContentService svc)
+                =>
+            {
+                try
+                {
+                    var model = await svc.GetNewsQatarAsync();
+                    return Results.Ok(model);
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { Message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Landing Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("GetNewsQatar")
+            .WithTags("Content");
+
+            return group;
+        }
+
+        public static RouteGroupBuilder MapContentQueueEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.MapGet("{queue}/landing", async (
+                    [FromRoute] string queue,
+                    [FromServices] IContentService svc)
+                =>
+            {
+                try
+                {
+                    var model = await svc.GetLandingByQueuePageAsync(queue);
+                    return Results.Ok(model);
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { Message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Landing Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("GetLandingByQueue")
+            .WithDescription("Tester method for testing out as yet unmapped Drupal queues - returns a dynamic object so isnt very efficient")
             .WithTags("Content");
 
             return group;

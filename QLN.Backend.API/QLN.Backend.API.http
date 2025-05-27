@@ -1,7 +1,10 @@
-@QLN.Backend.API_HostAddress = http://localhost:5200
+@QLN.Backend.API_HostAddress = https://localhost:7161
 
-GET {{QLN.Backend.API_HostAddress}}/weatherforecast/
+@DrupalQueue = qln_news_news_qatar
+
+GET {{QLN.Backend.API_HostAddress}}/api/content/{{DrupalQueue}}/landing
 Accept: application/json
+
 
 ###
 
