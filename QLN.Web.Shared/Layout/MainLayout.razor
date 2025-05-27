@@ -18,29 +18,34 @@
 
     <div class="header-left">
         <NavLink href="/">
-            <MudImage id="logoImage" Src="/images/logo.png" Alt="Qatar Living" Height="30" />
+            <MudImage id="logoImage" Src="/images/Headerlogo.svg" Alt="Qatar Living" Width="126" Height="48" />
         </NavLink>
     </div>
-    <div class="@($"nav-container {(showMobileMenu ? "mobile-menu-open" : "")}")">
-        <nav class="nav-links">
-         
-            <NavLink id="propertiesLink" href="/properties" class="nav-link ">Properties</NavLink>
-            <NavLink id="vehiclesLink" href="/vehicles" class="nav-link ">Vehicles</NavLink>
-            <NavLink id="classifiedsLink" href="/classifieds" class="nav-link ">Classifieds</NavLink>
-            <NavLink id="servicesLink" href="/services" class="nav-link ">Services</NavLink>
-            <NavLink id="jobsLink" href="/jobs" class="nav-link ">Jobs</NavLink>
-            <NavLink id="rewardsLink" href="/rewards" class="nav-link ">Rewards</NavLink>
-        </nav>
+    <div style="display: flex; align-items: center; gap: 36px;">
+        <div class="@($"nav-container {(showMobileMenu ? "mobile-menu-open" : "")}")">
+            <nav class="nav-links">
+                <NavLink id="propertiesLink" href="/properties" class="nav-link">Properties</NavLink>
+                <NavLink id="vehiclesLink" href="/vehicles" class="nav-link">Vehicles</NavLink>
+                <NavLink id="classifiedsLink" href="/classifieds" class="nav-link">Classifieds</NavLink>
+                <NavLink id="servicesLink" href="/services" class="nav-link">Services</NavLink>
+                <NavLink id="jobsLink" href="/jobs" class="nav-link">Jobs</NavLink>
+                <NavLink id="rewardsLink" href="/rewards" class="nav-link">Rewards</NavLink>
+                <NavLink id="rewardsLink"  class="nav-link d-flex align-items-center">
+                More
+                <img src="/images/header/arrow_down.svg" alt="Down arrow" style="width: 20px; height: 20px; margin-left: 5px;" />
+                </NavLink>
+            </nav>
+        </div>
 
-    </div>
-
-    <div class="header-right">
         <div class="post-button-wrapper">
                 <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
                 <ActivatorContent>
-                <MudButton id="headerPostButton" Variant="Variant.Filled" Style="background-color: #FF7F38; color: white;" Size="Size.Small"
-                    StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn desktop-post-btn">
-                    Post
+                <MudButton id="headerPostButton" Variant="Variant.Filled"
+                    Style="background-color: #FF7F38; color: white;"
+                    Size="Size.Medium"
+                    StartIcon="@Icons.Material.Filled.Add"
+                    Class="post-ad-btn desktop-post-btn">
+                    <span class="post-ad-text">Post Ad</span>
                 </MudButton>
            </ActivatorContent>
                 <ChildContent>
@@ -59,8 +64,9 @@
             <img src="/images/header/add_post_svg.svg" alt="Post" class="mobile-post-icon"
                 @onclick="@(() => NavManager.NavigateTo("/"))" />
         </div>
+    </div>
 
-
+    <div class="header-right">
         <MudAvatar Size="Size.Medium" Style="background-color: #E8F2FE;">
             <img id="favouriteIcon" src="/images/header/favourite_icon.svg" alt="Account" style="width: 70%; height: 70%; padding: 4px;" />
         </MudAvatar>
@@ -274,9 +280,19 @@ Route = "/more-features-coming-soon"
         color: var(--color-text-heading);
         flex-grow: 1;
     }
+    .post-ad-text {
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 14px;
+        letter-spacing: 0.5px;
+        text-transform: none !important;
+    }
     .nav-link {
         color: white;
         text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        font-family: 'Public Sans', sans-serif;
     }
 
         .nav-link.active {

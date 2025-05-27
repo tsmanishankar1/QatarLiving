@@ -9,7 +9,7 @@ namespace QLN.Common.Infrastructure.IService.IFileStorage
 {
     public interface IFileStorageService
     {
-        Task<string> SaveFile(IFormFile file, string path);
+        Task<string> SaveFile(Stream stream, string path, CancellationToken cancellationToken = default);
         Task DeleteFile(string path);
         Task<byte[]> ReadFile(string path);
     }

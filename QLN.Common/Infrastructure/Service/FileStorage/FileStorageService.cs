@@ -13,22 +13,21 @@ namespace QLN.Common.Infrastructure.Service.FileStorage
             _logger = logger;
         }
 
-        public async Task<string> SaveFile(IFormFile file, string path)
+        public async Task<string> SaveFile(Stream fileStream, string path, CancellationToken cancellationToken = default)
         {
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
                 using var stream = new FileStream(path, FileMode.Create);
-                await file.CopyToAsync(stream);
+                await fileStream.CopyToAsync(stream, cancellationToken);
                 return path;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error saving file: {FileName}", file.FileName);
+                _logger.LogError(ex, "Error saving file to path: {Path}", path);
                 throw;
             }
         }
-
         public async Task<byte[]> ReadFile(string path)
         {
             try

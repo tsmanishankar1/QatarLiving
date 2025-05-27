@@ -10,10 +10,12 @@ namespace QLN.Common.Infrastructure.IService.ICompanyService
 {
     public interface ICompanyService
     {
-        Task<CompanyProfileEntity> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default);
+        Task<string> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default);
         Task<CompanyProfileEntity?> GetCompanyById(Guid id, CancellationToken cancellationToken = default);
-        Task<IEnumerable<CompanyProfileEntity>> GetAllCompanies();
+        Task<List<CompanyProfileEntity>> GetAllCompanies(CancellationToken cancellationToken = default);
         Task<CompanyProfileEntity> UpdateCompany(Guid id, CompanyProfileDto dto, CancellationToken cancellationToken = default);
         Task DeleteCompany(Guid id, CancellationToken cancellationToken = default);
+        Task<CompanyProfileCompletionStatusDto?> GetCompanyProfileCompletionStatus(Guid userId, string vertical, CancellationToken cancellationToken = default);
+        Task<CompanyProfileVerificationStatusDto> GetVerificationStatus(Guid userId, VerticalType verticalType, CancellationToken cancellationToken = default);
     }
 }

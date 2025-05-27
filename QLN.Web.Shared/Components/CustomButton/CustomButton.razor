@@ -7,7 +7,7 @@
            Disabled="Disabled || Loading"
            Loading="Loading"
            FullWidth="true"
-           Style="@($"background-color: {BackgroundColor}; color: {TextColor}; border-radius: 8px;")"
+           Style="@ButtonStyle"
            Class="@Class">
     @if (Loading)
     {
@@ -16,7 +16,7 @@
     }
     else
     {
-        <MudText Typo="Typo.button"  Style="text-transform: capitalize;">@Text</MudText>
+        <MudText Typo="Typo.button" Class="button-text" Style="text-transform: capitalize;">@Text</MudText>
     }
 </MudButton>
 
@@ -32,4 +32,17 @@
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object> AdditionalAttributes { get; set; }
 
+    [Parameter] public string? Height { get; set; }
+
+    private string ButtonStyle =>
+    $"background-color: {BackgroundColor}; color: {TextColor}; border-radius: 8px;"
+    + (string.IsNullOrWhiteSpace(Height) ? "" : $" height: {Height};");
+
 }
+<style>
+    .button-text{
+         font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+    }
+</style>
