@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.DTO_s
 {
-    public enum AdItemType
+    public enum AdInformation
     {
         Category,
         SubCategory,
@@ -20,14 +20,6 @@ namespace QLN.Common.Infrastructure.DTO_s
         Ram,
         Resolution,
         SizeType,
-        Gender,
         Zone
-    }
-
-    public class BaseItem
-    {
-        public Guid Id { get; set; }
-        public string Name { get; set; } = default!;
-        public AdItemType Type { get; set; }
-    }
+    }  
 }
