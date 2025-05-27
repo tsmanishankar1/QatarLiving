@@ -123,106 +123,56 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<T> AddItem<T>(T item) where T : BaseItem
+        private async Task<Category> AddItem(Category item)
         {
-            item.Id = Guid.NewGuid();
-            var key = $"{item.Type.ToString().ToLowerInvariant()}-{item.Id}";
+            if (item == null)
+                throw new ArgumentNullException(nameof(item), "Category item cannot be null.");
 
-            var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
-            await _dapr.SaveStateAsync(UnifiedStore, key, item);
+            if (string.IsNullOrWhiteSpace(item.TypePrefix))
+                throw new ArgumentException("TypePrefix is required for the category item.", nameof(item.TypePrefix));
 
-            index.Add(key);
-            await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, index);
-
-            return item;
-        }
-
-        public async Task<List<T>> GetItemsByType<T>(AdItemType type) where T : BaseItem
-        {
-            var keys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
-            var result = new List<T>();
-
-            foreach (var key in keys)
-            {
-                if (!key.StartsWith($"{type.ToString().ToLowerInvariant()}-")) continue;
-
-                var item = await _dapr.GetStateAsync<T>(UnifiedStore, key);
-                if (item != null) result.Add(item);
-            }
-
-            return result;
-        }
-
-        public async Task<Adcateg> AddCategory(string categoryName, CancellationToken cancellationToken = default)
-        {
             try
             {
-                var category = new Adcateg
-                {
-                    Name = categoryName,
-                    Type = AdItemType.Category
-                };
-                return await AddItem(category);
+                item.Id = Guid.NewGuid();
+                var key = $"{item.TypePrefix.ToLowerInvariant()}-{item.Id}";
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+                index.Add(key);
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, item);
+                await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, index);
+
+                return item;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error while adding category", ex);
+                throw new InvalidOperationException(
+                    $"Error while saving category item '{item?.Name}' to Dapr state store. KeyPrefix: {item?.TypePrefix}",
+                    ex
+                );
             }
         }
 
-        public async Task<List<Adcateg>> GetAllCategories(CancellationToken cancellationToken = default)
+
+        private async Task<List<Category>> GetItemsByType(string typePrefix)
         {
-            try
-            {
-                return await GetItemsByType<Adcateg>(AdItemType.Category);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error while getting all categories", ex);
-            }
-        }
+            if (string.IsNullOrWhiteSpace(typePrefix))
+                throw new ArgumentException("typePrefix cannot be null or empty.", nameof(typePrefix));
 
-        public async Task<AdSubCategory> AddSubCategory(string name, Guid categoryId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var subcategory = new AdSubCategory
-                {
-                    Id = Guid.NewGuid(),
-                    Name = name,
-                    CategoryId = categoryId,
-                    Type = AdItemType.SubCategory
-                };
-
-                var key = $"subcategory-{subcategory.Id}";
-
-                await _dapr.SaveStateAsync(UnifiedStore, key, subcategory);
-
-                var keys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
-                keys.Add(key);
-                await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, keys);
-
-                return subcategory;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error while adding subcategory", ex);
-            }
-        }
-
-        public async Task<List<AdSubCategory>> GetAllSubCategories(CancellationToken cancellationToken = default)
-        {
             try
             {
                 var keys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
-                var result = new List<AdSubCategory>();
+                var result = new List<Category>();
 
                 foreach (var key in keys)
                 {
-                    if (!key.StartsWith("subcategory-")) continue;
+                    if (!key.StartsWith($"{typePrefix.ToLowerInvariant()}-")) continue;
 
-                    var item = await _dapr.GetStateAsync<AdSubCategory>(UnifiedStore, key);
-                    if (item != null && item.Type == AdItemType.SubCategory)
+                    var item = await _dapr.GetStateAsync<Category>(UnifiedStore, key);
+
+                    if (item == null) continue;
+
+                    if (item.TypePrefix.Equals(typePrefix, StringComparison.OrdinalIgnoreCase))
                     {
                         result.Add(item);
                     }
@@ -232,562 +182,1150 @@ namespace QLN.Classified.MS.Service
             }
             catch (Exception ex)
             {
-                throw new Exception("Error while getting all subcategories", ex);
+                throw new InvalidOperationException($"Error while retrieving categories of type '{typePrefix}' from state store.", ex);
             }
         }
 
-        public async Task<List<AdSubCategory>> GetSubCategoriesByCategoryId(Guid categoryId)
+        private string GetTypePrefix(AdInformation type)
         {
             try
             {
-                var all = await GetItemsByType<AdSubCategory>(AdItemType.SubCategory);
-                return all.Where(s => s.CategoryId == categoryId).ToList();
+                var prefix = type.ToString().ToLowerInvariant();
+
+                if (string.IsNullOrWhiteSpace(prefix))
+                    throw new InvalidOperationException("Converted typePrefix is empty.");
+
+                return prefix;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                throw new Exception("Error while getting subcategories by category id", ex);
+                throw new InvalidOperationException($"Failed to convert AdInformation enum value '{type}' to type prefix.", ex);
             }
         }
 
-        public async Task<AdBrand> AddBrand(string name, Guid subCategoryId, CancellationToken cancellationToken = default)
+        public async Task<Category> AddCategory(string categoryName, CancellationToken cancellationToken = default)
         {
+            if (string.IsNullOrWhiteSpace(categoryName))
+                throw new ArgumentException("Category name cannot be null or empty.", nameof(categoryName));
+
             try
             {
-                var brand = new AdBrand
+                var category = new Category
                 {
-                    Name = name,
-                    SubCategoryId = subCategoryId,
-                    Type = AdItemType.Brand
+                    Name = categoryName.Trim(),
+                    TypePrefix = GetTypePrefix(AdInformation.Category),
+                    ParentId = Guid.Empty,
+                    IsActive = true
+                };
+
+                return await AddItem(category);
+            }
+            catch (ArgumentException argEx)
+            {
+                throw; 
+            }
+            catch (InvalidOperationException logicEx)
+            {
+                throw; 
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error while adding a new category.", ex);
+            }
+        }
+
+        public async Task<List<CategoriesDto>> GetAllCategories(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var items = await GetItemsByType(GetTypePrefix(AdInformation.Category));
+
+                if (items == null || items.Count == 0)
+                    return new List<CategoriesDto>(); 
+
+                return items
+                    .Where(i => i != null)
+                    .Select(i => new CategoriesDto
+                    {
+                        Id = i.Id,
+                        Name = i.Name
+                    })
+                    .ToList();
+            }
+            catch (InvalidOperationException logicEx)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error while retrieving all categories.", ex);
+            }
+        }
+
+        public async Task<Category> AddSubCategory(string name, Guid categoryId, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Subcategory name cannot be null or empty.", nameof(name));
+
+            if (categoryId == Guid.Empty)
+                throw new ArgumentException("Parent Category ID is required.", nameof(categoryId));
+
+            try
+            {
+                var subcategory = new Category
+                {
+                    Name = name.Trim(),
+                    ParentId = categoryId,
+                    TypePrefix = GetTypePrefix(AdInformation.SubCategory),
+                    IsActive = true
+                };
+
+                return await AddItem(subcategory);
+            }
+            catch (ArgumentException)
+            {
+                throw; 
+            }
+            catch (InvalidOperationException)
+            {
+                throw; 
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error while adding subcategory.", ex);
+            }
+        }
+
+        public async Task<List<CategoriesDto>> GetAllSubCategories(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var typePrefix = GetTypePrefix(AdInformation.SubCategory);
+                var items = await GetItemsByType(typePrefix);
+
+                if (items == null || items.Count == 0)
+                    return new List<CategoriesDto>(); 
+
+                return items
+                    .Where(i => i != null)
+                    .Select(i => new CategoriesDto
+                    {
+                        Id = i.Id,
+                        Name = i.Name
+                    })
+                    .ToList();
+            }
+            catch (InvalidOperationException)
+            {
+                throw; 
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error while retrieving subcategories.", ex);
+            }
+        }
+
+        public async Task<CategoryDto?> GetCategoryWithSubCategories(Guid categoryId, CancellationToken cancellationToken = default)
+        {
+            if (categoryId == Guid.Empty)
+                throw new ArgumentException("Invalid category ID.", nameof(categoryId));
+
+            try
+            {
+                var categoryKeyPrefix = GetTypePrefix(AdInformation.Category);
+                var subCategoryKeyPrefix = GetTypePrefix(AdInformation.SubCategory);
+
+                var allKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+
+                Category? selectedCategory = null;
+                var subcategories = new List<CategoriesDto>();
+
+                foreach (var key in allKeys)
+                {
+                    if (!key.StartsWith(categoryKeyPrefix) && !key.StartsWith(subCategoryKeyPrefix))
+                        continue;
+
+                    var item = await _dapr.GetStateAsync<Category>(UnifiedStore, key);
+                    if (item == null) continue;
+
+                    if (item.TypePrefix == categoryKeyPrefix && item.Id == categoryId)
+                    {
+                        selectedCategory = item;
+                    }
+                    else if (item.TypePrefix == subCategoryKeyPrefix && item.ParentId == categoryId)
+                    {
+                        subcategories.Add(new CategoriesDto
+                        {
+                            Id = item.Id,
+                            Name = item.Name
+                        });
+                    }
+                }
+
+                if (selectedCategory == null)
+                    throw new KeyNotFoundException($"Category with ID '{categoryId}' not found.");
+
+                return new CategoryDto
+                {
+                    Id = selectedCategory.Id,
+                    Name = selectedCategory.Name,
+                    SubCategories = subcategories
+                };
+            }
+            catch (ArgumentException)
+            {
+                throw; 
+            }
+            catch (KeyNotFoundException)
+            {
+                throw; 
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error while loading category with its subcategories.", ex);
+            }
+        }
+
+        public async Task<Category> AddBrand(string name, Guid subCategoryId, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Brand name cannot be null or empty.", nameof(name));
+
+            if (subCategoryId == Guid.Empty)
+                throw new ArgumentException("SubCategoryId must be a valid non-empty GUID.", nameof(subCategoryId));
+
+            try
+            {
+                var brand = new Category
+                {
+                    Name = name.Trim(),
+                    ParentId = subCategoryId,
+                    TypePrefix = GetTypePrefix(AdInformation.Brand),
+                    IsActive = true
                 };
 
                 return await AddItem(brand);
             }
-            catch(Exception ex)
+            catch (ArgumentException)
             {
-                throw new Exception("Error while adding brand", ex);
+                throw;
             }
-        }
-
-        public async Task<List<AdBrand>> GetAllBrands(CancellationToken cancellationToken = default)
-        {
-            try
+            catch (InvalidOperationException)
             {
-                return await GetItemsByType<AdBrand>(AdItemType.Brand);
+                throw;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error while getting all brands", ex);
+                throw new InvalidOperationException("Unexpected error while adding brand.", ex);
             }
         }
 
-        public async Task<List<AdBrand>> GetBrandsBySubCategoryId(Guid subCategoryId, CancellationToken cancellationToken = default)
+        public async Task<List<CategoriesDto>> GetAllBrands(CancellationToken cancellationToken = default)
         {
             try
             {
-                var allBrands = await GetItemsByType<AdBrand>(AdItemType.Brand);
-                return allBrands.Where(b => b.SubCategoryId == subCategoryId).ToList();
+                var items = await GetItemsByType(GetTypePrefix(AdInformation.Brand));
+
+                if (items == null || items.Count == 0)
+                    return new List<CategoriesDto>();
+
+                return items
+                    .Where(i => i != null)
+                    .Select(i => new CategoriesDto { Id = i.Id, Name = i.Name })
+                    .ToList();
             }
-            catch(Exception ex)
+            catch (InvalidOperationException)
             {
-                throw new Exception("Error while getting brands by subcategory id", ex);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error while retrieving brand list.", ex);
             }
         }
 
-        public async Task<AdModel> AddModel(string name, Guid brandId, CancellationToken cancellationToken = default)
+        public async Task<SubCategoryWithBrandsDto> GetSubCategoryWithBrands(Guid subCategoryId, CancellationToken cancellationToken = default)
         {
+            if (subCategoryId == Guid.Empty)
+                throw new ArgumentException("SubCategoryId must be a valid non-empty GUID.", nameof(subCategoryId));
+
             try
             {
-                var model = new AdModel
+                var subCategoryKeyPrefix = GetTypePrefix(AdInformation.SubCategory);
+                var brandKeyPrefix = GetTypePrefix(AdInformation.Brand);
+
+                var allKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+
+                Category? selectedSubCategory = null;
+                var brandList = new List<BrandDto>();
+
+                foreach (var key in allKeys)
                 {
-                    Name = name,
-                    BrandId = brandId,
-                    Type = AdItemType.Model
+                    if (!key.StartsWith(subCategoryKeyPrefix) && !key.StartsWith(brandKeyPrefix))
+                        continue;
+
+                    var item = await _dapr.GetStateAsync<Category>(UnifiedStore, key);
+                    if (item == null) continue;
+
+                    if (item.TypePrefix == subCategoryKeyPrefix && item.Id == subCategoryId)
+                    {
+                        selectedSubCategory = item;
+                    }
+                    else if (item.TypePrefix == brandKeyPrefix && item.ParentId == subCategoryId)
+                    {
+                        brandList.Add(new BrandDto
+                        {
+                            Id = item.Id,
+                            Name = item.Name
+                        });
+                    }
+                }
+
+                if (selectedSubCategory == null)
+                    throw new KeyNotFoundException($"Subcategory with ID '{subCategoryId}' was not found.");
+
+                return new SubCategoryWithBrandsDto
+                {
+                    Id = selectedSubCategory.Id,
+                    Name = selectedSubCategory.Name,
+                    Brands = brandList
+                };
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (KeyNotFoundException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error while loading subcategory with its brands.", ex);
+            }
+        }
+
+        public async Task<Category> AddModel(string name, Guid brandId, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Model name cannot be null or empty.", nameof(name));
+
+            if (brandId == Guid.Empty)
+                throw new ArgumentException("Brand ID must be a valid non-empty GUID.", nameof(brandId));
+
+            try
+            {
+                var model = new Category
+                {
+                    Name = name.Trim(),
+                    ParentId = brandId,
+                    TypePrefix = GetTypePrefix(AdInformation.Model),
+                    IsActive = true
                 };
 
                 return await AddItem(model);
             }
-            catch (Exception ex)
+            catch (ArgumentException)
             {
-                throw new Exception("Error while adding model", ex);
+                throw;
             }
-        }
-
-        public async Task<List<AdModel>> GetAllModels(CancellationToken cancellationToken = default)
-        {
-            try
+            catch (InvalidOperationException)
             {
-                return await GetItemsByType<AdModel>(AdItemType.Model);
+                throw;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error while getting all models", ex);
+                throw new InvalidOperationException("Unexpected error occurred while adding model.", ex);
             }
         }
 
-        public async Task<List<AdModel>> GetModelsByBrandId(Guid brandId, CancellationToken cancellationToken = default)
+        public async Task<List<CategoriesDto>> GetAllModels(CancellationToken cancellationToken = default)
         {
             try
             {
-                var allModels = await GetItemsByType<AdModel>(AdItemType.Model);
-                return allModels.Where(m => m.BrandId == brandId).ToList();
+                var items = await GetItemsByType(GetTypePrefix(AdInformation.Model));
+
+                if (items == null || items.Count == 0)
+                    return new List<CategoriesDto>();
+
+                return items
+                    .Where(i => i != null)
+                    .Select(i => new CategoriesDto
+                    {
+                        Id = i.Id,
+                        Name = i.Name
+                    })
+                    .ToList();
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error while getting models by brand ID", ex);
+                throw new InvalidOperationException("Error while retrieving model list.", ex);
             }
         }
 
-        public async Task<AdCondition> AddCondition(string name, CancellationToken cancellationToken = default)
+        public async Task<BrandWithModelsDto> GetBrandWithModels(Guid brandId, CancellationToken cancellationToken = default)
         {
+            if (brandId == Guid.Empty)
+                throw new ArgumentException("Brand ID must be a valid non-empty GUID.", nameof(brandId));
+
             try
             {
-                var condition = new AdCondition
+                var brandPrefix = GetTypePrefix(AdInformation.Brand);
+                var modelPrefix = GetTypePrefix(AdInformation.Model);
+
+                var allKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+
+                Category? selectedBrand = null;
+                var models = new List<ModelDto>();
+
+                foreach (var key in allKeys)
                 {
-                    Name = name,
-                    Type = AdItemType.Condition
+                    if (!key.StartsWith(brandPrefix) && !key.StartsWith(modelPrefix))
+                        continue;
+
+                    var item = await _dapr.GetStateAsync<Category>(UnifiedStore, key);
+                    if (item == null) continue;
+
+                    if (item.TypePrefix == brandPrefix && item.Id == brandId)
+                    {
+                        selectedBrand = item;
+                    }
+                    else if (item.TypePrefix == modelPrefix && item.ParentId == brandId)
+                    {
+                        models.Add(new ModelDto
+                        {
+                            Id = item.Id,
+                            Name = item.Name
+                        });
+                    }
+                }
+
+                if (selectedBrand == null)
+                    throw new KeyNotFoundException($"Brand with ID '{brandId}' not found.");
+
+                return new BrandWithModelsDto
+                {
+                    Id = selectedBrand.Id,
+                    Name = selectedBrand.Name,
+                    Models = models
+                };
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (KeyNotFoundException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error while loading brand with its models.", ex);
+            }
+        }
+
+        public async Task<Category> AddCondition(string name, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Condition name cannot be null or empty.", nameof(name));
+
+            try
+            {
+                var condition = new Category
+                {
+                    Name = name.Trim(),
+                    TypePrefix = GetTypePrefix(AdInformation.Condition),
+                    ParentId = Guid.Empty,
+                    IsActive = true
                 };
 
                 return await AddItem(condition);
             }
-            catch (Exception ex)
+            catch (ArgumentException)
             {
-                throw new Exception("Error while adding condition", ex);
+                throw;
             }
-        }
-
-        public async Task<List<AdCondition>> GetAllConditions(CancellationToken cancellationToken = default)
-        {
-            try
+            catch (InvalidOperationException)
             {
-                return await GetItemsByType<AdCondition>(AdItemType.Condition);
+                throw;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error while getting conditions", ex);
+                throw new InvalidOperationException("Unexpected error occurred while adding condition.", ex);
             }
         }
 
-        public async Task<AdColor> AddColor(string name, CancellationToken cancellationToken = default)
+        public async Task<List<CategoriesDto>> GetAllConditions(CancellationToken cancellationToken = default)
         {
             try
             {
-                var color = new AdColor
+                var items = await GetItemsByType(GetTypePrefix(AdInformation.Condition));
+
+                if (items == null || items.Count == 0)
+                    return new List<CategoriesDto>();
+
+                return items
+                    .Where(i => i != null)
+                    .Select(i => new CategoriesDto { Id = i.Id, Name = i.Name })
+                    .ToList();
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error while retrieving conditions.", ex);
+            }
+        }
+
+        public async Task<Category> AddColor(string name, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Color name cannot be null or empty.", nameof(name));
+
+            try
+            {
+                var color = new Category
                 {
-                    Name = name,
-                    Type = AdItemType.Color
+                    Name = name.Trim(),
+                    TypePrefix = GetTypePrefix(AdInformation.Color),
+                    ParentId = Guid.Empty,
+                    IsActive = true
                 };
 
                 return await AddItem(color);
             }
-            catch(Exception ex)
+            catch (ArgumentException)
             {
-                throw new Exception("Error while adding color", ex);
+                throw;
             }
-        }
-
-        public async Task<List<AdColor>> GetAllColors(CancellationToken cancellationToken = default)
-        {
-            try
+            catch (InvalidOperationException)
             {
-                return await GetItemsByType<AdColor>(AdItemType.Color);
+                throw;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error while getting all colors", ex);
+                throw new InvalidOperationException("Unexpected error occurred while adding color.", ex);
             }
         }
 
-        public async Task<AdCapacity> AddCapacity(string name, CancellationToken cancellationToken = default)
+        public async Task<List<CategoriesDto>> GetAllColors(CancellationToken cancellationToken = default)
         {
             try
             {
-                var capacity = new AdCapacity
+                var items = await GetItemsByType(GetTypePrefix(AdInformation.Color));
+
+                if (items == null || items.Count == 0)
+                    return new List<CategoriesDto>();
+
+                return items
+                    .Where(i => i != null)
+                    .Select(i => new CategoriesDto
+                    {
+                        Id = i.Id,
+                        Name = i.Name
+                    })
+                    .ToList();
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error while retrieving colors.", ex);
+            }
+        }
+
+        public async Task<Category> AddCapacity(string name, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Capacity name cannot be null or empty.", nameof(name));
+
+            try
+            {
+                var capacity = new Category
                 {
-                    Name = name,
-                    Type = AdItemType.Capacity
+                    Name = name.Trim(),
+                    TypePrefix = GetTypePrefix(AdInformation.Capacity),
+                    ParentId = Guid.Empty,
+                    IsActive = true
                 };
 
                 return await AddItem(capacity);
             }
-            catch (Exception ex)
+            catch (ArgumentException)
             {
-                throw new Exception("Error while adding capacity", ex);
+                throw;
             }
-        }
-
-        public async Task<List<AdCapacity>> GetAllCapacities(CancellationToken cancellationToken = default)
-        {
-            try
+            catch (InvalidOperationException)
             {
-                return await GetItemsByType<AdCapacity>(AdItemType.Capacity);
+                throw;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error while getting all capacities", ex);
+                throw new InvalidOperationException("Unexpected error occurred while adding capacity.", ex);
             }
         }
 
-        public async Task<AdProcessor> AddProcessor(string name, Guid modelId, CancellationToken cancellationToken = default)
+        public async Task<List<CategoriesDto>> GetAllCapacities(CancellationToken cancellationToken = default)
         {
             try
             {
-                var processor = new AdProcessor
+                var items = await GetItemsByType(GetTypePrefix(AdInformation.Capacity));
+
+                if (items == null || items.Count == 0)
+                    return new List<CategoriesDto>();
+
+                return items
+                    .Where(i => i != null)
+                    .Select(i => new CategoriesDto
+                    {
+                        Id = i.Id,
+                        Name = i.Name
+                    })
+                    .ToList();
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error while retrieving capacity list.", ex);
+            }
+        }
+
+        public async Task<Category> AddProcessor(string name, Guid modelId, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Processor name cannot be null or empty.", nameof(name));
+
+            if (modelId == Guid.Empty)
+                throw new ArgumentException("Model ID must be a valid non-empty GUID.", nameof(modelId));
+
+            try
+            {
+                var processor = new Category
                 {
-                    Name = name,
-                    ModelId = modelId,
-                    Type = AdItemType.Processor
+                    Name = name.Trim(),
+                    ParentId = modelId,
+                    TypePrefix = GetTypePrefix(AdInformation.Processor),
+                    IsActive = true
                 };
 
                 return await AddItem(processor);
             }
-            catch (Exception ex)
+            catch (ArgumentException)
             {
-                throw new Exception("Error while adding processor", ex);
+                throw;
             }
-        }
-
-        public async Task<List<AdProcessor>> GetAllProcessors(CancellationToken cancellationToken = default)
-        {
-            try
+            catch (InvalidOperationException)
             {
-                return await GetItemsByType<AdProcessor>(AdItemType.Processor);
+                throw;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error while getting processors", ex);
+                throw new InvalidOperationException("Unexpected error occurred while adding processor.", ex);
             }
         }
 
-        public async Task<List<AdProcessor>> GetProcessorsByModelId(Guid modelId, CancellationToken cancellationToken = default)
+        public async Task<List<CategoriesDto>> GetAllProcessors(CancellationToken cancellationToken = default)
         {
             try
             {
-                var all = await GetItemsByType<AdProcessor>(AdItemType.Processor);
-                return all.Where(p => p.ModelId == modelId).ToList();
+                var items = await GetItemsByType(GetTypePrefix(AdInformation.Processor));
+
+                if (items == null || items.Count == 0)
+                    return new List<CategoriesDto>();
+
+                return items
+                    .Where(i => i != null)
+                    .Select(i => new CategoriesDto
+                    {
+                        Id = i.Id,
+                        Name = i.Name
+                    })
+                    .ToList();
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error while getting processors by model ID", ex);
+                throw new InvalidOperationException("Unexpected error while retrieving processors.", ex);
             }
         }
 
-        public async Task<AdCoverage> AddCoverage(string name, CancellationToken cancellationToken = default)
+        public async Task<ModelWithProcessorsDto?> GetModelWithProcessors(Guid modelId, CancellationToken cancellationToken = default)
         {
+            if (modelId == Guid.Empty)
+                throw new ArgumentException("Model ID must be a valid non-empty GUID.", nameof(modelId));
+
             try
             {
-                var coverage = new AdCoverage
+                var modelPrefix = GetTypePrefix(AdInformation.Model);
+                var processorPrefix = GetTypePrefix(AdInformation.Processor);
+
+                var keys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+
+                Category? selectedModel = null;
+                var processors = new List<ProcessorDto>();
+
+                foreach (var key in keys)
                 {
-                    Name = name,
-                    Type = AdItemType.Coverage
+                    if (!key.StartsWith(modelPrefix) && !key.StartsWith(processorPrefix))
+                        continue;
+
+                    var item = await _dapr.GetStateAsync<Category>(UnifiedStore, key);
+                    if (item == null) continue;
+
+                    if (item.TypePrefix == modelPrefix && item.Id == modelId)
+                        selectedModel = item;
+
+                    if (item.TypePrefix == processorPrefix && item.ParentId == modelId)
+                    {
+                        processors.Add(new ProcessorDto
+                        {
+                            Id = item.Id,
+                            Name = item.Name
+                        });
+                    }
+                }
+
+                if (selectedModel == null)
+                    throw new KeyNotFoundException($"Model with ID '{modelId}' not found.");
+
+                return new ModelWithProcessorsDto
+                {
+                    Id = selectedModel.Id,
+                    Name = selectedModel.Name,
+                    Processors = processors
+                };
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (KeyNotFoundException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error while loading model with processors.", ex);
+            }
+        }
+
+        public async Task<Category> AddCoverage(string name, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Coverage name cannot be null or empty.", nameof(name));
+
+            try
+            {
+                var coverage = new Category
+                {
+                    Name = name.Trim(),
+                    TypePrefix = GetTypePrefix(AdInformation.Coverage),
+                    ParentId = Guid.Empty,
+                    IsActive = true
                 };
 
                 return await AddItem(coverage);
             }
-            catch (Exception ex)
+            catch (ArgumentException)
             {
-                throw new Exception("Error while adding coverage", ex);
+                throw;
             }
-        }
-        public async Task<List<AdCoverage>> GetAllCoverages(CancellationToken cancellationToken = default)
-        {
-            try
+            catch (InvalidOperationException)
             {
-                return await GetItemsByType<AdCoverage>(AdItemType.Coverage);
+                throw;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error while getting all coverages", ex);
+                throw new InvalidOperationException("Unexpected error occurred while adding coverage.", ex);
             }
         }
-        public async Task<AdRam> AddRam(string name, Guid modelId, CancellationToken cancellationToken = default)
+
+        public async Task<List<CategoriesDto>> GetAllCoverages(CancellationToken cancellationToken = default)
         {
             try
             {
-                var ram = new AdRam
+                var items = await GetItemsByType(GetTypePrefix(AdInformation.Coverage));
+
+                if (items == null || items.Count == 0)
+                    return new List<CategoriesDto>();
+
+                return items
+                    .Where(i => i != null)
+                    .Select(i => new CategoriesDto
+                    {
+                        Id = i.Id,
+                        Name = i.Name
+                    })
+                    .ToList();
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error while retrieving coverage list.", ex);
+            }
+        }
+
+        public async Task<Category> AddRam(string name, Guid modelId, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("RAM name cannot be null or empty.", nameof(name));
+
+            if (modelId == Guid.Empty)
+                throw new ArgumentException("Model ID must be a valid non-empty GUID.", nameof(modelId));
+
+            try
+            {
+                var ram = new Category
                 {
-                    Name = name,
-                    ModelId = modelId,
-                    Type = AdItemType.Ram
+                    Name = name.Trim(),
+                    ParentId = modelId,
+                    TypePrefix = GetTypePrefix(AdInformation.Ram),
+                    IsActive = true
                 };
 
                 return await AddItem(ram);
             }
-            catch(Exception ex)
+            catch (ArgumentException)
             {
-                throw new Exception("Error while adding RAM", ex);
-            }            
-        }
-
-        public async Task<List<AdRam>> GetAllRams(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                return await GetItemsByType<AdRam>(AdItemType.Ram);
+                throw;
             }
-            catch(Exception ex)
+            catch (InvalidOperationException)
             {
-                throw new Exception("Error while Geting all RAM", ex);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error occurred while adding RAM.", ex);
             }
         }
 
-        public async Task<List<AdRam>> GetRamsByModelId(Guid modelId, CancellationToken cancellationToken = default)
+        public async Task<List<CategoriesDto>> GetAllRams(CancellationToken cancellationToken = default)
         {
             try
             {
-                var all = await GetItemsByType<AdRam>(AdItemType.Ram);
-                return all.Where(r => r.ModelId == modelId).ToList();
+                var items = await GetItemsByType(GetTypePrefix(AdInformation.Ram));
+
+                if (items == null || items.Count == 0)
+                    return new List<CategoriesDto>();
+
+                return items
+                    .Where(i => i != null)
+                    .Select(i => new CategoriesDto { Id = i.Id, Name = i.Name })
+                    .ToList();
             }
-            catch(Exception ex)
+            catch (InvalidOperationException)
             {
-                throw new Exception("Error while getting Ram", ex);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error while retrieving RAM options.", ex);
             }
         }
 
-        public async Task<AdResolution> AddResolution(string name, Guid modelId, CancellationToken cancellationToken = default)
+        public async Task<ModelWithRamDto?> GetModelWithRam(Guid modelId, CancellationToken cancellationToken = default)
         {
+            if (modelId == Guid.Empty)
+                throw new ArgumentException("Model ID must be a valid non-empty GUID.", nameof(modelId));
+
             try
             {
-                var resolution = new AdResolution
+                var modelPrefix = GetTypePrefix(AdInformation.Model);
+                var ramPrefix = GetTypePrefix(AdInformation.Ram);
+
+                var allKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+
+                Category? selectedModel = null;
+                var ramList = new List<CategoriesDto>();
+
+                foreach (var key in allKeys)
                 {
-                    Name = name,
-                    ModelId = modelId,
-                    Type = AdItemType.Resolution
+                    if (!key.StartsWith(modelPrefix) && !key.StartsWith(ramPrefix))
+                        continue;
+
+                    var item = await _dapr.GetStateAsync<Category>(UnifiedStore, key);
+                    if (item == null) continue;
+
+                    if (item.TypePrefix == modelPrefix && item.Id == modelId)
+                        selectedModel = item;
+
+                    if (item.TypePrefix == ramPrefix && item.ParentId == modelId)
+                    {
+                        ramList.Add(new CategoriesDto
+                        {
+                            Id = item.Id,
+                            Name = item.Name
+                        });
+                    }
+                }
+
+                if (selectedModel == null)
+                    throw new KeyNotFoundException($"Model with ID '{modelId}' not found.");
+
+                return new ModelWithRamDto
+                {
+                    Id = selectedModel.Id,
+                    Name = selectedModel.Name,
+                    RamOptions = ramList
+                };
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (KeyNotFoundException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Error while loading RAM linked to the selected model.", ex);
+            }
+        }
+
+        public async Task<Category> AddResolution(string name, Guid modelId, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Resolution name cannot be null or empty.", nameof(name));
+
+            if (modelId == Guid.Empty)
+                throw new ArgumentException("Model ID must be a valid non-empty GUID.", nameof(modelId));
+
+            try
+            {
+                var resolution = new Category
+                {
+                    Name = name.Trim(),
+                    TypePrefix = GetTypePrefix(AdInformation.Resolution),
+                    ParentId = modelId,
+                    IsActive = true
                 };
 
                 return await AddItem(resolution);
             }
-            catch(Exception ex)
+            catch (ArgumentException)
             {
-                throw new Exception("Error while adding Resolution", ex);
+                throw;
             }
-        }
-
-        public async Task<List<AdResolution>> GetAllResolutions(CancellationToken cancellationToken = default)
-        {
-            try
+            catch (InvalidOperationException)
             {
-                return await GetItemsByType<AdResolution>(AdItemType.Resolution);
+                throw;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error while getting all resolutions", ex);
+                throw new InvalidOperationException("Unexpected error occurred while adding resolution.", ex);
             }
         }
 
-        public async Task<List<AdResolution>> GetResolutionsByModelId(Guid modelId, CancellationToken cancellationToken = default)
+        public async Task<List<CategoriesDto>> GetAllResolutions(CancellationToken cancellationToken = default)
         {
             try
             {
-                var all = await GetItemsByType<AdResolution>(AdItemType.Resolution);
-                return all.Where(r => r.ModelId == modelId).ToList();
+                var items = await GetItemsByType(GetTypePrefix(AdInformation.Resolution));
+
+                if (items == null || items.Count == 0)
+                    return new List<CategoriesDto>();
+
+                return items
+                    .Where(i => i != null)
+                    .Select(i => new CategoriesDto { Id = i.Id, Name = i.Name })
+                    .ToList();
             }
-            catch(Exception ex)
+            catch (InvalidOperationException)
             {
-                throw new Exception("Error while getting Resolution", ex);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error while retrieving resolution list.", ex);
             }
         }
 
-        public async Task<AdSizeType> AddSizeType(string name, CancellationToken cancellationToken = default)
+        public async Task<ModelWithResolutionsDto?> GetModelWithResolutions(Guid modelId, CancellationToken cancellationToken = default)
         {
+            if (modelId == Guid.Empty)
+                throw new ArgumentException("Model ID must be a valid non-empty GUID.", nameof(modelId));
+
             try
             {
-                var sizeType = new AdSizeType
+                var modelPrefix = GetTypePrefix(AdInformation.Model);
+                var resolutionPrefix = GetTypePrefix(AdInformation.Resolution);
+
+                var allKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+
+                Category? selectedModel = null;
+                var resolutions = new List<CategoriesDto>();
+
+                foreach (var key in allKeys)
                 {
-                    Name = name,
-                    Type = AdItemType.SizeType
+                    if (!key.StartsWith(modelPrefix) && !key.StartsWith(resolutionPrefix))
+                        continue;
+
+                    var item = await _dapr.GetStateAsync<Category>(UnifiedStore, key);
+                    if (item == null) continue;
+
+                    if (item.TypePrefix == modelPrefix && item.Id == modelId)
+                        selectedModel = item;
+
+                    if (item.TypePrefix == resolutionPrefix && item.ParentId == modelId)
+                    {
+                        resolutions.Add(new CategoriesDto
+                        {
+                            Id = item.Id,
+                            Name = item.Name
+                        });
+                    }
+                }
+
+                if (selectedModel == null)
+                    throw new KeyNotFoundException($"Model with ID '{modelId}' not found.");
+
+                return new ModelWithResolutionsDto
+                {
+                    Id = selectedModel.Id,
+                    Name = selectedModel.Name,
+                    Resolutions = resolutions
+                };
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (KeyNotFoundException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Error while loading model with resolutions.", ex);
+            }
+        }
+
+        public async Task<Category> AddSizeType(string name, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Size type name cannot be null or empty.", nameof(name));
+
+            try
+            {
+                var sizeType = new Category
+                {
+                    Name = name.Trim(),
+                    TypePrefix = GetTypePrefix(AdInformation.SizeType),
+                    ParentId = Guid.Empty,
+                    IsActive = true
                 };
 
                 return await AddItem(sizeType);
             }
-            catch (Exception ex)
+            catch (ArgumentException)
             {
-                throw new Exception("Error while adding size type", ex);
+                throw;
             }
-        }
-
-        public async Task<List<AdSizeType>> GetAllSizeTypes(CancellationToken cancellationToken = default)
-        {
-            try
+            catch (InvalidOperationException)
             {
-                return await GetItemsByType<AdSizeType>(AdItemType.SizeType);
+                throw;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error while fetching all size types", ex);
+                throw new InvalidOperationException("Unexpected error occurred while adding size type.", ex);
             }
         }
 
-        public async Task<AdGender> AddGender(string name, CancellationToken cancellationToken = default)
+        public async Task<List<CategoriesDto>> GetAllSizeTypes(CancellationToken cancellationToken = default)
         {
             try
             {
-                var gender = new AdGender
+                var items = await GetItemsByType(GetTypePrefix(AdInformation.SizeType));
+                if (items == null || items.Count == 0)
+                    return new List<CategoriesDto>();
+
+                return items
+                    .Where(i => i != null)
+                    .Select(i => new CategoriesDto { Id = i.Id, Name = i.Name })
+                    .ToList();
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error occurred while retrieving all size types.", ex);
+            }
+        }
+
+        public async Task<Category> AddZone(string name, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Zone name cannot be null or empty.", nameof(name));
+
+            try
+            {
+                var zone = new Category
                 {
-                    Name = name,
-                    Type = AdItemType.Gender
-                };
-
-                return await AddItem(gender);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error while adding gender", ex);
-            }
-        }
-
-        public async Task<List<AdGender>> GetAllGenders(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                return await GetItemsByType<AdGender>(AdItemType.Gender);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error while getting all genders", ex);
-            }
-        }
-
-        public async Task<AdZone> AddZone(string name, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var zone = new AdZone
-                {
-                    Name = name,
-                    Type = AdItemType.Zone
+                    Name = name.Trim(),
+                    TypePrefix = GetTypePrefix(AdInformation.Zone),
+                    ParentId = Guid.Empty,
+                    IsActive = true
                 };
 
                 return await AddItem(zone);
             }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
-                throw new Exception("Error while adding zone", ex);
+                throw new InvalidOperationException("Unexpected error occurred while adding zone.", ex);
             }
         }
 
-        public async Task<List<AdZone>> GetAllZones(CancellationToken cancellationToken = default)
+
+        public async Task<List<CategoriesDto>> GetAllZones(CancellationToken cancellationToken = default)
         {
             try
             {
-                return await GetItemsByType<AdZone>(AdItemType.Zone);
+                var items = await GetItemsByType(GetTypePrefix(AdInformation.Zone));
+                if (items == null || items.Count == 0)
+                    return new List<CategoriesDto>();
+
+                return items
+                    .Where(i => i != null)
+                    .Select(i => new CategoriesDto { Id = i.Id, Name = i.Name })
+                    .ToList();
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error while getting zones", ex);
+                throw new InvalidOperationException("Unexpected error occurred while retrieving all zones.", ex);
             }
-        }
-
-        //public async Task<string> CreateAd(AdInformation ad, string userId, CancellationToken token = default)
-        //{
-        //    try
-        //    {
-        //        var user = await _userManager.Users
-        //            .FirstOrDefaultAsync(u => u.Id.ToString() == userId && u.IsActive, cancellationToken: token);
-
-        //        if (user == null)
-        //            throw new UnauthorizedAccessException("User is not registered or inactive.");
-
-        //        if (ad.WarrantyCertificate == null || ad.WarrantyCertificate.Length == 0)
-        //            throw new ArgumentException("Warranty certificate is required.");
-
-        //        if (ad.UploadPhotos == null || ad.UploadPhotos.Length == 0)
-        //            throw new ArgumentException("At least one photo is required.");
-
-        //        var adId = Guid.NewGuid();
-
-        //        // Create sub directory
-        //        var subDir = Path.Combine(_env.WebRootPath, "images", "ads", ad.SubVertical);
-        //        Directory.CreateDirectory(subDir);
-
-        //        // Save warranty certificate
-        //        var licenseFileName = $"{adId}_license{Path.GetExtension(ad.WarrantyCertificate.FileName)}";
-        //        var licensePath = Path.Combine(subDir, licenseFileName);
-        //        using (var stream = new FileStream(licensePath, FileMode.Create))
-        //        {
-        //            await ad.WarrantyCertificate.CopyToAsync(stream, token);
-        //        }
-
-        //        // Save photo
-        //        var photoFileName = $"{adId}_photo{Path.GetExtension(ad.UploadPhotos.FileName)}";
-        //        var photoPath = Path.Combine(subDir, photoFileName);
-        //        using (var stream = new FileStream(photoPath, FileMode.Create))
-        //        {
-        //            await ad.UploadPhotos.CopyToAsync(stream, token);
-        //        }
-
-        //        var model = new AdResponse
-        //        {
-        //            Id = adId,
-        //            SubVertical = ad.SubVertical,
-        //            Title = ad.Title,
-        //            Description = ad.Description,
-        //            Category = ad.Category,
-        //            SubCategory = ad.SubCategory,
-        //            Brand = ad.Brand,
-        //            Model = ad.Model,
-        //            Condition = ad.Condition,
-        //            Price = ad.Price,
-        //            Color = ad.Color,
-        //            Capacity = ad.Capacity,
-        //            Processor = ad.Processor,
-        //            Coverage = ad.Coverage,
-        //            Ram = ad.Ram,
-        //            Resolution = ad.Resolution,
-        //            BatteryPercentage = ad.BatteryPercentage,
-        //            Size = ad.Size,
-        //            SizeType = ad.SizeType,
-        //            Gender = ad.Gender,
-        //            WarrantyCertificateUrl = $"/images/ads/{ad.SubVertical}/{licenseFileName}",
-        //            ImageUrl = $"/images/ads/{ad.SubVertical}/{photoFileName}",
-        //            PhoneNumber = ad.PhoneNumber,
-        //            WhatsappNumber = ad.WhatsappNumber,
-        //            Zone = ad.zone,
-        //            StreetNumber = ad.streetNumber,
-        //            BuildingNumber = ad.buildingNumber,
-        //            CreatedBy = userId,
-        //            CreatedAt = DateTime.UtcNow,
-        //            IsPublished = ad.Ispublished
-        //        };
-
-        //        var stateKey = $"ad-{adId}";
-        //        await _dapr.SaveStateAsync("adstore", stateKey, model, cancellationToken: token);
-
-        //        var keys = await _dapr.GetStateAsync<List<string>>("adstore", "ad-index", cancellationToken: token) ?? new();
-        //        keys.Add(stateKey);
-        //        await _dapr.SaveStateAsync("adstore", "ad-index", keys, cancellationToken: token);
-
-        //        return stateKey;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw new Exception("Error while Ad posting", ex);
-        //    }
-        //}
-
-        //public async Task<List<AdResponse>> GetUserAds(string userId, bool? isPublished, CancellationToken token = default)
-        //{
-        //    try
-        //    {
-        //        var allKeys = await _dapr.GetStateAsync<List<string>>("adstore", "ad-index") ?? new();
-        //        var result = new List<AdResponse>();
-
-        //        foreach (var key in allKeys)
-        //        {
-        //            var ad = await _dapr.GetStateAsync<AdResponse>("adstore", key);
-        //            if (ad?.CreatedBy == userId && (isPublished == null || ad.IsPublished == isPublished))
-        //            {
-        //                result.Add(ad);
-        //            }
-        //        }
-
-        //        return result;
-
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw new Exception("Error while getting user ads", ex);
-        //    }
-        //}
+        }   
 
         public async Task<ClassifiedLandingPageResponse> GetLandingPage()
         {
