@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
-using QLN.Common.Infrastructure.IService.BannerService;
+using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.Model;
 using static Dapr.Client.Autogen.Grpc.v1.Dapr;
 
@@ -24,17 +24,15 @@ namespace QLN.Classified.MS.Service
         private const string Vertical = ConstantValues.ClassifiedsVertical;
         private readonly IWebHostEnvironment _env;
         private readonly Dapr.Client.DaprClient _dapr;        
-        private readonly IBannerService _bannerService;
 
         private const string UnifiedStore = "adstore";
         private const string UnifiedIndexKey = "ad-index";               
         private readonly ILogger<ClassifiedService> _logger;
 
-        public ClassifiedService(Dapr.Client.DaprClient dapr, ILogger<ClassifiedService> logger, IWebHostEnvironment env, IBannerService bannerService)
+        public ClassifiedService(Dapr.Client.DaprClient dapr, ILogger<ClassifiedService> logger, IWebHostEnvironment env)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _bannerService = bannerService ?? throw new ArgumentNullException(nameof(bannerService));
             _env = env;
         }
 

@@ -1,5 +1,4 @@
-﻿// QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints.cs
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -21,8 +20,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 {
     public static class ClassifiedEndpoints
     {
-        private const string Vertical = Constants.ConstantValues.ClassifiedsVertical;
-
         public static RouteGroupBuilder MapClassifiedLandingEndpoints(this RouteGroupBuilder group)
         {
             // SEARCH
@@ -41,7 +38,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Bad Request",
                         Detail = "Search payload is required.",
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{Vertical}/search"
+                        Instance = $"/api/classified/search"
                     });
                 }
 
@@ -58,7 +55,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Invalid Request",
                         Detail = ex.Message,
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{Vertical}/search"
+                        Instance = $"/api/classified/search"
                     });
                 }
                 catch (Exception ex)
@@ -68,7 +65,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         title: "Search Error",
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/{Vertical}/search"
+                        instance: $"/api/classified/search"
                     );
                 }
             })
@@ -95,7 +92,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Bad Request",
                         Detail = "Document ID is required.",
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{Vertical}/{id}"
+                        Instance = $"/api/classified/{id}"
                     });
                 }
 
@@ -106,9 +103,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         return Results.NotFound(new ProblemDetails
                         {
                             Title = "Not Found",
-                            Detail = $"No document '{id}' in '{Vertical}'.",
+                            Detail = $"No document '{id}' in 'classifieds'.",
                             Status = StatusCodes.Status404NotFound,
-                            Instance = $"/api/{Vertical}/{id}"
+                            Instance = $"/api/classified/{id}"
                         });
                     return Results.Ok(ad);
                 }
@@ -120,7 +117,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Invalid Request",
                         Detail = ex.Message,
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{Vertical}/{id}"
+                        Instance = $"/api/classified/{id}"
                     });
                 }
                 catch (Exception ex)
@@ -130,7 +127,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         title: "Lookup Error",
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/{Vertical}/{id}"
+                        instance: $"/api/classified/{id}"
                     );
                 }
             })
@@ -158,7 +155,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Bad Request",
                         Detail = "Document payload is required.",
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{Vertical}/upload"
+                        Instance = $"/api/classified/upload"
                     });
                 }
 
@@ -175,7 +172,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Invalid Request",
                         Detail = ex.Message,
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{Vertical}/upload"
+                        Instance = $"/api/classified/upload"
                     });
                 }
                 catch (Exception ex)
@@ -185,7 +182,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         title: "Upload Error",
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/{Vertical}/upload"
+                        instance: $"/api/classified/upload"
                     );
                 }
             })
@@ -212,7 +209,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Bad Request",
                         Detail = "Document payload with valid Id is required.",
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{Vertical}/update"
+                        Instance = $"/api/classified/update"
                     });
                 }
 
@@ -229,7 +226,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Invalid Request",
                         Detail = ex.Message,
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{Vertical}/update"
+                        Instance = $"/api/classified/update"
                     });
                 }
                 catch (Exception ex)
@@ -239,7 +236,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         title: "Update Error",
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/{Vertical}/update"
+                        instance: $"/api/classified/update"
                     );
                 }
             })
@@ -308,7 +305,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("AddCategory")
-                .WithTags("Category")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Create a new ad category")
                 .WithDescription("Adds a new ad category into the unified adstore")
                 .Produces<Category>(StatusCodes.Status201Created)
@@ -375,7 +372,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("GetAllCategories")
-                .WithTags("Category")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get all ad categories")
                 .WithDescription("Fetches all available ad categories from Dapr store")
                 .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
@@ -449,7 +446,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("AddSubCategory")
-                .WithTags("SubCategory")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Create a new subcategory")
                 .WithDescription("Adds a subcategory linked to a category.")
                 .Produces<Category>(StatusCodes.Status201Created)
@@ -515,7 +512,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("GetAllSubCategories")
-                .WithTags("SubCategory")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get all subcategories")
                 .WithDescription("Fetches all available subcategories from Dapr store.")
                 .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
@@ -589,7 +586,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("GetCategoryWithSubCategories")
-                .WithTags("SubCategory")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get category with subcategories")
                 .WithDescription("Fetches a category and its related subcategories from Dapr store.")
                 .Produces<CategoryDto>(StatusCodes.Status200OK)
@@ -675,7 +672,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("AddBrand")
-                .WithTags("Brand")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Add a new brand")
                 .WithDescription("Adds a brand entry linked to a subcategory in the Dapr state store.")
                 .Produces<Category>(StatusCodes.Status201Created)
@@ -738,7 +735,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("GetAllBrands")
-                .WithTags("Brand")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get all brands")
                 .WithDescription("Fetches all brand records from the Dapr state store.")
                 .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
@@ -804,7 +801,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("GetBrandsBySubCategoryId")
-                .WithTags("Brand")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get brands by subcategory ID")
                 .WithDescription("Fetches all brands that belong to the given subcategory from the Dapr state store.")
                 .Produces<SubCategoryWithBrandsDto>(StatusCodes.Status200OK)
@@ -872,7 +869,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("AddModel")
-                .WithTags("Model")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Add a new model")
                 .WithDescription("Adds a model linked to a brand.")
                 .Produces<Category>(StatusCodes.Status201Created)
@@ -938,7 +935,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("GetAllModels")
-                .WithTags("Model")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get all models")
                 .WithDescription("Fetches all models from the Dapr state store.")
                 .Produces<List<CategoryDto>>(StatusCodes.Status200OK)
@@ -1014,7 +1011,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("GetModelsByBrandId")
-                .WithTags("Model")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get models by brand ID")
                 .WithDescription("Fetches all models related to a given brand.")
                 .Produces<BrandWithModelsDto>(StatusCodes.Status200OK)
@@ -1102,7 +1099,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("AddCondition")
-                .WithTags("Condition")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Add a condition")
                 .WithDescription("Adds a new product condition to the store.")
                 .Produces<Category>(StatusCodes.Status201Created)
@@ -1166,7 +1163,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("GetAllConditions")
-                .WithTags("Condition")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get all conditions")
                 .WithDescription("Fetches all condition records.")
                 .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
@@ -1252,7 +1249,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("AddColor")
-                .WithTags("Color")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Add a color")
                 .WithDescription("Adds a new color value to the store.")
                 .Produces<Category>(StatusCodes.Status201Created)
@@ -1319,7 +1316,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("GetAllColors")
-                .WithTags("Color")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get all colors")
                 .WithDescription("Fetches all color records.")
                 .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
@@ -1405,7 +1402,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("AddCapacity")
-                .WithTags("Capacity")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Add a capacity value")
                 .WithDescription("Adds a new storage capacity like '64GB', '256GB' etc.")
                 .Produces<Category>(StatusCodes.Status201Created)
@@ -1471,7 +1468,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("GetAllCapacities")
-                .WithTags("Capacity")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get all capacity values")
                 .WithDescription("Fetches all available capacities from Dapr store.")
                 .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
@@ -1556,7 +1553,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("AddProcessor")
-                .WithTags("Processor")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Add a processor")
                 .WithDescription("Adds a new processor (e.g., Snapdragon 8, A16 Bionic) linked to a model.")
                 .Produces<Category>(StatusCodes.Status201Created)
@@ -1651,7 +1648,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("GetProcessorsByModelId")
-                .WithTags("Processor")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get processors by model")
                 .WithDescription("Fetches processors like A16, A15 etc. based on selected mobile model.")
                 .Produces<ModelWithProcessorsDto>(StatusCodes.Status200OK)
@@ -1716,7 +1713,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("GetAllProcessors")
-                .WithTags("Processor")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get all processors")
                 .WithDescription("Returns all processors from the store.")
                 .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
@@ -1799,7 +1796,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("AddCoverage")
-                .WithTags("Coverage")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Add a coverage option")
                 .WithDescription("Adds a coverage label such as 'Under Warranty' ")
                 .Produces<Category>(StatusCodes.Status201Created)
@@ -1865,7 +1862,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("GetAllCoverages")
-                .WithTags("Coverage")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get all coverage options")
                 .WithDescription("Fetches all warranty/coverage types from the store.")
                 .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
@@ -1951,7 +1948,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("AddRam")
-                .WithTags("RAM")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Add RAM")
                 .WithDescription("Adds a RAM option.")
                 .Produces<Category>(StatusCodes.Status201Created)
@@ -2018,7 +2015,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
             .WithName("GetAllRams")
-            .WithTags("RAM")
+            .WithTags("ClassifiedsDropdown")
             .WithSummary("Get all RAM values")
             .WithDescription("Fetches all RAM sizes from the store.")
             .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
@@ -2093,7 +2090,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
             .WithName("GetRamsByModelId")
-            .WithTags("RAM")
+            .WithTags("ClassifiedsDropdown")
             .WithSummary("Get RAM by model")
             .WithDescription("Returns RAM values for a specific model.")
             .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
@@ -2169,7 +2166,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
             .WithName("AddResolution")
-            .WithTags("Resolution")
+            .WithTags("ClassifiedsDropdown")
             .WithSummary("Add resolution")
             .WithDescription("Adds a resolution like '1080x2400'.")
             .Produces<Category>(StatusCodes.Status201Created)
@@ -2223,7 +2220,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
             .WithName("GetAllResolutions")
-            .WithTags("Resolution")
+            .WithTags("ClassifiedsDropdown")
             .WithSummary("Get all resolutions")
             .WithDescription("Returns all screen resolutions from store.")
             .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
@@ -2296,7 +2293,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
             .WithName("GetResolutionsByModelId")
-            .WithTags("Resolution")
+            .WithTags("ClassifiedsDropdown")
             .WithSummary("Get resolutions by model")
             .WithDescription("Returns resolutions for a selected model.")
             .Produces<List<ModelWithResolutionsDto>>(StatusCodes.Status200OK)
@@ -2370,7 +2367,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
             .WithName("AddSizeType")
-            .WithTags("SizeType")
+            .WithTags("ClassifiedsDropdown")
             .WithSummary("Add a size type")
             .WithDescription("Adds size labels like 'Small', 'Medium', 'XL'.")
             .Produces<Category>(StatusCodes.Status201Created)
@@ -2437,7 +2434,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
             .WithName("GetAllSizeTypes")
-            .WithTags("SizeType")
+            .WithTags("ClassifiedsDropdown")
             .WithSummary("Get all size types")
             .WithDescription("Fetches size options from Dapr store.")
             .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
@@ -2521,7 +2518,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
             .WithName("AddZone")
-            .WithTags("Zone")
+            .WithTags("ClassifiedsDropdown")
             .WithSummary("Add a zone number")
             .WithDescription("Adds a zone like 51, 52, etc.")
             .Produces<Category>(StatusCodes.Status201Created)
@@ -2587,14 +2584,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
             .WithName("GetAllZones")
-            .WithTags("Zone")
+            .WithTags("ClassifiedsDropdown")
             .WithSummary("Get all zones")
             .WithDescription("Fetches all zone numbers from the store.")
             .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);          
 
-            // GET /api/{vertical}/landing
+            // GET /api/classified/landing
             group.MapGet("/landing", async (
                     [FromServices] IClassifiedService svc,
                     [FromServices] ILoggerFactory logFac
@@ -2614,7 +2611,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Invalid Request",
                         Detail = ex.Message,
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{Vertical}/landing"
+                        Instance = $"/api/classified/landing"
                     });
                 }
                 catch (Exception ex)
@@ -2624,7 +2621,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         title: "Landing Error",
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/{Vertical}/landing"
+                        instance: $"/api/classified/landing"
                     );
                 }
             })
