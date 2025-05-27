@@ -120,13 +120,13 @@ namespace QLN.Common.DTOs
 
 
 
-[JsonConverter(typeof(JsonStringEnumConverter))]
+/*[JsonConverter(typeof(JsonStringEnumConverter))]
     public enum Category
     {
         Deals = 0,
         Stores = 1,
         Preloved = 2
-    }
+    }*/
 
 
 
