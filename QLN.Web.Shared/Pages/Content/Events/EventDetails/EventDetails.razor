@@ -3,6 +3,7 @@
 @using MudBlazor
 @using QLN.Web.Shared.Pages.Content.Events.EventDetails
 @layout ContentLayout
+@using QLN.Web.Shared.Components.BreadCrumb
 
 <div style="width: 100%; background-color: var(--color-secondary-background);">
     <div class="responsive-container">
@@ -11,14 +12,8 @@
         <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
             Transition="Transition.Slide" />
 
-        <MudGrid Class="py-4" GutterSize="16px">
-            <MudItem xs="12" md="8">
+                <Breadcrumb Items="breadcrumbItems" />
                 <EventDetailsSection />
-            </MudItem>
-            <MudItem xs="12" md="4">
-                <EventInfoSection />
-            </MudItem>
-        </MudGrid>
 
     </div>
 </div>
@@ -30,6 +25,18 @@
 "/images/banner_image.svg",
 "/images/banner_image.svg"
 };
+private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
+     protected override void OnInitialized()
+        {
+            breadcrumbItems = new()
+        {
+            new() {   Label = "Events",Url ="/events" },
+
+            new() { Label = "Name", Url = "/events/details", IsLast = true },
+
+        };
+           
+        }
 }
 
 <style>

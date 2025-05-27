@@ -80,6 +80,12 @@
 
     </script>
     <script>
+        window.toggleBodyScroll = function (shouldLock) {
+            document.body.style.overflow = shouldLock ? 'hidden' : '';
+        };
+
+    </script>
+    <script>
         window.triggerFileInputClick = (element) => {
             if (element) element.click();
         };

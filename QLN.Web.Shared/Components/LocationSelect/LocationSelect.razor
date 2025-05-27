@@ -1,0 +1,272 @@
+@typeparam TItem
+
+<div class="location-select-wrapper" @onfocusout="HideDropdown">
+    <div class="location-input-area" @onclick="FocusInput">
+        <div class="chip-wrapper">
+            @if (SelectedItems.Count > 0)
+            {
+                <div class="chip">
+                    <span>@ShortLabel(SelectedItems[0])</span>
+                    <button type="button" @onclick="(e) => RemoveLocation(SelectedItems[0])">×</button>
+                </div>
+
+                @if (SelectedItems.Count > 1)
+                {
+                    <div class="chip muted">
+                        <span>+ @(SelectedItems.Count - 1) more</span>
+                    </div>
+                }
+            }
+
+            <input type="text" class="search-box" value="@SearchTerm" @oninput="OnInputChanged" @onfocus="ShowDropdown"
+                placeholder="@(SelectedItems.Count >= 2 ? "" : "Search location")" />
+        </div>
+
+        <div class="location-icon">
+            <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Medium" />
+        </div>
+    </div>
+
+
+    @if (ShowSuggestions && (FilteredItems.Any() || SelectedItems.Any()))
+    {
+        <div class="dropdown-list" @onmousedown="() => IsClickingDropdown = true"
+            @onmouseup="() => IsClickingDropdown = false">
+
+            <div class="dropdown-top-fixed">
+                @if (SelectedItems.Any())
+                {
+                    @foreach (var item in SelectedItems)
+                    {
+                        <div class="dropdown-item selected">
+                            @GetLabel(item)
+                            <button class="remove-btn" @onclick="() => RemoveLocation(item)">×</button>
+                        </div>
+                    }
+                    <div class="dropdown-header">Recent searches</div>
+                }
+            </div>
+
+            @foreach (var item in FilteredItems)
+            {
+                <div class="dropdown-item" @onclick="() => SelectLocation(item)">
+                    @GetLabel(item)
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<TItem> Items { get; set; } = new();
+    [Parameter] public EventCallback<List<TItem>> SelectedItemsChanged { get; set; }
+    [Parameter] public Func<TItem, string> GetLabel { get; set; }
+    [Parameter] public Func<TItem, string> GetId { get; set; }
+    [Parameter] public EventCallback<string> OnSearch { get; set; }
+
+    private List<TItem> SelectedItems = new();
+    private List<TItem> FilteredItems = new();
+    private string SearchTerm = string.Empty;
+    private bool ShowSuggestions = false;
+    private bool IsClickingDropdown = false;
+
+    private async Task OnInputChanged(ChangeEventArgs e)
+    {
+        SearchTerm = e?.Value?.ToString() ?? "";
+        await SearchLocations();
+    }
+
+    private async Task SearchLocations()
+    {
+        await OnSearch.InvokeAsync(SearchTerm);
+
+        FilteredItems = Items
+        .Where(x => GetLabel(x).Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)
+        && !SelectedItems.Any(s => GetId(s) == GetId(x)))
+        .ToList();
+
+        ShowSuggestions = true;
+    }
+
+    private void SelectLocation(TItem item)
+    {
+        if (!SelectedItems.Any(x => GetId(x) == GetId(item)))
+        {
+            SelectedItems.Add(item);
+            SelectedItemsChanged.InvokeAsync(SelectedItems);
+        }
+
+        SearchTerm = string.Empty;
+        FilteredItems.Clear();
+        ShowSuggestions = true;
+    }
+
+    private void RemoveLocation(TItem item)
+    {
+        SelectedItems.RemoveAll(x => GetId(x) == GetId(item));
+        SelectedItemsChanged.InvokeAsync(SelectedItems);
+        ShowSuggestions = true;
+    }
+
+    private void ShowDropdown()
+    {
+        ShowSuggestions = true;
+        FilteredItems = Items
+        .Where(x => !SelectedItems.Any(s => GetId(s) == GetId(x)))
+        .ToList();
+    }
+
+    private async void HideDropdown(FocusEventArgs _)
+    {
+        await Task.Delay(150);
+        if (!IsClickingDropdown)
+        {
+            ShowSuggestions = false;
+            StateHasChanged();
+        }
+    }
+
+    private void FocusInput() => ShowDropdown();
+
+    private string ShortLabel(TItem item)
+    {
+        var full = GetLabel(item);
+        return full.Length > 12 ? full.Substring(0, 12) + "…" : full;
+    }
+}
+
+
+<style>
+    .location-select-wrapper {
+        position: relative;
+        width: 100%;
+    }
+
+    .location-input-area {
+        display: flex;
+        align-items: center;
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        background: #fff;
+        cursor: text;
+        position: relative;
+        gap: 6px;
+        justify-content: space-between;
+    }
+
+    .chip-wrapper {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        flex: 1;
+        overflow: hidden;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .search-box {
+        border: none;
+        outline: none;
+        font-size: 14px;
+        min-width: 120px;
+        flex: 1;
+        background: transparent;
+    }
+
+    .location-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #888;
+        padding-left: 8px;
+        flex-shrink: 0;
+    }
+
+
+
+    .chip {
+        background-color: #f0f0f0;
+        border-radius: 16px;
+        padding: 4px 8px;
+        display: flex;
+        align-items: center;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .chip.muted {
+        background-color: #eee;
+        color: #666;
+    }
+
+    .chip span {
+        margin-right: 4px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100px;
+    }
+
+    .chip button {
+        background: none;
+        border: none;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .dropdown-list {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 1000;
+        margin-top: 4px;
+    }
+
+    .dropdown-top-fixed {
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 1;
+        padding: 6px 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .dropdown-item {
+        padding: 10px 12px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .dropdown-item:hover {
+        background-color: #f8f8f8;
+    }
+
+    .dropdown-item.selected {
+        font-weight: bold;
+        background-color: #f4f4f4;
+    }
+
+    .dropdown-header {
+        font-weight: 600;
+        padding: 8px 12px;
+        background: #f9f9f9;
+        font-size: 13px;
+        color: #666;
+    }
+
+    .remove-btn {
+        background: none;
+        border: none;
+        font-size: 16px;
+        cursor: pointer;
+        margin-left: 8px;
+    }
+</style>

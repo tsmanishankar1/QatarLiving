@@ -4,12 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using QLN.Web.Shared.Components.EventListCard;
-
 public class EventListBase : ComponentBase
 {
     protected int CurrentPage { get; set; } = 1;
     protected int PageSize { get; set; } = 12;
     protected string SelectedSort { get; set; } = "default";
+    [Inject] protected NavigationManager Navigation { get; set; }
+
 
     public class SortOption
     {
@@ -96,11 +97,11 @@ public class EventListBase : ComponentBase
         return Task.CompletedTask;
     }
 
-    protected void HandleCardClick(EventListCard.EventItem item)
-    {
-        Console.WriteLine($"Clicked: {item.Title}");
-    }
-
+     protected void HandleCardClick(EventListCard.EventItem item)
+        {
+            Console.WriteLine($"Clicked: {item.Title}");
+            Navigation.NavigateTo("/events/details");
+        }
     protected void HandlePageChange(int newPage)
     {
         CurrentPage = newPage;
