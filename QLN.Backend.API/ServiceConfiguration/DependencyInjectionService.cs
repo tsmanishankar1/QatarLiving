@@ -1,5 +1,5 @@
-﻿using QLN.Backend.API.Service;
-using QLN.Backend.API.Service.ClassifiedService;
+﻿using QLN.Backend.API.Service.ClassifiedService;
+using QLN.Backend.API.Service.ContentService;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.BannerService;
 

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Routing;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.IService.BannerService;
+using QLN.Common.Infrastructure.Constants;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
 {
@@ -15,81 +16,239 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         /// <summary>
         /// Maps Content endpoints: detail and landing.
         /// </summary>
-        public static RouteGroupBuilder MapGetContentByIdEndpoint(this RouteGroupBuilder group)
-        {
-            
-            // GET /api/{vertical}/{id}
-            group.MapGet("/content/{id}", async (
-                    [FromRoute] string id,
-                    [FromServices] IContentService svc)
-                =>
-            {
-                try
-                {
-                    var ad = await svc.GetContentByIdAsync(id);
-                    return ad is null ? Results.NotFound() : Results.Ok(ad);
-                }
-                catch (ArgumentException ex)
-                {
-                    return Results.BadRequest(new { Message = ex.Message });
-                }
-                catch (Exception ex)
-                {
-                    return Results.Problem(
-                        title: "Lookup Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-            .WithName("GetContentById")
-            .WithTags("Content");
-
-            return group;
-        }
-
-        public static RouteGroupBuilder MapGetEventByIdEndpoint(this RouteGroupBuilder group)
-        {
-
-            // GET /api/event/{id}
-            group.MapGet("/event/{id}", async (
-                    [FromRoute] string id,
-                    [FromServices] IContentService svc)
-                =>
-            {
-                try
-                {
-                    var ad = await svc.GetEventByIdAsync(id);
-                    return ad is null ? Results.NotFound() : Results.Ok(ad);
-                }
-                catch (ArgumentException ex)
-                {
-                    return Results.BadRequest(new { Message = ex.Message });
-                }
-                catch (Exception ex)
-                {
-                    return Results.Problem(
-                        title: "Lookup Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-            .WithName("GetEventById")
-            .WithTags("Content");
-
-            return group;
-        }
-
-        public static RouteGroupBuilder MapContentLandingEndpoint(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapContentsDailyEndpoint(this RouteGroupBuilder group)
         {
 
             // GET /api/content/landing
-            group.MapGet("/content/landing", async (
-                    [FromServices] IContentService svc)
+            group.GenerateLandingEndpoint<QlnContentsDailyPageResponse>(ContentConstants.QlnContentsDaily, "GetContentsDaily"); 
+
+            return group;
+        }
+
+        public static RouteGroupBuilder MapNewsCommunityEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<NewsCommunityPageResponse>(ContentConstants.QlnNewsNewsCommunity, "GetNewsCommunity");
+
+            return group;
+        }
+
+        public static RouteGroupBuilder MapNewsMiddleEastEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<NewsMiddleEastPageResponse>(ContentConstants.QlnNewsNewsMiddleEast, "GetNewsMiddleEast");
+
+            return group;
+        }
+
+        public static RouteGroupBuilder MapNewsWorldEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<NewsWorldPageResponse>(ContentConstants.QlnNewsNewsWorld, "GetNewsWorld");
+
+            return group;
+        }
+
+        public static RouteGroupBuilder MapNewsHealthEducationEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<NewsHealthEducationPageResponse>(ContentConstants.QlnNewsNewsHealthEducation, "GetNewsHealthEducation");
+
+            return group;
+        }
+
+        public static RouteGroupBuilder MapNewsLawEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<NewsLawPageResponse>(ContentConstants.QlnNewsNewsLaw, "GetNewsLaw");
+
+            return group;
+        }
+
+        public static RouteGroupBuilder MapNewsQatarEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<NewsQatarPageResponse>(ContentConstants.QlnNewsNewsQatar, "GetNewsQatar");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapContentQueueEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.MapGet("{queue}/landing", async (
+                    [FromRoute] string queue,
+                    [FromServices] IContentService svc,
+                    CancellationToken cancellationToken
+                    )
                 =>
             {
                 try
                 {
-                    var model = await svc.GetLandingPageAsync();
+                    var model = await svc.GetPostsFromDrupalAsync<dynamic>(queue, cancellationToken);
+
+                    //if (model != null)
+                    //{
+                    //    var genericResponse = new GenericNewsPageResponse
+                    //    {
+                    //        Results = new GenericNewsResults
+                    //        {
+                    //            TopStory = model.Results.TopStory,
+                    //        }
+                    //    };
+
+                    //    return Results.Ok(genericResponse);
+
+                    //}
+
+                    //return Results.NotFound();
+                    return Results.Ok(model);
+
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { Message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Landing Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("GetLandingByQueue")
+            .WithDescription("Tester method for testing out as yet unmapped Drupal queues - returns a dynamic object so isnt very efficient")
+            .WithTags("Content");
+
+            return group;
+        }
+
+        public static RouteGroupBuilder MapContentEventsEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/events
+            group.MapGet("/events", async (
+                    [FromServices] IContentService svc,
+                    CancellationToken cancellationToken
+                    )
+                =>
+            {
+                try
+                {
+                    var model = await svc.GetEventsFromDrupalAsync(cancellationToken);
+                    return Results.Ok(model);
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { Message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Content Events Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("GetContentEvents")
+            .WithTags("Content");
+
+            return group;
+        }
+
+        public static RouteGroupBuilder MapGetPostBySlugEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/post/{slug}
+            group.MapGet("/post/{slug}", async (
+                    [FromRoute] string slug,
+                    [FromServices] IContentService svc,
+                    CancellationToken cancellationToken
+                    )
+                =>
+            {
+                try
+                {
+                    var ad = await svc.GetPostBySlugAsync(slug, cancellationToken);
+                    return ad is null ? Results.NotFound() : Results.Ok(ad);
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { Message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Lookup Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("GetPostBySlug")
+            .WithTags("Content");
+
+            return group;
+        }
+
+        public static RouteGroupBuilder MapGetEventBySlugEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/event/{slug}
+            group.MapGet("/event/{slug}", async (
+                    [FromRoute] string slug,
+                    [FromServices] IContentService svc,
+                    CancellationToken cancellationToken
+                    )
+                =>
+            {
+                try
+                {
+                    var ad = await svc.GetEventBySlugAsync(slug, cancellationToken);
+                    return ad is null ? Results.NotFound() : Results.Ok(ad);
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { Message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Lookup Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("GetEventBySlug")
+            .WithTags("Content");
+
+            return group;
+        }
+
+
+
+        private static RouteGroupBuilder GenerateLandingEndpoint<T>(this RouteGroupBuilder group, string QueueName, string Name)
+        {
+
+            // GET /api/content/landing
+            group.MapGet($"{QueueName}/landing", async (
+                    [FromServices] IContentService svc,
+                    CancellationToken cancellationToken
+                    )
+                =>
+            {
+                try
+                {
+                    var model = await svc.GetPostsFromDrupalAsync<T>(QueueName, cancellationToken);
+
                     return Results.Ok(model);
                 }
                 catch (ArgumentException ex)
@@ -104,7 +263,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                         statusCode: StatusCodes.Status500InternalServerError);
                 }
             })
-            .WithName("GetContentLanding")
+            .WithName(Name)
             .WithTags("Content");
 
             return group;

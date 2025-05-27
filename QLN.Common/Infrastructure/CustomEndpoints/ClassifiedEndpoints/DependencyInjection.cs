@@ -14,9 +14,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints
 
         public static RouteGroupBuilder MapContentLandingEndpoints(this RouteGroupBuilder group)
         {
-            group.MapContentLandingEndpoint()
-                .MapGetContentByIdEndpoint()
-                .MapGetEventByIdEndpoint();
+            group
+                .MapContentEventsEndpoint()
+                .MapContentsDailyEndpoint()
+                .MapNewsCommunityEndpoint()
+                .MapNewsQatarEndpoint()
+                .MapNewsMiddleEastEndpoint()
+                .MapNewsWorldEndpoint()
+                .MapNewsHealthEducationEndpoint()
+                .MapNewsLawEndpoint()
+                .MapContentQueueEndpoint()
+                .MapGetPostBySlugEndpoint()
+                .MapGetEventBySlugEndpoint();
 
             return group;
         }
