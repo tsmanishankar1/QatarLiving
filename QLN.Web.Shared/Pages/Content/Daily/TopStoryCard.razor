@@ -1,0 +1,115 @@
+<div class="top-story-list-card">
+    <div class="top-story-image-wrapper">
+        <img src="/images/categories/new1.svg" class="top-story-card-img" alt="Top Story Image" />
+    </div>
+
+    <div class="top-story-card-body">
+        <div class="top-story-category">Top Story</div>
+        <h3 class="top-story-title">
+            Al Sadd lift fourth Qatar Cup title with thrilling win over Al Duhail
+        </h3>
+        <div class="top-story-author-wrapper">
+            <div class="top-story-main-author">
+                Ismat Zerin •
+                <a href="#" class="top-story-main-source">Qatar Living</a>
+                <img src="/images/tick.svg" alt="Verified" class="top-story-tick-icon" />
+            </div>
+            <div class="top-story-comment-badge">
+                <img src="/images/comment_icon.svg" alt="Comments" class="top-story-comment-icon" />
+                <span class="top-story-count">12</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .top-story-list-card {
+        border-radius: 10px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background: #ffffff;
+        border: 1px solid #F0F0F0;
+        font-family: 'Public Sans';
+        max-width: 374px;
+        height: 368px;
+        cursor: pointer;
+    }
+
+    .top-story-image-wrapper {
+        width: 100%;
+        height: 214px;
+        overflow: hidden;
+        border-radius: 6px;
+        padding: 10px
+    }
+
+    .top-story-card-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        border-radius: 6px;
+
+    }
+
+    .top-story-card-body {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        background: #ffffff;
+    }
+
+    .top-story-category {
+        font-size: 11px;
+        font-weight: 500;
+        color: #646464;
+    }
+
+    .top-story-title {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: #242424;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .top-story-author-wrapper {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+
+    .top-story-main-author {
+        font-weight: 500;
+        font-size: 14px;
+        color: var(--color-text-heading);
+    }
+
+    .top-story-main-source {
+        font-weight: 500;
+        font-size: 14px;
+        color: var(--color-primary);
+    }
+
+    .top-story-comment-badge {
+        display: flex;
+        align-items: center;
+        border: 1px solid #e3e3e3;
+        border-radius: 20px;
+        padding: 4px 8px;
+        gap: 4px;
+    }
+
+    .top-story-count {
+        font-weight: 400;
+        font-size: 12px;
+        color: var(--color-primary);
+    }
+</style>
