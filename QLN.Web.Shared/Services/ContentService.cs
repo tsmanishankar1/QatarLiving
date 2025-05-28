@@ -13,7 +13,7 @@ namespace QLN.Web.Shared.Services
         public ContentService(HttpClient httpClient, IOptions<ApiSettings> options)
         {
             _httpClient = httpClient;
-            _baseUrl = options.Value.BaseUrl.TrimEnd('/');
+            _baseUrl = "https://qlc-bo-dev.qatarliving.com/";
         }
 
         /// <inheritdoc />
@@ -21,7 +21,7 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"{_baseUrl}/api/content/qln_contents_daily/landing");
+                var response = await _httpClient.GetAsync($"{_baseUrl}api/content/qln_contents_daily/landing");
                 return response;
             }
             catch (Exception ex)

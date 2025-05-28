@@ -14,7 +14,7 @@ namespace QLN.Web.Shared.Services
         public NewsService(HttpClient httpClient, IOptions<ApiSettings> options)
         {
             _httpClient = httpClient;
-            _baseUrl = options.Value.BaseUrl.TrimEnd('/');
+            _baseUrl = "https://qlc-bo-dev.qatarliving.com/";
         }
 
         public async Task<HttpResponseMessage?> GetNewsCommunityAsync()
