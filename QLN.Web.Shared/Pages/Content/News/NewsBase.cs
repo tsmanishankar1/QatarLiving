@@ -8,7 +8,7 @@ using System.Net.Http.Json;
 
 namespace QLN.Web.Shared.Pages.Content.News
 {
-    public class NewsCardBase : ComponentBase
+    public class NewsBase : ComponentBase
     {
         protected bool IsDisliked { get; set; } = true;
         protected List<string> carouselImages = new()
