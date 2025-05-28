@@ -1,5 +1,9 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using QLN.Web.Shared;
 using QLN.Web.Shared.Pages;
+using QLN.Web.Shared;
+using MudBlazor;
 using MudBlazor.Services;
 using QLN.Web.Shared.Services;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -17,12 +21,11 @@ builder.Services.AddMudServices();
 // });
 builder.Services.AddScoped<CustomAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<CustomAuthStateProvider>());
-builder.Services.AddScoped<ICommunityService,CommunityMockService>();
-builder.Services.AddScoped<IContentService, ContentService>();
+builder.Services.AddScoped<ICommunityService, CommunityMockService>();
+builder.Services.AddScoped<INewsService,NewsService>();
 
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<ICompanyProfileService, CompanyProfileService>();
-builder.Services.AddScoped<IContentService, ContentService>();
 // builder.Services.AddCascadingAuthenticationState();
 builder.Services.Configure<ApiSettings>(
     builder.Configuration.GetSection("ApiSettings"));
@@ -55,3 +58,4 @@ app.MapRazorComponents<App>()
 
 
 app.Run();
+
