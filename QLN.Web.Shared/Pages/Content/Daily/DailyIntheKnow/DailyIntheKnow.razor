@@ -1,0 +1,118 @@
+<div class="daily-know-section">
+    <!-- Section Title -->
+    <div class="daily-title">
+        <span class="title-orange">IN</span>
+        <span class="title-blue">the Know</span>
+    </div>
+
+    <!-- Categories -->
+    <div class="daily-category-group">
+        @foreach (var item in DailyCategories)
+        {
+            <button class="daily-category-btn">
+                <img src="@item.Icon" alt="@item.Label" class="btn-icon" />
+                @item.Label
+            </button>
+        }
+
+        <button class="view-all-btn">
+            View all
+            <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowRight" class="arrow-icon" />
+        </button>
+    </div>
+</div>
+
+@code {
+
+    private List<CategoryItem> DailyCategories = new()
+{
+new CategoryItem { Icon = "/images/content/business_icon.svg", Label = "Business" },
+new CategoryItem { Icon = "/images/content/sports_icon.svg", Label = "Sports" },
+new CategoryItem { Icon = "/images/content/lifestyle_icon.svg", Label = "Lifestyle" },
+new CategoryItem { Icon = "/images/content/food_icon.svg", Label = "Food & Dining" },
+new CategoryItem { Icon = "/images/content/travel_icon.svg", Label = "Travel & Leisure" },
+};
+
+
+    public class CategoryItem
+    {
+        public string Icon { get; set; }
+        public string Label { get; set; }
+    }
+}
+<style>
+    .daily-know-section {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 20px;
+        width: 100%;
+        padding: 20px 0;
+        font-family: 'Public Sans';
+    }
+
+    .daily-title {
+        font-size: 25px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .title-orange {
+        color: var(--color-accent);
+    }
+
+    .title-blue {
+        color: var(--color-primary);
+    }
+
+    .daily-category-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: center;
+    }
+
+    .daily-category-btn {
+        display: flex;
+        align-items: center;
+        padding: 10px 18px;
+        border: 1px solid var(--color-secondary-grey-container);
+        border-radius: 999px;
+        background-color: white;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .btn-icon {
+        width: 20px;
+        height: 20px;
+        margin-right: 10px;
+    }
+
+    .view-all-btn {
+        background-color: var(--color-primary);
+        color: white;
+        font-weight: 600;
+        border: none;
+        border-radius: 999px;
+        padding: 10px 22px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .arrow-icon {
+        font-size: 18px;
+        margin-left: 6px;
+        color: white;
+    }
+</style>

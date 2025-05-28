@@ -6,13 +6,39 @@ GET {{QLN.Backend.API_HostAddress}}/api/content/{{DrupalQueue}}/landing
 Accept: application/json
 
 ###
+GET {{QLN.Backend.API_HostAddress}}/api/content/event/events/fifa-arab-cup-qatar-2021
+Accept: application/json
+
+###
+GET {{QLN.Backend.API_HostAddress}}/api/content/post/forum/news/akram-afif-scores-twice-qatar-beat-lebanon-afc-asian-cup-opener
+Accept: application/json
+
+###
+GET {{QLN.Backend.API_HostAddress}}/api/content/news/forum/news/akram-afif-scores-twice-qatar-beat-lebanon-afc-asian-cup-opener
+Accept: application/json
+
+###
 
 GET {{QLN.Backend.API_HostAddress}}/api/content/events
 Accept: application/json
 
 ###
 
+GET {{QLN.Backend.API_HostAddress}}/api/content/categories
+Accept: application/json
+
+###
+GET {{QLN.Backend.API_HostAddress}}/api/content/community?forum_id=20000006
+Accept: application/json
+
+###
+
 @QLN.Drupal.API_HostAddress = https://test.qatarliving.com
+
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/categories
+Accept: application/json
+
+###
 
 GET {{QLN.Drupal.API_HostAddress}}/qlnapi/events
 Accept: application/json
@@ -28,3 +54,9 @@ Accept: application/json
 ###
 GET {{QLN.Drupal.API_HostAddress}}/qlnapi/node?slug=events/fifa-arab-cup-qatar-2021
 Accept: application/json
+
+###
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/community?page=1&page_size=10&order=asc&forum_id=20000006
+Accept: application/json
+
+

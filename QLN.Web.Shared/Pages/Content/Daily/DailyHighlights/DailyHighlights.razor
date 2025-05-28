@@ -1,0 +1,142 @@
+@using MudBlazor
+
+<div class="section-daily-highlights">
+    <div class="section-header">
+        <h3 class="section-heading">
+            <span class="accent-bar"></span>Ramadan
+        </h3>
+        <div class="view-all">
+            <span class="view-all-text">View all</span>
+            <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowRight" />
+        </div>
+    </div>
+
+    <div class="highlight-card-group">
+
+        <!-- News Card -->
+        <div class="highlight-card">
+            <img src="/images/gold.svg" class="highlight-img" alt="Gold News" />
+            <div class="highlight-content">
+                <div class="highlight-category">Finance</div>
+                <div class="highlight-title">Qatar gold prices rise by 4.86% this week</div>
+            </div>
+        </div>
+
+        <!-- Event Card -->
+        <div class="highlight-card">
+            <img src="/images/gold.svg" class="highlight-img" alt="Event" />
+            <div class="highlight-content">
+                <div class="highlight-category">Event</div>
+                <div class="highlight-title">FIFA Arab Cup Doha 2025</div>
+                <div class="highlight-desc">12 Dec 2025 to 13 Jan 2026</div>
+            </div>
+        </div>
+
+        <!-- Video Card -->
+        <div class="highlight-card">
+            <img src="/images/gold.svg" class="highlight-img" alt="Video" />
+            <div class="highlight-content">
+                <div class="highlight-category">Video</div>
+                <div class="highlight-title">Amir Cup Recap and Highlights</div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    .section-daily-highlights {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        padding: 20px 0;
+        font-family: 'Public Sans';
+        background-color: #ffffff;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        padding: 0px 5px;
+    }
+
+    .section-heading {
+        font-size: 26px;
+        font-weight: 600;
+        color: var(--color-primary);
+        display: flex;
+        align-items: center;
+    }
+
+    .accent-bar {
+        width: 4px;
+        height: 24px;
+        background-color: var(--color-primary);
+        margin-right: 8px;
+    }
+
+    .view-all {
+        display: flex;
+        align-items: center;
+        color: var(--color-accent);
+        font-weight: 600;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    .view-all-text {
+        margin-right: 4px;
+    }
+
+    .highlight-card-group {
+        display: flex;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        padding: 0 5px;
+    }
+
+    .highlight-card {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        max-width: 370px;
+    }
+
+    .highlight-img {
+        width: 130px;
+        height: 90px;
+        border-radius: 8px;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .highlight-content {
+        padding-left: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .highlight-category {
+        color: var(--color-accent);
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .highlight-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--color-text-heading);
+    }
+
+    .highlight-desc {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--color-primary);
+    }
+</style>
