@@ -12,6 +12,7 @@ using System.Collections.Concurrent;
 public class ExternalSubscriptionService : IExternalSubscriptionService
 {
     private readonly ILogger<ExternalSubscriptionService> _logger;
+    private static readonly ConcurrentDictionary<Guid, byte> _paymentTransactionIds = new();
     private static readonly ConcurrentDictionary<Guid, byte> _subscriptionIds = new ConcurrentDictionary<Guid, byte>();
     private static readonly ConcurrentDictionary<Guid, byte> _subscriptionId = new();
     private readonly RoleManager<IdentityRole<Guid>> _roleManager;
@@ -255,11 +256,26 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
     }
 
     public async Task<Guid> CreatePaymentAsync(
-        PaymentTransactionRequestDto request,
-        Guid userId,
-        CancellationToken cancellationToken = default)
+       PaymentTransactionRequestDto request,
+       Guid userId,
+       CancellationToken cancellationToken = default)
     {
         if (request == null) throw new ArgumentNullException(nameof(request));
+
+        // 🔍 Check for existing active subscription
+        foreach (var existingId in _paymentTransactionIds.Keys)
+        {
+            var existingActor = GetPaymentTransactionActorProxy(existingId);
+            var existingPayment = await existingActor.GetDataAsync(cancellationToken);
+
+            if (existingPayment != null &&
+                existingPayment.SubscriptionId == request.SubscriptionId &&
+                existingPayment.UserId == userId &&
+                existingPayment.EndDate > DateTime.UtcNow)
+            {
+                throw new InvalidOperationException("You already have an active subscription for this package.");
+            }
+        }
 
         var id = Guid.NewGuid();
         var startDate = DateTime.UtcNow;
@@ -295,13 +311,11 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         if (!result)
             throw new Exception("Payment transaction creation failed.");
 
-        _subscriptionIds.TryAdd(dto.Id, 0);
+        _paymentTransactionIds.TryAdd(dto.Id, 0);
         _logger.LogInformation("Payment transaction created with ID: {TransactionId}", dto.Id);
 
-        // ROLE LOGIC STARTS HERE
         const string subscriberRole = "Subscriber";
 
-        // 1. Ensure the role exists
         var role = await _roleManager.FindByNameAsync(subscriberRole);
         if (role == null)
         {
@@ -310,15 +324,12 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 throw new Exception("Failed to create Subscriber role.");
         }
 
-        // 2. Get the user
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user == null)
             throw new Exception($"User not found with ID: {userId}");
 
-        // 3. Get current roles of the user
         var currentRoles = await _userManager.GetRolesAsync(user);
 
-        // 4. Replace existing roles with "Subscriber" (if needed)
         if (!currentRoles.Contains(subscriberRole))
         {
             var removeResult = await _userManager.RemoveFromRolesAsync(user, currentRoles);
@@ -335,47 +346,6 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
 
 
-    //private async Task AssignSubscriberRoleAsync(Guid userId, CancellationToken cancellationToken)
-    //{
-    //    const string subscriberRoleName = "Subscriber";
-
-    //    // Check if role exists
-    //    var subscriberRole = await _dbContext.Roles
-    //        .FirstOrDefaultAsync(r => r.Name == subscriberRoleName, cancellationToken);
-
-    //    if (subscriberRole == null)
-    //    {
-    //        // Create role if it doesn't exist
-    //        subscriberRole = new IdentityRole<Guid>
-    //        {
-    //            Id = Guid.NewGuid(),
-    //            Name = subscriberRoleName,
-    //            NormalizedName = subscriberRoleName.ToUpper(),
-    //            ConcurrencyStamp = Guid.NewGuid().ToString()
-    //        };
-
-    //        await _dbContext.Roles.AddAsync(subscriberRole, cancellationToken);
-    //        await _dbContext.SaveChangesAsync(cancellationToken);
-    //    }
-
-    //    // Check if the user already has the role
-    //    var userRoleExists = await _dbContext.UserRoles
-    //        .AnyAsync(ur => ur.UserId == userId && ur.RoleId == subscriberRole.Id, cancellationToken);
-
-    //    if (!userRoleExists)
-    //    {
-    //        var userRole = new IdentityUserRole<Guid>
-    //        {
-    //            UserId = userId,
-    //            RoleId = subscriberRole.Id
-    //        };
-
-    //        await _dbContext.UserRoles.AddAsync(userRole, cancellationToken);
-    //        await _dbContext.SaveChangesAsync(cancellationToken);
-
-    //        _logger.LogInformation("Assigned Subscriber role to UserId: {UserId}", userId);
-    //    }
-    //}
 
     private DateTime ParseDurationAndGetEndDate(DateTime startDate, string duration)
     {

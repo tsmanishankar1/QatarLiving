@@ -134,38 +134,6 @@ namespace QLN.Common.DTOs
         public DateTime LastUpdated { get; set; }
     }
 
-    public class SubscriptionDetailsResponseDto
-    {
-        public Guid CompanyId { get; set; }
-        public string CompanyName { get; set; } = default!;
-        public BusinessProfileDto BusinessProfile { get; set; } = default!;
-        public SubscriptionStatisticsDto SubscriptionStatistics { get; set; } = default!;
-    }
-
-    public class BusinessProfileDto
-    {
-        public string Name { get; set; } = default!;
-        public Guid CompanyId { get; set; }
-        public string CompanyName { get; set; } = default!;
-        public string Duration { get; set; } = default!;
-        public DateTime ValidFrom { get; set; }
-        public DateTime ValidTo { get; set; }
-        public string LogoUrl { get; set; } = default!;
-    }
-
-    public class SubscriptionStatisticsDto
-    {
-        public UsageDto PublishedAds { get; set; } = default!;
-        public UsageDto PromotedAds { get; set; } = default!;
-        public UsageDto FeaturedAds { get; set; } = default!;
-        public UsageDto Refreshes { get; set; } = default!;
-    }
-
-    public class UsageDto
-    {
-        public int Usage { get; set; }
-        public int Total { get; set; }
-    }
 
 }
 
