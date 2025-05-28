@@ -797,7 +797,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             catch (Exception ex)
             {
                 _log.LogException(ex);
-                throw new InvalidOperationException("Failed to save search due to internal error.", ex);
+                throw;
             }
         }
 
@@ -820,12 +820,12 @@ namespace QLN.Backend.API.Service.ClassifiedService
             catch (DaprException dex)
             {
                 _log.LogException(dex);
-                throw new InvalidOperationException("Failed to fetch saved searches due to Dapr error.", dex);
+                throw;
             }
             catch (Exception ex)
             {
                 _log.LogException(ex);
-                throw new InvalidOperationException("An unexpected error occurred while fetching saved searches.", ex);
+                throw;
             }
         }       
 
