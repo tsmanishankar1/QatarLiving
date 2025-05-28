@@ -12,7 +12,17 @@ Accept: application/json
 
 ###
 
+GET {{QLN.Backend.API_HostAddress}}/api/content/categories
+Accept: application/json
+
+###
+
 @QLN.Drupal.API_HostAddress = https://test.qatarliving.com
+
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/categories
+Accept: application/json
+
+###
 
 GET {{QLN.Drupal.API_HostAddress}}/qlnapi/events
 Accept: application/json

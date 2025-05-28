@@ -4,6 +4,7 @@
     {
         public const string LandingPath = "/qlnapi/landing";
         public const string EventsPath = "/qlnapi/events";
+        public const string CategoriesPath = "/qlnapi/categories";
 
         // News
         public const string QlnNewsNewsCommunity = "qln_news_news_community";

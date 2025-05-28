@@ -16,6 +16,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints
         {
             group
                 .MapContentEventsEndpoint()
+                .MapContentCategoriesEndpoint()
                 .MapContentsDailyEndpoint()
                 .MapNewsCommunityEndpoint()
                 .MapNewsQatarEndpoint()

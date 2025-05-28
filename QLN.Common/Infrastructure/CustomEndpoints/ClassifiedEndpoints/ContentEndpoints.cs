@@ -165,6 +165,39 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             return group;
         }
 
+        public static RouteGroupBuilder MapContentCategoriesEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/events
+            group.MapGet("/categories", async (
+                    [FromServices] IContentService svc,
+                    CancellationToken cancellationToken
+                    )
+                =>
+            {
+                try
+                {
+                    var model = await svc.GetCategoriesFromDrupalAsync(cancellationToken);
+                    return Results.Ok(model);
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { Message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Content Categories Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("GetContentCategories")
+            .WithTags("Content");
+
+            return group;
+        }
+
         public static RouteGroupBuilder MapGetPostBySlugEndpoint(this RouteGroupBuilder group)
         {
 

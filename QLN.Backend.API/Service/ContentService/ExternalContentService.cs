@@ -19,6 +19,11 @@ namespace QLN.Backend.API.Service.ContentService
             return await httpClient.GetFromJsonAsync<List<ContentEvent>>(ContentConstants.EventsPath, cancellationToken);
         }
 
+        public async Task<CategoriesResponse?> GetCategoriesFromDrupalAsync(CancellationToken cancellationToken)
+        {
+            return await httpClient.GetFromJsonAsync<CategoriesResponse>(ContentConstants.CategoriesPath, cancellationToken);
+        }
+
         public async Task<ContentPost?> GetPostBySlugAsync(string slug, CancellationToken cancellationToken)
         {
             var results = await httpClient.GetFromJsonAsync<ContentPost>($"{ContentConstants.GetPostBySlugPath}?slug={slug}", cancellationToken);
