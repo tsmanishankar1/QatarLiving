@@ -1,6 +1,6 @@
 @using MudBlazor
 @using QLN.Web.Shared.Components.CustomPagination
-@using QLN.Web.Shared.Components.CustomSelect2
+@using QLN.Web.Shared.Components.NewCustomSelect
 
 <div class="footer-pagination-container">
     <div class="pagination-row">
@@ -27,7 +27,7 @@
     <!-- Page Size Dropdown Centered Below -->
     <div class="page-size-container">
         <div class="page-size-dropdown">
-            <CustomSelect2 TItem="int" Label="" Items="PageSizeOptions" SelectedId="@PageSize.ToString()"
+            <NewCustomSelect TItem="int" Label="" Items="PageSizeOptions" SelectedId="@PageSize.ToString()"
                 SelectedIdChanged="OnPageSizeChanged" GetId="item => item.ToString()"
                 GetLabel="@(item => $"{item} results per page")" Placeholder="Select page size" />
         </div>

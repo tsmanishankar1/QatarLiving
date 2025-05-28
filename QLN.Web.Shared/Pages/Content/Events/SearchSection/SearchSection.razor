@@ -1,4 +1,4 @@
-@using QLN.Web.Shared.Components.CustomSelect2
+@using QLN.Web.Shared.Components.NewCustomSelect
 @using MudBlazor
 @inherits SearchSectionBase
 
@@ -20,7 +20,7 @@
 
             <!-- Property Type Select -->
             <div class="select-field">
-                <CustomSelect2 TItem="SelectOption" Items="@PropertyTypes" Label="Category" Placeholder="Choose"
+                <NewCustomSelect TItem="SelectOption" Items="@PropertyTypes" Label="Category" Placeholder="Choose"
                     SelectedId="@SelectedPropertyTypeId" SelectedIdChanged="id => SelectedPropertyTypeId = id"
                     GetLabel="x => x.Label" GetId="x => x.Id" BorderRadius="@(IsMobile ? "8px" : "0px")"
                     Padding="8px 10px" />

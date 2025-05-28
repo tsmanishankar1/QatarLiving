@@ -1,7 +1,7 @@
 @implements IDisposable
 @using Microsoft.AspNetCore.Components.Web
 @using MudBlazor
-@using QLN.Web.Shared.Components.CustomSelect2
+@using QLN.Web.Shared.Components.NewCustomSelect
 @inject IJSRuntime JSRuntime
 
 @if (IsVisible || IsClosing)
@@ -16,7 +16,7 @@
             <h3 class="title">Event Reminder</h3>
             <p class="subtitle">@Message</p>
 
-            <CustomSelect2 TItem="SelectOption" Items="@CalendarOptions" Label="Calendar*" Placeholder="Choose"
+            <NewCustomSelect TItem="SelectOption" Items="@CalendarOptions" Label="Calendar*" Placeholder="Choose"
                 SelectedId="@SelectedCalendarId" SelectedIdChanged="id => SelectedCalendarId = id" GetLabel="x => x.Label"
                 GetId="x => x.Id" BorderRadius="8px" Padding="8px 10px" />
 

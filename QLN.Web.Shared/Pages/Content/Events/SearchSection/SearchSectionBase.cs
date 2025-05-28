@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor; 
 
-namespace QLN.Web.Shared.Components.CustomSelect2
+namespace QLN.Web.Shared.Components.NewCustomSelect
 {
     public class SearchSectionBase : ComponentBase
     {
