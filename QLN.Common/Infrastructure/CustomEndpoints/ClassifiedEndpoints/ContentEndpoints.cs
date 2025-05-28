@@ -1,13 +1,14 @@
-﻿using System;
-using System.Linq;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using QLN.Common.Infrastructure.DTO_s;
-using QLN.Common.Infrastructure.Model;
-using QLN.Common.Infrastructure.IService.BannerService;
+using Microsoft.Net.Http.Headers;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.DTO_s;
+using QLN.Common.Infrastructure.IService.BannerService;
+using QLN.Common.Infrastructure.Model;
+using System;
+using System.Linq;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
 {
@@ -167,9 +168,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
 
         public static RouteGroupBuilder MapContentCategoriesEndpoint(this RouteGroupBuilder group)
         {
+            const int CATEGORY_CACHE_EXPIRY_IN_MINS = 60;
 
-            // GET /api/content/events
+            // GET /api/content/categories
             group.MapGet("/categories", async (
+                    HttpContext context,
                     [FromServices] IContentService svc,
                     CancellationToken cancellationToken
                     )
@@ -177,7 +180,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             {
                 try
                 {
+                    context.Response.GetTypedHeaders().CacheControl = new CacheControlHeaderValue
+                    {
+                        Public = true,
+                        MaxAge = TimeSpan.FromMinutes(CATEGORY_CACHE_EXPIRY_IN_MINS)
+                    };
+
+                    // Add Vary header for the User-Agent
+                    context.Response.Headers[HeaderNames.Vary] = "User-Agent";
+
                     var model = await svc.GetCategoriesFromDrupalAsync(cancellationToken);
+
                     return Results.Ok(model);
                 }
                 catch (ArgumentException ex)
