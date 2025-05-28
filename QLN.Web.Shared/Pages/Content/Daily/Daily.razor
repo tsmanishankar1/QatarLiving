@@ -1,4 +1,3 @@
-<PageTitle>Qatar Living | The go-to place for lifestyle, news, and events</PageTitle>
 @inherits DailyComponentBase
 @using QLN.Web.Shared.Components.Carousel
 @using QLN.Web.Shared.Pages.Content.Daily
@@ -11,6 +10,8 @@
 @using QLN.Web.Shared.Pages.Content.Daily.DainlyIntheKnow
 @using QLN.Web.Shared.Pages.Content.Daily.MoreEvents
 @layout ContentLayout
+
+<PageTitle>Qatar Living | The go-to place for lifestyle, news, and events</PageTitle>
 
 <div style="width: 100%;background-color: var(--color-secondary-background);">
     <div style="max-width: 1200px; margin: 0 auto;">
@@ -25,9 +26,8 @@
                 <div class="main-article">
                     <div class="main-content">
                         <div class="main-category">
-                            <img src="/images/sample_news.svg" class="main-image" />
-                            <h2 class="main-title">Al Sadd lift fourth Qatar Cup title with thrilling win over Al Duhail
-                            </h2>
+                            <img src="@(TopStoryItem.ImageUrl)" class="main-image" />
+                            <h2 class="main-title">@(TopStoryItem.Title)</h2>
                             <div class="author-wrapper">
                                 <div class="main-author">
                                     Ismat Zerin • <a href="#" class="main-source">Qatar Living</a>
@@ -44,7 +44,7 @@
             </MudItem>
 
             <MudItem xs="12" md="4">
-                <DailyMoreArticle />
+                <DailyMoreArticle Items="@MoreArticles" />
             </MudItem>
         </div>
         <div class="flex-container">
