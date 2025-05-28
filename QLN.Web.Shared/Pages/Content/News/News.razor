@@ -90,7 +90,7 @@
     </MudItem>
      </div> 
      <MudItem xs="12">
-         <div class="side-padding">
+         <div class="video-padding">
        <VideoCards />
        </div>
      </MudItem>
@@ -133,7 +133,7 @@
     {
         <MudItem xs="12" sm="6" md="4"> 
             <div class="card-wrapper">
-                <NewsCard Item="news" IsHorizontal="false" />
+                <NewsCard Item="news" IsHorizontal="true" />
             </div>
         </MudItem>
     }
@@ -161,6 +161,10 @@
 .news-container{
     background-color: white;
     @* width: 100%; *@
+}
+.grid-padding {
+    padding-left: 110px;
+    padding-right: 98px;
 }
    
     .news-tabs {
@@ -202,6 +206,10 @@
     padding-left: 0px;
     @* padding-top: 0px; *@
 }
+.grid-padding {
+    padding-left: 20px;
+    padding-right: 0px;
+    }
 
 
 .news-tab {
@@ -300,6 +308,11 @@
     padding-left: 98px;
     padding-right: 98px;
 }
+.video-padding {
+    padding-left: 98px;
+    padding-right: 98px;
+    background-color: #FAFAFA;
+}
 
 .comment-badge {
     display: flex;
@@ -379,6 +392,11 @@
     .side-padding {
         padding-left: 16px;
         padding-right: 16px;
+    }
+    .video-padding {
+        padding-left: 16px;
+        padding-right: 16px;
+        background-color: #FAFAFA;
     }
  .horizontal-scroll-wrapper {
         overflow-x: auto;
