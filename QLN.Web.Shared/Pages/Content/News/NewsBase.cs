@@ -18,12 +18,12 @@ public class NewsBase : ComponentBase
         new() { Label = "Sports", Value = "sports" },
         new() { Label = "Lifestyle", Value = "lifestyle" }
     };
-    
-     
+
+
     protected string _selectedView = "news";
     protected async void SetViewMode(string view)
     {
-         _selectedView = view;
+        _selectedView = view;
     }
     protected NewsItem GoldNews = new NewsItem
     {
