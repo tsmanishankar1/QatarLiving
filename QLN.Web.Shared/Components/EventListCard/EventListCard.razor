@@ -15,7 +15,7 @@
         <p class="description">@Item.Description</p>
 
         <div class="location">
-            <MudIcon Icon="@Icons.Material.Filled.LocationOn" />
+            <MudIcon Icon="@Icons.Material.Rounded.LocationOn" Class="location-icon" />
             <span class="location-text">@Item.Location</span>
         </div>
 
@@ -106,20 +106,25 @@
         align-items: center;
         gap: 4px;
         font-size: 12px;
-        font-weight: 600;
+        font-weight: 500;
+        color: #646464;
+    }
+
+    .location-icon {
+        font-size: 16px;
         color: #646464;
     }
 
     .price {
         font-size: 25px;
         font-weight: 600;
-        color: #242424;
+        color: var(--color-primary);
     }
 
     .price .currency {
         font-size: 14px;
         font-weight: 500;
         margin-left: 4px;
-        color: #242424;
+        color: var(--color-primary);
     }
 </style>

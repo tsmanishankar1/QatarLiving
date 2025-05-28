@@ -21,7 +21,9 @@
             }
 
         </div>
-        <MudIcon Icon="@Icons.Material.Filled.ArrowDropDown" Class="arrow-icon" />
+        <MudIcon Icon="@(IsOpen? Icons.Material.Filled.KeyboardArrowUp : Icons.Material.Filled.KeyboardArrowDown)"
+            Class="arrow-icon" />
+
     </div>
 
     @if (IsOpen)
@@ -112,10 +114,14 @@
         margin-bottom: 2px;
     }
 
+    .select-display.focused .select-label-custom {
+        color: #FF7F38;
+    }
+
     .select-display {
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-end;
         background: white;
         border: 1px solid #ccc;
         padding: 10px;
@@ -150,9 +156,13 @@
     }
 
     .arrow-icon {
-        text-align: end;
         color: #475467;
+        margin-left: 8px;
+        display: flex;
+        align-items: flex-end;
+        /* ensure vertical alignment with text */
     }
+
 
     .select-dropdown {
         position: absolute;
