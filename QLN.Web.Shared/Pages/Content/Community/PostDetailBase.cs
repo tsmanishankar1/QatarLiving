@@ -59,7 +59,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         {
             breadcrumbItems = new()
         {
-            new() { Label = "Community", Url = "community" },
+            new() { Label = "Community", Url = "/content/community" },
             new() { Label = "Discussion", Url = "/post-detail/{PostId:int}",IsLast=true }
         };
 

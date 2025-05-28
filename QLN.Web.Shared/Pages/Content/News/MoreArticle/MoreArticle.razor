@@ -1,6 +1,8 @@
 @inherits MoreArticleBase
 <div class="more-articles side-spacing" style="padding-top: 20px;">
-    <h3 class="heading-style"><span class="accent-bar">|</span> More Articles</h3>
+     <h3 class="section-heading">
+  <span class="accent-bar"></span>More Articles
+</h3>
 
     @foreach (var article in Articles)
     {
@@ -17,18 +19,28 @@
 </div>
 
 <style>
+    .section-heading {
+  display: flex;
+  align-items: center;
+  font-family: 'Public Sans', sans-serif;
+  font-size: 25px;
+  font-weight: 600;
+  color: var(--color-text-heading);
+}
+
+.accent-bar {
+  display: inline-block;
+  width: 6px;        
+  height: 26px;      
+  background-color: var(--color-primary);
+  margin-right: 8px;  
+}
+
     .more-articles {
         max-width: 600px;
         font-family: 'Public Sans', sans-serif;
     }
 
-    .accent-bar {
-        margin-right: 4px;
-        font-weight: bold;
-        width: 6px;   
-        font-family: 'Public Sans', sans-serif;
-        color: var(--color-primary);
-    }
     .heading-style {
         margin-right: 4px;
         font-size: 25px;
@@ -47,7 +59,10 @@
         justify-content: space-between;
         align-items: flex-start;
         padding: 12px 0;
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid #F0F0F0;
+    }
+    .article-entry:last-child {
+    border-bottom: none;
     }
 
     .article-content {
