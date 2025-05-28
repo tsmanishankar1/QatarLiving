@@ -16,6 +16,10 @@ GET {{QLN.Backend.API_HostAddress}}/api/content/categories
 Accept: application/json
 
 ###
+GET {{QLN.Backend.API_HostAddress}}/api/content/community?forum_id=20000006
+Accept: application/json
+
+###
 
 @QLN.Drupal.API_HostAddress = https://test.qatarliving.com
 
@@ -38,3 +42,9 @@ Accept: application/json
 ###
 GET {{QLN.Drupal.API_HostAddress}}/qlnapi/node?slug=events/fifa-arab-cup-qatar-2021
 Accept: application/json
+
+###
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/community?page=1&page_size=10&order=asc&forum_id=20000006
+Accept: application/json
+
+

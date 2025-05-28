@@ -15,5 +15,6 @@ namespace QLN.Common.Infrastructure.IService.BannerService
         Task<T?> GetPostsFromDrupalAsync<T>(string queue_name, CancellationToken cancellationToken);
         Task<List<ContentEvent>?> GetEventsFromDrupalAsync(CancellationToken cancellationToken);
         Task<CategoriesResponse?> GetCategoriesFromDrupalAsync(CancellationToken cancellationToken);
+        Task<List<CommunityPost>?> GetCommunitiesFromDrupalAsync(string forum_id, CancellationToken cancellationToken, string? order = "asc", int? page_size = 10, int? page = 1);
     }
 }
