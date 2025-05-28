@@ -1,23 +1,28 @@
+@using QLN.Common.Infrastructure.DTO_s
+@using System.Text.RegularExpressions
 <div class="Top-event-list-card">
     <div class="Top-event-image-wrapper">
-        <img src="/images/categories/new1.svg" class="Top-event-card-img" alt="Title" />
-        <div class="Top-event-date">
-            12 Dec 2025 to 13 Jan 2026
-        </div>
+        <img src="@Item.ImageUrl" class="Top-event-card-img" alt="Title" />
+        @if (!string.IsNullOrEmpty(Item.EventStart) && !string.IsNullOrEmpty(Item.EventEnd))
+        {
+            <div class="Top-event-date">
+                @Item.EventStart to @Item.EventEnd
+            </div>
+        }
     </div>
 
     <div class="Top-event-card-body">
         <div class="Top-event-category">Highlighted Event</div>
 
-        <h3 class="Top-event-title">FIFA Arab Cup 2025</h3>
+        <h3 class="Top-event-title">@Item.Title</h3>
 
-        <p class="Top-event-description">
-            The FIFA Arab Cup brings together the best of Arab football, showcasing national teams competing...
+        <p class="Top-event-description" style="text-overflow:ellipsis;">
+            @StripHTML(Item.Description ?? "")
         </p>
 
         <div class="Top-event-location">
             <MudIcon Icon="@Icons.Material.Filled.LocationOn" />
-            <span class="Top-event-location-text">Doha, Qatar</span>
+            <span class="Top-event-location-text">@Item.EventLocation</span>
         </div>
     </div>
 </div>
@@ -51,7 +56,6 @@
         object-fit: cover;
         display: block;
         border-radius: 6px;
-
     }
 
     .Top-event-date {
@@ -110,3 +114,16 @@
         font-size: 12px;
     }
 </style>
+
+@code {
+    [Parameter]
+    public ContentEvent Item { get; set; } = new();
+
+
+    public static string StripHTML(string input)
+    {
+        string noHTML = Regex.Replace(input, @"<[^>]+>|&nbsp;", string.Empty).Trim();
+        string noHTMLNormalised = Regex.Replace(noHTML, @"\s{2,}", " ");
+        return noHTMLNormalised;
+    }
+}

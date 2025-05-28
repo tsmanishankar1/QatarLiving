@@ -1,12 +1,13 @@
+@using QLN.Common.Infrastructure.DTO_s
 <div class="top-story-list-card">
     <div class="top-story-image-wrapper">
-        <img src="/images/categories/new1.svg" class="top-story-card-img" alt="Top Story Image" />
+        <img src="@Item.ImageUrl" class="top-story-card-img" alt="Top Story Image" />
     </div>
 
     <div class="top-story-card-body">
         <div class="top-story-category">Top Story</div>
         <h3 class="top-story-title">
-            Al Sadd lift fourth Qatar Cup title with thrilling win over Al Duhail
+           @Item.Title
         </h3>
         <div class="top-story-author-wrapper">
             <div class="top-story-main-author">
@@ -113,3 +114,9 @@
         color: var(--color-primary);
     }
 </style>
+
+@code {
+    [Parameter]
+    public ContentPost Item { get; set; } = new();
+}
+

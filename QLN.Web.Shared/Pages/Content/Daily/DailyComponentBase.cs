@@ -2,6 +2,7 @@
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
+using System.Text.RegularExpressions;
 
 namespace QLN.Web.Shared.Pages.Content.Daily
 {
@@ -57,5 +58,6 @@ namespace QLN.Web.Shared.Pages.Content.Daily
                 return new QlnContentsDailyPageResponse();
             }
         }
+
     }
 }
