@@ -6,6 +6,18 @@ GET {{QLN.Backend.API_HostAddress}}/api/content/{{DrupalQueue}}/landing
 Accept: application/json
 
 ###
+GET {{QLN.Backend.API_HostAddress}}/api/content/event/events/fifa-arab-cup-qatar-2021
+Accept: application/json
+
+###
+GET {{QLN.Backend.API_HostAddress}}/api/content/post/forum/news/akram-afif-scores-twice-qatar-beat-lebanon-afc-asian-cup-opener
+Accept: application/json
+
+###
+GET {{QLN.Backend.API_HostAddress}}/api/content/news/forum/news/akram-afif-scores-twice-qatar-beat-lebanon-afc-asian-cup-opener
+Accept: application/json
+
+###
 
 GET {{QLN.Backend.API_HostAddress}}/api/content/events
 Accept: application/json

@@ -253,11 +253,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             return group;
         }
 
-        public static RouteGroupBuilder MapGetPostBySlugEndpoint(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapGetNewsBySlugEndpoint(this RouteGroupBuilder group)
         {
 
-            // GET /api/content/post/{slug}
-            group.MapGet("/post/{slug}", async (
+
+            // GET /api/content/news/{slug}
+            group.MapGet("/news/{*slug}", async (
                     [FromRoute] string slug,
                     [FromServices] IContentService svc,
                     CancellationToken cancellationToken
@@ -266,7 +267,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             {
                 try
                 {
-                    var ad = await svc.GetPostBySlugAsync(slug, cancellationToken);
+                    var ad = await svc.GetNewsBySlugAsync(slug, cancellationToken);
                     return ad is null ? Results.NotFound() : Results.Ok(ad);
                 }
                 catch (ArgumentException ex)
@@ -281,7 +282,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                         statusCode: StatusCodes.Status500InternalServerError);
                 }
             })
-            .WithName("GetPostBySlug")
+            .WithName("GetNewsBySlug")
             .WithTags("Content");
 
             return group;
@@ -291,7 +292,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/event/{slug}
-            group.MapGet("/event/{slug}", async (
+            group.MapGet("/event/{*slug}", async (
                     [FromRoute] string slug,
                     [FromServices] IContentService svc,
                     CancellationToken cancellationToken
@@ -321,7 +322,39 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             return group;
         }
 
+        public static RouteGroupBuilder MapGetPostBySlugEndpoint(this RouteGroupBuilder group)
+        {
 
+            // GET /api/content/event/{slug}
+            group.MapGet("/post/{*slug}", async (
+                    [FromRoute] string slug,
+                    [FromServices] IContentService svc,
+                    CancellationToken cancellationToken
+                    )
+                =>
+            {
+                try
+                {
+                    var ad = await svc.GetPostBySlugAsync(slug, cancellationToken);
+                    return ad is null ? Results.NotFound() : Results.Ok(ad);
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { Message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Lookup Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("GetPostBySlug")
+            .WithTags("Content");
+
+            return group;
+        }
 
         private static RouteGroupBuilder GenerateLandingEndpoint<T>(this RouteGroupBuilder group, string QueueName, string Name)
         {

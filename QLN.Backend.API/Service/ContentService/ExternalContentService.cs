@@ -41,6 +41,18 @@ namespace QLN.Backend.API.Service.ContentService
             return null;
         }
 
+        public async Task<ContentPost?> GetNewsBySlugAsync(string slug, CancellationToken cancellationToken)
+        {
+            var results = await httpClient.GetFromJsonAsync<ContentPost>($"{ContentConstants.GetNewsBySlugPath}?slug={slug}", cancellationToken);
+
+            if (results?.NodeType == "post")
+            {
+                return results;
+            }
+
+            return null;
+        }
+
         public async Task<ContentEvent?> GetEventBySlugAsync(string slug, CancellationToken cancellationToken)
         {
             var results = await httpClient.GetFromJsonAsync<ContentEvent>($"{ContentConstants.GetEventBySlugPath}?slug={slug}", cancellationToken);
