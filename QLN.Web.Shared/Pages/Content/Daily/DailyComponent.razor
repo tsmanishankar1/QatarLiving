@@ -1,0 +1,196 @@
+@inherits DailyComponentBase
+@using QLN.Web.Shared.Components.Carousel
+@using QLN.Web.Shared.Pages.Content.Daily
+@using QLN.Web.Shared.Components.DailyFeaturedEventCard
+@using QLN.Web.Shared.Pages.Content.Daily.DailyNewsCard
+@using QLN.Web.Shared.Pages.Content.Daily.DailyVideoCards
+@using QLN.Web.Shared.Pages.Content.Daily.DailyNewsLetter
+@using QLN.Web.Shared.Pages.Content.Daily.DailyMoreArticle
+@using QLN.Web.Shared.Pages.Content.Daily.DailyHighlights
+@using QLN.Web.Shared.Pages.Content.Daily.DailyIntheKnow
+@using QLN.Web.Shared.Pages.Content.Daily.MoreEvents
+@layout ContentLayout
+
+<PageTitle>Qatar Living | The go-to place for lifestyle, news, and events</PageTitle>
+
+<div style="width: 100%;background-color: var(--color-secondary-background);">
+    <div style="max-width: 1200px; margin: 0 auto;">
+        <div class="carousel-responsive-container">
+
+            <!-- Carousel Banner -->
+            <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
+                            Transition="Transition.Slide" />
+        </div>
+        <div class="side-padding" style="padding:40px; width: 100%;background-color: #FFFFFF;">
+            <div style="display: flex; flex-wrap: wrap;margin-bottom:20px ">
+                <MudItem xs="12" md="8">
+                    <div style="display: flex; flex-direction: row; gap: 10px; width: 100%;">
+                        <TopStoryCard Item="@TopStoryItem" />
+                        <TopEventCard Item="@HighlightedEvent" />
+
+                    </div>
+                </MudItem>
+
+                <MudItem xs="12" md="4">
+                    <DailyMoreArticle Items="@MoreArticles" />
+                </MudItem>
+            </div>
+            <div class="flex-container">
+                @foreach (var item in Items)
+                {
+                    <div class="news-card-wrapper">
+                        <DailyNewsCard Item="item" IsHorizontal="false" />
+                    </div>
+                }
+
+                <div class="newsletter-wrapper">
+                    <DailyNewsLetter />
+                </div>
+            </div>
+            <DailyIntheKnow />
+
+        </div>
+
+        <DailyFeaturedEvents FeaturedEvent="@featuredEeventData" Loading="isLoading" />
+
+        <MoreEvents />
+        <div class="responsive-container">
+
+
+            <div class="side-padding">
+                <DailyVideoCards />
+            </div>
+
+
+        </div>
+        <div class="daily-highlights">
+            <DailyHighlights />
+        </div>
+
+    </div>
+</div>
+
+@code {
+    private List<string> carouselImages = new()
+{
+"/images/banner_image.svg",
+"/images/banner_image.svg",
+"/images/banner_image.svg"
+};
+
+    private bool isLoading = false;
+
+    private List<DailyFeaturedEventCard.DailyEventItem> featuredEeventData = new()
+{
+new() { Category = "Qatar International Art Festival 2025 - 7th Edition", ImageUrl = "/images/categories/new1.svg" },
+new() { Category = "FIFA Arab Cup - Doha 2025", ImageUrl = "/images/categories/new2.svg" },
+new() { Category = "Qatar T100 Triathlon World Championship Final", ImageUrl = "/images/categories/new3.svg" },
+new() { Category = "In the Realms of Mecca: A Journey through the Ritua", ImageUrl = "/images/categories/new4.svg" },
+new() { Category = "Qatar Desert Trail Running Series 2025", ImageUrl = "/images/categories/new5.svg" },
+new() { Category = "A Sneak Peek at Qatar Auto Museum Project", ImageUrl = "/images/categories/new6.svg" }
+};
+
+
+    public List<NewsItem> Items { get; set; } = new();
+
+    private List<NewsItem> GoldNewsList = new()
+{
+new NewsItem
+{
+Category = "Finance",
+Title = "Qatar gold prices rise by 4.86% this week",
+ImageUrl = "/images/gold.svg"
+},
+new NewsItem
+{
+Category = "Economy",
+Title = "Qatar’s inflation remains steady in 2025",
+ImageUrl = "/images/gold.svg"
+},
+new NewsItem
+{
+Category = "Technology",
+Title = "New fintech regulations boost startups",
+ImageUrl = "/images/gold.svg"
+},
+};
+
+    protected override void OnInitialized()
+    {
+        // Assign GoldNewsList to Items so it gets rendered
+        Items = GoldNewsList;
+    }
+}
+
+
+<style>
+    .responsive-container {
+        width: 100%;
+        padding: 0 40px;
+        box-sizing: border-box;
+    }
+
+    .carousel-responsive-container {
+        width: 100%;
+        padding: 0px 40px;
+        margin-bottom: 40px;
+        box-sizing: border-box;
+    }
+
+    .flex-container {
+        justify-content: space-between;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px;
+    }
+
+    .news-card-wrapper {
+        padding-right: 3px;
+    }
+
+        .news-card-wrapper.with-divider {
+            border-right: 1px solid #F0F0F0;
+            padding-right: 3px;
+            padding-left: 3px;
+        }
+
+    .newsletter-wrapper {
+        flex: 1;
+        min-width: 250px;
+        /* adjust as needed */
+        padding: 0 8px;
+        /* optional for spacing */
+        box-sizing: border-box;
+    }
+
+    .side-padding {
+        padding: 10px;
+    }
+
+    .daily-highlights {
+        width: 100%;
+        background-color: #FFFFFF;
+    }
+
+    @@media (max-width: 768px) {
+        .responsive-container {
+            padding: 0 16px;
+        }
+
+        .carousel-responsive-container {
+            margin-bottom: 10px;
+            padding: 0 16px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .responsive-container {
+            padding: 0 5px;
+        }
+
+        .carousel-responsive-container {
+            margin-bottom: 5px;
+            padding: 0 5px;
+        }
+    }
+</style>
