@@ -4,6 +4,8 @@
     {
         public const string LandingPath = "/qlnapi/landing";
         public const string EventsPath = "/qlnapi/events";
+        public const string CategoriesPath = "/qlnapi/categories";
+        public const string CommunityPath = "/qlnapi/community";
 
         // News
         public const string QlnNewsNewsCommunity = "qln_news_news_community";
@@ -43,5 +45,6 @@
         // Slugs
         public const string GetEventBySlugPath = "/qlnapi/node";
         public const string GetPostBySlugPath = "/qlnapi/node";
+        public const string GetNewsBySlugPath = "/qlnapi/node";
     }
 }

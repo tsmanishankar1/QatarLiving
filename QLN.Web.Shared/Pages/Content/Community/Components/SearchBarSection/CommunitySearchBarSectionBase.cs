@@ -1,15 +1,12 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using QLN.Web.Shared.Components.Classifieds.FeaturedItemCard;
-using QLN.Web.Shared.Services;
-using static QLN.Web.Shared.Helpers.HttpErrorHelper;
 
 public class CommunitySearchBarSectionBase : ComponentBase
 {
-    [Inject] protected ISnackbar Snackbar { get; set; }
-    [Inject] protected ApiService Api { get; set; }
 
-    [Parameter] public EventCallback<List<FeaturedItemCard.FeaturedItem>> OnSearchCompleted { get; set; }
+    [Inject] protected ISnackbar Snackbar { get; set; }
+    [Parameter] public EventCallback<Dictionary<string, object>> OnSearchCompleted { get; set; }
+
 
     protected string searchText;
     protected string selectedCategory;
@@ -17,7 +14,7 @@ public class CommunitySearchBarSectionBase : ComponentBase
 
     protected List<string> categoryOptions = new()
     {
-         "Qatar Living Lounge",
+    "Qatar Living Lounge",
     "Advice & Help",
     "Welcome to Qatar",
     "Visas and Permits",
@@ -41,36 +38,24 @@ public class CommunitySearchBarSectionBase : ComponentBase
 
     protected async Task PerformSearch()
     {
-   
+
 
         loading = true;
 
-       var payload = new Dictionary<string, object>
-    {
-        ["text"] = searchText
-    };
-
-    if (!string.IsNullOrWhiteSpace(selectedCategory))
-    {
-        payload["filters"] = new Dictionary<string, object>
+        var payload = new Dictionary<string, object>
         {
-            ["Category"] = selectedCategory
+            ["text"] = searchText
         };
-    }
 
-        try
+        if (!string.IsNullOrWhiteSpace(selectedCategory))
         {
-            var result = await Api.PostAsync<object, List<FeaturedItemCard.FeaturedItem>>("api/classified/search", payload);
+            payload["filters"] = new Dictionary<string, object>
+            {
+                ["Category"] = selectedCategory
+            };
+        }
 
-            await OnSearchCompleted.InvokeAsync(result);
-        }
-        catch (HttpRequestException ex)
-        {
-            HandleHttpException(ex, Snackbar);
-        }
-        finally
-        {
-            loading = false;
-        }
+        await OnSearchCompleted.InvokeAsync(payload);
+
     }
 }

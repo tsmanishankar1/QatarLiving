@@ -33,7 +33,7 @@
                             </div>
 
                             <MudSelect T="string" @bind-Value="sortOption" Variant="Variant.Outlined"
-                                Class="sort-select" Dense="true">
+                                       Class="sort-select" Dense="true">
 
                                 <MudSelectItem T="string" Value=@(null)>Default</MudSelectItem>
                                 <MudSelectItem Value=@("Popular")>Most Popular</MudSelectItem>
@@ -43,15 +43,36 @@
 
                         </div>
                     </div>
-
-                    @foreach (var post in PostList)
+                    @if (IsLoading)
                     {
-                        <div class="postcard-margin-top">
-
-                            <PostCard Post="post" IsDetailView="false" />
-                        </div>
-
+                        @for (int i = 0; i < 3; i++)
+                        {
+                            <div class="postcard-margin-top">
+                                <MudSkeleton Width="100%" Height="200px" Animation="Animation.Pulse" />
+                            </div>
+                        }
                     }
+                    else if (HasError)
+                    {
+                        <MudPaper Class="pa-4" Color="Color.Error" Elevation="0">
+                            <MudText Typo="Typo.h6" Color="Color.Error">
+                                Oops! Something went wrong while loading community posts.
+                            </MudText>
+                            <MudText Typo="Typo.body2">
+                                Please try again later.
+                            </MudText>
+                        </MudPaper>
+                    }
+                    else
+                    {
+                        @foreach (var post in PostList)
+                        {
+                            <div class="postcard-margin-top">
+
+                                <PostCard Post="post" IsDetailView="false" />
+                            </div>
+
+                        }   }
                 </MudItem>
 
                 <!-- Right Section -->
@@ -66,7 +87,7 @@
                         </MudText>
 
                         <MudTextField T="string" Placeholder="Your email" Variant="Variant.Outlined"
-                            Class="newsletter-input" />
+                                      Class="newsletter-input" />
 
                         <MudButton Variant="Variant.Filled" Class="newsletter-button">
                             Subscribe
@@ -153,7 +174,6 @@
 
     .sort-select {
         min-width: 180px;
-
         background-color: #FFFFFF;
     }
 

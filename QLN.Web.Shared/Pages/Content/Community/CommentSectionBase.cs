@@ -1,10 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
-using QLN.Web.Shared.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using QLN.Web.Shared.Model;
+
 
 namespace QLN.Web.Shared.Pages.Content.Community
 {

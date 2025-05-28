@@ -1,64 +1,42 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
-using QLN.Web.Shared.Models;
-using QLN.Web.Shared.Services.Interface;
+using QLN.Web.Shared.Contracts;
+using QLN.Web.Shared.Model;
 
 
 namespace QLN.Web.Shared.Pages.Content.Community
 {
     public class CommunityBase : ComponentBase
     {
-        protected string search = string.Empty;
-        protected string sortOption = "Popular";
 
         [Inject] private ILogger<CommunityBase> Logger { get; set; }
         [Inject] private ICommunityService CommunityService { get; set; }
+        [Inject] private INewsLetterSubscription NewsLetterSubscriptionService { get; set; }
+        [Inject] private IAdService AdService { get; set; }
+        protected string search = string.Empty;
+        protected string sortOption = "Popular";
+        protected bool IsLoading { get; set; } = true;
+        protected bool HasError { get; set; } = false;
+
+
+        // Newsletter subscription
+        protected NewsLetterSubscriptionModel SubscriptionModel { get; set; } = new();
+        protected string SubscriptionStatusMessage = string.Empty;
+
+        protected bool IsSubscribingToNewsletter { get; set; } = false;
+
 
         protected List<PostModel> PostList { get; set; } = [];
-
-        //protected List<PostModel> posts = new()
-        //{
-        //    new PostModel
-        //    {
-        //        Id = "1",
-        //        Category = "Advice & Help",
-        //        Title = "Anyone wanna buy 5x Seated Travis Scott Tickets?",
-        //        ImageUrl = "images/content/Post1.svg",
-        //        Author = "Ismat Zerin",
-        //        Time = DateTime.Now.AddHours(-2),
-        //        LikeCount = 3,
-        //        CommentCount = 12
-        //    },
-        //    new PostModel
-        //    {
-        //        Id = "1",
-        //        Category = "Visa and Permits",
-        //        Title = "Family Residence Visa status stuck",
-        //        BodyPreview = "Looking for some advice or similar experiences. 15 April – Applied for Family Residence Visa 16 April – Uploaded missing document and resubmitted Status remained “Under Process” for 3 weeks 5 May – Visited Duhail Immigration office but was told: “Private companies come after 2 weeks” and they didn’t allow me in 7 ...",
-        //        Author = "Ismat Zerin",
-        //        Time = DateTime.Now.AddHours(-2),
-        //        LikeCount = 3,
-        //        CommentCount = 12
-        //    },
-        //    new PostModel
-        //    {
-        //        Id = "1",
-        //        Category = "Visa and Permits",
-        //        Title = "Family Residence Visa status stuck",
-        //        ImageUrl = "images/content/Post2.svg",
-        //        BodyPreview = "Looking for some advice or similar experiences. 15 April – Applied for Family Residence Visa 16 April – Uploaded missing document and resubmitted Status remained “Under Process” for 3 weeks 5 May – Visited Duhail Immigration office but was told: “Private companies come after 2 weeks” and they didn’t allow me in 7 ...",
-        //        Author = "Ismat Zerin",
-        //        Time = DateTime.Now.AddHours(-2),
-        //        LikeCount = 3,
-        //        CommentCount = 12
-        //    }
-        //};
+        //Ad
+        protected AdModel Ad { get; set; } = null;
 
         protected async override Task OnInitializedAsync()
         {
             try
             {
                 PostList = await GetPostListAsync();
+                Ad = await GetAdAsync();
+
             }
             catch (Exception ex)
             {
@@ -66,14 +44,19 @@ namespace QLN.Web.Shared.Pages.Content.Community
             }
         }
 
+
         protected async Task HandleSearchResults()
         {
             Console.WriteLine("Search completed.");
         }
         protected async Task<List<PostModel>> GetPostListAsync()
         {
+
             try
             {
+                IsLoading = true;
+                HasError = false;
+
                 var response = await CommunityService.GetAllAsync();
                 if (response != null)
                 {
@@ -83,9 +66,34 @@ namespace QLN.Web.Shared.Pages.Content.Community
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Get Post ArticleAsync");
-                return new List<PostModel>();
+                Logger.LogError(ex, "Get Community Post Async");
+                HasError = true;
+                return [];
             }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        protected async Task SubscribeAsync()
+        {
+
+            try
+            {
+                var success = await NewsLetterSubscriptionService.SubscribeAsync(SubscriptionModel);
+                SubscriptionStatusMessage = success ? "Subscribed successfully!" : "Failed to subscribe.";
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Newsletter subscription failed.");
+                SubscriptionStatusMessage = "An error occurred while subscribing.";
+            }
+        }
+        private async Task<AdModel> GetAdAsync()
+        {
+            var response = await AdService.GetAdDetail();
+            return response.FirstOrDefault();
         }
 
     }

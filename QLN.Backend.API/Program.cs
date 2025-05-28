@@ -171,6 +171,7 @@ builder.Services.AddActors(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
+builder.Services.AddResponseCaching();   // Register Response Caching service
 
 
 builder.Services.AddDaprClient();
@@ -185,6 +186,8 @@ builder.Services.CompanyConfiguration(builder.Configuration);
 builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
 var app = builder.Build();
+
+app.UseResponseCaching();                // Enable the middleware
 
 if (app.Environment.IsDevelopment())
 {
