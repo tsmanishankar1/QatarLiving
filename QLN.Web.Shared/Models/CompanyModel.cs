@@ -39,6 +39,8 @@ namespace QLN.Web.Shared.Models
             private string _businessDescription = string.Empty;
             private string _crNumber = string.Empty;
             private string _crDocumentPath = string.Empty;
+            public string? LogoBase64 { get; set; }
+            public string? DocumentBase64 { get; set; }
 
             public event PropertyChangedEventHandler PropertyChanged;
 

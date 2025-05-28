@@ -1,0 +1,207 @@
+@page "/content/community"
+<PageTitle>Community</PageTitle>
+@layout ContentLayout
+@inherits CommunityBase
+
+@inject NavigationManager Navigation
+@using QLN.Web.Shared.Pages.Content.Community.Components.SearchBarSection
+@using QLN.Web.Shared.Components.Carousel
+
+
+
+<div class="container">
+    <div class="container-inner-wrapper">
+
+        <div class="category-banner-wrapper">
+            <img src="/images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
+        </div>
+
+        <CommunitySearchBarSection OnSearchCompleted="HandleSearchResults" />
+
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="section-container">
+            <MudGrid>
+                <!-- Left Section -->
+                <MudItem xs="12" md="8">
+                    <div class=" community-header">
+                        <MudText Typo="Typo.h5" Class="community-title">
+                            Community Posts
+                        </MudText>
+
+                        <div class="sort-section">
+                            <div class="sort-label">
+                                Sort by:
+                            </div>
+
+                            <MudSelect T="string" @bind-Value="sortOption" Variant="Variant.Outlined"
+                                Class="sort-select" Dense="true" MaxHeight="40">
+
+                                <MudSelectItem T="string" Value=@(null)>Default</MudSelectItem>
+                                <MudSelectItem Value=@("Popular")>Most Popular</MudSelectItem>
+                                <MudSelectItem Value=@("Recent")>Date :Recent First</MudSelectItem>
+                                <MudSelectItem Value=@("Oldest")>Date :Oldest First</MudSelectItem>
+                            </MudSelect>
+
+                        </div>
+                    </div>
+
+                    @foreach (var post in PostList)
+                    {
+                        <div class="postcard-margin-top">
+
+                            <PostCard Post="post" IsDetailView="false" />
+                        </div>
+
+                    }
+                </MudItem>
+
+                <!-- Right Section -->
+                <MudItem xs="12" md="4">
+                    <CommunityRules />
+
+                    <MudPaper Class="newsletter-box" Elevation="1">
+
+                        <img src="/images/content/Mail.svg" alt="mail icon" class="newsletter-icon" />
+                        <MudText Typo="Typo.body1" Class="newsletter-text">
+                            Get The QL newsletter. Sign up to receive the top stories you need to know right now.
+                        </MudText>
+
+                        <MudTextField T="string" Placeholder="Your email" Variant="Variant.Outlined"
+                            Class="newsletter-input" />
+
+                        <MudButton Variant="Variant.Filled" Class="newsletter-button">
+                            Subscribe
+                        </MudButton>
+                    </MudPaper>
+
+
+                    <MudImage Src="/images/content/Ad.png" Alt="Advertisement" Class="ad-image" />
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+    </div>
+</div>
+
+
+<style>
+    .container {
+        width: 100%;
+        background-color: var(--color-secondary-background);
+    }
+
+    .container-inner-wrapper {
+        width: 100%;
+        padding: 10px 40px;
+    }
+
+    .section-container {
+        margin-top: 40px;
+    }
+
+    .category-banner-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    .category-banner-image {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        object-fit: cover;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+
+    .postcard-margin-top {
+        margin-top: 30px;
+    }
+
+    .community-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 32px;
+    }
+
+    .community-title {
+        font-family: 'Public Sans';
+        font-weight: 600;
+        font-size: 16px;
+        line-height: 26px;
+    }
+
+    .mud-select-input {
+        height: 40px;
+    }
+
+    .sort-section {
+        width: 300px;
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .sort-label {
+        font-family: 'Public Sans';
+        font-weight: 500;
+        font-size: 13px;
+        line-height: 22px;
+        color: #242424;
+        margin-bottom: 4px;
+    }
+
+    .sort-select {
+        min-width: 180px;
+
+        background-color: #FFFFFF;
+    }
+
+
+
+
+    .newsletter-box {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        padding: 12px;
+        margin-top: 1rem;
+    }
+
+    .newsletter-icon {
+        width: 48px;
+        height: 48px;
+        margin-top: 10px;
+    }
+
+    .newsletter-text {
+        font-family: 'Public Sans';
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 24px;
+        letter-spacing: 0%;
+        text-align: center;
+    }
+
+    .newsletter-input {
+        width: 292px;
+    }
+
+    .newsletter-button {
+        width: 292px;
+        height: 44px;
+        gap: 8px;
+        border-radius: 6px;
+        padding: 6px 40px;
+        background-color: #FF7F38;
+        color: white;
+    }
+
+    .ad-image {
+        width: 340px;
+        height: 402px;
+        margin-top: 18px;
+    }
+</style>

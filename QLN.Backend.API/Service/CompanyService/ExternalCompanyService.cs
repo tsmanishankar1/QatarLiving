@@ -8,20 +8,25 @@ namespace QLN.Backend.API.Service.CompanyService
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<ExternalCompanyService> _logger;
+
         public ExternalCompanyService(DaprClient dapr, ILogger<ExternalCompanyService> logger)
         {
             _dapr = dapr;
             _logger = logger;
         }
-        public async Task<CompanyProfileEntity> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
+        public const string CompanyServiceAppId = ConstantValues.CompanyServiceAppId;
+        public async Task<string> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                var response = await _dapr.InvokeMethodAsync<CompanyProfileDto, CompanyProfileEntity>(
-                   ConstantValues.CompanyServiceAppId,
-                   "/api/companyprofile/create",
-                   dto,
-                   cancellationToken);
+                var url = "/api/companyprofile/create";
+                var response = await _dapr.InvokeMethodAsync<CompanyProfileDto, string>(
+                    HttpMethod.Post,
+                    CompanyServiceAppId,
+                    url,
+                    dto,
+                    cancellationToken);
+
                 return response;
             }
             catch (Exception ex)
@@ -34,27 +39,30 @@ namespace QLN.Backend.API.Service.CompanyService
         {
             try
             {
-                var response = await _dapr.InvokeMethodAsync<CompanyProfileEntity>(
+                var url = $"/api/companyprofile/getById?id={id}";
+                return await _dapr.InvokeMethodAsync<CompanyProfileEntity>(
                     HttpMethod.Get,
-                    ConstantValues.CompanyServiceAppId,
-                    "/api/companyprofile/getById", cancellationToken);
-                return response;
+                    CompanyServiceAppId,
+                    url,
+                    cancellationToken);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while retrieving company profile for ID: {Id}", id);
+                _logger.LogError(ex, "Error retrieving company profile for ID: {Id}", id);
                 throw;
             }
         }
-        public async Task<IEnumerable<CompanyProfileEntity>> GetAllCompanies()
+
+        public async Task<List<CompanyProfileEntity>> GetAllCompanies(CancellationToken cancellationToken = default)
         {
             try
             {
-                var response = await _dapr.InvokeMethodAsync<IEnumerable<CompanyProfileEntity>>(
+                var response = await _dapr.InvokeMethodAsync<List<CompanyProfileEntity>>(
                     HttpMethod.Get,
-                    ConstantValues.CompanyServiceAppId,
-                    "/api/companyprofile/getAll");
-                return response;
+                    CompanyServiceAppId,
+                    "api/companyprofile/getAll",
+                    cancellationToken);
+                return response ?? new List<CompanyProfileEntity>();
             }
             catch (Exception ex)
             {
@@ -66,17 +74,19 @@ namespace QLN.Backend.API.Service.CompanyService
         {
             try
             {
+                var url = $"/api/companyprofile/update?id={id}";
                 var response = await _dapr.InvokeMethodAsync<CompanyProfileDto, CompanyProfileEntity>(
                     HttpMethod.Put,
-                    ConstantValues.CompanyServiceAppId,
-                    "/api/companyprofile/update",
+                    CompanyServiceAppId,
+                    url,
                     dto,
                     cancellationToken);
+
                 return response;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while updating company profile with ID: {Id}", id);
+                _logger.LogError(ex, "Error updating company profile with ID: {Id}", id);
                 throw;
             }
         }
@@ -84,18 +94,52 @@ namespace QLN.Backend.API.Service.CompanyService
         {
             try
             {
+                var url = $"/api/companyprofile/delete?id={id}";
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Delete,
-                    ConstantValues.CompanyServiceAppId,
-                    "/api/companyprofile/delete",
+                    CompanyServiceAppId,
+                    url,
                     cancellationToken);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while deleting company profile with ID: {Id}", id);
+                _logger.LogError(ex, "Error deleting company profile with ID: {Id}", id);
+                throw;
+            }
+        }
+        public async Task<CompanyProfileCompletionStatusDto?> GetCompanyProfileCompletionStatus(Guid userId, string vertical, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/companyprofile/completion-status?userId={userId}&vertical={vertical}";
+                return await _dapr.InvokeMethodAsync<CompanyProfileCompletionStatusDto>(
+                    HttpMethod.Get,
+                    CompanyServiceAppId,
+                    url,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving profile completion status for user {UserId} and vertical {Vertical}", userId, vertical);
+                throw;
+            }
+        }
+        public async Task<CompanyProfileVerificationStatusDto?> GetVerificationStatus(Guid userId, VerticalType verticalType, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/companyprofile/verification-status?userId={userId}&vertical={verticalType}";
+                return await _dapr.InvokeMethodAsync<CompanyProfileVerificationStatusDto>(
+                    HttpMethod.Get,
+                    CompanyServiceAppId,
+                    url,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving verification status for user {UserId} and vertical {VerticalType}", userId, verticalType);
                 throw;
             }
         }
     }
 }
-

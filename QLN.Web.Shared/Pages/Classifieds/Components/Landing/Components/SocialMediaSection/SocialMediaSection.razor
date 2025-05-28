@@ -4,7 +4,9 @@
 <div class="store-media-section">
     <MudGrid>
        <MudItem xs="12" md="6">
-    <div class="d-flex flex-column" style="height: 100%;justify-content: flex-start;">
+ <div class="store-header">
+
+
         <h3 class="header-title">@Title</h3>
         <h4 class="header-description">@Description</h4>
 
@@ -19,66 +21,46 @@
                                />
             }
         </div>
-@* 
-        <MudPaper Elevation="0"
-                  Class="py-3 my-4 mt-8">
-         <MudDivider Class="mb-3"/>
-            <div class="d-flex align-items-center justify-content-between">
-                <!-- Left: Avatar + Text -->
-                <div class="d-flex align-items-center">
-                    <MudAvatar Size="Size.Large" Class="mr-3" >
-                     <img src="/images/account_qatar.svg" alt="Account" style="width: 100%; height: 100%;" />
-                     </MudAvatar>
-                    <div>
-                        <MudText Typo="Typo.subtitle1" Style="color:var(--color-text-primary); font-weight: 600;">
-                            Qatar Living® Properties
-                        </MudText>
-                        <MudText Typo="Typo.body2" Style="color:var(--color-text-secondary);">
-                            <strong>6,381</strong> Posts
-                        </MudText>
-                    </div>
-                </div>
-
-                <!-- Right: Follow Button -->
-               <MudButton StartIcon="@Icons.Custom.Brands.Instagram"
-                    Style="background-color: var(--color-accent); color:var(--color-background); border-radius: 8px; text-transform: capitalize"
-                    Href="https://www.instagram.com/qatarlivingproperties"
-                    Target="_blank">
-                Follow
-            </MudButton>
-            </div>
-        </MudPaper> *@
     </div>
 </MudItem>
         <MudItem xs="12" md="6">
-            <div style="display: flex; gap: 16px; height: 100%; justify-content: center; align-items: center;">
+           <div class="video-scroll-wrapper">
+
                 @foreach (var video in VideoCards)
                 {
-                    <div style="position: relative; width: 220px; height: 348px; border-radius: 12px; overflow: hidden; cursor: pointer;"
-                         class="video-card"
-                         @onclick="() => ToggleVideoPlay(video)"
-                         @onmouseenter="() => ShowPlayButton(video)"
-                         @onmouseleave="() => HidePlayButton(video)">
-                        
-                        <!-- Video element -->
-                        <video width="100%" height="100%" 
-                               muted loop
-                               style="object-fit: cover;"
-                               src="@video.VideoUrl"
-                               @ref="video.VideoElement">
-                        </video>
-                        
-                        <!-- Play button overlay - shown on hover when not playing -->
-                        @if (video.ShowPlayButton)
-                        {
-                            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
-                                        display: flex; justify-content: center; align-items: center;
-                                        background: rgba(0,0,0,0.3);">
-                                <MudIcon Icon="@Icons.Material.Filled.PlayCircle" 
-                                         Style="color:var(--color-text-white); font-size: 36px;" />
-                            </div>
-                        }
+               <div class="video-card"
+                    style="position: relative; border-radius: 12px; overflow: hidden; cursor: pointer;"
+                    @onclick="() => ToggleVideoPlay(video)"
+                    @onmouseenter="() => ShowPlayButton(video)"
+                    @onmouseleave="() => HidePlayButton(video)">
+
+                    <!-- Video -->
+                    <video width="100%" height="100%" 
+                        muted loop
+                        style="object-fit: cover;"
+                        src="@video.VideoUrl"
+                        @ref="video.VideoElement">
+                    </video>
+
+                    <!-- Play button -->
+                    @if (video.ShowPlayButton)
+                    {
+                       <div class="play-overlay">
+                        <MudIcon Icon="@Icons.Material.Filled.PlayArrow" Class="play-icon"   />
                     </div>
+
+                    }
+
+                    <!-- Hover-only info -->
+                    <div class="video-info">
+                        <img src="@AvatarUrl" class="avatar" />
+                        <div class="info-text">
+                            <span class="source">@SourceName</span>
+                            <span class="time">@video.TimeAgo</span>
+                        </div>
+                    </div>
+                </div>
+
                 }
             </div>
         </MudItem>
@@ -88,20 +70,137 @@
 <style>
     .store-media-section {
        background-color: var(--color-background);
-       padding: 2rem 1rem;
+       padding: 2rem;
+         display: flex;
+      align-items: center;
+       justify-content: center;
        font-family: 'Public Sans', sans-serif;
     }
+    .store-header {
+    background-color: var(--color-background);
+    padding: 2rem ;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+      justify-content: center;
+    height: 100%;
+}
+
     .header-title{
         font-size: 25px;
         font-weight: 600;
         color: var(--color-text-primary);
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
     }
     .header-description{
         font-size: 16px;
         font-weight: 400;
         color: var(--color-text-descripton);
     }
+.video-scroll-wrapper {
+    display: flex;
+     gap: 20px;
+    justify-content: center;
+}
+
+
+.video-card {
+     width: 215px; height: 348px;
+}
+
+.video-card .video-info {
+    position: absolute;
+
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    background: linear-gradient(to top, rgba(0,0,0,0.6), rgba(0,0,0,0));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.video-card:hover .video-info {
+    opacity: 1;
+}
+
+.video-card .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+.video-card .info-text {
+    margin-left: 8px;
+    display: flex;
+    flex-direction: column;
+    color: white;
+}
+
+.video-card .info-text .source {
+    font-weight: 600;
+    font-size: 11px;
+    Color:#FFFFFF;
+}
+
+.video-card .info-text .time {
+    font-size: 10px;
+   font-weight: 500;
+    Color:#FFFFFF
+}
+
+.play-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.2);
+    z-index: 10; /* ensure above video */
+}
+
+.play-icon {
+    color: white;
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    padding: 5px;
+    font-size: 30px !important;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+}
+
+
+/* Mobile: enable horizontal scroll */
+@@media (max-width: 700px) {
+     .store-media-section {
+       padding: 1rem;
+    }
+     .store-header {
+       padding: 1rem;
+    }
+    .video-scroll-wrapper {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; /* Firefox */
+    }
+.video-card {
+     width: 168px; height: 299.13px;
+}
+    .video-scroll-wrapper::-webkit-scrollbar {
+        display: none; /* Chrome/Safari */
+    }
+
+    .video-card {
+        flex: 0 0 auto; /* prevent shrinking */
+    }
+}
 
 </style>
 
@@ -112,6 +211,11 @@
 
     [Parameter]
     public string Description { get; set; } = "Stay Tuned with Qatar Living Classifieds on social media for the latest updates, featured exclusive listings, market trends, and valuable insights to guide your investments.";
+[Parameter]
+public string AvatarUrl { get; set; } = "/images/qatar_socialmedia_logo.svg"; // static
+
+[Parameter]
+public string SourceName { get; set; } = "Qatar Living® Services"; // static
 
   [Parameter]
 public List<SocialPlatform> SocialPlatforms { get; set; } = new()
@@ -131,34 +235,15 @@ public List<SocialPlatform> SocialPlatforms { get; set; } = new()
         Icon = Icons.Custom.Brands.YouTube, 
         Link = "https://www.youtube.com/channel/UCcsJRinZg4qYGLRDkFiVHcQ" 
     },
-    new SocialPlatform { 
-        Name = "LinkedIn", 
-        Icon = Icons.Custom.Brands.LinkedIn, 
-        Link = "https://www.linkedin.com/company/qatarliving-com" 
-    },
-    new SocialPlatform { 
-        Name = "Twitter", 
-        Icon = Icons.Custom.Brands.Twitter, 
-        Link = "https://twitter.com/qatarliving" 
-    }
 };
 
     [Parameter]
-    public List<VideoCard> VideoCards { get; set; } = new()
-    {
-        new VideoCard { 
-            VideoUrl = "/videos/video1.mp4",
-            Title = "Video 1"
-        },
-        new VideoCard { 
-            VideoUrl = "/videos/video2.mp4",
-            Title = "Video 2"
-        },
-        new VideoCard { 
-            VideoUrl = "/videos/video3.mp4",
-            Title = "Video 3"
-        }
-    };
+  public List<VideoCard> VideoCards { get; set; } = new()
+{
+    new VideoCard { VideoUrl = "/videos/video1.mp4", Title = "Video 1", TimeAgo = "1 week ago" },
+    new VideoCard { VideoUrl = "/videos/video2.mp4", Title = "Video 2", TimeAgo = "2 days ago" },
+    new VideoCard { VideoUrl = "/videos/video3.mp4", Title = "Video 3", TimeAgo = "3 hours ago" }
+};
 
     private async Task ToggleVideoPlay(VideoCard video)
     {
@@ -215,6 +300,7 @@ public List<SocialPlatform> SocialPlatforms { get; set; } = new()
     {
         public string VideoUrl { get; set; }
         public string Title { get; set; }
+        public string TimeAgo { get; set; } 
         public bool ShowPlayButton { get; set; }
         public bool IsPlaying { get; set; }
         public ElementReference VideoElement { get; set; }

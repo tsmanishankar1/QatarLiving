@@ -1,127 +1,15 @@
 @using MudBlazor
+@using QLN.Web.Shared.Components.FaqList
 
-<div class="faqs-section">
-    <h3 class="faq-title">FAQ's</h3>
-    @foreach (var faq in faqs)
-    {
-        <MudPaper Class="@($"faq-item {(faq.Expanded ? "expanded" : "")}")" Elevation="0">
-            <MudButton Variant="Variant.Text"
-                       FullWidth="true"
-                       Class="@($"faq-question {(faq.Expanded ? "expanded" : "")}")"
-                       EndIcon="@(faq.Expanded ? Icons.Material.Filled.Remove : Icons.Material.Filled.Add)"
-                       OnClick="@(() => ToggleFaq(faq))">
-                <h4 class="faq-question-text">@faq.Question</h4>
-            </MudButton>
-
-            <MudCollapse Expanded="@faq.Expanded">
-                <MudPaper Class="faq-answer" Elevation="0">
-                     <h4 class="faq-answer-text">@faq.Answer</h4>
-                </MudPaper>
-            </MudCollapse>
-        </MudPaper>
-    }
-</div>
-
-<style>
-/* Container */
-.faqs-section {
-    padding: 2rem 1rem;
-    font-family: 'Public Sans', sans-serif;
-}
-
-/* Title */
-.faq-title {
-    font-weight: 600;
-    font-size: 25px;
-    color: var(--color-text-heading);
-    margin-bottom: 2rem;
-    text-align: center;
-}
-
-/* FAQ Item (MudPaper) */
-.faq-item {
-    margin-bottom: 8px;
-    border-radius: 8px;
-    overflow: hidden;
-    background-color: var(--color-secondary-background);
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-/* Hover and Expanded - MudPaper */
-.faq-item:hover,
-.faq-item.expanded {
-    background-color: var(--color-background);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-.faq-question-text{
-     font-weight: 500;
-     font-size: 15px;
-    color: var(--color-text-heading);
-}
-.faq-answer-text{
-     font-weight: 500;
-     font-size: 15px;
-    color: var(--color-text-gray);
-}
-/* FAQ Button */
-.faq-question {
-    justify-content: space-between;
-    padding: 1rem;
-    text-transform: none;
-    text-align: left;
-    width: 100%;
-    transition: background-color 0.3s ease;
-}
-
-/* Hover and Expanded - MudButton */
-.faq-item:hover .faq-question,
-.faq-item.expanded .faq-question {
-    background-color: var(--color-background);
-}
-
-/* End Icon */
-.faq-question .mud-button-end-icon {
-    margin-left: 1rem;
-    color: var(--mud-palette-primary);
-}
-
-/* FAQ Answer */
-.faq-answer {
-    padding: 1rem;
-    padding-top: 0;
-    background-color: var(--color-background);
-}
-
-/* Mobile Responsive */
-@@media (max-width: 600px) {
-    .faqs-section {
-        padding: 0 0.5rem;
-    }
-    .faq-question {
-        padding: 0.75rem;
-    }
-}
-</style>
+<FaqList Title="FAQ's" Items="faqItems" />
 
 @code {
-    private List<FAQItem> faqs = new()
+    private List<FaqList.FAQItem> faqItems = new()
     {
-        new FAQItem { Question = "How would Qatar living sell my car in Qatar?", Answer = "Qatar Living provides a platform to list your car with detailed information and photos. Potential buyers can contact you directly through the platform.", Expanded = false },
-        new FAQItem { Question = "How long will it take to publish the ad after I make the payment?", Answer = "After the payment, Ad will be reviewed by moderators and will be published within 24 hours.", Expanded = false },
-        new FAQItem { Question = "What is auto refresh?", Answer = "Auto refresh is a feature that automatically bumps your listing to the top of search results at regular intervals to increase visibility.", Expanded = false },
-        new FAQItem { Question = "Is there a fee for using this service?", Answer = "Basic listings are free, but featured listings and premium services may require payment.", Expanded = false },
-        new FAQItem { Question = "How does the Qatar Living decide the deal tag?", Answer = "The deal tag is automatically applied to listings that meet certain criteria for pricing and condition.", Expanded = false }
+        new() { Question = "How would Qatar Living sell my car in Qatar?", Answer = "You list your car; buyers contact you directly." },
+        new() { Question = "How long will it take to publish the ad?", Answer = "Usually within 24 hours post-review." },
+        new() { Question = "What is auto refresh?", Answer = "It bumps your listing at regular intervals." },
+        new() { Question = "Is there a fee?", Answer = "Basic listings are free; extras cost more." },
+        new() { Question = "What is the deal tag?", Answer = "Automatically added based on pricing and condition." }
     };
-
-    private void ToggleFaq(FAQItem faq)
-    {
-        faq.Expanded = !faq.Expanded;
-    }
-
-    public class FAQItem
-    {
-        public string Question { get; set; }
-        public string Answer { get; set; }
-        public bool Expanded { get; set; }
-    }
 }

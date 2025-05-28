@@ -1,6 +1,5 @@
-﻿@page "/add-company"
-@inject ISnackbar Snackbar
-@inject IJSRuntime JSRuntime
+﻿@page "/company/add"
+<PageTitle>Add Company</PageTitle>
 
 @using QLN.Web.Shared.Components.BreadCrumb
 @using System.ComponentModel.DataAnnotations
@@ -52,8 +51,7 @@
                 <!-- Form Fields -->
                 <MudItem xs="12" sm="8">
                     <MudStack Spacing="2">
-                                                <div class="selector-wrapper">
-
+                    <div class="selector-wrapper">
                         <MudTextField
                             id="businessName"
 
@@ -264,27 +262,30 @@
                         <!-- License -->
                         <MudItem xs="12">
                             <MudText Class="section-header">License & Visibility</MudText>
-                                                                            <div class="selector-wrapper">
 
-                            <MudTextField T="string"
-                                          Label="CR Number"
+                            <div class="selector-wrapper">
+                                <MudTextField T="string"
+                                              Label="CR Number"
                                               Class="form-input no-underline"
-                                          Adornment="Adornment.End"
-                                          AdornmentIcon="@Icons.Material.Filled.Upload"
-                                          OnAdornmentClick="TriggerFileUpload" />
-                            <InputFile id="doc-upload" OnChange="HandleDocumentUpload" style="display: none;" />
+                                              Adornment="Adornment.End"
+                                              AdornmentIcon="@Icons.Material.Filled.Upload"
+                                              OnAdornmentClick="TriggerFileUpload"
+                                              ReadOnly="true"
+                                              @bind-Value="crFileName" />
+
+                                <InputFile id="doc-upload" OnChange="HandleDocumentUpload" accept=".pdf,image/png,image/jpeg" style="display: none;" />
                             </div>
+
                             <div class="input-caption mt-2">
                                 Supported file formats: PDF, PNG, JPEG. Max: 10MB
                             </div>
-
-
                         </MudItem>
+
 
                     </MudStack>
                     <!-- Submit Button -->
                     <MudItem xs="12">
-                        <MudButton Variant="Variant.Filled" OnClick="SubmitForm" Class="mt-4 px-8" Style="background-color: #F26D1E;color:white">
+                        <MudButton Variant="Variant.Filled" OnClick="SubmitCompanyAsync" Class="mt-4 px-8" Style="background-color: #F26D1E;color:white">
                             Save
                         </MudButton>
 

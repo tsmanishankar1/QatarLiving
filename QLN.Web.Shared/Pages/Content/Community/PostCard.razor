@@ -1,0 +1,172 @@
+﻿@using System.Globalization
+@inherits PostCardBase
+@using MudBlazor
+
+<MudPaper Class="post-card" Elevation="0" @onclick="() => { if (!IsDetailView) NavigateToPostDetail(); }">
+    <div class="post-header d-flex justify-space-between align-center">
+        <div class="post-tag">@Post.Category</div>
+
+        <MudMenu Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopRight">
+            <ActivatorContent>
+                <MudIconButton DisableRipple="true" >
+                    <img src="images/content/Menu.svg" alt="More" class="menu-icon" />
+                </MudIconButton>
+            </ActivatorContent>
+
+            <ChildContent>
+                @if (!IsDetailView)
+                {
+                    <MudMenuItem OnClick="@OnReport">Report</MudMenuItem>
+                }
+            </ChildContent>
+
+        </MudMenu>
+
+
+    </div>
+    <div class="post-title">@Post.Title</div>
+
+    @if (!string.IsNullOrWhiteSpace(Post.ImageUrl))
+    {
+        <img src="@($"{Post.ImageUrl}")" alt="Post Image" class="post-image" />
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Post.BodyPreview))
+    {
+        <div class="post-body">@Post.BodyPreview</div>
+    }
+
+    <div class="post-footer">
+        <div class="post-footer-left">
+            <img src="/images/content/Sample.svg" alt="User Avatar" class="post-footer-avatar" />
+            By @Post.Author • @Post.Time.ToString("MMM dd, yyyy - hh:mm tt")
+        </div>
+
+        <div class="post-icons">
+            <div class="like-wrapper">
+
+            <img src="images/content/Like.svg" class="icon" />
+            <span>@Post.LikeCount</span>
+            </div>
+               <div class="like-wrapper">
+
+            <img src="images/content/Dislike.svg" class="icon" />
+            <span>@Post.LikeCount</span>
+            </div>
+
+            <img src="images/content/Share.svg" class="icon" />
+
+            <img src="images/content/Comment.svg" class="icon" />
+            <span>@Post.CommentCount</span>
+        </div>
+    </div>
+</MudPaper>
+
+
+
+<style>
+    .post-card {
+        border: 1px solid #E0E0E0;
+        border-radius: 12px;
+        padding: 16px;
+        margin-top: 16px;
+    }
+
+    .post-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+
+    .post-tag {
+        display: inline-block;
+        background-color: #FFF0E7;
+        color: #FF7F38;
+        padding: 4px 12px;
+        border-radius: 9999px;
+        font-size: 12px;
+        font-weight: 500;
+        border: 1px solid #FF7F38;
+        margin-bottom: 8px;
+    }
+
+    .post-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1c1c1c;
+        margin-bottom: 10px;
+    }
+
+    .post-image {
+        width: 100%;
+        max-height: 400px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+
+    .post-body {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 12px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2; 
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .post-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 12px;
+        color: #999;
+        border: 1px solid #F0F0F0;
+        border-radius: 12px;
+        padding: 2px 4px;
+    }
+
+    .post-icons {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 4px;
+    }
+
+
+    .menu-icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    .icon {
+        width: 18px;
+        height: 18px;
+    }
+
+    .post-footer-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 2px 4px;
+    }
+
+    .post-footer-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 200px;
+        border: 1.5px solid #F0F0F0;
+        object-fit: cover;
+    }
+
+    .like-wrapper {
+        background-color: #F4F4FA;
+        padding: 8px;
+        display: inline-flex;
+        align-items: center;
+        border-radius: 6px;
+        gap: 6px;
+    }
+
+</style>

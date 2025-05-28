@@ -22,7 +22,7 @@
 
 <!-- Main Container -->
 <div style="width: 100%; background-color: var(--color-secondary-background);">
-    <div style="width: 100%; padding: 0 40px;">
+    <div class="responsive-container">
 
         <!-- Carousel Banner -->
         <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
@@ -43,7 +43,7 @@
     <SubscriptionSection />
 
 
-    <div style="width: 100%; padding: 0 40px;">
+    <div class="responsive-container">
         <!-- Store Deals -->
         <StoreDealsSection Stores="storeData" />
 
@@ -182,5 +182,23 @@
         border-radius: 8px;
         object-fit: cover;
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+
+    .responsive-container {
+        width: 100%;
+        padding: 0 40px;
+        box-sizing: border-box;
+    }
+
+    @@media (max-width: 768px) {
+        .responsive-container {
+            padding: 0 16px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .responsive-container {
+            padding: 0 5px;
+        }
     }
 </style>

@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace QLN.Common.Infrastructure.IService.BannerService
+namespace QLN.Common.Infrastructure.IService
 {
     public interface IClassifiedService
     {
@@ -14,43 +14,40 @@ namespace QLN.Common.Infrastructure.IService.BannerService
         Task<ClassifiedIndexDto?> GetById(string id);
         Task<string> Upload(ClassifiedIndexDto document);
         Task<ClassifiedLandingPageResponse> GetLandingPage();
-        Task<Adcateg> AddCategory(string categoryName, CancellationToken cancellationToken = default);
-        Task<List<Adcateg>> GetAllCategories(CancellationToken cancellationToken = default);
-
-        Task<AdSubCategory> AddSubCategory(string name, Guid categoryId, CancellationToken cancellationToken = default);
-        Task<List<AdSubCategory>> GetAllSubCategories(CancellationToken cancellationToken = default);
-        Task<List<AdSubCategory>> GetSubCategoriesByCategoryId(Guid categoryId);
-        Task<AdBrand> AddBrand(string name, Guid subCategoryId, CancellationToken cancellationToken = default);
-        Task<List<AdBrand>> GetAllBrands(CancellationToken cancellationToken = default);
-        Task<List<AdBrand>> GetBrandsBySubCategoryId(Guid subCategoryId, CancellationToken cancellationToken = default);
-        Task<AdModel> AddModel(string name, Guid brandId, CancellationToken cancellationToken = default);
-        Task<List<AdModel>> GetAllModels(CancellationToken cancellationToken = default);
-        Task<List<AdModel>> GetModelsByBrandId(Guid brandId, CancellationToken cancellationToken = default);
-        Task<AdCondition> AddCondition(string name, CancellationToken cancellationToken = default);
-        Task<List<AdCondition>> GetAllConditions(CancellationToken cancellationToken = default);
-        Task<AdColor> AddColor(string name, CancellationToken cancellationToken = default);
-        Task<List<AdColor>> GetAllColors(CancellationToken cancellationToken = default);
-        Task<AdCapacity> AddCapacity(string name, CancellationToken cancellationToken = default);
-        Task<List<AdCapacity>> GetAllCapacities(CancellationToken cancellationToken = default);
-        Task<AdProcessor> AddProcessor(string name, Guid modelId, CancellationToken cancellationToken = default);
-        Task<List<AdProcessor>> GetAllProcessors(CancellationToken cancellationToken = default);
-        Task<List<AdProcessor>> GetProcessorsByModelId(Guid modelId, CancellationToken cancellationToken = default);
-        Task<AdCoverage> AddCoverage(string name, CancellationToken cancellationToken = default);
-        Task<List<AdCoverage>> GetAllCoverages(CancellationToken cancellationToken = default);
-        Task<AdRam> AddRam(string name, Guid modelId, CancellationToken cancellationToken = default);
-        Task<List<AdRam>> GetAllRams(CancellationToken cancellationToken = default);
-        Task<List<AdRam>> GetRamsByModelId(Guid modelId, CancellationToken cancellationToken = default);
-        Task<AdResolution> AddResolution(string name, Guid modelId, CancellationToken cancellationToken = default);
-        Task<List<AdResolution>> GetAllResolutions(CancellationToken cancellationToken = default);
-        Task<List<AdResolution>> GetResolutionsByModelId(Guid modelId, CancellationToken cancellationToken = default);
-        Task<AdSizeType> AddSizeType(string name, CancellationToken cancellationToken = default);
-        Task<List<AdSizeType>> GetAllSizeTypes(CancellationToken cancellationToken = default);
-        Task<AdGender> AddGender(string name, CancellationToken cancellationToken = default);
-        Task<List<AdGender>> GetAllGenders(CancellationToken cancellationToken = default);
-        Task<AdZone> AddZone(string name, CancellationToken cancellationToken = default);
-        Task<List<AdZone>> GetAllZones(CancellationToken cancellationToken = default);
-        //Task<string> CreateAd(AdInformation ad, string userId, CancellationToken token = default);
-        //Task<List<AdResponse>> GetUserAds(string userId, bool? isPublished, CancellationToken token = default);
-
+        Task<Category> AddCategory(string categoryName, CancellationToken cancellationToken = default);
+        Task<List<CategoriesDto>> GetAllCategories(CancellationToken cancellationToken = default);
+        Task<Category> AddSubCategory(string name, Guid categoryId, CancellationToken cancellationToken = default);
+        Task<List<CategoriesDto>> GetAllSubCategories(CancellationToken cancellationToken = default);
+        Task<CategoryDto?> GetCategoryWithSubCategories(Guid categoryId, CancellationToken cancellationToken = default);
+        Task<Category> AddBrand(string name, Guid subCategoryId, CancellationToken cancellationToken = default);
+        Task<List<CategoriesDto>> GetAllBrands(CancellationToken cancellationToken = default);
+        Task<SubCategoryWithBrandsDto> GetSubCategoryWithBrands(Guid subCategoryId, CancellationToken cancellationToken = default);
+        Task<Category> AddModel(string name, Guid brandId, CancellationToken cancellationToken = default);
+        Task<List<CategoriesDto>> GetAllModels(CancellationToken cancellationToken = default);
+        Task<BrandWithModelsDto> GetBrandWithModels(Guid brandId, CancellationToken cancellationToken = default);
+        Task<Category> AddCondition(string name, CancellationToken cancellationToken = default);
+        Task<List<CategoriesDto>> GetAllConditions(CancellationToken cancellationToken = default);
+        Task<Category> AddColor(string name, CancellationToken cancellationToken = default);
+        Task<List<CategoriesDto>> GetAllColors(CancellationToken cancellationToken = default);
+        Task<Category> AddCapacity(string name, CancellationToken cancellationToken = default);
+        Task<List<CategoriesDto>> GetAllCapacities(CancellationToken cancellationToken = default);
+        Task<Category> AddProcessor(string name, Guid modelId, CancellationToken cancellationToken = default);
+        Task<List<CategoriesDto>> GetAllProcessors(CancellationToken cancellationToken = default);
+        Task<ModelWithProcessorsDto?> GetModelWithProcessors(Guid modelId, CancellationToken cancellationToken = default);
+        Task<Category> AddCoverage(string name, CancellationToken cancellationToken = default);
+        Task<List<CategoriesDto>> GetAllCoverages(CancellationToken cancellationToken = default);
+        Task<Category> AddRam(string name, Guid modelId, CancellationToken cancellationToken = default);
+        Task<List<CategoriesDto>> GetAllRams(CancellationToken cancellationToken = default);
+        Task<ModelWithRamDto?> GetModelWithRam(Guid modelId, CancellationToken cancellationToken = default);
+        Task<Category> AddResolution(string name, Guid modelId, CancellationToken cancellationToken = default);
+        Task<List<CategoriesDto>> GetAllResolutions(CancellationToken cancellationToken = default);
+        Task<ModelWithResolutionsDto?> GetModelWithResolutions(Guid modelId, CancellationToken cancellationToken = default);
+        Task<Category> AddSizeType(string name, CancellationToken cancellationToken = default);
+        Task<List<CategoriesDto>> GetAllSizeTypes(CancellationToken cancellationToken = default);
+        Task<Category> AddZone(string name, CancellationToken cancellationToken = default);
+        Task<List<CategoriesDto>> GetAllZones(CancellationToken cancellationToken = default);
+        Task<bool> SaveSearch(SaveSearchRequestDto dto, Guid userId, CancellationToken cancellationToken = default);
+        Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default);
+        Task<List<SavedSearchResponseDto>> GetSearches(string userId, CancellationToken cancellationToken = default);
     }
 }

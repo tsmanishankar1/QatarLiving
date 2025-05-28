@@ -1,0 +1,385 @@
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<MudGrid Class="py-4" GutterSize="16px">
+    <!-- Main Content -->
+    <MudItem xs="12" md="8">
+        <div class="event-card">
+            <div class="event-header">
+                <h2 class="event-title">Beach Volleyball Championship</h2>
+            </div>
+
+            <div class="event-image-container">
+                <img src="/images/event_image.svg" alt="Beach Volleyball" class="event-image" />
+
+                <div class="event-info-bar">
+                    <div class="location">
+                        <MudIcon Icon="@Icons.Material.Filled.LocationOn" class="location-icon" />
+                        <span class="location-text">Al Mayassa Hall, QNCC, Doha</span>
+                    </div>
+                    <div class="icons">
+                        <MudIconButton Icon="@Icons.Material.Filled.FavoriteBorder" Class="icons-color" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Share" Class="icons-color" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Info -->
+            <div class="event-mobile-info">
+                @* Reuse common event info *@
+                @EventInfoBlock()
+
+                @* Register/Calendar Buttons *@
+                @ActionButtons()
+            </div>
+
+            <div class="event-description mt-4">
+                <p>
+                    Experience the thrill of the Beach Volleyball Championship! Watch top teams compete in an
+                    electrifying tournament. Enjoy the sun, sand, and sporting spirit with friends and family.
+                </p>
+            </div>
+        </div>
+    </MudItem>
+
+    <!-- Sidebar -->
+    <MudItem xs="12" md="4">
+        <div class="card-container">
+            <div class="card-desktop-only">
+                <h3 class="section-title">Sports & Activities</h3>
+                @EventInfoBlock()
+                @ActionButtons()
+            </div>
+
+            <!-- Always visible map & ad -->
+            <div class="map-container">
+                <span class="map-access-name">Location:</span>
+                <iframe frameborder="0" scrolling="no" marginheight="0" marginwidth="0"
+                    src="https://www.openstreetmap.org/export/embed.html?bbox=51.505%2C25.295%2C51.515%2C25.305&layer=mapnik&marker=25.300%2C51.510"
+                    class="map-frame">
+                </iframe>
+            </div>
+            <img src="/images/classifieds/detail_ad.svg" alt="Ad" class="ad-banner" />
+        </div>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private bool IsModalOpen { get; set; } = false;
+
+    private void OnCalendarConfirmed()
+    {
+        // Add calendar logic
+    }
+
+    RenderFragment EventInfoBlock() => __builder =>
+    {
+        <div class="info-section">
+            <div class="info-item">
+                <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Style="color: #555;" />
+                <span class="info-text">12 Dec 2025 to 13 Jan 2026</span>
+            </div>
+            <div class="info-item">
+                <MudIcon Icon="@Icons.Material.Filled.AccessTime" Style="color: #555;" />
+                <span class="info-text">12:00 PM</span>
+            </div>
+        </div>
+
+        <div class="info-Access">
+            <span class="access-name">Access Fees:</span>
+            <span class="price-text">250 - 3,500 <span class="qar">QAR</span></span>
+        </div>
+
+        <div class="location-secondary">
+            <MudIcon Icon="@Icons.Material.Filled.LocationOn" class="location-icon" />
+            <span class="location-text">Al Mayassa Hall, QNCC, Doha</span>
+        </div>
+    };
+
+    RenderFragment ActionButtons() => __builder =>
+    {
+        <button class="register-button">
+            Register Now
+            <MudIcon Icon="@Icons.Material.Filled.Event" Style="margin-right: 6px;" />
+        </button>
+        <button class="calendar-button" @onclick="() => IsModalOpen = true">
+            Add to Calendar
+            <MudIcon Icon="@Icons.Material.Filled.Event" Style="margin-right: 6px;" />
+        </button>
+
+        <AddToCalendarDialog @bind-IsVisible="IsModalOpen" Message="You will be notified 1 day ahead of this event"
+            OnConfirm="OnCalendarConfirmed" />
+    };
+}
+
+
+<style>
+    .event-card {
+        background-color: white;
+        border-radius: 6px;
+        padding: 24px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        font-family: 'Public Sans';
+    }
+
+    .event-title {
+        font-size: 25px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .event-image-container {
+        width: 100%;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #F0F0F0;
+    }
+
+    .event-image {
+        width: 100%;
+        max-height: 421.88px;
+        object-fit: cover;
+        display: block;
+    }
+
+    .event-info-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 5px 10px;
+        background: #ffffff;
+    }
+
+    .location {
+        display: flex;
+        align-items: center;
+        color: var(--color-primary);
+    }
+
+    .location-secondary {
+        display: none;
+        align-items: center;
+        color: var(--color-primary);
+    }
+
+
+    .icons-item {
+        border-radius: 50px;
+        padding: 10px;
+        border: 1px solid var(--color-secondary-grey-container);
+        color: var(--color-accent)
+    }
+
+    .icons-color {
+        background-color: white;
+        border-radius: 30px;
+        border: 1px solid var(--color-secondary-grey-container);
+        padding: 5px;
+        font-size: 14px;
+        color: var(--color-accent)
+    }
+
+    .location-icon {
+        font-size: 14px;
+        color: var(--color-primary);
+    }
+
+    .location-text {
+        margin-left: 6px;
+        font-weight: 500;
+        font-size: 13px;
+        color: var(--color-primary)
+    }
+
+    .icons {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .event-description {
+        margin-top: 20px;
+        font-size: 16px;
+        line-height: 1.6;
+        color: #444;
+    }
+
+    .card-container {
+        background-color: white;
+        border-radius: 6px;
+        padding: 24px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        font-family: 'Public Sans';
+    }
+
+    .card-desktop-only {
+        display: block;
+    }
+
+    .section-title {
+        margin: 0;
+        font-size: 12px;
+        color: #2A6BA0;
+        font-weight: 500;
+        padding: 2px 6px;
+        border-radius: 3px;
+        border: 1px solid #E8F2FE;
+    }
+
+    .info-section {
+        margin: 10px 0;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid #E8F2FE;
+    }
+
+    .info-Access {
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        flex-direction: column;
+        padding: 10px 0;
+    }
+
+    .info-text {
+        font-size: 14px;
+        color: #454545;
+        font-weight: 500;
+    }
+
+    .price-text {
+        font-size: 25px;
+        font-weight: 600;
+        color: var(--color-text-heading);
+    }
+
+    .access-name {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--color-text-heading);
+    }
+
+    .map-access-name {
+        font-size: 14px;
+        font-weight: 500;
+        padding: 5px 0;
+        color: var(--color-text-heading);
+    }
+
+
+    .qar {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--color-text-heading);
+    }
+
+    .register-button,
+    .calendar-button {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+        margin-bottom: 12px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+    }
+
+    .register-button {
+        background-color: var(--color-accent);
+        color: white;
+    }
+
+    .calendar-button {
+        background-color: transparent;
+        color: var(--color-accent);
+        border: 1px solid var(--color-accent);
+    }
+
+    .map-container {
+        margin-top: 24px;
+    }
+
+    .map-frame {
+        width: 100%;
+        height: 200px;
+        border: none;
+        border-radius: 8px;
+    }
+
+    .ad-banner {
+        margin-top: 24px;
+        width: 100%;
+    }
+
+    /* Responsive styles */
+    .event-mobile-info {
+        display: none;
+    }
+
+    @@media (max-width: 768px) {
+        .event-image-container {
+            position: relative;
+        }
+
+        .event-info-bar {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            background: transparent;
+            padding: 0;
+            justify-content: flex-end;
+            pointer-events: none;
+        }
+
+        .icons {
+            gap: 8px;
+            pointer-events: auto;
+        }
+
+        .icons-item {
+            border: none;
+        }
+
+        .card-container {
+            margin-top: 16px;
+        }
+
+        .card-desktop-only {
+            display: none;
+        }
+
+        .location {
+            display: none;
+        }
+
+        .event-mobile-info {
+            display: block;
+            padding: 10px 5px;
+        }
+
+        .event-info-bar {
+            top: 8px;
+            right: 8px;
+        }
+
+        .location-secondary {
+            display: flex;
+            padding: 5px 0;
+        }
+    }
+</style>

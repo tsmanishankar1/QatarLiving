@@ -1,5 +1,4 @@
-﻿// QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints.cs
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -10,14 +9,18 @@ using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.BannerService;
 using System.Security.Claims;
 using QLN.Common.Infrastructure.Model;
+using Microsoft.AspNetCore.Http.HttpResults;
+using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.Utilities;
+using QLN.Common.Infrastructure.CustomException;
+using System.ComponentModel.DataAnnotations;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 {
     public static class ClassifiedEndpoints
     {
-        private const string Vertical = Constants.ConstantValues.ClassifiedsVertical;
-
-        public static RouteGroupBuilder MapClassifiedLandingEndpoints(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapClassifiedEndpoints(this RouteGroupBuilder group)
         {
             // SEARCH
             group.MapPost("/search", async (
@@ -35,7 +38,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Bad Request",
                         Detail = "Search payload is required.",
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{Vertical}/search"
+                        Instance = $"/api/classified/search"
                     });
                 }
 
@@ -52,7 +55,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Invalid Request",
                         Detail = ex.Message,
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{Vertical}/search"
+                        Instance = $"/api/classified/search"
                     });
                 }
                 catch (Exception ex)
@@ -62,7 +65,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         title: "Search Error",
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/{Vertical}/search"
+                        instance: $"/api/classified/search"
                     );
                 }
             })
@@ -89,7 +92,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Bad Request",
                         Detail = "Document ID is required.",
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{Vertical}/{id}"
+                        Instance = $"/api/classified/{id}"
                     });
                 }
 
@@ -100,9 +103,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         return Results.NotFound(new ProblemDetails
                         {
                             Title = "Not Found",
-                            Detail = $"No document '{id}' in '{Vertical}'.",
+                            Detail = $"No document '{id}' in 'classifieds'.",
                             Status = StatusCodes.Status404NotFound,
-                            Instance = $"/api/{Vertical}/{id}"
+                            Instance = $"/api/classified/{id}"
                         });
                     return Results.Ok(ad);
                 }
@@ -114,7 +117,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Invalid Request",
                         Detail = ex.Message,
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{Vertical}/{id}"
+                        Instance = $"/api/classified/{id}"
                     });
                 }
                 catch (Exception ex)
@@ -124,7 +127,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         title: "Lookup Error",
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/{Vertical}/{id}"
+                        instance: $"/api/classified/{id}"
                     );
                 }
             })
@@ -152,7 +155,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Bad Request",
                         Detail = "Document payload is required.",
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{Vertical}/upload"
+                        Instance = $"/api/classified/upload"
                     });
                 }
 
@@ -169,7 +172,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Invalid Request",
                         Detail = ex.Message,
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{Vertical}/upload"
+                        Instance = $"/api/classified/upload"
                     });
                 }
                 catch (Exception ex)
@@ -179,7 +182,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         title: "Upload Error",
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/{Vertical}/upload"
+                        instance: $"/api/classified/upload"
                     );
                 }
             })
@@ -206,7 +209,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Bad Request",
                         Detail = "Document payload with valid Id is required.",
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{Vertical}/update"
+                        Instance = $"/api/classified/update"
                     });
                 }
 
@@ -223,7 +226,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Invalid Request",
                         Detail = ex.Message,
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{Vertical}/update"
+                        Instance = $"/api/classified/update"
                     });
                 }
                 catch (Exception ex)
@@ -233,7 +236,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         title: "Update Error",
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/{Vertical}/update"
+                        instance: $"/api/classified/update"
                     );
                 }
             })
@@ -253,6 +256,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
+                    if (string.IsNullOrWhiteSpace(categoryName))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Category name cannot be null or empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
                     var created = await service.AddCategory(categoryName, token);
                     return TypedResults.Created($"/api/classified/category/{created.Id}", created);
                 }
@@ -267,18 +279,36 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: "An unexpected error occurred.",
-                        statusCode: StatusCodes.Status500InternalServerError
-                        );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"category not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                        return TypedResults.Problem(
+                            title: "Internal Server Error",
+                            detail: "An unexpected error occurred.",
+                            statusCode: StatusCodes.Status500InternalServerError
+                            );
                 }
             })
                 .WithName("AddCategory")
-                .WithTags("Category")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Create a new ad category")
                 .WithDescription("Adds a new ad category into the unified adstore")
-                .Produces<Adcateg>(StatusCodes.Status201Created)
+                .Produces<Category>(StatusCodes.Status201Created)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -291,22 +321,61 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 try
                 {
                     var categories = await service.GetAllCategories(token);
+
+                    if (categories == null || !categories.Any())
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "No Categories Found",
+                            Detail = "The category store is empty or not available.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+
                     return TypedResults.Ok(categories);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Internal Operation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                            title: "Fetch Error",
-                            detail: ex.Message,
-                            statusCode: StatusCodes.Status500InternalServerError
-                            );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"category not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unexpected Error",
+                        Detail = "An unexpected error occurred while fetching categories.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("GetAllCategories")
-                .WithTags("Category")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get all ad categories")
                 .WithDescription("Fetches all available ad categories from Dapr store")
-                .Produces<List<Adcateg>>(StatusCodes.Status200OK)
+                .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
@@ -318,8 +387,35 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
+                    if (string.IsNullOrWhiteSpace(dto.Name))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Subcategory name cannot be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    if (dto.CategoryId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Parent Category ID is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
                     var created = await service.AddSubCategory(dto.Name, dto.CategoryId, token);
                     return TypedResults.Created($"/api/classified/subcategory/{created.Id}", created);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Argument",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
                 }
                 catch (InvalidDataException ex)
                 {
@@ -332,18 +428,28 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: "An unexpected error occurred.",
-                        statusCode: StatusCodes.Status500InternalServerError
-                        );
+                     if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"sub category not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }                  
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unexpected Error",
+                        Detail = "An unexpected error occurred.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("AddSubCategory")
-                .WithTags("SubCategory")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Create a new subcategory")
                 .WithDescription("Adds a subcategory linked to a category.")
-                .Produces<AdSubCategory>(StatusCodes.Status201Created)
+                .Produces<Category>(StatusCodes.Status201Created)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -357,22 +463,59 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 try
                 {
                     var subCategories = await service.GetAllSubCategories(token);
+                    if (subCategories == null || !subCategories.Any())
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "No Data",
+                            Detail = "No subcategories found in the store.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
                     return TypedResults.Ok(subCategories);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Fetch Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                        );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"sub category not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unexpected Error",
+                        Detail = "An unexpected error occurred while retrieving subcategories.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("GetAllSubCategories")
-                .WithTags("SubCategory")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get all subcategories")
                 .WithDescription("Fetches all available subcategories from Dapr store.")
-                .Produces<List<AdSubCategory>>(StatusCodes.Status200OK)
+                .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // fetching subcategories by category id
@@ -384,23 +527,71 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    var subCategories = await service.GetSubCategoriesByCategoryId(categoryId);
-                    return TypedResults.Ok(subCategories);
+                    var result = await service.GetCategoryWithSubCategories(categoryId);
+
+                    if (result is null)
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Category Not Found",
+                            Detail = $"No category found with ID: {categoryId}",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+
+                    return TypedResults.Ok(result);
                 }
-                catch(Exception ex)
+                catch (ArgumentException ex)
                 {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Input",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Category Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"category with {categoryId} was not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
                     return TypedResults.Problem(
-                        title: "Fetch Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                        );
+                        title: "Internal Server Error",
+                        detail: "An unexpected error occurred.",
+                        statusCode: StatusCodes.Status500InternalServerError);
                 }
             })
-                .WithName("GetSubCategoriesByCategoryId")
-                .WithTags("SubCategory")
-                .WithSummary("Get subcategories by category ID")
-                .WithDescription("Fetches all subcategories related to a given category from Dapr state store.")
-                .Produces<List<AdSubCategory>>(StatusCodes.Status200OK)
+                .WithName("GetCategoryWithSubCategories")
+                .WithTags("ClassifiedsDropdown")
+                .WithSummary("Get category with subcategories")
+                .WithDescription("Fetches a category and its related subcategories from Dapr store.")
+                .Produces<CategoryDto>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // adding brand
@@ -412,23 +603,81 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
+                    if (string.IsNullOrWhiteSpace(dto.Name))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Brand name must not be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    if (dto.SubCategoryId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "SubCategory ID is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
                     var result = await service.AddBrand(dto.Name, dto.SubCategoryId);
                     return TypedResults.Created($"/api/brand/{result.Id}", result);
                 }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Input",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
                 catch (Exception ex)
                 {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"brand not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
                     return TypedResults.Problem(
-                        title: "Add Brand Error",
-                        detail: ex.Message,
+                        title: "Internal Server Error",
+                        detail: "An unexpected error occurred.",
                         statusCode: StatusCodes.Status500InternalServerError
                     );
                 }
             })
                 .WithName("AddBrand")
-                .WithTags("Brand")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Add a new brand")
                 .WithDescription("Adds a brand entry linked to a subcategory in the Dapr state store.")
-                .Produces<AdBrand>(StatusCodes.Status201Created)
+                .Produces<Category>(StatusCodes.Status201Created)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // fetching all brands
@@ -440,22 +689,57 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 try
                 {
                     var brands = await service.GetAllBrands();
+
+                    if (brands == null || !brands.Any())
+                    {
+                        return TypedResults.Ok(new List<CategoriesDto>());
+                    }
+
                     return TypedResults.Ok(brands);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Brand Fetch Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Fetch Brands Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"Brand not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Internal Server Error",
+                        Detail = "An unexpected error occurred while fetching brands.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("GetAllBrands")
-                .WithTags("Brand")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get all brands")
                 .WithDescription("Fetches all brand records from the Dapr state store.")
-                .Produces<List<AdBrand>>(StatusCodes.Status200OK)
+                .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
@@ -468,23 +752,61 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    var brands = await service.GetBrandsBySubCategoryId(subCategoryId);
+                    var brands = await service.GetSubCategoryWithBrands(subCategoryId);
                     return TypedResults.Ok(brands);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid SubCategory ID",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "SubCategory Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
                 }
                 catch (Exception ex)
                 {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"Not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
                     return TypedResults.Problem(
-                        title: "Fetch Brands by SubCategory Error",
-                        detail: ex.Message,
+                        title: "Fetch Brands Error",
+                        detail: "An unexpected error occurred while retrieving brands by subcategory.",
                         statusCode: StatusCodes.Status500InternalServerError
-                    );
+                        );
                 }
             })
                 .WithName("GetBrandsBySubCategoryId")
-                .WithTags("Brand")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get brands by subcategory ID")
                 .WithDescription("Fetches all brands that belong to the given subcategory from the Dapr state store.")
-                .Produces<List<AdBrand>>(StatusCodes.Status200OK)
+                .Produces<SubCategoryWithBrandsDto>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
@@ -500,20 +822,59 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     var result = await service.AddModel(dto.Name, dto.BrandId);
                     return TypedResults.Created($"/api/model/{result.Id}", result);
                 }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Input",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict 
+                    });
+                }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Add Model Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"model not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Internal Server Error",
+                        Detail = "An unexpected error occurred while adding the model.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("AddModel")
-                .WithTags("Model")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Add a new model")
                 .WithDescription("Adds a model linked to a brand.")
-                .Produces<AdModel>(StatusCodes.Status201Created)
+                .Produces<Category>(StatusCodes.Status201Created)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // fetching all models
@@ -525,22 +886,61 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 try
                 {
                     var models = await service.GetAllModels(token);
+                    if (models == null || !models.Any())
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "No Models Found",
+                            Detail = "The model list is empty or could not be retrieved.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
                     return TypedResults.Ok(models);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Data Access Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Fetch Models Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"model not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Internal Server Error",
+                        Detail = "An unexpected error occurred while retrieving models.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("GetAllModels")
-                .WithTags("Model")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get all models")
                 .WithDescription("Fetches all models from the Dapr state store.")
-                .Produces<List<AdModel>>(StatusCodes.Status200OK)
+                .Produces<List<CategoryDto>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // fetching models by brand id
@@ -552,23 +952,71 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    var models = await service.GetModelsByBrandId(brandId, token);
-                    return TypedResults.Ok(models);
+                    var result = await service.GetBrandWithModels(brandId, token);
+                    if (result == null || string.IsNullOrWhiteSpace(result.Name))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Brand Not Found",
+                            Detail = $"No brand found with ID '{brandId}' or it contains no models.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Ok(result);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Brand ID",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Brand Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Fetch Models by Brand Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"Not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Internal Server Error",
+                        Detail = "An unexpected error occurred while fetching models for the brand.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("GetModelsByBrandId")
-                .WithTags("Model")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get models by brand ID")
                 .WithDescription("Fetches all models related to a given brand.")
-                .Produces<List<AdModel>>(StatusCodes.Status200OK)
+                .Produces<BrandWithModelsDto>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // Adding condition
@@ -580,23 +1028,82 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
+                    if (string.IsNullOrWhiteSpace(dto?.Name))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Condition name is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
                     var result = await service.AddCondition(dto.Name, token);
+
+                    if (result == null)
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Creation Failed",
+                            Detail = "Failed to create the condition entry. Result is null.",
+                            Status = StatusCodes.Status500InternalServerError
+                        });
+                    }
+
                     return TypedResults.Created($"/api/condition/{result.Id}", result);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Argument",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Add Condition Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"Condition not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unexpected Error",
+                        Detail = "An unexpected error occurred while adding the condition.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("AddCondition")
-                .WithTags("Condition")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Add a condition")
                 .WithDescription("Adds a new product condition to the store.")
-                .Produces<AdCondition>(StatusCodes.Status201Created)
+                .Produces<Category>(StatusCodes.Status201Created)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)                
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // Get all Condition
@@ -607,22 +1114,60 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 try
                 {
                     var result = await service.GetAllConditions(token);
+                    if (result == null || !result.Any())
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "No Conditions Found",
+                            Detail = "No condition records were found in the Dapr store.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
                     return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Operational Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Get Conditions Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"Condition not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unexpected Error",
+                        Detail = "An unexpected error occurred while fetching conditions.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("GetAllConditions")
-                .WithTags("Condition")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get all conditions")
                 .WithDescription("Fetches all condition records.")
-                .Produces<List<AdCondition>>(StatusCodes.Status200OK)
+                .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // adding color
@@ -634,23 +1179,81 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    var result = await service.AddColor(dto.Name, token);
+                    if (dto is null || string.IsNullOrWhiteSpace(dto.Name))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Color name must not be null or empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                        var result = await service.AddColor(dto.Name, token);
+
+                    if (result == null)
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Creation Failed",
+                            Detail = "Failed to create the color entry.",
+                            Status = StatusCodes.Status500InternalServerError
+                        });
+                    }
+
                     return TypedResults.Created($"/api/color/{result.Id}", result);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Argument",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Add Color Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"Color not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unexpected Error",
+                        Detail = "An unexpected error occurred while adding the color.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("AddColor")
-                .WithTags("Color")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Add a color")
                 .WithDescription("Adds a new color value to the store.")
-                .Produces<AdColor>(StatusCodes.Status201Created)
+                .Produces<Category>(StatusCodes.Status201Created)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // get all color
@@ -662,22 +1265,62 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 try
                 {
                     var result = await service.GetAllColors(token);
+
+                    if (result == null || !result.Any())
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "No Colors Found",
+                            Detail = "No color records were found in the store.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+
                     return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Data Access Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Get Colors Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"color not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unexpected Error",
+                        Detail = "An unexpected error occurred while retrieving colors.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("GetAllColors")
-                .WithTags("Color")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get all colors")
                 .WithDescription("Fetches all color records.")
-                .Produces<List<AdColor>>(StatusCodes.Status200OK)
+                .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // adding capacity
@@ -688,23 +1331,82 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
+                    if (string.IsNullOrWhiteSpace(dto?.Name))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Capacity name cannot be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
                     var result = await service.AddCapacity(dto.Name, token);
+
+                    if (result == null)
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Creation Failed",
+                            Detail = "Failed to create the capacity value.",
+                            Status = StatusCodes.Status500InternalServerError
+                        });
+                    }
+
                     return TypedResults.Created($"/api/capacity/{result.Id}", result);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Argument",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Invalid Operation",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Add Capacity Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"Capacity not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unexpected Error",
+                        Detail = "An unexpected error occurred while adding the capacity.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("AddCapacity")
-                .WithTags("Capacity")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Add a capacity value")
                 .WithDescription("Adds a new storage capacity like '64GB', '256GB' etc.")
-                .Produces<AdCapacity>(StatusCodes.Status201Created)
+                .Produces<Category>(StatusCodes.Status201Created)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // get all capacity
@@ -715,22 +1417,62 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 try
                 {
                     var result = await service.GetAllCapacities(token);
+
+                    if (result == null || result.Count == 0)
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "No Capacities Found",
+                            Detail = "No capacity records are available in the store.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+
                     return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Data Retrieval Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Get Capacities Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"capacity not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unexpected Error",
+                        Detail = "An unexpected error occurred while retrieving capacities.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("GetAllCapacities")
-                .WithTags("Capacity")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get all capacity values")
                 .WithDescription("Fetches all available capacities from Dapr store.")
-                .Produces<List<AdCapacity>>(StatusCodes.Status200OK)
+                .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // adding processor
@@ -741,23 +1483,81 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
+                    if (string.IsNullOrWhiteSpace(dto.Name))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Processor name is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    if (dto.ModelId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Model ID must be a valid non-empty GUID.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
                     var result = await service.AddProcessor(dto.Name, dto.ModelId, token);
                     return TypedResults.Created($"/api/processor/{result.Id}", result);
                 }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Argument",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Processor Creation Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Add Processor Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"processor not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Internal Server Error",
+                        Detail = "An unexpected error occurred while adding the processor.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("AddProcessor")
-                .WithTags("Processor")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Add a processor")
                 .WithDescription("Adds a new processor (e.g., Snapdragon 8, A16 Bionic) linked to a model.")
-                .Produces<AdProcessor>(StatusCodes.Status201Created)
+                .Produces<Category>(StatusCodes.Status201Created)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             //get processorby id 
@@ -768,23 +1568,92 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    var result = await service.GetProcessorsByModelId(modelId, token);
+                    if (modelId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Model ID cannot be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.GetModelWithProcessors(modelId, token);
+
+                    if (result is null)
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Model Not Found",
+                            Detail = $"No model found with ID {modelId}.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+
                     return TypedResults.Ok(result);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Argument",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Processor Retrieval Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Fetch Processor Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"Not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Internal Server Error",
+                        Detail = "An unexpected error occurred while fetching processors for the model.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("GetProcessorsByModelId")
-                .WithTags("Processor")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get processors by model")
                 .WithDescription("Fetches processors like A16, A15 etc. based on selected mobile model.")
-                .Produces<List<AdProcessor>>(StatusCodes.Status200OK)
+                .Produces<ModelWithProcessorsDto>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // get all processor 
@@ -795,22 +1664,60 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 try
                 {
                     var result = await service.GetAllProcessors(token);
+                    if (result == null || !result.Any())
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "No Processors Found",
+                            Detail = "No processor records were found in the store.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
                     return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Processor Retrieval Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Get All Processors Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"Processor not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Internal Server Error",
+                        Detail = "An unexpected error occurred while retrieving processors.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("GetAllProcessors")
-                .WithTags("Processor")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get all processors")
                 .WithDescription("Returns all processors from the store.")
-                .Produces<List<AdProcessor>>(StatusCodes.Status200OK)
+                .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // adding coverage
@@ -821,23 +1728,80 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
+                    if (dto == null || string.IsNullOrWhiteSpace(dto.Name))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Input",
+                            Detail = "Coverage name cannot be null or empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
                     var result = await service.AddCoverage(dto.Name);
+                    if (result == null)
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Add Coverage Failed",
+                            Detail = "Coverage could not be created.",
+                            Status = StatusCodes.Status500InternalServerError
+                        });
+                    }
                     return TypedResults.Created($"/api/coverage/{result.Id}", result);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Coverage Creation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Add Coverage Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"coverage not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unexpected Error",
+                        Detail = "An internal error occurred while adding coverage.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("AddCoverage")
-                .WithTags("Coverage")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Add a coverage option")
                 .WithDescription("Adds a coverage label such as 'Under Warranty' ")
-                .Produces<AdCoverage>(StatusCodes.Status201Created)
+                .Produces<Category>(StatusCodes.Status201Created)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // Get coverage list
@@ -849,22 +1813,60 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 try
                 {
                     var result = await service.GetAllCoverages(token);
+                    if (result == null || !result.Any())
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "No Coverage Found",
+                            Detail = "No coverage records exist in the store.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
                     return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Data Access Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Get Coverage Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"coverage not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unexpected Error",
+                        Detail = "An error occurred while fetching coverage data.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("GetAllCoverages")
-                .WithTags("Coverage")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get all coverage options")
                 .WithDescription("Fetches all warranty/coverage types from the store.")
-                .Produces<List<AdCoverage>>(StatusCodes.Status200OK)
+                .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // adding ram
@@ -875,23 +1877,82 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
+                    if (dto == null || string.IsNullOrWhiteSpace(dto.Name) || dto.ModelId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid RAM Input",
+                            Detail = "RAM name and valid Model ID are required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
                     var result = await service.AddRam(dto.Name, dto.ModelId);
+
+                    if (result == null)
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "RAM Creation Failed",
+                            Detail = "Failed to add the new RAM entry.",
+                            Status = StatusCodes.Status500InternalServerError
+                        });
+                    }
+
                     return TypedResults.Created($"/api/ram/{result.Id}", result);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Argument",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Add RAM Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"Ram not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Internal Server Error",
+                        Detail = "An unexpected error occurred while adding RAM.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("AddRam")
-                .WithTags("RAM")
+                .WithTags("ClassifiedsDropdown")
                 .WithSummary("Add RAM")
                 .WithDescription("Adds a RAM option.")
-                .Produces<AdRam>(StatusCodes.Status201Created)
+                .Produces<Category>(StatusCodes.Status201Created)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
@@ -903,22 +1964,62 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 try
                 {
                     var result = await service.GetAllRams(token);
+
+                    if (result == null || !result.Any())
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "No RAM Records Found",
+                            Detail = "The RAM store is currently empty.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+
                     return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "RAM Fetch Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Get RAM Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"Ram not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unexpected Error",
+                        Detail = $"An unexpected error occurred while retrieving RAM records: {ex.Message}",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
             .WithName("GetAllRams")
-            .WithTags("RAM")
+            .WithTags("ClassifiedsDropdown")
             .WithSummary("Get all RAM values")
             .WithDescription("Fetches all RAM sizes from the store.")
-            .Produces<List<AdRam>>(StatusCodes.Status200OK)
+            .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // Get RAMs by model
@@ -929,23 +2030,72 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    var result = await service.GetRamsByModelId(modelId, token);
+                    var result = await service.GetModelWithRam(modelId, token);
+
+                    if (result == null)
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Model Not Found",
+                            Detail = $"No RAM options found because model with ID '{modelId}' does not exist.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+
                     return TypedResults.Ok(result);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Model ID",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Model Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
                 }
                 catch (Exception ex)
                 {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"Not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
                     return TypedResults.Problem(
-                        title: "Get RAM by Model Error",
-                        detail: ex.Message,
+                        title: "Internal Server Error",
+                        detail: $"An error occurred while retrieving RAM options: {ex.Message}",
                         statusCode: StatusCodes.Status500InternalServerError
                     );
                 }
             })
             .WithName("GetRamsByModelId")
-            .WithTags("RAM")
+            .WithTags("ClassifiedsDropdown")
             .WithSummary("Get RAM by model")
             .WithDescription("Returns RAM values for a specific model.")
-            .Produces<List<AdRam>>(StatusCodes.Status200OK)
+            .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // Add Resolution
@@ -956,23 +2106,71 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
+                    if (string.IsNullOrWhiteSpace(dto.Name))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Resolution Name",
+                            Detail = "Resolution name cannot be null or empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    if (dto.ModelId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Model ID",
+                            Detail = "Model ID must be a valid non-empty GUID.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
                     var result = await service.AddResolution(dto.Name, dto.ModelId, token);
                     return TypedResults.Created($"/api/resolution/{result.Id}", result);
                 }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
                 catch (Exception ex)
                 {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"resolution not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
                     return TypedResults.Problem(
                         title: "Add Resolution Error",
-                        detail: ex.Message,
+                        detail: $"An unexpected error occurred: {ex.Message}",
                         statusCode: StatusCodes.Status500InternalServerError
                     );
                 }
             })
             .WithName("AddResolution")
-            .WithTags("Resolution")
+            .WithTags("ClassifiedsDropdown")
             .WithSummary("Add resolution")
             .WithDescription("Adds a resolution like '1080x2400'.")
-            .Produces<AdResolution>(StatusCodes.Status201Created)
+            .Produces<Category>(StatusCodes.Status201Created)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // Get all Resolutions
@@ -983,10 +2181,37 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 try
                 {
                     var result = await service.GetAllResolutions(token);
+                    if (result == null || !result.Any())
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "No Resolutions Found",
+                            Detail = "No resolution records are available in the store.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
                 {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"resolution not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
                     return TypedResults.Problem(
                         title: "Get Resolution Error",
                         detail: ex.Message,
@@ -995,10 +2220,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
             .WithName("GetAllResolutions")
-            .WithTags("Resolution")
+            .WithTags("ClassifiedsDropdown")
             .WithSummary("Get all resolutions")
             .WithDescription("Returns all screen resolutions from store.")
-            .Produces<List<AdResolution>>(StatusCodes.Status200OK)
+            .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // Get Resolutions by model
@@ -1009,23 +2235,68 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    var result = await service.GetResolutionsByModelId(modelId, token);
+                    var result = await service.GetModelWithResolutions(modelId, token);
+                    if (result == null)
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Model Not Found",
+                            Detail = $"No model found with ID: {modelId}",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
                     return TypedResults.Ok(result);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Model Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
                 }
                 catch (Exception ex)
                 {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"Not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
                     return TypedResults.Problem(
-                        title: "Get Resolution by Model Error",
+                        title: "Internal Server Error",
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError
                     );
                 }
             })
             .WithName("GetResolutionsByModelId")
-            .WithTags("Resolution")
+            .WithTags("ClassifiedsDropdown")
             .WithSummary("Get resolutions by model")
             .WithDescription("Returns resolutions for a selected model.")
-            .Produces<List<AdResolution>>(StatusCodes.Status200OK)
+            .Produces<List<ModelWithResolutionsDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
@@ -1037,23 +2308,70 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
+                    if (string.IsNullOrWhiteSpace(dto?.Name))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Size type name cannot be null or empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
                     var result = await service.AddSizeType(dto.Name, token);
                     return TypedResults.Created($"/api/size-type/{result.Id}", result);
                 }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Argument",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Add SizeType Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"SizeType not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unexpected Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
             .WithName("AddSizeType")
-            .WithTags("SizeType")
+            .WithTags("ClassifiedsDropdown")
             .WithSummary("Add a size type")
             .WithDescription("Adds size labels like 'Small', 'Medium', 'XL'.")
-            .Produces<AdSizeType>(StatusCodes.Status201Created)
+            .Produces<Category>(StatusCodes.Status201Created)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
@@ -1065,77 +2383,64 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 try
                 {
                     var result = await service.GetAllSizeTypes(token);
+
+                    if (result == null || !result.Any())
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "No Size Types Found",
+                            Detail = "No size types are available in the system.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+
                     return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Get SizeType Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"SizeType not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unexpected Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
             .WithName("GetAllSizeTypes")
-            .WithTags("SizeType")
+            .WithTags("ClassifiedsDropdown")
             .WithSummary("Get all size types")
             .WithDescription("Fetches size options from Dapr store.")
-            .Produces<List<AdSizeType>>(StatusCodes.Status200OK)
+            .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            // POST /gender
-            group.MapPost("/gender", async Task<IResult> (
-                [FromBody] AdGenderRequest dto,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                try
-                {
-                    var result = await service.AddGender(dto.Name, token);
-                    return TypedResults.Created($"/api/gender/{result.Id}", result);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Add Gender Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }
-            })
-            .WithName("AddGender")
-            .WithTags("Gender")
-            .WithSummary("Add a gender type")
-            .WithDescription("Adds gender like 'Male', 'Female'.")
-            .Produces<AdGender>(StatusCodes.Status201Created)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            // GET /gender
-            group.MapGet("/gender", async Task<IResult> (
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                try
-                {
-                    var result = await service.GetAllGenders(token);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Get Gender Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }
-            })
-            .WithName("GetAllGenders")
-            .WithTags("Gender")
-            .WithSummary("Get all gender types")
-            .WithDescription("Fetches all gender options from Dapr store.")
-            .Produces<List<AdGender>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
+         
             // POST /zone
             group.MapPost("/zone", async Task<IResult> (
                 [FromBody] AdZoneRequest dto,
@@ -1144,23 +2449,80 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
+                    if (dto == null || string.IsNullOrWhiteSpace(dto.Name))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Zone name must be provided.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
                     var result = await service.AddZone(dto.Name, token);
+                    if (result == null)
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Zone Creation Failed",
+                            Detail = "Zone could not be added due to an internal error.",
+                            Status = StatusCodes.Status500InternalServerError
+                        });
+                    }
                     return TypedResults.Created($"/api/zone/{result.Id}", result);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Argument",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Add Zone Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"Zone not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unexpected Error",
+                        Detail = "An unexpected error occurred while adding the zone.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
             .WithName("AddZone")
-            .WithTags("Zone")
+            .WithTags("ClassifiedsDropdown")
             .WithSummary("Add a zone number")
             .WithDescription("Adds a zone like 51, 52, etc.")
-            .Produces<AdZone>(StatusCodes.Status201Created)
+            .Produces<Category>(StatusCodes.Status201Created)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // GET /zone
@@ -1171,107 +2533,65 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 try
                 {
                     var result = await service.GetAllZones(token);
+
+                    if (result == null || !result.Any())
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "No Zones Found",
+                            Detail = "No zones are currently available in the system.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+
                     return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Operational Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Get Zone Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"Zone not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unexpected Error",
+                        Detail = "An unexpected error occurred while fetching zones.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
             .WithName("GetAllZones")
-            .WithTags("Zone")
+            .WithTags("ClassifiedsDropdown")
             .WithSummary("Get all zones")
             .WithDescription("Fetches all zone numbers from the store.")
-            .Produces<List<AdZone>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);          
 
-
-            // create Ad 
-            //group.MapPost("/ad", async Task<IResult> (
-            //    [FromForm] AdInformation ad,
-            //    HttpContext context,
-            //    IClassifiedService service,
-            //    CancellationToken token) =>
-            //{
-            //    try
-            //    {
-            //        var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            //        if (string.IsNullOrWhiteSpace(userId))
-            //            return Results.Unauthorized();
-
-
-            //        if (string.IsNullOrWhiteSpace(ad.SubVertical))
-            //        {
-            //            return Results.BadRequest(new ProblemDetails
-            //            {
-            //                Title = "Invalid Request",
-            //                Detail = "SubVertical is required in the form data.",
-            //                Status = StatusCodes.Status400BadRequest
-            //            });
-            //        }
-
-            //        var adKey = await service.CreateAd(ad, userId, token);
-
-            //        return TypedResults.Ok(new
-            //        {
-            //            Message = "Ad created successfully.",
-            //            Key = adKey
-            //        });
-            //    }
-            //    catch (UnauthorizedAccessException ex)
-            //    {
-            //        return TypedResults.Problem(
-            //            title: "Unauthorized",
-            //            detail: ex.Message,
-            //            statusCode: StatusCodes.Status401Unauthorized);
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        return TypedResults.Problem(
-            //            title: "Ad Creation Error",
-            //            detail: ex.Message,
-            //            statusCode: StatusCodes.Status500InternalServerError);
-            //    }
-            //})
-            //    .WithName("CreateAd")
-            //    .WithTags("Ad")
-            //    .WithSummary("Create new classified ad")
-            //    .WithDescription("Creates a new classified ad, validates user, stores ad in Dapr, and uploads files.")
-            //    .Accepts<AdInformation>("multipart/form-data")
-            //    .Produces(StatusCodes.Status200OK)
-            //    .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
-            //    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-            //    .DisableAntiforgery()
-            //    .RequireAuthorization();
-
-            // get user ad's
-            //group.MapGet("/ad/user", async Task<IResult> (
-            //    HttpContext context,
-            //    [FromQuery] bool? isPublished,
-            //    IClassifiedService service,
-            //    CancellationToken token) =>
-            //{
-            //    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            //    if (string.IsNullOrWhiteSpace(userId))
-            //        return Results.Unauthorized();
-
-            //    var ads = await service.GetUserAds(userId, isPublished, token);
-            //    return TypedResults.Ok(ads);
-            //})
-            //    .WithName("GetUserAds")
-            //    .WithTags("Ad")
-            //    .WithSummary("Get user ads")
-            //    .WithDescription("Returns ads created by the logged-in user filtered by IsPublished status")
-            //    .Produces<List<AdResponse>>(StatusCodes.Status200OK)
-            //    .Produces(StatusCodes.Status401Unauthorized)
-            //    .RequireAuthorization();
-
-
-            // GET /api/{vertical}/landing
+            // GET /api/classified/landing
             group.MapGet("/landing", async (
                     [FromServices] IClassifiedService svc,
                     [FromServices] ILoggerFactory logFac
@@ -1291,7 +2611,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Invalid Request",
                         Detail = ex.Message,
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{Vertical}/landing"
+                        Instance = $"/api/classified/landing"
                     });
                 }
                 catch (Exception ex)
@@ -1301,7 +2621,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         title: "Landing Error",
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/{Vertical}/landing"
+                        instance: $"/api/classified/landing"
                     );
                 }
             })
@@ -1311,6 +2631,261 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ClassifiedLandingPageResponse>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+
+            // added save search
+            group.MapPost("/search/by-category", async Task<Results<
+                Ok<string>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                SaveSearchRequestDto dto,
+                IClassifiedService service,
+                HttpContext context
+            ) =>
+            {
+                Guid userId = context.User.GetId();
+                if (userId == null || userId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Valid User ID must be provided.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+
+                if (string.IsNullOrWhiteSpace(dto.Name))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Search name is required.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+
+                if (dto.SearchQuery == null || string.IsNullOrWhiteSpace(dto.SearchQuery.Text))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Search query text is required.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+
+                try
+                {
+                    var success = await service.SaveSearch(dto,userId);
+                    if (success)
+                    {
+                        return TypedResults.Ok("Search saved successfully.");
+                    }
+
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Save Failed",
+                        Detail = "Search save could not be confirmed.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+           .WithName("SaveSearch")
+           .WithTags("Search")
+           .WithSummary("Save user search")
+           .WithDescription("Save the search criteria using user ID from frontend.")
+           .RequireAuthorization()
+           .Produces<string>(StatusCodes.Status200OK)
+           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            // added save search id
+            group.MapPost("/search/by-category-id", async Task<Results<
+                Ok<string>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                SaveSearchRequestByIdDto dto,
+                IClassifiedService service,
+                HttpContext context
+            ) =>
+            {
+                if (dto.UserId == null || dto.UserId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Valid User ID must be provided.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+
+                if (string.IsNullOrWhiteSpace(dto.Name))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Search name is required.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+
+                if (dto.SearchQuery == null || string.IsNullOrWhiteSpace(dto.SearchQuery.Text))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Search query text is required.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+
+                try
+                {
+                    var success = await service.SaveSearchById(dto);
+                    if (success)
+                    {
+                        return TypedResults.Ok("Search saved successfully.");
+                    }
+
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Save Failed",
+                        Detail = "Search save could not be confirmed.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+           .WithName("SaveSearcssh")
+           .WithTags("Searchss")
+           .WithSummary("Save user searcssh")
+           .WithDescription("Save the search criteria using user ID from frontendss.")
+           .ExcludeFromDescription()
+           .Produces<string>(StatusCodes.Status200OK)
+           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            // get save search
+            group.MapGet("/search/save", async Task<Results<
+                Ok<List<SavedSearchResponseDto>>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                IClassifiedService service,
+                HttpContext context
+            ) =>
+            {
+                Guid? userId = context.User.GetId();
+                if (userId == null || userId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Valid User ID must be provided in the query.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+                else
+                {
+                    try
+                    {
+                        var result = await service.GetSearches(userId.ToString());
+                        return TypedResults.Ok(result);
+                    }
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem(
+                            title: "Internal Server Error",
+                            detail: ex.Message,
+                            statusCode: StatusCodes.Status500InternalServerError,
+                            instance: context.Request.Path
+                        );
+                    }
+                }
+            })
+            .WithName("GetSavedSearches")
+            .WithTags("Search")
+            .WithSummary("Get saved searches")
+            .WithDescription("Get all saved searches for the current user.")
+            .RequireAuthorization()
+            .Produces<List<SavedSearchResponseDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/search/save-by-id", async Task<Results<
+                Ok<List<SavedSearchResponseDto>>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                [Required][FromQuery] Guid userId,
+                IClassifiedService service,
+                HttpContext context
+            ) =>
+            {
+                if ( userId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Valid User ID must be provided in the query.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+                else
+                {
+                    try
+                    {
+                        var result = await service.GetSearches(userId.ToString());
+                        return TypedResults.Ok(result);
+                    }
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem(
+                            title: "Internal Server Error",
+                            detail: ex.Message,
+                            statusCode: StatusCodes.Status500InternalServerError,
+                            instance: context.Request.Path
+                        );
+                    }
+                }
+            })
+            .WithName("GetSavedSearchess")
+            .WithTags("Searchs")
+            .WithSummary("Get saved searchess")
+            .WithDescription("Get all saved searches for the current users.")
+            .ExcludeFromDescription()
+            .Produces<List<SavedSearchResponseDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
         }

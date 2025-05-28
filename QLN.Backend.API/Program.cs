@@ -20,6 +20,8 @@ using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.Subscriptions;
 using System.Text.Json.Serialization;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
+using QLN.Common.Infrastructure.IService;
+using Microsoft.AspNetCore.Authorization;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -176,6 +178,8 @@ builder.Services.AddDaprClient();
 // This looks like a custom extension method? Adjust if needed
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
+builder.Services.ContentServicesConfiguration(builder.Configuration);
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
 builder.Services.SubscriptionConfiguration(builder.Configuration);
@@ -196,10 +200,15 @@ if (app.Environment.IsDevelopment())
 
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
+
 var companyGroup = app.MapGroup("/api/companyprofile");
 companyGroup.MapCompanyEndpoints();
+
 var classifiedGroup = app.MapGroup("/api/classified");
-classifiedGroup.MapClassifiedsEndpoints();
+classifiedGroup.MapClassifiedEndpoints();
+
+var contentGroup = app.MapGroup("/api/content");
+contentGroup.MapContentLandingEndpoints();
 
 app.MapGroup("/api/subscriptions")
    .MapSubscriptionEndpoints();
@@ -212,4 +221,6 @@ app.MapGroup("/api/PayToPublish")
     .MapPayToPublishEndpoints();
 
 
+app.UseHttpsRedirection();
+app.UseAuthorization();
 app.Run();
