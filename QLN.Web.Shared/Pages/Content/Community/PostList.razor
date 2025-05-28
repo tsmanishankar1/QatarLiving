@@ -1,0 +1,55 @@
+﻿@inherits PostListBase
+<div class="more-posts-container">
+    <div class="more-posts-header">
+        <div class="accent-bar"></div>
+        <MudText Class="more-posts-title">More Posts</MudText>
+    </div>
+
+    <div class="d-flex flex-column gap-3 mt-4">
+        @foreach (var post in posts)
+        {
+            <a href="@post.Url" class="post-link">@post.Title</a>
+            <MudDivider Class="my-1" />
+        }
+    </div>
+</div>
+
+
+<style>
+    .more-posts-container {
+        padding: 10px;
+    }
+
+    .more-posts-header {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .accent-bar {
+        width: 6px;
+        height: 26px;
+        background-color: #00426D;
+    }
+    .more-posts-title {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 25px;
+        color: #242424;
+    }
+
+    .post-link {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 14px;
+        color: #242424;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+        .post-link:hover {
+            color: #00426D;
+            text-decoration: underline;
+        }
+</style>

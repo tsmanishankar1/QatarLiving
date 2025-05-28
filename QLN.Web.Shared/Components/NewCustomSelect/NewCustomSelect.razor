@@ -1,0 +1,217 @@
+@typeparam TItem
+
+<div class="custom-select-wrapper" @onfocusout="HandleFocusOut" tabindex="0" @onkeydown="HandleKeyDown">
+
+    <div class="select-display @(IsOpen ? "focused" : "")" @onclick="ToggleDropdown"
+        style="@($"border-radius:{BorderRadius}; border-color:{(IsOpen ? "#FF7F38" : "#D0D5DD")}; padding:{Padding};")">
+
+
+        <div class="select-label-column">
+            @if (!string.IsNullOrEmpty(Label))
+            {
+                <label class="select-label-custom">@Label</label>
+            }
+            @if (Items.FirstOrDefault(x => GetId(x) == SelectedId) is TItem selected)
+            {
+                <span class="select-value-selected">@GetLabel(selected)</span>
+            }
+            else
+            {
+                <span class="select-value-placeholder">@Placeholder</span>
+            }
+
+        </div>
+        <MudIcon Icon="@Icons.Material.Filled.ArrowDropDown" Class="arrow-icon" />
+    </div>
+
+    @if (IsOpen)
+    {
+        <div class="select-dropdown animate-dropdown">
+            @if (!string.IsNullOrEmpty(Placeholder))
+            {
+                <div class="dropdown-item disabled">@Placeholder</div>
+            }
+
+            @foreach (var item in Items)
+            {
+                <div class="dropdown-item" @onclick="() => SelectItem(item)" title="@GetLabel(item)">
+                    <span class="dropdown-text">@GetLabel(item)</span>
+                    @if (SelectedId == GetId(item))
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Check" Class="check-icon" />
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "Choose";
+    [Parameter] public string Placeholder { get; set; } = "Choose";
+    [Parameter] public List<TItem> Items { get; set; } = new();
+    [Parameter] public string BorderRadius { get; set; } = "8px";
+    [Parameter] public string FocusBorderColor { get; set; } = "#9c27b0";
+    [Parameter] public string Padding { get; set; } = "10px";
+    [Parameter] public string SelectedId { get; set; }
+    [Parameter] public EventCallback<string> SelectedIdChanged { get; set; }
+
+    [Parameter] public Func<TItem, string> GetLabel { get; set; }
+    [Parameter] public Func<TItem, string> GetId { get; set; }
+
+    private bool IsOpen = false;
+
+    private string SelectedLabel => Items.FirstOrDefault(x => GetId(x) == SelectedId) is TItem selected
+    ? GetLabel(selected)
+    : Placeholder;
+
+
+    private void ToggleDropdown() => IsOpen = !IsOpen;
+
+    private async Task SelectItem(TItem item)
+    {
+        SelectedId = GetId(item);
+        IsOpen = false;
+        await SelectedIdChanged.InvokeAsync(SelectedId);
+    }
+
+    private void HandleFocusOut(FocusEventArgs e) => IsOpen = false;
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" || e.Key == " " || e.Key == "ArrowDown")
+        {
+            IsOpen = !IsOpen;
+        }
+    }
+}
+
+
+<style>
+    .custom-select-wrapper {
+        position: relative;
+        width: 100%;
+        outline: none;
+        padding: 0;
+        font-family: 'Public Sans';
+    }
+
+    .select-label-column {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 0;
+        min-width: 0;
+    }
+
+    .select-label-custom {
+        font-size: 12px;
+        font-weight: 500;
+        color: #646464;
+        margin-bottom: 2px;
+    }
+
+    .select-display {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: white;
+        border: 1px solid #ccc;
+        padding: 10px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+    }
+
+    .select-display.focused {
+        border-color: #FF7F38;
+    }
+
+    .select-value-placeholder {
+        color: #787878;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
+    }
+
+    .select-value-selected {
+        width: 100%;
+        color: #242424;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .arrow-icon {
+        text-align: end;
+        color: #475467;
+    }
+
+    .select-dropdown {
+        position: absolute;
+        width: 100%;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        margin-top: 4px;
+        z-index: 1000;
+        padding: 10px 5px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .animate-dropdown {
+        animation: slideDown 0.25s ease-out;
+    }
+
+    @@keyframes slideDown {
+        from {
+            transform: translateY(-8px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+
+    .dropdown-item {
+        padding: 8px;
+        font-size: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .dropdown-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+    }
+
+    .dropdown-item:hover {
+        border-radius: 10px;
+        background-color: #FAFAFA;
+    }
+
+    .dropdown-item.disabled {
+        color: #aaa;
+        pointer-events: none;
+    }
+
+    .check-icon {
+        color: #242424;
+    }
+</style>

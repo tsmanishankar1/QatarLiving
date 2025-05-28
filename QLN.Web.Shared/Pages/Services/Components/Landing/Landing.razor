@@ -1,0 +1,48 @@
+@using MudBlazor
+@inject ApiService Api
+@using QLN.Web.Shared.Services
+@using QLN.Web.Shared.Components.Carousel
+
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.SearchBarSection
+
+<!-- Page: Services -->
+
+<!-- Main Container -->
+<div style="width: 100%; background-color: var(--color-secondary-background);">
+    <div style="width: 100%; padding: 5px 40px;">
+
+        <!-- Carousel Banner -->
+        <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
+            Transition="Transition.Slide" />
+
+        <SearchBarSection />
+    </div>
+
+</div>
+
+@code {
+    private List<string> carouselImages = new()
+{
+"/images/category1.png",
+"/images/category1.png",
+"/images/category1.png"
+};
+
+}
+
+<style>
+    .category-banner-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    .category-banner-image {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        object-fit: cover;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+</style>

@@ -1,0 +1,426 @@
+@using QLN.Web.Shared.Components.NewCustomSelect
+@using MudBlazor
+@inherits SearchSectionBase
+
+<div class="search-bar">
+    <div class="search-container">
+        <div class="search-row">
+
+            <!-- Search Field: Icon Left, Input Right -->
+            <div class="search-field search-input">
+                <MudIcon Icon="@Icons.Material.Filled.Search" class="left-icon" />
+                <input type="text" id="event-search-input" placeholder="Search" class="text-input" />
+            </div>
+
+            <!-- Location Field: Input Left, Icon Right -->
+            <div class="search-field location-input">
+                <input type="text" placeholder="Location" class="text-input" />
+                <MudIcon Icon="@Icons.Material.Filled.LocationOn" class="right-icon" />
+            </div>
+
+            <!-- Property Type Select -->
+            <div class="select-field">
+                <NewCustomSelect TItem="SelectOption" Items="@PropertyTypes" Label="Category" Placeholder="Choose"
+                    SelectedId="@SelectedPropertyTypeId" SelectedIdChanged="id => SelectedPropertyTypeId = id"
+                    GetLabel="x => x.Label" GetId="x => x.Id" BorderRadius="@(IsMobile ? "8px" : "0px")"
+                    Padding="8px 10px" />
+            </div>
+
+            <!-- Date Picker Field -->
+            <div class="select-field date-picker-field" @onclick="ToggleDatePicker">
+                <label class="select-label">Dates</label>
+                <div class="date-choose-wrapper">
+                    <div class="date-labels">
+                        <label
+                            class="select-choose @(string.IsNullOrEmpty(SelectedDateLabel) ? "placeholder" : "selected")">
+                            @(string.IsNullOrEmpty(SelectedDateLabel) ? "Choose" : SelectedDateLabel)
+                        </label>
+                    </div>
+                    <div class="date-icon">
+                        <MudIcon Icon="@Icons.Material.Filled.ArrowDropDown" Class="white-text" />
+                    </div>
+                </div>
+                <MudPopover Open="@_showDatePicker" AnchorOrigin="Origin.BottomCenter"
+                    TransformOrigin="Origin.TopCenter" Elevation="6" Class="popover-container">
+                    <div class="picker-overlay my-orange-theme" @onclick:stopPropagation>
+                        <MudDateRangePicker @bind-DateRange="_dateRange" DisplayMonths="1"
+                            PickerVariant="PickerVariant.Static" DisableToolbar="true" ShowToolbar="false" />
+
+                        <div class="picker-actions">
+                            <button class="cancel-button" @onclick="CancelDatePicker">Cancel</button>
+                            <button class="apply-button" @onclick="ApplyDatePicker"
+                                disabled="@(_dateRange?.Start == null || _dateRange?.End == null)">
+                                Apply
+                            </button>
+                        </div>
+
+                    </div>
+                </MudPopover>
+
+            </div>
+
+
+
+        </div>
+
+
+        <!-- Toggle Row -->
+        <div class="toggle-row">
+            <div class="left-toggle">
+                <label class="toggle-wrapper">
+                    <input type="checkbox" checked />
+                    <span class="switch"></span>
+                    <span class="toggle-label">Show Free Events Only</span>
+                </label>
+            </div>
+            <div class="right-clear">
+                <span class="clear-text">Clear All</span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+
+<style>
+    .search-bar {
+        background-color: #e6e6e6;
+        border-radius: 10px;
+        padding: 60px 10px 40px 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+    }
+
+    .search-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 88%;
+        font-family: 'Public Sans';
+    }
+
+    .search-row {
+        display: flex;
+        justify-content: center;
+        gap: 1.5px;
+        align-items: center;
+    }
+
+    /* Common style for all search fields */
+    .search-field {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        width: 255px;
+        height: 56px;
+        background-color: white;
+        padding: 0 12px;
+    }
+
+    .select-field {
+        width: 255px;
+        height: 56px;
+    }
+
+    /* Text input styles */
+    .text-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        font-size: 14px;
+        background: transparent;
+    }
+
+    /* Search Field: Icon on left */
+    .search-input {
+        border-top-left-radius: 6px;
+        border-bottom-left-radius: 6px;
+        border: 1px solid transparent;
+        transition: border 0.3s ease;
+        font-size: 20px;
+        color: #888;
+    }
+
+    .search-input:focus-within {
+        border: 1px solid var(--color-accent);
+    }
+
+    .left-icon {
+        font-size: 20px;
+        color: #888;
+    }
+
+    /* Location Field: Icon on right */
+    .location-input .right-icon {
+        font-size: 20px;
+        color: var(--color-accent);
+    }
+
+    .date-picker-field {
+        background-color: var(--color-accent);
+        color: white;
+        padding: 8px 10px;
+        flex-direction: column;
+        height: 56px;
+        justify-content: center;
+        border-top-right-radius: 6px;
+        border-bottom-right-radius: 6px;
+        cursor: pointer;
+
+    }
+
+    .select-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: white;
+    }
+
+    .select-choose.placeholder {
+        color: white;
+        font-size: 14px;
+        font-weight: 400;
+    }
+
+    .select-choose.selected {
+        color: white;
+        font-size: 14px;
+        font-weight: 400;
+    }
+
+    .date-icon {
+        color: white;
+    }
+
+    .date-choose-wrapper {
+        display: flex;
+        justify-content: space-between;
+        /* Align children to the start of the main axis (horizontal) */
+        align-items: center;
+        padding: 0;
+    }
+
+    .date-labels {
+        padding: 0;
+    }
+
+    /* White text used in date picker component */
+    .white-text {
+        color: white;
+        font-weight: bold;
+    }
+
+    .picker-overlay {
+        background-color: white;
+        border-radius: 20px;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+
+    .picker-actions {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+    }
+
+    .apply-button,
+    .cancel-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 8px;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+    }
+
+    .cancel-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    .apply-button {
+        background-color: var(--color-accent);
+        color: var(--color-text-white);
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .cancel-button {
+        background-color: transparent;
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--color-text-heading);
+        border: 1px solid var(--color-secondary-grey-container);
+    }
+
+    .my-orange-theme {
+
+        .mud-picker-calendar .mud-day.mud-range-selection:hover,
+        .mud-picker-calendar .mud-day.mud-range-end,
+        .mud-picker-calendar .mud-day.mud-range-start:hover,
+        .mud-picker-calendar .mud-day.mud-range-end:hover {
+            background-color: var(--color-accent) !important;
+            color: white !important;
+        }
+
+        .mud-picker-calendar:nth-child(2) {
+            display: none !important;
+        }
+
+
+        .mud-button-outlined.mud-button-outlined-primary {
+            border-color: var(--color-accent) !important;
+            color: var(--color-accent) !important;
+        }
+
+        .mud-button-outlined.mud-button-outlined-primary:hover {
+            background-color: var(--color-accent) !important;
+            /* lighter orange on hover */
+            color: white !important;
+            border-color: var(--color-accent) !important;
+        }
+
+
+        .mud-button-filled.mud-button-filled-primary {
+            background-color: var(--color-accent) !important;
+            color: white !important;
+        }
+
+        .mud-primary-text {
+            color: var(--color-accent) !important;
+        }
+
+        .mud-theme-primary {
+            background-color: var(--color-accent) !important;
+            color: white !important;
+        }
+    }
+
+    /* Toggle switch styles */
+    .toggle-row {
+        width: 100%;
+        margin-top: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .toggle-label {
+        margin: 0;
+        color: var(--color-text-heading);
+        font-size: 16px;
+        font-weight: 500;
+        margin-left: 8px;
+    }
+
+    .left-toggle,
+    .right-clear {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .clear-text {
+        color: var(--color-accent);
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+
+    .toggle-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .toggle-wrapper input[type="checkbox"] {
+        display: none;
+    }
+
+    .switch {
+        width: 32px;
+        height: 18px;
+        background-color: #ccc;
+        border-radius: 20px;
+        position: relative;
+        display: inline-block;
+    }
+
+    .switch::after {
+        content: "";
+        width: 14px;
+        height: 14px;
+        background: white;
+        border-radius: 50%;
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        transition: 0.3s;
+    }
+
+    .toggle-wrapper input[type="checkbox"]:checked+.switch::after {
+        transform: translateX(14px);
+    }
+
+    .toggle-wrapper input[type="checkbox"]:checked+.switch {
+        background-color: var(--color-accent);
+    }
+
+    @@media (max-width: 1010px) {
+        .search-container {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .search-bar {
+            padding: 10px;
+            width: 100%;
+        }
+
+        .search-row {
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .search-input,
+        .select-field,
+        .date-picker-field,
+        .location-input {
+            border-radius: 8px !important;
+            width: 100% !important;
+        }
+
+        .toggle-wrapper {
+            justify-content: center;
+            margin-left: 0;
+            margin-top: 12px;
+        }
+
+        .toggle-label {
+            font-size: 12px;
+        }
+
+        .clear-text {
+            font-size: 12px;
+        }
+    }
+
+    @@media (min-width: 1010px) and (max-width: 1024px) {
+
+        .search-field,
+        .select-field {
+            width: 220px !important;
+        }
+    }
+</style>
