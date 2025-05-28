@@ -3,9 +3,9 @@
 <div class="daily-category-event-card-section" @onclick="() => OnClick.InvokeAsync(Item)">
     <div class="daily-card-contents">
         <div class="daily-category-event-image-wrapper">
-            <img src="@Item.ImageUrl" alt="@Item.Title" class="daily-category-event-image" />
+            <img src="@Item.ImageUrl" alt="@Item.Category" class="daily-category-event-image" />
         </div>
-        <h4 class="daily-category-event-card-title">@Item.Title</h4>
+        <h4 class="daily-category-event-card-title">@Item.Category</h4>
     </div>
 </div>
 
