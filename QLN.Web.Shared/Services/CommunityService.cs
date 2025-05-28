@@ -11,11 +11,15 @@ namespace QLN.Web.Shared.Services
 
         private readonly HttpClient _httpClient;
         private readonly ApiSettings _apiSettings;
+        private readonly string _baseUrl;
 
         public CommunityService(HttpClient httpClient, IOptions<ApiSettings> options)
         {
             _httpClient = httpClient;
-            _apiSettings = options.Value;
+            //_apiSettings = options.Value;
+            _baseUrl = "https://qlc-bo-dev.qatarliving.com/";
+
+
         }
 
 
@@ -24,7 +28,7 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                var url = $"{_apiSettings.BaseUrl}/api/content/community?" +
+                var url = $"{_baseUrl}/api/content/community?" +
                           $"forum_id={forumId}&" +
                           $"order={order}&" +
                           $"page={page}&" +
