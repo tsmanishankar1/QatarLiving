@@ -22,6 +22,7 @@ builder.Services.AddMudServices();
 builder.Services.AddScoped<CustomAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<CustomAuthStateProvider>());
 builder.Services.AddScoped<ICommunityService,CommunityMockService>();
+builder.Services.AddScoped<IContentService, ContentService>();
 
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<ICompanyProfileService, CompanyProfileService>();
