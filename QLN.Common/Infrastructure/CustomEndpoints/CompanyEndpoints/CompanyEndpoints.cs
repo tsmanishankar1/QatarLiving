@@ -30,12 +30,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 CancellationToken cancellationToken = default) =>
             {
                 try
-                {
-                    var user = httpContext.User;
-                    //if (!user.IsInRole("Subscriber"))
-                    //{
-                    //    return TypedResults.Forbid();
-                    //}
+                {                    
                     var entity = await service.CreateCompany(dto, cancellationToken);
                     return TypedResults.Ok("Company Profile created successfully");
                 }
@@ -61,6 +56,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .WithTags("Company")
             .WithSummary("Create a company profile")
             .WithDescription("Creates a new company profile.")
+            .RequireAuthorization(new AuthorizeAttribute { Roles = "Subscriber" })
             .Produces<CompanyProfileEntity>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
@@ -317,10 +313,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
         }
         public static RouteGroupBuilder MapCompanyApproval(this RouteGroupBuilder group)
         {
-            group.MapPost("/approve", [Authorize(Roles = "Admin")] async Task<IResult> (
+            group.MapPost("/approve", async Task<IResult> (
                 [FromBody] CompanyApproveDto dto,
                 [FromServices] ICompanyService service,
-                CancellationToken cancellationToken) =>
+                HttpContext httpContext,
+                CancellationToken cancellationToken = default) =>
             {
                 try
                 {
@@ -340,7 +337,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 {
                     return TypedResults.Problem(
                         title: "Internal Server Error",
-                        detail: "An unexpected error occurred.",
+                        detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError
                     );
                 }
@@ -348,6 +345,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .WithName("ApproveCompanyInternal")
             .WithTags("Company")
             .WithSummary("Approve a company profile internally")
+            .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" })
             .Produces(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
@@ -393,6 +391,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .WithTags("Company")
             .WithSummary("Get approval info of a company")
             .WithDescription("Returns company ID, name, verification status, and status details.")
+              //.RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" })
             .Produces<CompanyApprovalResponseDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);

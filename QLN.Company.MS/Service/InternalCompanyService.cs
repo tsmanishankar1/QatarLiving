@@ -33,13 +33,16 @@ namespace QLN.Company.MS.Service
                 entity.IsActive = true;
                 entity.CreatedUtc = DateTime.UtcNow;
                 entity.CreatedBy = dto.UserId;
+
                 await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, id.ToString(), entity);
+
                 var keys = await GetIndex();
                 if (!keys.Contains(id.ToString()))
                 {
                     keys.Add(id.ToString());
                     await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, ConstantValues.CompanyIndexKey, keys);
                 }
+
                 return "Company Created successfully";
             }
             catch (Exception ex)
@@ -48,6 +51,7 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
+
 
         public async Task<CompanyProfileEntity?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
         {
@@ -136,10 +140,10 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        private async Task<CompanyProfileEntity> ConvertDtoToEntity(
-            CompanyProfileDto dto,
-            Guid id,
-            CancellationToken cancellationToken = default)
+       private async Task<CompanyProfileEntity> ConvertDtoToEntity(
+          CompanyProfileDto dto,
+          Guid id,
+          CancellationToken cancellationToken = default)
         {
             try
             {
@@ -196,6 +200,7 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
+
         private string? ToRelative(string? physicalPath)
         {
             if (string.IsNullOrWhiteSpace(physicalPath))
@@ -340,6 +345,7 @@ namespace QLN.Company.MS.Service
 
                 company.IsVerified = dto.IsVerified ?? false;
                 company.Status = dto.Status;
+                company.UpdatedUtc = DateTime.Now;
 
                 await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, company.Id.ToString(), company, cancellationToken: cancellationToken);
             }
@@ -364,7 +370,8 @@ namespace QLN.Company.MS.Service
                     Name = company.BusinessName,
                     IsVerified = company.IsVerified,
                     StatusId = company.Status,
-                    StatusName = company.Status.ToString()
+                    StatusName = company.Status.ToString(),
+                    UpdatedUtc = company.UpdatedUtc ?? DateTime.UtcNow
                 };
             }
             catch (Exception ex)

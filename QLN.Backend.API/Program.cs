@@ -22,6 +22,7 @@ using System.Text.Json.Serialization;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 using QLN.Common.Infrastructure.IService;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -144,13 +145,11 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
+        RoleClaimType = ClaimTypes.Role, 
     };
 
     options.MapInboundClaims = false;
-
-    options.TokenValidationParameters.RoleClaimType = "role";
-    options.TokenValidationParameters.NameClaimType = "name";
 });
 #endregion
 
@@ -200,14 +199,11 @@ var companyGroup = app.MapGroup("/api/companyprofile");
 companyGroup.MapCompanyEndpoints();
 var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedsEndpoints();
-
 app.MapGroup("/api/subscriptions")
    .MapSubscriptionEndpoints()
     .RequireAuthorization(); 
-
-
-
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

@@ -1,35 +1,41 @@
 ﻿using Dapr.Client;
+using Microsoft.AspNetCore.Http;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
-using System.ComponentModel.Design;
-using System.Net;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 namespace QLN.Backend.API.Service.CompanyService
 {
     public class ExternalCompanyService : ICompanyService
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<ExternalCompanyService> _logger;
-
-        public ExternalCompanyService(DaprClient dapr, ILogger<ExternalCompanyService> logger)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public ExternalCompanyService(DaprClient dapr, ILogger<ExternalCompanyService> logger, IHttpContextAccessor httpContextAccessor)
         {
             _dapr = dapr;
             _logger = logger;
+            _httpContextAccessor = httpContextAccessor;
         }
-        public const string CompanyServiceAppId = ConstantValues.CompanyServiceAppId;
         public async Task<string> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
                 var url = "/api/companyprofile/create";
-                var response = await _dapr.InvokeMethodAsync<CompanyProfileDto, string>(
-                    HttpMethod.Post,
-                    CompanyServiceAppId,
-                    url,
-                    dto,
-                    cancellationToken);
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.CompanyServiceAppId, url);
+                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
-                return response;
+                if (_httpContextAccessor.HttpContext?.Request.Headers.TryGetValue("Authorization", out var authHeader) == true)
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authHeader.ToString().Split(' ').Last());
+                }
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                response.EnsureSuccessStatusCode();
+
+                return await response.Content.ReadAsStringAsync();
             }
             catch (Exception ex)
             {
@@ -44,7 +50,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 var url = $"/api/companyprofile/getById?id={id}";
                 return await _dapr.InvokeMethodAsync<CompanyProfileEntity>(
                     HttpMethod.Get,
-                    CompanyServiceAppId,
+                    ConstantValues.CompanyServiceAppId,
                     url,
                     cancellationToken);
             }
@@ -66,7 +72,7 @@ namespace QLN.Backend.API.Service.CompanyService
             {
                 var response = await _dapr.InvokeMethodAsync<List<CompanyProfileEntity>>(
                     HttpMethod.Get,
-                    CompanyServiceAppId,
+                    ConstantValues.CompanyServiceAppId,
                     "api/companyprofile/getAll",
                     cancellationToken);
                 return response ?? new List<CompanyProfileEntity>();
@@ -84,7 +90,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 var url = $"/api/companyprofile/update?id={id}";
                 var response = await _dapr.InvokeMethodAsync<CompanyProfileDto, CompanyProfileEntity>(
                     HttpMethod.Put,
-                    CompanyServiceAppId,
+                    ConstantValues.CompanyServiceAppId,
                     url,
                     dto,
                     cancellationToken);
@@ -104,7 +110,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 var url = $"/api/companyprofile/delete?id={id}";
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Delete,
-                    CompanyServiceAppId,
+                    ConstantValues.CompanyServiceAppId,
                     url,
                     cancellationToken);
             }
@@ -126,7 +132,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 var url = $"/api/companyprofile/completion-status?userId={userId}&vertical={vertical}";
                 return await _dapr.InvokeMethodAsync<CompanyProfileCompletionStatusDto>(
                     HttpMethod.Get,
-                    CompanyServiceAppId,
+                    ConstantValues.CompanyServiceAppId,
                     url,
                     cancellationToken);
             }
@@ -148,7 +154,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 var url = $"/api/companyprofile/verification-status?userId={userId}&vertical={verticalType}";
                 return await _dapr.InvokeMethodAsync<CompanyProfileVerificationStatusDto>(
                     HttpMethod.Get,
-                    CompanyServiceAppId,
+                    ConstantValues.CompanyServiceAppId,
                     url,
                     cancellationToken);
             }
@@ -168,12 +174,18 @@ namespace QLN.Backend.API.Service.CompanyService
             try
             {
                 var url = "/api/companyprofile/approve";
-                await _dapr.InvokeMethodAsync<CompanyApproveDto>(
-                    HttpMethod.Post,
-                    CompanyServiceAppId,
-                    url,
-                    dto,
-                    cancellationToken);
+
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.CompanyServiceAppId, url);
+                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+
+                if (_httpContextAccessor.HttpContext?.Request.Headers.TryGetValue("Authorization", out var authHeader) == true)
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authHeader.ToString().Split(' ').Last());
+                }
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+                response.EnsureSuccessStatusCode();
             }
             catch (Exception ex)
             {
@@ -188,7 +200,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 var url = $"/api/companyprofile/getApproval?companyId={companyId}";
                 var response = await _dapr.InvokeMethodAsync<CompanyApprovalResponseDto>(
                     HttpMethod.Get,
-                    CompanyServiceAppId,
+                    ConstantValues.CompanyServiceAppId,
                     url,
                     cancellationToken);
 
