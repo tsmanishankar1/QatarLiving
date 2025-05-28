@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using System.Linq;
+
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
@@ -18,6 +20,10 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected bool IsLoading { get; set; } = true;
         protected bool HasError { get; set; } = false;
 
+        // Pagination
+        protected int CurrentPage { get; set; } = 1;
+        protected int PageSize { get; set; } = 10;
+        protected int TotalPosts { get; set; } = 0;
 
         // Newsletter subscription
         protected NewsLetterSubscriptionModel SubscriptionModel { get; set; } = new();
@@ -49,31 +55,70 @@ namespace QLN.Web.Shared.Pages.Content.Community
         {
             Console.WriteLine("Search completed.");
         }
+
         protected async Task<List<PostModel>> GetPostListAsync()
         {
-
             try
             {
                 IsLoading = true;
                 HasError = false;
 
-                var response = await CommunityService.GetAllAsync();
-                if (response != null)
+                var dtoList = await CommunityService.GetPostsAsync(
+                    forumId: 20000006,
+                    order: GetOrderFromSortOption(),
+                    page: CurrentPage,
+                    pageSize: PageSize
+                );
+
+                var postModelList = dtoList.Select(dto => new PostModel
                 {
-                    return response.ToList();
-                }
-                return [];
+                    Id = dto.nid,
+                    Category = dto.forum_category,
+                    Title = dto.title,
+                    BodyPreview = dto.description,
+                    Author = dto.user_name,
+                    Time = DateTime.TryParse(dto.date_created, out var parsedDate) ? parsedDate : DateTime.MinValue,
+                    LikeCount = 0,
+                    CommentCount = 0,
+                    isCommented = false,
+                    ImageUrl = null
+                }).ToList();
+
+                return postModelList;
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Get Community Post Async");
                 HasError = true;
-                return [];
+                return new List<PostModel>();
             }
             finally
             {
                 IsLoading = false;
             }
+        }
+
+        private string GetOrderFromSortOption()
+        {
+            return sortOption switch
+            {
+                "Recent" => "desc",
+                "Oldest" => "asc",
+                _ => "desc" 
+            };
+        }
+
+        protected async Task HandleSortChange(string newSortOption)
+        {
+            sortOption = newSortOption;
+            CurrentPage = 1;
+            await GetPostListAsync();
+        }
+
+        protected async Task HandlePageChange(int newPage)
+        {
+            CurrentPage = newPage;
+            await GetPostListAsync();
         }
 
         protected async Task SubscribeAsync()

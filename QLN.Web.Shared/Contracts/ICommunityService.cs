@@ -4,7 +4,7 @@ namespace QLN.Web.Shared.Contracts
 {
     public interface ICommunityService
     {
-        Task<IEnumerable<PostModel>> GetAllAsync();
+        Task<List<PostListDto>> GetPostsAsync(int forumId, string order, int page, int pageSize);
 
     }
 }
