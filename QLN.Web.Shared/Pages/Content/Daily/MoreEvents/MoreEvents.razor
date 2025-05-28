@@ -1,8 +1,7 @@
 <div class="daily-know-section">
     <!-- Section Title -->
     <div class="daily-title">
-        <span class="title-orange">IN</span>
-        <span class="title-blue">the Know</span>
+        <span class="title-more-events">More Events</span>
     </div>
 
     <!-- Categories -->
@@ -10,7 +9,6 @@
         @foreach (var item in DailyCategories)
         {
             <button class="daily-category-btn">
-                <img src="@item.Icon" alt="@item.Label" class="btn-icon" />
                 @item.Label
             </button>
         }
@@ -26,17 +24,16 @@
 
     private List<CategoryItem> DailyCategories = new()
 {
-new CategoryItem { Icon = "/images/content/business_icon.svg", Label = "Business" },
-new CategoryItem { Icon = "/images/content/sports_icon.svg", Label = "Sports" },
-new CategoryItem { Icon = "/images/content/lifestyle_icon.svg", Label = "Lifestyle" },
-new CategoryItem { Icon = "/images/content/food_icon.svg", Label = "Food & Dining" },
-new CategoryItem { Icon = "/images/content/travel_icon.svg", Label = "Travel & Leisure" },
+new CategoryItem { Label = "Concerts" },
+new CategoryItem { Label = "Workshops" },
+new CategoryItem { Label = "Sports" },
+new CategoryItem { Label = "Festivals" },
+new CategoryItem { Label = "Exhibitions" },
 };
 
 
     public class CategoryItem
     {
-        public string Icon { get; set; }
         public string Label { get; set; }
     }
 }
@@ -53,19 +50,18 @@ new CategoryItem { Icon = "/images/content/travel_icon.svg", Label = "Travel & L
     }
 
     .daily-title {
-        font-size: 25px;
-        font-weight: 600;
         display: flex;
         align-items: center;
         gap: 6px;
     }
 
-    .title-orange {
-        color: var(--color-accent);
-    }
 
-    .title-blue {
-        color: var(--color-primary);
+    .title-more-events {
+        color: var(--color-text-heading);
+        font-size: 25px;
+        font-weight: 600;
+        color: var(--color-text-heading);
+
     }
 
     .daily-category-group {
@@ -84,6 +80,7 @@ new CategoryItem { Icon = "/images/content/travel_icon.svg", Label = "Travel & L
         background-color: white;
         font-size: 14px;
         font-weight: 600;
+        color: var(--color-text-heading);
         cursor: pointer;
         transition: all 0.3s ease;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
@@ -96,7 +93,7 @@ new CategoryItem { Icon = "/images/content/travel_icon.svg", Label = "Travel & L
     }
 
     .view-all-btn {
-        background-color: var(--color-primary);
+        background-color: #003F69;
         color: white;
         font-weight: 600;
         border: none;

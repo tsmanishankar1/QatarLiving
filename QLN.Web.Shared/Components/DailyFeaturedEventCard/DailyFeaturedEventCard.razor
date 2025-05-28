@@ -1,27 +1,26 @@
 @inherits DailyFeaturedEventCardBase
 
-<div class="daily-category-card-section" @onclick="() => OnClick.InvokeAsync(Item)">
+<div class="daily-category-event-card-section" @onclick="() => OnClick.InvokeAsync(Item)">
     <div class="daily-card-contents">
-        <img src="@Item.ImageUrl" alt="@Item.Category" class="daily-category-image" />
-        <h4 class="daily-category-card-title">@Item.Category</h4>
+        <div class="daily-category-event-image-wrapper">
+            <img src="@Item.ImageUrl" alt="@Item.Category" class="daily-category-event-image" />
+        </div>
+        <h4 class="daily-category-event-card-title">@Item.Category</h4>
     </div>
 </div>
 
 
 <style>
-    .daily-category-card-section {
-        margin-right: 1rem;
-        border-radius: 12px;
+    .daily-category-event-card-section {
         transition: transform 0.3s ease;
         cursor: pointer;
         padding: 0;
         width: 181px;
         height: 290px;
-        font-family: 'Public Sans', sans-serif;
-
+        font-family: 'Public Sans';
     }
 
-    .daily-category-card-section:hover {
+    .daily-category-event-card-section:hover {
         transform: scale(1.03);
     }
 
@@ -31,42 +30,38 @@
         align-items: flex-start;
     }
 
-    .daily-category-image {
+    .daily-category-event-image-wrapper {
         width: 100%;
-        height: 260px;
-        object-fit: cover;
-        border-radius: 8px;
+        height: 200px;
+        border-radius: 10px;
+        overflow: hidden;
         margin-bottom: 8px;
     }
 
-    .daily-category-card-title {
+    .daily-category-event-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .daily-category-event-card-title {
         font-size: 18px;
-        font-weight: 600;
+        font-weight: 500;
         color: #242424;
+        text-overflow: ellipsis;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
     }
 
     @@media (max-width: 768px) {
-
-
-        .daily-category-card-section {
-            flex: 0 0 auto;
-            width: 120px;
-            border-radius: 12px;
-            scroll-snap-align: start;
-            margin-right: 0.5rem;
-        }
-
-        .daily-category-image {
-            max-height: 250px;
-            object-fit: cover;
-        }
 
         .daily-card-contents {
             align-items: flex-start;
             text-align: left;
         }
 
-        .daily-category-card-title {
+        .daily-category-event-card-title {
             font-size: 0.85rem;
             color: #242424;
             text-align: center;

@@ -2,11 +2,9 @@
 
 <div class="section-daily-highlights">
     <div class="section-header">
-        <div class="section-title">
-            <h3 class="section-heading">
-                <span class="accent-bar"></span>Ramadan
-            </h3>
-        </div>
+        <h3 class="section-heading">
+            <span class="accent-bar"></span>Ramadan
+        </h3>
         <div class="view-all">
             <span class="view-all-text">View all</span>
             <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowRight" />
@@ -48,7 +46,11 @@
 
 <style>
     .section-daily-highlights {
-        padding: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        padding: 20px 0;
         font-family: 'Public Sans';
         background-color: #ffffff;
     }
@@ -57,7 +59,8 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0 10px;
+        width: 100%;
+        padding: 0px 5px;
     }
 
     .section-heading {
@@ -90,34 +93,33 @@
 
     .highlight-card-group {
         display: flex;
-        gap: 28px;
-        flex-wrap: nowrap;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        padding: 0 5px;
     }
 
     .highlight-card {
         display: flex;
         flex-direction: row;
         align-items: flex-start;
-        border-radius: 12px;
-        padding: 10px;
-        width: 370px;
-        min-height: 120px;
+        max-width: 370px;
     }
 
     .highlight-img {
-        width: 150px;
-        height: 100px;
+        width: 130px;
+        height: 90px;
         border-radius: 8px;
         object-fit: cover;
         flex-shrink: 0;
     }
 
     .highlight-content {
+        padding-left: 12px;
         display: flex;
         flex-direction: column;
-        justify-content: flex-start;
-        padding-left: 12px;
-        gap: 5px
+        gap: 4px;
     }
 
     .highlight-category {
@@ -133,7 +135,7 @@
     }
 
     .highlight-desc {
-        font-size: 12px;
+        font-size: 13px;
         font-weight: 500;
         color: var(--color-primary);
     }
