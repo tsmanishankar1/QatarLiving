@@ -1,4 +1,5 @@
 @using MudBlazor
+@using QLN.Common.Infrastructure.DTO_s
 @using QLN.Web.Shared.Components.DailyFeaturedEventCard
 
 
@@ -13,7 +14,7 @@
     {
         <MudText>loading</MudText>
     }
-    else if (FeaturedEvent?.Any() != true)
+    else if (Items?.Any() != true)
     {
         <MudText>No featured categories found.</MudText>
     }
@@ -30,7 +31,7 @@
                 </div>
 
                 <div class="swiper-wrapper">
-                    @foreach (var events in FeaturedEvent)
+                    @foreach (var events in Items)
                     {
                         <div class="swiper-slide swiper-slide-Card">
                             <DailyFeaturedEventCard Item="events" OnClick="HandleCategoryClick" />
@@ -49,7 +50,7 @@
     public bool Loading { get; set; } = false;
 
     [Parameter]
-    public List<DailyFeaturedEventCard.DailyEventItem> FeaturedEvent { get; set; } = new();
+    public List<ContentPost> Items { get; set; } = new();
 
     [Inject]
     private IJSRuntime JSRuntime { get; set; } = default!;
@@ -64,9 +65,9 @@
             await JSRuntime.InvokeVoidAsync("initCategoriesSwiper");
         }
     }
-    private void HandleCategoryClick(DailyFeaturedEventCard.DailyEventItem item)
+    private void HandleCategoryClick(ContentPost item)
     {
-        Console.WriteLine($"Clicked category: {item.Category}");
+        Console.WriteLine($"Clicked category: {item.Title}");
     }
 }
 

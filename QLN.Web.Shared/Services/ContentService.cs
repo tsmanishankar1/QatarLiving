@@ -7,7 +7,6 @@ namespace QLN.Web.Shared.Services
 {
     public class ContentService : IContentService
     {
-        private readonly ILogger _logger;
         private readonly HttpClient _httpClient;
         private readonly string _baseUrl;
 
@@ -27,7 +26,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError("GetDailyLPAsync" + ex);
+                Console.WriteLine("GetDailyLPAsync" + ex);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }

@@ -1,9 +1,5 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using QLN.Web.Shared;
 using QLN.Web.Shared.Pages;
-using QLN.Web.Shared;
-using MudBlazor;
 using MudBlazor.Services;
 using QLN.Web.Shared.Services;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -26,6 +22,7 @@ builder.Services.AddScoped<IContentService, ContentService>();
 
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<ICompanyProfileService, CompanyProfileService>();
+builder.Services.AddScoped<IContentService, ContentService>();
 // builder.Services.AddCascadingAuthenticationState();
 builder.Services.Configure<ApiSettings>(
     builder.Configuration.GetSection("ApiSettings"));

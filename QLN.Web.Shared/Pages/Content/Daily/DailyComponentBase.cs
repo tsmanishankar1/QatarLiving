@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Logging;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
@@ -8,7 +7,6 @@ namespace QLN.Web.Shared.Pages.Content.Daily
 {
     public class DailyComponentBase : LayoutComponentBase
     {
-        [Inject] private ILogger<DailyComponentBase> Logger { get; set; }
         [Inject] private IContentService _contentService { get; set; }
 
         protected QlnContentsDailyPageResponse LandingContent { get; set; } = new QlnContentsDailyPageResponse();
@@ -22,16 +20,16 @@ namespace QLN.Web.Shared.Pages.Content.Daily
         {
             try
             {
-                LandingContent = await GetContentLandingAsync();
-                TopStoryItem = LandingContent.QlnContentsDaily.DailyTopStory.Items.First();
-                HighlightedEvent = LandingContent.QlnContentsDaily.DailyEvent.Items.First();
-                FeaturedEvents = LandingContent.QlnContentsDaily.DailyFeaturedEvents?.Items ?? [];
-                MoreArticles = LandingContent.QlnContentsDaily.DailyMoreArticles?.Items ?? [];
-                Videos = LandingContent.QlnContentsDaily.DailyWatchOnQatarLiving.Items ?? [];
+                LandingContent = await GetContentLandingAsync() ?? new();
+                TopStoryItem = LandingContent.QlnContentsDaily?.DailyTopStory?.Items.First() ?? new();
+                HighlightedEvent = LandingContent.QlnContentsDaily?.DailyEvent?.Items.First() ?? new();
+                FeaturedEvents = LandingContent.QlnContentsDaily?.DailyFeaturedEvents?.Items ?? [];
+                MoreArticles = LandingContent.QlnContentsDaily?.DailyMoreArticles?.Items ?? [];
+                Videos = LandingContent.QlnContentsDaily?.DailyWatchOnQatarLiving.Items ?? [];
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "OnInitializedAsync");
+                Console.WriteLine(ex.Message, "OnInitializedAsync");
             }
         }
 
@@ -55,7 +53,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "GetContentLandingAsync");
+                Console.WriteLine(ex.Message, "OnInitializedAsync");
                 return new QlnContentsDailyPageResponse();
             }
         }

@@ -7,7 +7,7 @@
 @using QLN.Web.Shared.Pages.Content.Daily.DailyNewsLetter
 @using QLN.Web.Shared.Pages.Content.Daily.DailyMoreArticle
 @using QLN.Web.Shared.Pages.Content.Daily.DailyHighlights
-@using QLN.Web.Shared.Pages.Content.Daily.DainlyIntheKnow
+@using QLN.Web.Shared.Pages.Content.Daily.DailyIntheKnow
 @using QLN.Web.Shared.Pages.Content.Daily.MoreEvents
 @layout ContentLayout
 
@@ -19,7 +19,7 @@
 
             <!-- Carousel Banner -->
             <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
-                Transition="Transition.Slide" />
+                            Transition="Transition.Slide" />
         </div>
         <div class="side-padding" style="display: flex; flex-wrap: wrap; gap: 0px;">
             <MudItem xs="12" md="8">
@@ -59,9 +59,9 @@
                 <DailyNewsLetter />
             </div>
         </div>
-        <DainlyIntheKnow />
+        <DailyIntheKnow />
 
-        <DailyFeaturedEvents FeaturedEvent="featuredEeventData" Loading="isLoading" />
+        <DailyFeaturedEvents FeaturedEvent="@FeaturedEvents" Loading="isLoading" />
 
         <MoreEvents />
         <div class="responsive-container">
@@ -89,16 +89,6 @@
 };
 
     private bool isLoading = false;
-
-    private List<DailyFeaturedEventCard.DailyEventItem> featuredEeventData = new()
-{
-new() { Category = "Qatar International Art Festival 2025 - 7th Edition", ImageUrl = "/images/categories/new1.svg" },
-new() { Category = "FIFA Arab Cup - Doha 2025", ImageUrl = "/images/categories/new2.svg" },
-new() { Category = "Qatar T100 Triathlon World Championship Final", ImageUrl = "/images/categories/new3.svg" },
-new() { Category = "In the Realms of Mecca: A Journey through the Ritua", ImageUrl = "/images/categories/new4.svg" },
-new() { Category = "Qatar Desert Trail Running Series 2025", ImageUrl = "/images/categories/new5.svg" },
-new() { Category = "A Sneak Peek at Qatar Auto Museum Project", ImageUrl = "/images/categories/new6.svg" }
-};
 
     public List<NewsItem> Items { get; set; } = new();
 
@@ -157,11 +147,11 @@ ImageUrl = "/images/gold.svg"
         padding-right: 3px;
     }
 
-    .news-card-wrapper.with-divider {
-        border-right: 1px solid #F0F0F0;
-        padding-right: 3px;
-        padding-left: 3px;
-    }
+        .news-card-wrapper.with-divider {
+            border-right: 1px solid #F0F0F0;
+            padding-right: 3px;
+            padding-left: 3px;
+        }
 
     .newsletter-wrapper {
         flex: 1;

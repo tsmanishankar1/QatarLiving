@@ -4,15 +4,15 @@
         <span class="accent-bar"></span>More Articles
     </h3>
 
-    @foreach (var article in Articles)
+    @foreach (var article in Items)
     {
         <div class="article-entry">
             <div class="article-content">
-                <a href="@article.Url" class="article-title">@article.Title</a>
+                <a href="#" class="article-title">@(article.Title)</a>
             </div>
-            @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
+            @if (!string.IsNullOrWhiteSpace(@article.ImageUrl))
             {
-                <img src="@article.ImageUrl" class="article-image" />
+                <img src="@(article.ImageUrl)" class="article-image" />
             }
         </div>
     }
@@ -62,9 +62,9 @@
         border-bottom: 1px solid #F0F0F0;
     }
 
-    .article-entry:last-child {
-        border-bottom: none;
-    }
+        .article-entry:last-child {
+            border-bottom: none;
+        }
 
     .article-content {
         flex: 1;
@@ -88,10 +88,10 @@
         line-height: 1.4;
     }
 
-    .article-title:hover {
-        text-decoration: underline;
-        color: var(--color-primary);
-    }
+        .article-title:hover {
+            text-decoration: underline;
+            color: var(--color-primary);
+        }
 
     .article-image {
         width: 124px;
