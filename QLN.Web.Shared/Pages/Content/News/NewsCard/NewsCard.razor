@@ -1,6 +1,6 @@
 @using MudBlazor;
 @inherits NewsCardBase
-<div class="news-card @(IsHorizontal ? "horizontal" : "")">
+<div class="news-card @(IsHorizontal ? "horizontal" : "")" @onclick="NavigateToDetails">
     <img src="@Item.ImageUrl" alt="News Image" class="news-image" />
     <div class="news-content">
         <div class="news-title">@Item.Title</div>

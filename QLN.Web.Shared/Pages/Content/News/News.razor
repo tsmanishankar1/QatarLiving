@@ -20,9 +20,9 @@
                         Transition="Transition.Slide" />
     </div>
     </MudItem>
-    @* <MudItem xs="12" Class="d-flex justify-center py-3">
+     <MudItem xs="12" Class="d-flex justify-center py-3">
         <ViewToggleButtons Items="@_viewOptions" SelectedValue="@_selectedView" OnSelected="SetViewMode" TextClass="custom-text"/>
-    </MudItem> *@
+    </MudItem>
 
     <MudItem xs="12" Class="news-tabs-wrapper">
         <div class="news-tabs">
@@ -129,11 +129,11 @@
         </MudGrid>
     </MudItem> *@
     <MudGrid GutterSize="3" Class="side-padding responsive-grid">
-    @for (int i = 0; i < 9; i++)
+    @foreach (var news in GoldNewsList)
     {
         <MudItem xs="12" sm="6" md="4"> 
             <div class="card-wrapper">
-            <NewsCard Item="GoldNews" IsHorizontal="false" />
+                <NewsCard Item="news" IsHorizontal="false" />
             </div>
         </MudItem>
     }

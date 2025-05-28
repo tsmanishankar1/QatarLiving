@@ -1,5 +1,5 @@
 @using MudBlazor
-
+@inherits ArticleDetailCardBase
 <div class="event-card">
     <div class="event-title">Al Sadd lift fourth Qatar Cup title with thrilling win over Al Duhail</div>
 
@@ -27,7 +27,6 @@
             </div>
         </div>
     </div>
-
     <div class="event-description">
         <p>
             Reigning Qatar Stars League champions Al Sadd clinched their second trophy of the season —
@@ -42,6 +41,7 @@
             Qatar Olympic Committee President HE Sheikh Joaan bin Hamad Al Thani crowned the winners and handed
             over the coveted trophy to Al Sadd captain Hassan Al Haydos.
         </p>
+        <div>@ParsedDescription</div>
         <p>
             Goalkeeper Meshaal Barsham, brother of decorated high-jumper and reigning Olympic champion Mutaz Essa Barsham, proved to be the hero of the night. He produced two crucial saves in the shootout, diving to his left and then right, to gift the Wolves the title.
 
@@ -228,6 +228,15 @@
     width: 100%;
     padding: 16px;
 }
+@@media (max-width: 768px) {
+    .author-wrapper {
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 10px;
+    flex-direction: column; 
+    align-items: flex-start;
+    }
 </style>
 
  

@@ -18,12 +18,12 @@ public class NewsBase : ComponentBase
         new() { Label = "Sports", Value = "sports" },
         new() { Label = "Lifestyle", Value = "lifestyle" }
     };
-    
-     
+
+
     protected string _selectedView = "news";
     protected async void SetViewMode(string view)
     {
-         _selectedView = view;
+        _selectedView = view;
     }
     protected NewsItem GoldNews = new NewsItem
     {
@@ -31,7 +31,64 @@ public class NewsBase : ComponentBase
         Title = "Qatar gold prices rise by 4.86% this week",
         ImageUrl = "/images/gold.svg"
     };
-     protected string[] Tabs = new[] { "Qatar", "Sports", "Finance", "Lifestyle", "Politics", "Option" };
+    protected List<NewsItem> GoldNewsList = new()
+    {
+    new NewsItem
+    {
+        Category = "Finance",
+        Title = "Qatar gold prices rise by 4.86% this week",
+        ImageUrl = "/images/gold.svg"
+    },
+    new NewsItem
+    {
+         Category = "Finance",
+        Title = "Hilton Salwa Beach Resort & Villas unveils Summer",
+        ImageUrl = "/images/content/qatar_Image2.svg"
+    },
+    new NewsItem
+    {
+        Category = "Finance",
+        Title = "Qatar’s Abdulwahab creates history, enters Round of 64",
+        ImageUrl = "/images/content/qatar_image.svg"
+    },
+    new NewsItem
+    {
+        Category = "Finance",
+        Title = "Qatar gold prices rise by 4.86% this week",
+        ImageUrl = "/images/gold.svg"
+    },
+    new NewsItem
+    {
+         Category = "Finance",
+        Title = "Hilton Salwa Beach Resort & Villas unveils Summer",
+        ImageUrl = "/images/content/qatar_Image2.svg"
+    },
+    new NewsItem
+    {
+        Category = "Finance",
+        Title = "Qatar’s Abdulwahab creates history, enters Round of 64",
+        ImageUrl = "/images/content/qatar_image.svg"
+    },
+    new NewsItem
+    {
+        Category = "Finance",
+        Title = "Qatar gold prices rise by 4.86% this week",
+        ImageUrl = "/images/gold.svg"
+    },
+    new NewsItem
+    {
+         Category = "Finance",
+        Title = "Hilton Salwa Beach Resort & Villas unveils Summer",
+        ImageUrl = "/images/content/qatar_Image2.svg"
+    },
+    new NewsItem
+    {
+        Category = "Finance",
+        Title = "Qatar’s Abdulwahab creates history, enters Round of 64",
+        ImageUrl = "/images/content/qatar_image.svg"
+    }
+};
+    protected string[] Tabs = new[] { "Qatar", "Sports", "Finance", "Lifestyle", "Politics", "Option" };
     protected string SelectedTab = "Qatar";
     protected void SelectTab(string tab)
     {
