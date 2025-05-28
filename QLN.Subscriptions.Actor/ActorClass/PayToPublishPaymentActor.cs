@@ -1,46 +1,48 @@
 ﻿using Dapr.Actors;
 using Dapr.Actors.Runtime;
 using Microsoft.Extensions.Logging;
-using QLN.Common.DTOs;
-using QLN.Common.Infrastructure.IService.ISubscriptionService;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
+using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.IService.IPayToPublishService;
 
-namespace QLN.Subscriptions
+namespace QLN.Subscriptions.Actor.ActorClass
 {
-    public class PaymentTransactionActor : Actor, IPaymentTransactionActor
+    public class PayToPublishPaymentActor : Dapr.Actors.Runtime.Actor,IPaymentActor
     {
-        private const string StateKey = "payment-transaction-data";
-        private readonly ILogger<PaymentTransactionActor> _logger;
+        private const string StateKey = "paytopublish-payment-data";
+        private readonly ILogger<PayToPublishPaymentActor> _logger;
 
-        public PaymentTransactionActor(ActorHost host, ILogger<PaymentTransactionActor> logger) : base(host)
+        public PayToPublishPaymentActor(ActorHost host, ILogger<PayToPublishPaymentActor> logger) : base(host)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<bool> SetDataAsync(PaymentTransactionDto data, CancellationToken cancellationToken = default)
+        public async Task<bool> SetDataAsync(PaymentDto data, CancellationToken cancellationToken = default)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
 
             _logger.LogInformation("[PaymentActor {ActorId}] SetDataAsync called", Id);
+
             await StateManager.SetStateAsync(StateKey, data, cancellationToken);
+            await StateManager.SaveStateAsync(cancellationToken);
+
             return true;
         }
 
-        public async Task<bool> FastSetDataAsync(PaymentTransactionDto data, CancellationToken cancellationToken = default)
+        public async Task<bool> FastSetDataAsync(PaymentDto data, CancellationToken cancellationToken = default)
         {
-            // In this simple version, FastSet behaves the same as Set
+           
             return await SetDataAsync(data, cancellationToken);
         }
 
-        public async Task<PaymentTransactionDto?> GetDataAsync(CancellationToken cancellationToken = default)
+        public async Task<PaymentDto?> GetDataAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("[PaymentActor {ActorId}] GetDataAsync called", Id);
 
-            if (await StateManager.ContainsStateAsync(StateKey, cancellationToken))
+            var conditionalValue = await StateManager.TryGetStateAsync<PaymentDto>(StateKey, cancellationToken);
+
+            if (conditionalValue.HasValue)
             {
-                return await StateManager.GetStateAsync<PaymentTransactionDto>(StateKey, cancellationToken);
+                return conditionalValue.Value;
             }
 
             return null;

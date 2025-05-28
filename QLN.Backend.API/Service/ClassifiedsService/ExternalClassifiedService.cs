@@ -13,7 +13,7 @@ using Microsoft.Extensions.Hosting;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.EventLogger;
-using QLN.Common.Infrastructure.IService.BannerService;
+using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Utilities;
 
@@ -119,11 +119,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<Adcateg> AddCategory(string categoryName, CancellationToken cancellationToken = default)
+        public async Task<Category> AddCategory(string categoryName, CancellationToken cancellationToken = default)
         {
             try
             {
-                return await _dapr.InvokeMethodAsync<string, Adcateg>(
+                return await _dapr.InvokeMethodAsync<string, Category>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/category",
@@ -138,18 +138,18 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<List<Adcateg>> GetAllCategories(CancellationToken cancellationToken = default)
+        public async Task<List<CategoriesDto>> GetAllCategories(CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<List<Adcateg>>(
+                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/categories",
                     cancellationToken
                     );
 
-                return result ?? new List<Adcateg>();
+                return result ?? new List<CategoriesDto>();
             }
             catch (Exception ex)
             {
@@ -158,7 +158,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdSubCategory> AddSubCategory(string name, Guid categoryId, CancellationToken cancellationToken = default)
+        public async Task<Category> AddSubCategory(string name, Guid categoryId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -168,7 +168,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     CategoryId = categoryId
                 };
 
-                return await _dapr.InvokeMethodAsync<object, AdSubCategory>(
+                return await _dapr.InvokeMethodAsync<object, Category>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/subcategory",
@@ -182,18 +182,18 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw;
             }
         }
-        public async Task<List<AdSubCategory>> GetAllSubCategories(CancellationToken cancellationToken = default)
+        public async Task<List<CategoriesDto>> GetAllSubCategories(CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<List<AdSubCategory>>(
+                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/subcategory",
                     cancellationToken
                 );
 
-                return result ?? new List<AdSubCategory>();
+                return result ?? new List<CategoriesDto>();
             }
             catch (Exception ex)
             {
@@ -202,17 +202,17 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<List<AdSubCategory>> GetSubCategoriesByCategoryId(Guid categoryId)
+        public async Task<CategoryDto?> GetCategoryWithSubCategories(Guid categoryId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<List<AdSubCategory>>(
+                var result = await _dapr.InvokeMethodAsync<CategoryDto>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/subcategory/by-category/{categoryId}"                    
                 );
 
-                return result ?? new List<AdSubCategory>();
+                return result ?? new CategoryDto();
             }
             catch (Exception ex)
             {
@@ -221,7 +221,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdBrand> AddBrand(string name, Guid subCategoryId, CancellationToken cancellationToken = default)
+        public async Task<Category> AddBrand(string name, Guid subCategoryId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -231,7 +231,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     SubCategoryId = subCategoryId
                 };
 
-                return await _dapr.InvokeMethodAsync<object, AdBrand>(
+                return await _dapr.InvokeMethodAsync<object, Category>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/brand",
@@ -245,17 +245,17 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<List<AdBrand>> GetAllBrands(CancellationToken cancellationToken = default)
+        public async Task<List<CategoriesDto>> GetAllBrands(CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<List<AdBrand>>(
+                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/brand"
                 );
 
-                return result ?? new List<AdBrand>();
+                return result ?? new List<CategoriesDto>();
             }
             catch (Exception ex)
             {
@@ -264,17 +264,17 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<List<AdBrand>> GetBrandsBySubCategoryId(Guid subCategoryId, CancellationToken cancellationToken = default)
+        public async Task<SubCategoryWithBrandsDto> GetSubCategoryWithBrands(Guid subCategoryId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<List<AdBrand>>(
+                var result = await _dapr.InvokeMethodAsync<SubCategoryWithBrandsDto> (
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/brand/by-subcategory/{subCategoryId}"
                 );
 
-                return result ?? new List<AdBrand>();
+                return result ?? new SubCategoryWithBrandsDto();
             }
             catch (Exception ex)
             {
@@ -283,13 +283,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdModel> AddModel(string name, Guid brandId, CancellationToken cancellationToken = default)
+        public async Task<Category> AddModel(string name, Guid brandId, CancellationToken cancellationToken = default)
         {
             try
             {
                 var body = new { Name = name, BrandId = brandId };
 
-                return await _dapr.InvokeMethodAsync<object, AdModel>(
+                return await _dapr.InvokeMethodAsync<object, Category>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/model",
@@ -303,18 +303,18 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw;
             }
         }
-        public async Task<List<AdModel>> GetAllModels(CancellationToken cancellationToken = default)
+        public async Task<List<CategoriesDto>> GetAllModels(CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<List<AdModel>>(
+                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/model",
                     cancellationToken
                 );
 
-                return result ?? new List<AdModel>();
+                return result ?? new List<CategoriesDto>();
             }
             catch (Exception ex)
             {
@@ -322,18 +322,18 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw;
             }
         }
-        public async Task<List<AdModel>> GetModelsByBrandId(Guid brandId, CancellationToken cancellationToken = default)
+        public async Task<BrandWithModelsDto> GetBrandWithModels(Guid brandId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<List<AdModel>>(
+                var result = await _dapr.InvokeMethodAsync<BrandWithModelsDto> (
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/model/by-brand/{brandId}",
                     cancellationToken
                 );
 
-                return result ?? new List<AdModel>();
+                return result ?? new BrandWithModelsDto();
             }
             catch (Exception ex)
             {
@@ -342,13 +342,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdCondition> AddCondition(string name, CancellationToken cancellationToken = default)
+        public async Task<Category> AddCondition(string name, CancellationToken cancellationToken = default)
         {
             try
             {
                 var body = new { Name = name };
 
-                return await _dapr.InvokeMethodAsync<object, AdCondition>(
+                return await _dapr.InvokeMethodAsync<object, Category>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/condition",
@@ -363,18 +363,18 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<List<AdCondition>> GetAllConditions(CancellationToken cancellationToken = default)
+        public async Task<List<CategoriesDto>> GetAllConditions(CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<List<AdCondition>>(
+                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/condition",
                     cancellationToken
                 );
 
-                return result ?? new List<AdCondition>();
+                return result ?? new List<CategoriesDto>();
             }
             catch (Exception ex)
             {
@@ -383,13 +383,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdColor> AddColor(string name, CancellationToken cancellationToken = default)
+        public async Task<Category> AddColor(string name, CancellationToken cancellationToken = default)
         {
             try
             {
                 var body = new { Name = name };
 
-                return await _dapr.InvokeMethodAsync<object, AdColor>(
+                return await _dapr.InvokeMethodAsync<object, Category>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/color",
@@ -404,18 +404,18 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<List<AdColor>> GetAllColors(CancellationToken cancellationToken = default)
+        public async Task<List<CategoriesDto>> GetAllColors(CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<List<AdColor>>(
+                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/color",
                     cancellationToken
                 );
 
-                return result ?? new List<AdColor>();
+                return result ?? new List<CategoriesDto>();
             }
             catch (Exception ex)
             {
@@ -424,13 +424,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdCapacity> AddCapacity(string name, CancellationToken cancellationToken = default)
+        public async Task<Category> AddCapacity(string name, CancellationToken cancellationToken = default)
         {
             try
             {
                 var body = new { Name = name };
 
-                return await _dapr.InvokeMethodAsync<object, AdCapacity>(
+                return await _dapr.InvokeMethodAsync<object, Category>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/capacity",
@@ -445,18 +445,18 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<List<AdCapacity>> GetAllCapacities(CancellationToken cancellationToken = default)
+        public async Task<List<CategoriesDto>> GetAllCapacities(CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<List<AdCapacity>>(
+                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/capacity",
                     cancellationToken
                 );
 
-                return result ?? new List<AdCapacity>();
+                return result ?? new List<CategoriesDto>();
             }
             catch (Exception ex)
             {
@@ -465,13 +465,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdProcessor> AddProcessor(string name, Guid modelId, CancellationToken cancellationToken = default)
+        public async Task<Category> AddProcessor(string name, Guid modelId, CancellationToken cancellationToken = default)
         {
             try
             {
                 var body = new { Name = name, ModelId = modelId };
 
-                return await _dapr.InvokeMethodAsync<object, AdProcessor>(
+                return await _dapr.InvokeMethodAsync<object, Category>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/processor",
@@ -486,18 +486,18 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<List<AdProcessor>> GetAllProcessors(CancellationToken cancellationToken = default)
+        public async Task<List<CategoriesDto>> GetAllProcessors(CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<List<AdProcessor>>(
+                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/processor",
                     cancellationToken
                 );
 
-                return result ?? new List<AdProcessor>();
+                return result ?? new List<CategoriesDto>();
             }
             catch (Exception ex)
             {
@@ -506,18 +506,18 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<List<AdProcessor>> GetProcessorsByModelId(Guid modelId, CancellationToken cancellationToken = default)
+        public async Task<ModelWithProcessorsDto?> GetModelWithProcessors(Guid modelId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<List<AdProcessor>>(
+                var result = await _dapr.InvokeMethodAsync<ModelWithProcessorsDto>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/processor/by-model/{modelId}",
                     cancellationToken
                 );
 
-                return result ?? new List<AdProcessor>();
+                return result ?? new ModelWithProcessorsDto();
             }
             catch (Exception ex)
             {
@@ -526,13 +526,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdCoverage> AddCoverage(string name, CancellationToken cancellationToken = default)
+        public async Task<Category> AddCoverage(string name, CancellationToken cancellationToken = default)
         {
             try
             {
                 var body = new { Name = name };
 
-                return await _dapr.InvokeMethodAsync<object, AdCoverage>(
+                return await _dapr.InvokeMethodAsync<object, Category>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/coverage",
@@ -547,18 +547,18 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<List<AdCoverage>> GetAllCoverages(CancellationToken cancellationToken = default)
+        public async Task<List<CategoriesDto>> GetAllCoverages(CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<List<AdCoverage>>(
+                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/coverage",
                     cancellationToken
                 );
 
-                return result ?? new List<AdCoverage>();
+                return result ?? new List<CategoriesDto>();
             }
             catch (Exception ex)
             {
@@ -566,13 +566,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw;
             }
         }
-        public async Task<AdRam> AddRam(string name, Guid modelId, CancellationToken cancellationToken = default)
+        public async Task<Category> AddRam(string name, Guid modelId, CancellationToken cancellationToken = default)
         {
             try
             {
                 var body = new { Name = name, ModelId = modelId };
 
-                return await _dapr.InvokeMethodAsync<object, AdRam>(
+                return await _dapr.InvokeMethodAsync<object, Category>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/ram",
@@ -587,18 +587,18 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<List<AdRam>> GetAllRams(CancellationToken cancellationToken = default)
+        public async Task<List<CategoriesDto>> GetAllRams(CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<List<AdRam>>(
+                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/ram",
                     cancellationToken
                 );
 
-                return result ?? new List<AdRam>();
+                return result ?? new List<CategoriesDto>();
             }
             catch (Exception ex)
             {
@@ -607,18 +607,18 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<List<AdRam>> GetRamsByModelId(Guid modelId, CancellationToken cancellationToken = default)
+        public async Task<ModelWithRamDto?> GetModelWithRam(Guid modelId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<List<AdRam>>(
+                var result = await _dapr.InvokeMethodAsync<ModelWithRamDto>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/ram/by-model/{modelId}",
                     cancellationToken
                 );
 
-                return result ?? new List<AdRam>();
+                return result ?? new ModelWithRamDto();
             }
             catch (Exception ex)
             {
@@ -627,13 +627,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdResolution> AddResolution(string name, Guid modelId, CancellationToken cancellationToken = default)
+        public async Task<Category> AddResolution(string name, Guid modelId, CancellationToken cancellationToken = default)
         {
             try
             {
                 var body = new { Name = name, ModelId = modelId };
 
-                return await _dapr.InvokeMethodAsync<object, AdResolution>(
+                return await _dapr.InvokeMethodAsync<object, Category>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/resolution",
@@ -648,18 +648,18 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<List<AdResolution>> GetAllResolutions(CancellationToken cancellationToken = default)
+        public async Task<List<CategoriesDto>> GetAllResolutions(CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<List<AdResolution>>(
+                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/resolution",
                     cancellationToken
                 );
 
-                return result ?? new List<AdResolution>();
+                return result ?? new List<CategoriesDto>();
             }
             catch (Exception ex)
             {
@@ -668,18 +668,18 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<List<AdResolution>> GetResolutionsByModelId(Guid modelId, CancellationToken cancellationToken = default)
+        public async Task<ModelWithResolutionsDto?> GetModelWithResolutions(Guid modelId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<List<AdResolution>>(
+                var result = await _dapr.InvokeMethodAsync<ModelWithResolutionsDto>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/resolution/by-model/{modelId}",
                     cancellationToken
                 );
 
-                return result ?? new List<AdResolution>();
+                return result ?? new ModelWithResolutionsDto();
             }
             catch (Exception ex)
             {
@@ -688,13 +688,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdSizeType> AddSizeType(string name, CancellationToken cancellationToken = default)
+        public async Task<Category> AddSizeType(string name, CancellationToken cancellationToken = default)
         {
             try
             {
                 var body = new { Name = name };
 
-                return await _dapr.InvokeMethodAsync<object, AdSizeType>(
+                return await _dapr.InvokeMethodAsync<object, Category>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/size-type",
@@ -709,18 +709,18 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<List<AdSizeType>> GetAllSizeTypes(CancellationToken cancellationToken = default)
+        public async Task<List<CategoriesDto>> GetAllSizeTypes(CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<List<AdSizeType>>(
+                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/size-type",
                     cancellationToken
                 );
 
-                return result ?? new List<AdSizeType>();
+                return result ?? new List<CategoriesDto>();
             }
             catch (Exception ex)
             {
@@ -728,55 +728,14 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw;
             }
         }
-
-        public async Task<AdGender> AddGender(string name, CancellationToken cancellationToken = default)
+      
+        public async Task<Category> AddZone(string name, CancellationToken cancellationToken = default)
         {
             try
             {
                 var body = new { Name = name };
 
-                return await _dapr.InvokeMethodAsync<object, AdGender>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/gender",
-                    body,
-                    cancellationToken
-                );
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<List<AdGender>> GetAllGenders(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<List<AdGender>>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/gender",
-                    cancellationToken
-                );
-
-                return result ?? new List<AdGender>();
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<AdZone> AddZone(string name, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var body = new { Name = name };
-
-                return await _dapr.InvokeMethodAsync<object, AdZone>(
+                return await _dapr.InvokeMethodAsync<object, Category>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/zone",
@@ -791,25 +750,25 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<List<AdZone>> GetAllZones(CancellationToken cancellationToken = default)
+        public async Task<List<CategoriesDto>> GetAllZones(CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<List<AdZone>>(
+                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/zone",
                     cancellationToken
                 );
 
-                return result ?? new List<AdZone>();
+                return result ?? new List<CategoriesDto>();
             }
             catch (Exception ex)
             {
                 _log.LogException(ex);
                 throw;
             }
-        }
+        }   
 
 
 

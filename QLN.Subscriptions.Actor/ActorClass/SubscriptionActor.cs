@@ -4,22 +4,16 @@ using Dapr.Actors.Runtime;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Subscriptions;
-
 using System.Collections.Concurrent;
 using System.Net.Sockets;
 using QLN.Common.DTOs;
 
-
-namespace QLN.Subscriptions
+namespace QLN.Subscriptions.Actor.ActorClass
 {
-    public class SubscriptionActor : Actor, ISubscriptionActor
+    public class SubscriptionActor : Dapr.Actors.Runtime.Actor, ISubscriptionActor
     {
         private const string StateKey = "subscription-data";
         private readonly ILogger<SubscriptionActor> _logger;
-
-
-
-        // In-memory cache to avoid state store operations when possible
         private static readonly ConcurrentDictionary<string, SubscriptionDto> _memoryCache = new ConcurrentDictionary<string, SubscriptionDto>();
 
         // Flag to track if we're experiencing state store issues
@@ -68,6 +62,7 @@ namespace QLN.Subscriptions
                         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, cancellationToken);
 
                         await StateManager.SetStateAsync(StateKey, data, linkedCts.Token);
+                        await StateManager.SaveStateAsync(linkedCts.Token); // Added SaveStateAsync
 
                         // Reset state store stability flag if operation succeeds
                         _stateStoreUnstable = false;
@@ -152,13 +147,16 @@ namespace QLN.Subscriptions
                         using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(1)); // Reduced from 2 seconds
                         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, cancellationToken);
 
-                        if (!await StateManager.ContainsStateAsync(StateKey, linkedCts.Token))
+                        // Use TryGetStateAsync instead of ContainsStateAsync + GetStateAsync
+                        var conditionalValue = await StateManager.TryGetStateAsync<SubscriptionDto>(StateKey, linkedCts.Token);
+
+                        if (!conditionalValue.HasValue)
                         {
                             _logger.LogInformation("[Actor {ActorId}] GetDataAsync found no data in state store", actorKey);
                             return null;
                         }
 
-                        var data = await StateManager.GetStateAsync<SubscriptionDto>(StateKey, linkedCts.Token);
+                        var data = conditionalValue.Value;
 
                         // Store in memory cache for future requests
                         if (data != null)
@@ -210,8 +208,6 @@ namespace QLN.Subscriptions
                 throw;
             }
         }
-
-       
 
         protected override Task OnActivateAsync()
         {

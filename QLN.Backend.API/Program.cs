@@ -11,7 +11,7 @@ using Dapr.Client;
 using QLN.Common.Infrastructure.IService;
 using Microsoft.OpenApi.Models;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
-using Dapr.Client;
+
 using QLN.Backend.API.ServiceConfiguration;
 using QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints;
 using QLN.Common.Swagger;
@@ -21,6 +21,8 @@ using QLN.Common.Infrastructure.Subscriptions;
 using System.Text.Json.Serialization;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 using QLN.Common.Infrastructure.IService;
+using Microsoft.AspNetCore.Authorization;
+using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -169,16 +171,19 @@ builder.Services.AddActors(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
-// Register your subscription service
-builder.Services.AddSingleton<IExternalSubscriptionService, ExternalSubscriptionService>();
+
 
 builder.Services.AddDaprClient();
 
 // This looks like a custom extension method? Adjust if needed
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
+builder.Services.ContentServicesConfiguration(builder.Configuration);
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
+builder.Services.SubscriptionConfiguration(builder.Configuration);
+builder.Services.PayToPublishConfiguration(builder.Configuration);
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -195,19 +200,27 @@ if (app.Environment.IsDevelopment())
 
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
+
 var companyGroup = app.MapGroup("/api/companyprofile");
 companyGroup.MapCompanyEndpoints();
+
 var classifiedGroup = app.MapGroup("/api/classified");
-classifiedGroup.MapClassifiedsEndpoints();
+classifiedGroup.MapClassifiedEndpoints();
+
+var contentGroup = app.MapGroup("/api/content");
+contentGroup.MapContentLandingEndpoints();
 
 app.MapGroup("/api/subscriptions")
-   .MapSubscriptionEndpoints()
-    .RequireAuthorization(); 
+   .MapSubscriptionEndpoints();
 
+   app.MapGroup("/api/payments")
+    .MapPaymentEndpoints()
+    .RequireAuthorization();
+
+app.MapGroup("/api/PayToPublish")
+    .MapPayToPublishEndpoints();
 
 
 app.UseHttpsRedirection();
-app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
 app.Run();

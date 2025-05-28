@@ -18,6 +18,7 @@
 @inject CustomAuthStateProvider CustomAuthenticationStateProvider;
 @inject IJSRuntime JS
 
+<MudThemeProvider Theme="@CustomPaletteTheme" /> 
 <div id="login-container" style="width: 100%; background-color: var(--color-secondary-background); padding: 100px 16px;">
     <div style="max-width: 400px; margin: 0 auto;">
         <MudText Align="Align.Center" Class="mt-4 login-heading">Log in to your account</MudText>
@@ -28,14 +29,14 @@
         </MudStack>
         <MudText Typo="Typo.body1" Class="email-text">
             Email or Phone number </MudText>
-        <MudTextField id="loginEmailInput" T="string" Label="Email or Phone number" Variant="Variant.Outlined" FullWidth="true"
-            InputType="InputType.Text" style="background-color: var(--color-background)" MaxLength="50" Required="true"
+        <MudTextField id="loginEmailInput" T="string" Placeholder="Email or Phone number" Variant="Variant.Outlined" FullWidth="true"
+            InputType="InputType.Text" style="background-color: var(--color-background)" MaxLength="50" Required="true" Class="mt-4"
             Error="@(!string.IsNullOrEmpty(_usernameError))" ErrorText="@_usernameError" Immediate="true"
             ValueChanged="OnEmailChanged" ValueExpression="(() => _username)" OnBlur="@ValidateUsername"/>
         <MudText Typo="Typo.body1" Class="label-text">
             Password
         </MudText>
-        <MudTextField id="loginPasswordInput" T="string" Label="Password" MaxLength="50" Variant="Variant.Outlined"
+        <MudTextField id="loginPasswordInput" T="string" Placeholder="Password" MaxLength="50" Variant="Variant.Outlined"
             InputType="@(_showPassword? InputType.Text: InputType.Password)" FullWidth="true" Class="mt-4"
             style="background-color: var(--color-background)" Required="true" Adornment="Adornment.End"
             AdornmentIcon="@(_showPassword? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
@@ -50,7 +51,7 @@
         </div>
 
         <CustomButton id="signInButton" BackgroundColor="var(--color-accent)" TextColor="#FFFFFF" Text="Sign In" Disabled="_isLoading"
-            Loading="_isLoading" OnClick="@PerformLogin" Class="mt-4 pt-3 pb-3"/>
+            Loading="_isLoading" OnClick="@PerformLogin" Class="mt-4 pt-3 pb-3" Height="50px"/>
 
 
         <div class="d-flex align-center my-4">
@@ -92,6 +93,7 @@
 </div>
 
 @code {
+    private MudTheme CustomPaletteTheme = new CustomTheme();
     public string Name{ get; set; }
     private string _username = string.Empty;
     private string _password = string.Empty;
