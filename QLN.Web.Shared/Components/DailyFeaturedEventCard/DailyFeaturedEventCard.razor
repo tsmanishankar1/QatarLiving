@@ -1,0 +1,80 @@
+@inherits DailyFeaturedEventCardBase
+
+<div class="daily-category-card-section" @onclick="() => OnClick.InvokeAsync(Item)">
+    <div class="daily-card-contents">
+        <img src="@Item.ImageUrl" alt="@Item.Category" class="daily-category-image" />
+        <h4 class="daily-category-card-title">@Item.Category</h4>
+    </div>
+</div>
+
+
+<style>
+    .daily-category-card-section {
+        margin-right: 1rem;
+        border-radius: 12px;
+        transition: transform 0.3s ease;
+        cursor: pointer;
+        padding: 0;
+        width: 181px;
+        height: 290px;
+        font-family: 'Public Sans', sans-serif;
+
+    }
+
+    .daily-category-card-section:hover {
+        transform: scale(1.03);
+    }
+
+    .daily-card-contents {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .daily-category-image {
+        width: 100%;
+        height: 260px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 8px;
+    }
+
+    .daily-category-card-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #242424;
+    }
+
+    @@media (max-width: 768px) {
+
+
+        .daily-category-card-section {
+            flex: 0 0 auto;
+            width: 120px;
+            border-radius: 12px;
+            scroll-snap-align: start;
+            margin-right: 0.5rem;
+        }
+
+        .daily-category-image {
+            max-height: 250px;
+            object-fit: cover;
+        }
+
+        .daily-card-contents {
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        .daily-category-card-title {
+            font-size: 0.85rem;
+            color: #242424;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+    }
+</style>

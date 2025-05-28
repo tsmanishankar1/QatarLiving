@@ -1,0 +1,186 @@
+@using MudBlazor
+
+<div class="section-daily-highlights">
+    <div class="section-header">
+        <div class="section-title">
+            <h3 class="section-heading">
+                <span class="accent-bar"></span>Ramadan
+            </h3>
+        </div>
+        <div class="view-all">
+            <span class="view-all-text">View all</span>
+            <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowRight"
+                Style="margin-left: 4px; color: var(--color-primary);" />
+        </div>
+    </div>
+
+    <div class="highlight-card-group">
+
+        <!-- News Card -->
+        <div class="highlight-card">
+            <img src="/images/gold.svg" class="highlight-img" alt="Gold News" />
+            <div class="highlight-content">
+                <div class="highlight-category">
+                    <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Style="font-size:16px; margin-right: 4px;" />
+                    Finance
+                </div>
+                <div class="highlight-title">Qatar gold prices rise by 4.86% this week</div>
+                <div class="highlight-desc">Gold price spikes due to global demand.</div>
+            </div>
+        </div>
+
+        <!-- Event Card -->
+        <div class="highlight-card">
+            <img src="/images/trophy.jpg" class="highlight-img" alt="Event" />
+            <div class="highlight-content full">
+                <div class="highlight-category">
+                    <MudIcon Icon="@Icons.Material.Filled.Event" Style="font-size:16px; margin-right: 4px;" />
+                    Event
+                </div>
+                <div class="highlight-title">FIFA Arab Cup Doha 2025</div>
+                <div class="highlight-desc">12 Dec 2025 to 13 Jan 2026</div>
+            </div>
+        </div>
+
+        <!-- Video Card with IFrame -->
+        <div class="highlight-card video">
+            <div class="video-thumb-wrapper">
+                <iframe src="/videos/video1.mp4" class="highlight-video" frameborder="0" allowfullscreen>
+                </iframe>
+                <MudIcon Icon="@Icons.Material.Filled.PlayCircleOutline" Class="video-play-icon" />
+            </div>
+            <div class="highlight-content">
+                <div class="highlight-category">
+                    <MudIcon Icon="@Icons.Material.Filled.VideoLibrary" Style="font-size:16px; margin-right: 4px;" />
+                    Video
+                </div>
+                <div class="highlight-title">Amir Cup Recap and Highlights</div>
+                <div class="highlight-desc">Watch the best moments from the final.</div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<style>
+    .section-daily-highlights {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+    }
+
+    .section-heading {
+        display: flex;
+        align-items: center;
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--color-primary);
+    }
+
+    .accent-bar {
+        width: 6px;
+        height: 26px;
+        background-color: var(--color-primary);
+        margin-right: 8px;
+    }
+
+    .view-all {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    .view-all-text {
+        color: var(--color-primary);
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    .highlight-card-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .highlight-card {
+        background-color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        max-width: 350px;
+        overflow: hidden;
+    }
+
+    .highlight-img {
+        width: 120px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 8px 0 0 8px;
+    }
+
+    .highlight-content {
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .highlight-title {
+        font-weight: 600;
+        font-size: 16px;
+        margin-top: 4px;
+    }
+
+    .highlight-desc {
+        font-size: 14px;
+        color: #555;
+        margin-top: 2px;
+    }
+
+    .highlight-category {
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--color-primary);
+    }
+
+    .video-thumb-wrapper {
+        position: relative;
+    }
+
+    .highlight-video {
+        width: 120px;
+        height: 100px;
+        border-radius: 8px 0 0 8px;
+        object-fit: cover;
+        pointer-events: none;
+    }
+
+    .video-play-icon {
+        position: absolute;
+        font-size: 36px;
+        color: white;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0.9;
+    }
+</style>
