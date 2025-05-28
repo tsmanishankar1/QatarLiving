@@ -2,6 +2,7 @@
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
+using MudBlazor;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
 
@@ -16,7 +17,9 @@ namespace QLN.Web.Shared.Pages.Content.Community
         [Inject] private INewsLetterSubscription NewsLetterSubscriptionService { get; set; }
         [Inject] private IAdService AdService { get; set; }
         protected string search = string.Empty;
-        protected string sortOption = "Popular";
+        protected string sortOption = "Default";
+        private string ApiSortValue => sortOption == "Default" ? null : sortOption;
+
         protected bool IsLoading { get; set; } = true;
         protected bool HasError { get; set; } = false;
 
