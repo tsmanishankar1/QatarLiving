@@ -11,33 +11,57 @@ public class VideoCardsBase : ComponentBase
         public string Title { get; set; }
         public string ThumbnailUrl { get; set; }
     }
-
-    protected List<VideoItem> VideoList = new()
-    {
-        new() { Title = "How to spot scam websites & social media accounts in Qatar", ThumbnailUrl = "/images/sample_news.svg" },
-        new() { Title = "Amir Cup Recap and Highlights", ThumbnailUrl = "/images/sample_news.svg" },
-        new() { Title = "How to spot scam websites & social media accounts in Qatar", ThumbnailUrl = "/images/sample_news.svg" }
-    };
+    protected List<VideoCard> VideoList = new()
+{
+    new VideoCard 
+    { 
+        Title = "How to spot scam websites & social media accounts in Qatar", 
+        VideoUrl = "/videos/video1.mp4", 
+        ThumbnailUrl = "/images/sample_news.svg",
+        ShowPlayButton = true,
+        IsPlaying = false,
+        VideoElement = default 
+    },
+    new VideoCard 
+    { 
+        Title = "Amir Cup Recap and Highlights", 
+        VideoUrl = "/videos/video2.mp4", 
+        ThumbnailUrl = "/images/sample_news.svg",
+        ShowPlayButton = true,
+        IsPlaying = false,
+        VideoElement = default
+    },
+    new VideoCard 
+    { 
+        Title = "How to spot scam websites & social media accounts in Qatar", 
+        VideoUrl = "/videos/video3.mp4", 
+        ThumbnailUrl = "/images/sample_news.svg",
+        ShowPlayButton = true,
+        IsPlaying = false,
+        VideoElement = default
+    }
+};
     public VideoCard SingleVideoCard { get; set; } = new VideoCard
     {
-    VideoUrl = "/videos/video1.mp4",
-    Title = "Video 1"
+        VideoUrl = "/videos/video1.mp4",
+        Title = "Video 1"
     };
 
-    protected VideoItem SelectedVideo;
+    protected VideoCard SelectedVideo;
 
     protected override void OnInitialized()
     {
-        SelectedVideo = VideoList[1]; 
+        SelectedVideo = VideoList[1];
     }
 
-    protected void SelectVideo(VideoItem video)
+    protected void SelectVideo(VideoCard video)
     {
         SelectedVideo = video;
     }
     public class VideoCard
     {
         public string VideoUrl { get; set; }
+        public string ThumbnailUrl { get; set; }
         public string Title { get; set; }
         public bool ShowPlayButton { get; set; }
         public bool IsPlaying { get; set; }

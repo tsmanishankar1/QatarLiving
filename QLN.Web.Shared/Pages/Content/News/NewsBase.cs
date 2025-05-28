@@ -4,6 +4,7 @@ using QLN.Web.Shared.Components.ViewToggleButtons;
 using QLN.Web.Shared.Model;
 public class NewsBase : ComponentBase
 {
+    protected bool IsDisliked { get; set; } = true;
     protected List<string> carouselImages = new()
     {
         "/images/banner_image.svg",
