@@ -1,7 +1,7 @@
 using Dapr.Client;
 using Google.Api;
 using QLN.Common.Infrastructure.Service;
-using QLN.Subscriptions;
+using QLN.Subscriptions.Actor.ActorClass;
 using System.Text.Json.Serialization;
 
 
@@ -21,6 +21,8 @@ builder.Services.AddActors(options =>
 {
     options.Actors.RegisterActor<SubscriptionActor>();
     options.Actors.RegisterActor<PaymentTransactionActor>();
+    options.Actors.RegisterActor<PayToPublishPaymentActor>();
+    options.Actors.RegisterActor<PayToPublishActor>();
     options.ActorIdleTimeout = TimeSpan.FromMinutes(60);
     options.ActorScanInterval = TimeSpan.FromSeconds(30);
     options.DrainOngoingCallTimeout = TimeSpan.FromSeconds(60);
