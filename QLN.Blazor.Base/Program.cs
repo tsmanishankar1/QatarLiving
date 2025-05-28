@@ -2,12 +2,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using QLN.Web.Shared;
 using QLN.Web.Shared.Pages;
-using QLN.Web.Shared;
-using MudBlazor;
 using MudBlazor.Services;
 using QLN.Web.Shared.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using QLN.Web.Shared.Services.Interface;
+using QLN.Web.Shared.Contracts;
+using QLN.Web.Shared.MockServices;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
@@ -21,7 +21,6 @@ builder.Services.AddMudServices();
 // });
 builder.Services.AddScoped<CustomAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<CustomAuthStateProvider>());
-builder.Services.AddScoped<ICommunityService,CommunityMockService>();
 
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<ICompanyProfileService, CompanyProfileService>();
@@ -31,6 +30,16 @@ builder.Services.Configure<ApiSettings>(
 
 builder.Services.AddHttpClient<ApiService>();
 builder.Services.AddWebSharedServices(builder.Configuration);
+
+// Inject Web only services here
+
+//builder.Services.AddHttpClient<ICommunityService, CommunityService>();
+builder.Services.AddScoped<ICommunityService, QLN.Web.Shared.MockServices.CommunityMockService>();
+builder.Services.AddHttpClient<INewsLetterSubscription, NewsLetterSubscriptionService>();
+//builder.Services.AddHttpClient<IAdService, AdService>();
+builder.Services.AddScoped<IAdService, AdMockService>();
+builder.Services.AddHttpClient<IPostInteractionService, PostInteractionService>();
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 

@@ -1,19 +1,18 @@
 ﻿using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
 
-
-namespace QLN.Web.Shared.Services
+namespace QLN.Web.Shared.MockServices
 {
     public class CommunityMockService : ICommunityService
     {
-        private List<PostModel> PostList = new()
+        private List<PostModel> posts = new()
         {
             new PostModel
             {
                 Id = "1",
                 Category = "Advice & Help",
                 Title = "Anyone wanna buy 5x Seated Travis Scott Tickets?",
-                ImageUrl = "images/content/Post1.svg",
+                ImageUrl = "/images/content/Post1.svg",
                 Author = "Ismat Zerin",
                 Time = DateTime.Now.AddHours(-2),
                 LikeCount = 3,
@@ -35,7 +34,7 @@ namespace QLN.Web.Shared.Services
                 Id = "1",
                 Category = "Visa and Permits",
                 Title = "Family Residence Visa status stuck",
-                ImageUrl = "images/content/Post2.svg",
+                ImageUrl = "/images/content/Post2.svg",
                 BodyPreview = "Looking for some advice or similar experiences. 15 April – Applied for Family Residence Visa 16 April – Uploaded missing document and resubmitted Status remained “Under Process” for 3 weeks 5 May – Visited Duhail Immigration office but was told: “Private companies come after 2 weeks” and they didn’t allow me in 7 ...",
                 Author = "Ismat Zerin",
                 Time = DateTime.Now.AddHours(-2),
@@ -47,7 +46,7 @@ namespace QLN.Web.Shared.Services
         public async Task<IEnumerable<PostModel>> GetAllAsync()
         {
 
-            return PostList;
+            return posts;
         }
 
     }
