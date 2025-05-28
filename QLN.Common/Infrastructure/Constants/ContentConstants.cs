@@ -45,5 +45,6 @@
         // Slugs
         public const string GetEventBySlugPath = "/qlnapi/node";
         public const string GetPostBySlugPath = "/qlnapi/node";
+        public const string GetNewsBySlugPath = "/qlnapi/node";
     }
 }
