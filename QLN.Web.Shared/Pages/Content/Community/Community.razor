@@ -33,12 +33,12 @@
                             </div>
 
                             <MudSelect T="string" @bind-Value="sortOption" Variant="Variant.Outlined"
-                                Class="sort-select" Dense="true" MaxHeight="40">
+                                Class="sort-select" Dense="true">
 
                                 <MudSelectItem T="string" Value=@(null)>Default</MudSelectItem>
                                 <MudSelectItem Value=@("Popular")>Most Popular</MudSelectItem>
-                                <MudSelectItem Value=@("Recent")>Date :Recent First</MudSelectItem>
-                                <MudSelectItem Value=@("Oldest")>Date :Oldest First</MudSelectItem>
+                                <MudSelectItem Value=@("Recent")>Date : Recent First</MudSelectItem>
+                                <MudSelectItem Value=@("Oldest")>Date : Oldest First</MudSelectItem>
                             </MudSelect>
 
                         </div>
@@ -168,6 +168,7 @@
         gap: 16px;
         padding: 12px;
         margin-top: 1rem;
+        max-width: 340px;
     }
 
     .newsletter-icon {
