@@ -47,21 +47,20 @@
         </div>
 
         <div class="post-icons">
-            <div class="like-wrapper">
+            <div class="like-wrapper" @onclick="ToggleLikeAsync">
 
-                <img src="images/content/Like.svg" class="icon" />
+                <img src="@($"images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="icon" />
                 <span class="icon-text">@Post.LikeCount</span>
             </div>
-            <div class="like-wrapper">
+            <div class="like-wrapper" @onclick="ToggleDislikeAsync">
 
-                <img src="images/content/Dislike.svg" class="icon" />
-                <span class="icon-text">@Post.LikeCount</span>
+                <img src="@($"images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
             </div>
-            <div class="like-wrapper">
+            <div class="like-wrapper" @onclick="SharePost">
 
-            <img src="images/content/Share.svg" class="icon" />
+                <img src="images/content/Share.svg" class="icon" />
             </div>
-            
+
             <img src="images/content/Comment.svg" class="icon" />
             <span class="icon-text">@Post.CommentCount</span>
         </div>
@@ -185,7 +184,11 @@
         height: 18px;
     }
 
-    .icon-text{
+    .icon-filled {
+        filter: brightness(0) saturate(100%) invert(22%) sepia(99%) saturate(7499%) hue-rotate(195deg) brightness(93%) contrast(101%) drop-shadow(0 0 1px rgba(0, 66, 109, 0.5));
+    }
+
+    .icon-text {
         color: #00426D
     }
 
@@ -220,7 +223,7 @@
         border-radius: 8px;
         gap: 8px;
         border: 1.5px solid #F0F0F0;
-        border-color:gray;
+        border-color: gray;
     }
 
 </style>

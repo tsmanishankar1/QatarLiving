@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
+using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
 public class ArticleBase : ComponentBase
@@ -10,9 +11,9 @@ public class ArticleBase : ComponentBase
         "/images/banner_image.svg",
         "/images/banner_image.svg"
     };
-     [Parameter]
-        public NewsItem Item { get; set; }
-        protected List<PostModel> PostsList = new()
+    [Parameter]
+    public NewsItem Item { get; set; }
+    protected List<PostModel> PostsList = new()
         {
         new PostModel
         {

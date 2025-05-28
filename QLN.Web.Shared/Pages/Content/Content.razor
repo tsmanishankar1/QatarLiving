@@ -2,8 +2,11 @@
 @inject NavigationManager Navigation
 
 @code {
-    protected override void OnInitialized()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        Navigation.NavigateTo("/content/daily", true);
+        if (firstRender)
+        {
+            Navigation.NavigateTo("/content/daily", true);
+        }
     }
 }
