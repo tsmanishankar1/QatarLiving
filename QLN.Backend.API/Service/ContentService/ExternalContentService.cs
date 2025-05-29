@@ -14,7 +14,7 @@ namespace QLN.Backend.API.Service.ContentService
 
             //httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwtWoken);
 
-            var httpRequest = await httpClient.PostAsJsonAsync<CreateCommentRequest>(ContentConstants.CommentsSavePath, request, cancellationToken);
+            var httpRequest = await httpClient.PostAsJsonAsync<CreateCommentRequest>(DrupalContentConstants.CommentsSavePath, request, cancellationToken);
 
             if(httpRequest.IsSuccessStatusCode)
             {
@@ -30,7 +30,7 @@ namespace QLN.Backend.API.Service.ContentService
 
             //httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwtWoken);
 
-            var httpRequest = await httpClient.PostAsJsonAsync<CreatePostRequest>(ContentConstants.PostsSavePath, request, cancellationToken);
+            var httpRequest = await httpClient.PostAsJsonAsync<CreatePostRequest>(DrupalContentConstants.PostsSavePath, request, cancellationToken);
 
             if (httpRequest.IsSuccessStatusCode)
             {
@@ -41,29 +41,45 @@ namespace QLN.Backend.API.Service.ContentService
             return null;
         }
 
+        public async Task<ChangeLikeStatusResponse?> ChangeLikeStatusOnDrupalAsync(ChangeLikeStatusRequest request, CancellationToken cancellationToken)
+        {
+
+            //httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwtWoken);
+
+            var httpRequest = await httpClient.PostAsJsonAsync<ChangeLikeStatusRequest>(DrupalContentConstants.ChangeLikeStatusPath, request, cancellationToken);
+
+            if (httpRequest.IsSuccessStatusCode)
+            {
+                var response = await httpRequest.Content.ReadFromJsonAsync<ChangeLikeStatusResponse>(cancellationToken);
+                return response;
+            }
+
+            return null;
+        }
+
         public async Task<T?> GetPostsFromDrupalAsync<T>(string queue_name, CancellationToken cancellationToken)
         {
-            return await httpClient.GetFromJsonAsync<T>($"{ContentConstants.LandingPath}/{queue_name}", cancellationToken);
+            return await httpClient.GetFromJsonAsync<T>($"{DrupalContentConstants.LandingPath}/{queue_name}", cancellationToken);
         }
 
         public async Task<List<ContentEvent>?> GetEventsFromDrupalAsync(CancellationToken cancellationToken)
         {
-            return await httpClient.GetFromJsonAsync<List<ContentEvent>>(ContentConstants.EventsPath, cancellationToken);
+            return await httpClient.GetFromJsonAsync<List<ContentEvent>>(DrupalContentConstants.EventsPath, cancellationToken);
         }
 
         public async Task<CategoriesResponse?> GetCategoriesFromDrupalAsync(CancellationToken cancellationToken)
         {
-            return await httpClient.GetFromJsonAsync<CategoriesResponse>(ContentConstants.CategoriesPath, cancellationToken);
+            return await httpClient.GetFromJsonAsync<CategoriesResponse>(DrupalContentConstants.CategoriesPath, cancellationToken);
         }
 
         public async Task<List<CommunityPost>?> GetCommunitiesFromDrupalAsync(string forum_id, CancellationToken cancellationToken, string? order = "asc", int? page = 1, int? page_size = 10)
         {
-            return await httpClient.GetFromJsonAsync<List<CommunityPost>>($"{ContentConstants.CommunityPath}?page={page}&page_size={page_size}&order={order}&forum_id={forum_id}", cancellationToken);
+            return await httpClient.GetFromJsonAsync<List<CommunityPost>>($"{DrupalContentConstants.CommunityPath}?page={page}&page_size={page_size}&order={order}&forum_id={forum_id}", cancellationToken);
         }
 
         public async Task<ContentPost?> GetPostBySlugAsync(string slug, CancellationToken cancellationToken)
         {
-            var results = await httpClient.GetFromJsonAsync<ContentPost>($"{ContentConstants.GetPostBySlugPath}?slug={slug}", cancellationToken);
+            var results = await httpClient.GetFromJsonAsync<ContentPost>($"{DrupalContentConstants.GetPostBySlugPath}?slug={slug}", cancellationToken);
 
             if (results?.NodeType == "post")
             {
@@ -75,7 +91,7 @@ namespace QLN.Backend.API.Service.ContentService
 
         public async Task<ContentPost?> GetNewsBySlugAsync(string slug, CancellationToken cancellationToken)
         {
-            var results = await httpClient.GetFromJsonAsync<ContentPost>($"{ContentConstants.GetNewsBySlugPath}?slug={slug}", cancellationToken);
+            var results = await httpClient.GetFromJsonAsync<ContentPost>($"{DrupalContentConstants.GetNewsBySlugPath}?slug={slug}", cancellationToken);
 
             if (results?.NodeType == "post")
             {
@@ -87,7 +103,7 @@ namespace QLN.Backend.API.Service.ContentService
 
         public async Task<ContentEvent?> GetEventBySlugAsync(string slug, CancellationToken cancellationToken)
         {
-            var results = await httpClient.GetFromJsonAsync<ContentEvent>($"{ContentConstants.GetEventBySlugPath}?slug={slug}", cancellationToken);
+            var results = await httpClient.GetFromJsonAsync<ContentEvent>($"{DrupalContentConstants.GetEventBySlugPath}?slug={slug}", cancellationToken);
 
             if (results?.NodeType == "event")
             {
