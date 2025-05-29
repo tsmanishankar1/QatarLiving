@@ -6,6 +6,8 @@
         public const string EventsPath = "/qlnapi/events";
         public const string CategoriesPath = "/qlnapi/categories";
         public const string CommunityPath = "/qlnapi/community";
+        public const string CommentsSavePath = "/qlnapi/comment/save";
+        public const string PostsSavePath = "/qlnapi/node/save";
 
         // News
         public const string QlnNewsNewsCommunity = "qln_news_news_community";

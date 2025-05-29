@@ -288,6 +288,76 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             return group;
         }
 
+        public static RouteGroupBuilder MapPostCommentEndpoint(this RouteGroupBuilder group)
+        {
+
+
+            // GET /api/content/news/{slug}
+            group.MapPost("/comment/save", async (
+                    [FromBody] CreateCommentRequest request,
+                    [FromServices] IContentService svc,
+                    CancellationToken cancellationToken
+                    )
+                =>
+            {
+                try
+                {
+                    var comment = await svc.CreateCommentOnDrupalAsync(request, cancellationToken);
+                    return comment is null ? Results.NotFound() : Results.Ok(comment);
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { Message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Create Comment Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("PostComment")
+            .WithTags("Content");
+
+            return group;
+        }
+
+        public static RouteGroupBuilder MapPostForumPostEndpoint(this RouteGroupBuilder group)
+        {
+
+
+            // GET /api/content/news/{slug}
+            group.MapPost("/post/save", async (
+                    [FromBody] CreatePostRequest request,
+                    [FromServices] IContentService svc,
+                    CancellationToken cancellationToken
+                    )
+                =>
+            {
+                try
+                {
+                    var comment = await svc.CreatePostOnDrupalAsync(request, cancellationToken);
+                    return comment is null ? Results.NotFound() : Results.Ok(comment);
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { Message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Create Post Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("PostForumPost")
+            .WithTags("Content");
+
+            return group;
+        }
+
         public static RouteGroupBuilder MapGetEventBySlugEndpoint(this RouteGroupBuilder group)
         {
 

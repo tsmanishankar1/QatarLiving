@@ -1,4 +1,5 @@
-﻿using QLN.Common.Infrastructure.Constants;
+﻿using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.BannerService;
 using System.Text.Json;
@@ -8,6 +9,37 @@ namespace QLN.Backend.API.Service.ContentService
 {
     public class ExternalContentService(HttpClient httpClient) : IContentService
     {
+        public async Task<CreateCommentResponse?> CreateCommentOnDrupalAsync(CreateCommentRequest request, CancellationToken cancellationToken)
+        {
+
+            //httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwtWoken);
+
+            var httpRequest = await httpClient.PostAsJsonAsync<CreateCommentRequest>(ContentConstants.CommentsSavePath, request, cancellationToken);
+
+            if(httpRequest.IsSuccessStatusCode)
+            {
+                var response = await httpRequest.Content.ReadFromJsonAsync<CreateCommentResponse>(cancellationToken);
+                return response;
+            }
+
+            return null;
+        }
+
+        public async Task<CreatePostResponse?> CreatePostOnDrupalAsync(CreatePostRequest request, CancellationToken cancellationToken)
+        {
+
+            //httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwtWoken);
+
+            var httpRequest = await httpClient.PostAsJsonAsync<CreatePostRequest>(ContentConstants.PostsSavePath, request, cancellationToken);
+
+            if (httpRequest.IsSuccessStatusCode)
+            {
+                var response = await httpRequest.Content.ReadFromJsonAsync<CreatePostResponse>(cancellationToken);
+                return response;
+            }
+
+            return null;
+        }
 
         public async Task<T?> GetPostsFromDrupalAsync<T>(string queue_name, CancellationToken cancellationToken)
         {

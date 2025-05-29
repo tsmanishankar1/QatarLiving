@@ -16,6 +16,10 @@
      
      
      
+     <PackageReference Include="GoogleAnalytics.Blazor" Version="1.0.3" />
+     
+     
+     
      <PackageReference Include="MudBlazor" Version="8.6.0" />
 	  
   </ItemGroup>

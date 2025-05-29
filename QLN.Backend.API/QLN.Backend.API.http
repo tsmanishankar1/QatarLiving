@@ -32,6 +32,29 @@ GET {{QLN.Backend.API_HostAddress}}/api/content/community?forum_id=20000006
 Accept: application/json
 
 ###
+POST {{QLN.Backend.API_HostAddress}}/api/content/comment/save
+Accept: application/json
+Content-Type: application/json
+{
+  "nid": 46438698,
+  "uid": 5834086,
+  "comment": "Great article! 3"
+}
+
+###
+POST {{QLN.Backend.API_HostAddress}}/api/content/post/save
+Accept: application/json
+Content-Type: application/json
+{
+  "type": "post",
+  "forum_id": 20000006,
+  "uid": 5834086,
+  "title": "Posted from Crayon",
+  "description": "This is description"
+}
+
+
+###################################
 
 @QLN.Drupal.API_HostAddress = https://test.qatarliving.com
 
@@ -59,4 +82,24 @@ Accept: application/json
 GET {{QLN.Drupal.API_HostAddress}}/qlnapi/community?page=1&page_size=10&order=asc&forum_id=20000006
 Accept: application/json
 
+###
+POST {{QLN.Drupal.API_HostAddress}}/qlnapi/comment/save
+Accept: application/json
+Content-Type: application/json
+{
+  "nid": 46438698,
+  "uid": 5834086,
+  "comment": "Great article! 3"
+}
 
+###
+POST {{QLN.Drupal.API_HostAddress}}/qlnapi/node/save
+Accept: application/json
+Content-Type: application/json
+{
+  "type": "post",
+  "forum_id": 20000006,
+  "uid": 5834086,
+  "title": "Posted from Crayon",
+  "description": "This is description"
+}
