@@ -52,8 +52,6 @@ jobs:
   steps:
   - task: AzureContainerApps@1
     inputs:
-      workingDirectory: '$(Build.SourcesDirectory)'
-      appSourcePath: '$(Build.SourcesDirectory)'
       azureSubscription: 'dev-qlnext'
       acrName: '$(acrRegistry)'
       acrUsername: 'qlnv2'
