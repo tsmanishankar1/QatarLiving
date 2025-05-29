@@ -87,10 +87,21 @@
                         </MudText>
 
                         <MudTextField T="string" Placeholder="Your email" Variant="Variant.Outlined"
-                                      Class="newsletter-input" />
+                                      Class="newsletter-input" @bind-Value="SubscriptionModel.Email" />
 
-                        <MudButton Variant="Variant.Filled" Class="newsletter-button">
-                            Subscribe
+                        <MudButton Variant="Variant.Filled"
+                                   Class="newsletter-button"
+                                   Disabled="@IsSubscribingToNewsletter"
+                                   OnClick="SubscribeAsync">
+                            @if (IsSubscribingToNewsletter)
+                            {
+                                <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" />
+                                @("Subscribing...")
+                            }
+                            else
+                            {
+                                @("Subscribe")
+                            }
                         </MudButton>
                     </MudPaper>
 
