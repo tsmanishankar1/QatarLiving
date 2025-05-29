@@ -35,14 +35,6 @@ steps:
     resourceGroup: 'rg-containerapps-dev'
     runtimeStack: 'dotnetcore:8.0'
 
-- task: ManualValidation@1
-  inputs:
-    notifyUsers: 'Front End - QA Release Approval'
-    approvers: 'Front End - QA Release Approval'
-    allowApproversToApproveTheirOwnRuns: true
-    instructions: 'Please review and approve the deployment to proceed.'
-    onTimeout: 'reject'
-
 - task: AzureContainerApps@1
   inputs:
     workingDirectory: '$(Build.SourcesDirectory)'
