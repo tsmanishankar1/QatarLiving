@@ -17,7 +17,11 @@ if (string.IsNullOrWhiteSpace(contentVerticalAPIUrl))
 {
     throw new InvalidOperationException("ContentVerticalAPI URL is missing in configuration.");
 }
-
+var newsLetterSubscriptionAPIUrl = builder.Configuration["ServiceUrlPaths:NewsletterSubscriptionAPI"];
+if (string.IsNullOrWhiteSpace(newsLetterSubscriptionAPIUrl))
+{
+    throw new InvalidOperationException("NewsletterSubscriptionAPI URL is missing in configuration.");
+}
 
 builder.Services.AddScoped<CustomAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<CustomAuthStateProvider>());
@@ -38,8 +42,11 @@ builder.Services.AddHttpClient<ICommunityService, CommunityService>(client =>
 {
     client.BaseAddress = new Uri(contentVerticalAPIUrl);
 });
+builder.Services.AddHttpClient<INewsLetterSubscription, NewsLetterSubscriptionService>(client =>
+{
+    client.BaseAddress = new Uri(newsLetterSubscriptionAPIUrl);
+});
 
-builder.Services.AddHttpClient<INewsLetterSubscription, NewsLetterSubscriptionService>();
 //builder.Services.AddHttpClient<IAdService, AdService>();
 builder.Services.AddScoped<IAdService, AdMockService>();
 builder.Services.AddHttpClient<IPostInteractionService, PostInteractionService>();

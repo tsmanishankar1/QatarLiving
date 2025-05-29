@@ -85,24 +85,28 @@
                         <MudText Typo="Typo.body1" Class="newsletter-text">
                             Get The QL newsletter. Sign up to receive the top stories you need to know right now.
                         </MudText>
+                        <MudForm @ref="_form">
 
-                        <MudTextField T="string" Placeholder="Your email" Variant="Variant.Outlined"
-                                      Class="newsletter-input" @bind-Value="SubscriptionModel.Email" />
+                            <MudTextField T="string" Placeholder="Your email" Variant="Variant.Outlined"
+                                          Class="newsletter-input" @bind-Value="SubscriptionModel.Email"
+                                          For="@(() => SubscriptionModel.Email)"
+                                          Immediate="true" />
 
-                        <MudButton Variant="Variant.Filled"
-                                   Class="newsletter-button"
-                                   Disabled="@IsSubscribingToNewsletter"
-                                   OnClick="SubscribeAsync">
-                            @if (IsSubscribingToNewsletter)
-                            {
-                                <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" />
-                                @("Subscribing...")
-                            }
-                            else
-                            {
-                                @("Subscribe")
-                            }
-                        </MudButton>
+                            <MudButton Variant="Variant.Filled"
+                                       Class="newsletter-button"
+                                       Disabled="@IsSubscribingToNewsletter"
+                                       OnClick="SubscribeAsync">
+                                @if (IsSubscribingToNewsletter)
+                                {
+                                    <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" />
+                                    @("Subscribing...")
+                                }
+                                else
+                                {
+                                    @("Subscribe")
+                                }
+                            </MudButton>
+                        </MudForm>
                     </MudPaper>
 
 
@@ -187,10 +191,6 @@
         min-width: 180px;
         background-color: #FFFFFF;
     }
-
-
-
-
     .newsletter-box {
         text-align: center;
         display: flex;
@@ -229,11 +229,23 @@
         padding: 6px 40px;
         background-color: #FF7F38;
         color: white;
+        margin-top: 16px;
     }
 
     .ad-image {
         width: 340px;
         height: 402px;
         margin-top: 18px;
+    }
+
+    @@media (max-width: 700px) and (min-width: 375px) {
+        .container-inner-wrapper {
+            padding: 0 8px 25px 8px;
+        }
+
+        .newsletter-box,
+        .ad-image {
+            max-width: 100%;
+        }
     }
 </style>
