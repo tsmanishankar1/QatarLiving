@@ -8,6 +8,7 @@
 @using QLN.Web.Shared.Pages.Content.News.VideoCards
 @using QLN.Web.Shared.Components.ViewToggleButtons
 @using QLN.Web.Shared.Pages.Content.News.MoreArticle
+@using QLN.Web.Shared.Pages.Content.News.Skeletons
 @inject IJSRuntime JSRuntime
 @using QLN.Web.Shared.Components.Carousel
 <MudGrid Class="full-width" Justify="Justify.Center" >
@@ -34,17 +35,26 @@
             }
         </div>
     </MudItem>
-
-    <!-- Main Article and MoreArticles section -->
-      <div class="news-container"> 
+       <div class="news-container">   
          <div class="side-padding" style="display: flex; flex-wrap: wrap; gap: 0px;">
     <MudItem xs="12" md="8">
         <div class="main-article">
             <div class="main-content">
                 <div class="main-category">
-                    <img src="/images/sample_news.svg" class="main-image" />
+                    @if (isLoading){
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="400px" Width="100%" Animation="Animation.Wave" />
+                    }
+                    else{
+                    <img src="@topNews.ImageUrl" class="main-image" />
+                    }
+                     @if (isLoading){
+                    <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="100px" Animation="Animation.Wave" />
+                    <MudSkeleton Class="mb-2" SkeletonType="SkeletonType.Text" Height="30px" Width="100%" Animation="Animation.Wave" />
+                    <MudSkeleton Class="mb-2" SkeletonType="SkeletonType.Text" Height="30px" Width="200px" Animation="Animation.Wave" />
+                    }
+                    else{
                     <span class="category-style">Sports</span>
-                    <h2 class="main-title">Al Sadd lift fourth Qatar Cup title with thrilling win over Al Duhail</h2>
+                    <h2 class="main-title">@topNews.Title</h2>
                     <div class="author-wrapper">
                         <div class="main-author">
                             Ismat Zerin • <a href="#" class="main-source">Qatar Living</a>  
@@ -55,28 +65,46 @@
                             <span class="count">12</span>
                         </div> 
                     </div>
+                    }
                 </div>
             </div>
         </div>
     </MudItem>
 
     <MudItem xs="12" md="4">
-        <MoreArticle />
+        <MoreArticle Articles="@moreArticleList" loading="@isLoading"/>
     </MudItem>
      </div>  
     <!-- Recommended Cards -->
    <MudItem xs="12" Class="side-padding py-6">
-   <div class="flex-container">
-        @for (int i = 0; i < 3; i++)
+    @if (isLoading){
+        <div class="skeleton-container">
+         @for (int i = 0; i < 3; i++)
         {
-              <div class="news-card-wrapper @(i < 4 ? "with-divider" : "")"> 
-                <NewsCard Item="GoldNews" IsHorizontal="false" />
-                 </div> 
-        } 
-        <div class="newsletter-wrapper">
-        <NewsLetter />
-        </div>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Elevation="0" Class="p-2 mx-2" Style="max-width: 214px;">
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="120px" Width="214px;" Animation="Animation.Wave" Class="mb-3 rounded" />
+                <MudSkeleton SkeletonType="SkeletonType.Text" Height="20px" Width="100%" Animation="Animation.Wave" Class="mb-1" />
+                <MudSkeleton SkeletonType="SkeletonType.Text" Height="20px" Width="80%" Animation="Animation.Wave" />
+            </MudPaper>
+        </MudItem>
+        }
+        <MudSkeleton SkeletonType="SkeletonType.Text" Height="400px" Width="500px" Animation="Animation.Wave" Class="mb-1 rounded" />
+        </div>  
+    }
+    else{
+   <div class="flex-container">
+        @foreach (var news in moreArticleList.Take(3))
+        {
+            <div class="news-card-wrapper @(news == moreArticleList.Take(3).Last() ? "" : "with-divider")"> 
+            <NewsCard news="news" IsHorizontal="false" />
+            </div>
+        }
+            <div class="newsletter-wrapper">
+            <NewsLetter />
+            </div>
     </div>
+    }
     </MudItem>
     <!-- Video Cards -->
      <MudItem xs="12">
@@ -91,18 +119,18 @@
      </div> 
      <MudItem xs="12">
          <div class="video-padding">
-       <VideoCards />
+       <VideoCards Loading="@isLoading" />
        </div>
      </MudItem>
 
     <!-- More Cards -->
     <MudItem xs="12" Class="py-2 ">
    <div class="card-container side-padding">
-        @for (int i = 0; i < 5; i++)
+        @foreach (var news in moreArticleList)
         {
-            <div class="news-card-wrapper @(i < 4 ? "with-divider" : "")">
-                <NewsCard Item="GoldNews" IsHorizontal="false" />
-            </div>
+        <div class="news-card-wrapper @(news == moreArticleList.Last() ? "" : "with-divider")"> 
+            <NewsCard news="news" IsHorizontal="false" />
+        </div>
         }
         </div>
     </MudItem>
@@ -110,34 +138,66 @@
      <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="section-container side-padding">
     <MudItem xs="12">
          <div class="poular-article-container">
-            <PopularArticles />
+            <PopularArticles Articles="@moreArticleList"/>
             <img src="/images/classifieds/detail_ad.svg"  alt="Product Image" />
         </div>
     </MudItem>
 </MudContainer> 
 
     <!-- Even Better -->
-     @* <MudItem xs="12">
-        <MudText Typo="Typo.h5">Even Better</MudText>
-        <MudGrid>
-            @for (int i = 0; i < 3; i++)
-            {
-                <MudItem xs="12" sm="6" md="4">
-                    <NewsCard Item="GoldNews" IsHorizontal="true" />
-                </MudItem>
-            }
-        </MudGrid>
-    </MudItem> *@
-    <MudGrid GutterSize="3" Class="side-padding responsive-grid">
-    @foreach (var news in GoldNewsList)
+     <MudGrid GutterSize="3" Class="side-padding responsive-grid">
+        @if(!isLoading){
+    @foreach (var news in moreArticleList)
     {
         <MudItem xs="12" sm="6" md="4"> 
             <div class="card-wrapper">
-                <NewsCard Item="news" IsHorizontal="true" />
+                <NewsCard news="news" IsHorizontal="true" />
             </div>
         </MudItem>
     }
-</MudGrid>
+    }
+    else{
+    @for (int i = 0; i < 9; i++)
+    {
+        <MudItem xs="12" sm="6" md="4">
+        <MudGrid>
+        <MudItem xs="4">
+            <MudSkeleton 
+                SkeletonType="SkeletonType.Rectangle" 
+                Height="100px" 
+                Width="100%" 
+                Animation="Animation.Wave" 
+                Class="rounded" />
+        </MudItem>
+        <MudItem xs="8" Class="d-flex flex-column justify-center pl-2">
+            <MudSkeleton 
+                SkeletonType="SkeletonType.Text" 
+                Height="20px" 
+                Width="60%" 
+                Animation="Animation.Wave" 
+                Class="mb-1" />
+            <MudSkeleton 
+                SkeletonType="SkeletonType.Text" 
+                Height="20px" 
+                Width="60%" 
+                Animation="Animation.Wave" 
+                Class="mb-1" />
+            <MudSkeleton 
+                SkeletonType="SkeletonType.Text" 
+                Height="20px" 
+                Width="80%" 
+                Animation="Animation.Wave" />
+        </MudItem>
+    </MudGrid>
+        </MudItem>
+    }
+    }
+    </MudGrid> 
+
+
+
+
+    
 </MudGrid>
 
 <style>
@@ -335,6 +395,13 @@
     justify-content: space-between;
     display: flex;
     flex-wrap: wrap;
+    gap: 30px; 
+}
+.skeleton-container{
+    justify-content: space-between;
+    display: flex;
+    align-items: center;
+    @* flex-wrap: wrap; *@
     gap: 30px; 
 }
 .card-container {

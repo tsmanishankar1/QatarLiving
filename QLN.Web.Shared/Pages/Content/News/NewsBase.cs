@@ -10,7 +10,30 @@ namespace QLN.Web.Shared.Pages.Content.News
 {
     public class NewsBase : ComponentBase
     {
-        protected bool IsDisliked { get; set; } = true;
+        public bool isLoading = true;
+        public List<Category> Categories { get; set; } = new List<Category>
+    {
+        new Category
+        {
+            Name = "News",
+            SubCategories = new List<string> { "Qatar", "Middle East", "World","Health & Education","Community","Law" }
+        },
+        new Category
+        {
+            Name = "Business",
+            SubCategories = new List<string> { "Qatar Economy", "Market Updates", "Real Estate","Entrepreneurship","Finance","Jobs & Careers" }
+        },
+        new Category
+        {
+            Name = "Sports",
+            SubCategories = new List<string> { "Qatar Sports", "Football", "International","Motorsports","Olympics","Athlete Features" }
+        },
+        new Category
+        {
+            Name = "Lifestyle",
+            SubCategories = new List<string> { "Food & Dining", "Travel & Leisure", "Arts & Culture","Events","Fashion & Style","Home & Living" }
+        }
+    };
         protected List<string> carouselImages = new()
     {
         "/images/banner_image.svg",
@@ -20,98 +43,19 @@ namespace QLN.Web.Shared.Pages.Content.News
         protected List<ViewToggleButtons.ViewToggleOption> _viewOptions = new()
     {
         new() { Label = "News", Value = "news" },
-        new() { Label = "Finance", Value = "finance" },
+        new() { Label = "Business", Value = "business" },
         new() { Label = "Sports", Value = "sports" },
         new() { Label = "Lifestyle", Value = "lifestyle" }
     };
-
-
-        protected string _selectedView = "news";
-        protected async void SetViewMode(string view)
-        {
-            _selectedView = view;
-        }
-        protected NewsItem GoldNews = new NewsItem
-        {
-            Category = "Finance",
-            Title = "Qatar gold prices rise by 4.86% this week",
-            ImageUrl = "/images/gold.svg"
-        };
-        protected List<NewsItem> GoldNewsList = new()
-    {
-    new NewsItem
-    {
-        Category = "Finance",
-        Title = "Qatar gold prices rise by 4.86% this week",
-        ImageUrl = "/images/gold.svg"
-    },
-    new NewsItem
-    {
-         Category = "Finance",
-        Title = "Hilton Salwa Beach Resort & Villas unveils Summer",
-        ImageUrl = "/images/gold.svg"
-    },
-    new NewsItem
-    {
-        Category = "Finance",
-        Title = "Qatar’s Abdulwahab creates history, enters Round of 64",
-        ImageUrl = "/images/content/qatar_image.svg"
-    },
-    new NewsItem
-    {
-        Category = "Finance",
-        Title = "Qatar gold prices rise by 4.86% this week",
-        ImageUrl = "/images/gold.svg"
-    },
-    new NewsItem
-    {
-         Category = "Finance",
-        Title = "Hilton Salwa Beach Resort & Villas unveils Summer",
-        ImageUrl = "/images/gold.svg"
-    },
-    new NewsItem
-    {
-        Category = "Finance",
-        Title = "Qatar’s Abdulwahab creates history, enters Round of 64",
-        ImageUrl = "/images/content/qatar_image.svg"
-    },
-    new NewsItem
-    {
-        Category = "Finance",
-        Title = "Qatar gold prices rise by 4.86% this week",
-        ImageUrl = "/images/gold.svg"
-    },
-    new NewsItem
-    {
-         Category = "Finance",
-        Title = "Hilton Salwa Beach Resort & Villas unveils Summer",
-        ImageUrl = "/images/gold.svg"
-    },
-    new NewsItem
-    {
-        Category = "Finance",
-        Title = "Qatar’s Abdulwahab creates history, enters Round of 64",
-        ImageUrl = "/images/content/qatar_image.svg"
-    }
-};
-        protected string[] Tabs = new[] { "Qatar", "Sports", "Finance", "Lifestyle", "Politics", "Option" };
+        protected string _selectedView = "News";
+        protected string[] Tabs = new[] { "Qatar", "Middle East", "World", "Health & Education", "Community", "Law" };
         protected string SelectedTab = "Qatar";
-        protected void SelectTab(string tab)
-        {
-            SelectedTab = tab;
-        }
         [Inject]
         protected NavigationManager navManager { get; set; }
-        [Parameter]
-        public NewsItem Item { get; set; }
-        [Parameter]
-        public bool IsHorizontal { get; set; } = false;
-        protected void NavigateToDetails()
-        {
-            navManager.NavigateTo("/article/details");
-        }
         [Inject] private ILogger<NewsCardBase> Logger { get; set; }
         [Inject] private INewsService _newsService { get; set; }
+        protected ContentPost topNews { get; set; } = new ContentPost();
+        protected List<ContentPost> moreArticleList { get; set; } = new List<ContentPost>();
         protected NewsQatarPageResponse QatarNewsContent { get; set; } = new NewsQatarPageResponse();
         protected NewsCommunityPageResponse CommunityNewsContent { get; set; } = new NewsCommunityPageResponse();
         protected NewsHealthEducationPageResponse HealthEducationNewsContent { get; set; } = new NewsHealthEducationPageResponse();
@@ -123,22 +67,81 @@ namespace QLN.Web.Shared.Pages.Content.News
             try
             {
                 QatarNewsContent = await GetNewsQatarAsync();
-                CommunityNewsContent = await GetNewsCommunityAsync();
-                HealthEducationNewsContent = await GetNewsHealthAndEducationAsync();
-                LawsNewsContent = await GetNewsLawAsync();
-                MiddleEastNewsContent = await GetNewsMiddleEastAsync();
-                WorldNewsContent = await GetNewsWorldAsync();
+                moreArticleList = QatarNewsContent.QlnNewsNewsQatar.MoreArticles.Items;
+                topNews = QatarNewsContent.QlnNewsNewsQatar.TopStory.Items.First();
+                isLoading = false;
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "OnInitializedAsync");
             }
         }
+        protected async void SetViewMode(string view)
+        {
+            _selectedView = view;
+             var selectedCategory = Categories.FirstOrDefault(c => c.Name.Equals(view, StringComparison.OrdinalIgnoreCase));
+            if (selectedCategory != null)
+            {
+                Tabs = selectedCategory.SubCategories.ToArray();
+                SelectedTab = Tabs.First();
+            }
+            else
+            {
+                Tabs = Array.Empty<string>();
+            }
+        }
+        protected async void SelectTab(string tab)
+        {
+            isLoading = true;
+            SelectedTab = tab;
+            switch (tab)
+            {
 
-        /// <summary>
-        /// Gets Content Landing Page data
-        /// </summary>
-        /// <returns>NewsQatarPageResponse</returns>
+                case "Qatar":
+                    QatarNewsContent = await GetNewsQatarAsync();
+                    moreArticleList = QatarNewsContent.QlnNewsNewsQatar.MoreArticles.Items;
+                    topNews = QatarNewsContent.QlnNewsNewsQatar.TopStory.Items.First();
+                    isLoading = false;
+                    StateHasChanged();
+                    break;
+                case "Community":
+                    CommunityNewsContent = await GetNewsCommunityAsync();
+                    topNews = CommunityNewsContent.QlnNewsNewsCommunity.TopStory.Items.First();
+                    moreArticleList = CommunityNewsContent.QlnNewsNewsCommunity.MoreArticles.Items;
+                    isLoading = false;
+                    StateHasChanged();
+                    break;
+                case "Law":
+                    LawsNewsContent = await GetNewsLawAsync();
+                    topNews = LawsNewsContent.QlnNewsNewsLaw.TopStory.Items.First();
+                    moreArticleList = LawsNewsContent.QlnNewsNewsLaw.Articles.Items;
+                    isLoading = false;
+                    StateHasChanged();
+                    break;
+                case "Health & Education":
+                    HealthEducationNewsContent = await GetNewsHealthAndEducationAsync();
+                    topNews = HealthEducationNewsContent.QlnNewsNewsHealthEducation.TopStory.Items.First();
+                    moreArticleList = HealthEducationNewsContent.QlnNewsNewsHealthEducation.MoreArticles.Items;
+                    isLoading = false;
+                    StateHasChanged();
+                    break;
+                case "Middle East":
+                    MiddleEastNewsContent = await GetNewsMiddleEastAsync();
+                    topNews = MiddleEastNewsContent.QlnNewsNewsMiddleEast.TopStory.Items.First();
+                    moreArticleList = MiddleEastNewsContent.QlnNewsNewsMiddleEast.MoreArticles.Items;
+                    isLoading = false;
+                    StateHasChanged();
+                    break;
+                case "World":
+                    WorldNewsContent = await GetNewsWorldAsync();
+                    topNews = WorldNewsContent.QlnNewsNewsWorld.TopStory.Items.First();
+                    moreArticleList = WorldNewsContent.QlnNewsNewsWorld.MoreArticles.Items;
+                    isLoading = false;
+                    StateHasChanged();
+                    break;
+            }
+            isLoading = false;
+        }
         protected async Task<NewsQatarPageResponse> GetNewsQatarAsync()
         {
             try
@@ -161,6 +164,7 @@ namespace QLN.Web.Shared.Pages.Content.News
         {
             try
             {
+                Console.WriteLine("reached news apii");
                 var apiResponse = await _newsService.GetNewsCommunityAsync() ?? new HttpResponseMessage();
 
                 if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)

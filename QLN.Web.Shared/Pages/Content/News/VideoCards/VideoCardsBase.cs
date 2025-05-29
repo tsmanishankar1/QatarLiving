@@ -6,6 +6,8 @@ public class VideoCardsBase : ComponentBase
 {
     [Inject]
     protected IJSRuntime JSRuntime { get; set; }
+    [Parameter]
+    public bool Loading { get; set; } = false;
     public class VideoItem
     {
         public string Title { get; set; }
