@@ -40,7 +40,7 @@ namespace QLN.Common.Infrastructure.DTO_s
 
     public class ContentsDailyPageResponse
     {
-        [JsonPropertyName(ContentConstants.QlnContentsDaily)]
+        [JsonPropertyName(DrupalContentConstants.QlnContentsDaily)]
         public ContentsDaily ContentsDaily { get; set; }
     }
 }

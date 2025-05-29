@@ -1,6 +1,6 @@
 @QLN.Backend.API_HostAddress = https://localhost:7161
 
-@DrupalQueue = qln_news_news_middle_east
+@DrupalQueue = qln_community_post
 
 GET {{QLN.Backend.API_HostAddress}}/api/content/{{DrupalQueue}}/landing
 Accept: application/json
@@ -53,7 +53,15 @@ Content-Type: application/json
   "description": "This is description"
 }
 
-
+###
+POST {{QLN.Backend.API_HostAddress}}/api/content/like
+Accept: application/json
+Content-Type: application/json
+{
+  "nid": 46438975,
+  "uid": 5834086,
+  "action": "like"
+}
 ###################################
 
 @QLN.Drupal.API_HostAddress = https://test.qatarliving.com
@@ -102,4 +110,14 @@ Content-Type: application/json
   "uid": 5834086,
   "title": "Posted from Crayon",
   "description": "This is description"
+}
+
+###
+POST {{QLN.Drupal.API_HostAddress}}/qlnapi/node/like
+Accept: application/json
+Content-Type: application/json
+{
+  "nid": 46438975,
+  "uid": 5834086,
+  "action": "like"
 }

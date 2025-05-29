@@ -20,7 +20,7 @@ namespace QLN.Common.Infrastructure.DTO_s
 
     public class NewsLawPageResponse
     {
-        [JsonPropertyName(ContentConstants.QlnNewsNewsLaw)]
+        [JsonPropertyName(DrupalContentConstants.QlnNewsNewsLaw)]
         public QlnNewsNewsLaw QlnNewsNewsLaw { get; set; }
     }
 }

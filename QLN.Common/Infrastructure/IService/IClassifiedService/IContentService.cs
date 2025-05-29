@@ -20,5 +20,6 @@ namespace QLN.Common.Infrastructure.IService.BannerService
         Task<ContentPost?> GetNewsBySlugAsync(string slug, CancellationToken cancellationToken);
         Task<CreateCommentResponse?> CreateCommentOnDrupalAsync(CreateCommentRequest request, CancellationToken cancellationToken);
         Task<CreatePostResponse?> CreatePostOnDrupalAsync(CreatePostRequest request, CancellationToken cancellationToken);
+        Task<ChangeLikeStatusResponse?> ChangeLikeStatusOnDrupalAsync(ChangeLikeStatusRequest request, CancellationToken cancellationToken);
     }
 }

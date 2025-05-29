@@ -26,11 +26,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints
                 .MapNewsHealthEducationEndpoint()
                 .MapNewsLawEndpoint()
                 .MapContentQueueEndpoint()
+                .MapCommunityMorePostsEndpoint()
                 .MapGetPostBySlugEndpoint()
                 .MapGetEventBySlugEndpoint()
                 .MapGetNewsBySlugEndpoint()
                 .MapPostCommentEndpoint()
-                .MapPostForumPostEndpoint();
+                .MapPostForumPostEndpoint()
+                .MapChangeLikeStatusEndpoint();
 
             return group;
         }

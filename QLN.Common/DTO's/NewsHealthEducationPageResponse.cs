@@ -22,7 +22,7 @@ namespace QLN.Common.Infrastructure.DTO_s
 
     public class NewsHealthEducationPageResponse
     {
-        [JsonPropertyName(ContentConstants.QlnNewsNewsHealthEducation)]
+        [JsonPropertyName(DrupalContentConstants.QlnNewsNewsHealthEducation)]
         public QlnNewsNewsHealthEducation QlnNewsNewsHealthEducation { get; set; }
     }
 }
