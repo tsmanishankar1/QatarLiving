@@ -1,0 +1,58 @@
+trigger:
+  branches:
+    include:
+    - qln-dev
+  paths:
+    include:
+    - contentweb-azure-pipelines.yml
+    - QLN.Blazor.Base/*
+    - QLN.Common/*
+    - QLN.Web.Shared/*
+
+variables:
+ - name: acrRegistry
+   value: qlnv2-ezftf8ehejdadpfn
+ - name: appName
+   value: QLN.Blazor.Base
+ - name: appShortName
+   value: contentweb
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: AzureContainerApps@1
+  inputs:
+    workingDirectory: '$(Build.SourcesDirectory)'
+    appSourcePath: '$(Build.SourcesDirectory)'
+    azureSubscription: 'dev-qlnext'
+    acrName: '$(acrRegistry)'
+    acrUsername: 'qlnv2'
+    acrPassword: 'jxmPri2GCql4OHO5Fl+3C0Bii3fmUbsrEZ1EHDbx/y+ACRDo/bQ0'
+    dockerfilePath: '$(appName)/Dockerfile'
+    imageToBuild: 'qlnv2-ezftf8ehejdadpfn.azurecr.io/qlnv2/$(appShortName):$(Build.BuildId).$(Build.BuildNumber)'
+    containerAppName: 'capp-$(appShortName)-dev'
+    resourceGroup: 'rg-containerapps-dev'
+    runtimeStack: 'dotnetcore:8.0'
+
+- task: ManualValidation@1
+      inputs:
+        notifyUsers: 'Front End - QA Release Approval'
+        approvers: 'Front End - QA Release Approval' # string. Approvers. 
+        allowApproversToApproveTheirOwnRuns: true # boolean. Allow approvers to approve their own run. Default: true.
+        instructions: 'Please review and approve the deployment to proceed.'
+        onTimeout: 'reject'
+        timeout: '43200' # 12 hours in seconds
+
+- task: AzureContainerApps@1
+  inputs:
+    workingDirectory: '$(Build.SourcesDirectory)'
+    appSourcePath: '$(Build.SourcesDirectory)'
+    azureSubscription: 'dev-qlnext'
+    acrName: '$(acrRegistry)'
+    acrUsername: 'qlnv2'
+    acrPassword: 'jxmPri2GCql4OHO5Fl+3C0Bii3fmUbsrEZ1EHDbx/y+ACRDo/bQ0'
+    imageToDeploy: 'qlnv2-ezftf8ehejdadpfn.azurecr.io/qlnv2/$(appShortName):latest'
+    containerAppName: 'capp-$(appShortName)-qa'
+    resourceGroup: 'rg-containerapps-qa'
+    runtimeStack: 'dotnetcore:8.0'
