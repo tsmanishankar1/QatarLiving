@@ -1,8 +1,9 @@
-@page "/article/details"
+@page "/article/details/{slug}"
 @inherits ArticleBase
 @using QLN.Web.Shared.Components.Carousel
 @using QLN.Web.Shared.Pages.Content.Article.Components
 @using QLN.Web.Shared.Pages.Content.Community
+@using QLN.Web.Shared.Components.BreadCrumb
 @using MudBlazor
 
 <div style="width: 100%; background-color: var(--color-secondary-background);">
@@ -10,16 +11,15 @@
         <!-- Carousel Banner -->
         <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
             Transition="Transition.Slide" />
+            <Breadcrumb Items="breadcrumbItems" />
 
         <MudGrid Class="py-4" GutterSize="16px">
             <MudItem xs="12" md="8">
-                <ArticleDetailCard />
-                @* <MudContainer MaxWidth="MaxWidth.ExtraLarge">  *@
+                <ArticleDetailCard Post="newsArticle"/>
                      @foreach (var post in PostsList)
                     {
-                        <CommentSection Comment="post"/>
+                        <CommentSection Comment="SelectedPost"/>
                     } 
-                     @* </MudContainer>  *@
             </MudItem>
             <MudItem xs="12" md="4">
                 <MoreArticleSection />

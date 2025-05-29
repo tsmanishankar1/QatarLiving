@@ -21,11 +21,9 @@ if (string.IsNullOrWhiteSpace(contentVerticalAPIUrl))
 
 builder.Services.AddScoped<CustomAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<CustomAuthStateProvider>());
-builder.Services.AddScoped<IContentService, ContentService>();
-builder.Services.AddScoped<INewsService, NewsService>();
 
 builder.Services.AddAuthorizationCore();
-builder.Services.AddScoped<ICompanyProfileService, CompanyProfileService>();
+
 // builder.Services.AddCascadingAuthenticationState();
 
 builder.Services.AddHttpClient<ApiService>();
@@ -42,10 +40,19 @@ builder.Services.AddHttpClient<ICommunityService, CommunityService>(client =>
     client.BaseAddress = new Uri(contentVerticalAPIUrl);
 });
 
+builder.Services.AddScoped<ICompanyProfileService, CompanyProfileService>();
 builder.Services.AddHttpClient<INewsLetterSubscription, NewsLetterSubscriptionService>();
 //builder.Services.AddHttpClient<IAdService, AdService>();
 builder.Services.AddScoped<IAdService, AdMockService>();
 builder.Services.AddHttpClient<IPostInteractionService, PostInteractionService>();
+builder.Services.AddScoped<IContentService, ContentService>();
+builder.Services.AddScoped<INewsService, NewsService>();
+builder.Services.AddHttpClient<IEventService, EventService>(client =>
+{
+    client.BaseAddress = new Uri(contentVerticalAPIUrl);
+});
+
+
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
@@ -67,7 +74,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 // app.UseAuthentication();
 // app.UseAuthorization();
- app.UseAntiforgery();
+app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 

@@ -1,28 +1,28 @@
 namespace QLN.Web.Shared.Services.Interface
 {
-    public  interface INewsService
+    public interface INewsService
     {
         /// <summary>
         /// Gets Content News Landing Page data.
         /// </summary>
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetNewsQatarAsync();
-         /// <summary>
+        /// <summary>
         /// Gets Content News Landing Page data.
         /// </summary>
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetNewsMiddleEastAsync();
-         /// <summary>
+        /// <summary>
         /// Gets Content News Landing Page data.
         /// </summary>
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetNewsWorldAsync();
-         /// <summary>
+        /// <summary>
         /// Gets Content News Landing Page data.
         /// </summary>
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetNewsHealthAndEducationAsync();
-         /// <summary>
+        /// <summary>
         /// Gets Content News Landing Page data.
         /// </summary>
         /// <returns>HttpResponseMessage</returns>
@@ -32,5 +32,10 @@ namespace QLN.Web.Shared.Services.Interface
         /// </summary>
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetNewsLawAsync();
+        /// <summary>
+        /// Gets Content News Article using Slug.
+        /// </summary>
+        /// <returns>HttpResponseMessage</returns>
+        Task<HttpResponseMessage?> GetNewsBySlugAsync(string slug);
     }
 }
