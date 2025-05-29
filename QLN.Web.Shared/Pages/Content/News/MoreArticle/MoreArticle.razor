@@ -3,18 +3,34 @@
      <h3 class="section-heading">
   <span class="accent-bar"></span>More Articles
 </h3>
-
+    @if (loading){
+        @for (int i = 0; i < 4; i++)
+    {
+    <MudGrid Class="ps-3">
+    <MudItem xs="9">
+        <MudSkeleton SkeletonType="SkeletonType.Text" Width="80%" Height="20px" Animation="Animation.Wave" Class="mb-1 " />
+        <MudSkeleton SkeletonType="SkeletonType.Text" Width="95%" Height="20px" Animation="Animation.Wave" Class="mb-1" />
+        <MudSkeleton SkeletonType="SkeletonType.Text" Width="70%" Height="20px" Animation="Animation.Wave" />
+    </MudItem>
+    <MudItem xs="3">
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="70px" Width="100%" Animation="Animation.Wave" Class="rounded" />
+    </MudItem>
+    </MudGrid>
+    }
+    }
+    else{
     @foreach (var article in Articles)
     {
         <div class="article-entry">
             <div class="article-content">
-                <a href="@article.Url" class="article-title">@article.Title</a>
+                <a href="@article.Title" class="article-title">@article.Title</a>
             </div>
             @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
             {
                 <img src="@article.ImageUrl" class="article-image" />
             }
         </div>
+    }
     }
 </div>
 

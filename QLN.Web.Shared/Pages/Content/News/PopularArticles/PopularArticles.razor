@@ -1,13 +1,14 @@
 @using System.Globalization
 @using MudBlazor
+@inherits PopularArticlesBase
 <div class="popular-articles">
     <h3 class="title">Most Popular Articles</h3>
 
-    @for (int i = 0; i < Articles.Count; i++)
+     @foreach (var article in Articles)
     {
         <div class="article-item">
-             <img src="/images/gold.svg" alt="News Image" class="news-image" />
-            <div class="article-text">@Articles[i]</div>
+             <img src="@article.ImageUrl" alt="News Image" class="news-image" />
+            <div class="article-text">@article.Title</div>
         </div>
     }
 </div>
@@ -63,13 +64,3 @@
     }
 </style>
 
-@code {
-    private List<string> Articles = new()
-    {
-        "How to spot scam websites & social media accounts in Qatar",
-        "How to spot scam websites & social media accounts in Qatar",
-        "How to spot scam websites & social media accounts in Qatar",
-        "How to spot scam websites & social media accounts in Qatar",
-        "How to spot scam websites & social media accounts in Qatar"
-    };
-}

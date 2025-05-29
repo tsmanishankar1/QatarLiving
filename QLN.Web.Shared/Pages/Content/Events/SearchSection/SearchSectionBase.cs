@@ -45,12 +45,12 @@ protected async Task ApplyDatePicker()
 {
     if (_dateRange?.Start != null && _dateRange?.End != null)
     {
-        var start = _dateRange.Start.Value.ToString("dd MMM");
-        var end = _dateRange.End.Value.ToString("dd MMM");
+        var start = _dateRange.Start.Value.ToString("dd-MM-yyyy");
+        var end = _dateRange.End.Value.ToString("dd-MM-yyyy");
 
         SelectedDateLabel = (_dateRange.Start.Value.Date == _dateRange.End.Value.Date)
             ? start
-            : $"{start} - {end}";
+            : $"{start} to {end}";
 
         _showDatePicker = false; // Close picker after applying dates
         StateHasChanged();

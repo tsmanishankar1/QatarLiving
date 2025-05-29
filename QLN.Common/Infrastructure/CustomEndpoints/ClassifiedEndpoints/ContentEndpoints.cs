@@ -21,7 +21,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            group.GenerateLandingEndpoint<QlnContentsDailyPageResponse>(ContentConstants.QlnContentsDaily, "GetContentsDaily"); 
+            group.GenerateLandingEndpoint<ContentsDailyPageResponse>(ContentConstants.QlnContentsDaily, "GetContentsDaily"); 
 
             return group;
         }

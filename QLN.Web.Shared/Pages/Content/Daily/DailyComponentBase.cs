@@ -10,7 +10,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
     {
         [Inject] private IContentService _contentService { get; set; }
 
-        protected QlnContentsDailyPageResponse LandingContent { get; set; } = new QlnContentsDailyPageResponse();
+        protected ContentsDailyPageResponse LandingContent { get; set; } = new ContentsDailyPageResponse();
         protected ContentPost TopStoryItem { get; set; } = new ContentPost();
         protected ContentEvent HighlightedEvent { get; set; } = new ContentEvent();
         protected List<ContentPost> FeaturedEvents { get; set; } = [];
@@ -22,11 +22,11 @@ namespace QLN.Web.Shared.Pages.Content.Daily
             try
             {
                 LandingContent = await GetContentLandingAsync() ?? new();
-                TopStoryItem = LandingContent.QlnContentsDaily?.DailyTopStory?.Items.First() ?? new();
-                HighlightedEvent = LandingContent.QlnContentsDaily?.DailyEvent?.Items.First() ?? new();
-                FeaturedEvents = LandingContent.QlnContentsDaily?.DailyFeaturedEvents?.Items ?? [];
-                MoreArticles = LandingContent.QlnContentsDaily?.DailyMoreArticles?.Items ?? [];
-                Videos = LandingContent.QlnContentsDaily?.DailyWatchOnQatarLiving.Items ?? [];
+                TopStoryItem = LandingContent.ContentsDaily?.DailyTopStory?.Items.First() ?? new();
+                HighlightedEvent = LandingContent.ContentsDaily?.DailyEvent?.Items.First() ?? new();
+                FeaturedEvents = LandingContent.ContentsDaily?.DailyFeaturedEvents?.Items ?? [];
+                MoreArticles = LandingContent.ContentsDaily?.DailyMoreArticles?.Items ?? [];
+                Videos = LandingContent.ContentsDaily?.DailyWatchOnQatarLiving.Items ?? [];
             }
             catch (Exception ex)
             {
@@ -38,7 +38,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
         /// Gets Content Landing Page data
         /// </summary>
         /// <returns>QlnContentsDailyPageResponse</returns>
-        protected async Task<QlnContentsDailyPageResponse> GetContentLandingAsync()
+        protected async Task<ContentsDailyPageResponse> GetContentLandingAsync()
         {
             try
             {
@@ -46,16 +46,16 @@ namespace QLN.Web.Shared.Pages.Content.Daily
 
                 if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
                 {
-                    var response = await apiResponse.Content.ReadFromJsonAsync<QlnContentsDailyPageResponse>();
-                    return response ?? new QlnContentsDailyPageResponse();
+                    var response = await apiResponse.Content.ReadFromJsonAsync<ContentsDailyPageResponse>();
+                    return response ?? new ContentsDailyPageResponse();
                 }
 
-                return new QlnContentsDailyPageResponse();
+                return new ContentsDailyPageResponse();
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message, "OnInitializedAsync");
-                return new QlnContentsDailyPageResponse();
+                return new ContentsDailyPageResponse();
             }
         }
 
