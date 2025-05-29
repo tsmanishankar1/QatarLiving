@@ -22,6 +22,7 @@ namespace QLN.Web.Shared.Services
             try
             {
                 var response = await _httpClient.GetAsync($"{_baseUrl}/api/content/qln_news_news_community/landing");
+                Console.WriteLine("response is" + response);
                 return response;
             }
             catch (Exception ex)
