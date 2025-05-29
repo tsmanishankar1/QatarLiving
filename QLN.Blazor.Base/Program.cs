@@ -1,8 +1,5 @@
 using QLN.Web.Shared;
 using QLN.Web.Shared.Pages;
-using MudBlazor;
-using MudBlazor;
-using MudBlazor;
 using MudBlazor.Services;
 using QLN.Web.Shared.Services;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -14,31 +11,34 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddMudServices();
-// builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(Options=>{
-//     Options.Cookie.Name = "auth-name";
-//     Options.LoginPath = "/login";
-//     Options.Cookie.MaxAge=TimeSpan.FromMinutes(10);
 
-// });
+var contentVerticalAPIUrl = builder.Configuration["ServiceUrlPaths:ContentVerticalAPI"];
+if (string.IsNullOrWhiteSpace(contentVerticalAPIUrl))
+{
+    throw new InvalidOperationException("ContentVerticalAPI URL is missing in configuration.");
+}
+
+
 builder.Services.AddScoped<CustomAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<CustomAuthStateProvider>());
-//builder.Services.AddScoped<ICommunityService, QLN.Web.Shared.MockServices.CommunityMockService>(); // not sure if this is correct ??
 builder.Services.AddScoped<IContentService, ContentService>();
 builder.Services.AddScoped<INewsService, NewsService>();
 
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<ICompanyProfileService, CompanyProfileService>();
 // builder.Services.AddCascadingAuthenticationState();
-builder.Services.Configure<ApiSettings>(
-    builder.Configuration.GetSection("ApiSettings"));
 
 builder.Services.AddHttpClient<ApiService>();
 builder.Services.AddWebSharedServices(builder.Configuration);
+builder.Services.Configure<ApiSettings>(
+    builder.Configuration.GetSection("ApiSettings"));
 
-// Inject Web only services here
 
-builder.Services.AddHttpClient<ICommunityService, CommunityService>();
-//builder.Services.AddScoped<ICommunityService,CommunityMockService>();
+builder.Services.AddHttpClient<ICommunityService, CommunityService>(client =>
+{
+    client.BaseAddress = new Uri(contentVerticalAPIUrl);
+});
+
 builder.Services.AddHttpClient<INewsLetterSubscription, NewsLetterSubscriptionService>();
 //builder.Services.AddHttpClient<IAdService, AdService>();
 builder.Services.AddScoped<IAdService, AdMockService>();
