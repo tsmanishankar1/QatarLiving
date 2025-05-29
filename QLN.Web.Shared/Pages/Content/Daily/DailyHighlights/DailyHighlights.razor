@@ -1,6 +1,4 @@
-@using MudBlazor
-
-<div class="section-daily-highlights">
+<div class="category-section">
     <div class="section-header">
         <h3 class="section-heading">
             <span class="accent-bar"></span>Ramadan
@@ -10,55 +8,49 @@
             <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowRight" />
         </div>
     </div>
-
-    <div class="highlight-card-group">
-
-        <!-- News Card -->
-        <div class="highlight-card">
-            <img src="/images/gold.svg" class="highlight-img" alt="Gold News" />
-            <div class="highlight-content">
-                <div class="highlight-category">Finance</div>
-                <div class="highlight-title">Qatar gold prices rise by 4.86% this week</div>
+    <div class="card-list">
+        <!-- Card 1 -->
+        <div class="news-card">
+            <img src="/images/gold.svg" alt="Gold Prices" />
+            <div class="text-content">
+                <p class="tag">Finance</p>
+                <h4 class="headline">Qatar gold prices rise by 4.86% this week</h4>
             </div>
         </div>
 
-        <!-- Event Card -->
-        <div class="highlight-card">
-            <img src="/images/gold.svg" class="highlight-img" alt="Event" />
-            <div class="highlight-content">
-                <div class="highlight-category">Event</div>
-                <div class="highlight-title">FIFA Arab Cup Doha 2025</div>
-                <div class="highlight-desc">12 Dec 2025 to 13 Jan 2026</div>
+        <!-- Card 2 -->
+        <div class="news-card">
+            <img src="/images/gold.svg" alt="FIFA" />
+            <div class="text-content">
+                <p class="tag">Event</p>
+                <h4 class="headline">FIFA Arab Cup Doha 2025</h4>
+                <p class="date">12 Dec 2025 to 13 Jan 2026</p>
             </div>
         </div>
 
-        <!-- Video Card -->
-        <div class="highlight-card">
-            <img src="/images/gold.svg" class="highlight-img" alt="Video" />
-            <div class="highlight-content">
-                <div class="highlight-category">Video</div>
-                <div class="highlight-title">Amir Cup Recap and Highlights</div>
+        <!-- Card 3 -->
+        <div class="news-card">
+            <img src="/images/gold.svg" alt="Amir Cup" />
+            <div class="text-content">
+                <p class="tag">Video</p>
+                <h4 class="headline">Amir Cup Recap and Highlights</h4>
             </div>
         </div>
-
     </div>
 </div>
 
 <style>
-    .section-daily-highlights {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        padding: 20px 0;
+    .category-section {
+        padding: 1rem;
+        margin-bottom: 2rem;
+        border-radius: 0.5rem;
         font-family: 'Public Sans';
-        background-color: #ffffff;
     }
 
     .section-header {
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-start;
         width: 100%;
         padding: 0px 5px;
     }
@@ -91,52 +83,100 @@
         margin-right: 4px;
     }
 
-    .highlight-card-group {
-        display: flex;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 20px;
-        padding: 0 5px;
+    .category-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        border-left: 4px solid #0078ba;
+        padding-left: 0.5rem;
+        margin: 0;
+        color: #004a75;
     }
 
-    .highlight-card {
+    .view-all {
+        color: #f26522;
+        font-weight: bold;
+        text-decoration: none;
+    }
+
+    .card-list {
         display: flex;
-        flex-direction: row;
+        overflow-x: auto;
+        gap: 1rem;
+        scroll-snap-type: x mandatory;
+        padding-bottom: 0.5rem;
+    }
+
+    .news-card {
+        display: flex;
         align-items: flex-start;
-        max-width: 370px;
-    }
-
-    .highlight-img {
-        width: 130px;
-        height: 90px;
-        border-radius: 8px;
-        object-fit: cover;
-        flex-shrink: 0;
-    }
-
-    .highlight-content {
-        padding-left: 12px;
-        display: flex;
         flex-direction: column;
-        gap: 4px;
+        flex: 0 0 214px;
+        background: white;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
+        scroll-snap-align: start;
+        transition: all 0.3s ease;
+        padding: 10px;
     }
 
-    .highlight-category {
-        color: var(--color-accent);
-        font-size: 14px;
+    .news-card img {
+        width: 100%;
+        height: 100px;
+        border-radius: 6px;
+        object-fit: cover;
+    }
+
+    .text-content {
+        padding: 0.75rem;
+    }
+
+    .tag {
+        color: #f26522;
+        font-size: 0.75rem;
+        margin: 0 0 0.25rem;
+    }
+
+    .headline {
+        font-size: 0.9rem;
         font-weight: 600;
+        margin: 0 0 0.5rem;
+        color: #111;
     }
 
-    .highlight-title {
-        font-size: 16px;
-        font-weight: 600;
-        color: var(--color-text-heading);
+    .date {
+        font-size: 0.75rem;
+        color: #0078ba;
     }
 
-    .highlight-desc {
-        font-size: 13px;
-        font-weight: 500;
-        color: var(--color-primary);
+    /* --- Desktop: image left, text right --- */
+    @@media (min-width: 768px) {
+        .card-list {
+            overflow-x: visible;
+        }
+
+        .news-card {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            flex: 1 1 calc(33.333% - 1rem);
+            max-width: 100%;
+            height: 160px;
+            padding: 10px;
+        }
+
+        .news-card img {
+            width: 45%;
+            height: 100%;
+            border-radius: 6px;
+        }
+
+        .text-content {
+            width: 55%;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
     }
 </style>
