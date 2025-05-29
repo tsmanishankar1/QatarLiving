@@ -3,7 +3,7 @@ using QLN.Web.Shared.Model;
 
 namespace QLN.Web.Shared.MockServices
 {
-    public class CommunityMockService : ICommunityService
+    public class CommunityMockService 
     {
         private List<PostModel> posts = new()
         {
@@ -49,5 +49,11 @@ namespace QLN.Web.Shared.MockServices
             return posts;
         }
 
+        public Task<PostListResponse> GetPostsAsync(int forumId, string order, int page, int pageSize)
+        {
+            throw new NotImplementedException();
+        }
+
+       
     }
 }

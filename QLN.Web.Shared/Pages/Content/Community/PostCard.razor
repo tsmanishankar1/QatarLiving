@@ -2,7 +2,7 @@
 @inherits PostCardBase
 @using MudBlazor
 
-<MudPaper Class="post-card" Elevation="0" @onclick="() => { if (!IsDetailView) NavigateToPostDetail(); }">
+<MudPaper Class="post-card p-4" Elevation="0" @onclick="() => { if (!IsDetailView) NavigateToPostDetail(); }">
     <div class="post-header d-flex justify-space-between align-center">
         <div class="post-tag">@Post.Category</div>
 
@@ -86,20 +86,21 @@
 
     .post-tag {
         display: inline-block;
-        background-color: #FFF0E7;
         color: #FF7F38;
         padding: 4px 12px;
-        border-radius: 9999px;
+        border-radius: 25px;
         font-size: 12px;
         font-weight: 500;
         border: 1px solid #FF7F38;
         margin-bottom: 8px;
+        font-family: 'Public Sans', sans-serif;
     }
 
     .post-title {
-        font-size: 18px;
+        font-family: 'Public Sans', sans-serif;
+        font-size: 25px;
         font-weight: 600;
-        color: #1c1c1c;
+        color: #242424;
         margin-bottom: 10px;
     }
 
@@ -131,7 +132,6 @@
         font-weight: 500;
         font-size: 12px;
         line-height: 18px;
-        letter-spacing: 0%;
         color: #242424;
     }
 
@@ -142,13 +142,16 @@
     }
 
     .post-body {
+        font-family: 'Public Sans', sans-serif;
         font-size: 14px;
-        color: #666;
+        color: #242424;
         margin-bottom: 12px;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
+        font-weight: 400;
         overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 3; 
+        -webkit-box-orient: vertical;
+        line-height: 2;
     }
 
     .post-footer {

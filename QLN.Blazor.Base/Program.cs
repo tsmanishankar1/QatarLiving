@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using QLN.Web.Shared;
 using QLN.Web.Shared.Pages;
 using MudBlazor;
@@ -39,8 +37,8 @@ builder.Services.AddWebSharedServices(builder.Configuration);
 
 // Inject Web only services here
 
-//builder.Services.AddHttpClient<ICommunityService, CommunityService>();
-builder.Services.AddScoped<ICommunityService, QLN.Web.Shared.MockServices.CommunityMockService>();
+builder.Services.AddHttpClient<ICommunityService, CommunityService>();
+//builder.Services.AddScoped<ICommunityService,CommunityMockService>();
 builder.Services.AddHttpClient<INewsLetterSubscription, NewsLetterSubscriptionService>();
 //builder.Services.AddHttpClient<IAdService, AdService>();
 builder.Services.AddScoped<IAdService, AdMockService>();

@@ -1,6 +1,7 @@
 @using MudBlazor
 @inherits CommunitySearchBarSectionBase
 @using QLN.Web.Shared.Components.CustomSelect
+@using QLN.Web.Shared.Components.NewCustomSelect
 
 <MudPaper Elevation="0" Class="py-4 custom-paper">
     <MudContainer MaxWidth="MaxWidth.False">
@@ -16,14 +17,19 @@
 
             <!-- Category Dropdown -->
             <div class="flex-grow-1 flex-md-grow-2_2 w-100 w-md-auto ms-md-0">
-                <CustomSelect TItem="string"
-                              Options="categoryOptions"
-                              SelectedItem="selectedCategory"
-                              SelectedItemChanged="v => selectedCategory = v"
-                              Placeholder="Category"
-                              IsDisabled="false"
-                              Padding="18px 10px"
-                              BorderRadius="0px" />
+                <NewCustomSelect TItem="SelectOption"
+                                 Items="@CategorySelectOptions"
+                                 Label="Category"
+                                 Placeholder="Choose"
+                                 SelectedId="@SelectedCategoryId"
+                                 SelectedIdChanged="id => SelectedCategoryId = id"
+                                 GetLabel="x => x.Label"
+                                 GetId="x => x.Id"
+                                 BorderRadius="1px"
+                                 Padding="8px 10px" />
+
+
+
             </div>
 
             <!-- Search Button -->
@@ -58,9 +64,14 @@
         margin-top: 20px;
     }
 
+
         .custom-paper .d-flex {
             gap: 16px;
         }
+
+    .select-field {
+        width: 255px;
+    }
 
     @@media (min-width: 600px) {
         .custom-paper {
@@ -69,10 +80,27 @@
         }
 
             .custom-paper .d-flex {
-                gap: 0 !important; 
+                gap: 0 !important;
             }
+
             .custom-paper .ms-md-0 {
                 margin-left: 0 !important;
             }
+    }
+
+    @@media (min-width: 601px) and (max-width: 950px) {
+        .custom-paper {
+            height: 210px;
+            padding: 40px 70px;
+        }
+    }
+
+
+
+    @@media (min-width: 1010px) and (max-width: 1024px) {
+
+        .select-field {
+            width: 220px !important;
+        }
     }
 </style>

@@ -26,5 +26,22 @@
         public int UnlikeCount { get; set; }
         public bool IsByCurrentUser { get; set; }
     }
+    public class PostListResponse
+    {
+        public List<PostListDto> Posts { get; set; }
+    }
+
+    public class PostListDto
+    {
+        public string forum_id { get; set; }
+        public string forum_category { get; set; }
+        public string user_name { get; set; }
+        public string nid { get; set; }
+        public string date_created { get; set; }
+        public string title { get; set; }
+        public string slug { get; set; }
+        public string description { get; set; }
+    }
+
 
 }
