@@ -20,6 +20,9 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonPropertyName("description")]
         public string Description { get; set; }
 
+        [JsonPropertyName("category")]
+        public string Category { get; set; }
+
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("comments")]
         public List<ContentComment> Comments { get; set; }

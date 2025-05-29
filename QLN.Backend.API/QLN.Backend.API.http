@@ -1,6 +1,6 @@
 @QLN.Backend.API_HostAddress = https://localhost:7161
 
-@DrupalQueue = qln_news_news_law
+@DrupalQueue = qln_news_news_middle_east
 
 GET {{QLN.Backend.API_HostAddress}}/api/content/{{DrupalQueue}}/landing
 Accept: application/json

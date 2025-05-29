@@ -17,7 +17,7 @@ namespace QLN.Common.Infrastructure.DTO_s
     public class DailyTopStory : BaseQueueResponse<ContentPost>;
     public class DailyWatchOnQatarLiving : BaseQueueResponse<ContentPost>;
 
-    public class QlnContentsDaily
+    public class ContentsDaily
     {
         [JsonPropertyName("daily_top_story")]
         public DailyTopStory DailyTopStory { get; set; }
@@ -38,9 +38,9 @@ namespace QLN.Common.Infrastructure.DTO_s
         public DailyMoreArticles DailyMoreArticles { get; set; }
     }
 
-    public class QlnContentsDailyPageResponse
+    public class ContentsDailyPageResponse
     {
         [JsonPropertyName(ContentConstants.QlnContentsDaily)]
-        public QlnContentsDaily QlnContentsDaily { get; set; }
+        public ContentsDaily ContentsDaily { get; set; }
     }
 }
