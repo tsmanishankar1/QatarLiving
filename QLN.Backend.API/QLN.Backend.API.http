@@ -54,14 +54,13 @@ Content-Type: application/json
 }
 
 ###
-POST {{QLN.Backend.API_HostAddress}}/api/content/like
+Get {{QLN.Backend.API_HostAddress}}/api/content/like/post/46438975/5834086/like
 Accept: application/json
-Content-Type: application/json
-{
-  "nid": 46438975,
-  "uid": 5834086,
-  "action": "like"
-}
+
+###
+Get {{QLN.Backend.API_HostAddress}}/api/content/like/comment/46438975/5834086/like
+Accept: application/json
+
 ###################################
 
 @QLN.Drupal.API_HostAddress = https://test.qatarliving.com

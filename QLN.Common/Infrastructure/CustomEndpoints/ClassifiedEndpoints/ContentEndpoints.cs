@@ -368,16 +368,29 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             return group;
         }
 
-        public static RouteGroupBuilder MapChangeLikeStatusEndpoint(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapChangeCommentLikeStatusEndpoint(this RouteGroupBuilder group)
         {
             // GET /api/content/like
-            group.MapPost("/like", async (
-                    [FromBody] ChangeLikeStatusRequest request,
+            group.MapGet("/like/post/{articleId}/{userId}/{action}", async (
+                    //[FromBody] ChangeLikeStatusRequest request,
+                    [FromRoute] int articleId,
+                    [FromRoute] int userId,
+                    [FromRoute] string action,
                     [FromServices] IContentService svc,
                     CancellationToken cancellationToken
                     )
                 =>
             {
+                if (action != "like" && action != "unlike")
+                    return Results.BadRequest("action can only be like or unlike");
+
+                var request = new ChangeLikeStatusRequest
+                {
+                    Uid = userId,
+                    Nid = articleId,
+                    Action = action
+                };
+
                 try
                 {
                     var comment = await svc.ChangeLikeStatusOnDrupalAsync(request, cancellationToken);
@@ -390,17 +403,62 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                 catch (Exception ex)
                 {
                     return Results.Problem(
-                        title: "Change Like Status Error",
+                        title: "Change Post Like Status Error",
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError);
                 }
             })
-            .WithName("PostChangeLikeStatus")
+            .WithName("PostChangePostLikeStatus")
             .WithTags("Content");
 
             return group;
         }
 
+        public static RouteGroupBuilder MapChangePostLikeStatusEndpoint(this RouteGroupBuilder group)
+        {
+            // GET /api/content/like
+            group.MapGet("/like/comment/{articleId}/{userId}/{action}", async (
+                    //[FromBody] ChangeLikeStatusRequest request,
+                    [FromRoute] int articleId,
+                    [FromRoute] int userId,
+                    [FromRoute] string action,
+                    [FromServices] IContentService svc,
+                    CancellationToken cancellationToken
+                    )
+                =>
+            {
+                if (action != "like" && action != "unlike") 
+                    return Results.BadRequest("action can only be like or unlike");
+
+                var request = new ChangeLikeStatusRequest
+                {
+                    Uid = userId,
+                    Nid = articleId,
+                    Action = action
+                };
+
+                try
+                {
+                    var comment = await svc.ChangeLikeStatusOnDrupalAsync(request, cancellationToken);
+                    return comment is null ? Results.NotFound() : Results.Ok(comment);
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { Message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Change Comment Like Status Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("PostChangeCommentLikeStatus")
+            .WithTags("Content");
+
+            return group;
+        }
         public static RouteGroupBuilder MapGetEventBySlugEndpoint(this RouteGroupBuilder group)
         {
 

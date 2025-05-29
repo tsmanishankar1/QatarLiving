@@ -32,7 +32,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints
                 .MapGetNewsBySlugEndpoint()
                 .MapPostCommentEndpoint()
                 .MapPostForumPostEndpoint()
-                .MapChangeLikeStatusEndpoint();
+                .MapChangePostLikeStatusEndpoint()
+                .MapChangeCommentLikeStatusEndpoint();
 
             return group;
         }
