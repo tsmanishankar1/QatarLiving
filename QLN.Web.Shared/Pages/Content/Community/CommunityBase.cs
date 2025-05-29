@@ -11,7 +11,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
 {
     public class CommunityBase : ComponentBase
     {
-
+        [Inject]
+        public ISnackbar Snackbar { get; set; }
         [Inject] private ILogger<CommunityBase> Logger { get; set; }
         [Inject] private ICommunityService CommunityService { get; set; }
         [Inject] private INewsLetterSubscription NewsLetterSubscriptionService { get; set; }
@@ -84,7 +85,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                     LikeCount = 0,
                     CommentCount = 0,
                     isCommented = false,
-                    ImageUrl = null
+                    ImageUrl = dto.image_url
                 }).ToList();
 
                 return postModelList;
@@ -126,16 +127,32 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected async Task SubscribeAsync()
         {
+            IsSubscribingToNewsletter = true;
 
             try
             {
                 var success = await NewsLetterSubscriptionService.SubscribeAsync(SubscriptionModel);
                 SubscriptionStatusMessage = success ? "Subscribed successfully!" : "Failed to subscribe.";
+                if (success)
+                {
+                    Snackbar.Add("Subscription successful!", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("Failed to subscribe. Please try again later.", Severity.Error);
+                }
+
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Newsletter subscription failed.");
                 SubscriptionStatusMessage = "An error occurred while subscribing.";
+                Snackbar.Add($"Failed to subscribe: {ex.Message}", Severity.Error);
+
+            }
+            finally
+            {
+                IsSubscribingToNewsletter = false;
             }
         }
         private async Task<AdModel> GetAdAsync()
