@@ -128,9 +128,9 @@
    <div class="card-container side-padding">
         @foreach (var news in moreArticleList)
         {
-        <div class="news-card-wrapper @(news == moreArticleList.Last() ? "" : "with-divider")"> 
+         <div class="news-card-wrapper @(news == moreArticleList.Last() ? "" : "with-divider")">  
             <NewsCard news="news" IsHorizontal="false" />
-        </div>
+         </div> 
         }
         </div>
     </MudItem>
