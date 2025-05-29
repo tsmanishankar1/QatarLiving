@@ -23,6 +23,7 @@ using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 using QLN.Common.Infrastructure.IService;
 using Microsoft.AspNetCore.Authorization;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -145,14 +146,14 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+        RoleClaimType = ClaimTypes.Role 
     };
 
-    options.MapInboundClaims = false;
 
-    options.TokenValidationParameters.RoleClaimType = "role";
-    options.TokenValidationParameters.NameClaimType = "name";
+    options.MapInboundClaims = false; 
 });
+
 #endregion
 
 builder.Services.AddAuthorization();

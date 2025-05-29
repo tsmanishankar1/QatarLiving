@@ -1,8 +1,6 @@
 ﻿using Dapr.Actors;
 using Dapr.Actors.Client;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using QLN.Common.DTO_s;
 using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.IService.ISubscriptionService;
 using QLN.Common.Infrastructure.Model;
