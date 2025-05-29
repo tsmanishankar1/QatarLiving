@@ -9,6 +9,7 @@ using Azure.Search.Documents.Indexes.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using QLN.SearchService.IndexModels;
+using QLN.SearchService.Models;
 
 namespace QLN.SearchService
 {
@@ -35,7 +36,7 @@ namespace QLN.SearchService
             _indexClient = indexClient ?? throw new ArgumentNullException(nameof(indexClient));
             _config = config ?? throw new ArgumentNullException(nameof(config));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _modelsAssembly = typeof(ClassifiedIndex).Assembly;
+            _modelsAssembly = typeof(ClassifiedsIndex).Assembly;
         }
 
         public async Task InitializeAsync()
@@ -118,14 +119,11 @@ namespace QLN.SearchService
                 throw new ArgumentException(msg, nameof(vertical));
             }
 
-            var singular = vertical.EndsWith("s", StringComparison.OrdinalIgnoreCase)
-                ? vertical[..^1]
-                : vertical;
-
+            // Use the vertical name as-is (Title-cased) to build the model type name:
             var typeName = CultureInfo.InvariantCulture
-                .TextInfo.ToTitleCase(singular.Trim()) + "Index";
+                .TextInfo.ToTitleCase(vertical) + "Index";
 
-            var fullName = $"QLN.SearchService.IndexModels.{typeName}";
+            var fullName = $"QLN.SearchService.Models.{typeName}";
             _logger.LogDebug("Resolving CLR type '{FullName}' for vertical '{Vertical}'", fullName, vertical);
 
             var type = _modelsAssembly.GetType(fullName, throwOnError: false);

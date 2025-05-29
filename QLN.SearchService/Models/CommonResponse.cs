@@ -9,7 +9,7 @@ namespace QLN.SearchService.Models
     public class CommonResponse
     {
         public string VerticalName { get; set; } = string.Empty;
-        public List<ClassifiedIndex>? ClassifiedsItems { get; set; }
+        public List<ClassifiedsIndex>? ClassifiedsItems { get; set; }
     }
 
     /// <summary>
@@ -18,6 +18,6 @@ namespace QLN.SearchService.Models
     public class CommonIndexRequest
     {
         public string VerticalName { get; set; } = string.Empty;
-        public ClassifiedIndex? ClassifiedsItem { get; set; }
+        public ClassifiedsIndex? ClassifiedsItem { get; set; }
     }
 }

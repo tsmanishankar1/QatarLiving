@@ -8,6 +8,7 @@ using QLN.SearchService.IRepository;
 using QLN.SearchService.IService;
 using QLN.SearchService.Repository;
 using QLN.SearchService.Service;
+using QLN.SearchService.ServiceConfiguration;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,11 +24,7 @@ builder.Services.AddSingleton(sp =>
         new AzureKeyCredential(s.ApiKey)
     );
 });
-
-builder.Services.AddScoped<ISearchRepository, SearchRepository>();
-builder.Services.AddScoped<ISearchService, SearchService>();
-builder.Services.AddSingleton<ISearchIndexInitializer, SearchIndexInitializer>();
-
+builder.Services.SearchConfiguration(builder.Configuration);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -51,6 +48,8 @@ if (app.Environment.IsDevelopment())
 
 var common = app.MapGroup("/api/{vertical}");
 common.MapCommonIndexingEndpoints();
+app.MapGroup("/api/analytics")
+   .MapAnalyticsEndpoints();
 
 app.UseHttpsRedirection();
 app.Run();

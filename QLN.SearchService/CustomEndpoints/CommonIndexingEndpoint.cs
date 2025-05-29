@@ -1,5 +1,4 @@
-﻿// QLN.SearchService.CustomEndpoints/CommonIndexingEndpoints.cs
-using System;
+﻿using System;
 using System.Linq;
 using Azure;
 using Microsoft.AspNetCore.Http;
@@ -9,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using QLN.SearchService.IService;
 using QLN.SearchService.IndexModels;
 using QLN.SearchService.Models;
+using System.Data;
 
 namespace QLN.SearchService.CustomEndpoints
 {
@@ -16,7 +16,7 @@ namespace QLN.SearchService.CustomEndpoints
     {
         public static RouteGroupBuilder MapCommonIndexingEndpoints(this RouteGroupBuilder group)
         {
-            // ─────────── SEARCH ───────────
+            // SEARCH
             group.MapPost("/search", async (
                     [FromRoute] string vertical,
                     [FromBody] SearchRequest req,
@@ -25,127 +25,79 @@ namespace QLN.SearchService.CustomEndpoints
                 ) =>
             {
                 var logger = logFac.CreateLogger("CommonIndexing");
-
                 if (req is null)
-                {
-                    logger.LogWarning("Search called with null payload on '{Vertical}'", vertical);
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Bad Request",
-                        Detail = "Search payload is required.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{vertical}/search"
-                    });
-                }
+                    return Results.BadRequest(new ProblemDetails { Title = "Bad Request", Detail = "Payload required", Status = 400 });
 
                 try
                 {
-                    var items = await svc.Search(vertical, req);
-                    var response = new CommonResponse
+                    var items = await svc.SearchAsync(vertical, req);
+                    var resp = new CommonResponse
                     {
                         VerticalName = vertical,
                         ClassifiedsItems = items.ToList()
                     };
-                    return Results.Ok(response);
+                    return Results.Ok(resp);
                 }
                 catch (ArgumentException ex)
                 {
-                    logger.LogWarning(ex, "Invalid vertical '{Vertical}' in search", vertical);
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Vertical",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{vertical}/search"
-                    });
+                    logger.LogWarning(ex, "Invalid vertical '{Vertical}'", vertical);
+                    return Results.BadRequest(new ProblemDetails { Title = "Invalid Vertical", Detail = ex.Message, Status = 400 });
+                }
+                catch (RequestFailedException ex)
+                {
+                    logger.LogError(ex, "Azure Search error on '{Vertical}'", vertical);
+                    var status = ex.Status >= 400 && ex.Status < 600
+                        ? ex.Status
+                        : StatusCodes.Status502BadGateway;
+                    return Results.Problem(
+                        title: "Search Error",
+                        detail: ex.Message,
+                        statusCode: status,
+                        instance: $"/api/{vertical}/search"
+                    );
                 }
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Search error on '{Vertical}'", vertical);
-                    return Results.Problem(
-                        title: "Search Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/{vertical}/search"
-                    );
+                    return Results.Problem("Search Error", ex.Message, 500);
                 }
             })
             .WithName("CommonSearch")
-            .WithTags("Indexing")
-            .WithSummary("Full-text search returning CommonResponse")
-            .Produces<CommonResponse>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status500InternalServerError);
+            .WithTags("Indexing");
 
-            // ─────────── UPLOAD ───────────
+            // UPLOAD
             group.MapPost("/upload", async (
-                    [FromBody] CommonIndexRequest request,
+                    [FromBody] CommonIndexRequest req,
                     [FromServices] ISearchService svc,
                     [FromServices] ILoggerFactory logFac
                 ) =>
             {
                 var logger = logFac.CreateLogger("CommonIndexing");
-
-                if (string.IsNullOrWhiteSpace(request.VerticalName)
-                    || (request.VerticalName.Equals(Constants.Constants.classifieds, StringComparison.OrdinalIgnoreCase)
-                        && request.ClassifiedsItem is null))
-                {
-                    logger.LogWarning("Upload called with invalid request: {@Request}", request);
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Bad Request",
-                        Detail = "VerticalName and corresponding item must be provided.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{request.VerticalName}/upload"
-                    });
-                }
-
                 try
                 {
-                    var msg = await svc.Upload(request);
+                    var msg = await svc.UploadAsync(req);
                     return Results.Ok(msg);
                 }
                 catch (ArgumentException ex)
                 {
-                    logger.LogWarning(ex, "Invalid upload request for vertical '{Vertical}'", request.VerticalName);
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Vertical or Payload",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{request.VerticalName}/upload"
-                    });
+                    logger.LogWarning(ex, "Invalid upload for '{Vertical}'", req.VerticalName);
+                    return Results.BadRequest(new ProblemDetails { Title = "Bad Request", Detail = ex.Message, Status = 400 });
                 }
                 catch (RequestFailedException ex)
                 {
-                    logger.LogError(ex, "Azure Search error on upload for '{Vertical}'", request.VerticalName);
-                    return Results.Problem(
-                        title: "Azure Search Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status502BadGateway,
-                        instance: $"/api/{request.VerticalName}/upload"
-                    );
+                    logger.LogError(ex, "Azure Search error on upload for '{Vertical}'", req.VerticalName);
+                    return Results.Problem("Azure Search Error", ex.Message, 502);
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Unexpected upload error for '{Vertical}'", request.VerticalName);
-                    return Results.Problem(
-                        title: "Indexing Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/{request.VerticalName}/upload"
-                    );
+                    logger.LogError(ex, "Unexpected upload error for '{Vertical}'", req.VerticalName);
+                    return Results.Problem("Indexing Error", ex.Message, 500);
                 }
             })
             .WithName("CommonUpload")
-            .WithTags("Indexing")
-            .WithSummary("Upload a single item via CommonIndexRequest")
-            .Produces<string>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status502BadGateway)
-            .ProducesProblem(StatusCodes.Status500InternalServerError);
+            .WithTags("Indexing");
 
-            // ─────────── GET BY ID ───────────
+            // GET BY ID
             group.MapGet("/{id}", async (
                     [FromRoute] string vertical,
                     [FromRoute] string id,
@@ -154,128 +106,58 @@ namespace QLN.SearchService.CustomEndpoints
                 ) =>
             {
                 var logger = logFac.CreateLogger("CommonIndexing");
-
-                if (string.IsNullOrWhiteSpace(id))
-                {
-                    logger.LogWarning("GetById called with empty id on '{Vertical}'", vertical);
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Bad Request",
-                        Detail = "Document ID is required.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{vertical}/{id}"
-                    });
-                }
-
                 try
                 {
-                    var doc = await svc.GetById(vertical, id);
+                    var doc = await svc.GetByIdAsync(vertical, id);
                     return doc is null
-                        ? Results.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = $"No document '{id}' in '{vertical}'.",
-                            Status = StatusCodes.Status404NotFound,
-                            Instance = $"/api/{vertical}/{id}"
-                        })
+                        ? Results.NotFound(new ProblemDetails { Title = "Not Found", Detail = $"No '{id}' in '{vertical}'", Status = 404 })
                         : Results.Ok(doc);
                 }
                 catch (ArgumentException ex)
                 {
-                    logger.LogWarning(ex, "Invalid vertical '{Vertical}' in GetById", vertical);
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Vertical",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{vertical}/{id}"
-                    });
+                    logger.LogWarning(ex, "Invalid vertical '{Vertical}'", vertical);
+                    return Results.BadRequest(new ProblemDetails { Title = "Invalid Vertical", Detail = ex.Message, Status = 400 });
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "GetById error on '{Vertical}/{Id}'", vertical, id);
-                    return Results.Problem(
-                        title: "Lookup Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/{vertical}/{id}"
-                    );
+                    logger.LogError(ex, "Lookup error for '{Vertical}/{Id}'", vertical, id);
+                    return Results.Problem("Lookup Error", ex.Message, 500);
                 }
             })
             .WithName("CommonGetById")
-            .WithTags("Indexing")
-            .WithSummary("Get document by key")
-            .Produces<ClassifiedIndex>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .ProducesProblem(StatusCodes.Status500InternalServerError);
+            .WithTags("Indexing");
 
-            // ─────────── UPDATE ───────────
+            // UPDATE (same as upload for upsert)
             group.MapPut("/update", async (
-                    [FromBody] CommonIndexRequest request,
+                    [FromBody] CommonIndexRequest req,
                     [FromServices] ISearchService svc,
                     [FromServices] ILoggerFactory logFac
                 ) =>
             {
                 var logger = logFac.CreateLogger("CommonIndexing");
-                var vertical = request.VerticalName?.ToLowerInvariant() ?? "";
-
-                // Validate
-                if (vertical != Constants.Constants.classifieds || request.ClassifiedsItem is null)
-                {
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Bad Request",
-                        Detail = "You must supply verticalName:'classifieds' and a ClassifiedsItem to update.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{vertical}/update"
-                    });
-                }
-
                 try
                 {
-                    var msg = await svc.Upload(request);
+                    var msg = await svc.UploadAsync(req);
                     return Results.Ok(msg);
                 }
                 catch (ArgumentException ex)
                 {
-                    logger.LogWarning(ex, "Invalid update request for '{Vertical}'", vertical);
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Payload",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{vertical}/update"
-                    });
+                    logger.LogWarning(ex, "Invalid update for '{Vertical}'", req.VerticalName);
+                    return Results.BadRequest(new ProblemDetails { Title = "Bad Request", Detail = ex.Message, Status = 400 });
                 }
                 catch (RequestFailedException ex)
                 {
-                    logger.LogError(ex, "Azure Search error updating '{Vertical}'", vertical);
-                    return Results.Problem(
-                        title: "Azure Search Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status502BadGateway,
-                        instance: $"/api/{vertical}/update"
-                    );
+                    logger.LogError(ex, "Azure Search error on update '{Vertical}'", req.VerticalName);
+                    return Results.Problem("Azure Search Error", ex.Message, 502);
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Unexpected error on update for '{Vertical}'", vertical);
-                    return Results.Problem(
-                        title: "Update Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/{vertical}/update"
-                    );
+                    logger.LogError(ex, "Unexpected update error for '{Vertical}'", req.VerticalName);
+                    return Results.Problem("Update Error", ex.Message, 500);
                 }
             })
             .WithName("CommonUpdate")
-            .WithTags("Indexing")
-            .WithSummary("Update an existing document")
-            .Produces<string>(200)
-            .Produces<ProblemDetails>(400)
-            .Produces<ProblemDetails>(502)
-            .ProducesProblem(500);
+            .WithTags("Indexing");
 
             return group;
         }
