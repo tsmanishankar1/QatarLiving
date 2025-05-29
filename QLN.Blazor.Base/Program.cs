@@ -31,6 +31,9 @@ builder.Services.AddWebSharedServices(builder.Configuration);
 builder.Services.Configure<ApiSettings>(
     builder.Configuration.GetSection("ApiSettings"));
 
+builder.Services.Configure<NavigationPath>(
+    builder.Configuration.GetSection("NavigationPath"));
+
 
 builder.Services.AddHttpClient<ICommunityService, CommunityService>(client =>
 {
