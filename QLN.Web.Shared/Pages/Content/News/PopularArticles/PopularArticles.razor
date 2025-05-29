@@ -4,10 +4,10 @@
 <div class="popular-articles">
     <h3 class="title">Most Popular Articles</h3>
 
-     @foreach (var article in Articles)
+     @foreach (var article in Articles.Take(5))
     {
         <div class="article-item">
-             <img src="@article.ImageUrl" alt="News Image" class="news-image" />
+             <img src="@article.ImageUrl" alt="News Image" class="article-image" />
             <div class="article-text">@article.Title</div>
         </div>
     }
@@ -24,8 +24,8 @@
 
     .title {
         color: var(--color-primary);
-        font-size: 20px;
-        font-weight: 700;
+        font-size: 25px;
+        font-weight: 600;
         margin-bottom: 16px;
         border-left: 4px solid #004374;
         padding-left: 8px;
@@ -39,7 +39,7 @@
     padding: 8px 0;
 }
 
-.news-image {
+.article-image {
     width: 177px;
     height: 100px;
     @* object-fit: contain; *@
@@ -58,9 +58,9 @@
     }
 
     .article-text {
-        font-size: 16px;
-        font-weight: 500;
-        color: #222;
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--color-text-heading);
     }
 </style>
 
