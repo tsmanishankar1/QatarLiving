@@ -28,7 +28,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints
                 .MapContentQueueEndpoint()
                 .MapGetPostBySlugEndpoint()
                 .MapGetEventBySlugEndpoint()
-                .MapGetNewsBySlugEndpoint();
+                .MapGetNewsBySlugEndpoint()
+                .MapPostCommentEndpoint()
+                .MapPostForumPostEndpoint();
 
             return group;
         }

@@ -1,11 +1,12 @@
-using QLN.Web.Shared;
-using QLN.Web.Shared.Pages;
-using MudBlazor.Services;
-using QLN.Web.Shared.Services;
+using GoogleAnalytics.Blazor;
 using Microsoft.AspNetCore.Components.Authorization;
-using QLN.Web.Shared.Services.Interface;
+using MudBlazor.Services;
+using QLN.Web.Shared;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.MockServices;
+using QLN.Web.Shared.Pages;
+using QLN.Web.Shared.Services;
+using QLN.Web.Shared.Services.Interface;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
@@ -47,6 +48,11 @@ builder.Services.AddHttpClient<INewsLetterSubscription, NewsLetterSubscriptionSe
 builder.Services.AddScoped<IAdService, AdMockService>();
 builder.Services.AddHttpClient<IPostInteractionService, PostInteractionService>();
 builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddGBService(options =>
+{
+    options.TrackingId = builder.Configuration["GoogleAnalytics:TrackingId"];
+});
 
 var app = builder.Build();
 

@@ -1,4 +1,5 @@
-﻿using QLN.Common.Infrastructure.DTO_s;
+﻿using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.DTO_s;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,5 +18,7 @@ namespace QLN.Common.Infrastructure.IService.BannerService
         Task<CategoriesResponse?> GetCategoriesFromDrupalAsync(CancellationToken cancellationToken);
         Task<List<CommunityPost>?> GetCommunitiesFromDrupalAsync(string forum_id, CancellationToken cancellationToken, string? order = "asc", int? page_size = 10, int? page = 1);
         Task<ContentPost?> GetNewsBySlugAsync(string slug, CancellationToken cancellationToken);
+        Task<CreateCommentResponse?> CreateCommentOnDrupalAsync(CreateCommentRequest request, CancellationToken cancellationToken);
+        Task<CreatePostResponse?> CreatePostOnDrupalAsync(CreatePostRequest request, CancellationToken cancellationToken);
     }
 }
