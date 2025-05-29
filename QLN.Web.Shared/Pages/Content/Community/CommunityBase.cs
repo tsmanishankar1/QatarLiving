@@ -87,7 +87,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
                     LikeCount = 0,
                     CommentCount = 0,
                     isCommented = false,
-                    ImageUrl = dto.image_url
+                    ImageUrl = dto.image_url,
+                    Slug = dto.slug
                 }).ToList();
 
                 return postModelList;

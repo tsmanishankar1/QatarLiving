@@ -2,6 +2,7 @@
 using Microsoft.JSInterop;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
+using QLN.Web.Shared.Models;
 
 namespace QLN.Web.Shared.Pages.Content.Community
 {
@@ -25,7 +26,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
         }
         protected void NavigateToPostDetail()
         {
-            Navigation.NavigateTo($"/content/community/post/detail/{Post.Id}");
+
+            Navigation.NavigateTo($"/content/community/post/detail/{Uri.EscapeDataString(Post.Slug)}");
         }
         protected async Task ToggleLikeAsync()
         {

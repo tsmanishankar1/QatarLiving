@@ -34,6 +34,20 @@ namespace QLN.Web.Shared.Services
                 return new List<PostListDto>();
             }
         }
+        public async Task<PostDetailsDto> GetPostBySlugAsync(string slug)
+        {
+            try
+            {
+                var url = $"api/content/post/{slug}";
+                var response = await _httpClient.GetFromJsonAsync<PostDetailsDto>(url);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"API Error: {ex.Message}");
+                return null;
+            }
+        }
 
     }
 }

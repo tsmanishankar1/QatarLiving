@@ -53,6 +53,7 @@ builder.Services.AddHttpClient<INewsLetterSubscription, NewsLetterSubscriptionSe
 //builder.Services.AddHttpClient<IAdService, AdService>();
 builder.Services.AddScoped<IAdService, AdMockService>();
 builder.Services.AddHttpClient<IPostInteractionService, PostInteractionService>();
+
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();

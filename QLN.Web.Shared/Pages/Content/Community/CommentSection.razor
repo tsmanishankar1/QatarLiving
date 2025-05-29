@@ -1,6 +1,6 @@
 ﻿@inherits CommentSectionBase
 
-@if (!Comment.isCommented)
+@if (Comment.Comments == null || !Comment.Comments.Any())
 {
     <div class="comment-section-empty">
         <div class="post-title">Comments</div>
@@ -49,7 +49,7 @@ else
         @foreach (var c in Comment.Comments)
         {
             <div class="comment-item @(c.IsByCurrentUser ? "my-comment" : "other-comment")">
-                <img src="/images/content/Sample.svg" alt="User Avatar" class="post-footer-avatar" />
+                <img src="@(c.Avatar ?? "/images/content/Sample.svg")" alt="User Avatar" class="post-footer-avatar" />
                 <div class="comment-content">
                     <div class="comment-header">
                         <div class="comment-meta">
