@@ -36,13 +36,12 @@ steps:
     runtimeStack: 'dotnetcore:8.0'
 
 - task: ManualValidation@1
-      inputs:
-        notifyUsers: 'Front End - QA Release Approval'
-        approvers: 'Front End - QA Release Approval' # string. Approvers. 
-        allowApproversToApproveTheirOwnRuns: true # boolean. Allow approvers to approve their own run. Default: true.
-        instructions: 'Please review and approve the deployment to proceed.'
-        onTimeout: 'reject'
-        timeout: '43200' # 12 hours in seconds
+  inputs:
+    notifyUsers: 'Front End - QA Release Approval'
+    approvers: 'Front End - QA Release Approval'
+    allowApproversToApproveTheirOwnRuns: true
+    instructions: 'Please review and approve the deployment to proceed.'
+    onTimeout: 'reject'
 
 - task: AzureContainerApps@1
   inputs:
