@@ -6,6 +6,7 @@
 @using QLN.Web.Shared.Pages.Content.Events.SearchSection
 @using QLN.Web.Shared.Pages.Content.Events.EventsList
 @using QLN.Web.Shared.Components.FeaturedEventCard
+@inherits EventsComponentBase
 
 <div style="width: 100%;background-color: var(--color-secondary-background);">
     <div style="max-width: 1200px; margin: 0 auto;">
@@ -13,7 +14,7 @@
 
             <!-- Carousel Banner -->
             <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
-                Transition="Transition.Slide" />
+                            Transition="Transition.Slide" />
 
 
         </div>
@@ -21,7 +22,7 @@
         <div class="responsive-container">
 
             <SearchSection />
-            <EventsList />
+            <EventsList Items="ListOfEvents" />
         </div>
     </div>
 </div>

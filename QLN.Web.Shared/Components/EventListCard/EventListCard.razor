@@ -1,28 +1,35 @@
 @inherits EventListCardBase
-
+@using System.Globalization
 <div class="Event-list-card" @onclick="() => OnClick.InvokeAsync(Item)">
     <div class="image-wrapper">
         <img src="@Item.ImageUrl" class="card-img" alt="@Item.Title" />
-        <div class="date">
-            @Item.StartDate.ToString("dd MMM") to @Item.EndDate.ToString("dd MMM")
-        </div>
+        @if (!string.IsNullOrEmpty(Item.EventStart) && !string.IsNullOrEmpty(Item.EventEnd))
+        {
+            <div class="date">
+                @Item.EventStart.ToString("dd MMM") to @Item.EventEnd.ToString("dd MMM")
+            </div>
+        }
     </div>
 
     <div class="card-body">
-        <div class="category">@Item.Category</div>
+        <div class="category">@Item.EventCategory</div>
 
         <h3 class="title">@Item.Title</h3>
-        <p class="description">@Item.Description</p>
+        <p class="description" style="text-overflow:ellipsis">@Item.Description</p>
 
-        <div class="location">
-            <MudIcon Icon="@Icons.Material.Rounded.LocationOn" Class="location-icon" />
-            <span class="location-text">@Item.Location</span>
-        </div>
-
+        @if (!string.IsNullOrEmpty(Item.EventLocation))
+        {
+            <div class="location">
+                <MudIcon Icon="@Icons.Material.Rounded.LocationOn" Class="location-icon" />
+                <span class="location-text">@Item.EventLocation</span>
+            </div>
+        }
+        <!--
         <div class="price">
             <span>@Item.PriceMin.ToString("0") - @Item.PriceMax.ToString("0")</span>
             <span class="currency">QAR</span>
         </div>
+         -->
     </div>
 </div>
 
@@ -98,7 +105,6 @@
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
-
     }
 
     .location {
@@ -121,10 +127,10 @@
         color: var(--color-primary);
     }
 
-    .price .currency {
-        font-size: 14px;
-        font-weight: 500;
-        margin-left: 4px;
-        color: var(--color-primary);
-    }
+        .price .currency {
+            font-size: 14px;
+            font-weight: 500;
+            margin-left: 4px;
+            color: var(--color-primary);
+        }
 </style>

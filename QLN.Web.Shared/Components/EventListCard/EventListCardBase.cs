@@ -1,15 +1,15 @@
 using Microsoft.AspNetCore.Components;
-using System;
+using QLN.Common.Infrastructure.DTO_s;
 
 namespace QLN.Web.Shared.Components.EventListCard
 {
-    public partial class EventListCardBase : ComponentBase
+    public class EventListCardBase : ComponentBase
     {
         [Parameter]
-        public EventItem Item { get; set; } = new();
+        public ContentEvent Item { get; set; } = new();
 
         [Parameter]
-        public EventCallback<EventItem> OnClick { get; set; }
+        public EventCallback<ContentEvent> OnClick { get; set; }
 
         public class EventItem
         {

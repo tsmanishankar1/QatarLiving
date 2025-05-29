@@ -16,7 +16,7 @@
         Task<HttpResponseMessage?> GetEventBySlugAsync(string eventSlug);
 
         /// <summary>
-        /// Gets Content Events Categories and Locationsg.
+        /// Gets Content Events Categories and Locations.
         /// </summary>
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetEventCategAndLoc();
