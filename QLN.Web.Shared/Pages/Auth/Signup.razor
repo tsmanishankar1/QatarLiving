@@ -929,7 +929,7 @@
         }
         finally
         {
-            _emailCodeVerifying = false;
+             _phoneCodeVerifying = false;
         }
     }
     private void CountdownCallback(object? state)
@@ -1079,8 +1079,15 @@
     .verify-button {
         background-color: var(--color-accent);
         color: white;
-        min-width: 70px;
-        padding-right: 2px;
+        min-width: 64px;
+        min-height: 28px;
+        padding: 0px 12px 0px 12px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        border-radius: 4px;
+        box-shadow: none !important;
     }
 
         .verify-button:disabled {
@@ -1123,19 +1130,19 @@
     }
 
     .selected-country-flag {
-        width: 30px;
-        height: 22px;
+        width: 20px;
+        height: 20px;
         margin-right: 5px;
         border-radius: 50%;
         border: 1px solid #ccc;
-        object-fit: cover;
+        object-fit: fill;
         display: inline-block;
     }
 
     .country-option {
         display: flex;
         align-items: center;
-        padding: 8px;
+        padding: 8px 6px 8px 6px;
     }
 
     .country-flag {
@@ -1147,8 +1154,8 @@
 
     .country-code-text {
         white-space: nowrap;
-        font-size: 18px;
-        margin-bottom: 4px;
+        font-size: 15px;
+        font-family: 500;
     }
 
     .mud-select .mud-select-input {

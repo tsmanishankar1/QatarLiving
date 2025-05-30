@@ -1,11 +1,14 @@
 ﻿namespace QLN.Common.Infrastructure.Constants
 {
-    public static class ContentConstants
+    public static class DrupalContentConstants
     {
         public const string LandingPath = "/qlnapi/landing";
         public const string EventsPath = "/qlnapi/events";
         public const string CategoriesPath = "/qlnapi/categories";
         public const string CommunityPath = "/qlnapi/community";
+        public const string CommentsSavePath = "/qlnapi/comment/save";
+        public const string PostsSavePath = "/qlnapi/node/save";
+        public const string ChangeLikeStatusPath = "/qlnapi/node/like";
 
         // News
         public const string QlnNewsNewsCommunity = "qln_news_news_community";
@@ -41,6 +44,9 @@
 
         // Daily
         public const string QlnContentsDaily = "qln_contents_daily";
+
+        // Community
+        public const string QlnCommunityMorePosts = "qln_community_post";
 
         // Slugs
         public const string GetEventBySlugPath = "/qlnapi/node";
