@@ -1,12 +1,13 @@
 @using MudBlazor
 @inherits CommunitySearchBarSectionBase
 @using QLN.Web.Shared.Components.CustomSelect
+@using QLN.Web.Shared.Components.NewCustomSelect
 
 <MudPaper Elevation="0" Class="py-4 custom-paper">
     <MudContainer MaxWidth="MaxWidth.False">
-        <div class="d-flex flex-column flex-md-row align-items-center px-4">
+        <div class="d-flex flex-column flex-md-row align-items-center px-4 gap-3 gap-md-0">
             <!-- Search Field -->
-            <div style="flex: 4;">
+            <div class="flex-grow-1 flex-md-grow-4 w-100 w-md-auto">
                 <MudTextField T="string" Variant="Variant.Outlined" Placeholder="Search..."
                               FullWidth="true" Adornment="Adornment.Start"
                               AdornmentIcon="@Icons.Material.Filled.Search"
@@ -15,20 +16,24 @@
             </div>
 
             <!-- Category Dropdown -->
-            <div style="flex: 2.2;">
-                <CustomSelect TItem="string"
-                              Options="categoryOptions"
-                              SelectedItem="selectedCategory"
-                              SelectedItemChanged="v => selectedCategory = v"
-                              Placeholder="Category"
-                              IsDisabled="false"
-                              Padding="18px 10px"
-                               BorderRadius="0px" 
-                              />
+            <div class="flex-grow-1 flex-md-grow-2_2 w-100 w-md-auto ms-md-0">
+                <NewCustomSelect TItem="SelectOption"
+                                 Items="@CategorySelectOptions"
+                                 Label="Category"
+                                 Placeholder="Choose"
+                                 SelectedId="@SelectedCategoryId"
+                                 SelectedIdChanged="id => SelectedCategoryId = id"
+                                 GetLabel="x => x.Label"
+                                 GetId="x => x.Id"
+                                 BorderRadius="1px"
+                                 Padding="8px 10px" />
+
+
+
             </div>
 
             <!-- Search Button -->
-            <div style="flex: 1.2;">
+            <div class="flex-grow-1 flex-md-grow-1_2 w-100 w-md-auto ms-md-0">
                 <MudButton Variant="Variant.Filled" FullWidth="true" OnClick="PerformSearch"
                            Disabled="@loading"
                            Style="height: 56px; color: var(--color-text-white);border-radius: 5px; background-color: var(--color-accent);text-transform: capitalize;">
@@ -50,12 +55,52 @@
     .custom-paper {
         background-color: var(--color-secondary-grey-container);
         border-radius: 12px;
-        height: 120px;
-        padding: 40px 70px;
-        display:flex;
-        justify-content:center;
-        align-items:center;
-        margin-top:20px;
+        height: auto;
+        min-height: 120px;
+        padding: 20px 30px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
     }
 
+
+        .custom-paper .d-flex {
+            gap: 16px;
+        }
+
+    .select-field {
+        width: 255px;
+    }
+
+    @@media (min-width: 600px) {
+        .custom-paper {
+            padding: 40px 70px;
+            height: 120px;
+        }
+
+            .custom-paper .d-flex {
+                gap: 0 !important;
+            }
+
+            .custom-paper .ms-md-0 {
+                margin-left: 0 !important;
+            }
+    }
+
+    @@media (min-width: 601px) and (max-width: 950px) {
+        .custom-paper {
+            height: 210px;
+            padding: 40px 70px;
+        }
+    }
+
+
+
+    @@media (min-width: 1010px) and (max-width: 1024px) {
+
+        .select-field {
+            width: 220px !important;
+        }
+    }
 </style>

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace QLN.Web.Shared.Models
+﻿namespace QLN.Web.Shared.Model
 {
     public class PostModel
     {
@@ -14,11 +8,28 @@ namespace QLN.Web.Shared.Models
         public string? ImageUrl { get; set; }
         public string BodyPreview { get; set; }
         public string Author { get; set; }
+        public string slug { get; set; }
         public DateTime Time { get; set; }
         public int LikeCount { get; set; }
         public int CommentCount { get; set; }
         public bool isCommented { get; set; }
+        public string Slug { get; set; } 
+        public List<CommentModel> Comments { get; set; } = new();
+    }
 
+    public class PostDetailsModel
+    {
+        public string Id { get; set; }
+        public string Category { get; set; }
+        public string Title { get; set; }
+        public string? ImageUrl { get; set; }
+        public string BodyPreview { get; set; }
+        public string Author { get; set; }
+        public DateTime Time { get; set; }
+        public int LikeCount { get; set; }
+        public int CommentCount { get; set; }
+        public bool isCommented { get; set; }
+        public string Slug { get; set; }
         public List<CommentModel> Comments { get; set; } = new();
     }
 
@@ -32,5 +43,50 @@ namespace QLN.Web.Shared.Models
         public int UnlikeCount { get; set; }
         public bool IsByCurrentUser { get; set; }
     }
+    public class PostListResponse
+    {
+        public List<PostListDto> Posts { get; set; }
+    }
+
+    public class PostListDto
+    {
+        public string forum_id { get; set; }
+        public string forum_category { get; set; }
+        public string user_name { get; set; }
+        public string nid { get; set; }
+        public string date_created { get; set; }
+        public string title { get; set; }
+        public string slug { get; set; }
+        public string description { get; set; }
+        public string image_url { get; set; }
+        public List<CommentDto> comments { get; set; } = new();
+
+    }
+    public class PostDetailsDto
+    {
+        public string forum_id { get; set; }
+        public string category { get; set; }
+        public string user_name { get; set; }
+        public string nid { get; set; }
+        public string date_created { get; set; }
+        public string title { get; set; }
+        public string slug { get; set; }
+        public string description { get; set; }
+        public string image_url { get; set; }
+        public List<CommentDto> comments { get; set; } = new();
+
+    }
+    public class CommentDto
+    {
+        public string comment_id { get; set; } = string.Empty;
+        public string username { get; set; } = string.Empty;
+        public DateTime created_date { get; set; }
+        public string subject { get; set; } = string.Empty;
+        public int LikeCount { get; set; }
+        public int UnlikeCount { get; set; }
+        public string profile_picture { get; set; }
+
+    }
+
 
 }

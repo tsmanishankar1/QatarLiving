@@ -11,7 +11,7 @@ using Dapr.Client;
 using QLN.Common.Infrastructure.IService;
 using Microsoft.OpenApi.Models;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
-using Dapr.Client;
+
 using QLN.Backend.API.ServiceConfiguration;
 using QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints;
 using QLN.Common.Swagger;
@@ -22,6 +22,7 @@ using System.Text.Json.Serialization;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 using QLN.Common.Infrastructure.IService;
 using Microsoft.AspNetCore.Authorization;
+using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 
@@ -172,8 +173,8 @@ builder.Services.AddActors(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
-// Register your subscription service
-builder.Services.AddSingleton<IExternalSubscriptionService, ExternalSubscriptionService>();
+builder.Services.AddResponseCaching();   // Register Response Caching service
+
 
 builder.Services.AddDaprClient();
 
@@ -184,7 +185,11 @@ builder.Services.ContentServicesConfiguration(builder.Configuration);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
+builder.Services.SubscriptionConfiguration(builder.Configuration);
+builder.Services.PayToPublishConfiguration(builder.Configuration);
 var app = builder.Build();
+
+app.UseResponseCaching();                // Enable the middleware
 
 if (app.Environment.IsDevelopment())
 {
@@ -211,8 +216,15 @@ var contentGroup = app.MapGroup("/api/content");
 contentGroup.MapContentLandingEndpoints();
 
 app.MapGroup("/api/subscriptions")
-   .MapSubscriptionEndpoints()
-    .RequireAuthorization(); 
+   .MapSubscriptionEndpoints();
+
+   app.MapGroup("/api/payments")
+    .MapPaymentEndpoints()
+    .RequireAuthorization();
+
+app.MapGroup("/api/PayToPublish")
+    .MapPayToPublishEndpoints();
+
 
 app.UseHttpsRedirection();
 app.UseAuthorization();

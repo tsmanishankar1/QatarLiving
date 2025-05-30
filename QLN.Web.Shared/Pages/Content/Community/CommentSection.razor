@@ -1,6 +1,6 @@
 ﻿@inherits CommentSectionBase
 
-@if (!Comment.isCommented)
+@if (Comment.Comments == null || !Comment.Comments.Any())
 {
     <div class="comment-section-empty">
         <div class="post-title">Comments</div>
@@ -49,7 +49,7 @@ else
         @foreach (var c in Comment.Comments)
         {
             <div class="comment-item @(c.IsByCurrentUser ? "my-comment" : "other-comment")">
-                <img src="/images/content/Sample.svg" alt="User Avatar" class="post-footer-avatar" />
+                <img src="@(c.Avatar ?? "/images/content/Sample.svg")" alt="User Avatar" class="post-footer-avatar" />
                 <div class="comment-content">
                     <div class="comment-header">
                         <div class="comment-meta">
@@ -74,13 +74,13 @@ else
                     <div class="post-icons">
                         <div class="like-wrapper">
                             <img src="images/content/Like.svg" class="icon" />
-                            <span style="margin-left: 4px;">@c.LikeCount</span>
+                            <span class="icon-text">@c.LikeCount</span>
                         </div>
 
                         <div class="like-wrapper">
 
                             <img src="images/content/Dislike.svg" class="icon" />
-                            <span style="margin-left: 4px;">@c.LikeCount</span>
+                            <span class="icon-text">@c.LikeCount</span>
                         </div>
                     </div>
                 </div>
@@ -137,6 +137,9 @@ else
         margin-top: 10px;
     }
 
+    .icon-text {
+        color: #00426D
+    }
     .comment-icon {
         background-color: #eef;
         margin-bottom: 0.5rem;
@@ -221,7 +224,7 @@ else
         padding: 8px;
         display: inline-flex;
         align-items: center;
-        border-radius: 6px;
+        border-radius: 16px;
         gap: 6px;
     }
 

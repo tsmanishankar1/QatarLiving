@@ -8,8 +8,11 @@
 @using QLN.Web.Shared.Pages.Content.News.VideoCards
 @using QLN.Web.Shared.Components.ViewToggleButtons
 @using QLN.Web.Shared.Pages.Content.News.MoreArticle
+@using QLN.Web.Shared.Pages.Content.News.Skeletons
 @inject IJSRuntime JSRuntime
 @using QLN.Web.Shared.Components.Carousel
+<div style="width: 100%;background-color: var(--color-secondary-background);">
+    <div style="max-width: 1500px; margin: 0 auto;">
 <MudGrid Class="full-width" Justify="Justify.Center" >
     <MudItem xs="12">
     <div class="carousel-padding">
@@ -20,9 +23,9 @@
                         Transition="Transition.Slide" />
     </div>
     </MudItem>
-    @* <MudItem xs="12" Class="d-flex justify-center py-3">
+     <MudItem xs="12" Class="d-flex justify-center py-3">
         <ViewToggleButtons Items="@_viewOptions" SelectedValue="@_selectedView" OnSelected="SetViewMode" TextClass="custom-text"/>
-    </MudItem> *@
+    </MudItem>
 
     <MudItem xs="12" Class="news-tabs-wrapper">
         <div class="news-tabs">
@@ -34,17 +37,26 @@
             }
         </div>
     </MudItem>
-
-    <!-- Main Article and MoreArticles section -->
-      <div class="news-container"> 
+       <div class="news-container">   
          <div class="side-padding" style="display: flex; flex-wrap: wrap; gap: 0px;">
     <MudItem xs="12" md="8">
         <div class="main-article">
             <div class="main-content">
-                <div class="main-category">
-                    <img src="/images/sample_news.svg" class="main-image" />
+                <div class="main-category" @onclick="@(() => onclick(topNews))">
+                    @if (isLoading){
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="400px" Width="100%" Animation="Animation.Wave" />
+                    }
+                    else{
+                    <img src="@topNews.ImageUrl" class="main-image" />
+                    }
+                     @if (isLoading){
+                    <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="100px" Animation="Animation.Wave" />
+                    <MudSkeleton Class="mb-2" SkeletonType="SkeletonType.Text" Height="30px" Width="100%" Animation="Animation.Wave" />
+                    <MudSkeleton Class="mb-2" SkeletonType="SkeletonType.Text" Height="30px" Width="200px" Animation="Animation.Wave" />
+                    }
+                    else{
                     <span class="category-style">Sports</span>
-                    <h2 class="main-title">Al Sadd lift fourth Qatar Cup title with thrilling win over Al Duhail</h2>
+                    <h2 class="main-title">@topNews.Title</h2>
                     <div class="author-wrapper">
                         <div class="main-author">
                             Ismat Zerin • <a href="#" class="main-source">Qatar Living</a>  
@@ -55,28 +67,46 @@
                             <span class="count">12</span>
                         </div> 
                     </div>
+                    }
                 </div>
             </div>
         </div>
     </MudItem>
 
     <MudItem xs="12" md="4">
-        <MoreArticle />
+        <MoreArticle Articles="@moreArticleList" loading="@isLoading" selectedTab="@SelectedTab"/>
     </MudItem>
      </div>  
     <!-- Recommended Cards -->
    <MudItem xs="12" Class="side-padding py-6">
-   <div class="flex-container">
-        @for (int i = 0; i < 3; i++)
+    @if (isLoading){
+        <div class="skeleton-container">
+         @for (int i = 0; i < 3; i++)
         {
-              <div class="news-card-wrapper @(i < 4 ? "with-divider" : "")"> 
-                <NewsCard Item="GoldNews" IsHorizontal="false" />
-                 </div> 
-        } 
-        <div class="newsletter-wrapper">
-        <NewsLetter />
-        </div>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Elevation="0" Class="p-2 mx-2" Style="max-width: 214px;">
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="120px" Width="214px;" Animation="Animation.Wave" Class="mb-3 rounded" />
+                <MudSkeleton SkeletonType="SkeletonType.Text" Height="20px" Width="100%" Animation="Animation.Wave" Class="mb-1" />
+                <MudSkeleton SkeletonType="SkeletonType.Text" Height="20px" Width="80%" Animation="Animation.Wave" />
+            </MudPaper>
+        </MudItem>
+        }
+        <MudSkeleton SkeletonType="SkeletonType.Text" Height="400px" Width="500px" Animation="Animation.Wave" Class="mb-1 rounded" />
+        </div>  
+    }
+    else{
+   <div class="flex-container">
+        @foreach (var news in moreArticleList.Take(3))
+        {
+             <div class="@(news == moreArticleList.Last() ? "card-image-style" : "news-card-wrapper")">  
+            <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)"/>
+             </div> 
+        }
+            <div class="newsletter-wrapper"> 
+            <NewsLetter />
+            </div>
     </div>
+    }
     </MudItem>
     <!-- Video Cards -->
      <MudItem xs="12">
@@ -90,55 +120,91 @@
     </MudItem>
      </div> 
      <MudItem xs="12">
-         <div class="side-padding">
-       <VideoCards />
+         <div class="video-padding">
+        <VideoCards Articles="@moreArticleList" selectedTab="@SelectedTab" />
        </div>
      </MudItem>
 
     <!-- More Cards -->
-    <MudItem xs="12" Class="py-2 ">
+    <MudItem xs="12" Class="py-2" >
    <div class="card-container side-padding">
-        @for (int i = 0; i < 5; i++)
+        @foreach (var news in moreArticleList.Take(5))
         {
-            <div class="news-card-wrapper @(i < 4 ? "with-divider" : "")">
-                <NewsCard Item="GoldNews" IsHorizontal="false" />
-            </div>
+         <div class="@(news == moreArticleList.Last() ? "" : "news-card-wrapper")">  
+            <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)"/>
+         </div> 
         }
         </div>
     </MudItem>
     <!-- Popular Articles & Ads -->
-     <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="section-container side-padding">
+     <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="section-container">
     <MudItem xs="12">
          <div class="poular-article-container">
-            <PopularArticles />
+            <PopularArticles Articles="@moreArticleList" selectedTab="@SelectedTab"/>
             <img src="/images/classifieds/detail_ad.svg"  alt="Product Image" />
         </div>
     </MudItem>
 </MudContainer> 
+@* <div style="width: 100%;" >
+<NewsCard news="topNews" IsHorizontal="true" OnClick="() => onclick(topNews)"/>
+<NewsCard news="topNews" IsHorizontal="true" OnClick="() => onclick(topNews)"/>
+</div> *@
 
     <!-- Even Better -->
-     @* <MudItem xs="12">
-        <MudText Typo="Typo.h5">Even Better</MudText>
-        <MudGrid>
-            @for (int i = 0; i < 3; i++)
-            {
-                <MudItem xs="12" sm="6" md="4">
-                    <NewsCard Item="GoldNews" IsHorizontal="true" />
-                </MudItem>
-            }
-        </MudGrid>
-    </MudItem> *@
-    <MudGrid GutterSize="3" Class="side-padding responsive-grid">
+     <MudGrid GutterSize="3" Class="grid-padding pb-3">
+        @if(!isLoading){
+        @foreach (var news in moreArticleList.Take(9))
+        {
+            <MudItem xs="12" sm="6" md="4"> 
+                  <div class="card-wrapper">  
+                    @* <div class="@(news == moreArticleList.Last() ? "" : "news-card-wrapper")">    *@
+                    <NewsCard news="news" IsHorizontal="true" OnClick="() => onclick(news)"/>
+                    @* </div>  *@
+                 </div>  
+            </MudItem>
+        }
+        }
+    else{
     @for (int i = 0; i < 9; i++)
     {
-        <MudItem xs="12" sm="6" md="4"> 
-            <div class="card-wrapper">
-            <NewsCard Item="GoldNews" IsHorizontal="false" />
-            </div>
+        <MudItem xs="12" sm="6" md="4">
+        <MudGrid>
+        <MudItem xs="4">
+            <MudSkeleton 
+                SkeletonType="SkeletonType.Rectangle" 
+                Height="100px" 
+                Width="100%" 
+                Animation="Animation.Wave" 
+                Class="rounded" />
+        </MudItem>
+        <MudItem xs="8" Class="d-flex flex-column justify-center pl-2">
+            <MudSkeleton 
+                SkeletonType="SkeletonType.Text" 
+                Height="20px" 
+                Width="60%" 
+                Animation="Animation.Wave" 
+                Class="mb-1" />
+            <MudSkeleton 
+                SkeletonType="SkeletonType.Text" 
+                Height="20px" 
+                Width="60%" 
+                Animation="Animation.Wave" 
+                Class="mb-1" />
+            <MudSkeleton 
+                SkeletonType="SkeletonType.Text" 
+                Height="20px" 
+                Width="80%" 
+                Animation="Animation.Wave" />
+        </MudItem>
+    </MudGrid>
         </MudItem>
     }
+    }
+    </MudGrid>  
+        
 </MudGrid>
-</MudGrid>
+</div>
+</div>
 
 <style>
     .custom-text {
@@ -161,13 +227,13 @@
 .news-container{
     background-color: white;
     @* width: 100%; *@
-}
-   
-    .news-tabs {
+}   
+.news-tabs {
     width: 100%;
     display: flex;
     overflow-x: auto;
     @* padding: 8px 16px; *@
+    align-items:center;
     gap: 8px;
     white-space: nowrap;
     justify-content: space-between;
@@ -202,6 +268,11 @@
     padding-left: 0px;
     @* padding-top: 0px; *@
 }
+.grid-padding {
+    padding-left: 110px;
+    padding-right: 110px;
+    padding-top: 60px
+}
 
 
 .news-tab {
@@ -209,8 +280,8 @@
     font-family: 'Public Sans', sans-serif;
     font-weight: 600;
     font-size: 14px;
+    height:44px;
     color: var(--color-text-heading);
-    border-radius: 4px;
     cursor: pointer;
     flex-shrink: 0;
 }
@@ -239,18 +310,20 @@
     color: var(--color-primary);
 }
 .news-card-wrapper {
-    padding-right: 3px;
+    border-right: 1px solid #F0F0F0;
+    padding-right: 15px;
+    padding-left: 15px;
+}
+.card-image-style{
+    border-right: 1px solid var(--color-text-heading);
+    padding-right: 15px;
+    padding-left: 15px;
 }
 
-.news-card-wrapper.with-divider {
-    border-right: 1px solid #F0F0F0;
-    padding-right: 3px;
-    padding-left: 3px;
-}
 .newsletter-wrapper {
     flex: 1;
-    min-width: 250px; /* adjust as needed */
-    padding: 0 8px;    /* optional for spacing */
+    max-width: 453px; 
+    padding: 0 8px;   
     box-sizing: border-box;
 }
 
@@ -270,6 +343,8 @@
     border-bottom: 2px solid var(--color-accent);
     font-family: 'Public Sans', sans-serif;
     font-weight: 600;
+    align-items:center;
+    height: 44px;
     font-size: 14px;
 }
 .multiple-container {
@@ -300,6 +375,11 @@
     padding-left: 98px;
     padding-right: 98px;
 }
+.video-padding {
+    padding-left: 98px;
+    padding-right: 98px;
+    background-color: #FAFAFA;
+}
 
 .comment-badge {
     display: flex;
@@ -322,10 +402,18 @@
     justify-content: space-between;
     display: flex;
     flex-wrap: wrap;
+    gap: 0px; 
+    align-items: center;
+}
+.skeleton-container{
+    justify-content: space-between;
+    display: flex;
+    align-items: center;
+    @* flex-wrap: wrap; *@
     gap: 30px; 
 }
 .card-container {
-    justify-content: space-between;
+    @* justify-content: space-between; *@
     display: flex;
     flex-wrap: wrap;
     gap: 0px; 
@@ -335,24 +423,28 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    max-width: 400px;
+    @* max-width: 400px; *@
 }
-.mud-grid-spacing-xs-6 {
+@* .mud-grid-spacing-xs-6 {
     width: calc(100% + 24px);
     margin-left: -24px;
     margin-top: 0px; 
-}
+} *@
 .poular-article-container{
      display: flex;
     flex-direction: row;
-    gap: 30px;
+    justify-content: space-between;
+    gap: 150px;
     align-items: center;
     padding: 0px ;
     width: 100%;
+    padding-left: 140px; 
+    padding-right: 160px;
 }
 .card-wrapper {
-    display: flex;
-    justify-content: center;
+    @* display: flex; *@
+    @* justify-content: center; *@
+    @* width: 340px; *@
 }
 
 
@@ -380,12 +472,14 @@
         padding-left: 16px;
         padding-right: 16px;
     }
- .horizontal-scroll-wrapper {
+    .video-padding {
+        padding-left: 16px;
+        padding-right: 16px;
+        background-color: #FAFAFA;
+    }
+    .horizontal-scroll-wrapper {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-    }
-    .news-card-wrapper.with-divider {
-        border-right: none;
     }
     .ad-style{
         padding-left: 200px;
@@ -397,6 +491,12 @@
         gap: 12px;
         width: max-content;
     }
+    .grid-padding {
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: 60px
+}
+
 
     .news-grid > .mud-grid-item {
         flex: 0 0 auto;
@@ -411,13 +511,61 @@
         gap: 35px;
         align-items: center;
         width: 100%;
+        padding-left: 10px; 
+        padding-right: 10px;
     }
     .multiple-container {
         grid-template-columns: 1fr;
     }
     .responsive-grid {
         justify-content: center;
-        padding-right: 5px;
+         padding-left: 15px; 
     }
+     .custom-text {
+    font-weight: 600px;
+    font-size: 14px;
+    padding-left: 10px;
+    padding-right: 10px;    
+    font-family: 'Public Sans', sans-serif;
+}
+}
+@@media (max-width: 375px) {
+    .custom-text {
+        font-weight: 600; 
+        font-size: 14px;
+        padding-left: 5px;
+        padding-right: 5px;    
+        font-family: 'Public Sans', sans-serif;
+    }
+     .grid-padding {
+        padding-right: 16px;
+        padding-top: 60px;
+    }
+}
+@@media (max-width: 320px) {
+    .custom-text {
+        font-weight: 600; 
+        font-size: 14px;
+        padding-left: 2px;
+        padding-right: 2px;    
+        font-family: 'Public Sans', sans-serif;
+    }
+}
+@@media (max-width: 1024px) {
+    .poular-article-container {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;               
+        padding-left: 16px;      
+        padding-right: 16px;
+        align-items: center;  
+    }
+}
+@@media (max-width: 425px){
+        .grid-padding {
+        padding-right: 16px;
+        padding-top: 60px;
+    }
+}
 }
 </style>

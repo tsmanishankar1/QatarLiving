@@ -2,13 +2,13 @@
 @inherits PostCardBase
 @using MudBlazor
 
-<MudPaper Class="post-card" Elevation="0" @onclick="() => { if (!IsDetailView) NavigateToPostDetail(); }">
+<MudPaper Class="post-card p-4" Elevation="0" @onclick="() => { if (!IsDetailView) NavigateToPostDetail(); }">
     <div class="post-header d-flex justify-space-between align-center">
         <div class="post-tag">@Post.Category</div>
 
         <MudMenu Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopRight">
             <ActivatorContent>
-                <MudIconButton DisableRipple="true" >
+                <MudIconButton DisableRipple="true">
                     <img src="images/content/Menu.svg" alt="More" class="menu-icon" />
                 </MudIconButton>
             </ActivatorContent>
@@ -31,33 +31,50 @@
         <img src="@($"{Post.ImageUrl}")" alt="Post Image" class="post-image" />
     }
 
-    @if (!string.IsNullOrWhiteSpace(Post.BodyPreview))
+    else if (!string.IsNullOrWhiteSpace(Post.BodyPreview))
     {
         <div class="post-body">@Post.BodyPreview</div>
+    }
+    else
+    {
+
+        <MudPaper Class="pa-4 mt-8" Color="Color.Error" Elevation="0">
+            <MudText Typo="Typo.h6" Color="Color.Error">
+                Oops! Something went wrong while loading community posts.
+            </MudText>
+            <MudText Typo="Typo.body2">
+                Please try again later.
+            </MudText>
+        </MudPaper>
     }
 
     <div class="post-footer">
         <div class="post-footer-left">
             <img src="/images/content/Sample.svg" alt="User Avatar" class="post-footer-avatar" />
-            By @Post.Author • @Post.Time.ToString("MMM dd, yyyy - hh:mm tt")
+            <span class="post-meta">
+
+                <span class="author">@Post.Author  • <span class="date-time">@Post.Time.ToString("MMM dd, yyyy - hh:mm tt")</span></span>
+            </span>
+
         </div>
 
         <div class="post-icons">
-            <div class="like-wrapper">
+            <div class="like-wrapper" @onclick="ToggleLikeAsync">
 
-            <img src="images/content/Like.svg" class="icon" />
-            <span>@Post.LikeCount</span>
+                <img src="@($"images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="icon" />
+                <span class="icon-text">@Post.LikeCount</span>
             </div>
-               <div class="like-wrapper">
+            <div class="like-wrapper" @onclick="ToggleDislikeAsync">
 
-            <img src="images/content/Dislike.svg" class="icon" />
-            <span>@Post.LikeCount</span>
+                <img src="@($"images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
             </div>
+            <div class="like-wrapper" @onclick="SharePost">
 
-            <img src="images/content/Share.svg" class="icon" />
+                <img src="images/content/Share.svg" class="icon" />
+            </div>
 
             <img src="images/content/Comment.svg" class="icon" />
-            <span>@Post.CommentCount</span>
+            <span class="icon-text">@Post.CommentCount</span>
         </div>
     </div>
 </MudPaper>
@@ -81,20 +98,21 @@
 
     .post-tag {
         display: inline-block;
-        background-color: #FFF0E7;
         color: #FF7F38;
         padding: 4px 12px;
-        border-radius: 9999px;
+        border-radius: 25px;
         font-size: 12px;
         font-weight: 500;
         border: 1px solid #FF7F38;
         margin-bottom: 8px;
+        font-family: 'Public Sans', sans-serif;
     }
 
     .post-title {
-        font-size: 18px;
+        font-family: 'Public Sans', sans-serif;
+        font-size: 25px;
         font-weight: 600;
-        color: #1c1c1c;
+        color: #242424;
         margin-bottom: 10px;
     }
 
@@ -106,14 +124,46 @@
         margin-bottom: 10px;
     }
 
-    .post-body {
+    .post-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .author {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
         font-size: 14px;
-        color: #666;
+        line-height: 22px;
+        letter-spacing: 0%;
+        color: #242424;
+    }
+
+    .date-time {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 12px;
+        line-height: 18px;
+        color: #242424;
+    }
+
+    @@media (max-width: 400px) {
+        .author, .date-time {
+            font-size: 12px;
+        }
+    }
+
+    .post-body {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        color: #242424;
         margin-bottom: 12px;
-        display: -webkit-box;
-        -webkit-line-clamp: 2; 
-        -webkit-box-orient: vertical;
+        font-weight: 400;
         overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 3; 
+        -webkit-box-orient: vertical;
+        line-height: 2;
     }
 
     .post-footer {
@@ -140,9 +190,21 @@
         height: 20px;
     }
 
+        .menu-icon:hover {
+            filter: brightness(0) saturate(100%) invert(48%) sepia(86%) saturate(2087%) hue-rotate(4deg) brightness(101%) contrast(102%);
+        }
+
     .icon {
         width: 18px;
         height: 18px;
+    }
+
+    .icon-filled {
+        filter: brightness(0) saturate(100%) invert(22%) sepia(99%) saturate(7499%) hue-rotate(195deg) brightness(93%) contrast(101%) drop-shadow(0 0 1px rgba(0, 66, 109, 0.5));
+    }
+
+    .icon-text {
+        color: #00426D
     }
 
     .post-footer-left {
@@ -165,8 +227,18 @@
         padding: 8px;
         display: inline-flex;
         align-items: center;
-        border-radius: 6px;
+        border-radius: 16px;
         gap: 6px;
+    }
+
+    .share-wrapper {
+        padding: 8px;
+        display: inline-flex;
+        align-items: center;
+        border-radius: 8px;
+        gap: 8px;
+        border: 1.5px solid #F0F0F0;
+        border-color: gray;
     }
 
 </style>

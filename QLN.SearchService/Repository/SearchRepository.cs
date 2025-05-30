@@ -47,7 +47,8 @@ namespace QLN.SearchService.Repository
             var client = GetClient(vertical);
             var options = new SearchOptions
             {
-                Size = req.Top > 0 ? req.Top : 50
+                Size = req.Top > 0 ? req.Top : 50,
+                 SearchMode = SearchMode.All
             };
 
             if (req.Filters != null && req.Filters.Any())
@@ -81,9 +82,9 @@ namespace QLN.SearchService.Repository
                         if (val is JsonElement je)
                         {
                             if (je.ValueKind == JsonValueKind.Number)
-                                raw = je.GetRawText();        
+                                raw = je.GetRawText();
                             else if (je.ValueKind == JsonValueKind.String)
-                                raw = je.GetString()!;       
+                                raw = je.GetString()!;
                             else
                                 throw new NotSupportedException(
                                     $"Range filter JSON kind '{je.ValueKind}' not supported");

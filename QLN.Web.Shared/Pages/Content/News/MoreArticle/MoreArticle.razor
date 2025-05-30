@@ -1,20 +1,40 @@
 @inherits MoreArticleBase
 <div class="more-articles side-spacing" style="padding-top: 20px;">
-     <h3 class="section-heading">
+     <h3 class="section-heading" style="color: var(--color-text-heading);">
   <span class="accent-bar"></span>More Articles
 </h3>
-
-    @foreach (var article in Articles)
+    @if (loading){
+        @for (int i = 0; i < 4; i++)
+    {
+    <MudGrid Class="ps-3">
+    <MudItem xs="9">
+        <MudSkeleton SkeletonType="SkeletonType.Text" Width="80%" Height="20px" Animation="Animation.Wave" Class="mb-1 " />
+        <MudSkeleton SkeletonType="SkeletonType.Text" Width="95%" Height="20px" Animation="Animation.Wave" Class="mb-1" />
+        <MudSkeleton SkeletonType="SkeletonType.Text" Width="70%" Height="20px" Animation="Animation.Wave" />
+    </MudItem>
+    <MudItem xs="3">
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="70px" Width="100%" Animation="Animation.Wave" Class="rounded" />
+    </MudItem>
+    </MudGrid>
+    }
+    }
+    else{
+    @foreach (var article in Articles.Take(5))
     {
         <div class="article-entry">
             <div class="article-content">
-                <a href="@article.Url" class="article-title">@article.Title</a>
+                <a class="article-title" href="@($"/article/details/{Uri.EscapeDataString(article.Slug)}")">
+                    @article.Title
+                </a>
             </div>
             @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
             {
+                <div @onclick="@(() => onclick(article))">
                 <img src="@article.ImageUrl" class="article-image" />
+                </div>
             }
         </div>
+    }
     }
 </div>
 
@@ -57,7 +77,7 @@
     .article-entry {
         display: flex;
         justify-content: space-between;
-        align-items: flex-start;
+        align-items: center;
         padding: 12px 0;
         border-bottom: 1px solid #F0F0F0;
     }
@@ -77,7 +97,7 @@
         margin-bottom: 4px;
     }
 
-    .article-title {
+    @* .article-title {
         display: block;
         font-size: 16px;
         font-weight: 600;
@@ -85,7 +105,21 @@
         text-decoration: none;
         color: var(--color-text-heading);
         line-height: 1.4;
-    }
+    } *@
+    .article-title {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;               /* Number of lines to show */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-heading);
+    line-height: 1.4;
+    max-height: calc(1.4em * 3);         /* 3 lines x line-height */
+}
 
     .article-title:hover {
         text-decoration: underline;
@@ -103,6 +137,6 @@
             padding-right: 16px;
             padding-left: 16px;
         }
-        }
+    }
 </style>
 

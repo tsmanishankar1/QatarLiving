@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web; 
 using Microsoft.JSInterop;
 using MudBlazor; 
 
 namespace QLN.Web.Shared.Components.NewCustomSelect
 {
-    public class SearchSectionBase : ComponentBase
+   public class SearchSectionBase : ComponentBase, IDisposable
+
     {
         [Inject] protected IJSRuntime JSRuntime { get; set; }
 
@@ -19,6 +21,11 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
         protected bool IsMobile = false;
         protected int windowWidth;
         private bool _jsInitialized = false;
+protected ElementReference _popoverDiv;
+
+protected DotNetObjectReference<SearchSectionBase>? _dotNetRef;
+
+
 
         private const int MobileBreakpoint = 770;
 
@@ -45,12 +52,12 @@ protected async Task ApplyDatePicker()
 {
     if (_dateRange?.Start != null && _dateRange?.End != null)
     {
-        var start = _dateRange.Start.Value.ToString("dd MMM");
-        var end = _dateRange.End.Value.ToString("dd MMM");
+        var start = _dateRange.Start.Value.ToString("dd-MM-yyyy");
+        var end = _dateRange.End.Value.ToString("dd-MM-yyyy");
 
         SelectedDateLabel = (_dateRange.Start.Value.Date == _dateRange.End.Value.Date)
             ? start
-            : $"{start} - {end}";
+            : $"{start} to {end}";
 
         _showDatePicker = false; // Close picker after applying dates
         StateHasChanged();
@@ -58,18 +65,42 @@ protected async Task ApplyDatePicker()
 }
 
 
+ protected void HandleDatePickerFocusOut(FocusEventArgs e)
+    {
+        _showDatePicker = false;
+    }
 
-        protected override async Task OnAfterRenderAsync(bool firstRender)
-        {
-            if (firstRender)
-            {
-                windowWidth = await JSRuntime.InvokeAsync<int>("getWindowWidth");
-                IsMobile = windowWidth <= MobileBreakpoint;
-                await JSRuntime.InvokeVoidAsync("registerResizeHandler", DotNetObjectReference.Create(this));
-                _jsInitialized = true;
-                StateHasChanged();
-            }
-        }
+[JSInvokable]
+public void CloseDatePickerExternally()
+{
+    _showDatePicker = false;
+    StateHasChanged();
+}
+
+    public void Dispose()
+    {
+        _dotNetRef?.Dispose();
+    }
+
+      protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+    if (firstRender)
+    {
+        windowWidth = await JSRuntime.InvokeAsync<int>("getWindowWidth");
+        IsMobile = windowWidth <= MobileBreakpoint;
+        await JSRuntime.InvokeVoidAsync("registerResizeHandler", DotNetObjectReference.Create(this));
+        _jsInitialized = true;
+        StateHasChanged();
+    }
+
+    if (_showDatePicker)
+    {
+        _dotNetRef ??= DotNetObjectReference.Create(this); // ✅ Fix type here too
+        await JSRuntime.InvokeVoidAsync("registerPopoverClickAway", _popoverDiv, _dotNetRef);
+    }
+}
+
+
 
         [JSInvokable]
         public void UpdateWindowWidth(int width)

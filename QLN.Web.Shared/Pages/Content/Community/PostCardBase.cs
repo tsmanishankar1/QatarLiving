@@ -1,11 +1,8 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.JSInterop;
+using QLN.Web.Shared.Contracts;
+using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace QLN.Web.Shared.Pages.Content.Community
 {
@@ -13,9 +10,15 @@ namespace QLN.Web.Shared.Pages.Content.Community
     {
         [Inject]
         protected NavigationManager Navigation { get; set; }
+        [Inject] protected IJSRuntime JS { get; set; }
+
+        [Inject] protected IPostInteractionService PostInteractionService { get; set; }
 
         [Parameter] public PostModel Post { get; set; } = new();
         [Parameter] public bool IsDetailView { get; set; } = false;
+
+        protected bool IsLiked { get; set; } = false;
+        protected bool IsDisliked { get; set; } = false;
 
         protected void OnReport()
         {
@@ -23,7 +26,50 @@ namespace QLN.Web.Shared.Pages.Content.Community
         }
         protected void NavigateToPostDetail()
         {
-            Navigation.NavigateTo($"/content/community/post/detail/{Post.Id}");
+
+            Navigation.NavigateTo($"/content/community/post/detail/{Uri.EscapeDataString(Post.Slug)}");
         }
+        protected async Task ToggleLikeAsync()
+        {
+            var success = await PostInteractionService.LikeOrUnlikeAsync(new PostInteractionRequest
+            {
+                PostId = Guid.Parse(Post.Id),
+                IsLike = true
+            });
+
+            if (success)
+            {
+                IsLiked = !IsLiked;
+                if (IsLiked) IsDisliked = false;
+
+                Post.LikeCount += IsLiked ? 1 : -1;
+            }
+        }
+
+        protected async Task ToggleDislikeAsync()
+        {
+            var success = await PostInteractionService.LikeOrUnlikeAsync(new PostInteractionRequest
+            {
+                PostId = Guid.Parse(Post.Id),
+                IsLike = false
+            });
+
+            if (success)
+            {
+                IsDisliked = !IsDisliked;
+                if (IsDisliked) IsLiked = false;
+
+                Post.LikeCount += IsDisliked ? -1 : 1;
+            }
+        }
+        protected void SharePost()
+        {
+            var postUrl = $"{Navigation.BaseUri.TrimEnd('/')}/content/community/post/detail/{Post.Id}";
+            var request = new ShareRequest { UrlToShare = postUrl };
+            var shareUrl = ShareService.GetShareUrl(request);
+
+            JS.InvokeVoidAsync("open", shareUrl, "_blank");
+        }
+
     }
 }

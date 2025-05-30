@@ -33,25 +33,46 @@
                             </div>
 
                             <MudSelect T="string" @bind-Value="sortOption" Variant="Variant.Outlined"
-                                Class="sort-select" Dense="true" MaxHeight="40">
+                                       Class="sort-select" Dense="true">
 
-                                <MudSelectItem T="string" Value=@(null)>Default</MudSelectItem>
+                                <MudSelectItem Value=@("Default")>Default</MudSelectItem>
                                 <MudSelectItem Value=@("Popular")>Most Popular</MudSelectItem>
-                                <MudSelectItem Value=@("Recent")>Date :Recent First</MudSelectItem>
-                                <MudSelectItem Value=@("Oldest")>Date :Oldest First</MudSelectItem>
+                                <MudSelectItem Value=@("Recent")>Date : Recent First</MudSelectItem>
+                                <MudSelectItem Value=@("Oldest")>Date : Oldest First</MudSelectItem>
                             </MudSelect>
 
                         </div>
                     </div>
-
-                    @foreach (var post in PostList)
+                    @if (IsLoading)
                     {
-                        <div class="postcard-margin-top">
-
-                            <PostCard Post="post" IsDetailView="false" />
-                        </div>
-
+                        @for (int i = 0; i < 3; i++)
+                        {
+                            <div class="postcard-margin-top">
+                                <MudSkeleton Width="100%" Height="200px" Animation="Animation.Pulse" />
+                            </div>
+                        }
                     }
+                    else if (HasError)
+                    {
+                        <MudPaper Class="pa-4 mt-8" Color="Color.Error" Elevation="0">
+                            <MudText Typo="Typo.h6" Color="Color.Error">
+                                Oops! Something went wrong while loading community posts.
+                            </MudText>
+                            <MudText Typo="Typo.body2">
+                                Please try again later.
+                            </MudText>
+                        </MudPaper>
+                    }
+                    else
+                    {
+                        @foreach (var post in PostList)
+                        {
+                            <div class="postcard-margin-top">
+
+                                <PostCard Post="post" IsDetailView="false" />
+                            </div>
+
+                        }   }
                 </MudItem>
 
                 <!-- Right Section -->
@@ -64,13 +85,28 @@
                         <MudText Typo="Typo.body1" Class="newsletter-text">
                             Get The QL newsletter. Sign up to receive the top stories you need to know right now.
                         </MudText>
+                        <MudForm @ref="_form">
 
-                        <MudTextField T="string" Placeholder="Your email" Variant="Variant.Outlined"
-                            Class="newsletter-input" />
+                            <MudTextField T="string" Placeholder="Your email" Variant="Variant.Outlined"
+                                          Class="newsletter-input" @bind-Value="SubscriptionModel.Email"
+                                          For="@(() => SubscriptionModel.Email)"
+                                          Immediate="true" />
 
-                        <MudButton Variant="Variant.Filled" Class="newsletter-button">
-                            Subscribe
-                        </MudButton>
+                            <MudButton Variant="Variant.Filled"
+                                       Class="newsletter-button"
+                                       Disabled="@IsSubscribingToNewsletter"
+                                       OnClick="SubscribeAsync">
+                                @if (IsSubscribingToNewsletter)
+                                {
+                                    <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" />
+                                    @("Subscribing...")
+                                }
+                                else
+                                {
+                                    @("Subscribe")
+                                }
+                            </MudButton>
+                        </MudForm>
                     </MudPaper>
 
 
@@ -90,7 +126,7 @@
 
     .container-inner-wrapper {
         width: 100%;
-        padding: 10px 40px;
+        padding: 0px 50px 50px 50px;
     }
 
     .section-container {
@@ -153,13 +189,8 @@
 
     .sort-select {
         min-width: 180px;
-
         background-color: #FFFFFF;
     }
-
-
-
-
     .newsletter-box {
         text-align: center;
         display: flex;
@@ -168,6 +199,7 @@
         gap: 16px;
         padding: 12px;
         margin-top: 1rem;
+        max-width: 340px;
     }
 
     .newsletter-icon {
@@ -197,11 +229,23 @@
         padding: 6px 40px;
         background-color: #FF7F38;
         color: white;
+        margin-top: 16px;
     }
 
     .ad-image {
         width: 340px;
         height: 402px;
         margin-top: 18px;
+    }
+
+    @@media (max-width: 700px) and (min-width: 375px) {
+        .container-inner-wrapper {
+            padding: 0 8px 25px 8px;
+        }
+
+        .newsletter-box,
+        .ad-image {
+            max-width: 100%;
+        }
     }
 </style>

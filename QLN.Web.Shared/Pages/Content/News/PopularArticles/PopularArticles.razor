@@ -1,13 +1,14 @@
 @using System.Globalization
 @using MudBlazor
+@inherits PopularArticlesBase
 <div class="popular-articles">
     <h3 class="title">Most Popular Articles</h3>
 
-    @for (int i = 0; i < Articles.Count; i++)
+     @foreach (var article in Articles.Take(5))
     {
-        <div class="article-item">
-             <img src="/images/gold.svg" alt="News Image" class="news-image" />
-            <div class="article-text">@Articles[i]</div>
+        <div class="article-item" @onclick="@(() => onclick(article))">
+             <img src="@article.ImageUrl" alt="News Image" class="article-image" />
+            <div class="article-text">@article.Title</div>
         </div>
     }
 </div>
@@ -15,7 +16,7 @@
 <style>
     .popular-articles {
     font-family: 'Public Sans', sans-serif;
-    max-width: 500px; 
+    max-width: 550px; 
     @* margin: 0 auto;    *@
     padding: 16px;
     border-radius: 8px;
@@ -23,8 +24,8 @@
 
     .title {
         color: var(--color-primary);
-        font-size: 20px;
-        font-weight: 700;
+        font-size: 25px;
+        font-weight: 600;
         margin-bottom: 16px;
         border-left: 4px solid #004374;
         padding-left: 8px;
@@ -38,7 +39,7 @@
     padding: 8px 0;
 }
 
-.news-image {
+.article-image {
     width: 177px;
     height: 100px;
     @* object-fit: contain; *@
@@ -57,19 +58,38 @@
     }
 
     .article-text {
-        font-size: 16px;
-        font-weight: 500;
-        color: #222;
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--color-text-heading);
     }
+     .article-title {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;              
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-text-heading);
+    line-height: 1.4;
+    max-height: calc(1.4em * 3);    
+         
+}
+@@media (max-width: 768px) {
+    .article-text {
+        display: -webkit-box;
+        -webkit-line-clamp: 3; /* up to 3 lines */
+        -webkit-box-orient: vertical;
+         font-size: 18px;
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
+        line-height: 1.4;
+        max-height: calc(1.4em * 3); /* ~3 lines */
+    }
+}
 </style>
 
-@code {
-    private List<string> Articles = new()
-    {
-        "How to spot scam websites & social media accounts in Qatar",
-        "How to spot scam websites & social media accounts in Qatar",
-        "How to spot scam websites & social media accounts in Qatar",
-        "How to spot scam websites & social media accounts in Qatar",
-        "How to spot scam websites & social media accounts in Qatar"
-    };
-}

@@ -15,10 +15,21 @@ public class SearchBarSectionBase : ComponentBase
     protected string selectedCategory;
     protected bool loading = false;
 
-    protected List<string> categoryOptions = new()
-    {
-        "Mobile Phones & Tablets", "Accessories", "Fashion", "Toys"
-    };
+ protected List<CategoryItem> categoryOptions = new()
+{
+    new CategoryItem { Id = "mobiles", Label = "Mobile Phones & Tablets" },
+    new CategoryItem { Id = "accessories", Label = "Accessories" },
+    new CategoryItem { Id = "fashion", Label = "Fashion" },
+    new CategoryItem { Id = "toys", Label = "Toys" }
+};
+
+
+    public class CategoryItem
+{
+    public string Id { get; set; }
+    public string Label { get; set; }
+}
+
 
     protected async Task PerformSearch()
     {

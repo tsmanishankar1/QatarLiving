@@ -22,7 +22,7 @@ namespace QLN.Common.Infrastructure.DTO_s
 
     public class NewsQatarPageResponse
     {
-        [JsonPropertyName(ContentConstants.QlnNewsNewsQatar)]
+        [JsonPropertyName(DrupalContentConstants.QlnNewsNewsQatar)]
         public QlnNewsNewsQatar QlnNewsNewsQatar { get; set; }
     }
 

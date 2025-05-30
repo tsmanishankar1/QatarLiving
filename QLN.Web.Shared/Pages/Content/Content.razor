@@ -1,9 +1,6 @@
 @page "/"
-@inject NavigationManager Navigation
+@page "/content/daily"
+@using QLN.Web.Shared.Pages.Content.Daily
+@layout ContentLayout
 
-@code {
-    protected override void OnInitialized()
-    {
-        Navigation.NavigateTo("/content/daily", true);
-    }
-}
+<DailyComponent />
