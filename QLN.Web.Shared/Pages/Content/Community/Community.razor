@@ -12,13 +12,14 @@
 <div class="container">
     <div class="container-inner-wrapper">
 
-        <div class="category-banner-wrapper">
-            <img src="/images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
-        </div>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" >
+            <div class="category-banner-wrapper">
+                <img src="/images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
+            </div>
 
-        <CommunitySearchBarSection OnSearchCompleted="HandleSearchResults" />
+            <CommunitySearchBarSection OnSearchCompleted="HandleSearchResults" />
+            <div class="section-container">
 
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="section-container">
             <MudGrid>
                 <!-- Left Section -->
                 <MudItem xs="12" md="8">
@@ -131,6 +132,8 @@
                     </MudPaper>
                 </MudItem>
             </MudGrid>
+            </div>
+
         </MudContainer>
     </div>
 </div>

@@ -6,7 +6,8 @@
     <div class="post-header d-flex justify-space-between align-center">
         <div class="post-tag">@Post.Category</div>
 
-        <MudMenu Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopRight">
+        <MudMenu Dense="true" AnchorOrigin="Origin.BottomCenter"
+                 TransformOrigin="Origin.TopCenter">
             <ActivatorContent>
                 <MudIconButton DisableRipple="true">
                     <img src="images/content/Menu.svg" alt="More" class="menu-icon" />
@@ -93,6 +94,10 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+    }
+
+    .custom-menu .mud-popover {
+        box-shadow: none;
     }
 
 
