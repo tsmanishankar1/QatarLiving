@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Http;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
+using System.ComponentModel.Design;
 using System.Net.Http.Headers;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 namespace QLN.Backend.API.Service.CompanyService
@@ -19,6 +21,7 @@ namespace QLN.Backend.API.Service.CompanyService
             _logger = logger;
             _httpContextAccessor = httpContextAccessor;
         }
+
         public async Task<string> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
             try
@@ -217,6 +220,42 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
+        public async Task<IEnumerable<CompanyProfileEntity>> VerificationStatus(bool isVerified, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/companyprofile/verifiedstatus?isverified={isVerified.ToString().ToLower()}";
 
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.CompanyServiceAppId, url);
+
+                if (_httpContextAccessor.HttpContext?.Request.Headers.TryGetValue("Authorization", out var authHeader) == true)
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authHeader.ToString().Split(' ').Last());
+                }
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                var companies = JsonSerializer.Deserialize<List<CompanyProfileEntity>>(content, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                return companies ?? Enumerable.Empty<CompanyProfileEntity>();
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning(ex, "No companies found with verified status: {IsVerified}", isVerified);
+                return Enumerable.Empty<CompanyProfileEntity>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching companies with verified status: {IsVerified}", isVerified);
+                throw;
+            }
+        }
     }
 }

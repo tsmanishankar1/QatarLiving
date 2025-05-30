@@ -8,6 +8,10 @@ using QLN.Common.Infrastructure.IService.IFileStorage;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp;
 using System.Net;
+using QLN.Common.Infrastructure.Model;
+using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Service.SmtpService;
+using QLN.Common.Infrastructure.IService.IEmailService;
 
 namespace QLN.Company.MS.Service
 {
@@ -279,12 +283,15 @@ namespace QLN.Company.MS.Service
                     { "Email", c => !string.IsNullOrWhiteSpace(c.Email) },
                     { "StartDay", c => !string.IsNullOrWhiteSpace(c.StartDay) },
                     { "EndDay", c => !string.IsNullOrWhiteSpace(c.EndDay) },
+                    { "StartHour", c => c.StartHour != TimeSpan.Zero },
+                    { "EndHour", c => c.EndHour != TimeSpan.Zero },
                     { "NatureOfBusiness", c => !string.IsNullOrWhiteSpace(c.NatureOfBusiness) },
                     { "CompanySize", c => c.CompanySize != default },
                     { "CompanyType", c => c.CompanyType != default },
                     { "UserDesignation", c => !string.IsNullOrWhiteSpace(c.UserDesignation) },
                     { "BusinessDescription", c => !string.IsNullOrWhiteSpace(c.BusinessDescription) },
                     { "CRNumber", c => c.CRNumber > 0 },
+                    { "VerticalId", c => c.VerticalId > 0 },
                     { "CRDocument", c => !string.IsNullOrWhiteSpace(c.CRDocument) },
                 };
 
@@ -333,6 +340,7 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
+
         public async Task ApproveCompany(CompanyApproveDto dto, CancellationToken cancellationToken = default)
         {
             try
@@ -377,6 +385,24 @@ namespace QLN.Company.MS.Service
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching company with ID {CompanyId}");
+                throw;
+            }
+        }
+        public async Task<IEnumerable<CompanyProfileEntity>> VerificationStatus(bool isVerified, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var allCompanies = await GetAllCompanies(cancellationToken);
+
+                var filteredCompanies = allCompanies
+                    .Where(c => c.IsVerified == isVerified)
+                    .ToList();
+
+                return filteredCompanies;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting companies with verification status: {IsVerified}", isVerified);
                 throw;
             }
         }

@@ -39,7 +39,7 @@ namespace QLN.Common.DTO_s
         Suspended = 3,
         Unblocked = 4
     }
-    public enum Category
+    public enum CompanyCategory
     {
         Preloved = 1,
         Deals = 2,

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Google.Api;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -30,7 +31,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 CancellationToken cancellationToken = default) =>
             {
                 try
-                {                    
+                {
+                    var userId = httpContext.User.FindFirst("sub")?.Value
+             ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                    if (!Guid.TryParse(userId, out var userGuid))
+                        throw new UnauthorizedAccessException("Invalid user ID in JWT");
+
                     var entity = await service.CreateCompany(dto, cancellationToken);
                     return TypedResults.Ok("Company Profile created successfully");
                 }
@@ -52,11 +59,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                     );
                 }
             })
+            .RequireAuthorization(new AuthorizeAttribute { Roles = "Subscriber" })
             .WithName("CreateCompanyProfile")
             .WithTags("Company")
             .WithSummary("Create a company profile")
             .WithDescription("Creates a new company profile.")
-            .RequireAuthorization(new AuthorizeAttribute { Roles = "Subscriber" })
             .Produces<CompanyProfileEntity>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
@@ -272,10 +279,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 [FromServices] ICompanyService service,
                 HttpContext context) =>
             {
-
-                //if (!context.User.IsInRole("Admin"))
-                //    return Results.Forbid();
-
                 try
                 {
                     var result = await service.GetVerificationStatus(userId, vertical);
@@ -391,13 +394,53 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .WithTags("Company")
             .WithSummary("Get approval info of a company")
             .WithDescription("Returns company ID, name, verification status, and status details.")
-              //.RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" })
             .Produces<CompanyApprovalResponseDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
         }
+        public static RouteGroupBuilder MapVerificationStatus(this RouteGroupBuilder group)
+        {
+            group.MapGet("/verifiedstatus", async Task<IResult> (
+                [FromQuery] bool isVerified,
+                [FromServices] ICompanyService service) =>
+            {
+                try
+                {
+                    var result = await service.VerificationStatus(isVerified);
+                    if (result == null)
+                        throw new KeyNotFoundException("Verification status not found");
+                    return Results.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: "An unexpected error occurred.",
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetCompaniesByVerificationStatus")
+            .WithTags("Company")
+            .WithSummary("Get companies by verification status")
+            .WithDescription("Returns verified or unverified companies based on the isverified query parameter")
+            .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" })
+            .Produces<IEnumerable<CompanyProfileVerificationStatusDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            return group;
+        }
     }
 }

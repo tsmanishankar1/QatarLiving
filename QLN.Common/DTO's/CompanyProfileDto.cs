@@ -16,7 +16,7 @@ namespace QLN.Common.Infrastructure.DTO_s
     {
         [Required]
         public VerticalType VerticalId { get; set; }
-        public Category? CategoryId { get; set; }
+        public CompanyCategory? CategoryId { get; set; }
         public Guid UserId { get; set; }
         [Required]
         public string CompanyLogo { get; set; } = string.Empty;
@@ -67,7 +67,7 @@ namespace QLN.Common.Infrastructure.DTO_s
     {
         public Guid Id { get; set; }
         public VerticalType VerticalId { get; set; }
-        public Category? CategoryId { get; set; } 
+        public CompanyCategory? CategoryId { get; set; } 
         public Guid UserId { get; set; }
         public string CompanyLogo { get; set; } = string.Empty;
         public string BusinessName { get; set; } = string.Empty;
@@ -115,7 +115,7 @@ namespace QLN.Common.Infrastructure.DTO_s
     {
         public Guid CompanyId { get; set; }
         public bool? IsVerified { get; set; }
-        public CompanyStatus Status { get; set; }
+        public CompanyStatus? Status { get; set; }
         public DateTime UpdatedUtc { get; set; }
     }
     public class CompanyApprovalResponseDto

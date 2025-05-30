@@ -3,8 +3,11 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.IService.ICompanyService;
+using QLN.Common.Infrastructure.IService.IEmailService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Service.FileStorage;
+using QLN.Common.Infrastructure.Service.SmtpService;
 using QLN.Common.Swagger;
 using QLN.Company.MS.Service;
 using System.Security.Claims;
@@ -16,7 +19,8 @@ builder.Services.AddControllers();
 builder.Services.AddDaprClient();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddAuthorization();
-builder.Services.AddSwaggerGen(opts => {
+builder.Services.AddSwaggerGen(opts =>
+{
     opts.SwaggerDoc("v1", new OpenApiInfo { Title = "QLN.Company.MS", Version = "v1" });
     opts.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -64,9 +68,9 @@ builder.Services.AddAuthentication(options =>
 
     options.MapInboundClaims = false;
 });
-builder.Services.AddAuthorization();
 builder.Services.AddScoped<ICompanyService, InternalCompanyService>();
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+builder.Services.AddScoped<IExtendedEmailSender<ApplicationUser>, EmailSenderService>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -74,10 +78,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-var companyGroup = app.MapGroup("/api/companyprofile");
+var companyGroup = app.MapGroup("/api/companyprofile")
+    .RequireAuthorization();
 companyGroup.MapCompanyEndpoints();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
+

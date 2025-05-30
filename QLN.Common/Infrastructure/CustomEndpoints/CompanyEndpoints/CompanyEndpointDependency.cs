@@ -19,6 +19,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 .MapGetVerificationStatus()
                 .MapCompanyApproval()
                 .MapGetCompanyApprovalInfo()
+                .MapVerificationStatus()
                 .MapGetCompanyProfileCompletionStatus();
             return group;
         }
