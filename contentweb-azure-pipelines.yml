@@ -60,3 +60,28 @@ jobs:
       containerAppName: 'capp-$(appShortName)-qa'
       resourceGroup: 'rg-containerapps-qa'
       runtimeStack: 'dotnetcore:8.0'
+
+- job: GetApprovalForProd
+  dependsOn: DeployToQA
+  pool: server
+  steps:
+  - task: ManualValidation@1
+    inputs:
+      notifyUsers: 'Front End - QA Release Approval'
+      approvers: 'Front End - QA Release Approval'
+      instructions: 'Please approve to QA'
+- job: DeployToProd
+  dependsOn: GetApprovalForProd
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+  - task: AzureContainerApps@1
+    inputs:
+      azureSubscription: 'prod-qlnext'
+      acrName: '$(acrRegistry)'
+      acrUsername: 'qlnv2'
+      acrPassword: 'jxmPri2GCql4OHO5Fl+3C0Bii3fmUbsrEZ1EHDbx/y+ACRDo/bQ0'
+      imageToDeploy: 'qlnv2-ezftf8ehejdadpfn.azurecr.io/qlnv2/$(appShortName):$(Build.BuildId).$(Build.BuildNumber)'
+      containerAppName: 'capp-$(appShortName)-prod'
+      resourceGroup: 'rg-containerapps-prod'
+      runtimeStack: 'dotnetcore:8.0'
