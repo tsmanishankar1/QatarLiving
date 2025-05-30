@@ -1,32 +1,48 @@
 ﻿@page "/cookiecheck"
 @using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Components.Authorization
 
-<h3>CookieCheck</h3>
+<CascadingAuthenticationState>
+    <h3>CookieCheck</h3>
 
-<p>This page is used to check if the cookies are set correctly.</p>
+    <p>This page is used to check if the cookies are set correctly.</p>
 
-<p>
-    @Token
-</p>
+    <p>
+        @Token
+    </p>
+
+    <p>
+        User Name: @UserName
+    </p>
+</CascadingAuthenticationState>
 
 @code {
     [CascadingParameter] public HttpContext HttpContext { get; set; } = default!;
+    [CascadingParameter] private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
 
     private const string AUTH_TOKEN_NAME = "qat"; // Replace with your actual token cookie name
 
     private string Token { get; set; } = string.Empty;
+    private string UserName { get; set; } = string.Empty;
 
-    protected override void OnInitialized()
+    protected override async void OnInitialized()
     {
         // Try to get the token from cookies
-        if (HttpContext.Request.Cookies.TryGetValue(AUTH_TOKEN_NAME, out var token) && !IsTokenExpired(token))
-        {
-            Token = token;
-        }
+        // if (HttpContext.Request.Cookies.TryGetValue(AUTH_TOKEN_NAME, out var token) && !IsTokenExpired(token))
+        // {
+        //     Token = token;
+        // }
+
+        var authState = await AuthenticationStateTask;
+        var user = authState.User;
+        UserName = user.Identity?.IsAuthenticated == true ? user.Identity.Name ?? "(no name)" : "(not authenticated)";
+        StateHasChanged();
     }
 
-    private bool IsTokenExpired(string token)
+    private bool IsTokenExpired(string? token)
     {
+        if (string.IsNullOrEmpty(token)) return false;
+
         try
         {
             // JWT format: header.payload.signature
