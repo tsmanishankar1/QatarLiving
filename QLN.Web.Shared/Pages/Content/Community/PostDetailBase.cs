@@ -28,8 +28,10 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected PostModel? post;
 
-        protected override async Task OnInitializedAsync()
+       
+        protected override async Task OnParametersSetAsync()
         {
+            // Update breadcrumb for current slug
             postBreadcrumbItem = new()
             {
                 Label = slug ?? "Not Found",
@@ -37,7 +39,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 IsLast = true
             };
 
-            breadcrumbItems = new()
+            breadcrumbItems = new List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem>
             {
                 new() { Label = "Community", Url = "/content/community" },
                 new() { Label = "Discussion", Url = "/content/community" },
@@ -51,6 +53,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         {
             try
             {
+                SelectedPost = null;
                 IsLoading = true;
                 HasError = false;
                 StateHasChanged();

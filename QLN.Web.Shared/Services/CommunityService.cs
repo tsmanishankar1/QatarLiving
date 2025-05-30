@@ -48,6 +48,20 @@ namespace QLN.Web.Shared.Services
                 return null;
             }
         }
+        public async Task<List<MorePostItem>> GetMorePostsAsync()
+        {
+            try
+            {
+                var response = await _httpClient.GetFromJsonAsync<MorePostsResponse>("api/content/qln_community_post/landing");
+                return response?.qln_community_post?.qln_community_post_more_posts?.items ?? new List<MorePostItem>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"API Error: {ex.Message}");
+                return new List<MorePostItem>();
+            }
+        }
+
 
     }
 }
