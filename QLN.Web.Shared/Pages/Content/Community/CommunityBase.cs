@@ -40,6 +40,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
         //Ad
         protected AdModel Ad { get; set; } = null;
 
+        protected MudForm _form;
+
         protected async override Task OnInitializedAsync()
         {
             try
@@ -85,7 +87,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
                     LikeCount = 0,
                     CommentCount = 0,
                     isCommented = false,
-                    ImageUrl = dto.image_url
+                    ImageUrl = dto.image_url,
+                    Slug = dto.slug
                 }).ToList();
 
                 return postModelList;
@@ -128,31 +131,40 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected async Task SubscribeAsync()
         {
             IsSubscribingToNewsletter = true;
+            await _form.Validate();
 
-            try
+            if (_form.IsValid)
             {
-                var success = await NewsLetterSubscriptionService.SubscribeAsync(SubscriptionModel);
-                SubscriptionStatusMessage = success ? "Subscribed successfully!" : "Failed to subscribe.";
-                if (success)
+                try
                 {
-                    Snackbar.Add("Subscription successful!", Severity.Success);
+                    var success = await NewsLetterSubscriptionService.SubscribeAsync(SubscriptionModel);
+                    SubscriptionStatusMessage = success ? "Subscribed successfully!" : "Failed to subscribe.";
+                    if (success)
+                    {
+                        Snackbar.Add("Subscription successful!", Severity.Success);
+                    }
+                    else
+                    {
+                        Snackbar.Add("Failed to subscribe. Please try again later.", Severity.Error);
+                    }
+
                 }
-                else
+                catch (Exception ex)
                 {
-                    Snackbar.Add("Failed to subscribe. Please try again later.", Severity.Error);
+                    Logger.LogError(ex, "Newsletter subscription failed.");
+                    SubscriptionStatusMessage = "An error occurred while subscribing.";
+                    Snackbar.Add($"Failed to subscribe: {ex.Message}", Severity.Error);
+
                 }
-
+                finally
+                {
+                    IsSubscribingToNewsletter = false;
+                }
             }
-            catch (Exception ex)
+            else
             {
-                Logger.LogError(ex, "Newsletter subscription failed.");
-                SubscriptionStatusMessage = "An error occurred while subscribing.";
-                Snackbar.Add($"Failed to subscribe: {ex.Message}", Severity.Error);
+                Snackbar.Add("Failed to subscribe. Please try again later.", Severity.Error);
 
-            }
-            finally
-            {
-                IsSubscribingToNewsletter = false;
             }
         }
         private async Task<AdModel> GetAdAsync()
