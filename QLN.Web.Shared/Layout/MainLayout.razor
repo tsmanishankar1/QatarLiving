@@ -1,7 +1,7 @@
 ﻿@inherits LayoutComponentBase
 @using Microsoft.Extensions.Options
 @using QLN.Web.Shared.Components.FooterFolder
-@inject CustomAuthStateProvider CustomAuthenticationStateProvider;
+@inject CookieAuthStateProvider CookieAuthenticationStateProvider;
 @inject NavigationManager NavManager
 @using System.Security.Claims;
 
@@ -150,7 +150,7 @@
     protected override async Task OnInitializedAsync()
     {
         @* await base.OnInitializedAsync();   *@
-        var authState = await CustomAuthenticationStateProvider.GetAuthenticationStateAsync();
+        var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
         if (authState != null)
         {
             var user = authState.User;
@@ -164,7 +164,7 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender) return;
-        var authState = await CustomAuthenticationStateProvider.GetAuthenticationStateAsync();
+        var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
         if (authState != null)
         {
             var user = authState.User;
@@ -196,7 +196,7 @@
 
     public void logout()
     {
-        CustomAuthenticationStateProvider.LogoutUser();
+        // CookieAuthenticationStateProvider.LogoutUser();
         Name = string.Empty;
         IsLoggedIn = false;
         NavManager.NavigateTo("/login");
