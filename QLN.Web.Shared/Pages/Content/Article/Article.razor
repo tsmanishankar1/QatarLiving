@@ -15,14 +15,14 @@
 
         <MudGrid Class="py-4" GutterSize="16px">
             <MudItem xs="12" md="8">
-                <ArticleDetailCard Post="newsArticle"/>
-                     @foreach (var post in PostsList)
-                    {
+                <ArticleDetailCard Post="newsArticle" loading="isLoading"/>
+                     @* @foreach (var post in PostsList)
+                    { *@
                         <CommentSection Comment="SelectedPost"/>
-                    } 
+                    @* }  *@
             </MudItem>
             <MudItem xs="12" md="4">
-                <MoreArticleSection />
+                <MoreArticleSection Articles="@moreArticleList"/>
             </MudItem>
         </MudGrid>
     </div>
@@ -71,4 +71,5 @@
             padding: 0 5px;
         }
     }
+    
 </style>

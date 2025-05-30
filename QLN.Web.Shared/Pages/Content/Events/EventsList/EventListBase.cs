@@ -99,8 +99,7 @@ namespace QLN.Web.Shared.Pages.Content.Events.EventsList
 
         protected void HandleCardClick(ContentEvent item)
         {
-            Console.WriteLine($"Clicked: {item.Title}");
-            Navigation.NavigateTo("/events/details");
+            Navigation.NavigateTo($"/events/details/{Uri.EscapeDataString(item.Slug)}");
         }
         protected void HandlePageChange(int newPage)
         {

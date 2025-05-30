@@ -13,7 +13,16 @@
                 <img src="@article.ImageUrl" class="article-image" />
             }
              <div class="article-content">
-                <a href="@article.Url" class="article-title">@article.Title</a>
+                @if(selectedPost == article){
+                     <a class="selected-title" href="@($"/article/details/{Uri.EscapeDataString(article.Slug)}")">
+                    @article.Title
+                    </a>
+                }
+                else{
+                    <a class="article-title" href="@($"/article/details/{Uri.EscapeDataString(article.Slug)}")">
+                    @article.Title
+                    </a>
+                }
             </div>
         </div>
     }
@@ -150,8 +159,7 @@
     .article-entry {
         display: flex;
         justify-content: space-between;
-        align-items: flex-start;
-        padding: 12px 0;
+        align-items: center;
         border-bottom: 1px solid #eee;
     }
 
@@ -170,22 +178,14 @@
         margin-bottom: 4px;
     }
 
-    .article-title {
-        display: block;
-        font-size: 16px;
-        font-weight: 500;
-        text-decoration: none;
-        color: #000;
-        line-height: 1.4;
-    }
-
     .article-title:hover {
         text-decoration: underline;
+        color: var(--color-primary);
     }
 
     .article-image {
-        width: 100px;
-        height: auto;
+        width: 107px;
+        height: 60px;
         border-radius: 6px;
         object-fit: cover;
     }
@@ -193,6 +193,36 @@
         color: #003865;
         font-weight: bold;
         margin-right: 4px;
+    }
+    .article-title {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;              
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-decoration: none;
+        text-overflow: ellipsis;
+        white-space: normal;
+        line-height: 1.4;
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--color-text-heading);
+        line-height: 1.4;
+        max-height: calc(1.4em * 3);        
+    }
+    .selected-title {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;              
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-decoration: none;
+        text-overflow: ellipsis;
+        white-space: normal;
+        line-height: 1.4;
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--color-primary);
+        line-height: 1.4;
+        max-height: calc(1.4em * 3);        
     }
 </style>
 
