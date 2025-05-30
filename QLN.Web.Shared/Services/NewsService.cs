@@ -101,5 +101,18 @@ namespace QLN.Web.Shared.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+         public async Task<HttpResponseMessage?> GetNewsBySlugAsync(string slug )
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"{_baseUrl}/api/content/news/{slug}");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetNewsQatarAsync" + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
     }
 }

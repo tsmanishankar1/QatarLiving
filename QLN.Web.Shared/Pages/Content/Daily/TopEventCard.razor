@@ -1,5 +1,6 @@
 @using QLN.Common.Infrastructure.DTO_s
 @using System.Text.RegularExpressions
+@using QLN.Web.Shared.Helpers
 <div class="Top-event-list-card">
     <div class="Top-event-image-wrapper">
         <img src="@Item.ImageUrl" class="Top-event-card-img" alt="Title" />
@@ -17,7 +18,7 @@
         <h3 class="Top-event-title">@Item.Title</h3>
 
         <p class="Top-event-description" style="text-overflow:ellipsis;">
-            @StripHTML(Item.Description ?? "")
+            @HtmlHelper.StripHTML(Item.Description ?? "")
         </p>
 
         <div class="Top-event-location">
@@ -124,11 +125,4 @@
     [Parameter]
     public ContentEvent Item { get; set; } = new();
 
-
-    public static string StripHTML(string input)
-    {
-        string noHTML = Regex.Replace(input, @"<[^>]+>|&nbsp;", string.Empty).Trim();
-        string noHTMLNormalised = Regex.Replace(noHTML, @"\s{2,}", " ");
-        return noHTMLNormalised;
-    }
 }

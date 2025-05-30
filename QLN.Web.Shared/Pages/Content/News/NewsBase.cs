@@ -47,7 +47,7 @@ namespace QLN.Web.Shared.Pages.Content.News
         new() { Label = "Sports", Value = "sports" },
         new() { Label = "Lifestyle", Value = "lifestyle" }
     };
-        protected string _selectedView = "News";
+        protected string _selectedView = "news";
         protected string[] Tabs = new[] { "Qatar", "Middle East", "World", "Health & Education", "Community", "Law" };
         protected string SelectedTab = "Qatar";
         [Inject]
@@ -79,7 +79,7 @@ namespace QLN.Web.Shared.Pages.Content.News
         protected async void SetViewMode(string view)
         {
             _selectedView = view;
-             var selectedCategory = Categories.FirstOrDefault(c => c.Name.Equals(view, StringComparison.OrdinalIgnoreCase));
+            var selectedCategory = Categories.FirstOrDefault(c => c.Name.Equals(view, StringComparison.OrdinalIgnoreCase));
             if (selectedCategory != null)
             {
                 Tabs = selectedCategory.SubCategories.ToArray();
@@ -255,6 +255,11 @@ namespace QLN.Web.Shared.Pages.Content.News
                 Logger.LogError(ex, "GetNewsWorldAsync");
                 return new NewsWorldPageResponse();
             }
+        }
+
+        protected void onclick(ContentPost news)
+        {
+            navManager.NavigateTo($"/article/details/{Uri.EscapeDataString(news.Slug)}");
         }
     }
 }

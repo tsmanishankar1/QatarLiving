@@ -1,11 +1,12 @@
-using QLN.Web.Shared;
-using QLN.Web.Shared.Pages;
-using MudBlazor.Services;
-using QLN.Web.Shared.Services;
+using GoogleAnalytics.Blazor;
 using Microsoft.AspNetCore.Components.Authorization;
-using QLN.Web.Shared.Services.Interface;
+using MudBlazor.Services;
+using QLN.Web.Shared;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.MockServices;
+using QLN.Web.Shared.Pages;
+using QLN.Web.Shared.Services;
+using QLN.Web.Shared.Services.Interface;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
@@ -25,11 +26,9 @@ if (string.IsNullOrWhiteSpace(newsLetterSubscriptionAPIUrl))
 
 builder.Services.AddScoped<CustomAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<CustomAuthStateProvider>());
-builder.Services.AddScoped<IContentService, ContentService>();
-builder.Services.AddScoped<INewsService, NewsService>();
 
 builder.Services.AddAuthorizationCore();
-builder.Services.AddScoped<ICompanyProfileService, CompanyProfileService>();
+
 // builder.Services.AddCascadingAuthenticationState();
 
 builder.Services.AddHttpClient<ApiService>();
@@ -53,8 +52,21 @@ builder.Services.AddHttpClient<INewsLetterSubscription, NewsLetterSubscriptionSe
 //builder.Services.AddHttpClient<IAdService, AdService>();
 builder.Services.AddScoped<IAdService, AdMockService>();
 builder.Services.AddHttpClient<IPostInteractionService, PostInteractionService>();
+builder.Services.AddScoped<IContentService, ContentService>();
+builder.Services.AddScoped<INewsService, NewsService>();
+builder.Services.AddHttpClient<IEventService, EventService>(client =>
+{
+    client.BaseAddress = new Uri(contentVerticalAPIUrl);
+});
+
+
 
 builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddGBService(options =>
+{
+    options.TrackingId = builder.Configuration["GoogleAnalytics:TrackingId"];
+});
 
 var app = builder.Build();
 
@@ -75,7 +87,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 // app.UseAuthentication();
 // app.UseAuthorization();
- app.UseAntiforgery();
+app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 

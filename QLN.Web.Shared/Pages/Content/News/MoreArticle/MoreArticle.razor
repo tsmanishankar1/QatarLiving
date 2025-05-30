@@ -1,6 +1,6 @@
 @inherits MoreArticleBase
 <div class="more-articles side-spacing" style="padding-top: 20px;">
-     <h3 class="section-heading">
+     <h3 class="section-heading" style="color: var(--color-text-heading);">
   <span class="accent-bar"></span>More Articles
 </h3>
     @if (loading){
@@ -19,7 +19,7 @@
     }
     }
     else{
-    @foreach (var article in Articles)
+    @foreach (var article in Articles.Take(5))
     {
         <div class="article-entry">
             <div class="article-content">

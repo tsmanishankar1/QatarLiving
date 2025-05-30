@@ -10,9 +10,5 @@ public class NewsCardBase : ComponentBase
     public ContentPost news { get; set; } = new ContentPost();
     [Parameter]
     public bool IsHorizontal { get; set; } = false;
-     protected void NavigateToDetails()
-    {
-        navManager.NavigateTo("/article/details");
-    }
-
+    [Parameter] public EventCallback<ContentPost> OnClick { get; set; }
 }

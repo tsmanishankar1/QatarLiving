@@ -22,7 +22,7 @@ namespace QLN.Common.Infrastructure.DTO_s
 
     public class NewsMiddleEastPageResponse
     {
-        [JsonPropertyName(ContentConstants.QlnNewsNewsMiddleEast)]
+        [JsonPropertyName(DrupalContentConstants.QlnNewsNewsMiddleEast)]
         public QlnNewsNewsMiddleEast QlnNewsNewsMiddleEast { get; set; }
     }
 }
