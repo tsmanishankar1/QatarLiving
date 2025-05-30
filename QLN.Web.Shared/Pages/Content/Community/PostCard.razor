@@ -33,7 +33,7 @@
 
     else if (!string.IsNullOrWhiteSpace(Post.BodyPreview))
     {
-        <div class="post-body">@Post.BodyPreview</div>
+        <div class="post-body">@((MarkupString)Post.BodyPreview)</div>
     }
     else
     {
@@ -161,7 +161,7 @@
         font-weight: 400;
         overflow: hidden;
         display: -webkit-box;
-        -webkit-line-clamp: 3; 
+        -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         line-height: 2;
     }
