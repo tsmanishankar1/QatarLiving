@@ -9,8 +9,10 @@ public class ArticleBase : ComponentBase
 {
     [Parameter]
     public string slug { get; set; }
+    public bool isLoading { get; set; }
     public List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
- 
+    protected NewsQatarPageResponse QatarNewsContent { get; set; } = new NewsQatarPageResponse();
+    protected List<ContentPost> moreArticleList { get; set; } = new List<ContentPost>();
     [Inject] private ILogger<NewsCardBase> Logger { get; set; }
     public PostModel SelectedPost { get; set; }
     [Inject] private INewsService _newsService { get; set; }
@@ -24,47 +26,11 @@ public class ArticleBase : ComponentBase
     };
     [Parameter]
     public NewsItem Item { get; set; }
-    protected List<PostModel> PostsList = new()
-        {
-        new PostModel
-        {
-            Category = "Advice & Help",
-            Title = "Anyone wanna buy 5x Seated Travis Scott Tickets?",
-            ImageUrl = "images/content/Post1.svg",
-            Author = "Ismat Zerin",
-            Time = DateTime.Now.AddHours(-2),
-            LikeCount = 3,
-            CommentCount = 12,
-            isCommented=true,
-            Comments = new List<CommentModel>
-        {
-        new CommentModel
-        {
-            Avatar = "images/avatars/user1.png",
-            CreatedBy = "Jas",
-            CreatedAt = DateTime.Now.AddMinutes(-10),
-            Description = "I might be interested, can you DM the price?",
-            LikeCount = 2,
-            UnlikeCount = 0,
-            IsByCurrentUser = true
-        },
-        new CommentModel
-        {
-            Avatar = "images/avatars/user2.png",
-            CreatedBy = "Alex Morgan",
-            CreatedAt = DateTime.Now.AddMinutes(-5),
-            Description = "It was a great game, watched it from the stadium. Go Al Sadd 🏆🎉",
-            LikeCount = 0,
-            UnlikeCount = 1,
-            IsByCurrentUser = false
-        }
-    }
-     },
-        };
-         protected async override Task OnInitializedAsync()
-        {
+    protected async override Task OnInitializedAsync()
+    {
         try
         {
+            isLoading = true;
             newsArticle = await GetNewsBySlugAsync();
             SelectedPost = new PostModel
             {
@@ -89,19 +55,25 @@ public class ArticleBase : ComponentBase
                     Avatar = "/images/content/Sample.svg"
                 }).ToList() ?? new List<CommentModel>()
             };
-               breadcrumbItems = new()
+            breadcrumbItems = new()
             {
                 new() {   Label = "News",Url ="/content/news" },
                 new() { Label = "Sports", Url = "/content/news"},
                 new() { Label = newsArticle.Title, Url = "/article/details/{slug}", IsLast = true },
             };
+            QatarNewsContent = await GetNewsQatarAsync();
+            moreArticleList = QatarNewsContent.QlnNewsNewsQatar.MoreArticles.Items;
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "OnInitializedAsync");
         }
+        finally
+        {
+            isLoading = false;
         }
-        protected async Task<ContentPost> GetNewsBySlugAsync()
+    }
+    protected async Task<ContentPost> GetNewsBySlugAsync()
     {
         try
         {
@@ -118,5 +90,23 @@ public class ArticleBase : ComponentBase
             Logger.LogError(ex, "GetNewsBySlugAsync");
             return new ContentPost();
         }
+    }
+    protected async Task<NewsQatarPageResponse> GetNewsQatarAsync()
+    {
+            try
+            {
+                var apiResponse = await _newsService.GetNewsQatarAsync() ?? new HttpResponseMessage();
+                if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
+                {
+                    var response = await apiResponse.Content.ReadFromJsonAsync<NewsQatarPageResponse>();
+                    return response ?? new NewsQatarPageResponse();
+                }
+                return new NewsQatarPageResponse();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetNewsQatarAsync");
+                return new NewsQatarPageResponse();
+            }
     }
 }

@@ -67,14 +67,24 @@ namespace QLN.Web.Shared.Pages.Content.News
             try
             {
                 QatarNewsContent = await GetNewsQatarAsync();
-                moreArticleList = QatarNewsContent.QlnNewsNewsQatar.MoreArticles.Items;
-                topNews = QatarNewsContent.QlnNewsNewsQatar.TopStory.Items.First();
+
+                if (QatarNewsContent?.QlnNewsNewsQatar?.MoreArticles?.Items != null)
+                    moreArticleList = QatarNewsContent.QlnNewsNewsQatar.MoreArticles.Items;
+
+                var topStoryItems = QatarNewsContent?.QlnNewsNewsQatar?.TopStory?.Items;
+                if (topStoryItems != null && topStoryItems.Any())
+                    topNews = topStoryItems.First();
+
                 isLoading = false;
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "OnInitializedAsync");
             }
+            finally
+            {   
+                isLoading = false;
+            }   
         }
         protected async void SetViewMode(string view)
         {

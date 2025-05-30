@@ -1,13 +1,13 @@
 @inherits NewsLetterBase
 @using QLN.Web.Shared.Components.CustomButton
 <div class="newsletter-container">
-  <h2>Get The QL newsletter. Sign up to receive the top stories you need to know right now.</h2>
+  <h2 style="text-align: center;">Get The QL newsletter. Sign up to receive the top stories you need to know right now.</h2>
   <input type="email" placeholder="Enter your email" class="email-input" @oninput="() => ErrorMessage = null"/>
   @if (!string.IsNullOrWhiteSpace(ErrorMessage))
   {
       <div class="error-message">@ErrorMessage</div>
   }
-  <CustomButton id="forgetPasswordButton" BackgroundColor="#FF7F38" TextColor="#FFFFFF" Text="Sign up" Disabled="@IsLoading"
+  <CustomButton id="forgetPasswordButton" BackgroundColor="#FF7F38" TextColor="#FFFFFF" Text="Subscribe" Disabled="@IsLoading"
                     Loading="@IsLoading" OnClick="@HandleResetPassword" Class="reset-button"/>
 </div>
 
@@ -18,9 +18,9 @@
   margin: 0 auto;
   padding: 24px;
   box-sizing: border-box;
-  border: 1px solid #eee;
-  border-radius: 12px;
-  background-color: #fff;
+  border: 1px solid #F0F0F0;
+  border-radius: 6px;
+  background-color: #FFFFFF;
   font-family: sans-serif;
   display: flex;
   flex-direction: column;
@@ -47,8 +47,8 @@
     width: 100%;
     padding: 14px;
     font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
+    border: 1px solid #D0D5DD;
+    border-radius: 6px;
     margin-bottom: 16px;
     box-sizing: border-box;
   }
@@ -59,6 +59,10 @@
 
   .signup-button:hover {
     background-color: #e56c21;
+  }
+  .reset-button{
+    border-radius: 4px;
+    height: 44px;
   }
 </style>
 

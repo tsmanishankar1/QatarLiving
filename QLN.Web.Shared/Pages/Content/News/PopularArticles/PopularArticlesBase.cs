@@ -6,4 +6,12 @@ public class PopularArticlesBase : ComponentBase
 {
     [Parameter]
     public List<ContentPost> Articles { get; set; } = new List<ContentPost>();
+    [Inject]
+    protected NavigationManager navManager { get; set; }
+    [Parameter]
+    public string selectedTab { get; set; }
+    protected void onclick(ContentPost news)
+    {
+        navManager.NavigateTo($"/article/details/{Uri.EscapeDataString(news.Slug)}/{selectedTab}");
+    }
 }
