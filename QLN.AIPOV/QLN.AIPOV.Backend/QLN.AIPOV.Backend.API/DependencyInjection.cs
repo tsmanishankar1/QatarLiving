@@ -12,12 +12,14 @@ namespace QLN.AIPOV.Backend.API
         public static IServiceCollection AddApiConfig(this IServiceCollection services, IConfiguration configuration)
         {
             services.Configure<OpenAISettingsModel>(configuration.GetSection("OpenAI"));
+            services.Configure<DocumentIntelligenceSettingsModel>(configuration.GetSection("DocumentIntelligence"));
             return services;
         }
 
         public static IServiceCollection AddApiServices(this IServiceCollection services)
         {
             services.AddScoped<IChatService, ChatService>();
+            services.AddScoped<IDocumentService, DocumentService>();
             return services;
         }
 
@@ -25,6 +27,7 @@ namespace QLN.AIPOV.Backend.API
         {
             services.AddHttpClient();
             services.AddScoped<IChatGPTClient, ChatGPTClient>();
+            services.AddScoped<IDocumentIntelligenceClient, DocumentIntelligenceClient>();
             return services;
         }
 
