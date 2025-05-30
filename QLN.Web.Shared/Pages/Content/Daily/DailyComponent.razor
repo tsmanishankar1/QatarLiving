@@ -1,5 +1,6 @@
 @inherits DailyComponentBase
 @using QLN.Web.Shared.Components.Carousel
+@using QLN.Web.Shared.Components.TakeOverBanner
 @using QLN.Web.Shared.Pages.Content.Daily
 @using QLN.Web.Shared.Components.DailyFeaturedEventCard
 @using QLN.Web.Shared.Pages.Content.Daily.DailyNewsCard
@@ -14,14 +15,16 @@
 <PageTitle>Qatar Living | The go-to place for lifestyle, news, and events</PageTitle>
 
 <div style="width: 100%;background-color: var(--color-secondary-background);">
-    <div style="max-width: 1200px; margin: 0 auto;">
-        <div class="carousel-responsive-container">
-
+    <div class="carousel-responsive-container">
+        <div class="max-container">
             <!-- Carousel Banner -->
             <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
                 Transition="Transition.Slide" />
         </div>
-        <div class="responsive-news-container">
+    </div>
+    <div class="responsive-news-container">
+        <div class="max-container">
+
             <MudGrid GutterSize="5px" Style="margin-bottom: 20px;">
                 <MudItem xs="12" md="8">
                     <MudGrid GutterSize="10px">
@@ -41,7 +44,7 @@
 
             <MudGrid GutterSize="16px">
                 <!-- Left column: news cards -->
-                <MudItem xs="12" md="8" lg="9">
+                <MudItem xs="12" md="9" lg="9">
                     <MudGrid GutterSize="16px">
                         @foreach (var item in Items)
                         {
@@ -53,34 +56,35 @@
                 </MudItem>
 
                 <!-- Right column: newsletter -->
-                <MudItem xs="12" md="4" lg="3">
+                <MudItem xs="12" md="3" lg="3">
                     <DailyNewsLetter />
                 </MudItem>
             </MudGrid>
 
 
             <DailyIntheKnow />
-
         </div>
+    </div>
+    <div class="responsive-news-container-daily">
+        <div class="max-container">
+            <DailyFeaturedEvents FeaturedEvent="@featuredEeventData" Loading="isLoading" />
 
-        <DailyFeaturedEvents FeaturedEvent="@featuredEeventData" Loading="isLoading" />
-        <div class="side-padding">
             <MoreEvents />
-        </div>
-
-        <div class="responsive-container">
-
-
-            <div class="side-padding">
-                <DailyVideoCards />
-            </div>
-
+            <TakeOverBanner ImageUrl="/images/takeover_banner.svg" />
 
         </div>
-        <div class="daily-highlights">
+
+    </div>
+    <div class="max-container">
+        <DailyVideoCards />
+    </div>
+    <div class="responsive-news-container">
+
+        <div class="max-container">
+            <DailyHighlights />
+            <TakeOverBanner ImageUrl="/images/takeover_banner.svg" />
             <DailyHighlights />
         </div>
-
     </div>
 </div>
 
@@ -96,10 +100,12 @@
 
     private List<DailyFeaturedEventCard.DailyEventItem> featuredEeventData = new()
 {
-new() { Category = "Qatar International Art Festival 2025 - 7th Edition", ImageUrl = "/images/categories/new1.svg" },
+new() { Category = "Qatar International Art Festival 2025 - 7th Edition", ImageUrl = "/images/categories/new1.svg"
+},
 new() { Category = "FIFA Arab Cup - Doha 2025", ImageUrl = "/images/categories/new2.svg" },
 new() { Category = "Qatar T100 Triathlon World Championship Final", ImageUrl = "/images/categories/new3.svg" },
-new() { Category = "In the Realms of Mecca: A Journey through the Ritua", ImageUrl = "/images/categories/new4.svg" },
+new() { Category = "In the Realms of Mecca: A Journey through the Ritua", ImageUrl = "/images/categories/new4.svg"
+},
 new() { Category = "Qatar Desert Trail Running Series 2025", ImageUrl = "/images/categories/new5.svg" },
 new() { Category = "A Sneak Peek at Qatar Auto Museum Project", ImageUrl = "/images/categories/new6.svg" }
 };
@@ -140,8 +146,13 @@ ImageUrl = "/images/gold.svg"
 <style>
     .responsive-container {
         width: 100%;
-        padding: 0 40px;
+        padding: 0 30px;
         box-sizing: border-box;
+    }
+
+    .max-container {
+        max-width: 1170px;
+        margin: 0 auto;
     }
 
     .carousel-responsive-container {
@@ -153,9 +164,16 @@ ImageUrl = "/images/gold.svg"
 
     .responsive-news-container {
         width: 100%;
-        padding: 0px 40px;
+        padding: 0px 30px;
         box-sizing: border-box;
         background-color: #FFFFFF;
+    }
+
+    .responsive-news-container-daily {
+        width: 100%;
+        padding: 0px 30px;
+        box-sizing: border-box;
+        background: linear-gradient(to top, #FFFFFF 0%, #FFFFFF 20%, #F5F6FA 100%);
     }
 
     .side-padding {
@@ -167,12 +185,16 @@ ImageUrl = "/images/gold.svg"
         background-color: #FFFFFF;
     }
 
-    @@media (max-width: 768px) {
+    @@media (max-width: 770px) {
         .responsive-container {
             padding: 0 16px;
         }
 
         .responsive-news-container {
+            padding: 0px 16px;
+        }
+
+        .responsive-news-container-daily {
             padding: 0px 16px;
         }
 
@@ -188,6 +210,10 @@ ImageUrl = "/images/gold.svg"
         }
 
         .responsive-news-container {
+            padding: 0px 5px;
+        }
+
+        .responsive-news-container-daily {
             padding: 0px 5px;
         }
 

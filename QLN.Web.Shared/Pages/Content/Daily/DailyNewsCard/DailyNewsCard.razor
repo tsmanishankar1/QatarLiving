@@ -4,7 +4,8 @@
 <div class="daily-news-card @(IsHorizontal ? "horizontal" : "")">
     <img src="@Item.ImageUrl" alt="News Image" class="daily-news-image" />
     <div class="daily-news-content">
-        <div class="news-title">@Item.Title</div>
+        <div class="daily-news-category">@Item.Category</div>
+        <div class="daily-news-title">@Item.Title</div>
     </div>
 </div>
 
@@ -13,7 +14,7 @@
         display: flex;
         border-radius: 12px;
         overflow: hidden;
-        font-family: 'Public Sans', sans-serif;
+        font-family: 'Public Sans';
         width: 100%;
         max-width: 240px;
         flex-direction: column;
@@ -23,6 +24,13 @@
         flex-direction: column;
         height: 100%;
         max-width: 214px;
+    }
+
+    .daily-news-category {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--color-accent);
     }
 
     .daily-news-image {
@@ -46,19 +54,20 @@
     }
 
     .category {
-        color: #FF7F38;
+        color: var(--color-accent);
         font-size: 14px;
         font-weight: 600;
         margin-bottom: 4px;
     }
 
-    .news-title {
+    .daily-news-title {
         font-size: 16px;
         font-weight: 600;
-        font-family: 'Public Sans';
         color: var(--color-text-heading);
+        line-height: 26px;
+        letter-spacing: 0;
         display: -webkit-box;
-        -webkit-line-clamp: 3;
+        -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;

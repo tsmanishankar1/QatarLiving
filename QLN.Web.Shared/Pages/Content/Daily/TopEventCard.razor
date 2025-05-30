@@ -7,7 +7,7 @@
         @if (!string.IsNullOrEmpty(Item.EventStart) && !string.IsNullOrEmpty(Item.EventEnd))
         {
             <div class="Top-event-date">
-                @Item.EventStart to @Item.EventEnd
+                @DateHelper.FormatDate(Item.EventStart) to @DateHelper.FormatDate(Item.EventEnd)
             </div>
         }
     </div>
@@ -20,11 +20,13 @@
         <p class="Top-event-description" style="text-overflow:ellipsis;">
             @HtmlHelper.StripHTML(Item.Description ?? "")
         </p>
-
-        <div class="Top-event-location">
-            <MudIcon Icon="@Icons.Material.Rounded.LocationOn" class="Top-event-location-icon" />
-            <span class="Top-event-location-text">@Item.EventLocation</span>
-        </div>
+        @if (!string.IsNullOrEmpty(Item.EventLocation))
+        {
+            <div class="Top-event-location">
+                <MudIcon Icon="@Icons.Material.Rounded.LocationOn" class="Top-event-location-icon" />
+                <span class="Top-event-location-text">@Item.EventLocation</span>
+            </div>
+        }
     </div>
 </div>
 
@@ -41,6 +43,12 @@
         font-family: 'Public Sans';
         border: 1px solid #F0F0F0;
         background: #FFFFFF;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .Top-event-list-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
     }
 
     .Top-event-image-wrapper {
@@ -62,7 +70,7 @@
     .Top-event-date {
         position: absolute;
         bottom: 10px;
-        right: 12px;
+        right: 10px;
         background: #0071AF;
         color: white;
         padding: 4px 10px;
@@ -71,7 +79,7 @@
     }
 
     .Top-event-card-body {
-        padding: 16px;
+        padding: 8px 16px;
         display: flex;
         flex-direction: column;
         gap: 6px;
@@ -79,21 +87,29 @@
     }
 
     .Top-event-category {
-        font-size: 11px;
+        margin: 0;
+        font-size: 14px;
         font-weight: 500;
-        color: #FF7F38;
+        color: var(--color-accent);
     }
 
     .Top-event-title {
         margin: 0;
-        font-size: 18px;
-        font-weight: 600;
-        color: #242424;
+        font-size: 25px;
+        font-weight: 500;
+        color: var(--color-text-heading);
+        line-height: 26px;
+        letter-spacing: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .Top-event-description {
         font-size: 14px;
-        color: #242424;
+        color: var(--color-text-heading);
         font-weight: 400;
         display: -webkit-box;
         -webkit-line-clamp: 2;
