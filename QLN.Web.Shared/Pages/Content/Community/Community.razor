@@ -63,6 +63,18 @@
                             </MudText>
                         </MudPaper>
                     }
+                    else if (PostList == null )
+                    {
+                        <MudPaper Class="pa-4 mt-8" Color="Color.Warning" Elevation="0">
+                            <MudText Typo="Typo.h6" Color="Color.Warning">
+                                No community posts found
+                            </MudText>
+                            <MudText Typo="Typo.body2">
+                                There are currently no posts available. Be the first to create one!
+                            </MudText>
+
+                        </MudPaper>
+                    }
                     else
                     {
                         @foreach (var post in PostList)
@@ -86,12 +98,16 @@
                             Get The QL newsletter. Sign up to receive the top stories you need to know right now.
                         </MudText>
                         <MudForm @ref="_form">
-
-                            <MudTextField T="string" Placeholder="Your email" Variant="Variant.Outlined"
+                            @* 
+                            <MudTextField T="string" Placeholder="Enter your email" Variant="Variant.Outlined"
                                           Class="newsletter-input" @bind-Value="SubscriptionModel.Email"
                                           For="@(() => SubscriptionModel.Email)"
-                                          Immediate="true" />
-
+                                          Immediate="true" /> *@
+                            <input type="email"
+                                   class="newsletter-input"
+                                   placeholder="Enter your email"
+                                   @bind="SubscriptionModel.Email"
+                                   @bind:event="oninput" />
                             <MudButton Variant="Variant.Filled"
                                        Class="newsletter-button"
                                        Disabled="@IsSubscribingToNewsletter"
@@ -110,7 +126,9 @@
                     </MudPaper>
 
 
-                    <MudImage Src="/images/content/Ad.png" Alt="Advertisement" Class="ad-image" />
+                    <MudPaper Class="ad-wrapper" Elevation="0" Square="true">
+                        <MudImage Src="/images/content/Ad.png" Alt="Advertisement" Class="ad-image" />
+                    </MudPaper>
                 </MudItem>
             </MudGrid>
         </MudContainer>
@@ -157,7 +175,7 @@
         justify-content: space-between;
         align-items: center;
         height: 32px;
-        margin-top:16px;
+        margin-top: 16px;
     }
 
     .community-title {
@@ -192,6 +210,7 @@
         min-width: 180px;
         background-color: #FFFFFF;
     }
+
     .newsletter-box {
         text-align: center;
         display: flex;
@@ -210,16 +229,28 @@
     }
 
     .newsletter-text {
-        font-family: 'Public Sans';
-        font-weight: 600;
+        font-family: 'Public Sans',sans-serif;
+        font-weight: 500;
         font-size: 14px;
         line-height: 24px;
-        letter-spacing: 0%;
         text-align: center;
+        color: #242424;
     }
 
     .newsletter-input {
         width: 292px;
+        height: 44px;
+        padding: 10px 16px;
+        border: 1px solid #D0D5DD;
+        border-radius: 6px;
+    }
+
+        .newsletter-input::placeholder {
+            padding-left: 14px;
+        }
+
+    .newsletter-html-input:focus {
+        border-color: #FF7F38;
     }
 
     .newsletter-button {
@@ -231,12 +262,27 @@
         background-color: #FF7F38;
         color: white;
         margin-top: 16px;
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 24px;
+        letter-spacing: 0;
+        text-transform: capitalize;
+    }
+
+    .ad-wrapper {
+        padding: 0;
+        margin-top: 16px;
+        width: 320px;
+        height: 402px;
+        overflow: hidden;
     }
 
     .ad-image {
-        width: 340px;
-        height: 402px;
-        margin-top: 18px;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
     }
 
     @@media (max-width: 700px) and (min-width: 375px) {
@@ -247,6 +293,18 @@
         .newsletter-box,
         .ad-image {
             max-width: 100%;
+        }
+    }
+
+    @@media (min-width: 960px) and (max-width: 1145px) {
+        .container-inner-wrapper {
+            padding: 0 24px 50px 24px;
+        }
+
+        .newsletter-box {
+            max-width: 100%;
+            width: 100%;
+            padding: 10px !important
         }
     }
 </style>
