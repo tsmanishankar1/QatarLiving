@@ -206,7 +206,21 @@
     </script>
 
     <GBAnchor />
+    <script>
+        window.registerPopoverClickAway = (popoverDiv, dotNetHelper) => {
+            const handler = (event) => {
+                if (!popoverDiv || !popoverDiv.contains(event.target)) {
+                    dotNetHelper.invokeMethodAsync("CloseDatePickerExternally");
+                    document.removeEventListener("click", handler);
+                }
+            };
 
+            // Delay to avoid immediately triggering on same click
+            setTimeout(() => {
+                document.addEventListener("click", handler);
+            }, 100);
+        };
+    </script>
 </body>
 
 </html>
