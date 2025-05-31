@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 namespace QLN.Common.Infrastructure.DTO_s
 {
     // Unique Queue Responses for Daily Content
-
     public class ContentsDaily
     {
         [JsonPropertyName("daily_top_story")]
