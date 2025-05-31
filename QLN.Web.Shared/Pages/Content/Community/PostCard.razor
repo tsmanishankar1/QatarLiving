@@ -6,10 +6,11 @@
     <div class="post-header d-flex justify-space-between align-center">
         <div class="post-tag">@Post.Category</div>
 
-        <MudMenu Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopRight">
+        <MudMenu Dense="true" AnchorOrigin="Origin.BottomCenter"
+                 TransformOrigin="Origin.TopCenter">
             <ActivatorContent>
                 <MudIconButton DisableRipple="true">
-                    <img src="images/content/Menu.svg" alt="More" class="menu-icon" />
+                    <img src="qln-images/content/Menu.svg" alt="More" class="menu-icon" />
                 </MudIconButton>
             </ActivatorContent>
 
@@ -33,7 +34,7 @@
 
     else if (!string.IsNullOrWhiteSpace(Post.BodyPreview))
     {
-        <div class="post-body">@Post.BodyPreview</div>
+        <div class="post-body">@((MarkupString)Post.BodyPreview)</div>
     }
     else
     {
@@ -50,7 +51,7 @@
 
     <div class="post-footer">
         <div class="post-footer-left">
-            <img src="/images/content/Sample.svg" alt="User Avatar" class="post-footer-avatar" />
+            <img src="/qln-images/content/Sample.svg" alt="User Avatar" class="post-footer-avatar" />
             <span class="post-meta">
 
                 <span class="author">@Post.Author  • <span class="date-time">@Post.Time.ToString("MMM dd, yyyy - hh:mm tt")</span></span>
@@ -61,19 +62,19 @@
         <div class="post-icons">
             <div class="like-wrapper" @onclick="ToggleLikeAsync">
 
-                <img src="@($"images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="icon" />
+                <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="icon" />
                 <span class="icon-text">@Post.LikeCount</span>
             </div>
             <div class="like-wrapper" @onclick="ToggleDislikeAsync">
 
-                <img src="@($"images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
+                <img src="@($"qln-images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
             </div>
             <div class="like-wrapper" @onclick="SharePost">
 
-                <img src="images/content/Share.svg" class="icon" />
+                <img src="qln-images/content/Share.svg" class="icon" />
             </div>
 
-            <img src="images/content/Comment.svg" class="icon" />
+            <img src="qln-images/content/Comment.svg" class="icon" />
             <span class="icon-text">@Post.CommentCount</span>
         </div>
     </div>
@@ -93,6 +94,10 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+    }
+
+    .custom-menu .mud-popover {
+        box-shadow: none;
     }
 
 
@@ -161,7 +166,7 @@
         font-weight: 400;
         overflow: hidden;
         display: -webkit-box;
-        -webkit-line-clamp: 3; 
+        -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         line-height: 2;
     }

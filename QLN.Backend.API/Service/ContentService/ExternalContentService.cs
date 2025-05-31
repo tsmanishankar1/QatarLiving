@@ -1,7 +1,7 @@
 ﻿using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
-using QLN.Common.Infrastructure.IService.BannerService;
+using QLN.Common.Infrastructure.IService.IContentService;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -75,6 +75,11 @@ namespace QLN.Backend.API.Service.ContentService
         public async Task<List<CommunityPost>?> GetCommunitiesFromDrupalAsync(string forum_id, CancellationToken cancellationToken, string? order = "asc", int? page = 1, int? page_size = 10)
         {
             return await httpClient.GetFromJsonAsync<List<CommunityPost>>($"{DrupalContentConstants.CommunityPath}?page={page}&page_size={page_size}&order={order}&forum_id={forum_id}", cancellationToken);
+        }
+
+        public async Task<GetCommentsResponse?> GetCommentsFromDrupalAsync(string forum_id, CancellationToken cancellationToken, int? page = 1, int? page_size = 10)
+        {
+            return await httpClient.GetFromJsonAsync<GetCommentsResponse>($"{DrupalContentConstants.CommentsGetPath}/{forum_id}?page={page}&page_size={page_size}", cancellationToken);
         }
 
         public async Task<ContentPost?> GetPostBySlugAsync(string slug, CancellationToken cancellationToken)

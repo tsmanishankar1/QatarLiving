@@ -35,6 +35,7 @@
                 </div>
             }
         </div>
+<<<<<<< HEAD
     </div>
     <div style="gap: 0px;">
         <div class="news-container">   
@@ -82,6 +83,39 @@
                     { 
                         <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)"/>
                         <div class="@(news == moreArticleList.Last() ? "" : "card-divider")"></div>
+=======
+    </MudItem>
+       <div class="news-container">   
+         <div class="side-padding" style="display: flex; flex-wrap: wrap; gap: 0px;">
+    <MudItem xs="12" md="8">
+        <div class="main-article">
+            <div class="main-content">
+                <div class="main-category" @onclick="@(() => onclick(topNews))">
+                    @if (isLoading){
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="400px" Width="100%" Animation="Animation.Wave" />
+                    }
+                    else{
+                    <img src="@topNews.ImageUrl" class="main-image" />
+                    }
+                     @if (isLoading){
+                    <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="100px" Animation="Animation.Wave" />
+                    <MudSkeleton Class="mb-2" SkeletonType="SkeletonType.Text" Height="30px" Width="100%" Animation="Animation.Wave" />
+                    <MudSkeleton Class="mb-2" SkeletonType="SkeletonType.Text" Height="30px" Width="200px" Animation="Animation.Wave" />
+                    }
+                    else{
+                    <span class="category-style">Sports</span>
+                    <h2 class="main-title">@topNews.Title</h2>
+                    <div class="author-wrapper">
+                        <div class="main-author">
+                            Ismat Zerin • <a href="#" class="main-source">Qatar Living</a>  
+                            <img src="/qln-images/tick.svg" alt="Qatarliving" />
+                        </div>
+                         <div class="comment-badge">
+                            <img src="/qln-images/comment_icon.svg" alt="Comments" class="comment-icon" />
+                            <span class="count">12</span>
+                        </div> 
+                    </div>
+>>>>>>> 06c1154b6e409d8ff2a9b3f6a2ff23c55d3bbdd1
                     }
                     <div class="newsletter-wrapper"> 
                     <NewsLetter />
@@ -176,6 +210,33 @@
                 </div>
         </div>      
 
+<<<<<<< HEAD
+=======
+    <!-- More Cards -->
+    <MudItem xs="12" Class="py-2" >
+   <div class="card-container side-padding">
+        @foreach (var news in moreArticleList.Take(5))
+        {
+         <div class="@(news == moreArticleList.Last() ? "" : "news-card-wrapper")">  
+            <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)"/>
+         </div> 
+        }
+        </div>
+    </MudItem>
+    <!-- Popular Articles & Ads -->
+     <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="section-container">
+    <MudItem xs="12">
+         <div class="poular-article-container">
+            <PopularArticles Articles="@moreArticleList" selectedTab="@SelectedTab"/>
+            <img src="/qln-images/classifieds/detail_ad.svg"  alt="Product Image" />
+        </div>
+    </MudItem>
+</MudContainer> 
+@* <div style="width: 100%;" >
+<NewsCard news="topNews" IsHorizontal="true" OnClick="() => onclick(topNews)"/>
+<NewsCard news="topNews" IsHorizontal="true" OnClick="() => onclick(topNews)"/>
+</div> *@
+>>>>>>> 06c1154b6e409d8ff2a9b3f6a2ff23c55d3bbdd1
 
 </div>
 

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
@@ -40,5 +41,18 @@ namespace QLN.Common.Infrastructure.DTO_s
 
         [JsonPropertyName("qln_banners_news_qatar_take_over_1")]
         public List<BannerItem> NewsQatarTakeOver1 { get; set; } = new();
+=======
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace QLN.Common.Infrastructure.DTO_s
+{
+    public class BannerResponse
+    {
+
+>>>>>>> 06c1154b6e409d8ff2a9b3f6a2ff23c55d3bbdd1
     }
 }

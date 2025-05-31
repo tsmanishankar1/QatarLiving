@@ -12,7 +12,7 @@
         <MudText Typo="Typo.h5">@Item?.Title</MudText>
         <div class="icon-label-container">
             <div class="icon-label">
-                <img src="/images/classifieds/share.svg" alt="Share Icon" class="icon-image" />
+                <img src="/qln-images/classifieds/share.svg" alt="Share Icon" class="icon-image" />
                 <span class="icon-text">Share</span>
             </div>
             <div id="saveButton" class="icon-label" @onclick="OnSaveClicked">
@@ -44,13 +44,13 @@
                     <div class="button-group">
                         <div class="button-wrapper">
                             <button class="custom-btn call-btn">
-                                <img src="/images/classifieds/call.svg" class="btn-icon" />
+                                <img src="/qln-images/classifieds/call.svg" class="btn-icon" />
                                 Call
                             </button>
                         </div>
                         <div class="button-wrapper">
                             <button class="custom-btn whatsapp-btn">
-                                <img src="/images/classifieds/whatsapp.svg" class="btn-icon" />
+                                <img src="/qln-images/classifieds/whatsapp.svg" class="btn-icon" />
                                 WhatsApp
                             </button>
                         </div>
@@ -61,7 +61,7 @@
 
                         <div class="posted-details">
                             <div class="user-info">
-                                <img src="/images/classifieds/personIcon.svg" class="person-icon" />
+                                <img src="/qln-images/classifieds/personIcon.svg" class="person-icon" />
                                 <div class="user-text">
                                     <div class="username">@Item?.Company</div>
                                     <div class="updated-time">Updated 1 hour ago</div>
@@ -69,14 +69,14 @@
                             </div>
 
                             <div class="location-info">
-                                <img src="/images/classifieds/location.svg" class="location-icon" />
+                                <img src="/qln-images/classifieds/location.svg" class="location-icon" />
                                 <span class="location-text">@Item?.Location</span>
                             </div>
                         </div>
                     </div>
                 </MudPaper>
 
-                <img src="/images/classifieds/detail_ad.svg" alt="Product Image" class="main-image"
+                <img src="/qln-images/classifieds/detail_ad.svg" alt="Product Image" class="main-image"
                     style="width: 300px; height: 350px; object-fit: contain;" />
             </div>
         </MudItem>
@@ -151,7 +151,7 @@ new() { Label = Item?.Title ?? "Details", Url = NavigationManager.Uri, IsLast = 
     {
         isSaved = !isSaved;
     }
-    private string HeartIcon => isSaved ? "images/classifieds/liked_heart.svg" : "images/classifieds/heart.svg";
+    private string HeartIcon => isSaved ? "qln-images/classifieds/liked_heart.svg" : "qln-images/classifieds/heart.svg";
 
 
 }

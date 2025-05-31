@@ -1,9 +1,10 @@
-﻿@inherits CommentSectionBase
+﻿@using QLN.Web.Shared.Pages.Content.Community.Components.PaginationFooter
+@inherits CommentSectionBase
 
 @if (Comment.Comments == null || !Comment.Comments.Any())
 {
     <div class="comment-section-empty">
-        <div class="post-title">Comments</div>
+        <div class="comment-title">Comments</div>
 
         <div class="comment-input-wrapper @(string.IsNullOrWhiteSpace(newComment) ? "" : "has-text")">
             <input class="comment-input"
@@ -18,7 +19,7 @@
         </div>
 
         <div class="empty-state">
-            <img src="images/content/Message.svg" class="msg-icon" />
+            <img src="qln-images/content/Message.svg" class="msg-icon" />
 
             <h6 class="empty-title">Be the first to comment</h6>
             <p class="empty-description">
@@ -30,7 +31,7 @@
 else
 {
     <div class="comment-list">
-        <div class="post-title">Comment</div>
+        <div class="comment-title">Comments</div>
 
         <div class="comment-input-wrapper @(string.IsNullOrWhiteSpace(newComment) ? "" : "has-text")">
             <input class="comment-input"
@@ -46,21 +47,21 @@ else
 
 
 
-        @foreach (var c in Comment.Comments)
+        @foreach (var c in PagedComments)
         {
             <div class="comment-item @(c.IsByCurrentUser ? "my-comment" : "other-comment")">
-                <img src="@(c.Avatar ?? "/images/content/Sample.svg")" alt="User Avatar" class="post-footer-avatar" />
+                <img src="@(c.Avatar ?? "/qln-images/content/Sample.svg")" alt="User Avatar" class="post-footer-avatar" />
                 <div class="comment-content">
                     <div class="comment-header">
                         <div class="comment-meta">
-                            <span class="created-by">@c.CreatedBy</span>
+                            <span class="created-by">@c.CreatedBy</span>  •
                             <span class="created-at">@c.CreatedAt.ToString("g")</span>
                         </div>
 
                         <MudMenu Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopRight">
                             <ActivatorContent>
                                 <MudIconButton DisableRipple="true" Style="padding: 0; min-width: 0;">
-                                    <img src="images/content/Menu.svg" alt="More" style="width: 20px; height: 20px;" />
+                                    <img src="qln-images/content/Menu.svg" alt="More" style="width: 20px; height: 20px;" />
                                 </MudIconButton>
                             </ActivatorContent>
 
@@ -70,23 +71,36 @@ else
                         </MudMenu>
 
                     </div>
-                    <div>@c.Description</div>
+                    <div class="comment-description">@c.Description</div>
                     <div class="post-icons">
-                        <div class="like-wrapper">
-                            <img src="images/content/Like.svg" class="icon" />
+                        <div class="comment-wrapper">
+                            <img src="qln-images/content/Like.svg" class="comment-interaction-icon" />
                             <span class="icon-text">@c.LikeCount</span>
                         </div>
 
-                        <div class="like-wrapper">
+                        <div class="comment-wrapper">
 
-                            <img src="images/content/Dislike.svg" class="icon" />
+                            <img src="qln-images/content/Dislike.svg" class="comment-interaction-icon" />
                             <span class="icon-text">@c.LikeCount</span>
                         </div>
                     </div>
                 </div>
+
             </div>
+            <div class="comment-divider"></div>
+
         }
+        <div class="pagination-container">
+            <PaginationFooter TotalItems="30"
+                              CurrentPage="@CurrentPage"
+                              PageSize="@PageSize"
+                              OnPageChange="HandlePageChange"
+                              OnPageSizeChange="HandlePageSizeChange" />
+        </div>
+
+
     </div>
+
 }
 
 
@@ -108,6 +122,7 @@ else
         gap: 0.5rem;
         background-color: #fff;
         transition: border-color 0.2s ease;
+        margin-top:16px;
     }
 
         .comment-input-wrapper.has-text {
@@ -119,6 +134,7 @@ else
         border: none;
         outline: none;
         font-size: 1rem;
+        margin-top:10px;
     }
 
     .comment-post-btn {
@@ -148,7 +164,7 @@ else
     .comment-item {
         display: flex;
         gap: 0.75rem;
-        margin-top: 10px;
+        margin-top: 16px;
     }
 
     .my-comment {
@@ -157,6 +173,13 @@ else
 
     .other-comment {
         background-color: white;
+    }
+
+    .comment-divider {
+        height: 1px;
+        background-color: #F0F0F0;
+        margin: 14px 8px;
+        width: 100%;
     }
 
     .comment-content {
@@ -205,21 +228,31 @@ else
 
     .created-at {
         font-family: 'Public Sans', sans-serif;
-        font-weight: 500;
+        font-weight: 400;
         font-size: 12px;
         line-height: 18px;
         letter-spacing: 0;
         color: #1C1C1C;
     }
 
-    .post-title {
-        font-size: 18px;
-        font-weight: 600;
-        color: #1c1c1c;
-        margin-bottom: 10px;
+    .comment-description{
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 400;
+        font-size: 16px;
+      
+        color: #242424;
     }
 
-    .like-wrapper {
+    .comment-title {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 22px;
+      
+        color: #242424;
+        margin-top: 6px;
+    }
+
+    .comment-wrapper {
         background-color: #F4F4FA;
         padding: 8px;
         display: inline-flex;
@@ -228,9 +261,9 @@ else
         gap: 6px;
     }
 
-    .icon {
-        width: 18px;
-        height: 18px;
+    comment-interaction-icon {
+        width: 14px;
+        height: 14px;
     }
 
     .msg-icon {
@@ -267,5 +300,15 @@ else
         max-width: 360px;
         margin: 0;
     }
+
+    .pagination-container {
+        display: flex;
+        justify-content: center; 
+        padding: 1rem 0;
+        background-color: #fff;
+        width:100%;
+        padding: 0px 30px;
+    }
+
 
 </style>

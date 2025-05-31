@@ -6,10 +6,23 @@
     </div>
 
     <div class="d-flex flex-column gap-3 mt-4">
-        @foreach (var post in posts)
+        @if (isLoading)
         {
-            <a href="@post.Url" class="post-link">@post.Title</a>
-            <MudDivider Class="my-1" />
+            @for (int i = 0; i < 4; i++)
+            {
+                <MudSkeleton Height="16px" Width="80%" Animation="Animation.Wave" Class="mt-2" />
+                <MudDivider Class="my-1" />
+            }
+        }
+        else
+        {
+            @foreach (var post in posts)
+            {
+                <span @onclick="() => NavigateToPostDetail(post.Slug)" class="post-link">
+                    @post.Title
+                </span>
+                <MudDivider Class="my-1" />
+            }
         }
     </div>
 </div>
