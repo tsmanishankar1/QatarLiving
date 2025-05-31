@@ -11,9 +11,10 @@ namespace QLN.Web.Shared.Services
         private readonly HttpClient _httpClient;
         private readonly string _baseUrl;
 
-        public NewsService(HttpClient httpClient, IOptions<ApiSettings> options)
+        public NewsService(HttpClient httpClient, IOptions<ApiSettings> options, ILogger<NewsService> logger)
         {
             _httpClient = httpClient;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _baseUrl = "https://qlc-bo-dev.qatarliving.com/";
         }
 
