@@ -16,6 +16,7 @@ namespace QLN.Common.Infrastructure.DTO_s
     public class DailyMoreArticles : BaseQueueResponse<ContentPost>;
     public class DailyTopStory : BaseQueueResponse<ContentPost>;
     public class DailyWatchOnQatarLiving : BaseQueueResponse<ContentPost>;
+    public class DailyTopicsQatarLiving : BaseQueueResponse<ContentEvent>;
 
     public class ContentsDaily
     {
@@ -31,11 +32,20 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonPropertyName("daily_watch_on_qatar_living")]
         public DailyWatchOnQatarLiving DailyWatchOnQatarLiving { get; set; }
 
-        //[JsonPropertyName("daily_fifa_arab_cup")]
-        //public DailyFifaArabCup DailyFifaArabCup { get; set; }
-
         [JsonPropertyName("daily_more_articles")]
         public DailyMoreArticles DailyMoreArticles { get; set; }
+
+        [JsonPropertyName("daily_topics_1")]
+        public DailyTopicsQatarLiving DailyTopics1 { get; set; }
+
+        [JsonPropertyName("daily_topics_2")]
+        public DailyTopicsQatarLiving DailyTopics2 { get; set; }
+
+        [JsonPropertyName("daily_topics_3")]
+        public DailyTopicsQatarLiving DailyTopics3 { get; set; }
+
+        [JsonPropertyName("daily_topics_4")]
+        public DailyTopicsQatarLiving DailyTopics4 { get; set; }
     }
 
     public class ContentsDailyPageResponse
