@@ -33,7 +33,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected void NavigateToPostDetail()
         {
 
-            Navigation.NavigateTo($"/content/community/post/detail/{Uri.EscapeDataString(Post.Slug)}");
+            Navigation.NavigateTo($"/content/community/post/detail/{Post.Slug}");
         }
         protected async Task ToggleLikeAsync()
         {
