@@ -15,7 +15,7 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         Task<T?> GetPostsFromDrupalAsync<T>(string queue_name, CancellationToken cancellationToken);
         Task<List<ContentEvent>?> GetEventsFromDrupalAsync(CancellationToken cancellationToken);
         Task<CategoriesResponse?> GetCategoriesFromDrupalAsync(CancellationToken cancellationToken);
-        Task<List<CommunityPost>?> GetCommunitiesFromDrupalAsync(string forum_id, CancellationToken cancellationToken, string? order = "asc", int? page_size = 10, int? page = 1);
+        Task<List<CommunityPost>?> GetCommunitiesFromDrupalAsync(CancellationToken cancellationToken, string? forum_id, string? order = "asc", int? page_size = 10, int? page = 1);
         Task<ContentPost?> GetNewsBySlugAsync(string slug, CancellationToken cancellationToken);
         Task<CreateCommentResponse?> CreateCommentOnDrupalAsync(CreateCommentRequest request, CancellationToken cancellationToken);
         Task<CreatePostResponse?> CreatePostOnDrupalAsync(CreatePostRequest request, CancellationToken cancellationToken);
