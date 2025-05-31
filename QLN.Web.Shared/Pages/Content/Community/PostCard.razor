@@ -8,28 +8,28 @@
         @if (!IsDetailView)
         {
             <MudMenu Dense="true" AnchorOrigin="Origin.BottomLeft"
-            TransformOrigin="Origin.TopCenter"
-                 @bind-IsOpen="@isMenuOpen">
-            <ActivatorContent>
-                <MudIconButton DisableRipple="true"
-                               Class="menu-icon-button">
+                     TransformOrigin="Origin.TopCenter"
+                     @bind-IsOpen="@isMenuOpen">
+                <ActivatorContent>
+                    <MudIconButton DisableRipple="true"
+                                   Class="menu-icon-button">
 
-@*                     <img src="@($"images/content/{(isMenuOpen ? "Menu-Selected.svg" : "Menu.svg")}")" alt="More" class="menu-icon" />
+                        @*                     <img src="@($"images/content/{(isMenuOpen ? "Menu-Selected.svg" : "Menu.svg")}")" alt="More" class="menu-icon" />
  *@               
-  <img src="images/content/Menu.svg"
-                         alt="Menu"
-                         class="@($"menu-icon {(isMenuOpen ? "menu-open" : "")}")" />
+      <img src="images/content/Menu.svg"
+                             alt="Menu"
+                             class="@($"menu-icon {(isMenuOpen ? "menu-open" : "")}")" />
 
-</MudIconButton>
-            </ActivatorContent>
+                    </MudIconButton>
+                </ActivatorContent>
 
-            <ChildContent>
-                
+                <ChildContent>
+
                     <MudMenuItem Class="report-menu-item" OnClick="@OnReport">Report</MudMenuItem>
-                
-            </ChildContent>
 
-        </MudMenu>
+                </ChildContent>
+
+            </MudMenu>
         }
 
     </div>
@@ -81,10 +81,10 @@
 
                 <img src="images/content/Share.svg" class="icon" />
             </div>
-            <div class="post-card-comment-wrapper" >
+            <div class="post-card-comment-wrapper">
 
-            <img src="images/content/Comment.svg" class="icon" />
-            <span class="icon-text">@Post.CommentCount</span>
+                <img src="images/content/Comment.svg" class="icon" />
+                <span class="icon-text">@Post.CommentCount</span>
             </div>
         </div>
     </div>
@@ -210,10 +210,11 @@
             filter: brightness(0) saturate(100%) invert(48%) sepia(86%) saturate(2087%) hue-rotate(4deg) brightness(101%) contrast(102%);
         }
 
-     
+
     menu-icon-button:active .menu-icon {
         filter: brightness(0) saturate(100%) invert(48%) sepia(86%) saturate(2087%) hue-rotate(4deg) brightness(101%) contrast(102%);
     }
+
     .menu-icon-button {
         background-color: transparent !important;
         box-shadow: none !important;
@@ -243,6 +244,7 @@
         .report-menu-item:hover {
             background-color: transparent !important;
         }
+
     .icon {
         width: 18px;
         height: 18px;
@@ -287,7 +289,6 @@
         border-radius: 16px;
         gap: 8px;
         background-color: #F4F4FA;
-       
     }
 
     .post-card-comment-wrapper {
@@ -298,6 +299,5 @@
         gap: 6px;
         border: 1px solid #F0F0F0;
     }
-
 
 </style>
