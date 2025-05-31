@@ -32,7 +32,9 @@
             <div class="flex-grow-1 flex-md-grow-1_2 w-100 w-md-auto ms-md-0">
                 <MudButton Variant="Variant.Filled" FullWidth="true" OnClick="PerformSearch"
                            Disabled="@loading"
-                           Style="height: 56px; color: var(--color-text-white);border-top-right-radius: 5px; border-bottom-right-radius: 5px; background-color: var(--color-accent);text-transform: capitalize;">
+                           Class="community-search-button"
+                           Style="height: 56px; color: var(--color-text-white); background-color: var(--color-accent); text-transform: capitalize;">
+                    
                     @if (loading)
                     {
                         <MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Inherit" />
@@ -92,8 +94,22 @@
         font-size: 14px;
         background: transparent;
     }
+
     .select-field {
         width: 255px;
+    }
+
+    .community-search-button {
+        border-radius: 6px;
+    }
+
+    @@media (min-width: 950px) {
+        .community-search-button {
+            border-top-left-radius: 0 !important;
+            border-bottom-left-radius: 0 !important;
+            border-top-right-radius: 6px !important;
+            border-bottom-right-radius: 6px !important;
+        }
     }
 
 
