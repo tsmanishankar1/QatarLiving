@@ -1,12 +1,13 @@
 @inherits TopStoryCardBase
 <div class="top-story-list-card">
     <div class="top-story-image-wrapper">
-        <a @onclick="NavigateToEventDetail()"> <img src="@Item.ImageUrl" class="top-story-card-img" alt="Top Story Image" /></a>
+        <a @onclick="() => NavigateToEventDetail()"> <img src="@Item.ImageUrl" class="top-story-card-img" alt="Top Story Image" /></a>
     </div>
     <div class="top-story-card-body">
         <div class="top-story-category">Top Story</div>
-        <a href=""><h3 class="top-story-title">
-            @Item.Title
+        <a @onclick="() => NavigateToEventDetail()">
+            <h3 class="top-story-title">
+                @Item.Title
             </h3>
         </a>
         <div class="top-story-author-wrapper">
@@ -38,10 +39,10 @@
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
-    .top-story-list-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-    }
+        .top-story-list-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
 
     .top-story-image-wrapper {
         width: 100%;
@@ -57,7 +58,6 @@
         object-fit: cover;
         display: block;
         border-radius: 6px;
-
     }
 
     .top-story-card-body {

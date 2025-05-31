@@ -2,7 +2,7 @@
 @using QLN.Web.Shared.Helpers
 <div class="Top-event-list-card">
     <div class="Top-event-image-wrapper">
-        <img src="@Item.ImageUrl" class="Top-event-card-img" alt="Title" />
+        <a @onclick="() => NavigateToEventDetail()"> <img src="@Item.ImageUrl" class="Top-event-card-img" alt="Title" /></a>
         @if (!string.IsNullOrEmpty(Item.EventStart) && !string.IsNullOrEmpty(Item.EventEnd))
         {
             <div class="Top-event-date">
@@ -14,7 +14,7 @@
     <div class="Top-event-card-body">
         <div class="Top-event-category">Highlighted Event</div>
 
-        <h3 class="Top-event-title">@Item.Title</h3>
+        <a @onclick="() => NavigateToEventDetail()"><h3 class="Top-event-title">@Item.Title</h3></a>
 
         <p class="Top-event-description" style="text-overflow:ellipsis;">
             @HtmlHelper.StripHTML(Item.Description ?? "")
@@ -45,10 +45,10 @@
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
-    .Top-event-list-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-    }
+        .Top-event-list-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
 
     .Top-event-image-wrapper {
         position: relative;
