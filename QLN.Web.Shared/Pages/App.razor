@@ -107,27 +107,43 @@
                 }
             });
         };
-        // ✅ NEW BANNER SWIPER
-   window.initBannerSwiper = function (bannerCount) {
-    const autoplayEnabled = bannerCount > 1;
+        let bannerSwiperInstance;
 
-    new Swiper('.banner-swiper', {
-        slidesPerView: 1,
-        loop: autoplayEnabled,
-        autoplay: autoplayEnabled
-            ? {
-                delay: 5000,
-                disableOnInteraction: false,
-                pauseOnMouseEnter: true
+        function initBannerSwiper() {
+            const swiperEl = document.querySelector('.banner-swiper');
+            if (!swiperEl) {
+                console.warn("Banner swiper element not found");
+                return;
             }
-            : false,
-        pagination: {
-            el: '.swiper-pagination',
-            clickable: true
-        }
-    });
-};
 
+            const bannerCount = swiperEl.querySelectorAll('.swiper-slide').length;
+            const autoplayEnabled = bannerCount > 1;
+
+            if (bannerSwiperInstance) {
+                bannerSwiperInstance.destroy(true, true);
+            }
+
+            bannerSwiperInstance = new Swiper(swiperEl, {
+                slidesPerView: 1,
+                loop: autoplayEnabled,
+                autoplay: autoplayEnabled
+                    ? {
+                        delay: 5000,
+                        disableOnInteraction: false,
+                        pauseOnMouseEnter: true
+                    }
+                    : false,
+                pagination: {
+                    el: '.swiper-pagination',
+                    clickable: true
+                }
+            });
+            const paginationEl = swiperEl.querySelector('.swiper-pagination');
+            if (paginationEl) {
+                paginationEl.style.display = "none";
+            }
+            console.log("Banner Swiper initialized with autoplay:", autoplayEnabled);
+        }
 
 
         let featuredSwiperInstance;
@@ -200,8 +216,8 @@
                     768: { slidesPerView: 4, spaceBetween: 7 },
                     860: { slidesPerView: 4.8, spaceBetween: 7 },
                     1024: { slidesPerView: 5.2, spaceBetween: 7 },
-                    1120: { slidesPerView: 6, spaceBetween: 8 },
-                    1200: { slidesPerView: 6, spaceBetween: 8 },
+                    1120: { slidesPerView: 6, spaceBetween: 10 },
+                    1200: { slidesPerView: 6, spaceBetween: 13 },
                 },
                 on: {
                     afterInit: function (swiper) {
