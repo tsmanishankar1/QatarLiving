@@ -13,11 +13,22 @@ namespace QLN.Common.Infrastructure.DTO_s
 
     public class QlnNewsNewsWorld
     {
-        [JsonPropertyName("news_news_world_top_story")]
-        public TopStory TopStory { get; set; }
+        const string _prefix = "qln_news_news_world";
 
-        [JsonPropertyName("news_news_world_more_articles")]
-        public MoreArticles MoreArticles { get; set; }
+        [JsonPropertyName($"{_prefix}_top_story")]
+        public BaseQueueResponse<ContentPost> TopStory { get; set; }
+
+        [JsonPropertyName($"{_prefix}_more_articles")]
+        public BaseQueueResponse<ContentPost> MoreArticles { get; set; }
+
+        [JsonPropertyName($"{_prefix}_articles_1")]
+        public BaseQueueResponse<ContentPost> Articles1 { get; set; }
+
+        [JsonPropertyName($"{_prefix}_articles_2")]
+        public BaseQueueResponse<ContentPost> Articles2 { get; set; }
+
+        [JsonPropertyName($"{_prefix}_most_popular_articles")]
+        public BaseQueueResponse<ContentPost> MostPopularArticles { get; set; }
     }
 
     public class NewsWorldPageResponse
