@@ -6,11 +6,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace QLN.Common.Infrastructure.IService.BannerService
+namespace QLN.Common.Infrastructure.IService.IContentService
 {
     public interface IContentService
     {
-
         Task<ContentPost?> GetPostBySlugAsync(string slug, CancellationToken cancellationToken);
         Task<ContentEvent?> GetEventBySlugAsync(string slug, CancellationToken cancellationToken);
         Task<T?> GetPostsFromDrupalAsync<T>(string queue_name, CancellationToken cancellationToken);

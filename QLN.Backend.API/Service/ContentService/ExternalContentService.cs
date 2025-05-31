@@ -1,7 +1,7 @@
 ﻿using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
-using QLN.Common.Infrastructure.IService.BannerService;
+using QLN.Common.Infrastructure.IService.IContentService;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 

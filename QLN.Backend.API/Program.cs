@@ -13,7 +13,6 @@ using Microsoft.OpenApi.Models;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
 
 using QLN.Backend.API.ServiceConfiguration;
-using QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints;
 using QLN.Common.Swagger;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
@@ -25,6 +24,8 @@ using Microsoft.AspNetCore.Authorization;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
+using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -182,6 +183,7 @@ builder.Services.AddDaprClient();
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
 builder.Services.ContentServicesConfiguration(builder.Configuration);
+builder.Services.BannerServicesConfiguration(builder.Configuration);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
@@ -214,6 +216,9 @@ classifiedGroup.MapClassifiedEndpoints();
 
 var contentGroup = app.MapGroup("/api/content");
 contentGroup.MapContentLandingEndpoints();
+
+var bannerGroup = app.MapGroup("/api/banner");
+bannerGroup.MapBannerEndpoints();
 
 app.MapGroup("/api/subscriptions")
    .MapSubscriptionEndpoints();
