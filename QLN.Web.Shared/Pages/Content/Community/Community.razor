@@ -6,7 +6,7 @@
 @inject NavigationManager Navigation
 @using QLN.Web.Shared.Pages.Content.Community.Components.SearchBarSection
 @using QLN.Web.Shared.Components.Carousel
-
+@using QLN.Web.Shared.Pages.Content.Community.Components.CustomDropdown
 
 
 <div class="container">
@@ -33,15 +33,15 @@
                                 Sort by:
                             </div>
 
-                            <MudSelect T="string" @bind-Value="sortOption" Variant="Variant.Outlined"
-                                       Class="sort-select" Dense="true">
-
-                                <MudSelectItem Value=@("Default")>Default</MudSelectItem>
-                                <MudSelectItem Value=@("Popular")>Most Popular</MudSelectItem>
-                                <MudSelectItem Value=@("Recent")>Date : Recent First</MudSelectItem>
-                                <MudSelectItem Value=@("Oldest")>Date : Oldest First</MudSelectItem>
-                            </MudSelect>
-
+                     
+                             <SortDropdown TItem="SelectOption"
+                                 Items="@CategorySelectOptions"
+                                 SelectedId="@SelectedCategoryId"
+                                 SelectedIdChanged="id => SelectedCategoryId = id"
+                                 GetLabel="x => x.Label"
+                                 GetId="x => x.Id"
+                                 BorderRadius="0px"
+                                 Padding="8px 10px" />
                         </div>
                     </div>
                     @if (IsLoading)
@@ -193,7 +193,6 @@
     }
 
     .sort-section {
-        width: 300px;
         display: flex;
         flex-direction: row;
         gap: 10px;
@@ -204,7 +203,7 @@
         font-family: 'Public Sans';
         font-weight: 500;
         font-size: 13px;
-        line-height: 22px;
+        white-space: nowrap;
         color: #242424;
         margin-bottom: 4px;
     }
@@ -213,7 +212,46 @@
         min-width: 180px;
         background-color: #FFFFFF;
     }
+    /* Select container */
+    .sort-select {
+        min-width: 180px;
+        background-color: #FFFFFF;
+    }
 
+        /* Focus/orange border styling */
+        .sort-select .mud-input-control-outlined:hover .mud-input-outlined-border {
+            border-color: #FF7F38 !important;
+        }
+
+        .sort-select .mud-input-control-outlined.mud-focused .mud-input-outlined-border {
+            border-color: #FF7F38 !important;
+            border-width: 2px !important;
+        }
+
+        /* Selected item text color */
+        .sort-select .mud-select-input {
+            color: #000000 !important; /* Black text for selected value */
+        }
+
+        /* Dropdown items */
+        .sort-select .mud-list-item.mud-selected-item {
+            color: #000000 !important; /* Black text for selected option in dropdown */
+            background-color: rgba(255, 127, 56, 0.08) !important; /* Light orange background */
+        }
+
+            /* Check icon styling */
+            .sort-select .mud-list-item.mud-selected-item .mud-list-item-icon {
+                color: #FF7F38 !important; /* Orange checkmark */
+                margin-left: auto !important; /* Push to right */
+                margin-right: 0 !important;
+                min-width: unset !important;
+            }
+
+        /* Dropdown panel styling */
+        .sort-select .mud-popover {
+            border-radius: 6px !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+        }
     .newsletter-box {
         text-align: center;
         display: flex;

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using MudBlazor;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
+using QLN.Web.Shared.Models;
 
 
 namespace QLN.Web.Shared.Pages.Content.Community
@@ -42,8 +43,23 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected MudForm _form;
 
+        //sort option
+        protected string selectedCategory;
+        protected string SelectedCategoryId { get; set; }
+        protected List<SelectOption> CategorySelectOptions { get; set; }
+
         protected async override Task OnInitializedAsync()
         {
+            CategorySelectOptions = new List<SelectOption>
+    {
+        new() { Id = "Default", Label = "Default" },
+        new() { Id = "Popular", Label = "Most Popular" },
+        new() { Id = "Recent", Label = "Date : Recent First" },
+        new() { Id = "Oldest", Label = "Date : Oldest First" },
+        
+    };
+            SelectedCategoryId = "Default";
+
             try
             {
                 PostList = await GetPostListAsync();
