@@ -5,14 +5,13 @@
     @onmouseover="() => OnHoverChanged(true)" @onmouseout="() => OnHoverChanged(false)"
     EnableSwipeGesture="@EnableSwipeGesture" AutoCycle="@AutoCycle" ShowBullets="false" TData="string">
 
-
     @if (ImageUrls != null)
     {
         @foreach (var image in ImageUrls)
         {
             <MudCarouselItem Transition="@Transition">
-                <div style="width: 100%; height: 100%;">
-                    <img src="@image" style="width: 100%; height: 100%; object-fit: cover;" />
+                <div class="carousel-image-container">
+                    <img src="@image" class="carousel-image" />
                 </div>
             </MudCarouselItem>
         }
@@ -43,7 +42,19 @@
 
 <style>
     .responsive-carousel {
-        height: 230px;
+        height: 250px;
+    }
+
+    .carousel-image-container {
+        width: 100%;
+        height: 250px;
+    }
+
+    .carousel-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
     }
 
     @@media (max-width: 770px) {

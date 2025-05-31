@@ -1,25 +1,25 @@
 @inherits NewsLetterBase
 @using QLN.Web.Shared.Components.CustomButton
 <div class="newsletter-container">
-    <h2>Get The QL newsletter. Sign up to receive the top stories you need to know right now.</h2>
+    <h3 class="newsletter-container-name">Get The QL newsletter. Sign up to receive the top stories you need to know
+        right now.</h3>
     <input type="email" placeholder="Enter your email" class="email-input" @oninput="() => ErrorMessage = null" />
     @if (!string.IsNullOrWhiteSpace(ErrorMessage))
     {
         <div class="error-message">@ErrorMessage</div>
     }
-    <CustomButton id="forgetPasswordButton" BackgroundColor="#FF7F38" TextColor="#FFFFFF" Text="Sign up"
+    <CustomButton id="dailySubscribe" BackgroundColor="#FF7F38" TextColor="#FFFFFF" Text="Subscribe"
         Disabled="@IsLoading" Loading="@IsLoading" OnClick="@HandleResetPassword" Class="reset-button" />
 </div>
 
 <style>
     .newsletter-container {
         width: 100%;
-        @* max-width: 500px; *@
-  margin: 0 auto;
+        margin: 0 auto;
         padding: 24px;
         box-sizing: border-box;
-        border: 1px solid #eee;
-        border-radius: 12px;
+        border: 1px solid var(--color-background-secondary-grey-medium);
+        border-radius: 6px;
         background-color: #fff;
         font-family: sans-serif;
         display: flex;
@@ -28,38 +28,39 @@
         justify-content: center;
     }
 
-    .newsletter-container h2 {
+    .newsletter-container-name {
         font-size: 14px;
         font-weight: 600;
-        margin-bottom: 20px;
-        font-family: 'Public Sans', sans-serif;
-        color: #222;
+        margin-bottom: 10px;
+        color: var(--color-text-heading);
+        line-height: 26px;
+        letter-spacing: 0;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-align: center;
     }
 
     .error-message {
         color: red;
         font-size: 13px;
-        margin-bottom: 12px;
-        text-align: left;
+        margin-bottom: 10px;
     }
 
 
     .email-input {
         width: 100%;
-        padding: 14px;
-        font-size: 16px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        margin-bottom: 16px;
+        padding: 8px 10px;
+        font-size: 15px;
+        border: 1px solid #D0D5DD;
+        border-radius: 6px;
+        margin-bottom: 10px;
         box-sizing: border-box;
     }
 
     .email-input:focus {
-        border-color: var(--color-accent);
-    }
-
-
-    .signup-button:hover {
-        background-color: #e56c21;
+        border-color: #ff7f38;
+        outline: none;
     }
 </style>

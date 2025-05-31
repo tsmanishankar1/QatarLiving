@@ -1,4 +1,5 @@
 @inherits DailyMoreArticleBase
+
 <div class="more-articles side-spacing">
     <h3 class="section-heading">
         <span class="accent-bar"></span>More Articles
@@ -20,9 +21,10 @@
 
 <style>
     .section-heading {
+        margin: 0;
         display: flex;
         align-items: center;
-        font-family: 'Public Sans', sans-serif;
+        font-family: 'Public Sans';
         font-size: 25px;
         font-weight: 600;
         color: var(--color-text-heading);
@@ -38,14 +40,14 @@
 
     .more-articles {
         max-width: 600px;
-        font-family: 'Public Sans', sans-serif;
+        font-family: 'Public Sans';
     }
 
     .heading-style {
         margin-right: 4px;
         font-size: 25px;
         font-weight: 600;
-        font-family: 'Public Sans', sans-serif;
+        font-family: 'Public Sans';
         color: var(--color-text-heading);
     }
 
@@ -58,7 +60,7 @@
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        padding: 12px 0;
+        padding: 10px 0;
         border-bottom: 1px solid #F0F0F0;
     }
 
@@ -79,13 +81,17 @@
     }
 
     .article-title {
-        display: block;
         font-size: 16px;
         font-weight: 600;
-        font-family: 'Public Sans', sans-serif;
         text-decoration: none;
         color: var(--color-text-heading);
-        line-height: 1.4;
+        line-height: 26px;
+        letter-spacing: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .article-title:hover {
@@ -102,8 +108,7 @@
 
     @@media (max-width: 768px) {
         .side-spacing {
-            padding-right: 16px;
-            padding-left: 16px;
+            padding: 0 16px;
         }
     }
 </style>

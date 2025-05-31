@@ -35,6 +35,12 @@
         max-width: 374px;
         height: 368px;
         cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .top-story-list-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
     }
 
     .top-story-image-wrapper {
@@ -55,7 +61,7 @@
     }
 
     .top-story-card-body {
-        padding: 16px;
+        padding: 8px 16px;
         display: flex;
         flex-direction: column;
         gap: 6px;
@@ -63,16 +69,19 @@
     }
 
     .top-story-category {
-        font-size: 11px;
+        margin: 0;
+        font-size: 14px;
         font-weight: 500;
-        color: #FF7F38;
+        color: var(--color-accent);
     }
 
     .top-story-title {
         margin: 0;
-        font-size: 18px;
-        font-weight: 600;
-        color: #242424;
+        font-size: 25px;
+        font-weight: 500;
+        color: var(--color-text-heading);
+        line-height: 26px;
+        letter-spacing: 0;
         display: -webkit-box;
         -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
@@ -81,6 +90,7 @@
     }
 
     .top-story-author-wrapper {
+        margin: 0;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -104,8 +114,13 @@
         align-items: center;
         border: 1px solid #e3e3e3;
         border-radius: 20px;
-        padding: 4px 8px;
+        padding: 4px 10px;
         gap: 4px;
+    }
+
+    .top-story-tick-icon {
+        width: 12px;
+        height: 12px
     }
 
     .top-story-count {
