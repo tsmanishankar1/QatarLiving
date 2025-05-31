@@ -124,7 +124,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                 case "Law":
                     LawsNewsContent = await GetNewsLawAsync();
                     topNews = LawsNewsContent.QlnNewsNewsLaw.TopStory.Items.First();
-                    moreArticleList = LawsNewsContent.QlnNewsNewsLaw.Articles.Items;
+                    moreArticleList = LawsNewsContent.QlnNewsNewsLaw.MoreArticles.Items;
                     isLoading = false;
                     StateHasChanged();
                     break;

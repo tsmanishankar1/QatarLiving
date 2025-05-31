@@ -21,8 +21,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            //group.GenerateLandingEndpoint<ContentsDailyPageResponse>(DrupalContentConstants.QlnContentsDaily, "GetContentsDaily"); 
-            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnContentsDaily, "GetContentsDaily"); 
+            group.GenerateLandingEndpoint<ContentsDailyPageResponse>(DrupalContentConstants.QlnContentsDaily, "GetContentsDaily");
 
             return group;
         }
@@ -31,8 +30,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            //group.GenerateLandingEndpoint<NewsCommunityPageResponse>(DrupalContentConstants.QlnNewsNewsCommunity, "GetNewsCommunity");
-            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsNewsCommunity, "GetNewsCommunity");
+            group.GenerateLandingEndpoint<NewsCommunityPageResponse>(DrupalContentConstants.QlnNewsNewsCommunity, "GetNewsCommunity");
 
             return group;
         }
@@ -41,8 +39,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            //group.GenerateLandingEndpoint<NewsMiddleEastPageResponse>(DrupalContentConstants.QlnNewsNewsMiddleEast, "GetNewsMiddleEast");
-            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsNewsMiddleEast, "GetNewsMiddleEast");
+            group.GenerateLandingEndpoint<NewsMiddleEastPageResponse>(DrupalContentConstants.QlnNewsNewsMiddleEast, "GetNewsMiddleEast");
 
             return group;
         }
@@ -51,8 +48,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            //group.GenerateLandingEndpoint<NewsWorldPageResponse>(DrupalContentConstants.QlnNewsNewsWorld, "GetNewsWorld");
-            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsNewsWorld, "GetNewsWorld");
+            group.GenerateLandingEndpoint<NewsWorldPageResponse>(DrupalContentConstants.QlnNewsNewsWorld, "GetNewsWorld");
 
             return group;
         }
@@ -61,8 +57,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            //group.GenerateLandingEndpoint<NewsHealthEducationPageResponse>(DrupalContentConstants.QlnNewsNewsHealthEducation, "GetNewsHealthEducation");
-            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsNewsHealthEducation, "GetNewsHealthEducation");
+            group.GenerateLandingEndpoint<NewsHealthEducationPageResponse>(DrupalContentConstants.QlnNewsNewsHealthEducation, "GetNewsHealthEducation");
 
             return group;
         }
@@ -71,8 +66,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            //group.GenerateLandingEndpoint<NewsLawPageResponse>(DrupalContentConstants.QlnNewsNewsLaw, "GetNewsLaw");
-            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsNewsLaw, "GetNewsLaw");
+            group.GenerateLandingEndpoint<NewsLawPageResponse>(DrupalContentConstants.QlnNewsNewsLaw, "GetNewsLaw");
 
             return group;
         }
@@ -81,8 +75,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            //group.GenerateLandingEndpoint<NewsQatarPageResponse>(DrupalContentConstants.QlnNewsNewsQatar, "GetNewsQatar");
-            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsNewsQatar, "GetNewsQatar");
+            group.GenerateLandingEndpoint<NewsQatarPageResponse>(DrupalContentConstants.QlnNewsNewsQatar, "GetNewsQatar");
 
             return group;
 
@@ -160,6 +153,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             //group.GenerateLandingEndpoint<FinanceRealEstatePageResponse>(DrupalContentConstants.QlnNewsFinanceRealEstate, "GetFinanceRealEstate");
             group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsFinanceRealEstate, "GetFinanceRealEstate");
 
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapContentVideosEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<ContentsVideosResponse>(DrupalContentConstants.QlnContentVideos, "GetVideos");
+            
             return group;
 
         }
@@ -637,6 +640,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             })
             .WithName("GetPostBySlug")
             .WithTags("Content");
+
+            return group;
+        }
+
+        private static RouteGroupBuilder GenerateLandingEndpoint(this RouteGroupBuilder group, string QueueName, string Name)
+        {
+            
 
             return group;
         }
