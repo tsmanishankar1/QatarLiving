@@ -10,17 +10,9 @@ namespace QLN.Web.Shared.Services
         private readonly ILogger _logger;
         private readonly HttpClient _httpClient;
 
-<<<<<<< HEAD
-        public NewsService(HttpClient httpClient, IOptions<ApiSettings> options, ILogger<NewsService> logger)
-        {
-            _httpClient = httpClient;
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _baseUrl = "https://qlc-bo-dev.qatarliving.com/";
-=======
         public NewsService(HttpClient httpClient)
         {
             _httpClient = httpClient;
->>>>>>> 06c1154b6e409d8ff2a9b3f6a2ff23c55d3bbdd1
         }
 
         public async Task<HttpResponseMessage?> GetNewsCommunityAsync()
