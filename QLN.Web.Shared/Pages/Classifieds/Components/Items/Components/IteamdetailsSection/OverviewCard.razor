@@ -34,14 +34,14 @@
     string Fallback(string value, string fallback) => string.IsNullOrWhiteSpace(value) ? fallback : value;
         OverviewData = new()
 {
- new("/qlm-images/classifieds/brand_icons.svg", $"Brand: {Fallback(Item.Brand, "Not specified")}"),
-            new("/qlm-images/classifieds/model_icons.svg", $"Model: {Fallback(Item.Model, "Unknown")}"),
-            new("/qlm-images/classifieds/colour_icon.svg", $"Colour: {Fallback(Item.Colour, "N/A")}"),
-            new("/qlm-images/classifieds/storage_icon.svg", $"Storage: {Fallback(Item.Storage, "N/A")}"),
-            new("/qlm-images/classifieds/battery_icons.svg", $"Battery: {(Item.BatteryPercentage > 0 ? $"{Item.BatteryPercentage}%" : "Unknown")}"),
-            new("/qlm-images/classifieds/chip_icons.svg", $"Chip: {Fallback(Item.Processor, "Not mentioned")}"),
-            new("/qlm-images/classifieds/wireless_icon.svg", "Wireless Charging"), // Keep static unless logic exists
-            new("/qlm-images/classifieds/warranty_icon.svg", $"Warranty: {Fallback(Item.Coverage, "No Warranty")}")
+ new("/qln-images/classifieds/brand_icons.svg", $"Brand: {Fallback(Item.Brand, "Not specified")}"),
+            new("/qln-images/classifieds/model_icons.svg", $"Model: {Fallback(Item.Model, "Unknown")}"),
+            new("/qln-images/classifieds/colour_icon.svg", $"Colour: {Fallback(Item.Colour, "N/A")}"),
+            new("/qln-images/classifieds/storage_icon.svg", $"Storage: {Fallback(Item.Storage, "N/A")}"),
+            new("/qln-images/classifieds/battery_icons.svg", $"Battery: {(Item.BatteryPercentage > 0 ? $"{Item.BatteryPercentage}%" : "Unknown")}"),
+            new("/qln-images/classifieds/chip_icons.svg", $"Chip: {Fallback(Item.Processor, "Not mentioned")}"),
+            new("/qln-images/classifieds/wireless_icon.svg", "Wireless Charging"), // Keep static unless logic exists
+            new("/qln-images/classifieds/warranty_icon.svg", $"Warranty: {Fallback(Item.Coverage, "No Warranty")}")
 };
     }
 }

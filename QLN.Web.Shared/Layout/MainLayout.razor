@@ -25,7 +25,7 @@
 
     <div class="header-left">
         <NavLink href="/">
-            <MudImage id="logoImage" Src="/qlm-images/Headerlogo.svg" Alt="Qatar Living" Width="126" Height="48" />
+            <MudImage id="logoImage" Src="/qln-images/Headerlogo.svg" Alt="Qatar Living" Width="126" Height="48" />
         </NavLink>
     </div>
     <div style="display: flex; align-items: center; gap: 36px;">
@@ -39,7 +39,7 @@
                 <NavLink id="rewardsLink" href=@{navigationPath.Rewards} class="nav-link">Rewards</NavLink>
                 <NavLink id="rewardsLink" class="nav-link d-flex align-items-center">
                     More
-                    <img src="/qlm-images/header/arrow_down.svg" alt="Down arrow"
+                    <img src="/qln-images/header/arrow_down.svg" alt="Down arrow"
                         style="width: 20px; height: 20px; margin-left: 5px;" />
                 </NavLink>
             </nav>
@@ -67,21 +67,21 @@
                 </ChildContent> *@
             </MudMenu>
 
-            <img src="/qlm-images/header/add_post_svg.svg" alt="Post" class="mobile-post-icon"
+            <img src="/qln-images/header/add_post_svg.svg" alt="Post" class="mobile-post-icon"
                 @onclick="@(() => NavManager.NavigateTo("/"))" />
         </div>
     </div>
 
     <div class="header-right">
         <MudAvatar Size="Size.Medium" Style="background-color: #E8F2FE;">
-            <img id="favouriteIcon" src="/qlm-images/header/favourite_icon.svg" alt="Account"
+            <img id="favouriteIcon" src="/qln-images/header/favourite_icon.svg" alt="Account"
                 style="width: 70%; height: 70%; padding: 4px;" />
         </MudAvatar>
         <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
             <ActivatorContent>
                 <div id="userIcon" style="display: flex; align-items: center; gap: 0.5rem;" class="cursor-pointer">
                     <MudAvatar Size="Size.Medium" Style="background-color: #D6E8F2;">
-                        <img src="/qlm-images/header/account.svg" alt="Account"
+                        <img src="/qln-images/header/account.svg" alt="Account"
                             style="width: 70%; height: 70%; padding: 4px;" />
                     </MudAvatar>
                     <MudTooltip Text="@Name">
@@ -209,32 +209,32 @@
 {
 new MenuItem {
 Text = "Properties",
-ImageSrc = "/qlm-images/post-icons/ad_properties.svg",
+ImageSrc = "/qln-images/post-icons/ad_properties.svg",
 Route = "/more-features-coming-soon"
 },
 new MenuItem {
 Text = "Vehicles",
-ImageSrc = "/qlm-images/post-icons/ad_vehicles.svg",
+ImageSrc = "/qln-images/post-icons/ad_vehicles.svg",
 Route = "/more-features-coming-soon"
 },
 new MenuItem {
 Text = "Classifieds",
-ImageSrc = "/qlm-images/post-icons/ad_classifieds.svg",
+ImageSrc = "/qln-images/post-icons/ad_classifieds.svg",
 Route = "/classifieds/createform"
 },
 new MenuItem {
 Text = "Services",
-ImageSrc = "/qlm-images/post-icons/ad_services.svg",
+ImageSrc = "/qln-images/post-icons/ad_services.svg",
 Route = "/more-features-coming-soon"
 },
 new MenuItem {
 Text = "Jobs",
-ImageSrc = "/qlm-images/post-icons/ad_jobs.svg",
+ImageSrc = "/qln-images/post-icons/ad_jobs.svg",
 Route = "/more-features-coming-soon"
 },
 new MenuItem {
 Text = "Rewards",
-ImageSrc = "/qlm-images/post-icons/ad_rewards.svg",
+ImageSrc = "/qln-images/post-icons/ad_rewards.svg",
 Route = "/more-features-coming-soon"
 }
 };

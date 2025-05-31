@@ -70,7 +70,7 @@
             <DailyFeaturedEvents FeaturedEvent="@featuredEeventData" Loading="isLoading" />
 
             <MoreEvents />
-            <TakeOverBanner ImageUrl="/qlm-images/takeover_banner.svg" />
+            <TakeOverBanner ImageUrl="/qln-images/takeover_banner.svg" />
 
         </div>
 
@@ -82,7 +82,7 @@
 
         <div class="max-container">
             <DailyHighlights />
-            <TakeOverBanner ImageUrl="/qlm-images/takeover_banner.svg" />
+            <TakeOverBanner ImageUrl="/qln-images/takeover_banner.svg" />
             <DailyHighlights />
         </div>
     </div>
@@ -91,23 +91,23 @@
 @code {
     private List<string> carouselImages = new()
 {
-"/qlm-images/banner_image.svg",
-"/qlm-images/banner_image.svg",
-"/qlm-images/banner_image.svg"
+"/qln-images/banner_image.svg",
+"/qln-images/banner_image.svg",
+"/qln-images/banner_image.svg"
 };
 
     private bool isLoading = false;
 
     private List<DailyFeaturedEventCard.DailyEventItem> featuredEeventData = new()
 {
-new() { Category = "Qatar International Art Festival 2025 - 7th Edition", ImageUrl = "/qlm-images/categories/new1.svg"
+new() { Category = "Qatar International Art Festival 2025 - 7th Edition", ImageUrl = "/qln-images/categories/new1.svg"
 },
-new() { Category = "FIFA Arab Cup - Doha 2025", ImageUrl = "/qlm-images/categories/new2.svg" },
-new() { Category = "Qatar T100 Triathlon World Championship Final", ImageUrl = "/qlm-images/categories/new3.svg" },
-new() { Category = "In the Realms of Mecca: A Journey through the Ritua", ImageUrl = "/qlm-images/categories/new4.svg"
+new() { Category = "FIFA Arab Cup - Doha 2025", ImageUrl = "/qln-images/categories/new2.svg" },
+new() { Category = "Qatar T100 Triathlon World Championship Final", ImageUrl = "/qln-images/categories/new3.svg" },
+new() { Category = "In the Realms of Mecca: A Journey through the Ritua", ImageUrl = "/qln-images/categories/new4.svg"
 },
-new() { Category = "Qatar Desert Trail Running Series 2025", ImageUrl = "/qlm-images/categories/new5.svg" },
-new() { Category = "A Sneak Peek at Qatar Auto Museum Project", ImageUrl = "/qlm-images/categories/new6.svg" }
+new() { Category = "Qatar Desert Trail Running Series 2025", ImageUrl = "/qln-images/categories/new5.svg" },
+new() { Category = "A Sneak Peek at Qatar Auto Museum Project", ImageUrl = "/qln-images/categories/new6.svg" }
 };
 
 
@@ -119,19 +119,19 @@ new NewsItem
 {
 Category = "Finance",
 Title = "Qatar gold prices rise by 4.86% this week",
-ImageUrl = "/qlm-images/gold.svg"
+ImageUrl = "/qln-images/gold.svg"
 },
 new NewsItem
 {
 Category = "Economy",
 Title = "Qatar’s inflation remains steady in 2025",
-ImageUrl = "/qlm-images/gold.svg"
+ImageUrl = "/qln-images/gold.svg"
 },
 new NewsItem
 {
 Category = "Technology",
 Title = "New fintech regulations boost startups",
-ImageUrl = "/qlm-images/gold.svg"
+ImageUrl = "/qln-images/gold.svg"
 },
 };
 

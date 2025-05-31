@@ -10,7 +10,7 @@
                  TransformOrigin="Origin.TopCenter">
             <ActivatorContent>
                 <MudIconButton DisableRipple="true">
-                    <img src="qlm-images/content/Menu.svg" alt="More" class="menu-icon" />
+                    <img src="qln-images/content/Menu.svg" alt="More" class="menu-icon" />
                 </MudIconButton>
             </ActivatorContent>
 
@@ -51,7 +51,7 @@
 
     <div class="post-footer">
         <div class="post-footer-left">
-            <img src="/qlm-images/content/Sample.svg" alt="User Avatar" class="post-footer-avatar" />
+            <img src="/qln-images/content/Sample.svg" alt="User Avatar" class="post-footer-avatar" />
             <span class="post-meta">
 
                 <span class="author">@Post.Author  • <span class="date-time">@Post.Time.ToString("MMM dd, yyyy - hh:mm tt")</span></span>
@@ -62,19 +62,19 @@
         <div class="post-icons">
             <div class="like-wrapper" @onclick="ToggleLikeAsync">
 
-                <img src="@($"qlm-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="icon" />
+                <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="icon" />
                 <span class="icon-text">@Post.LikeCount</span>
             </div>
             <div class="like-wrapper" @onclick="ToggleDislikeAsync">
 
-                <img src="@($"qlm-images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
+                <img src="@($"qln-images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
             </div>
             <div class="like-wrapper" @onclick="SharePost">
 
-                <img src="qlm-images/content/Share.svg" class="icon" />
+                <img src="qln-images/content/Share.svg" class="icon" />
             </div>
 
-            <img src="qlm-images/content/Comment.svg" class="icon" />
+            <img src="qln-images/content/Comment.svg" class="icon" />
             <span class="icon-text">@Post.CommentCount</span>
         </div>
     </div>
