@@ -134,8 +134,10 @@ builder.Services.AddHttpClient<INewsLetterSubscription, NewsLetterSubscriptionSe
 //builder.Services.AddHttpClient<IAdService, AdService>();
 builder.Services.AddScoped<IAdService, AdMockService>();
 builder.Services.AddHttpClient<IPostInteractionService, PostInteractionService>();
-builder.Services.AddScoped<IContentService, ContentService>();
-builder.Services.AddScoped<INewsService, NewsService>();
+builder.Services.AddHttpClient<INewsService, NewsService>(client =>
+{
+    client.BaseAddress = new Uri(contentVerticalAPIUrl);
+});
 builder.Services.AddHttpClient<IEventService, EventService>(client =>
 {
     client.BaseAddress = new Uri(contentVerticalAPIUrl);
