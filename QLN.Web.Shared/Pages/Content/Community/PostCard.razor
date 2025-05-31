@@ -5,24 +5,32 @@
 <MudPaper Class="post-card p-4" Elevation="0" @onclick="() => { if (!IsDetailView) NavigateToPostDetail(); }">
     <div class="post-header d-flex justify-space-between align-center">
         <div class="post-tag">@Post.Category</div>
-
-        <MudMenu Dense="true" AnchorOrigin="Origin.BottomCenter"
-                 TransformOrigin="Origin.TopCenter">
+        @if (!IsDetailView)
+        {
+            <MudMenu Dense="true" AnchorOrigin="Origin.BottomLeft"
+            TransformOrigin="Origin.TopCenter"
+                 @bind-IsOpen="@isMenuOpen">
             <ActivatorContent>
-                <MudIconButton DisableRipple="true">
-                    <img src="images/content/Menu.svg" alt="More" class="menu-icon" />
-                </MudIconButton>
+                <MudIconButton DisableRipple="true"
+                               Class="menu-icon-button">
+
+@*                     <img src="@($"images/content/{(isMenuOpen ? "Menu-Selected.svg" : "Menu.svg")}")" alt="More" class="menu-icon" />
+ *@               
+  <img src="images/content/Menu.svg"
+                         alt="Menu"
+                         class="@($"menu-icon {(isMenuOpen ? "menu-open" : "")}")" />
+
+</MudIconButton>
             </ActivatorContent>
 
             <ChildContent>
-                @if (!IsDetailView)
-                {
-                    <MudMenuItem OnClick="@OnReport">Report</MudMenuItem>
-                }
+                
+                    <MudMenuItem Class="report-menu-item" OnClick="@OnReport">Report</MudMenuItem>
+                
             </ChildContent>
 
         </MudMenu>
-
+        }
 
     </div>
     <div class="post-title">@Post.Title</div>
@@ -196,9 +204,43 @@
     }
 
         .menu-icon:hover {
+            background: none !important;
             filter: brightness(0) saturate(100%) invert(48%) sepia(86%) saturate(2087%) hue-rotate(4deg) brightness(101%) contrast(102%);
         }
 
+     
+    menu-icon-button:active .menu-icon {
+        filter: brightness(0) saturate(100%) invert(48%) sepia(86%) saturate(2087%) hue-rotate(4deg) brightness(101%) contrast(102%);
+    }
+    .menu-icon-button {
+        background-color: transparent !important;
+        box-shadow: none !important;
+    }
+
+        .menu-icon-button:hover,
+        .menu-icon-button:active,
+        .menu-icon-button:focus {
+            background-color: transparent !important;
+            box-shadow: none !important;
+        }
+
+
+            /* Active/Open state (overrides hover) */
+            .menu-icon.menu-open,
+            .menu-icon-button:hover .menu-icon.menu-open {
+                filter: brightness(0) saturate(100%) invert(48%) sepia(86%) saturate(2087%) hue-rotate(4deg) brightness(101%) contrast(102%) !important;
+            }
+
+    .report-menu-item {
+        width: 76px;
+        height: 48px;
+        padding-top: 4px;
+        padding-bottom: 4px;
+    }
+
+        .report-menu-item:hover {
+            background-color: transparent !important;
+        }
     .icon {
         width: 18px;
         height: 18px;
