@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using QLN.Common.Infrastructure.DTO_s;
-using static MudBlazor.CategoryTypes;
 
 namespace QLN.Web.Shared.Pages.Content.Daily
 {
