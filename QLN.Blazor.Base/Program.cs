@@ -122,10 +122,6 @@ builder.Services.AddHttpClient<IQLAnalyticsService, QLAnalyticsService>(client =
     client.BaseAddress = new Uri(trackingConfig.BaseUrl);
 });
 
-builder.Services.AddHttpClient<ICommunityService, CommunityService>(client =>
-{
-    client.BaseAddress = new Uri(contentVerticalAPIUrl);
-});
 builder.Services.AddHttpClient<INewsLetterSubscription, NewsLetterSubscriptionService>(client =>
 {
     client.BaseAddress = new Uri(newsLetterSubscriptionAPIUrl);
@@ -133,7 +129,19 @@ builder.Services.AddHttpClient<INewsLetterSubscription, NewsLetterSubscriptionSe
 
 //builder.Services.AddHttpClient<IAdService, AdService>();
 builder.Services.AddScoped<IAdService, AdMockService>();
-builder.Services.AddHttpClient<IPostInteractionService, PostInteractionService>();
+
+builder.Services.AddHttpClient<ICommunityService, CommunityService>(client =>
+{
+    client.BaseAddress = new Uri(contentVerticalAPIUrl);
+});
+builder.Services.AddHttpClient<IPostInteractionService, PostInteractionService>(client =>
+{
+    client.BaseAddress = new Uri(contentVerticalAPIUrl);
+});
+builder.Services.AddHttpClient<IContentService, ContentService>(client =>
+{
+    client.BaseAddress = new Uri(contentVerticalAPIUrl);
+});
 builder.Services.AddHttpClient<INewsService, NewsService>(client =>
 {
     client.BaseAddress = new Uri(contentVerticalAPIUrl);
