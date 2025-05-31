@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
-using QLN.SearchService.Models;
-using QLN.SearchService.Service;
+using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.IService.ISearchService;
 using System;
 
 namespace QLN.SearchService.CustomEndpoints

@@ -4,8 +4,6 @@ using Microsoft.Extensions.Options;
 using QLN.SearchService;
 using QLN.SearchService.CustomEndpoints;
 using QLN.SearchService.IndexModels;
-using QLN.SearchService.IRepository;
-using QLN.SearchService.IService;
 using QLN.SearchService.Repository;
 using QLN.SearchService.Service;
 using QLN.SearchService.ServiceConfiguration;

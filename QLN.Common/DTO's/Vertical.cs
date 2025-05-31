@@ -10,6 +10,10 @@ namespace QLN.Common.Infrastructure.Subscriptions
         [JsonPropertyName("Properties")]
         Properties = 1,
         [JsonPropertyName("Rewards")]
-        Rewards = 2
+        Rewards = 2,
+        [JsonPropertyName("Classifieds")]
+        Classifieds = 3,
+        [JsonPropertyName("Services")]
+        Services = 4
     }
 }

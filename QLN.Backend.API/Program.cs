@@ -19,6 +19,8 @@ using QLN.Common.Infrastructure.Subscriptions;
 using System.Text.Json.Serialization;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 using Microsoft.AspNetCore.Authorization;
+using QLN.SearchService.CustomEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -173,7 +175,9 @@ builder.Services.AddDaprClient();
 // This looks like a custom extension method? Adjust if needed
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
+builder.Services.SearchServicesConfiguration(builder.Configuration);
 builder.Services.ContentServicesConfiguration(builder.Configuration);
+builder.Services.AnalyticsServicesConfiguration(builder.Configuration);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
@@ -203,9 +207,14 @@ classifiedGroup.MapClassifiedLandingEndpoints();
 var contentGroup = app.MapGroup("/api/content");
 contentGroup.MapContentLandingEndpoints();
 
+var analyticGroup = app.MapGroup("/api/analytics");
+analyticGroup.MapAnalyticsEndpoints();
+
 app.MapGroup("/api/subscriptions")
    .MapSubscriptionEndpoints()
-    .RequireAuthorization(); 
+    .RequireAuthorization();
+
+app.MapAllBackOfficeEndpoints();
 
 app.UseHttpsRedirection();
 app.UseAuthorization();

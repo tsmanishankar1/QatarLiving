@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using QLN.Classified.MS.Service;
-using QLN.Common.Swagger;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -39,7 +38,6 @@ builder.Services.AddSwaggerGen(opts => {
         }]
         = new string[] { }
     });
-    opts.OperationFilter<SwaggerFileUploadFilter>();
 });
 
 builder.Services.AddAuthorization();

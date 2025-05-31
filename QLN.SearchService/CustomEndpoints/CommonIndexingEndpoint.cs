@@ -5,10 +5,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
-using QLN.SearchService.IService;
 using QLN.SearchService.IndexModels;
-using QLN.SearchService.Models;
 using System.Data;
+using QLN.Common.Infrastructure.IService.ISearchService;
+using QLN.Common.DTOs;
+using QLN.Common.DTO_s;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace QLN.SearchService.CustomEndpoints
 {
@@ -30,13 +32,8 @@ namespace QLN.SearchService.CustomEndpoints
 
                 try
                 {
-                    var items = await svc.SearchAsync(vertical, req);
-                    var resp = new CommonResponse
-                    {
-                        VerticalName = vertical,
-                        ClassifiedsItems = items.ToList()
-                    };
-                    return Results.Ok(resp);
+                    var response = await svc.SearchAsync(vertical, req);
+                    return Results.Ok(response);
                 }
                 catch (ArgumentException ex)
                 {
@@ -108,10 +105,16 @@ namespace QLN.SearchService.CustomEndpoints
                 var logger = logFac.CreateLogger("CommonIndexing");
                 try
                 {
-                    var doc = await svc.GetByIdAsync(vertical, id);
-                    return doc is null
+                    object? result = vertical.ToLowerInvariant() switch
+                    {
+                        "classifieds" => await svc.GetByIdAsync<ClassifiedsIndex>(vertical, id),
+                        "backofficemaster" => await svc.GetByIdAsync<BackofficemasterIndex>(vertical, id),
+                        // add other verticals here...
+                        _ => throw new NotSupportedException($"Unknown vertical '{vertical}'")
+                    };
+                    return result is null
                         ? Results.NotFound(new ProblemDetails { Title = "Not Found", Detail = $"No '{id}' in '{vertical}'", Status = 404 })
-                        : Results.Ok(doc);
+                        : Results.Ok(result);
                 }
                 catch (ArgumentException ex)
                 {

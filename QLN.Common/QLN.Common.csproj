@@ -42,7 +42,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Infrastructure\CustomEndpoints\ServicesEndpoints\" />
     <Folder Include="Infrastructure\IService\IServicesService\" />
   </ItemGroup>
 

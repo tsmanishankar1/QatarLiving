@@ -1,5 +1,4 @@
-﻿// QLN.SearchService.Service/SearchService.cs
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -7,11 +6,10 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Azure.Search.Documents.Models;
 using Microsoft.Extensions.Logging;
-using QLN.SearchService.IRepository;
-using QLN.SearchService.IService;
-using QLN.SearchService.IndexModels;
-using QLN.SearchService.Models;
 using Azure.Search.Documents;
+using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.IService.ISearchService;
+using QLN.Common.Infrastructure.IRepository;
 
 namespace QLN.SearchService.Service
 {
@@ -28,13 +26,12 @@ namespace QLN.SearchService.Service
             _logger = logger;
         }
 
-        public async Task<IEnumerable<ClassifiedsIndex>> SearchAsync(
-            string vertical,
-            SearchRequest req)
+        public async Task<CommonResponse> SearchAsync(string vertical, SearchRequest req)
         {
             if (string.IsNullOrWhiteSpace(vertical))
                 throw new ArgumentException("Vertical is required.", nameof(vertical));
 
+            // build shared SearchOptions
             var opts = new SearchOptions
             {
                 Size = req.Top > 0 ? req.Top : 50,
@@ -44,7 +41,7 @@ namespace QLN.SearchService.Service
             if (req.Filters != null && req.Filters.Any())
             {
                 var clauses = req.Filters
-                    .Select(kv => BuildClause<ClassifiedsIndex>(kv.Key, kv.Value))
+                    .Select(kv => BuildClause<object>(kv.Key, kv.Value))  // we'll swap T in each branch
                     .ToList();
                 opts.Filter = string.Join(" and ", clauses);
                 _logger.LogInformation("Applied filter: {Filter}", opts.Filter);
@@ -52,16 +49,43 @@ namespace QLN.SearchService.Service
 
             if (!string.IsNullOrWhiteSpace(req.OrderBy))
             {
-                var orderExpr = ParseOrderBy<ClassifiedsIndex>(req.OrderBy);
+                var orderExpr = ParseOrderBy<object>(req.OrderBy);       // swap T in each branch
                 opts.OrderBy.Add(orderExpr);
                 _logger.LogInformation("Applied OrderBy: {OrderBy}", orderExpr);
             }
 
-            return await _repo.SearchAsync<ClassifiedsIndex>(
-                vertical,
-                opts,
-                req.Text);
+            var response = new CommonResponse
+            {
+                VerticalName = vertical
+            };
+
+            switch (vertical.Trim().ToLowerInvariant())
+            {
+                case "classifieds":
+                    var classifieds = await _repo.SearchAsync<ClassifiedsIndex>(
+                        vertical, opts, req.Text);
+                    response.ClassifiedsItems = classifieds.ToList();
+                    break;
+
+                case "backofficemaster":
+                    var masters = await _repo.SearchAsync<BackofficemasterIndex>(
+                        vertical, opts, req.Text);
+                    response.MasterItems = masters.ToList();
+                    break;
+
+                // add more verticals here as needed:
+                // case "services":
+                //     var services = await _repo.SearchAsync<ServiceIndex>(vertical, opts, req.Text);
+                //     response.ServiceItems = services.ToList();
+                //     break;
+
+                default:
+                    throw new NotSupportedException($"Unknown vertical '{vertical}'");
+            }
+
+            return response;
         }
+
 
         public async Task<string> UploadAsync(CommonIndexRequest request)
         {
@@ -71,26 +95,31 @@ namespace QLN.SearchService.Service
             var vertical = request.VerticalName?
                               .ToLowerInvariant()
                           ?? throw new ArgumentException("VerticalName is required", nameof(request.VerticalName));
-
-            if (vertical == Constants.Constants.classifieds)
+            switch (vertical.Trim().ToLowerInvariant())
             {
-                var item = request.ClassifiedsItem
+                case "classifieds":
+                    var classifieds = request.ClassifiedsItem
                            ?? throw new ArgumentException("ClassifiedsItem is required for classifieds.", nameof(request.ClassifiedsItem));
-                _logger.LogInformation("Uploading ClassifiedIndex Id={Id} to '{Vertical}'", item.Id, vertical);
-                return await _repo.UploadAsync<ClassifiedsIndex>(vertical, item);
-            }
+                    _logger.LogInformation("Uploading ClassifiedIndex Id={Id} to '{Vertical}'", classifieds.Id, vertical);
+                    return await _repo.UploadAsync<ClassifiedsIndex>(vertical, classifieds);
 
+                case "backofficemaster":
+                    var master = request.MasterItem
+                           ?? throw new ArgumentException("Backoffice item.", nameof(request.MasterItem));
+                    _logger.LogInformation("Uploading ClassifiedIndex Id={Id} to '{Vertical}'", master.Id, vertical);
+                    return await _repo.UploadAsync<BackofficemasterIndex>(vertical, master);
+            }
             throw new ArgumentException($"Unsupported vertical: '{vertical}'", nameof(request.VerticalName));
         }
 
-        public Task<ClassifiedsIndex?> GetByIdAsync(string vertical, string key)
+        public Task<T?> GetByIdAsync<T>(string vertical, string key)
         {
             if (string.IsNullOrWhiteSpace(vertical))
                 throw new ArgumentException("Vertical is required.", nameof(vertical));
             if (string.IsNullOrWhiteSpace(key))
                 throw new ArgumentException("Key is required.", nameof(key));
 
-            return _repo.GetByIdAsync<ClassifiedsIndex>(vertical, key);
+            return _repo.GetByIdAsync<T>(vertical, key);
         }
 
         private string BuildClause<T>(string key, object val)

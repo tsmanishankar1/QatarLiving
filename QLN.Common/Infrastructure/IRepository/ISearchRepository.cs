@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using Azure.Search.Documents;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
-using Azure.Search.Documents;
-using Azure.Search.Documents.Models;
 
-namespace QLN.SearchService.IRepository
+namespace QLN.Common.Infrastructure.IRepository
 {
     public interface ISearchRepository
     {

@@ -4,7 +4,6 @@ using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.Service.FileStorage;
-using QLN.Common.Swagger;
 using QLN.Company.MS.Service;
 using System.Text;
 
@@ -36,7 +35,6 @@ builder.Services.AddSwaggerGen(opts => {
         }]
         = new string[] { }
     });
-    opts.OperationFilter<SwaggerFileUploadFilter>();
 });
 
 builder.Services.AddScoped<ICompanyService, InternalCompanyService>();

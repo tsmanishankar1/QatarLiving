@@ -1,7 +1,7 @@
 ﻿using Azure.Search.Documents.Indexes.Models;
 using Azure.Search.Documents.Indexes;
 
-namespace QLN.SearchService.Models
+namespace QLN.Common.DTO_s
 {
     public class AnalyticsIndex
     {

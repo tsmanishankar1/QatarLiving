@@ -1,7 +1,7 @@
 ﻿using Azure.Search.Documents.Indexes;
 using System.Text.Json.Serialization;
 
-namespace QLN.SearchService.Models
+namespace QLN.Common.DTO_s
 {
     public class ClassifiedsIndex
     {

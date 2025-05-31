@@ -7,8 +7,8 @@ using Azure.Search.Documents.Indexes.Models;
 using Azure.Search.Documents.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using QLN.Common.Infrastructure.IRepository;
 using QLN.SearchService.IndexModels;
-using QLN.SearchService.IRepository;
 
 namespace QLN.SearchService.Repository
 {

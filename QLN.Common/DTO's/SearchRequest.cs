@@ -1,4 +1,4 @@
-﻿namespace QLN.SearchService.Models
+﻿namespace QLN.Common.DTO_s
 {
     public class SearchRequest
     {

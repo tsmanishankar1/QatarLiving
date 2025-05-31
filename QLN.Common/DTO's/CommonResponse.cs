@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
-using QLN.SearchService.IndexModels;
+﻿
+using QLN.Common.DTO_s;
+using QLN.Common.DTOs;
 
-namespace QLN.SearchService.Models
+namespace QLN.Common.DTO_s
 {
     /// <summary>
     /// Wrapper for a search response: vertical name + list of ClassifiedIndex items.
@@ -10,6 +11,7 @@ namespace QLN.SearchService.Models
     {
         public string VerticalName { get; set; } = string.Empty;
         public List<ClassifiedsIndex>? ClassifiedsItems { get; set; }
+        public List<BackofficemasterIndex>? MasterItems { get; set; }
     }
 
     /// <summary>
@@ -19,5 +21,6 @@ namespace QLN.SearchService.Models
     {
         public string VerticalName { get; set; } = string.Empty;
         public ClassifiedsIndex? ClassifiedsItem { get; set; }
+        public BackofficemasterIndex? MasterItem { get; set; }
     }
 }
