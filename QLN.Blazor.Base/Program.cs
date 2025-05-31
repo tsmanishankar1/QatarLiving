@@ -112,6 +112,15 @@ builder.Services.Configure<ApiSettings>(
 builder.Services.Configure<NavigationPath>(
     builder.Configuration.GetSection("NavigationPath"));
 
+builder.Services.AddHttpClient<IQLAnalyticsService, QLAnalyticsService>(client =>
+{
+    var trackingConfig = builder.Configuration.GetSection("TrackingConfiguration").Get<TrackingConfiguration>();
+    if (trackingConfig == null || string.IsNullOrWhiteSpace(trackingConfig.BaseUrl))
+    {
+        throw new InvalidOperationException("TrackingConfiguration is not properly configured.");
+    }
+    client.BaseAddress = new Uri(trackingConfig.BaseUrl);
+});
 
 builder.Services.AddHttpClient<ICommunityService, CommunityService>(client =>
 {

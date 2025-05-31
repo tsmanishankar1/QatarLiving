@@ -1,0 +1,28 @@
+@inject IJSRuntime JS
+
+@code {
+    private const string BROWSER_ID_KEY = "qln_browser_id";
+    private const string SESSION_ID_KEY = "qln_session_id";
+
+    public string BrowserId { get; private set; }
+    public string SessionId { get; private set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        BrowserId = await GetOrCreateIdAsync(BROWSER_ID_KEY);
+        SessionId = await GetOrCreateIdAsync(SESSION_ID_KEY);
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task<string> GetOrCreateIdAsync(string key)
+    {
+        var id = await JS.InvokeAsync<string>("localStorage.getItem", key);
+        if (string.IsNullOrEmpty(id))
+        {
+            id = Guid.NewGuid().ToString();
+            await JS.InvokeVoidAsync("localStorage.setItem", key, id);
+        }
+        return id;
+    }
+}
