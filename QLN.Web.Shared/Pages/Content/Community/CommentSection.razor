@@ -58,15 +58,18 @@ else
                             <span class="created-at">@c.CreatedAt.ToString("g")</span>
                         </div>
 
-                        <MudMenu Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopRight">
+                        <MudMenu Dense="true" AnchorOrigin="Origin.BottomLeft"
+                        @bind-IsOpen="@isMenuOpen" TransformOrigin="Origin.TopRight">
                             <ActivatorContent>
-                                <MudIconButton DisableRipple="true" Style="padding: 0; min-width: 0;">
-                                    <img src="qln-images/content/Menu.svg" alt="More" style="width: 20px; height: 20px;" />
+                                <MudIconButton DisableRipple="true" Class="menu-icon-button">
+                                    <img src="images/content/Menu.svg"
+                                         alt="Menu"
+                                         class="@($"menu-icon {(isMenuOpen ? "menu-open" : "")}")" />
                                 </MudIconButton>
                             </ActivatorContent>
 
                             <ChildContent>
-                                <MudMenuItem OnClick="@OnReport">Report</MudMenuItem>
+                                <MudMenuItem Class="report-menu-item" OnClick="@OnReport">Report</MudMenuItem>
                             </ChildContent>
                         </MudMenu>
 
@@ -310,5 +313,49 @@ else
         padding: 0px 30px;
     }
 
+    .menu-icon {
+        width: 20px;
+        height: 20px;
+    }
+
+        .menu-icon:hover {
+            background: none !important;
+            filter: brightness(0) saturate(100%) invert(48%) sepia(86%) saturate(2087%) hue-rotate(4deg) brightness(101%) contrast(102%);
+        }
+
+
+    menu-icon-button:active .menu-icon {
+        filter: brightness(0) saturate(100%) invert(48%) sepia(86%) saturate(2087%) hue-rotate(4deg) brightness(101%) contrast(102%);
+    }
+
+    .menu-icon-button {
+        background-color: transparent !important;
+        box-shadow: none !important;
+    }
+
+        .menu-icon-button:hover,
+        .menu-icon-button:active,
+        .menu-icon-button:focus {
+            background-color: transparent !important;
+            box-shadow: none !important;
+        }
+
+
+            /* Active/Open state (overrides hover) */
+            .menu-icon.menu-open,
+            .menu-icon-button:hover .menu-icon.menu-open {
+                filter: brightness(0) saturate(100%) invert(48%) sepia(86%) saturate(2087%) hue-rotate(4deg) brightness(101%) contrast(102%) !important;
+            }
+
+    .report-menu-item {
+        width: 76px;
+        height: 48px;
+        padding-top: 4px;
+        padding-bottom: 4px;
+    }
+
+        .report-menu-item:hover {
+            background-color: transparent !important;
+        }
 
 </style>
