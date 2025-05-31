@@ -1,49 +1,42 @@
-@page "/events/details"
+@page "/events/details/{*slug}"
 @using QLN.Web.Shared.Components.Carousel
 @using MudBlazor
 @using QLN.Web.Shared.Pages.Content.Events.EventDetails
 @layout ContentLayout
 @using QLN.Web.Shared.Components.BreadCrumb
+@inherits EventDetailsBase
 
 <div style="width: 100%; background-color: var(--color-secondary-background);">
     <div class="responsive-container">
 
-        <!-- Carousel Banner -->
         <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
             Transition="Transition.Slide" />
 
-                <Breadcrumb Items="breadcrumbItems" />
-                <EventDetailsSection />
+        <Breadcrumb Items="breadcrumbItems" />
+
+        @if (isLoading)
+        {
+            <EventdetailsSkeletons />
+        }
+        else if (eventDetails != null)
+        {
+            <EventDetailsSection item="eventDetails" />
+        }
+        else
+        {
+            <MudText Color="Color.Error">Failed to load event details.</MudText>
+        }
 
     </div>
 </div>
-
-@code {
-    private List<string> carouselImages = new()
-{
-"/images/banner_image.svg",
-"/images/banner_image.svg",
-"/images/banner_image.svg"
-};
-private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
-     protected override void OnInitialized()
-        {
-            breadcrumbItems = new()
-        {
-            new() {   Label = "Events",Url ="/content/events" },
-
-            new() { Label = "Name", Url = "/events/details", IsLast = true },
-
-        };
-           
-        }
-}
 
 <style>
     .responsive-container {
         width: 100%;
         padding: 0 40px;
         box-sizing: border-box;
+        max-width: 1170px;
+        margin: 0 auto;
     }
 
     @@media (max-width: 768px) {
