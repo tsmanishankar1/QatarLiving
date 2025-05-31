@@ -89,20 +89,21 @@ namespace QLN.Web.Shared.Services
         }
         public async Task<bool> PostSelectedCategoryAsync(string selectedCategoryId)
         {
-            try
-            {
-                var url = $"https://www.qatarliving.com/node/add/post?field_page={selectedCategoryId}";
+            //try
+            //{
+            //    var url = $"https://www.qatarliving.com/node/add/post?field_page={selectedCategoryId}";
 
-                var response = await _httpClient.GetAsync(url);
+            //    var response = await _httpClient.GetAsync(url);
 
 
-                return response.IsSuccessStatusCode;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"API Error in PostSelectedCategoryAsync: {ex.Message}");
-                return false;
-            }
+            //    return response.IsSuccessStatusCode;
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine($"API Error in PostSelectedCategoryAsync: {ex.Message}");
+            //    return false;
+            //}
+            throw new NotImplementedException("PostSelectedCategoryAsync is not implemented ");
         }
 
 
