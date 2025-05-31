@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Net.Http.Headers;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
-using QLN.Common.Infrastructure.IService.BannerService;
+using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.Model;
 using System;
 using System.Linq;
@@ -214,6 +214,47 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                 }
             })
             .WithName("GetContentCommunities")
+            .WithTags("Content");
+
+            return group;
+        }
+
+        public static RouteGroupBuilder MapContentGetCommentsEndpoint(this RouteGroupBuilder group)
+        {
+            // GET /api/content/categories
+            group.MapGet("/comments/{article_id}", async (
+                    HttpContext context,
+                    [FromRoute] string article_id,
+                    [FromQuery] int? page,
+                    [FromQuery] int? page_size,
+                    [FromServices] IContentService svc,
+                    CancellationToken cancellationToken
+                    )
+                =>
+            {
+                try
+                {
+                    var model = await svc.GetCommentsFromDrupalAsync(
+                        article_id,
+                        cancellationToken,
+                        page,
+                        page_size);
+
+                    return Results.Ok(model);
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { Message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Content Categories Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("GetContentComments")
             .WithTags("Content");
 
             return group;

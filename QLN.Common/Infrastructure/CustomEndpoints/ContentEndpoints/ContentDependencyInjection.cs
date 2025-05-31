@@ -1,15 +1,13 @@
 ﻿using Microsoft.AspNetCore.Routing;
-using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints
+namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
 {
-    public static class ClassifiedEndPointDependency
+    public static class ContentEndPointDependency
     {
 
         public static RouteGroupBuilder MapContentLandingEndpoints(this RouteGroupBuilder group)
@@ -33,7 +31,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints
                 .MapPostCommentEndpoint()
                 .MapPostForumPostEndpoint()
                 .MapChangePostLikeStatusEndpoint()
-                .MapChangeCommentLikeStatusEndpoint();
+                .MapChangeCommentLikeStatusEndpoint()
+                .MapContentGetCommentsEndpoint();
 
             return group;
         }

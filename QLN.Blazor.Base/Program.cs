@@ -112,11 +112,16 @@ builder.Services.Configure<ApiSettings>(
 builder.Services.Configure<NavigationPath>(
     builder.Configuration.GetSection("NavigationPath"));
 
-
-builder.Services.AddHttpClient<ICommunityService, CommunityService>(client =>
+builder.Services.AddHttpClient<IQLAnalyticsService, QLAnalyticsService>(client =>
 {
-    client.BaseAddress = new Uri(contentVerticalAPIUrl);
+    var trackingConfig = builder.Configuration.GetSection("TrackingConfiguration").Get<TrackingConfiguration>();
+    if (trackingConfig == null || string.IsNullOrWhiteSpace(trackingConfig.BaseUrl))
+    {
+        throw new InvalidOperationException("TrackingConfiguration is not properly configured.");
+    }
+    client.BaseAddress = new Uri(trackingConfig.BaseUrl);
 });
+
 builder.Services.AddHttpClient<INewsLetterSubscription, NewsLetterSubscriptionService>(client =>
 {
     client.BaseAddress = new Uri(newsLetterSubscriptionAPIUrl);
@@ -124,9 +129,23 @@ builder.Services.AddHttpClient<INewsLetterSubscription, NewsLetterSubscriptionSe
 
 //builder.Services.AddHttpClient<IAdService, AdService>();
 builder.Services.AddScoped<IAdService, AdMockService>();
-builder.Services.AddHttpClient<IPostInteractionService, PostInteractionService>();
-builder.Services.AddScoped<IContentService, ContentService>();
-builder.Services.AddScoped<INewsService, NewsService>();
+
+builder.Services.AddHttpClient<ICommunityService, CommunityService>(client =>
+{
+    client.BaseAddress = new Uri(contentVerticalAPIUrl);
+});
+builder.Services.AddHttpClient<IPostInteractionService, PostInteractionService>(client =>
+{
+    client.BaseAddress = new Uri(contentVerticalAPIUrl);
+});
+builder.Services.AddHttpClient<IContentService, ContentService>(client =>
+{
+    client.BaseAddress = new Uri(contentVerticalAPIUrl);
+});
+builder.Services.AddHttpClient<INewsService, NewsService>(client =>
+{
+    client.BaseAddress = new Uri(contentVerticalAPIUrl);
+});
 builder.Services.AddHttpClient<IEventService, EventService>(client =>
 {
     client.BaseAddress = new Uri(contentVerticalAPIUrl);
