@@ -9,16 +9,28 @@
         Task<HttpResponseMessage?> GetAllEventsAsync();
 
         /// <summary>
-        /// Gets Content Events by slug.
+        /// Gets Content Event by slug.
         /// </summary>
-        /// <param name="eventSlug">EventSlug</param>
+        /// <param name="eventSlug">Event slug</param>
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetEventBySlugAsync(string eventSlug);
 
         /// <summary>
-        /// Gets Content Events Categories and Locations.
+        /// Gets Event Categories and Locations.
         /// </summary>
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetEventCategAndLoc();
+
+        /// <summary>
+        /// Gets Featured Events for Events Landing Page.
+        /// </summary>
+        /// <returns>HttpResponseMessage</returns>
+        Task<HttpResponseMessage?> GetFeaturedEventsAsync();
+
+        /// <summary>
+        /// Gets Featured Events for Events Landing Page.
+        /// </summary>
+        /// <returns>HttpResponseMessage</returns>
+        Task<HttpResponseMessage?> GetBannerAsync();
     }
 }

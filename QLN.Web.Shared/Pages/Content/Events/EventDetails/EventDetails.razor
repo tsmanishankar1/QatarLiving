@@ -1,23 +1,48 @@
-@page "/events/details"
+@page "/events/details/{*slug}"
 @using QLN.Web.Shared.Components.Carousel
 @using MudBlazor
 @using QLN.Web.Shared.Pages.Content.Events.EventDetails
+@using QLN.Web.Shared.Pages.Content.Events
 @layout ContentLayout
 @using QLN.Web.Shared.Components.BreadCrumb
+@using QLN.Web.Shared.Components.EmptyCard
+@using QLN.Web.Shared.Components.BannerSwiper
+@inherits EventDetailsBase
 
 <div style="width: 100%; background-color: var(--color-secondary-background);">
     <div class="responsive-container">
 
-        <!-- Carousel Banner -->
-        <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
-            Transition="Transition.Slide" />
+        @if (isLoadingBanners)
+        {
+            <BannerSkleton />
+        }
+        else if (DailyHeroBanners?.Any() == true)
+        {
+            <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+        }
 
-                <Breadcrumb Items="breadcrumbItems" />
-                <EventDetailsSection />
+
+        <Breadcrumb Items="breadcrumbItems" />
+
+        @if (isLoading)
+        {
+            <EventdetailsSkeletons />
+        }
+        else if (eventDetails != null)
+        {
+            <EventDetailsSection item="eventDetails" />
+        }
+        else
+        {
+            <EmptyCard Title="Featured event details not found."
+                Subtitle="Please try again later or explore other available events." />
+        }
 
     </div>
 </div>
 
+<<<<<<< HEAD
+=======
 @code {
     private List<string> carouselImages = new()
 {
@@ -39,11 +64,14 @@ private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItem
         }
 }
 
+>>>>>>> 06c1154b6e409d8ff2a9b3f6a2ff23c55d3bbdd1
 <style>
     .responsive-container {
         width: 100%;
         padding: 0 40px;
         box-sizing: border-box;
+        max-width: 1170px;
+        margin: 0 auto;
     }
 
     @@media (max-width: 768px) {

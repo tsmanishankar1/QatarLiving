@@ -269,7 +269,7 @@ namespace QLN.Web.Shared.Pages.Content.News
 
         protected void onclick(ContentPost news)
         {
-            navManager.NavigateTo($"/article/details/{Uri.EscapeDataString(news.Slug)}");
+            navManager.NavigateTo($"/article/details/{news.Slug}");
         }
     }
 }

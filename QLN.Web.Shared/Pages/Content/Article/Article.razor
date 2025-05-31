@@ -1,4 +1,4 @@
-@page "/article/details/{slug}"
+@page "/article/details/{*slug}"
 @inherits ArticleBase
 @using QLN.Web.Shared.Components.Carousel
 @using QLN.Web.Shared.Pages.Content.Article.Components
@@ -18,7 +18,7 @@
                 <ArticleDetailCard Post="newsArticle" loading="isLoading"/>
                      @* @foreach (var post in PostsList)
                     { *@
-                        <CommentSection Comment="SelectedPost"/>
+                         @* <CommentSection Comment="SelectedPost"/>   *@
                     @* }  *@
             </MudItem>
             <MudItem xs="12" md="4">

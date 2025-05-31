@@ -1,32 +1,55 @@
 @page "/content/events"
 
 @layout ContentLayout
-@using QLN.Web.Shared.Components.Carousel
+@using QLN.Common.Infrastructure.DTO_s;
+@using QLN.Web.Shared.Components.BannerSwiper
 @using QLN.Web.Shared.Pages.Content.Events.FeaturedEvents
 @using QLN.Web.Shared.Pages.Content.Events.SearchSection
+@using QLN.Web.Shared.Pages.Content.Events
 @using QLN.Web.Shared.Pages.Content.Events.EventsList
 @using QLN.Web.Shared.Components.FeaturedEventCard
 @inherits EventsComponentBase
+
 <PageTitle>All the events in Qatar you don&#039;t want to miss | Qatar Living Events</PageTitle>
+
 <div style="width: 100%;background-color: var(--color-secondary-background);">
     <div style="max-width: 1170px; margin: 0 auto;">
         <div class="carousel-responsive-container">
 
-            <!-- Carousel Banner -->
-            <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
-                Transition="Transition.Slide" />
-
+            <!-- Carousel Banner Swiper -->
+            @if (isLoadingBanners)
+            {
+                <BannerSkleton />
+            }
+            else if (DailyHeroBanners?.Any() == true)
+            {
+                <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+            }
 
         </div>
-        <FeaturedEvents FeaturedEvent="featuredEeventData" Loading="isLoading" />
+
+        <FeaturedEvents FeaturedEvent="FeaturedEventData" Loading="isLoadingFeatured" />
+
         <div class="responsive-container">
 
-            <SearchSection />
-            <EventsList Items="ListOfEvents" />
+            @if (isLoadingCategories)
+            {
+                <SearchSkeletons />
+            }
+            else if (EventCategories?.Any() == true)
+            {
+                <SearchSection Categories="EventCategories" />
+            }
+
+
+            <EventsList Items="ListOfEvents" Loading="isLoadingEvents" />
         </div>
     </div>
 </div>
 
+<<<<<<< HEAD
+
+=======
 @code {
     private List<string> carouselImages = new()
 {
@@ -48,6 +71,7 @@ new() { Category = "A Sneak Peek at Qatar Auto Museum Project", ImageUrl = "/qln
 };
 
 }
+>>>>>>> 06c1154b6e409d8ff2a9b3f6a2ff23c55d3bbdd1
 
 <style>
     .responsive-container {
