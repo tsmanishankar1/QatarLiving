@@ -25,16 +25,25 @@ namespace QLN.Web.Shared.Pages.Content.Daily
 
         protected bool isLoading = false;
 
+        protected List<ContentEvent> TopicQueue1 { get; set; } = [];
+        protected List<ContentEvent> TopicQueue2 { get; set; } = [];
+        protected List<ContentEvent> TopicQueue3 { get; set; } = [];
+        protected List<ContentEvent> TopicQueue4 { get; set; } = [];
+
         protected async override Task OnInitializedAsync()
         {
             try
             {
                 LandingContent = await GetContentLandingAsync() ?? new();
-                TopStoryItem = LandingContent.ContentsDaily?.DailyTopStory?.Items.First() ?? new();
-                HighlightedEvent = LandingContent.ContentsDaily?.DailyEvent?.Items.First() ?? new();
-                FeaturedEvents = LandingContent.ContentsDaily?.DailyFeaturedEvents?.Items ?? [];
-                MoreArticles = LandingContent.ContentsDaily?.DailyMoreArticles?.Items ?? [];
-                Videos = LandingContent.ContentsDaily?.DailyWatchOnQatarLiving.Items ?? [];
+                TopStoryItem = LandingContent?.ContentsDaily?.DailyTopStory?.Items.First() ?? new();
+                HighlightedEvent = LandingContent?.ContentsDaily?.DailyEvent?.Items.First() ?? new();
+                FeaturedEvents = LandingContent?.ContentsDaily?.DailyFeaturedEvents?.Items ?? [];
+                MoreArticles = LandingContent?.ContentsDaily?.DailyMoreArticles?.Items ?? [];
+                Videos = LandingContent?.ContentsDaily?.DailyWatchOnQatarLiving?.Items ?? [];
+                TopicQueue1 = LandingContent?.ContentsDaily?.DailyTopics1?.Items ?? [];
+                TopicQueue2 = LandingContent?.ContentsDaily?.DailyTopics2?.Items ?? [];
+                TopicQueue3 = LandingContent?.ContentsDaily?.DailyTopics3?.Items ?? [];
+                TopicQueue4 = LandingContent?.ContentsDaily?.DailyTopics4?.Items ?? [];
             }
             catch (Exception ex)
             {

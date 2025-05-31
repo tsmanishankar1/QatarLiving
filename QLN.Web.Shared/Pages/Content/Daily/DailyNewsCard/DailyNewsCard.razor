@@ -1,14 +1,14 @@
-@using MudBlazor;
 @inherits DailyNewsCardBase
-
-<div class="daily-news-card @(IsHorizontal ? "horizontal" : "")">
-    <img src="@Item.ImageUrl" alt="News Image" class="daily-news-image" />
-    <div class="daily-news-content">
-        <div class="daily-news-category">@Item.Category</div>
-        <div class="daily-news-title">@Item.Title</div>
+@if (!string.IsNullOrEmpty(Item.ImageUrl) || !string.IsNullOrEmpty(Item.EventCategory) || !string.IsNullOrEmpty(Item.Title))
+{
+    <div class="daily-news-card @(IsHorizontal ? "horizontal" : "")" @onclick=" ">
+        <img src="@Item.ImageUrl" alt="img-alt" class="daily-news-image" />
+        <div class="daily-news-content">
+            <div class="daily-news-category">@Item.Category</div>
+            <div class="daily-news-title">@Item.Title</div>
+        </div>
     </div>
-</div>
-
+}
 <style>
     .daily-news-card {
         display: flex;
@@ -80,10 +80,10 @@
             padding: 10px;
         }
 
-        .daily-news-card.horizontal {
-            flex-direction: column;
-            height: auto;
-        }
+            .daily-news-card.horizontal {
+                flex-direction: column;
+                height: auto;
+            }
 
         .daily-news-image {
             height: 100px;
@@ -99,6 +99,5 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-
     }
 </style>
