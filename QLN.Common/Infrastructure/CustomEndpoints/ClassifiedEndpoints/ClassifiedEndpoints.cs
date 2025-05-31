@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using QLN.Common.Infrastructure.DTO_s;
-using QLN.Common.Infrastructure.IService.BannerService;
 using System.Security.Claims;
 using QLN.Common.Infrastructure.Model;
 using Microsoft.AspNetCore.Http.HttpResults;

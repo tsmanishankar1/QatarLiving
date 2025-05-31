@@ -95,6 +95,11 @@ GET {{QLN.Drupal.API_HostAddress}}/qlnapi/community?page=1&page_size=10&order=as
 Accept: application/json
 
 ###
+GET {{QLN.Drupal.API_HostAddress}}/q/api/rest-points/banners/qln_banners
+Accept: application/json
+
+
+###
 POST {{QLN.Drupal.API_HostAddress}}/qlnapi/comment/save
 Accept: application/json
 Content-Type: application/json
