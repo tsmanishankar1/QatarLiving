@@ -8,12 +8,10 @@ namespace QLN.Web.Shared.Services
     public class ContentService : IContentService
     {
         private readonly HttpClient _httpClient;
-        private readonly string _baseUrl;
 
-        public ContentService(HttpClient httpClient, IOptions<ApiSettings> options)
+        public ContentService(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            _baseUrl = "https://qlc-bo-dev.qatarliving.com/";
         }
 
         /// <inheritdoc />
@@ -21,7 +19,7 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"{_baseUrl}api/content/qln_contents_daily/landing");
+                var response = await _httpClient.GetAsync($"/api/content/qln_contents_daily/landing");
                 return response;
             }
             catch (Exception ex)

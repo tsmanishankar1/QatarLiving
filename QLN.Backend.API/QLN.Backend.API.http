@@ -1,7 +1,7 @@
-@QLN.Backend.API_HostAddress = https://localhost:7161
+# @QLN.Backend.API_HostAddress = https://localhost:7161
 # @QLN.Backend.API_HostAddress = https://qlc-bo-dev.qatarliving.com
 # @QLN.Backend.API_HostAddress = https://qlc-bo-qa.qatarliving.com
-# @QLN.Backend.API_HostAddress = https://qlm-bo.qatarliving.com
+@QLN.Backend.API_HostAddress = https://qlm-bo.qatarliving.com
 
 @DrupalQueue = qln_contents_daily
 
