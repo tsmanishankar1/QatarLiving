@@ -8,11 +8,10 @@
         <div class="d-flex flex-column flex-md-row align-items-center px-4 gap-3 gap-md-0">
             <!-- Search Field -->
             <div class="flex-grow-1 flex-md-grow-4 w-100 w-md-auto">
-                <MudTextField T="string" Variant="Variant.Outlined" Placeholder="Search..."
-                              FullWidth="true" Adornment="Adornment.Start"
-                              AdornmentIcon="@Icons.Material.Filled.Search"
-                              @bind-Value="searchText"
-                              Style="background-color: var(--color-background)" />
+                <div class="search-field search-input">
+                    <MudIcon Icon="@Icons.Material.Filled.Search" class="left-icon" />
+                    <input type="text" id="community-search-input" placeholder="Search" class="text-input" />
+                </div>
             </div>
 
             <!-- Category Dropdown -->
@@ -25,18 +24,15 @@
                                  SelectedIdChanged="id => SelectedCategoryId = id"
                                  GetLabel="x => x.Label"
                                  GetId="x => x.Id"
-                                 BorderRadius="1px"
+                                 BorderRadius="0px"
                                  Padding="8px 10px" />
-
-
-
             </div>
 
             <!-- Search Button -->
             <div class="flex-grow-1 flex-md-grow-1_2 w-100 w-md-auto ms-md-0">
                 <MudButton Variant="Variant.Filled" FullWidth="true" OnClick="PerformSearch"
                            Disabled="@loading"
-                           Style="height: 56px; color: var(--color-text-white);border-radius: 5px; background-color: var(--color-accent);text-transform: capitalize;">
+                           Style="height: 56px; color: var(--color-text-white);border-top-right-radius: 5px; border-bottom-right-radius: 5px; background-color: var(--color-accent);text-transform: capitalize;">
                     @if (loading)
                     {
                         <MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Inherit" />
@@ -69,9 +65,37 @@
             gap: 16px;
         }
 
+    .search-field {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        height: 55px;
+        background-color: white;
+        padding: 0 12px;
+    }
+
+    .search-input {
+        border-top-left-radius: 6px;
+        border-bottom-left-radius: 6px;
+        border: 1px solid transparent;
+        transition: border 0.3s ease;
+        font-size: 20px;
+        color: #888;
+    }
+
+    .text-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        font-size: 14px;
+        background: transparent;
+    }
     .select-field {
         width: 255px;
     }
+
 
     @@media (min-width: 600px) {
         .custom-paper {

@@ -75,7 +75,11 @@ namespace QLN.Web.Shared.Pages.Content.Community
                     page: CurrentPage,
                     pageSize: PageSize
                 );
-
+                if (dtoList == null || !dtoList.Any())
+                {
+                    HasError = true;
+                    return null;
+                }
                 var postModelList = dtoList.Select(dto => new PostModel
                 {
                     Id = dto.nid,
@@ -97,7 +101,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             {
                 Logger.LogError(ex, "Get Community Post Async");
                 HasError = true;
-                return new List<PostModel>();
+                return null;
             }
             finally
             {
