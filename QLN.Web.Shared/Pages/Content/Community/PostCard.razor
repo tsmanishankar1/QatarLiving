@@ -77,13 +77,15 @@
 
                 <img src="@($"images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
             </div>
-            <div class="like-wrapper" @onclick="SharePost">
+            <div class="share-wrapper" @onclick="SharePost">
 
                 <img src="images/content/Share.svg" class="icon" />
             </div>
+            <div class="post-card-comment-wrapper" >
 
             <img src="images/content/Comment.svg" class="icon" />
             <span class="icon-text">@Post.CommentCount</span>
+            </div>
         </div>
     </div>
 </MudPaper>
@@ -282,10 +284,20 @@
         padding: 8px;
         display: inline-flex;
         align-items: center;
-        border-radius: 8px;
+        border-radius: 16px;
         gap: 8px;
-        border: 1.5px solid #F0F0F0;
-        border-color: gray;
+        background-color: #F4F4FA;
+       
     }
+
+    .post-card-comment-wrapper {
+        padding: 8px;
+        display: inline-flex;
+        align-items: center;
+        border-radius: 16px;
+        gap: 6px;
+        border: 1px solid #F0F0F0;
+    }
+
 
 </style>
