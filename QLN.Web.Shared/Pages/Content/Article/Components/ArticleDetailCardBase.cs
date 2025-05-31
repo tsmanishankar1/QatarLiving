@@ -8,6 +8,8 @@ public class ArticleDetailCardBase : ComponentBase
 {
     [Parameter]
     public ContentPost Post { get; set; }
+    [Parameter]
+    public bool loading { get; set; }
     protected int commentsCount = 0;
     public string DescriptionHtml { get; set; }
     public string FormattedDate { get; set; }

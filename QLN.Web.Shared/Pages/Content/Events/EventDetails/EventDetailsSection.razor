@@ -6,16 +6,16 @@
     <MudItem xs="12" md="8">
         <div class="event-card">
             <div class="event-header">
-                <h2 class="event-title">Beach Volleyball Championship</h2>
+                <h2 class="event-title">@Event.Title</h2>
             </div>
 
             <div class="event-image-container">
-                <img src="/images/event_image.svg" alt="Beach Volleyball" class="event-image" />
+                <img src="@Event.ImageUrl" alt="@Event.Title" class="event-image" />
 
                 <div class="event-info-bar">
                     <div class="location">
                         <MudIcon Icon="@Icons.Material.Filled.LocationOn" class="location-icon" />
-                        <span class="location-text">Al Mayassa Hall, QNCC, Doha</span>
+                        <span class="location-text">@Event.Location</span>
                     </div>
                     <div class="icons">
                         <MudIconButton Icon="@Icons.Material.Filled.FavoriteBorder" Class="icons-color" />
@@ -26,17 +26,14 @@
 
             <!-- Mobile Info -->
             <div class="event-mobile-info">
-                @* Reuse common event info *@
                 @EventInfoBlock()
 
-                @* Register/Calendar Buttons *@
                 @ActionButtons()
             </div>
 
             <div class="event-description mt-4">
                 <p>
-                    Experience the thrill of the Beach Volleyball Championship! Watch top teams compete in an
-                    electrifying tournament. Enjoy the sun, sand, and sporting spirit with friends and family.
+                    @Event.Description
                 </p>
             </div>
         </div>
@@ -46,7 +43,7 @@
     <MudItem xs="12" md="4">
         <div class="card-container">
             <div class="card-desktop-only">
-                <h3 class="section-title">Sports & Activities</h3>
+                <h3 class="section-title">@Event.SectionTitle</h3>
                 @EventInfoBlock()
                 @ActionButtons()
             </div>
@@ -55,11 +52,11 @@
             <div class="map-container">
                 <span class="map-access-name">Location:</span>
                 <iframe frameborder="0" scrolling="no" marginheight="0" marginwidth="0"
-                    src="https://www.openstreetmap.org/export/embed.html?bbox=51.505%2C25.295%2C51.515%2C25.305&layer=mapnik&marker=25.300%2C51.510"
+                    src="@Event.MapLocation"
                     class="map-frame">
                 </iframe>
             </div>
-            <img src="/images/classifieds/detail_ad.svg" alt="Ad" class="ad-banner" />
+            <img src="/qln-images/classifieds/detail_ad.svg" alt="Ad" class="ad-banner" />
         </div>
     </MudItem>
 </MudGrid>
@@ -67,9 +64,52 @@
 @code {
     private bool IsModalOpen { get; set; } = false;
 
-    private void OnCalendarConfirmed()
+    private EventInfo Event = new EventInfo
     {
-        // Add calendar logic
+        Title = "Beach Volleyball Championship",
+        Location = "Al Mayassa Hall, QNCC, Doha",
+        Description = "Experience the thrill of the Beach Volleyball Championship! Watch top teams compete in an electrifying tournament. Enjoy the sun, sand, and sporting spirit with friends and family.",
+        SectionTitle = "Sports & Activities",
+        ImageUrl = "/qln-images/event_image.svg",
+        Date = "12 Dec 2025 to 13 Jan 2026",
+        Time = "12:00 PM",
+        Fees = "250 - 3,500 QAR",
+        MapLocation = "https://www.openstreetmap.org/export/embed.html?bbox=51.505%2C25.295%2C51.515%2C25.305&layer=mapnik&marker=25.300%2C51.510"
+    };
+
+    private async Task OnCalendarConfirmed(string calendarId)
+    {
+        var title = Uri.EscapeDataString(Event.Title);
+        var description = Uri.EscapeDataString(Event.Description);
+        var location = Uri.EscapeDataString(Event.Location);
+
+        DateTime startDate = DateTime.TryParse(Event.Date.Split("to")[0].Trim(), out var dt) ? dt : DateTime.Now;
+        DateTime endDate = startDate.AddHours(2);
+
+        string startUtc = startDate.ToUniversalTime().ToString("yyyyMMddTHHmmssZ");
+        string endUtc = endDate.ToUniversalTime().ToString("yyyyMMddTHHmmssZ");
+
+        string url = "";
+
+        switch (calendarId)
+        {
+            case "google":
+                url = $"https://calendar.google.com/calendar/render?action=TEMPLATE&text={title}&dates={startUtc}/{endUtc}&details={description}&location={location}";
+                break;
+            case "outlook":
+                url = $"https://outlook.live.com/calendar/0/deeplink/compose?subject={title}&body={description}&startdt={startDate:yyyy-MM-ddTHH:mm:ss}&enddt={endDate:yyyy-MM-ddTHH:mm:ss}&location={location}";
+                break;
+            case "webapp":
+                url = $"https://outlook.office.com/calendar/0/deeplink/compose?subject={title}&body={description}&startdt={startDate:yyyy-MM-ddTHH:mm:ss}&enddt={endDate:yyyy-MM-ddTHH:mm:ss}&location={location}";
+                break;
+            case "yahoo":
+                url = $"https://calendar.yahoo.com/?v=60&title={title}&st={startUtc}&et={endUtc}&desc={description}&in_loc={location}";
+                break;
+            default:
+                return;
+        }
+
+        await JSRuntime.InvokeVoidAsync("window.open", url, "_blank");
     }
 
     RenderFragment EventInfoBlock() => __builder =>
@@ -77,22 +117,22 @@
         <div class="info-section">
             <div class="info-item">
                 <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Style="color: #555;" />
-                <span class="info-text">12 Dec 2025 to 13 Jan 2026</span>
+                <span class="info-text">@Event.Date</span>
             </div>
             <div class="info-item">
                 <MudIcon Icon="@Icons.Material.Filled.AccessTime" Style="color: #555;" />
-                <span class="info-text">12:00 PM</span>
+                <span class="info-text">@Event.Time</span>
             </div>
         </div>
 
         <div class="info-Access">
             <span class="access-name">Access Fees:</span>
-            <span class="price-text">250 - 3,500 <span class="qar">QAR</span></span>
+            <span class="price-text">@Event.Fees</span>
         </div>
 
         <div class="location-secondary">
             <MudIcon Icon="@Icons.Material.Filled.LocationOn" class="location-icon" />
-            <span class="location-text">Al Mayassa Hall, QNCC, Doha</span>
+            <span class="location-text">@Event.Location</span>
         </div>
     };
 

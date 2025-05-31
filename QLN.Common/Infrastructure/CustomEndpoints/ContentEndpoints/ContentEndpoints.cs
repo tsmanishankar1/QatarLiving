@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Net.Http.Headers;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
-using QLN.Common.Infrastructure.IService.BannerService;
+using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.Model;
 using System;
 using System.Linq;
@@ -21,7 +21,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            group.GenerateLandingEndpoint<ContentsDailyPageResponse>(DrupalContentConstants.QlnContentsDaily, "GetContentsDaily"); 
+            //group.GenerateLandingEndpoint<ContentsDailyPageResponse>(DrupalContentConstants.QlnContentsDaily, "GetContentsDaily"); 
+            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnContentsDaily, "GetContentsDaily"); 
 
             return group;
         }
@@ -30,7 +31,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            group.GenerateLandingEndpoint<NewsCommunityPageResponse>(DrupalContentConstants.QlnNewsNewsCommunity, "GetNewsCommunity");
+            //group.GenerateLandingEndpoint<NewsCommunityPageResponse>(DrupalContentConstants.QlnNewsNewsCommunity, "GetNewsCommunity");
+            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsNewsCommunity, "GetNewsCommunity");
 
             return group;
         }
@@ -39,7 +41,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            group.GenerateLandingEndpoint<NewsMiddleEastPageResponse>(DrupalContentConstants.QlnNewsNewsMiddleEast, "GetNewsMiddleEast");
+            //group.GenerateLandingEndpoint<NewsMiddleEastPageResponse>(DrupalContentConstants.QlnNewsNewsMiddleEast, "GetNewsMiddleEast");
+            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsNewsMiddleEast, "GetNewsMiddleEast");
 
             return group;
         }
@@ -48,7 +51,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            group.GenerateLandingEndpoint<NewsWorldPageResponse>(DrupalContentConstants.QlnNewsNewsWorld, "GetNewsWorld");
+            //group.GenerateLandingEndpoint<NewsWorldPageResponse>(DrupalContentConstants.QlnNewsNewsWorld, "GetNewsWorld");
+            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsNewsWorld, "GetNewsWorld");
 
             return group;
         }
@@ -57,7 +61,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            group.GenerateLandingEndpoint<NewsHealthEducationPageResponse>(DrupalContentConstants.QlnNewsNewsHealthEducation, "GetNewsHealthEducation");
+            //group.GenerateLandingEndpoint<NewsHealthEducationPageResponse>(DrupalContentConstants.QlnNewsNewsHealthEducation, "GetNewsHealthEducation");
+            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsNewsHealthEducation, "GetNewsHealthEducation");
 
             return group;
         }
@@ -66,7 +71,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            group.GenerateLandingEndpoint<NewsLawPageResponse>(DrupalContentConstants.QlnNewsNewsLaw, "GetNewsLaw");
+            //group.GenerateLandingEndpoint<NewsLawPageResponse>(DrupalContentConstants.QlnNewsNewsLaw, "GetNewsLaw");
+            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsNewsLaw, "GetNewsLaw");
 
             return group;
         }
@@ -75,7 +81,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            group.GenerateLandingEndpoint<NewsQatarPageResponse>(DrupalContentConstants.QlnNewsNewsQatar, "GetNewsQatar");
+            //group.GenerateLandingEndpoint<NewsQatarPageResponse>(DrupalContentConstants.QlnNewsNewsQatar, "GetNewsQatar");
+            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsNewsQatar, "GetNewsQatar");
 
             return group;
 
@@ -86,6 +93,72 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
 
             // GET /api/content/landing
             group.GenerateLandingEndpoint<CommunityMorePostsResponse>(DrupalContentConstants.QlnCommunityMorePosts, "GetCommunityMorePosts");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapFinanceEntrepreneurshipEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            //group.GenerateLandingEndpoint<FinanceEntrepreneurshipPageResponse>(DrupalContentConstants.QlnNewsFinanceEntrepreneurship, "GetFinanceEntrepreneurship");
+            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsFinanceEntrepreneurship, "GetFinanceEntrepreneurship");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapFinanceFinanceEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            //group.GenerateLandingEndpoint<FinanceFinancePageResponse>(DrupalContentConstants.QlnNewsFinanceFinance, "GetFinanceFinance");
+            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsFinanceFinance, "GetFinanceFinance");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapFinanceJobsCareersEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            //group.GenerateLandingEndpoint<FinanceJobsCareersPageResponse>(DrupalContentConstants.QlnNewsFinanceJobsCareers, "GetFinanceJobsCareers");
+            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsFinanceJobsCareers, "GetFinanceJobsCareers");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapFinanceMarketUpdateEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            //group.GenerateLandingEndpoint<FinanceMarketUpdatePageResponse>(DrupalContentConstants.QlnNewsFinanceMarketUpdate, "GetFinanceMarketUpdate");
+            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsFinanceMarketUpdate, "GetFinanceMarketUpdate");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapFinanceQatarEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            //group.GenerateLandingEndpoint<FinanceQatarPageResponse>(DrupalContentConstants.QlnNewsFinanceQatar, "GetFinanceQatar");
+            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsFinanceQatar, "GetFinanceQatar");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapFinanceRealEstateEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            //group.GenerateLandingEndpoint<FinanceRealEstatePageResponse>(DrupalContentConstants.QlnNewsFinanceRealEstate, "GetFinanceRealEstate");
+            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsFinanceRealEstate, "GetFinanceRealEstate");
 
             return group;
 
@@ -214,6 +287,47 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                 }
             })
             .WithName("GetContentCommunities")
+            .WithTags("Content");
+
+            return group;
+        }
+
+        public static RouteGroupBuilder MapContentGetCommentsEndpoint(this RouteGroupBuilder group)
+        {
+            // GET /api/content/categories
+            group.MapGet("/comments/{article_id}", async (
+                    HttpContext context,
+                    [FromRoute] string article_id,
+                    [FromQuery] int? page,
+                    [FromQuery] int? page_size,
+                    [FromServices] IContentService svc,
+                    CancellationToken cancellationToken
+                    )
+                =>
+            {
+                try
+                {
+                    var model = await svc.GetCommentsFromDrupalAsync(
+                        article_id,
+                        cancellationToken,
+                        page,
+                        page_size);
+
+                    return Results.Ok(model);
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { Message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Content Categories Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("GetContentComments")
             .WithTags("Content");
 
             return group;

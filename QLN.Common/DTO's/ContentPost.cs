@@ -14,6 +14,9 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonPropertyName("image_url")]
         public string ImageUrl { get; set; }
 
+        [JsonPropertyName("user_name")]
+        public string UserName { get; set; }
+
         [JsonPropertyName("title")]
         public string Title { get; set; }
 

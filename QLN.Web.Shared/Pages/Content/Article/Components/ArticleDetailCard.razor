@@ -4,13 +4,21 @@
     <div class="event-title">@Post.Title</div>
 
     <div class="event-image-container">
-        <img src="@Post.ImageUrl" alt="Michael Bublé" class="event-image" />
+         @if (loading){
+                            <MudSkeleton 
+                                SkeletonType="SkeletonType.Rectangle" 
+                                Animation="Animation.Wave" 
+                                Class="rounded shadow-container" />
+                        }
+                        else{
+                <img src="@Post.ImageUrl" alt="Michael Bublé" class="event-image" />
+        }
 
              <div class="author-wrapper">
                     <div class="main-author">
                         <div>
                         Ismat Zerin • <a href="#" class="main-source">Qatar Living</a>  
-                        <img src="/images/tick.svg" alt="Qatarliving" />
+                            <img src="/qln-images/tick.svg" alt="Qatarliving" />
                          <h3 class="main-title">@FormattedDate</h3>
                          </div>
                     </div> 
@@ -21,7 +29,7 @@
                         <MudIcon Icon="@Icons.Material.Filled.Share" class="icon-circle-border" />
 
                     <div class="comment-badge">
-                        <img src="/images/comment_icon.svg" alt="Comments" class="comment-icon" />
+                        <img src="/qln-images/comment_icon.svg" alt="Comments"  />
                         <span class="count">@commentsCount</span>
                     </div>
             </div>
@@ -80,6 +88,10 @@
         display: flex;
         align-items: center;
         color: var(--color-primary);
+    }
+    .shadow-container{
+        width: 100%;
+        height: 421px;
     }
 
     .icons-item {
@@ -140,17 +152,14 @@
     display: block;
     margin: 1rem auto; 
     border-radius: 8px;
-}
+    }
     .comment-badge {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid #E3E3E3; 
+    border: 1px solid #E3E3E3; 
     border-radius: 50px;
     padding: 8px 10px;
-    gap: 8px;
-    width: fit-content;
-}
+    gap: 5px;
+    }
 
 .comment-badge .icon {
     color: var(--color-primary) ; 
@@ -197,6 +206,12 @@
     padding: 10px;
     flex-direction: column; 
     align-items: flex-start;
+    }
+    @@media (max-width: 600px) {
+        .shadow-container{
+            width: 100%;
+            height: 200px;
+        }
     }
 </style>
 

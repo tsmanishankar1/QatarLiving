@@ -9,7 +9,7 @@ namespace QLN.Web.Shared.Helpers
             try
             {
                 var parsed = DateTime.ParseExact(dateString, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
-                return parsed.ToString("dd MMM");
+                return parsed.ToString("dd MMM yyyy"); 
             }
             catch
             {

@@ -42,7 +42,7 @@
     <MudItem xs="12" md="8">
         <div class="main-article">
             <div class="main-content">
-                <div class="main-category">
+                <div class="main-category" @onclick="@(() => onclick(topNews))">
                     @if (isLoading){
                     <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="400px" Width="100%" Animation="Animation.Wave" />
                     }
@@ -60,10 +60,10 @@
                     <div class="author-wrapper">
                         <div class="main-author">
                             Ismat Zerin • <a href="#" class="main-source">Qatar Living</a>  
-                            <img src="/images/tick.svg" alt="Qatarliving" />
+                            <img src="/qln-images/tick.svg" alt="Qatarliving" />
                         </div>
                          <div class="comment-badge">
-                            <img src="/images/comment_icon.svg" alt="Comments" class="comment-icon" />
+                            <img src="/qln-images/comment_icon.svg" alt="Comments" class="comment-icon" />
                             <span class="count">12</span>
                         </div> 
                     </div>
@@ -74,7 +74,7 @@
     </MudItem>
 
     <MudItem xs="12" md="4">
-        <MoreArticle Articles="@moreArticleList" loading="@isLoading"/>
+        <MoreArticle Articles="@moreArticleList" loading="@isLoading" selectedTab="@SelectedTab"/>
     </MudItem>
      </div>  
     <!-- Recommended Cards -->
@@ -98,7 +98,7 @@
    <div class="flex-container">
         @foreach (var news in moreArticleList.Take(3))
         {
-             <div class="@(news == moreArticleList.Last() ? "" : "news-card-wrapper")">  
+             <div class="@(news == moreArticleList.Last() ? "card-image-style" : "news-card-wrapper")">  
             <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)"/>
              </div> 
         }
@@ -121,7 +121,7 @@
      </div> 
      <MudItem xs="12">
          <div class="video-padding">
-       <VideoCards Loading="@isLoading" />
+        <VideoCards Articles="@moreArticleList" selectedTab="@SelectedTab" />
        </div>
      </MudItem>
 
@@ -140,26 +140,30 @@
      <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="section-container">
     <MudItem xs="12">
          <div class="poular-article-container">
-            <PopularArticles Articles="@moreArticleList"/>
-            <img src="/images/classifieds/detail_ad.svg"  alt="Product Image" />
+            <PopularArticles Articles="@moreArticleList" selectedTab="@SelectedTab"/>
+            <img src="/qln-images/classifieds/detail_ad.svg"  alt="Product Image" />
         </div>
     </MudItem>
 </MudContainer> 
+@* <div style="width: 100%;" >
+<NewsCard news="topNews" IsHorizontal="true" OnClick="() => onclick(topNews)"/>
+<NewsCard news="topNews" IsHorizontal="true" OnClick="() => onclick(topNews)"/>
+</div> *@
 
     <!-- Even Better -->
-     <MudGrid GutterSize="3" Class="side-padding responsive-grid">
+     <MudGrid GutterSize="3" Class="grid-padding pb-3">
         @if(!isLoading){
-    @foreach (var news in moreArticleList.Take(9))
-    {
-        <MudItem xs="12" sm="6" md="4"> 
-            <div class="card-wrapper">
-                 <div class="@(news == moreArticleList.Last() ? "" : "news-card-wrapper")">  
-                <NewsCard news="news" IsHorizontal="true" OnClick="() => onclick(news)"/>
-                </div>
-            </div>
-        </MudItem>
-    }
-    }
+        @foreach (var news in moreArticleList.Take(9))
+        {
+            <MudItem xs="12" sm="6" md="4"> 
+                  <div class="card-wrapper">  
+                    @* <div class="@(news == moreArticleList.Last() ? "" : "news-card-wrapper")">    *@
+                    <NewsCard news="news" IsHorizontal="true" OnClick="() => onclick(news)"/>
+                    @* </div>  *@
+                 </div>  
+            </MudItem>
+        }
+        }
     else{
     @for (int i = 0; i < 9; i++)
     {
@@ -223,17 +227,13 @@
 .news-container{
     background-color: white;
     @* width: 100%; *@
-}
-.grid-padding {
-    padding-left: 110px;
-    padding-right: 98px;
-}
-   
-    .news-tabs {
+}   
+.news-tabs {
     width: 100%;
     display: flex;
     overflow-x: auto;
     @* padding: 8px 16px; *@
+    align-items:center;
     gap: 8px;
     white-space: nowrap;
     justify-content: space-between;
@@ -269,9 +269,10 @@
     @* padding-top: 0px; *@
 }
 .grid-padding {
-    padding-left: 20px;
-    padding-right: 0px;
-    }
+    padding-left: 110px;
+    padding-right: 110px;
+    padding-top: 60px
+}
 
 
 .news-tab {
@@ -279,8 +280,8 @@
     font-family: 'Public Sans', sans-serif;
     font-weight: 600;
     font-size: 14px;
+    height:44px;
     color: var(--color-text-heading);
-    border-radius: 4px;
     cursor: pointer;
     flex-shrink: 0;
 }
@@ -313,11 +314,16 @@
     padding-right: 15px;
     padding-left: 15px;
 }
+.card-image-style{
+    border-right: 1px solid var(--color-text-heading);
+    padding-right: 15px;
+    padding-left: 15px;
+}
 
 .newsletter-wrapper {
     flex: 1;
-    min-width: 250px; /* adjust as needed */
-    padding: 0 8px;    /* optional for spacing */
+    max-width: 453px; 
+    padding: 0 8px;   
     box-sizing: border-box;
 }
 
@@ -337,6 +343,8 @@
     border-bottom: 2px solid var(--color-accent);
     font-family: 'Public Sans', sans-serif;
     font-weight: 600;
+    align-items:center;
+    height: 44px;
     font-size: 14px;
 }
 .multiple-container {
@@ -395,6 +403,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0px; 
+    align-items: center;
 }
 .skeleton-container{
     justify-content: space-between;
@@ -414,27 +423,28 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    max-width: 400px;
+    @* max-width: 400px; *@
 }
-.mud-grid-spacing-xs-6 {
+@* .mud-grid-spacing-xs-6 {
     width: calc(100% + 24px);
     margin-left: -24px;
     margin-top: 0px; 
-}
+} *@
 .poular-article-container{
      display: flex;
     flex-direction: row;
     justify-content: space-between;
-    gap: 200px;
+    gap: 150px;
     align-items: center;
     padding: 0px ;
     width: 100%;
     padding-left: 140px; 
-    padding-right: 140px;
+    padding-right: 160px;
 }
 .card-wrapper {
-    display: flex;
-    justify-content: center;
+    @* display: flex; *@
+    @* justify-content: center; *@
+    @* width: 340px; *@
 }
 
 
@@ -481,6 +491,12 @@
         gap: 12px;
         width: max-content;
     }
+    .grid-padding {
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: 60px
+}
+
 
     .news-grid > .mud-grid-item {
         flex: 0 0 auto;
@@ -521,6 +537,10 @@
         padding-right: 5px;    
         font-family: 'Public Sans', sans-serif;
     }
+     .grid-padding {
+        padding-right: 16px;
+        padding-top: 60px;
+    }
 }
 @@media (max-width: 320px) {
     .custom-text {
@@ -530,5 +550,22 @@
         padding-right: 2px;    
         font-family: 'Public Sans', sans-serif;
     }
+}
+@@media (max-width: 1024px) {
+    .poular-article-container {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;               
+        padding-left: 16px;      
+        padding-right: 16px;
+        align-items: center;  
+    }
+}
+@@media (max-width: 425px){
+        .grid-padding {
+        padding-right: 16px;
+        padding-top: 60px;
+    }
+}
 }
 </style>
