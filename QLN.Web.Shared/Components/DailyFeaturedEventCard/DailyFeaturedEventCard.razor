@@ -1,11 +1,11 @@
 @inherits DailyFeaturedEventCardBase
 
-<div class="daily-category-event-card-section" @onclick="() => OnClick.InvokeAsync(Item)">
+<div class="daily-category-event-card-section" @onclick="ClickEvent">
     <div class="daily-card-contents">
         <div class="daily-category-event-image-wrapper">
-            <img src="@Item.ImageUrl" alt="@Item.Category" class="daily-category-event-image" />
+            <img src="@Item.ImageUrl" alt="featured-event-img" class="daily-category-event-image" />
         </div>
-        <h4 class="daily-category-event-card-title">@Item.Category</h4>
+        <h4 class="daily-category-event-card-title" style="text-overflow:ellipsis">@Item.Title</h4>
     </div>
 </div>
 

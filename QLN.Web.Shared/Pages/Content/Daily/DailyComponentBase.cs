@@ -6,7 +6,7 @@ using System.Net.Http.Json;
 
 namespace QLN.Web.Shared.Pages.Content.Daily
 {
-    public class DailyComponentBase : LayoutComponentBase
+    public class DailyComponentBase : ComponentBase
     {
         [Inject] private IContentService _contentService { get; set; }
 
@@ -16,6 +16,14 @@ namespace QLN.Web.Shared.Pages.Content.Daily
         protected List<ContentPost> FeaturedEvents { get; set; } = [];
         protected List<ContentPost> MoreArticles { get; set; } = [];
         protected List<ContentPost> Videos { get; set; } = [];
+        protected List<string> carouselImages = new()
+        {
+        "/qln-images/banner_image.svg",
+        "/qln-images/banner_image.svg",
+        "/qln-images/banner_image.svg"
+        };
+
+        protected bool isLoading = false;
 
         protected async override Task OnInitializedAsync()
         {

@@ -1,4 +1,4 @@
-@using MudBlazor
+@inherits DailyFeaturedEventsBase
 @using QLN.Web.Shared.Components.DailyFeaturedEventCard
 
 
@@ -13,7 +13,7 @@
     {
         <MudText>loading</MudText>
     }
-    else if (FeaturedEvent?.Any() != true)
+    else if (Items?.Any() != true)
     {
         <MudText>No featured categories found.</MudText>
     }
@@ -30,10 +30,10 @@
                 </div>
 
                 <div class="swiper-wrapper">
-                    @foreach (var events in FeaturedEvent)
+                    @foreach (var item in Items)
                     {
                         <div class="swiper-slide swiper-slide-Card">
-                            <DailyFeaturedEventCard Item="events" OnClick="HandleCategoryClick" />
+                            <DailyFeaturedEventCard Item="item" OnClickCallback="OnClickEvent" />
                         </div>
                     }
                 </div>
@@ -43,32 +43,6 @@
         </div>
     }
 </div>
-
-@code {
-    [Parameter]
-    public bool Loading { get; set; } = false;
-
-    [Parameter]
-    public List<DailyFeaturedEventCard.DailyEventItem> FeaturedEvent { get; set; } = new();
-
-    [Inject]
-    private IJSRuntime JSRuntime { get; set; } = default!;
-
-    private bool _categoriesSwiperInitialized = false;
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!_categoriesSwiperInitialized)
-        {
-            _categoriesSwiperInitialized = true;
-            await JSRuntime.InvokeVoidAsync("initCategoriesSwiper");
-        }
-    }
-    private void HandleCategoryClick(DailyFeaturedEventCard.DailyEventItem item)
-    {
-        Console.WriteLine($"Clicked category: {item.Category}");
-    }
-}
 
 <style>
     .daily-categories-wrapper {
@@ -131,14 +105,14 @@
         cursor: pointer;
     }
 
-    /* Position left/right arrows */
-    .arrow-button.left {
-        left: 20px;
-    }
+        /* Position left/right arrows */
+        .arrow-button.left {
+            left: 20px;
+        }
 
-    .arrow-button.right {
-        right: 20px;
-    }
+        .arrow-button.right {
+            right: 20px;
+        }
 
     /* Swiper pagination dots styling */
     .swiper-categories-pagination {
@@ -147,20 +121,20 @@
         user-select: none;
     }
 
-    .swiper-categories-pagination .swiper-pagination-bullet {
-        width: 8px;
-        height: 8px;
-        background: #bbb;
-        display: inline-block;
-        cursor: pointer;
-        transition: background-color 0.3s ease, transform 0.3s ease;
-    }
+        .swiper-categories-pagination .swiper-pagination-bullet {
+            width: 8px;
+            height: 8px;
+            background: #bbb;
+            display: inline-block;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
 
-    .swiper-categories-pagination .swiper-pagination-bullet-active {
-        width: 10px;
-        height: 10px;
-        background: #00426D;
-    }
+        .swiper-categories-pagination .swiper-pagination-bullet-active {
+            width: 10px;
+            height: 10px;
+            background: #00426D;
+        }
 
 
     /* Show arrows on hover only for desktop */
