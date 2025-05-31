@@ -17,7 +17,7 @@
                 <img src="/images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
             </div>
 
-            <CommunitySearchBarSection OnSearchCompleted="HandleSearchResults" />
+            <CommunitySearchBarSection OnSearchCompleted="HandleSearchResults" OnCategoryChanged="HandleCategoryChanged" />
             <div class="section-container">
 
             <MudGrid>
@@ -25,7 +25,10 @@
                 <MudItem xs="12" md="8">
                     <div class="community-header">
                         <MudText Typo="Typo.h5" Class="community-title">
-                            Community Posts
+                                Community Posts <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                                               Color="Color.Primary"
+                                                               OnClick="OpenCreatePostDialog"
+                                                               Class="ms-2" />
                         </MudText>
 
                         <div class="sort-section">
@@ -53,6 +56,19 @@
                             </div>
                         }
                     }
+
+                    else if (IsForumIdNotLoadedError)
+                        {
+                            <MudPaper Class="pa-4 mt-8" Color="Color.Error" Elevation="0">
+                                <MudText Typo="Typo.h6" Color="Color.Error">
+                                    Oops! Post Could not be loaded.
+                                </MudText>
+                                <MudText Typo="Typo.body2">
+                                    Please Select a category to load posts.
+                                </MudText>
+                            </MudPaper>
+                        }
+
                     else if (HasError)
                     {
                         <MudPaper Class="pa-4 mt-8" Color="Color.Error" Elevation="0">

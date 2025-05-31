@@ -21,7 +21,7 @@
                                  Label="Category"
                                  Placeholder="Choose"
                                  SelectedId="@SelectedCategoryId"
-                                 SelectedIdChanged="id => SelectedCategoryId = id"
+                                 SelectedIdChanged="@OnCategoryChange"
                                  GetLabel="x => x.Label"
                                  GetId="x => x.Id"
                                  BorderRadius="0px"

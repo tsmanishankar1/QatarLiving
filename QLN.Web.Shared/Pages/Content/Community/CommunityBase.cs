@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 
 using Microsoft.AspNetCore.Components;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
 using QLN.Web.Shared.Contracts;
@@ -24,7 +25,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected bool IsLoading { get; set; } = true;
         protected bool HasError { get; set; } = false;
-
+        protected bool IsForumIdNotLoadedError { get; set; } = false;
         // Pagination
         protected int CurrentPage { get; set; } = 1;
         protected int PageSize { get; set; } = 10;
@@ -47,6 +48,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected string selectedCategory;
         protected string SelectedCategoryId { get; set; }
         protected List<SelectOption> CategorySelectOptions { get; set; }
+        protected string SelectedForumId;
 
         protected async override Task OnInitializedAsync()
         {
@@ -56,13 +58,13 @@ namespace QLN.Web.Shared.Pages.Content.Community
         new() { Id = "Popular", Label = "Most Popular" },
         new() { Id = "Recent", Label = "Date : Recent First" },
         new() { Id = "Oldest", Label = "Date : Oldest First" },
-        
+
     };
             SelectedCategoryId = "Default";
 
             try
             {
-                PostList = await GetPostListAsync();
+
                 Ad = await GetAdAsync();
 
             }
@@ -71,7 +73,12 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 Logger.LogError(ex, "OnInitializedAsync");
             }
         }
-
+        protected async Task HandleCategoryChanged(string forumId)
+        {
+            SelectedForumId = forumId;
+            CurrentPage = 1;
+            PostList = await GetPostListAsync();
+        }
 
         protected async Task HandleSearchResults()
         {
@@ -84,9 +91,14 @@ namespace QLN.Web.Shared.Pages.Content.Community
             {
                 IsLoading = true;
                 HasError = false;
-
+                var forumId = int.TryParse(SelectedForumId, out var parsedId) ? parsedId : 0;
+                if (forumId <= 0)
+                {
+                    IsForumIdNotLoadedError = true;
+                    return null;
+                }
                 var dtoList = await CommunityService.GetPostsAsync(
-                    forumId: 20000006,
+                    forumId: forumId,
                     order: GetOrderFromSortOption(),
                     page: CurrentPage,
                     pageSize: PageSize
@@ -131,7 +143,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             {
                 "Recent" => "desc",
                 "Oldest" => "asc",
-                _ => "desc" 
+                _ => "desc"
             };
         }
 
@@ -193,5 +205,36 @@ namespace QLN.Web.Shared.Pages.Content.Community
             return response.FirstOrDefault();
         }
 
+        protected bool _isCreatePostDialogOpen = false;
+
+        protected void OpenCreatePostDialog()
+        {
+            _isCreatePostDialogOpen = true;
+        }
+
+        protected void RedirectToPostPage()
+        {
+            _isCreatePostDialogOpen = false;
+
+            if (!string.IsNullOrEmpty(SelectedCategoryId))
+            {
+                var url = $"https://www.qatarliving.com/node/add/post?field_page={SelectedCategoryId}";
+                Snackbar.Add("Please select a category before continuing.", Severity.Warning);
+
+            }
+            else
+            {
+                Snackbar.Add("Please select a category before continuing.", Severity.Warning);
+            }
+        }
+        [Parameter] public EventCallback<string> OnCategoryChanged { get; set; }
+
+
+
+        protected async Task OnCategoryChange(string newId)
+        {
+            SelectedCategoryId = newId;
+            await OnCategoryChanged.InvokeAsync(newId);
+        }
     }
 }
