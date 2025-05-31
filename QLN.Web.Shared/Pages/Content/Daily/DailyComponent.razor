@@ -79,9 +79,15 @@
         </div>
 
     </div>
-    <div class="max-container">
-        <DailyVideoCards />
-    </div>
+    @if (Videos.Count > 0)
+    {
+
+
+        <div class="max-container">
+
+            <DailyVideoCards Items="@Videos" />
+        </div>
+    }
     <div class="responsive-news-container">
 
         <div class="max-container">
