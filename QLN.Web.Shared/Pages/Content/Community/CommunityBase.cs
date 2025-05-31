@@ -15,6 +15,9 @@ namespace QLN.Web.Shared.Pages.Content.Community
     {
         [Inject]
         public ISnackbar Snackbar { get; set; }
+        [Inject]
+        public IDialogService DialogService { get;set; }
+
         [Inject] private ILogger<CommunityBase> Logger { get; set; }
         [Inject] private ICommunityService CommunityService { get; set; }
         [Inject] private INewsLetterSubscription NewsLetterSubscriptionService { get; set; }
@@ -210,26 +213,23 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected void OpenCreatePostDialog()
         {
             _isCreatePostDialogOpen = true;
+            StateHasChanged();
         }
 
-        protected void RedirectToPostPage()
-        {
-            _isCreatePostDialogOpen = false;
-
-            if (!string.IsNullOrEmpty(SelectedCategoryId))
-            {
-                var url = $"https://www.qatarliving.com/node/add/post?field_page={SelectedCategoryId}";
-                Snackbar.Add("Please select a category before continuing.", Severity.Warning);
-
-            }
-            else
-            {
-                Snackbar.Add("Please select a category before continuing.", Severity.Warning);
-            }
-        }
+       
         [Parameter] public EventCallback<string> OnCategoryChanged { get; set; }
 
-
+        protected Task OpenDialogAsync()
+        {
+            var options = new DialogOptions
+            {
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                CloseOnEscapeKey = true,
+               
+            };
+            return DialogService.ShowAsync<DialogUsageExample_Dialog>("Simple Dialog", options);
+        }
 
         protected async Task OnCategoryChange(string newId)
         {

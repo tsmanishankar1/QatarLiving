@@ -7,6 +7,7 @@
 @using QLN.Web.Shared.Pages.Content.Community.Components.SearchBarSection
 @using QLN.Web.Shared.Components.Carousel
 @using QLN.Web.Shared.Pages.Content.Community.Components.CustomDropdown
+@using QLN.Web.Shared.Components.NewCustomSelect
 
 
 <div class="container">
@@ -20,44 +21,44 @@
             <CommunitySearchBarSection OnSearchCompleted="HandleSearchResults" OnCategoryChanged="HandleCategoryChanged" />
             <div class="section-container">
 
-            <MudGrid>
-                <!-- Left Section -->
-                <MudItem xs="12" md="8">
-                    <div class="community-header">
-                        <MudText Typo="Typo.h5" Class="community-title">
+                <MudGrid>
+                    <!-- Left Section -->
+                    <MudItem xs="12" md="8">
+                        <div class="community-header">
+                            <MudText Typo="Typo.h5" Class="community-title">
                                 Community Posts <MudIconButton Icon="@Icons.Material.Filled.Add"
-                                                               Color="Color.Primary"
-                                                               OnClick="OpenCreatePostDialog"
-                                                               Class="ms-2" />
-                        </MudText>
+                                                               Style="color: #F26D1E;"
+                                                               OnClick="OpenDialogAsync"
+                                Class="ms-2" />
+                            </MudText>
+                          
+                            <div class="sort-section">
+                                <div class="sort-label">
+                                    Sort by:
+                                </div>
 
-                        <div class="sort-section">
-                            <div class="sort-label">
-                                Sort by:
+
+                                <SortDropdown TItem="SelectOption"
+                                Items="@CategorySelectOptions"
+                                SelectedId="@SelectedCategoryId"
+                                SelectedIdChanged="id => SelectedCategoryId = id"
+                                GetLabel="x => x.Label"
+                                GetId="x => x.Id"
+                                BorderRadius="0px"
+                                Padding="8px 10px" />
                             </div>
-
-                     
-                             <SortDropdown TItem="SelectOption"
-                                 Items="@CategorySelectOptions"
-                                 SelectedId="@SelectedCategoryId"
-                                 SelectedIdChanged="id => SelectedCategoryId = id"
-                                 GetLabel="x => x.Label"
-                                 GetId="x => x.Id"
-                                 BorderRadius="0px"
-                                 Padding="8px 10px" />
                         </div>
-                    </div>
-                    @if (IsLoading)
-                    {
-                        @for (int i = 0; i < 3; i++)
+                        @if (IsLoading)
                         {
-                            <div class="postcard-margin-top">
-                                <MudSkeleton Width="100%" Height="200px" Animation="Animation.Pulse" />
-                            </div>
+                            @for (int i = 0; i < 3; i++)
+                            {
+                                <div class="postcard-margin-top">
+                                    <MudSkeleton Width="100%" Height="200px" Animation="Animation.Pulse" />
+                                </div>
+                            }
                         }
-                    }
 
-                    else if (IsForumIdNotLoadedError)
+                        else if (IsForumIdNotLoadedError)
                         {
                             <MudPaper Class="pa-4 mt-8" Color="Color.Error" Elevation="0">
                                 <MudText Typo="Typo.h6" Color="Color.Error">
@@ -69,90 +70,92 @@
                             </MudPaper>
                         }
 
-                    else if (HasError)
-                    {
-                        <MudPaper Class="pa-4 mt-8" Color="Color.Error" Elevation="0">
-                            <MudText Typo="Typo.h6" Color="Color.Error">
-                                Oops! Something went wrong while loading community posts.
-                            </MudText>
-                            <MudText Typo="Typo.body2">
-                                Please try again later.
-                            </MudText>
-                        </MudPaper>
-                    }
-                    else if (PostList == null )
-                    {
-                        <MudPaper Class="pa-4 mt-8" Color="Color.Warning" Elevation="0">
-                            <MudText Typo="Typo.h6" Color="Color.Warning">
-                                No community posts found
-                            </MudText>
-                            <MudText Typo="Typo.body2">
-                                There are currently no posts available. Be the first to create one!
-                            </MudText>
-
-                        </MudPaper>
-                    }
-                    else
-                    {
-                        @foreach (var post in PostList)
+                        else if (HasError)
                         {
-                            <div class="postcard-margin-top">
+                            <MudPaper Class="pa-4 mt-8" Color="Color.Error" Elevation="0">
+                                <MudText Typo="Typo.h6" Color="Color.Error">
+                                    Oops! Something went wrong while loading community posts.
+                                </MudText>
+                                <MudText Typo="Typo.body2">
+                                    Please try again later.
+                                </MudText>
+                            </MudPaper>
+                        }
+                        else if (PostList == null )
+                        {
+                            <MudPaper Class="pa-4 mt-8" Color="Color.Warning" Elevation="0">
+                                <MudText Typo="Typo.h6" Color="Color.Warning">
+                                    No community posts found
+                                </MudText>
+                                <MudText Typo="Typo.body2">
+                                    There are currently no posts available. Be the first to create one!
+                                </MudText>
 
-                                <PostCard Post="post" IsDetailView="false" />
-                            </div>
+                            </MudPaper>
+                        }
+                        else
+                        {
+                            @foreach (var post in PostList)
+                            {
+                                <div class="postcard-margin-top">
 
-                        }   }
-                </MudItem>
+                                    <PostCard Post="post" IsDetailView="false" />
+                                </div>
 
-                <!-- Right Section -->
-                <MudItem xs="12" md="4">
-                    <CommunityRules />
+                            }   }
+                    </MudItem>
 
-                    <MudPaper Class="newsletter-box" Elevation="1">
+                    <!-- Right Section -->
+                    <MudItem xs="12" md="4">
+                        <CommunityRules />
 
-                        <img src="/images/content/Mail.svg" alt="mail icon" class="newsletter-icon" />
-                        <MudText Typo="Typo.body1" Class="newsletter-text">
-                            Get The QL newsletter. Sign up to receive the top stories you need to know right now.
-                        </MudText>
-                        <MudForm @ref="_form">
-                            @* 
+                        <MudPaper Class="newsletter-box" Elevation="1">
+
+                            <img src="/images/content/Mail.svg" alt="mail icon" class="newsletter-icon" />
+                            <MudText Typo="Typo.body1" Class="newsletter-text">
+                                Get The QL newsletter. Sign up to receive the top stories you need to know right now.
+                            </MudText>
+                            <MudForm @ref="_form">
+                                @* 
                             <MudTextField T="string" Placeholder="Enter your email" Variant="Variant.Outlined"
                                           Class="newsletter-input" @bind-Value="SubscriptionModel.Email"
                                           For="@(() => SubscriptionModel.Email)"
                                           Immediate="true" /> *@
-                            <input type="email"
-                                   class="newsletter-input"
-                                   placeholder="Enter your email"
-                                   @bind="SubscriptionModel.Email"
-                                   @bind:event="oninput" />
-                            <MudButton Variant="Variant.Filled"
-                                       Class="newsletter-button"
-                                       Disabled="@IsSubscribingToNewsletter"
-                                       OnClick="SubscribeAsync">
-                                @if (IsSubscribingToNewsletter)
-                                {
-                                    <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" />
-                                    @("Subscribing...")
-                                }
-                                else
-                                {
-                                    @("Subscribe")
-                                }
-                            </MudButton>
-                        </MudForm>
-                    </MudPaper>
+                                <input type="email"
+                                class="newsletter-input"
+                                placeholder="Enter your email"
+                                @bind="SubscriptionModel.Email"
+                                @bind:event="oninput" />
+                                <MudButton Variant="Variant.Filled"
+                                Class="newsletter-button"
+                                Disabled="@IsSubscribingToNewsletter"
+                                OnClick="SubscribeAsync">
+                                    @if (IsSubscribingToNewsletter)
+                                    {
+                                        <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" />
+                                        @("Subscribing...")
+                                    }
+                                    else
+                                    {
+                                        @("Subscribe")
+                                    }
+                                </MudButton>
+                            </MudForm>
+                        </MudPaper>
 
 
-                    <MudPaper Class="ad-wrapper" Elevation="0" Square="true">
-                        <MudImage Src="/images/content/Ad.png" Alt="Advertisement" Class="ad-image" />
-                    </MudPaper>
-                </MudItem>
-            </MudGrid>
+                        <MudPaper Class="ad-wrapper" Elevation="0" Square="true">
+                            <MudImage Src="/images/content/Ad.png" Alt="Advertisement" Class="ad-image" />
+                        </MudPaper>
+                    </MudItem>
+                </MudGrid>
             </div>
-
+            
         </MudContainer>
     </div>
 </div>
+
+
 
 
 <style>
