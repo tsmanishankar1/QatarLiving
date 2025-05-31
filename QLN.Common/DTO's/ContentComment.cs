@@ -12,13 +12,16 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonPropertyName("comment_id")]
         public string CommentId { get; set; }
 
+        [JsonPropertyName("user_id")]
+        public string UserId { get; set; }
+
+        [JsonPropertyName("user_name")]
+        public string UserName { get; set; }
+
         [JsonPropertyName("subject")]
         public string Subject { get; set; }
 
-        [JsonPropertyName("username")]
-        public string Username { get; set; }
-
-        [JsonPropertyName("created_date")]
-        public string CreatedDate { get; set; }
+        [JsonPropertyName("date_created")]
+        public string DateCreated { get; set; }
     }
 }

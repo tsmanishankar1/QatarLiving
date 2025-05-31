@@ -218,6 +218,47 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
 
             return group;
         }
+
+        public static RouteGroupBuilder MapContentGetCommentsEndpoint(this RouteGroupBuilder group)
+        {
+            // GET /api/content/categories
+            group.MapGet("/comments/{article_id}", async (
+                    HttpContext context,
+                    [FromRoute] string article_id,
+                    [FromQuery] int? page,
+                    [FromQuery] int? page_size,
+                    [FromServices] IContentService svc,
+                    CancellationToken cancellationToken
+                    )
+                =>
+            {
+                try
+                {
+                    var model = await svc.GetCommentsFromDrupalAsync(
+                        article_id,
+                        cancellationToken,
+                        page,
+                        page_size);
+
+                    return Results.Ok(model);
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { Message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Content Categories Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("GetContentComments")
+            .WithTags("Content");
+
+            return group;
+        }
         public static RouteGroupBuilder MapContentCategoriesEndpoint(this RouteGroupBuilder group)
         {
             const int CATEGORY_CACHE_EXPIRY_IN_MINS = 60;
