@@ -6,7 +6,7 @@
     @if (loading){
         @for (int i = 0; i < 4; i++)
     {
-    <MudGrid Class="ps-3">
+    <MudGrid Class="ps-3 py-1">
     <MudItem xs="9">
         <MudSkeleton SkeletonType="SkeletonType.Text" Width="80%" Height="20px" Animation="Animation.Wave" Class="mb-1 " />
         <MudSkeleton SkeletonType="SkeletonType.Text" Width="95%" Height="20px" Animation="Animation.Wave" Class="mb-1" />
@@ -23,7 +23,7 @@
     {
         <div class="article-entry">
             <div class="article-content">
-                <a class="article-title" href="@($"/article/details/{Uri.EscapeDataString(article.Slug)}")">
+                <a class="article-title" href="@($"/article/details/{article.Slug}")">
                     @article.Title
                 </a>
             </div>
@@ -71,7 +71,6 @@
 
     h3 {
         font-size: 20px;
-        margin-bottom: 20px;
     }
 
     .article-entry {
@@ -129,10 +128,22 @@
     .article-image {
         width: 124px;
         height: 70px;
-        border-radius: 6px;
+        border-radius: 4px;
         object-fit: cover;
     }
     @@media (max-width: 768px) {
+        .side-spacing{
+            padding-right: 16px;
+            padding-left: 16px;
+        }
+    }
+    @@media (max-width: 1024px) {
+        .article-image {
+        width: 124px;
+        height: 70px;
+        border-radius: 4px;
+        object-fit: cover;
+        }
         .side-spacing{
             padding-right: 16px;
             padding-left: 16px;
