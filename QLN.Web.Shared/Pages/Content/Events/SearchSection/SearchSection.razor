@@ -21,7 +21,7 @@
             <!-- Property Type Select -->
             <div class="select-field">
                 <NewCustomSelect TItem="SelectOption" Items="@PropertyTypes" Label="Category" Placeholder="Choose"
-                    SelectedId="@SelectedPropertyTypeId" SelectedIdChanged="id => SelectedPropertyTypeId = id"
+                    SelectedId="@SelectedPropertyTypeId" SelectedIdChanged="@HandleCategoryChanged"
                     GetLabel="x => x.Label" GetId="x => x.Id" BorderRadius="@(IsMobile ? "8px" : "0px")"
                     Padding="8px 10px" />
             </div>
@@ -46,19 +46,19 @@
                 <MudPopover Open="@_showDatePicker" AnchorOrigin="Origin.BottomCenter"
                     TransformOrigin="Origin.TopCenter" Elevation="6" Class="popover-container">
                     <div class="picker-overlay my-orange-theme" @ref="_popoverDiv">
-                        <MudDateRangePicker @bind-DateRange="_dateRange" DisplayMonths="1"
-                            PickerVariant="PickerVariant.Static" DisableToolbar="true" ShowToolbar="false" />
+
+                        <MudDatePicker @bind-Date="_selectedDate" PickerVariant="PickerVariant.Static"
+                            DisableToolbar="true" ShowToolbar="false" />
 
                         <div class="picker-actions">
                             <button class="cancel-button" @onclick="CancelDatePicker">Cancel</button>
-                            <button class="apply-button" @onclick="ApplyDatePicker"
-                                disabled="@(_dateRange?.Start == null || _dateRange?.End == null)">
+                            <button class="apply-button" @onclick="ApplyDatePicker" disabled="@(_selectedDate == null)">
                                 Apply
                             </button>
                         </div>
-
                     </div>
                 </MudPopover>
+
 
             </div>
 

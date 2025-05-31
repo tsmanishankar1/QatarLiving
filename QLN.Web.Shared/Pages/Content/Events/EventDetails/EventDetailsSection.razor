@@ -302,12 +302,31 @@ OpenInNewTab = true
         gap: 12px;
     }
 
+    .event-description a {
+        word-break: break-word;
+        overflow-wrap: break-word;
+        color: var(--color-primary);
+        text-decoration: underline;
+        display: inline-block;
+        max-width: 100%;
+    }
+
     .event-description {
-        margin-top: 20px;
-        font-size: 14px;
-        line-height: 26px;
-        letter-spacing: 0;
-        color: var(--color-text-heading);
+        overflow-wrap: break-word;
+        word-break: break-word;
+        max-width: 100%;
+    }
+
+    .event-description p {
+        margin-bottom: 1rem;
+    }
+
+    .event-description img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 1rem auto;
+        border-radius: 8px;
     }
 
     .card-container {

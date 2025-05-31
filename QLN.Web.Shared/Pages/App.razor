@@ -107,6 +107,28 @@
                 }
             });
         };
+        // ✅ NEW BANNER SWIPER
+   window.initBannerSwiper = function (bannerCount) {
+    const autoplayEnabled = bannerCount > 1;
+
+    new Swiper('.banner-swiper', {
+        slidesPerView: 1,
+        loop: autoplayEnabled,
+        autoplay: autoplayEnabled
+            ? {
+                delay: 5000,
+                disableOnInteraction: false,
+                pauseOnMouseEnter: true
+            }
+            : false,
+        pagination: {
+            el: '.swiper-pagination',
+            clickable: true
+        }
+    });
+};
+
+
 
         let featuredSwiperInstance;
 
@@ -178,8 +200,8 @@
                     768: { slidesPerView: 4, spaceBetween: 7 },
                     860: { slidesPerView: 4.8, spaceBetween: 7 },
                     1024: { slidesPerView: 5.2, spaceBetween: 7 },
-                    1120: { slidesPerView: 6, spaceBetween: 5 },
-                    1200: { slidesPerView: 6, spaceBetween: 5 },
+                    1120: { slidesPerView: 6, spaceBetween: 8 },
+                    1200: { slidesPerView: 6, spaceBetween: 8 },
                 },
                 on: {
                     afterInit: function (swiper) {

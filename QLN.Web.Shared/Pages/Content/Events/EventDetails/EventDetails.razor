@@ -2,15 +2,25 @@
 @using QLN.Web.Shared.Components.Carousel
 @using MudBlazor
 @using QLN.Web.Shared.Pages.Content.Events.EventDetails
+@using QLN.Web.Shared.Pages.Content.Events
 @layout ContentLayout
 @using QLN.Web.Shared.Components.BreadCrumb
+@using QLN.Web.Shared.Components.EmptyCard
+@using QLN.Web.Shared.Components.BannerSwiper
 @inherits EventDetailsBase
 
 <div style="width: 100%; background-color: var(--color-secondary-background);">
     <div class="responsive-container">
 
-        <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
-            Transition="Transition.Slide" />
+        @if (isLoadingBanners)
+        {
+            <BannerSkleton />
+        }
+        else if (DailyHeroBanners?.Any() == true)
+        {
+            <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+        }
+
 
         <Breadcrumb Items="breadcrumbItems" />
 
@@ -24,7 +34,8 @@
         }
         else
         {
-            <MudText Color="Color.Error">Failed to load event details.</MudText>
+            <EmptyCard Title="Featured event details not found."
+                Subtitle="Please try again later or explore other available events." />
         }
 
     </div>
