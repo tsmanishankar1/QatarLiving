@@ -1,7 +1,10 @@
+@using QLN.Web.Shared.Helpers
+@using QLN.Web.Shared.Pages.Content.Daily.DailyNewsCard
+@inherits DailyHighlightsBase
 <div class="category-section">
     <div class="section-header">
         <h3 class="section-heading">
-            <span class="accent-bar"></span>Ramadan
+            <span class="accent-bar"></span>@QueueLabel
         </h3>
         <div class="view-all">
             <span class="view-all-text">View all</span>
@@ -9,33 +12,20 @@
         </div>
     </div>
     <div class="card-list">
-        <!-- Card 1 -->
-        <div class="news-card with-divider">
-            <img src="/qln-images/gold.svg" alt="Gold Prices" />
-            <div class="text-content">
-                <p class="tag">Finance</p>
-                <h4 class="headline">Qatar gold prices rise by 4.86% this week</h4>
+        @foreach (var item in ListOfItems.Take(3))
+        {
+            <div class="news-card with-divider">
+                <img class="daily-news-image" src="@item.ImageUrl" alt="img" />
+                <div class="text-content">
+                    <p class="tag">@item.Category</p>
+                    <h4 class="headline">@item.Title</h4>
+                    @if (!string.IsNullOrEmpty(item.EventStart) && !string.IsNullOrEmpty(item.EventEnd))
+                    {
+                        <p class="date">@DateHelper.FormatDate(item.EventStart) to @DateHelper.FormatDate(item.EventEnd)</p>
+                    }
+                </div>
             </div>
-        </div>
-
-        <!-- Card 2 -->
-        <div class="news-card with-divider">
-            <img src="/qln-images/gold.svg" alt="FIFA" />
-            <div class="text-content">
-                <p class="tag">Event</p>
-                <h4 class="headline">FIFA Arab Cup Doha 2025</h4>
-                <p class="date">12 Dec 2025 to 13 Jan 2026</p>
-            </div>
-        </div>
-
-        <!-- Card 3 -->
-        <div class="news-card">
-            <img src="/qln-images/gold.svg" alt="Amir Cup" />
-            <div class="text-content">
-                <p class="tag">Video</p>
-                <h4 class="headline">Amir Cup Recap and Highlights</h4>
-            </div>
-        </div>
+        }
     </div>
 </div>
 
@@ -99,7 +89,6 @@
         color: var(--color-accent);
         font-weight: bold;
         text-decoration: none;
-
     }
 
     .card-list {
@@ -123,12 +112,12 @@
         padding: 10px;
     }
 
-    .news-card img {
-        width: 100%;
-        height: 100px;
-        border-radius: 6px;
-        object-fit: cover;
-    }
+        .news-card img {
+            width: 100%;
+            height: 100px;
+            border-radius: 6px;
+            object-fit: cover;
+        }
 
     .text-content {
         padding: 5px 10px;
@@ -184,7 +173,7 @@
         }
 
         .news-card {
-            display: flex;
+            display: contents;
             flex-direction: row;
             align-items: center;
             justify-content: center;
@@ -194,11 +183,11 @@
             padding: 10px;
         }
 
-        .news-card img {
-            width: 45%;
-            height: 100%;
-            border-radius: 6px;
-        }
+            .news-card img {
+                width: 20%;
+                height: 100%;
+                border-radius: 6px;
+            }
 
         .text-content {
             width: 55%;

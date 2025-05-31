@@ -46,12 +46,10 @@
 
                 @if (TopicQueue1.Count() > 0)
                 {
-
-
                     <!-- Left column: news cards -->
                     <MudItem xs="12" md="9" lg="9">
                         <MudGrid GutterSize="16px">
-                            @foreach (var item in TopicQueue1)
+                            @foreach (var item in TopicQueue1.Take(3))
                             {
                                 <MudItem xs="12" sm="6" md="4" lg="4">
                                     <DailyNewsCard Item="item" IsHorizontal="false" />
@@ -87,9 +85,21 @@
     <div class="responsive-news-container">
 
         <div class="max-container">
-            <DailyHighlights />
+            @if (TopicQueue2.Count() > 0)
+            {
+                <DailyHighlights QueueLabel="@TopicQueue2Label" ListOfItems="TopicQueue2" />
+            }
+
             <TakeOverBanner ImageUrl="/qln-images/takeover_banner.svg" />
-            <DailyHighlights />
+
+            @if (TopicQueue3.Count() > 0)
+            {
+                <DailyHighlights QueueLabel="@TopicQueue3Label" ListOfItems="TopicQueue3" />
+            }
+            @if (TopicQueue4.Count() > 0)
+            {
+                <DailyHighlights QueueLabel="@TopicQueue4Label" ListOfItems="TopicQueue4" />
+            }
         </div>
     </div>
 </div>

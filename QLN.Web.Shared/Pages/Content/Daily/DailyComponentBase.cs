@@ -30,6 +30,11 @@ namespace QLN.Web.Shared.Pages.Content.Daily
         protected List<ContentEvent> TopicQueue3 { get; set; } = [];
         protected List<ContentEvent> TopicQueue4 { get; set; } = [];
 
+        protected string TopicQueue1Label { get; set; } = string.Empty;
+        protected string TopicQueue2Label { get; set; } = string.Empty;
+        protected string TopicQueue3Label { get; set; } = string.Empty;
+        protected string TopicQueue4Label { get; set; } = string.Empty;
+
         protected async override Task OnInitializedAsync()
         {
             try
@@ -40,6 +45,10 @@ namespace QLN.Web.Shared.Pages.Content.Daily
                 FeaturedEvents = LandingContent?.ContentsDaily?.DailyFeaturedEvents?.Items ?? [];
                 MoreArticles = LandingContent?.ContentsDaily?.DailyMoreArticles?.Items ?? [];
                 Videos = LandingContent?.ContentsDaily?.DailyWatchOnQatarLiving?.Items ?? [];
+                TopicQueue1Label = LandingContent?.ContentsDaily?.DailyTopics1?.QueueLabel ?? "";
+                TopicQueue2Label = LandingContent?.ContentsDaily?.DailyTopics2?.QueueLabel ?? "";
+                TopicQueue3Label = LandingContent?.ContentsDaily?.DailyTopics3?.QueueLabel ?? "";
+                TopicQueue4Label = LandingContent?.ContentsDaily?.DailyTopics4?.QueueLabel ?? "";
                 TopicQueue1 = LandingContent?.ContentsDaily?.DailyTopics1?.Items ?? [];
                 TopicQueue2 = LandingContent?.ContentsDaily?.DailyTopics2?.Items ?? [];
                 TopicQueue3 = LandingContent?.ContentsDaily?.DailyTopics3?.Items ?? [];

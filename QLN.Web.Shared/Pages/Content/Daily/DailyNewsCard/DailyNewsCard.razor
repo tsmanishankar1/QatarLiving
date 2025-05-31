@@ -1,11 +1,16 @@
+@using QLN.Web.Shared.Helpers
 @inherits DailyNewsCardBase
 @if (!string.IsNullOrEmpty(Item.ImageUrl) || !string.IsNullOrEmpty(Item.EventCategory) || !string.IsNullOrEmpty(Item.Title))
 {
-    <div class="daily-news-card @(IsHorizontal ? "horizontal" : "")" @onclick=" ">
+    <div class="daily-news-card @(IsHorizontal ? "horizontal" : "")" @onclick="NavigateToEventDetail">
         <img src="@Item.ImageUrl" alt="img-alt" class="daily-news-image" />
         <div class="daily-news-content">
             <div class="daily-news-category">@Item.Category</div>
             <div class="daily-news-title">@Item.Title</div>
+            @if (!string.IsNullOrEmpty(Item.EventStart) && !string.IsNullOrEmpty(Item.EventEnd))
+            {
+                <p class="date">@DateHelper.FormatDate(Item.EventStart) to @DateHelper.FormatDate(Item.EventEnd)</p>
+            }
         </div>
     </div>
 }
@@ -95,6 +100,20 @@
             display: -webkit-box;
             -webkit-line-clamp: 2;
             /* Limit to 2 lines */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .date {
+            margin: 0;
+            font-weight: 500;
+            font-size: 12px;
+            color: var(--color-text-primary);
+            line-height: 18px;
+            letter-spacing: 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
             -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
