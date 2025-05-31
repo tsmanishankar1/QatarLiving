@@ -16,13 +16,6 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected IEnumerable<CommentModel> PagedComments =>
             Comment.Comments?.Skip((CurrentPage - 1) * PageSize).Take(PageSize) ?? Enumerable.Empty<CommentModel>();
 
-        protected bool isMenuOpen = false;
-
-        protected void OnMenuToggle(bool open)
-        {
-            isMenuOpen = open;
-            StateHasChanged();
-        }
         protected void OnInputChanged(ChangeEventArgs e)
         {
             newComment = e.Value?.ToString() ?? string.Empty;
