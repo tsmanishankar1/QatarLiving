@@ -30,7 +30,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected record PostItem(string Title, string Slug);
         protected void NavigateToPostDetail(string slug)
         {
-            Navigation.NavigateTo($"/content/community/post/detail/{slug}");
+            Navigation.NavigateTo($"/content/community/post/detail/{Uri.EscapeDataString(slug)}");
         }
 
 
