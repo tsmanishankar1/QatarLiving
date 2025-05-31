@@ -38,7 +38,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                 .MapPostForumPostEndpoint()
                 .MapChangePostLikeStatusEndpoint()
                 .MapChangeCommentLikeStatusEndpoint()
-                .MapContentGetCommentsEndpoint();
+                .MapContentGetCommentsEndpoint()
+                .MapContentVideosEndpoint();
 
             return group;
         }
