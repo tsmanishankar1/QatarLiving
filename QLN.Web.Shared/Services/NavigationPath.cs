@@ -39,6 +39,7 @@ namespace QLN.Web.Shared.Services
         public string SocialLinkedIn { get; set; } = "https://www.linkedin.com/company/qatarliving-com";
         public string SocialYouTube { get; set; } = "https://www.youtube.com/channel/UCcsJRinZg4qYGLRDkFiVHcQ";
         public string SocialTikTok { get; set; } = "https://www.tiktok.com/notfound";
+        public string Base { get; set; } = "https://www.qatarliving.com/";
 
     }
 }
