@@ -1,5 +1,4 @@
-@using QLN.Common.Infrastructure.DTO_s
-@using System.Text.RegularExpressions
+@inherits TopEventCardBase
 @using QLN.Web.Shared.Helpers
 <div class="Top-event-list-card">
     <div class="Top-event-image-wrapper">
@@ -137,8 +136,4 @@
     }
 </style>
 
-@code {
-    [Parameter]
-    public ContentEvent Item { get; set; } = new();
 
-}
