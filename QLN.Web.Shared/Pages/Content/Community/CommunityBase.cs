@@ -228,7 +228,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 CloseOnEscapeKey = true,
                
             };
-            return DialogService.ShowAsync<DialogUsageExample_Dialog>("Simple Dialog", options);
+            return DialogService.ShowAsync<AddPostDialog>("Post Dialog", options);
         }
 
         protected async Task OnCategoryChange(string newId)
