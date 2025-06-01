@@ -9,32 +9,31 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.DTO_s
 {
-    // Unique Queue Responses for New Qatar
+    // Unique Queue Responses for News Middle East
 
-    public class QlnNewsNewsQatar
+    public class QlnNewsNewsMiddleEast
     {
-        const string _prefix = "qln_news_news_qatar";
+        const string QueuePrefix = DrupalContentConstants.QlnNewsNewsMiddleEast;
 
-        [JsonPropertyName($"{_prefix}_top_story")]
+        [JsonPropertyName($"{QueuePrefix}_top_story")]
         public BaseQueueResponse<ContentPost> TopStory { get; set; }
 
-        [JsonPropertyName($"{_prefix}_more_articles")]
+        [JsonPropertyName($"{QueuePrefix}_more_articles")]
         public BaseQueueResponse<ContentPost> MoreArticles { get; set; }
 
-        [JsonPropertyName($"{_prefix}_articles_1")]
+        [JsonPropertyName($"{QueuePrefix}_articles_1")]
         public BaseQueueResponse<ContentPost> Articles1 { get; set; }
 
-        [JsonPropertyName($"{_prefix}_articles_2")]
+        [JsonPropertyName($"{QueuePrefix}_articles_2")]
         public BaseQueueResponse<ContentPost> Articles2 { get; set; }
 
-        [JsonPropertyName($"{_prefix}_most_popular_articles")]
+        [JsonPropertyName($"{QueuePrefix}_most_popular_articles")]
         public BaseQueueResponse<ContentPost> MostPopularArticles { get; set; }
     }
 
-    public class NewsQatarPageResponse
+    public class QlnNewsNewsMiddleEastPageResponse
     {
-        [JsonPropertyName(DrupalContentConstants.QlnNewsNewsQatar)]
-        public QlnNewsNewsQatar QlnNewsNewsQatar { get; set; }
+        [JsonPropertyName(DrupalContentConstants.QlnNewsNewsMiddleEast)]
+        public QlnNewsNewsMiddleEast QlnNewsNewsMiddleEast { get; set; }
     }
-
 }

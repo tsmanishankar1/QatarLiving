@@ -9,32 +9,31 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.DTO_s
 {
-    // Unique Queue Responses for News Middle East
 
-    public class QlnNewsFinanceRealEstate
+    public class QlnNewsFinanceEntrepreneurship
     {
-        const string _prefix = "qln_news_finance_real_estate";
+        const string QueuePrefix = DrupalContentConstants.QlnNewsFinanceEntrepreneurship;
 
-        [JsonPropertyName($"{_prefix}_top_story")]
+        [JsonPropertyName($"{QueuePrefix}_top_story")]
         public BaseQueueResponse<ContentPost> TopStory { get; set; }
 
-        [JsonPropertyName($"{_prefix}_more_articles")]
+        [JsonPropertyName($"{QueuePrefix}_watch_on_qatar_living")]
         public BaseQueueResponse<ContentPost> MoreArticles { get; set; }
 
-        [JsonPropertyName($"{_prefix}_articles_1")]
+        [JsonPropertyName($"{QueuePrefix}_articles_1")]
         public BaseQueueResponse<ContentPost> Articles1 { get; set; }
 
-        [JsonPropertyName($"{_prefix}_articles_2")]
+        [JsonPropertyName($"{QueuePrefix}_articles_2")]
         public BaseQueueResponse<ContentPost> Articles2 { get; set; }
 
-        [JsonPropertyName($"{_prefix}_most_popular_articles")]
+        [JsonPropertyName($"{QueuePrefix}_most_popular_articles")]
         public BaseQueueResponse<ContentPost> MostPopularArticles { get; set; }
     }
 
-    public class NewsRealEstatePageResponse
+    public class QlnNewsFinanceEntrepreneurshipPageResponse
     {
-        [JsonPropertyName(DrupalContentConstants.QlnNewsFinanceRealEstate)]
-        public QlnNewsFinanceRealEstate QlnNewsFinanceRealEstate { get; set; }
+        [JsonPropertyName(DrupalContentConstants.QlnNewsFinanceEntrepreneurship)]
+        public QlnNewsFinanceEntrepreneurship QlnNewsFinanceEntrepreneurship { get; set; }
     }
 }
 

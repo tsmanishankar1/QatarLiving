@@ -25,12 +25,12 @@ namespace QLN.Backend.API.Service.ContentService
             return null;
         }
 
-        public async Task<CreatePostResponse?> CreatePostOnDrupalAsync(CreatePostRequest request, CancellationToken cancellationToken)
+        public async Task<CreatePostResponse?> CreateDiscussionPostOnDrupalAsync(CreateDiscussionPostRequest request, CancellationToken cancellationToken)
         {
 
             //httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwtWoken);
 
-            var httpRequest = await httpClient.PostAsJsonAsync<CreatePostRequest>(DrupalContentConstants.PostsSavePath, request, cancellationToken);
+            var httpRequest = await httpClient.PostAsJsonAsync<CreateDiscussionPostRequest>(DrupalContentConstants.PostsSavePath, request, cancellationToken);
 
             if (httpRequest.IsSuccessStatusCode)
             {

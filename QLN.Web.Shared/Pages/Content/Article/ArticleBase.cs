@@ -15,7 +15,7 @@ public class ArticleBase : ComponentBase
     protected List<BannerItem> DailyHeroBanners { get; set; } = new();
     protected bool isLoadingBanners = true;
     public List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
-    protected NewsQatarPageResponse QatarNewsContent { get; set; } = new NewsQatarPageResponse();
+    protected QlnNewsNewsQatarPageResponse QatarNewsContent { get; set; } = new QlnNewsNewsQatarPageResponse();
     protected List<ContentPost> moreArticleList { get; set; } = new List<ContentPost>();
     [Inject] private ILogger<NewsCardBase> Logger { get; set; }
     public PostModel SelectedPost { get; set; }
@@ -102,23 +102,23 @@ public class ArticleBase : ComponentBase
             return new ContentPost();
         }
     }
-    protected async Task<NewsQatarPageResponse> GetNewsQatarAsync()
+    protected async Task<QlnNewsNewsQatarPageResponse> GetNewsQatarAsync()
     {
-        try
-        {
-            var apiResponse = await _newsService.GetNewsQatarAsync() ?? new HttpResponseMessage();
-            if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
+            try
             {
-                var response = await apiResponse.Content.ReadFromJsonAsync<NewsQatarPageResponse>();
-                return response ?? new NewsQatarPageResponse();
+                var apiResponse = await _newsService.GetNewsQatarAsync() ?? new HttpResponseMessage();
+                if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
+                {
+                    var response = await apiResponse.Content.ReadFromJsonAsync<QlnNewsNewsQatarPageResponse>();
+                    return response ?? new QlnNewsNewsQatarPageResponse();
+                }
+                return new QlnNewsNewsQatarPageResponse();
             }
-            return new NewsQatarPageResponse();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "GetNewsQatarAsync");
-            return new NewsQatarPageResponse();
-        }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetNewsQatarAsync");
+                return new QlnNewsNewsQatarPageResponse();
+            }
     }
     private async Task LoadBanners()
         {
