@@ -47,6 +47,9 @@
         // Daily
         public const string QlnContentsDaily = "qln_contents_daily";
 
+        // Events
+        public const string QlnFeaturedEvents = "qln_events";
+
         // Community
         public const string QlnCommunityMorePosts = "qln_community_post";
 

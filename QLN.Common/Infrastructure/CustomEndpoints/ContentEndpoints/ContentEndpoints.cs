@@ -35,6 +35,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             return group;
         }
 
+        public static RouteGroupBuilder MapFeaturedEventsEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<QlnFeaturedEventsPageResponse>(DrupalContentConstants.QlnFeaturedEvents, "GetFeaturedEvents");
+
+            return group;
+        }
+
         public static RouteGroupBuilder MapNewsMiddleEastEndpoint(this RouteGroupBuilder group)
         {
 
