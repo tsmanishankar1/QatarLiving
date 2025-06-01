@@ -10,14 +10,14 @@ using System.Threading.Tasks;
 namespace QLN.Common.Infrastructure.DTO_s
 {
 
-    public class QlnNewsFinanceEntrepreneurship
+    public class QlnNewsLifestyleArtsCulture
     {
-        const string _prefix = "qln_news_finance_entrepreneurship";
+        const string _prefix = "qln_news_lifestyle_arts_culture";
 
-        [JsonPropertyName($"qln_news_business_top_story")]
+        [JsonPropertyName($"{_prefix}_top_story")]
         public BaseQueueResponse<ContentPost> TopStory { get; set; }
 
-        [JsonPropertyName($"qln_news_finance_entrepreneurship_watch_on_qatar_living")]
+        [JsonPropertyName($"{_prefix}_more_articles")]
         public BaseQueueResponse<ContentPost> MoreArticles { get; set; }
 
         [JsonPropertyName($"{_prefix}_articles_1")]
@@ -30,10 +30,10 @@ namespace QLN.Common.Infrastructure.DTO_s
         public BaseQueueResponse<ContentPost> MostPopularArticles { get; set; }
     }
 
-    public class NewsEntrepreneurshipPageResponse
+    public class NewsArtsCulturePageResponse
     {
-        [JsonPropertyName(DrupalContentConstants.QlnNewsFinanceEntrepreneurship)]
-        public QlnNewsFinanceEntrepreneurship QlnNewsFinanceEntrepreneurship { get; set; }
+        [JsonPropertyName(DrupalContentConstants.QlnNewsLifestyleArtsCulture)]
+        public QlnNewsLifestyleArtsCulture QlnNewsLifestyleArtsCulture { get; set; }
     }
 }
 

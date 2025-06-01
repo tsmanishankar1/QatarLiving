@@ -156,37 +156,37 @@ namespace QLN.Web.Shared.Pages.Content.News
                     break;
 
                 case "World":
-                    WorldNewsContent = await GetNewsAsync<NewsWorldPageResponse>("Qatar");
+                    WorldNewsContent = await GetNewsAsync<NewsWorldPageResponse>("World");
                     var world = WorldNewsContent?.QlnNewsNewsWorld;
                     topNews = world?.TopStory?.Items?.FirstOrDefault();
                     moreArticleList = world?.MoreArticles?.Items ?? new List<ContentPost>();
                     break;
                 case "Market Updates":
-                    MarketUpdateNewsContent = await GetNewsAsync<NewsMarketUpdatePageResponse>("Qatar");
+                    MarketUpdateNewsContent = await GetNewsAsync<NewsMarketUpdatePageResponse>("Market Updates");
                     var market = MarketUpdateNewsContent?.QlnNewsFinanceMarketUpdate;
                     topNews = market?.TopStory?.Items?.FirstOrDefault();
                     moreArticleList = market?.MoreArticles?.Items ?? new List<ContentPost>();
                     break;
                 case "Real Estate":
-                    RealEstateNewsContent = await GetNewsAsync<NewsRealEstatePageResponse>("Qatar");
+                    RealEstateNewsContent = await GetNewsAsync<NewsRealEstatePageResponse>("Real Estate");
                     var realEstate = RealEstateNewsContent?.QlnNewsFinanceRealEstate;
                     topNews = realEstate?.TopStory?.Items?.FirstOrDefault();
                     moreArticleList = realEstate?.MoreArticles?.Items ?? new List<ContentPost>();
                     break;
                 case "Entrepreneurship":
-                    EntrepeneurshipNewsContent = await GetNewsAsync<NewsEntrepreneurshipPageResponse>("Qatar");
+                    EntrepeneurshipNewsContent = await GetNewsAsync<NewsEntrepreneurshipPageResponse>("Entrepreneurship");
                     var entrepreneurship = EntrepeneurshipNewsContent?.QlnNewsFinanceEntrepreneurship;
                     topNews = entrepreneurship?.TopStory?.Items?.FirstOrDefault();
                     moreArticleList = entrepreneurship?.MoreArticles?.Items ?? new List<ContentPost>();
                     break;
                 case "Finance":
-                    FinanceQatarNewsContent = await GetNewsAsync<NewsFinanceQatarPageResponse>("Qatar");
+                    FinanceQatarNewsContent = await GetNewsAsync<NewsFinanceQatarPageResponse>("Finance");
                     var finance = FinanceQatarNewsContent ?.QlnNewsFinanceFinance;
                     topNews = finance?.TopStory?.Items?.FirstOrDefault();
                     moreArticleList = finance?.MoreArticles?.Items ?? new List<ContentPost>();
                     break;
                 case "Jobs & Careers":
-                    JobCareersNewsContent = await GetNewsAsync<NewsJobCareersPageResponse>("Qatar");
+                    JobCareersNewsContent = await GetNewsAsync<NewsJobCareersPageResponse>("Jobs & Careers");
                     var jobs = JobCareersNewsContent?.QlnNewsFinanceJobsCareers;
                     topNews = jobs?.TopStory?.Items?.FirstOrDefault();
                     moreArticleList = jobs?.MoreArticles?.Items ?? new List<ContentPost>();

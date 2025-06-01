@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.DTO_s
 {
-    // Unique Queue Responses for News Community
     public class QlnNewsNewsCommunity
     {
         const string _prefix = "qln_news_news_community";

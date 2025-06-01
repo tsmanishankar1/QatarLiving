@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.DTO_s
 {
-    // Unique Queue Responses for News Middle East
 
     public class QlnNewsFinanceFinance
     {

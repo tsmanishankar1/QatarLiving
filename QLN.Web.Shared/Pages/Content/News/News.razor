@@ -53,7 +53,12 @@
                                         <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
                                     }
                                     else{
+                                        @if(string.IsNullOrEmpty(topNews.ImageUrl)){
+                                             <EmptyCard Title="No Image Available" Subtitle="" />
+                                        }
+                                        else{
                                         <img src="@topNews.ImageUrl" class="main-image" />
+                                        }
                                     }
                                     @if (isLoading){
                                         <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="100px" Animation="Animation.Wave" />
@@ -69,10 +74,10 @@
                                         <div class="author-wrapper">
                                             <div class="main-author">
                                                 Ismat Zerin • <a href="#" class="main-source">Qatar Living</a>  
-                                                <img src="/images/tick.svg" alt="Qatarliving" />
+                                                <img src="/qln-images/tick.svg" alt="Qatarliving" />
                                             </div>
                                             <div class="comment-badge">
-                                                <img src="/images/comment_icon.svg" alt="Comments" class="comment-icon" />
+                                                <img src="/qln-images/comment_icon.svg" alt="Comments" class="comment-icon" />
                                                 <span class="count">12</span>
                                             </div> 
                                         </div>
@@ -460,7 +465,8 @@
 
 .flex-container {
     width: 100%;
-    justify-content: flex-start;
+    @* justify-content: flex-start; *@
+    justify-content: space-between;
     align-items: flex-start;
     display: flex;
     flex-wrap: wrap;

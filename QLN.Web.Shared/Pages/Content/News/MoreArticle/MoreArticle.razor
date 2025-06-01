@@ -34,6 +34,11 @@
                     <img src="@article.ImageUrl" class="article-image" />
                     </div>
                 }
+                else{
+                    <div class="image-placeholder">
+                    No image available
+                    </div>
+                }
             </div>
         }
     }
@@ -52,6 +57,20 @@
   font-size: 25px;
   font-weight: 600;
   color: var(--color-text-heading);
+}
+.image-placeholder {
+    width: 124px;
+    height: 70px;
+    border-radius: 6px;
+     display: flex;
+     font-size: 14px;
+    font-family: 'Public Sans', sans-serif;
+    background-color: #FAFAFA;
+    border-radius: 6px;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+    font-size: 1rem;
 }
 
 .accent-bar {
