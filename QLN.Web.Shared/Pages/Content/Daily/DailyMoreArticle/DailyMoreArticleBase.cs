@@ -5,6 +5,8 @@ public class DailyMoreArticleBase : ComponentBase
     [Inject] NavigationManager NavigationManager { get; set; }
     [Parameter]
     public List<ContentPost> Items { get; set; } = [];
+  [Parameter]
+    public bool isLoading { get; set; } = false;
 
     protected void NavigatetoArticle()
     {

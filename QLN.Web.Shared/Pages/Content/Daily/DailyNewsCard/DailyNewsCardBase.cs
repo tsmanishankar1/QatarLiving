@@ -10,7 +10,7 @@ public class DailyNewsCardBase : ComponentBase
 
     protected void NavigateToEventDetail()
     {
-        NavigationManager.NavigateTo($"/events/details/{Item.Slug}");
+        NavigationManager.NavigateTo($"/content/events/details/{Item.Slug}");
     }
 
 }

@@ -2,7 +2,7 @@
 @using Microsoft.AspNetCore.Components
 @inject IJSRuntime JS
 
-<div class="swiper banner-swiper">
+<div class="swiper takeouverbanner-swiper">
     <div class="swiper-wrapper">
         @if (BannerItems?.Count == 1)
         {
@@ -11,7 +11,7 @@
             {
                 <div class="swiper-slide">
                     <a href="@BannerItems[0].Link" target="_blank" rel="noopener noreferrer">
-                        <img class="banner-image" src="@BannerItems[0].ImageDesktop"
+                        <img class="take-over-banner-image" src="@BannerItems[0].ImageDesktop"
                             srcset="@BannerItems[0].ImageMobile 600w, @BannerItems[0].ImageDesktop 1024w"
                             sizes="(max-width: 768px) 600px, 100vw" alt="Banner" />
                     </a>
@@ -24,7 +24,7 @@
             {
                 <div class="swiper-slide">
                     <a href="@banner.Link" target="_blank" rel="noopener noreferrer">
-                        <img class="banner-image" src="@banner.ImageDesktop"
+                        <img class="take-over-banner-image" src="@banner.ImageDesktop"
                             srcset="@banner.ImageMobile 600w, @banner.ImageDesktop 1024w"
                             sizes="(max-width: 768px) 600px, 100vw" alt="Banner" />
                     </a>
@@ -38,28 +38,16 @@
 </div>
 
 <style>
-    .banner-swiper {
+    .takeouverbanner-swiper {
         width: 100%;
     }
 
-    .banner-image {
+    .take-over-banner-image {
         width: 100%;
         border-radius: 3px;
+        height: 150px;
         object-fit: contain;
         display: block;
-    }
-
-    /* Height settings for responsive banners */
-    @@media (max-width: 768px) {
-        .banner-image {
-            height: 150px;
-        }
-    }
-
-    @@media (min-width: 769px) {
-        .banner-image {
-            height: 250px;
-        }
     }
 </style>
 
@@ -75,7 +63,7 @@
         if (!_bannerInitialized && !Loading && BannerItems?.Any() == true)
         {
             _bannerInitialized = true;
-            await JS.InvokeVoidAsync("initBannerSwiper");
+            await JS.InvokeVoidAsync("initTakeOverBannerSwiper");
         }
     }
 
