@@ -81,5 +81,22 @@ namespace QLN.Web.Shared.Pages.Content.Community
             isMenuOpen = true;
             StateHasChanged();
         }
+        protected string StripHtml(string html)
+        {
+            if (string.IsNullOrEmpty(html))
+                return string.Empty;
+
+            // Decode HTML entities first
+            var decoded = System.Net.WebUtility.HtmlDecode(html);
+
+            // Remove HTML tags
+            var stripped = System.Text.RegularExpressions.Regex.Replace(
+                decoded,
+                "<[^>]*(>|$)",
+                string.Empty,
+                System.Text.RegularExpressions.RegexOptions.Multiline);
+
+            return stripped;
+        }
     }
 }
