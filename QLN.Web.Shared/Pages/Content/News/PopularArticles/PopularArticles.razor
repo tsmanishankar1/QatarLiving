@@ -1,15 +1,28 @@
 @using System.Globalization
 @using MudBlazor
+@using QLN.Web.Shared.Components.EmptyCard
 @inherits PopularArticlesBase
 <div class="popular-articles">
     <h3 class="title">Most Popular Articles</h3>
 
+     @if (Articles != null && Articles.Any()){
      @foreach (var article in Articles.Take(5))
     {
         <div class="article-item" @onclick="@(() => onclick(article))">
-             <img src="@article.ImageUrl" alt="News Image" class="article-image" />
+             @if (string.IsNullOrWhiteSpace(article.ImageUrl)){
+                <div class="image-placeholder">
+                    No image available
+                </div>
+             }
+             else{
+                <img src="@article.ImageUrl" alt="News Image" class="article-image" />
+             }
             <div class="article-text">@article.Title</div>
         </div>
+    }
+    }
+    else{
+        <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
     }
 </div>
 
@@ -21,6 +34,19 @@
     padding: 16px;
     border-radius: 8px;
     }
+    .image-placeholder {
+    width: 177px;
+    height: 100px;
+    border-radius: 6px;
+     display: flex;
+    font-family: 'Public Sans', sans-serif;
+    background-color: #FAFAFA;
+    border-radius: 6px;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+    font-size: 1rem;
+}
 
     .title {
         color: var(--color-primary);

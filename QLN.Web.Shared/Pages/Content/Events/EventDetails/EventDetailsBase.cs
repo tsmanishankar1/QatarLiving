@@ -16,7 +16,7 @@ namespace QLN.Web.Shared.Pages.Content.Events.EventDetails
         [Parameter] public string slug { get; set; }
 
         protected bool isLoading { get; set; } = true;
-        protected bool isLoadingBanners { get; set; } = false;
+        protected bool isLoadingEventBanners { get; set; } = true;
 
         protected List<BannerItem> DailyHeroBanners { get; set; } = new();
         protected ContentEvent eventDetails { get; set; }
@@ -79,7 +79,7 @@ namespace QLN.Web.Shared.Pages.Content.Events.EventDetails
 
         private async Task LoadBanners()
         {
-            isLoadingBanners = true;
+            isLoadingEventBanners = true;
             try
             {
                 var banners = await FetchBannerData();
@@ -91,7 +91,7 @@ namespace QLN.Web.Shared.Pages.Content.Events.EventDetails
             }
             finally
             {
-                isLoadingBanners = false;
+                isLoadingEventBanners = false;
             }
         }
 

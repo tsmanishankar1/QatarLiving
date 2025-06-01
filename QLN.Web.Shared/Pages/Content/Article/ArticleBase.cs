@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using QLN.Web.Shared.Model;
+using System.Globalization;
 using QLN.Web.Shared.Models;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
+
 public class ArticleBase : ComponentBase
 {
     [Parameter]
@@ -48,21 +50,27 @@ public class ArticleBase : ComponentBase
                 Comments = newsArticle.Comments?.Select(c => new CommentModel
                 {
                     CreatedBy = c.Username,
-                    CreatedAt = DateTime.ParseExact(c.CreatedDate, "yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture),
+                    CreatedAt = !string.IsNullOrWhiteSpace(c.CreatedDate) && DateTime.TryParseExact(
+                    c.CreatedDate,
+                    "yyyy-MM-dd HH:mm:ss",
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out var commentDate
+                    ) ? commentDate : DateTime.MinValue,
                     Description = c.Subject,
                     LikeCount = 0,
                     UnlikeCount = 0,
                     Avatar = "/images/content/Sample.svg"
-                }).ToList() ?? new List<CommentModel>()
-            };
+                    }).ToList() ?? new List<CommentModel>()
+                };
             breadcrumbItems = new()
             {
                 new() {   Label = "News",Url ="/content/news" },
                 new() { Label = "Sports", Url = "/content/news"},
                 new() { Label = newsArticle.Title, Url = "/article/details/{slug}", IsLast = true },
             };
-            QatarNewsContent = await GetNewsQatarAsync();
-            moreArticleList = QatarNewsContent.QlnNewsNewsQatar.MoreArticles.Items;
+           QatarNewsContent = await GetNewsQatarAsync();
+            moreArticleList = QatarNewsContent?.QlnNewsNewsQatar?.MoreArticles?.Items ?? new List<ContentPost>();
         }
         catch (Exception ex)
         {
