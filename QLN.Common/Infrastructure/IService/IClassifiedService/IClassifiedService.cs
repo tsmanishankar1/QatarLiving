@@ -53,5 +53,7 @@ namespace QLN.Common.Infrastructure.IService
         Task<List<SavedSearchResponseDto>> GetSearches(string userId, CancellationToken cancellationToken = default);
         Task<AdsGroupedResult> GetAllItemsAds(Guid userId, CancellationToken cancellationToken = default);
         Task<ItemDashboardDto> GetUserItemsAdsDashboard(Guid userId, CancellationToken cancellationToken = default);
+        Task<AdsGroupedPrelovedResult> GetAllPrelovedAds(Guid userId, CancellationToken cancellationToken = default);
+        Task<PrelovedDashboardDto> GetUserPrelovedAdsDashboard(Guid userId, CancellationToken cancellationToken = default);
     }
 }

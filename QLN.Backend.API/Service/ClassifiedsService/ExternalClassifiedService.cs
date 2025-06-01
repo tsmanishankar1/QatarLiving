@@ -835,6 +835,46 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
+        public async Task<AdsGroupedPrelovedResult> GetAllPrelovedAds(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<AdsGroupedPrelovedResult>(
+                   HttpMethod.Get,
+                   SERVICE_APP_ID,
+                   $"api/classifieds/prelovedAd/{userId}",
+                   cancellationToken
+                   );
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                throw;
+            }
+        }
+
+        public async Task<PrelovedDashboardDto> GetUserPrelovedAdsDashboard(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<PrelovedDashboardDto>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/prelovedDashboard-summary/{userId}",
+                    cancellationToken
+                );
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                throw;
+            }
+        }
+
         public async Task<bool> SaveSearch(SaveSearchRequestDto dto ,Guid userId, CancellationToken cancellationToken = default)
         {
             try

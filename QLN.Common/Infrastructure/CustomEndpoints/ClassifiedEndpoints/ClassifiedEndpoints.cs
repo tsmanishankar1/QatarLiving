@@ -3031,7 +3031,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     );
                 }
             })
-                .WithName("GetUserAdsSummary")
+                .WithName("GetItemsUserAdsSummary")
                 .WithTags("Items")
                 .WithSummary("Get dashboard summary")
                 .WithDescription("Returns summary statistics for user's ads.")
@@ -3039,6 +3039,99 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            group.MapGet("prelovedAd/{userId}", async Task<IResult> (
+              Guid userId,
+              IClassifiedService service,
+              CancellationToken token) =>
+            {
+                try
+                {
+                    if (userId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "User ID must not be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var ads = await service.GetAllPrelovedAds(userId, token);
+                    if (ads == null || (!ads.PublishedAds.Any() && !ads.UnpublishedAds.Any()))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "No Ads Found",
+                            Detail = $"No ads were found for user ID '{userId}'.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+
+                    return TypedResults.Ok(ads);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Operation",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: "An unexpected error occurred while retrieving ads.",
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+              .WithName("GetAllPrelovedAdsByUser")
+              .WithTags("Preloved")
+              .WithSummary("Get all ads of a user")
+              .WithDescription("Fetches both published and unpublished ads for a given user ID.")
+              .Produces<AdsGroupedResult>(StatusCodes.Status200OK)
+              .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+              .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+              .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("prelovedDashboard-summary/{userId}", async Task<IResult> (
+            Guid userId,
+            IClassifiedService service,
+            CancellationToken token) =>
+            {
+                try
+                {
+                    if (userId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "User ID is required",
+                            Status = 400
+                        });
+                    }
+
+                    var summary = await service.GetUserPrelovedAdsDashboard(userId, token);
+                    return TypedResults.Ok(summary);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: 500
+                    );
+                }
+            })
+            .WithName("GetprelovedUserAdsSummary")
+            .WithTags("Preloved")
+            .WithSummary("Get dashboard summary")
+            .WithDescription("Returns summary statistics for user's ads.")
+            .Produces<ItemDashboardDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
         }

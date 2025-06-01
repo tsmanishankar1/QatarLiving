@@ -12,4 +12,9 @@ namespace QLN.Common.DTO_s
         public List<ItemAd> PublishedAds { get; set; } = new();
         public List<ItemAd> UnpublishedAds { get; set; } = new();
     }
+    public class AdsGroupedPrelovedResult
+    {
+        public List<PrelovedAd> PublishedAds { get; set; } = new();
+        public List<PrelovedAd> UnpublishedAds { get; set; } = new();
+    }
 }

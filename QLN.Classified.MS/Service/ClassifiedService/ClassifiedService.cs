@@ -10,6 +10,7 @@ using Dapr.Client;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration.UserSecrets;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
@@ -30,8 +31,8 @@ namespace QLN.Classified.MS.Service
         private const string UnifiedStore = "adstore";
         private const string UnifiedIndexKey = "ad-index";               
         private readonly ILogger<ClassifiedService> _logger;
-        private readonly string jsonPath = "itemsAdsMock.json";
-
+        private readonly string itemJsonPath = Path.Combine("ClassifiedMockData", "itemsAdsMock.json");
+        private readonly string prelovedJsonPath = Path.Combine("ClassifiedMockData", "prelovedAdsMock.json");
         public ClassifiedService(Dapr.Client.DaprClient dapr, ILogger<ClassifiedService> logger, IWebHostEnvironment env)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
@@ -1332,67 +1333,85 @@ namespace QLN.Classified.MS.Service
 
         public async Task<CategoryHierarchyDto> GetCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
         {
+            if (categoryId == Guid.Empty)
+                throw new ArgumentException("Invalid category ID.", nameof(categoryId));
+
             try
             {
-                if (categoryId == Guid.Empty)
-                    throw new ArgumentException("Invalid category ID.", nameof(categoryId));
-
                 var allKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
 
+                
                 var allCategories = new List<Category>();
+
                 foreach (var key in allKeys)
                 {
-                    if (!key.StartsWith("cat_")) continue; 
                     var item = await _dapr.GetStateAsync<Category>(UnifiedStore, key);
-                    if (item != null) allCategories.Add(item);
+                    if (item != null)
+                        allCategories.Add(item);
                 }
 
-                var rootCategory = allCategories.FirstOrDefault(c => c.Id == categoryId && c.TypePrefix == GetTypePrefix(AdInformation.Category));
+                
+                var catPrefix = GetTypePrefix(AdInformation.Category);
+                var subCatPrefix = GetTypePrefix(AdInformation.SubCategory);
+                var brandPrefix = GetTypePrefix(AdInformation.Brand);
+                var modelPrefix = GetTypePrefix(AdInformation.Model);
+                var ramPrefix = GetTypePrefix(AdInformation.Ram);
+                var procPrefix = GetTypePrefix(AdInformation.Processor);
+                var resoPrefix = GetTypePrefix(AdInformation.Resolution);
+
+                // Root category
+                var rootCategory = allCategories.FirstOrDefault(c => c.Id == categoryId && c.TypePrefix == catPrefix);
                 if (rootCategory == null)
                     throw new KeyNotFoundException($"Category with ID '{categoryId}' not found.");
 
+                // Filter related levels
                 var subCategories = allCategories
-                    .Where(c => c.ParentId == rootCategory.Id && c.TypePrefix == GetTypePrefix(AdInformation.SubCategory))
+                    .Where(c => c.TypePrefix == subCatPrefix && c.ParentId == categoryId)
                     .ToList();
 
                 var brands = allCategories
-                    .Where(c => subCategories.Select(sc => sc.Id).Contains(c.ParentId) && c.TypePrefix == GetTypePrefix(AdInformation.Brand))
+                    .Where(c => c.TypePrefix == brandPrefix && subCategories.Any(sc => sc.Id == c.ParentId))
                     .ToList();
 
                 var models = allCategories
-                    .Where(c => brands.Select(b => b.Id).Contains(c.ParentId) && c.TypePrefix == GetTypePrefix(AdInformation.Model))
+                    .Where(c => c.TypePrefix == modelPrefix && brands.Any(b => b.Id == c.ParentId))
                     .ToList();
 
-                var ram = allCategories
-                    .Where(c => models.Select(m => m.Id).Contains(c.ParentId) && c.TypePrefix == GetTypePrefix(AdInformation.Ram))
+                var rams = allCategories
+                    .Where(c => c.TypePrefix == ramPrefix && models.Any(m => m.Id == c.ParentId))
                     .ToList();
 
-                var processor = allCategories
-                    .Where(c => models.Select(m => m.Id).Contains(c.ParentId) && c.TypePrefix == GetTypePrefix(AdInformation.Processor))
+                var processors = allCategories
+                    .Where(c => c.TypePrefix == procPrefix && models.Any(m => m.Id == c.ParentId))
                     .ToList();
 
-                var resolution = allCategories
-                    .Where(c => models.Select(m => m.Id).Contains(c.ParentId) && c.TypePrefix == GetTypePrefix(AdInformation.Resolution))
+                var resolutions = allCategories
+                    .Where(c => c.TypePrefix == resoPrefix && models.Any(m => m.Id == c.ParentId))
                     .ToList();
 
+                
                 return new CategoryHierarchyDto
                 {
                     Category = new CategoriesDto { Id = rootCategory.Id, Name = rootCategory.Name },
-                    SubCategories = subCategories.Select(c => new CategoriesDto { Id = c.Id, Name = c.Name }).ToList(),
-                    Brands = brands.Select(c => new CategoriesDto { Id = c.Id, Name = c.Name }).ToList(),
-                    Models = models.Select(c => new CategoriesDto { Id = c.Id, Name = c.Name }).ToList(),
-                    Rams = ram.Select(c => new CategoriesDto { Id = c.Id, Name = c.Name }).ToList(),
-                    Processors = processor.Select(c => new CategoriesDto { Id = c.Id, Name = c.Name }).ToList(),
-                    Resolutions = resolution.Select(c => new CategoriesDto { Id = c.Id, Name = c.Name }).ToList()
+                    SubCategories = subCategories.Select(s => new CategoriesDto { Id = s.Id, Name = s.Name }).ToList(),
+                    Brands = brands.Select(b => new CategoriesDto { Id = b.Id, Name = b.Name }).ToList(),
+                    Models = models.Select(m => new CategoriesDto { Id = m.Id, Name = m.Name }).ToList(),
+                    Rams = rams.Select(r => new CategoriesDto { Id = r.Id, Name = r.Name }).ToList(),
+                    Processors = processors.Select(p => new CategoriesDto { Id = p.Id, Name = p.Name }).ToList(),
+                    Resolutions = resolutions.Select(r => new CategoriesDto { Id = r.Id, Name = r.Name }).ToList()
                 };
             }
             catch (ArgumentException)
             {
                 throw;
             }
+            catch (KeyNotFoundException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
-                throw new InvalidOperationException("Unexpected error occurred while retrieving all lists.", ex);
+                throw new InvalidOperationException("Unexpected error occurred while retrieving the category hierarchy.", ex);
             }
         }
 
@@ -1620,7 +1639,7 @@ namespace QLN.Classified.MS.Service
         {
             try
             {
-                var jsonString = await File.ReadAllTextAsync(jsonPath);
+                var jsonString = await File.ReadAllTextAsync(itemJsonPath);
                 var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                 return JsonSerializer.Deserialize<List<ItemAd>>(jsonString, options) ?? new();
             }
@@ -1702,5 +1721,87 @@ namespace QLN.Classified.MS.Service
             }
         }
 
+        private async Task<List<PrelovedAd>> ReadAllPrelovedAdsFromFile()
+        {
+            try
+            {                
+                var jsonString = await File.ReadAllTextAsync(prelovedJsonPath);
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                return JsonSerializer.Deserialize<List<PrelovedAd>>(jsonString, options) ?? new();
+            }
+            catch
+            {
+                return new List<PrelovedAd>();
+            }
+        }
+
+        public async Task<AdsGroupedPrelovedResult> GetAllPrelovedAds(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var allAds = await ReadAllPrelovedAdsFromFile();
+                var userAds = allAds.Where(ad => ad.UserId == userId);
+
+                var result = new AdsGroupedPrelovedResult
+                {
+                    PublishedAds = userAds
+                        .Where(ad => ad.IsPublished == true)
+                        .OrderByDescending(ad => ad.CreatedDate)
+                        .ToList(),
+
+                    UnpublishedAds = userAds
+                        .Where(ad => ad.IsPublished != true)
+                        .OrderByDescending(ad => ad.CreatedDate)
+                        .ToList()
+                };
+                return result;
+            }
+            catch(Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error occurred while retrieving Preloved ads.", ex);
+            }
+        }
+
+        public async Task<PrelovedDashboardDto> GetUserPrelovedAdsDashboard(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var allAds = await ReadAllPrelovedAdsFromFile();
+                var userAds = allAds.Where(ad => ad.UserId == userId);
+
+                var publishedCount = userAds.Count(ad => ad.IsPublished == true);
+                var promotedCount = userAds.Count(ad => ad.IsPromoted == true);
+                var featuredCount = userAds.Count(ad => ad.IsFeaturedItem == true || ad.IsFeaturedStore == true || ad.IsFeaturedCategory == true);
+                var refreshCount = userAds.Count(ad => ad.RefreshExpiry != null);
+                var totalImpressions = userAds.Sum(ad => ad.Impressions ?? 0);
+                var totalViews = userAds.Sum(ad => ad.Views ?? 0);
+                var totalWhatsappClicks = userAds.Sum(ad => ad.WhatsAppClicks ?? 0);
+                var totalCalls = userAds.Sum(ad => ad.Calls ?? 0);
+
+                var AdWithRefresh = userAds.Where(ad => ad.RefreshExpiry != null)
+                    .OrderByDescending(ad => ad.RefreshExpiry)
+                    .FirstOrDefault();
+
+                return new PrelovedDashboardDto
+                {
+                    PublishedAds = publishedCount,
+                    PromotedAds = promotedCount,
+                    FeaturedAds = featuredCount,
+                    Refreshes = refreshCount,
+                    Impressions = totalImpressions,
+                    Views = totalViews,
+                    WhatsAppClicks = totalWhatsappClicks,
+                    Calls = totalCalls,
+                    RemainingRefreshes = AdWithRefresh?.RemainingRefreshes ?? 0,
+                    TotalAllowedRefreshes = AdWithRefresh?.TotalAllowedRefreshes ?? 0,
+                    RefreshExpiry = AdWithRefresh?.RefreshExpiry
+                };
+
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Error while generating ad summary.", ex);
+            }
+        }
     }
 }
