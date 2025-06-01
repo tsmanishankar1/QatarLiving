@@ -5,9 +5,9 @@ namespace QLN.Web.Shared.Components.DailyFeaturedEventCard
 {
     public partial class DailyFeaturedEventCardBase : ComponentBase
     {
-        [Parameter] public ContentPost Item { get; set; } = new();
+        [Parameter] public ContentEvent Item { get; set; } = new();
 
-        [Parameter] public EventCallback<ContentPost> OnClickCallback { get; set; }
+        [Parameter] public EventCallback<ContentEvent> OnClickCallback { get; set; }
 
         protected async Task ClickEvent()
         {

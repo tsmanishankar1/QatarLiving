@@ -4,7 +4,7 @@ public class DailyMoreArticleBase : ComponentBase
 {
     [Inject] NavigationManager NavigationManager { get; set; }
     [Parameter]
-    public List<ContentPost> Items { get; set; } = [];
+    public List<ContentEvent> Items { get; set; } = [];
   [Parameter]
     public bool isLoading { get; set; } = false;
 
@@ -13,7 +13,7 @@ public class DailyMoreArticleBase : ComponentBase
         NavigationManager.NavigateTo("content/events");
     }
 
-    protected void NavigatetoArticle(ContentPost article)
+    protected void NavigatetoArticle(ContentEvent article)
     {
         NavigationManager.NavigateTo($"/content/article/details/{article.Slug}");
     }
