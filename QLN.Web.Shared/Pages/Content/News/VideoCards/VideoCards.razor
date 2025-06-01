@@ -1,12 +1,18 @@
 @inherits VideoCardsBase
 @using MudBlazor;
+@using QLN.Web.Shared.Components.EmptyCard
 @if (Articles?.Any() == true)
 {
 <div class="watch-section">
     <!-- Main Video -->
     
     <div class="main-video-wrapper video-card" @onclick="() => onclick(SelectedArticle)">
+         @if (Articles != null && Articles.Any()){
          <img src="@SelectedArticle.ImageUrl" class="selected-image-style" />
+         }
+         else{
+            <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
+         }
         <div class="video-overlay-center">
                 <MudIcon Icon="@Icons.Material.Filled.PlayArrow" />
         </div>
@@ -21,6 +27,7 @@
         </h3>
     </div>
         <div class="video-list">
+             @if (Articles != null && Articles.Any()){
             @foreach (var video in Articles.Take(3))
             {
                 <div class="video-card" @onclick="() => SelectVideo(video)">
@@ -46,6 +53,10 @@
                     </div>
                 </div>
             }
+            }
+             else{
+            <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
+         }
         </div>
     </div>
 </div>

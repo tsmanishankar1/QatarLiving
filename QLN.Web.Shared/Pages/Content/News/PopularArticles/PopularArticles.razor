@@ -1,15 +1,21 @@
 @using System.Globalization
 @using MudBlazor
+@using QLN.Web.Shared.Components.EmptyCard
 @inherits PopularArticlesBase
 <div class="popular-articles">
     <h3 class="title">Most Popular Articles</h3>
 
+     @if (Articles != null && Articles.Any()){
      @foreach (var article in Articles.Take(5))
     {
         <div class="article-item" @onclick="@(() => onclick(article))">
              <img src="@article.ImageUrl" alt="News Image" class="article-image" />
             <div class="article-text">@article.Title</div>
         </div>
+    }
+    }
+    else{
+        <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
     }
 </div>
 

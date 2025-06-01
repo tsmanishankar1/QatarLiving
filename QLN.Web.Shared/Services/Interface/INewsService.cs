@@ -37,5 +37,7 @@ namespace QLN.Web.Shared.Services.Interface
         /// </summary>
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetNewsBySlugAsync(string slug);
+        Task<HttpResponseMessage?> GetNewsAsync(string tab);
+        
     }
 }

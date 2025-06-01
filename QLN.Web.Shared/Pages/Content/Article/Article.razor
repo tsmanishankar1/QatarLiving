@@ -4,6 +4,7 @@
 @using QLN.Web.Shared.Pages.Content.Article.Components
 @using QLN.Web.Shared.Pages.Content.Community
 @using QLN.Web.Shared.Components.BreadCrumb
+@using QLN.Web.Shared.Components.EmptyCard
 @using MudBlazor
 
 <div style="width: 100%; background-color: var(--color-secondary-background);">
@@ -18,7 +19,7 @@
                 <ArticleDetailCard Post="newsArticle" loading="isLoading"/>
                      @* @foreach (var post in PostsList)
                     { *@
-                         @* <CommentSection Comment="SelectedPost"/>   *@
+                          <CommentSection Comment="SelectedPost"/>   
                     @* }  *@
             </MudItem>
             <MudItem xs="12" md="4">
