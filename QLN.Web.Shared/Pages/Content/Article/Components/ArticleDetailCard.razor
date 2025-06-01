@@ -1,5 +1,6 @@
 @using MudBlazor
 @inherits ArticleDetailCardBase
+@using QLN.Web.Shared.Components.EmptyCard
 <div class="event-card">
     <div class="event-title">@Post.Title</div>
 
@@ -10,6 +11,9 @@
                                 Animation="Animation.Wave" 
                                 Class="rounded shadow-container" />
                         }
+                        else if(@Post==null){
+                             <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
+                        }
                         else{
                 <img src="@Post.ImageUrl" alt="Michael Bublé" class="event-image" />
         }
@@ -18,7 +22,7 @@
                     <div class="main-author">
                         <div>
                         Ismat Zerin • <a href="#" class="main-source">Qatar Living</a>  
-                            <img src="/qln-images/tick.svg" alt="Qatarliving" />
+                            <img src="/images/tick.svg" alt="Qatarliving" />
                          <h3 class="main-title">@FormattedDate</h3>
                          </div>
                     </div> 
@@ -29,7 +33,7 @@
                         <MudIcon Icon="@Icons.Material.Filled.Share" class="icon-circle-border" />
 
                     <div class="comment-badge">
-                        <img src="/qln-images/comment_icon.svg" alt="Comments"  />
+                        <img src="/images/comment_icon.svg" alt="Comments"  />
                         <span class="count">@commentsCount</span>
                     </div>
             </div>

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace QLN.Web.Shared.Pages.Content.News
 {
@@ -57,6 +58,7 @@ namespace QLN.Web.Shared.Pages.Content.News
         protected ContentPost topNews { get; set; } = new ContentPost();
         protected List<ContentPost> moreArticleList { get; set; } = new List<ContentPost>();
         protected NewsQatarPageResponse QatarNewsContent { get; set; } = new NewsQatarPageResponse();
+        protected NewsEconomyPageResponse EconomyNewsContent { get; set; } = new NewsEconomyPageResponse();
         protected NewsCommunityPageResponse CommunityNewsContent { get; set; } = new NewsCommunityPageResponse();
         protected NewsHealthEducationPageResponse HealthEducationNewsContent { get; set; } = new NewsHealthEducationPageResponse();
         protected NewsLawPageResponse LawsNewsContent { get; set; } = new NewsLawPageResponse();
@@ -82,9 +84,9 @@ namespace QLN.Web.Shared.Pages.Content.News
                 Logger.LogError(ex, "OnInitializedAsync");
             }
             finally
-            {   
+            {
                 isLoading = false;
-            }   
+            }
         }
         protected async void SetViewMode(string view)
         {
@@ -105,54 +107,79 @@ namespace QLN.Web.Shared.Pages.Content.News
             isLoading = true;
             SelectedTab = tab;
             switch (tab)
-            {
+{
+    case "Qatar":
+        QatarNewsContent = await GetNewsAsync<NewsQatarPageResponse>("Qatar");
+        var qatar = QatarNewsContent?.QlnNewsNewsQatar;
+        topNews = qatar?.TopStory?.Items?.FirstOrDefault();
+        moreArticleList = qatar?.MoreArticles?.Items ?? new List<ContentPost>();
+        break;
 
-                case "Qatar":
-                    QatarNewsContent = await GetNewsQatarAsync();
-                    moreArticleList = QatarNewsContent.QlnNewsNewsQatar.MoreArticles.Items;
-                    topNews = QatarNewsContent.QlnNewsNewsQatar.TopStory.Items.First();
-                    isLoading = false;
-                    StateHasChanged();
-                    break;
-                case "Community":
-                    CommunityNewsContent = await GetNewsCommunityAsync();
-                    topNews = CommunityNewsContent.QlnNewsNewsCommunity.TopStory.Items.First();
-                    moreArticleList = CommunityNewsContent.QlnNewsNewsCommunity.MoreArticles.Items;
-                    isLoading = false;
-                    StateHasChanged();
-                    break;
-                case "Law":
-                    LawsNewsContent = await GetNewsLawAsync();
-                    topNews = LawsNewsContent.QlnNewsNewsLaw.TopStory.Items.First();
-                    moreArticleList = LawsNewsContent.QlnNewsNewsLaw.MoreArticles.Items;
-                    isLoading = false;
-                    StateHasChanged();
-                    break;
-                case "Health & Education":
-                    HealthEducationNewsContent = await GetNewsHealthAndEducationAsync();
-                    topNews = HealthEducationNewsContent.QlnNewsNewsHealthEducation.TopStory.Items.First();
-                    moreArticleList = HealthEducationNewsContent.QlnNewsNewsHealthEducation.MoreArticles.Items;
-                    isLoading = false;
-                    StateHasChanged();
-                    break;
-                case "Middle East":
-                    MiddleEastNewsContent = await GetNewsMiddleEastAsync();
-                    topNews = MiddleEastNewsContent.QlnNewsNewsMiddleEast.TopStory.Items.First();
-                    moreArticleList = MiddleEastNewsContent.QlnNewsNewsMiddleEast.MoreArticles.Items;
-                    isLoading = false;
-                    StateHasChanged();
-                    break;
-                case "World":
-                    WorldNewsContent = await GetNewsWorldAsync();
-                    topNews = WorldNewsContent.QlnNewsNewsWorld.TopStory.Items.First();
-                    moreArticleList = WorldNewsContent.QlnNewsNewsWorld.MoreArticles.Items;
-                    isLoading = false;
-                    StateHasChanged();
-                    break;
-            }
-            isLoading = false;
+    case "Community":
+        CommunityNewsContent = await GetNewsAsync<NewsCommunityPageResponse>("Community");
+        var community = CommunityNewsContent?.QlnNewsNewsCommunity;
+        topNews = community?.TopStory?.Items?.FirstOrDefault();
+        moreArticleList = community?.MoreArticles?.Items ?? new List<ContentPost>();
+        break;
+
+    case "Law":
+        LawsNewsContent = await GetNewsAsync<NewsLawPageResponse>("Law");
+        var law = LawsNewsContent?.QlnNewsNewsLaw;
+        topNews = law?.TopStory?.Items?.FirstOrDefault();
+        moreArticleList = law?.MoreArticles.Items ?? new List<ContentPost>();
+        break;
+
+    case "Health & Education":
+        HealthEducationNewsContent = await GetNewsAsync<NewsHealthEducationPageResponse>("Health & Education");
+        var health = HealthEducationNewsContent?.QlnNewsNewsHealthEducation;
+        topNews = health?.TopStory?.Items?.FirstOrDefault();
+        moreArticleList = health?.MoreArticles?.Items ?? new List<ContentPost>();
+        break;
+
+    case "Middle East":
+        MiddleEastNewsContent = await GetNewsAsync<NewsMiddleEastPageResponse>("Middle East");
+        var middleEast = MiddleEastNewsContent?.QlnNewsNewsMiddleEast;
+        topNews = middleEast?.TopStory?.Items?.FirstOrDefault();
+        moreArticleList = middleEast?.MoreArticles?.Items ?? new List<ContentPost>();
+        break;
+
+    case "Qatar Economy":
+        EconomyNewsContent = await GetNewsAsync<NewsEconomyPageResponse>("Qatar Economy");
+        var economy = EconomyNewsContent?.QlnNewsFinanceQatar;
+        topNews = economy?.TopStory?.Items?.FirstOrDefault();
+        moreArticleList = economy?.MoreArticles?.Items ?? new List<ContentPost>();
+        break;
+
+    case "World":
+        WorldNewsContent = await GetNewsAsync<NewsWorldPageResponse>("Qatar");
+        var world = WorldNewsContent?.QlnNewsNewsWorld;
+        topNews = world?.TopStory?.Items?.FirstOrDefault();
+        moreArticleList = world?.MoreArticles?.Items ?? new List<ContentPost>();
+        break;
+}
+
+isLoading = false;
+StateHasChanged();
         }
-        protected async Task<NewsQatarPageResponse> GetNewsQatarAsync()
+         protected async Task<T> GetNewsAsync<T>(string tab) where T : new()
+        {
+        try
+        {
+            var apiResponse = await _newsService.GetNewsAsync(tab) ?? new HttpResponseMessage();
+        if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
+        {
+            var response = await apiResponse.Content.ReadFromJsonAsync<T>();
+            return response ?? new T();
+        }
+        return new T();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, $"GetNewsAsync<{typeof(T).Name}> failed for tab: {tab}");
+            return new T();
+        }
+        }
+                protected async Task<NewsQatarPageResponse> GetNewsQatarAsync()
         {
             try
             {
@@ -273,3 +300,4 @@ namespace QLN.Web.Shared.Pages.Content.News
         }
     }
 }
+
