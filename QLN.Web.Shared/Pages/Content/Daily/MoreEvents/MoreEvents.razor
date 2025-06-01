@@ -8,12 +8,12 @@
     <div class="daily-more-category-group">
         @foreach (var item in DailyCategories)
         {
-            <button class="daily-category-btn">
+            <button class="daily-category-btn" @onclick="NavigatetoAllEvents">
                 @item.Label
             </button>
         }
 
-        <button class="view-all-btn">
+        <button class="view-all-btn" @onclick="NavigatetoAllEvents">
             View all
             <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowRight" class="arrow-icon" />
         </button>
@@ -21,6 +21,7 @@
 </div>
 
 @code {
+    [Inject] NavigationManager NavigationManager { get; set; }
 
     private List<CategoryItem> DailyCategories = new()
 {
@@ -36,6 +37,11 @@ new CategoryItem { Label = "Exhibitions" },
     {
         public string Label { get; set; }
     }
+
+    protected void NavigatetoAllEvents()
+    {
+        NavigationManager.NavigateTo("content/events");
+    }
 }
 <style>
     .daily-more-section {
@@ -46,7 +52,6 @@ new CategoryItem { Label = "Exhibitions" },
         width: 100%;
         font-family: 'Public Sans';
         padding: 20px 0;
-
     }
 
     .daily-title {
@@ -62,7 +67,6 @@ new CategoryItem { Label = "Exhibitions" },
         font-size: 25px;
         font-weight: 600;
         color: var(--color-text-heading);
-
     }
 
     .daily-more-category-group {
@@ -90,11 +94,11 @@ new CategoryItem { Label = "Exhibitions" },
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
-    .daily-category-btn:hover,
-    .view-all-btn:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-    }
+        .daily-category-btn:hover,
+        .view-all-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
 
     .btn-icon {
         width: 20px;
