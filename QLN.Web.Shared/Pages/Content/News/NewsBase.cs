@@ -62,12 +62,12 @@ namespace QLN.Web.Shared.Pages.Content.News
         protected ContentPost topNews { get; set; } = new ContentPost();
         protected List<ContentPost> moreArticleList { get; set; } = new List<ContentPost>();
         protected QlnNewsNewsQatarPageResponse QatarNewsContent { get; set; } = new QlnNewsNewsQatarPageResponse();
-        protected NewsEconomyPageResponse EconomyNewsContent { get; set; } = new NewsEconomyPageResponse();
+        protected QlnNewsFinanceEntrepreneurshipPageResponse FinanceEntrepreneurshipNewsContent { get; set; } = new QlnNewsFinanceEntrepreneurshipPageResponse();
         protected QlnNewsFinanceRealEstatePageResponse RealEstateNewsContent { get; set; } = new QlnNewsFinanceRealEstatePageResponse();
-        protected QlnNewsFinanceEntrepreneurshipPageResponse EntrepeneurshipNewsContent { get; set; } = new QlnNewsFinanceEntrepreneurshipPageResponse();
+        protected QlnNewsFinanceQatarPageResponse FinanceQatarNewsContent { get; set; } = new QlnNewsFinanceQatarPageResponse();
         protected QlnNewsFinanceMarketUpdatePageResponse MarketUpdateNewsContent { get; set; } = new QlnNewsFinanceMarketUpdatePageResponse();
         protected QlnNewsFinanceJobsCareersPageResponse JobCareersNewsContent { get; set; } = new QlnNewsFinanceJobsCareersPageResponse();
-        protected QlnNewsFinanceFinancePageResponse FinanceQatarNewsContent { get; set; } = new QlnNewsFinanceFinancePageResponse();
+        protected QlnNewsFinanceFinancePageResponse FinanceFinanceNewsContent { get; set; } = new QlnNewsFinanceFinancePageResponse();
         protected QlnNewsNewsCommunityPageResponse CommunityNewsContent { get; set; } = new QlnNewsNewsCommunityPageResponse();
         protected QlnNewsNewsHealthEducationPageResponse HealthEducationNewsContent { get; set; } = new QlnNewsNewsHealthEducationPageResponse();
         protected QlnNewsNewsLawPageResponse LawsNewsContent { get; set; } = new QlnNewsNewsLawPageResponse();
@@ -186,8 +186,8 @@ namespace QLN.Web.Shared.Pages.Content.News
                     break;
 
                 case "Qatar Economy":
-                    EconomyNewsContent = await GetNewsAsync<NewsEconomyPageResponse>("Qatar Economy");
-                    var economy = EconomyNewsContent?.QlnNewsFinanceQatar;
+                    FinanceQatarNewsContent = await GetNewsAsync<QlnNewsFinanceQatarPageResponse>("Qatar Economy");
+                    var economy = FinanceQatarNewsContent?.QlnNewsFinanceQatar;
                     topNews = economy?.TopStory?.Items?.FirstOrDefault();
                     moreArticleList = economy?.MoreArticles?.Items ?? new List<ContentPost>();
                     break;
@@ -211,14 +211,14 @@ namespace QLN.Web.Shared.Pages.Content.News
                     moreArticleList = realEstate?.MoreArticles?.Items ?? new List<ContentPost>();
                     break;
                 case "Entrepreneurship":
-                    EntrepeneurshipNewsContent = await GetNewsAsync<QlnNewsFinanceEntrepreneurshipPageResponse>("Entrepreneurship");
-                    var entrepreneurship = EntrepeneurshipNewsContent?.QlnNewsFinanceEntrepreneurship;
+                    FinanceEntrepreneurshipNewsContent = await GetNewsAsync<QlnNewsFinanceEntrepreneurshipPageResponse>("Entrepreneurship");
+                    var entrepreneurship = FinanceEntrepreneurshipNewsContent?.QlnNewsFinanceEntrepreneurship;
                     topNews = entrepreneurship?.TopStory?.Items?.FirstOrDefault();
                     moreArticleList = entrepreneurship?.MoreArticles?.Items ?? new List<ContentPost>();
                     break;
                 case "Finance":
-                    FinanceQatarNewsContent = await GetNewsAsync<QlnNewsFinanceFinancePageResponse>("Finance");
-                    var finance = FinanceQatarNewsContent ?.QlnNewsFinanceFinance;
+                    FinanceFinanceNewsContent = await GetNewsAsync<QlnNewsFinanceFinancePageResponse>("Finance");
+                    var finance = FinanceFinanceNewsContent?.QlnNewsFinanceFinance;
                     topNews = finance?.TopStory?.Items?.FirstOrDefault();
                     moreArticleList = finance?.MoreArticles?.Items ?? new List<ContentPost>();
                     break;
