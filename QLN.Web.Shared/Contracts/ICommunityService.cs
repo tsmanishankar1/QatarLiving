@@ -10,7 +10,6 @@ namespace QLN.Web.Shared.Contracts
         Task<List<MorePostItem>> GetMorePostsAsync();
         Task<List<SelectOption>> GetForumCategoriesAsync();
 
-        Task<bool> PostSelectedCategoryAsync(string selectedCategoryId);
 
     }
 }
