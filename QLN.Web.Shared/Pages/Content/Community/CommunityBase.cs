@@ -32,7 +32,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         // Pagination
         protected int CurrentPage { get; set; } = 1;
         protected int PageSize { get; set; } = 10;
-        protected int TotalPosts { get; set; } = 0;
+        protected int TotalPosts { get; set; } = 40;
 
         // Newsletter subscription
         protected NewsLetterSubscriptionModel SubscriptionModel { get; set; } = new();
@@ -95,7 +95,10 @@ namespace QLN.Web.Shared.Pages.Content.Community
             {
                 IsLoading = true;
                 HasError = false;
+                StateHasChanged();
+
                 int? forumId = int.TryParse(SelectedForumId, out var parsedId) ? parsedId : null;
+                Console.WriteLine("current page in GetPostListAsync", CurrentPage);
 
                 var dtoList = await CommunityService.GetPostsAsync(
                     forumId: forumId,
@@ -108,6 +111,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                     HasError = true;
                     return null;
                 }
+
                 var postModelList = dtoList.Select(dto => new PostModel
                 {
                     Id = dto.nid,
@@ -134,6 +138,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             finally
             {
                 IsLoading = false;
+                StateHasChanged();
             }
         }
 
@@ -153,11 +158,21 @@ namespace QLN.Web.Shared.Pages.Content.Community
             CurrentPage = 1;
             await GetPostListAsync();
         }
+        protected async Task HandlePageSizeChange(int newPageSize)
+        {
+            PageSize = newPageSize;
+            CurrentPage = 1; 
+            await GetPostListAsync();
+        }
 
         protected async Task HandlePageChange(int newPage)
         {
             CurrentPage = newPage;
-            await GetPostListAsync();
+            Console.WriteLine("current page", CurrentPage);
+            Logger.LogInformation($"Page changed to: {CurrentPage}");
+
+            PostList = await GetPostListAsync() ?? new List<PostModel>();
+            StateHasChanged();
         }
 
         protected async Task SubscribeAsync()
