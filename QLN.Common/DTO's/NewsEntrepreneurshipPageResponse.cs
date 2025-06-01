@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Http.Features;
 using QLN.Common.Infrastructure.Constants;
 using System;
 using System.Collections.Generic;
@@ -10,14 +10,14 @@ using System.Threading.Tasks;
 namespace QLN.Common.Infrastructure.DTO_s
 {
 
-    public class QlnNewsNewsHealthEducation
+    public class QlnNewsFinanceEntrepreneurship
     {
-        const string _prefix = "qln_news_news_health_education";
+        const string _prefix = "qln_news_finance_entrepreneurship";
 
-        [JsonPropertyName($"{_prefix}_top_story")]
+        [JsonPropertyName($"qln_news_business_top_story")]
         public BaseQueueResponse<ContentPost> TopStory { get; set; }
 
-        [JsonPropertyName($"{_prefix}_more_articles")]
+        [JsonPropertyName($"qln_news_finance_entrepreneurship_watch_on_qatar_living")]
         public BaseQueueResponse<ContentPost> MoreArticles { get; set; }
 
         [JsonPropertyName($"{_prefix}_articles_1")]
@@ -30,9 +30,11 @@ namespace QLN.Common.Infrastructure.DTO_s
         public BaseQueueResponse<ContentPost> MostPopularArticles { get; set; }
     }
 
-    public class NewsHealthEducationPageResponse
+    public class NewsEntrepreneurshipPageResponse
     {
-        [JsonPropertyName(DrupalContentConstants.QlnNewsNewsHealthEducation)]
-        public QlnNewsNewsHealthEducation QlnNewsNewsHealthEducation { get; set; }
+        [JsonPropertyName(DrupalContentConstants.QlnNewsFinanceEntrepreneurship)]
+        public QlnNewsFinanceEntrepreneurship QlnNewsFinanceEntrepreneurship { get; set; }
     }
 }
+
+

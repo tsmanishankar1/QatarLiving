@@ -1,5 +1,6 @@
 @using MudBlazor
 @inherits ArticleDetailCardBase
+@using QLN.Web.Shared.Components.EmptyCard
 <div class="event-card">
     <div class="event-title">@Post.Title</div>
 
@@ -10,9 +11,17 @@
                                 Animation="Animation.Wave" 
                                 Class="rounded shadow-container" />
                         }
+                        else if(@Post==null){
+                             <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
+                        }
                         else{
-                <img src="@Post.ImageUrl" alt="Michael Bublé" class="event-image" />
-        }
+                            @if(string.IsNullOrEmpty(Post.ImageUrl)){
+                                 <EmptyCard Title="No Images Available" Subtitle="" />
+                            }
+                            else{
+                            <img src="@Post.ImageUrl" alt="Michael Bublé" class="event-image" />
+                            }
+                        }
 
              <div class="author-wrapper">
                     <div class="main-author">

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Http.Features;
 using QLN.Common.Infrastructure.Constants;
 using System;
 using System.Collections.Generic;
@@ -9,10 +9,11 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.DTO_s
 {
+    // Unique Queue Responses for News Middle East
 
-    public class QlnNewsNewsHealthEducation
+    public class QlnNewsFinanceRealEstate
     {
-        const string _prefix = "qln_news_news_health_education";
+        const string _prefix = "qln_news_finance_real_estate";
 
         [JsonPropertyName($"{_prefix}_top_story")]
         public BaseQueueResponse<ContentPost> TopStory { get; set; }
@@ -30,9 +31,11 @@ namespace QLN.Common.Infrastructure.DTO_s
         public BaseQueueResponse<ContentPost> MostPopularArticles { get; set; }
     }
 
-    public class NewsHealthEducationPageResponse
+    public class NewsRealEstatePageResponse
     {
-        [JsonPropertyName(DrupalContentConstants.QlnNewsNewsHealthEducation)]
-        public QlnNewsNewsHealthEducation QlnNewsNewsHealthEducation { get; set; }
+        [JsonPropertyName(DrupalContentConstants.QlnNewsFinanceRealEstate)]
+        public QlnNewsFinanceRealEstate QlnNewsFinanceRealEstate { get; set; }
     }
 }
+
+
