@@ -1,0 +1,70 @@
+@using QLN.Common.Infrastructure.DTO_s
+@using Microsoft.AspNetCore.Components
+@inject IJSRuntime JS
+
+<div class="swiper banner-swiper">
+    <div class="swiper-wrapper">
+        @if (BannerItems?.Count == 1)
+        {
+            // Duplicate the banner to enable Swiper autoplay/loop
+            for (int i = 0; i < 2; i++)
+            {
+                <div class="swiper-slide">
+                    <a href="@BannerItems[0].Link" target="_blank" rel="noopener noreferrer">
+                        <img class="banner-image" src="@BannerItems[0].ImageDesktop"
+                            srcset="@BannerItems[0].ImageMobile 600w, @BannerItems[0].ImageDesktop 1024w"
+                            sizes="(max-width: 768px) 600px, 100vw" alt="Banner" />
+                    </a>
+                </div>
+            }
+        }
+        else if (BannerItems?.Count > 1)
+        {
+            foreach (var banner in BannerItems)
+            {
+                <div class="swiper-slide">
+                    <a href="@banner.Link" target="_blank" rel="noopener noreferrer">
+                        <img class="take-over-banner-image" src="@banner.ImageDesktop"
+                            srcset="@banner.ImageMobile 600w, @banner.ImageDesktop 1024w"
+                            sizes="(max-width: 768px) 600px, 100vw" alt="Banner" />
+                    </a>
+                </div>
+            }
+        }
+
+    </div>
+
+    <div class="swiper-pagination"></div> <!-- Required for pagination -->
+</div>
+
+<style>
+    .banner-swiper {
+        width: 100%;
+    }
+
+    .take-over-banner-image {
+        width: 100%;
+        border-radius: 3px;
+        height: 150px;
+        object-fit: cover;
+        display: block;
+    }
+</style>
+
+@code {
+    [Parameter] public List<BannerItem> BannerItems { get; set; } = [];
+
+    [Parameter] public bool Loading { get; set; } = false;
+
+    private bool _bannerInitialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_bannerInitialized && !Loading && BannerItems?.Any() == true)
+        {
+            _bannerInitialized = true;
+            await JS.InvokeVoidAsync("initBannerSwiper");
+        }
+    }
+
+}
