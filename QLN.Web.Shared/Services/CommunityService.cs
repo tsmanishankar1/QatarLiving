@@ -1,6 +1,8 @@
 ﻿using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
+using QLN.Web.Shared.Models;
 using System.Net.Http.Json;
+using System.Text.Json.Serialization;
 
 namespace QLN.Web.Shared.Services
 {
@@ -61,6 +63,49 @@ namespace QLN.Web.Shared.Services
                 return new List<MorePostItem>();
             }
         }
+        public async Task<List<SelectOption>> GetForumCategoriesAsync()
+        {
+            try
+            {
+                var response = await _httpClient.GetFromJsonAsync<CategoryResponse>("api/content/categories");
+                var forumCategories = response?.Forum_Categories ?? new List<ForumCategory>();
+
+                return forumCategories.Select(cat => new SelectOption
+                {
+                    Id = cat.Id,
+                    Label = cat.Name
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"API Error: {ex.Message}");
+                return new List<SelectOption>();
+            }
+        }
+        public class CategoryResponse
+        {
+            [JsonPropertyName("forum_categories")]
+            public List<ForumCategory> Forum_Categories { get; set; }
+        }
+        public async Task<bool> PostSelectedCategoryAsync(string selectedCategoryId)
+        {
+            //try
+            //{
+            //    var url = $"https://www.qatarliving.com/node/add/post?field_page={selectedCategoryId}";
+
+            //    var response = await _httpClient.GetAsync(url);
+
+
+            //    return response.IsSuccessStatusCode;
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine($"API Error in PostSelectedCategoryAsync: {ex.Message}");
+            //    return false;
+            //}
+            throw new NotImplementedException("PostSelectedCategoryAsync is not implemented ");
+        }
+
 
 
     }

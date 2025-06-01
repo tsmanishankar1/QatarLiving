@@ -31,6 +31,10 @@ GET {{QLN.Backend.API_HostAddress}}/api/content/categories
 Accept: application/json
 
 ###
+GET {{QLN.Backend.API_HostAddress}}/api/content/community
+Accept: application/json
+
+###
 GET {{QLN.Backend.API_HostAddress}}/api/content/community?forum_id=20000006
 Accept: application/json
 
@@ -96,6 +100,10 @@ Accept: application/json
 
 ###
 GET {{QLN.Drupal.API_HostAddress}}/qlnapi/community?page=1&page_size=10&order=asc&forum_id=20000006
+Accept: application/json
+
+###
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/community?page=1&page_size=10&order=asc
 Accept: application/json
 
 ###

@@ -257,7 +257,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             // GET /api/content/categories
             group.MapGet("/community", async (
                     HttpContext context,
-                    [FromQuery] string forum_id,
+                    [FromQuery] string? forum_id,
                     [FromQuery] string? order,
                     [FromQuery] int? page,
                     [FromQuery] int? page_size,
@@ -269,8 +269,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                 try
                 {
                     var model = await svc.GetCommunitiesFromDrupalAsync(
-                        forum_id,
                         cancellationToken,
+                        forum_id,
                         order,
                         page,
                         page_size);
@@ -284,7 +284,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                 catch (Exception ex)
                 {
                     return Results.Problem(
-                        title: "Content Categories Error",
+                        title: "Content Communities Error",
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError);
                 }

@@ -1,3 +1,4 @@
+@inherits DailyIntheKnowBase
 <div class="daily-know-section">
     <!-- Section Title -->
     <div class="daily-title">
@@ -9,37 +10,20 @@
     <div class="daily-category-group">
         @foreach (var item in DailyCategories)
         {
-            <button class="daily-category-btn">
+            <button class="daily-category-btn" @onclick="() => OnClickCommunityCateg(item.QLCategLink)">
                 <img src="@item.Icon" alt="@item.Label" class="btn-icon" />
                 @item.Label
             </button>
         }
 
-        <button class="view-all-btn">
+
+        <button class="view-all-btn" @onclick="OnClickCommunityViewAll">
             View all
             <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowRight" class="arrow-icon" />
         </button>
     </div>
 </div>
 
-@code {
-
-    private List<CategoryItem> DailyCategories = new()
-{
-new CategoryItem { Icon = "/qln-images/content/business_icon.svg", Label = "Business" },
-new CategoryItem { Icon = "/qln-images/content/sports_icon.svg", Label = "Sports" },
-new CategoryItem { Icon = "/qln-images/content/lifestyle_icon.svg", Label = "Lifestyle" },
-new CategoryItem { Icon = "/qln-images/content/food_icon.svg", Label = "Food & Dining" },
-new CategoryItem { Icon = "/qln-images/content/travel_icon.svg", Label = "Travel & Leisure" },
-};
-
-
-    public class CategoryItem
-    {
-        public string Icon { get; set; }
-        public string Label { get; set; }
-    }
-}
 <style>
     .daily-know-section {
         display: flex;

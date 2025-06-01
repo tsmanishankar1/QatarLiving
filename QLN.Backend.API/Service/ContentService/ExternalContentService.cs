@@ -72,9 +72,15 @@ namespace QLN.Backend.API.Service.ContentService
             return await httpClient.GetFromJsonAsync<CategoriesResponse>(DrupalContentConstants.CategoriesPath, cancellationToken);
         }
 
-        public async Task<List<CommunityPost>?> GetCommunitiesFromDrupalAsync(string forum_id, CancellationToken cancellationToken, string? order = "asc", int? page = 1, int? page_size = 10)
+        public async Task<List<CommunityPost>?> GetCommunitiesFromDrupalAsync(CancellationToken cancellationToken, string? forum_id = null, string? order = "asc", int? page = 1, int? page_size = 10)
         {
-            return await httpClient.GetFromJsonAsync<List<CommunityPost>>($"{DrupalContentConstants.CommunityPath}?page={page}&page_size={page_size}&order={order}&forum_id={forum_id}", cancellationToken);
+            string requestUri = $"{DrupalContentConstants.CommunityPath}?page={page}&page_size={page_size}&order={order}";
+            if (!string.IsNullOrEmpty(forum_id))
+            {
+                requestUri += $"&forum_id={forum_id}";
+            }
+
+            return await httpClient.GetFromJsonAsync<List<CommunityPost>>(requestUri, cancellationToken);
         }
 
         public async Task<GetCommentsResponse?> GetCommentsFromDrupalAsync(string forum_id, CancellationToken cancellationToken, int? page = 1, int? page_size = 10)
