@@ -45,16 +45,7 @@ namespace QLN.Web.Shared.Services
 
         public async Task<HttpResponseMessage?> GetNewsCommunityAsync()
         {
-            try
-            {
-                Console.WriteLine("response is" + response);
-                return response;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("GetNewsLPAsync" + ex);
-                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
-            }
+            throw new NotImplementedException();
         }
 
         public async Task<HttpResponseMessage?> GetNewsHealthAndEducationAsync()
