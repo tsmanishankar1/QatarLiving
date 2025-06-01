@@ -12,8 +12,14 @@
             </div>
 
             <div class="event-image-container">
+
+                @if (!imageLoaded)
+                {
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="421px" />
+                }
                 <img src="@(!string.IsNullOrWhiteSpace(Item?.ImageUrl) ? Item.ImageUrl : "/images/not_found.svg")"
-                    alt="Event Image" class="event-image" />
+                    alt="Event Image" class="event-image" style="@(imageLoaded ? "display: block;" : "display: none;")"
+                    @onload="OnImageLoaded" @onerror="OnImageError" />
 
 
                 <div class="event-info-bar">
@@ -92,14 +98,30 @@
                     </iframe>
                 }
             </div>
-            <img src="/images/classifieds/detail_ad.svg" alt="Ad" class="ad-banner" />
+            <img src="/qln-images/classifieds/detail_ad.svg" alt="Ad" class="ad-banner" />
         </div>
     </MudItem>
 </MudGrid>
 
 @code {
     private bool IsModalOpen { get; set; } = false;
+    protected bool imageLoaded = false;
+    protected override void OnParametersSet()
+    {
+        imageLoaded = false; // reset loading state
+    }
 
+    protected void OnImageLoaded()
+    {
+        imageLoaded = true;
+        StateHasChanged();
+    }
+
+    protected void OnImageError()
+    {
+        imageLoaded = true; // stop skeleton on error
+        StateHasChanged();
+    }
     [Parameter] public ContentEvent Item { get; set; }
     private List<MenuItem> shareMenuItems => new()
 {
