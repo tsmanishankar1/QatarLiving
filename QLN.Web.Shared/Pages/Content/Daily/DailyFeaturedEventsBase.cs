@@ -15,7 +15,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (!_categoriesSwiperInitialized)
+             if (!_categoriesSwiperInitialized && !Loading && Items?.Any() == true)
             {
                 _categoriesSwiperInitialized = true;
                 await JSRuntime.InvokeVoidAsync("initCategoriesSwiper");
@@ -24,7 +24,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
 
         protected void OnClickEvent(ContentPost item)
         {
-            NavigationManager.NavigateTo($"/events/details/{item.Slug}");
+            NavigationManager.NavigateTo($"/content/events/details/{item.Slug}");
         }
     }
 }

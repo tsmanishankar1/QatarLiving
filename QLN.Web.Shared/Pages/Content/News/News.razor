@@ -9,7 +9,10 @@
 @using QLN.Web.Shared.Pages.Content.News.VideoCards
 @using QLN.Web.Shared.Pages.Content.Daily.DailyNewsLetter
 @using QLN.Web.Shared.Components.ViewToggleButtons
+@using QLN.Web.Shared.Components.BannerSwiper
+@using QLN.Web.Shared.Pages.Content.Events
 @using QLN.Web.Shared.Components.TakeOverBanner
+@using QLN.Web.Shared.Components.BannerTakeOver
 @using QLN.Web.Shared.Components.EmptyCard
 @using QLN.Web.Shared.Pages.Content.News.MoreArticle
 @using QLN.Web.Shared.Pages.Content.News.Skeletons
@@ -20,8 +23,19 @@
     <div class="carousel-responsive-container">
         <div class="max-container">
             <!-- Carousel Banner -->
-            <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
-                Transition="Transition.Slide" />
+                 @if (isLoadingBanners)
+                {
+                    <BannerSkleton />
+                }
+                else if (DailyHeroBanners?.Any() == true)
+                {
+                    <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+                }
+                else
+                {
+                    <EmptyCard Title="No event banners found."
+                            Subtitle="Please check back later for updates." />
+                } 
         </div>
     </div>
     <div class="tooggle-container">
@@ -108,8 +122,26 @@
                     <NewsLetter />
                     </div>
                 </div>
-                
-                <TakeOverBanner ImageUrl="/images/takeover_banner.svg" />
+                <div class="carousel-responsive-container">
+                <div class="max-container">
+                <!-- Carousel Banner -->
+                 @if (isLoadingBanners)
+                {
+                    <BannerSkleton />
+                }
+                else if (DailyHeroBanners?.Any() == true)
+                {
+                    <div style="height: 150px;">
+                        <BannerTakeOver BannerItems="@DailyTakeOverBanners" Loading="@isLoadingBanners" />  
+                    </div>
+                }
+                else
+                {
+                    <EmptyCard Title="No event banners found."
+                            Subtitle="Please check back later for updates." />
+                } 
+                </div>
+            </div>
             </div>
         </div>  
         <div class="video-container">  
@@ -148,7 +180,7 @@
                     </div>
                     <div class="poular-article-container" >
                             <PopularArticles Articles="@moreArticleList" selectedTab="@SelectedTab"/>
-                            <img src="/images/classifieds/detail_ad.svg"  alt="Product Image" />
+                            <img src="/qln-images/classifieds/detail_ad.svg"  alt="Product Image" />
                     </div>
                     <div class="grid-padding">
                     <MudGrid GutterSize="0" Class="pb-3 pt-8">
@@ -258,6 +290,11 @@
         box-sizing: border-box;
         background: linear-gradient(to top, #FFFFFF 0%, #FFFFFF 20%, #F5F6FA 100%);
     }
+    .take-over-style{
+         max-width: 1170px;
+        margin: 0 auto;
+        width: 100%;
+    }
 .tooggle-container {
     display: flex;
     justify-content: center;
@@ -299,9 +336,8 @@
 .news-tabs {
     width: 100%;
     display: flex;
-    overflow-x: hidden;
+    overflow-x: auto;
     margin: 23px 0px;
-    overflow: hidden; 
     @* padding: 8px 16px; *@
     align-items:center;
     gap: 8px;

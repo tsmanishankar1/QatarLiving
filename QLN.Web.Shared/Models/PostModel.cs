@@ -79,7 +79,7 @@
     public class CommentDto
     {
         public string comment_id { get; set; } = string.Empty;
-        public string username { get; set; } = string.Empty;
+        public string user_name { get; set; } = string.Empty;
         public DateTime created_date { get; set; }
         public string subject { get; set; } = string.Empty;
         public int LikeCount { get; set; }

@@ -48,5 +48,20 @@ namespace QLN.Web.Shared.Services
         {
             throw new NotImplementedException();
         }
+
+           public async Task<HttpResponseMessage?> GetBannerAsync()
+{
+    try
+    {
+        var response = await _httpClient.GetAsync("api/banner");
+        return response;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("GetBannerAsync: " + ex);
+        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+    }
+}
+
     }
 }

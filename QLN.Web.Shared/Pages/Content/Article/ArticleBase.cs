@@ -12,12 +12,15 @@ public class ArticleBase : ComponentBase
     [Parameter]
     public string slug { get; set; }
     public bool isLoading { get; set; }
+    protected List<BannerItem> DailyHeroBanners { get; set; } = new();
+    protected bool isLoadingBanners = true;
     public List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
     protected QlnNewsNewsQatarPageResponse QatarNewsContent { get; set; } = new QlnNewsNewsQatarPageResponse();
     protected List<ContentPost> moreArticleList { get; set; } = new List<ContentPost>();
     [Inject] private ILogger<NewsCardBase> Logger { get; set; }
     public PostModel SelectedPost { get; set; }
     [Inject] private INewsService _newsService { get; set; }
+    [Inject] private IEventService _eventService { get; set; }
     protected ContentPost newsArticle { get; set; } = new ContentPost();
     protected int commentsCount = 0;
     public List<string> carouselImages = new()
@@ -61,15 +64,15 @@ public class ArticleBase : ComponentBase
                     LikeCount = 0,
                     UnlikeCount = 0,
                     Avatar = "/images/content/Sample.svg"
-                    }).ToList() ?? new List<CommentModel>()
-                };
+                }).ToList() ?? new List<CommentModel>()
+            };
             breadcrumbItems = new()
             {
                 new() {   Label = "News",Url ="/content/news" },
                 new() { Label = "Sports", Url = "/content/news"},
                 new() { Label = newsArticle.Title, Url = "/article/details/{slug}", IsLast = true },
             };
-           QatarNewsContent = await GetNewsQatarAsync();
+            QatarNewsContent = await GetNewsQatarAsync();
             moreArticleList = QatarNewsContent?.QlnNewsNewsQatar?.MoreArticles?.Items ?? new List<ContentPost>();
         }
         catch (Exception ex)
@@ -117,4 +120,34 @@ public class ArticleBase : ComponentBase
                 return new QlnNewsNewsQatarPageResponse();
             }
     }
+    private async Task LoadBanners()
+        {
+            isLoadingBanners = true;
+            try
+            {
+                var banners = await FetchBannerData();
+                DailyHeroBanners = banners?.DailyHero ?? new List<BannerItem>();
+            }
+            finally
+            {
+                isLoadingBanners = false;
+            }
+        }
+        private async Task<BannerResponse?> FetchBannerData()
+    {
+    try
+    {
+        var result = await _eventService.GetBannerAsync();
+        if (result.IsSuccessStatusCode && result.Content != null)
+        {
+            return await result.Content.ReadFromJsonAsync<BannerResponse>();
+        }
+        return null;
+    }
+    catch (Exception ex)
+    {
+        Logger.LogError(ex, "FetchBannerData error.");
+        return null;
+    }
+}
 }
