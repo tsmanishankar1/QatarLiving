@@ -1,12 +1,14 @@
 ﻿using System.Linq;
-
+using System.Net.Http.Json;
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Models;
+using QLN.Web.Shared.Services.Interface;
 
 
 namespace QLN.Web.Shared.Pages.Content.Community
@@ -20,6 +22,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         [Inject] private ILogger<CommunityBase> Logger { get; set; }
         [Inject] private ICommunityService CommunityService { get; set; }
+        [Inject] private IContentService _contentService { get; set; }
+
         [Inject] private INewsLetterSubscription NewsLetterSubscriptionService { get; set; }
         [Inject] private IAdService AdService { get; set; }
         protected string search = string.Empty;
@@ -53,6 +57,27 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected List<SelectOption> CategorySelectOptions { get; set; }
         protected string SelectedForumId;
 
+        protected bool isLoadingBanners = true;
+        protected List<BannerItem> DailyHeroBanners { get; set; } = new();
+        protected async Task LoadBanners()
+        {
+            isLoadingBanners = true;
+            try
+            {
+                var banners = await FetchBannerData();
+                DailyHeroBanners = banners?.DailyHero ?? new();
+              
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading banners: {ex.Message}");
+            }
+            finally
+            {
+                isLoadingBanners = false;
+            }
+        }
+
         protected async override Task OnInitializedAsync()
         {
             CategorySelectOptions = new List<SelectOption>
@@ -68,6 +93,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             try
             {
                 PostList = await GetPostListAsync();
+                await LoadBanners();
 
                 Ad = await GetAdAsync();
 
@@ -77,6 +103,24 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 Logger.LogError(ex, "OnInitializedAsync");
             }
         }
+        private async Task<BannerResponse?> FetchBannerData()
+        {
+            try
+            {
+                var response = await _contentService.GetBannerAsync();
+                if (response.IsSuccessStatusCode && response.Content != null)
+                {
+                    return await response.Content.ReadFromJsonAsync<BannerResponse>();
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"FetchBannerData error: {ex.Message}");
+                return null;
+            }
+        }
+    
         protected async Task HandleCategoryChanged(string forumId)
         {
             SelectedForumId = forumId;
