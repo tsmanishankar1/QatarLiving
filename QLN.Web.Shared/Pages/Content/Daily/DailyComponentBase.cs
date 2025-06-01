@@ -28,7 +28,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
         "/qln-images/banner_image.svg"
         };
 
-        protected bool isLoading = false;
+        protected bool isLoading = true;
 
         protected List<ContentPost> TopicQueue1 { get; set; } = [];
         protected List<ContentPost> TopicQueue2 { get; set; } = [];
@@ -61,6 +61,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
         }
                 protected async override Task OnInitializedAsync()
         {
+            isLoading = true;
             try
             {
                 LandingContent = await GetContentLandingAsync() ?? new();
@@ -82,6 +83,9 @@ namespace QLN.Web.Shared.Pages.Content.Daily
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message, "OnInitializedAsync");
+            }  finally
+            {
+                isLoading = false;
             }
         }
 
