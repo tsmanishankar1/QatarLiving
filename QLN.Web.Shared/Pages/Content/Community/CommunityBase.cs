@@ -1,12 +1,15 @@
 ﻿using System.Linq;
-
+using System.Net.Http.Json;
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
+using QLN.Common.Infrastructure.DTO_s;
+using QLN.Common.Infrastructure.Model;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Models;
+using QLN.Web.Shared.Services.Interface;
 
 
 namespace QLN.Web.Shared.Pages.Content.Community
@@ -16,10 +19,12 @@ namespace QLN.Web.Shared.Pages.Content.Community
         [Inject]
         public ISnackbar Snackbar { get; set; }
         [Inject]
-        public IDialogService DialogService { get;set; }
+        public IDialogService DialogService { get; set; }
 
         [Inject] private ILogger<CommunityBase> Logger { get; set; }
         [Inject] private ICommunityService CommunityService { get; set; }
+        [Inject] private IContentService _contentService { get; set; }
+
         [Inject] private INewsLetterSubscription NewsLetterSubscriptionService { get; set; }
         [Inject] private IAdService AdService { get; set; }
         protected string search = string.Empty;
@@ -32,8 +37,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
         // Pagination
         protected int CurrentPage { get; set; } = 1;
         protected int PageSize { get; set; } = 10;
-        protected int TotalPosts { get; set; } = 0;
-
+        protected int TotalPosts { get; set; } = 50;
+        //protected int TotalPosts { get; set; }
         // Newsletter subscription
         protected NewsLetterSubscriptionModel SubscriptionModel { get; set; } = new();
         protected string SubscriptionStatusMessage = string.Empty;
@@ -53,21 +58,28 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected List<SelectOption> CategorySelectOptions { get; set; }
         protected string SelectedForumId;
 
+        protected bool isLoadingBanners = true;
+        protected List<BannerItem> DailyHeroBanners { get; set; } = new();
+
+        [Parameter]
+        [SupplyParameterFromQuery]
+        public string? categoryId { get; set; }
+       
         protected async override Task OnInitializedAsync()
         {
             CategorySelectOptions = new List<SelectOption>
-    {
-        new() { Id = "Default", Label = "Default" },
-        new() { Id = "Popular", Label = "Most Popular" },
-        new() { Id = "Recent", Label = "Date : Recent First" },
-        new() { Id = "Oldest", Label = "Date : Oldest First" },
-
-    };
+              {
+                 new() { Id = "Default", Label = "Default" },
+                 new() { Id = "Popular", Label = "Most Popular" },
+                 new() { Id = "Recent", Label = "Date : Recent First" },
+                 new() { Id = "Oldest", Label = "Date : Oldest First" },
+            };
             SelectedCategoryId = "Default";
 
             try
             {
                 PostList = await GetPostListAsync();
+                await LoadBanners();
 
                 Ad = await GetAdAsync();
 
@@ -77,6 +89,51 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 Logger.LogError(ex, "OnInitializedAsync");
             }
         }
+
+        protected override async Task OnParametersSetAsync()
+        {
+            Console.WriteLine($"Received categoryId: {categoryId}");
+            if (!string.IsNullOrEmpty(categoryId))
+            {
+                SelectedForumId = categoryId;
+            }
+            else
+            {
+                SelectedForumId = null; 
+            }
+
+            try
+            {
+                PostList = await GetPostListAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to load posts");
+                HasError = true;
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+        private async Task<BannerResponse?> FetchBannerData()
+        {
+            try
+            {
+                var response = await _contentService.GetBannerAsync();
+                if (response.IsSuccessStatusCode && response.Content != null)
+                {
+                    return await response.Content.ReadFromJsonAsync<BannerResponse>();
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"FetchBannerData error: {ex.Message}");
+                return null;
+            }
+        }
+
         protected async Task HandleCategoryChanged(string forumId)
         {
             SelectedForumId = forumId;
@@ -95,7 +152,10 @@ namespace QLN.Web.Shared.Pages.Content.Community
             {
                 IsLoading = true;
                 HasError = false;
+                StateHasChanged();
+
                 int? forumId = int.TryParse(SelectedForumId, out var parsedId) ? parsedId : null;
+                Console.WriteLine("current page in GetPostListAsync", CurrentPage);
 
                 var dtoList = await CommunityService.GetPostsAsync(
                     forumId: forumId,
@@ -108,6 +168,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
                     HasError = true;
                     return null;
                 }
+
+
                 var postModelList = dtoList.Select(dto => new PostModel
                 {
                     Id = dto.nid,
@@ -120,8 +182,9 @@ namespace QLN.Web.Shared.Pages.Content.Community
                     CommentCount = 0,
                     isCommented = false,
                     ImageUrl = dto.image_url,
-                    Slug = dto.slug
+                    Slug = dto.slug,
                 }).ToList();
+                //TotalPosts = postModelList.TotalCount;
 
                 return postModelList;
             }
@@ -134,6 +197,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             finally
             {
                 IsLoading = false;
+                StateHasChanged();
             }
         }
 
@@ -153,11 +217,21 @@ namespace QLN.Web.Shared.Pages.Content.Community
             CurrentPage = 1;
             await GetPostListAsync();
         }
+        protected async Task HandlePageSizeChange(int newPageSize)
+        {
+            PageSize = newPageSize;
+            CurrentPage = 1;
+            await GetPostListAsync();
+        }
 
         protected async Task HandlePageChange(int newPage)
         {
             CurrentPage = newPage;
-            await GetPostListAsync();
+            Console.WriteLine("current page", CurrentPage);
+            Logger.LogInformation($"Page changed to: {CurrentPage}");
+
+            PostList = await GetPostListAsync() ?? new List<PostModel>();
+            StateHasChanged();
         }
 
         protected async Task SubscribeAsync()
@@ -213,7 +287,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             StateHasChanged();
         }
 
-       
+
         [Parameter] public EventCallback<string> OnCategoryChanged { get; set; }
 
         protected Task OpenDialogAsync()
@@ -223,7 +297,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 MaxWidth = MaxWidth.Small,
                 FullWidth = true,
                 CloseOnEscapeKey = true,
-               
+
             };
             return DialogService.ShowAsync<AddPostDialog>("Post Dialog", options);
         }
@@ -232,6 +306,25 @@ namespace QLN.Web.Shared.Pages.Content.Community
         {
             SelectedCategoryId = newId;
             await OnCategoryChanged.InvokeAsync(newId);
+        }
+
+        protected async Task LoadBanners()
+        {
+            isLoadingBanners = true;
+            try
+            {
+                var banners = await FetchBannerData();
+                DailyHeroBanners = banners?.DailyHero ?? new();
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading banners: {ex.Message}");
+            }
+            finally
+            {
+                isLoadingBanners = false;
+            }
         }
     }
 }

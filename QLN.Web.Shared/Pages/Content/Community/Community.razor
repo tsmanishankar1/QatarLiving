@@ -8,15 +8,31 @@
 @using QLN.Web.Shared.Components.Carousel
 @using QLN.Web.Shared.Pages.Content.Community.Components.CustomDropdown
 @using QLN.Web.Shared.Components.NewCustomSelect
+@using QLN.Web.Shared.Pages.Content.Community.Components.PaginationFooter
+@using QLN.Web.Shared.Components.EmptyCard
 
+@using QLN.Web.Shared.Pages.Content.Events
+@using QLN.Web.Shared.Components.BannerSwiper
 
 <div class="container">
     <div class="container-inner-wrapper">
 
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge" >
-            <div class="category-banner-wrapper">
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge">
+          @*   <div class="category-banner-wrapper">
                 <img src="/qln-images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
-            </div>
+            </div> *@
+              @if (isLoadingBanners)
+            {
+                <BannerSkleton />
+            }
+            else if (DailyHeroBanners?.Any() == true)
+            {
+                <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+            }
+            else
+            {
+                <EmptyCard Title="No  banners found." Subtitle="Please check back later for updates." />
+            }
 
             <CommunitySearchBarSection OnSearchCompleted="HandleSearchResults" OnCategoryChanged="HandleCategoryChanged" />
             <div class="section-container">
@@ -29,9 +45,9 @@
                                 Community Posts <MudIconButton Icon="@Icons.Material.Filled.Add"
                                                                Style="color: #F26D1E;"
                                                                OnClick="OpenDialogAsync"
-                                Class="ms-2" />
+                                                               Class="ms-2" />
                             </MudText>
-                          
+
                             <div class="sort-section">
                                 <div class="sort-label">
                                     Sort by:
@@ -39,13 +55,13 @@
 
 
                                 <SortDropdown TItem="SelectOption"
-                                Items="@CategorySelectOptions"
-                                SelectedId="@SelectedCategoryId"
-                                SelectedIdChanged="id => SelectedCategoryId = id"
-                                GetLabel="x => x.Label"
-                                GetId="x => x.Id"
-                                BorderRadius="0px"
-                                Padding="8px 10px" />
+                                              Items="@CategorySelectOptions"
+                                              SelectedId="@SelectedCategoryId"
+                                              SelectedIdChanged="id => SelectedCategoryId = id"
+                                              GetLabel="x => x.Label"
+                                              GetId="x => x.Id"
+                                              BorderRadius="0px"
+                                              Padding="8px 10px" />
                             </div>
                         </div>
                         @if (IsLoading)
@@ -81,7 +97,7 @@
                                 </MudText>
                             </MudPaper>
                         }
-                        else if (PostList == null )
+                        else if (PostList == null)
                         {
                             <MudPaper Class="pa-4 mt-8" Color="Color.Warning" Elevation="0">
                                 <MudText Typo="Typo.h6" Color="Color.Warning">
@@ -101,8 +117,17 @@
 
                                     <PostCard Post="post" IsDetailView="false" />
                                 </div>
+                               
 
-                            }   }
+                            }
+                            <div class="pagination-container">
+                                <PaginationFooter TotalItems="@TotalPosts"
+                                                  CurrentPage="@CurrentPage"
+                                                  PageSize="@PageSize"
+                                                  OnPageChange="HandlePageChange"
+                                                  OnPageSizeChange="HandlePageSizeChange" />
+                            </div>
+                        }
                     </MudItem>
 
 
@@ -117,16 +142,16 @@
                                 Get The QL newsletter. Sign up to receive the top stories you need to know right now.
                             </MudText>
                             <MudForm @ref="_form">
-                          
+
                                 <input type="email"
-                                class="newsletter-input"
-                                placeholder="Enter your email"
-                                @bind="SubscriptionModel.Email"
-                                @bind:event="oninput" />
+                                       class="newsletter-input"
+                                       placeholder="Enter your email"
+                                       @bind="SubscriptionModel.Email"
+                                       @bind:event="oninput" />
                                 <MudButton Variant="Variant.Filled"
-                                Class="newsletter-button"
-                                Disabled="@IsSubscribingToNewsletter"
-                                OnClick="SubscribeAsync">
+                                           Class="newsletter-button"
+                                           Disabled="@IsSubscribingToNewsletter"
+                                           OnClick="SubscribeAsync">
                                     @if (IsSubscribingToNewsletter)
                                     {
                                         <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" />
@@ -145,9 +170,9 @@
                         </MudPaper>
                     </MudItem>
                 </MudGrid>
-                    
+
             </div>
-            
+
         </MudContainer>
     </div>
 </div>
@@ -268,6 +293,7 @@
             border-radius: 6px !important;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
         }
+
     .newsletter-box {
         text-align: center;
         display: flex;

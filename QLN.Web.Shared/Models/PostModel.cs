@@ -4,6 +4,7 @@
     {
         public string Id { get; set; } 
         public string Category { get; set; }
+        public string CategoryId { get; set; }
         public string Title { get; set; }
         public string? ImageUrl { get; set; }
         public string BodyPreview { get; set; }
@@ -14,6 +15,7 @@
         public int CommentCount { get; set; }
         public bool isCommented { get; set; }
         public string Slug { get; set; } 
+        public int TotalCount { get; set; }
         public List<CommentModel> Comments { get; set; } = new();
     }
 
@@ -52,6 +54,7 @@
     {
         public string forum_id { get; set; }
         public string forum_category { get; set; }
+        public string category_id { get; set; }
         public string user_name { get; set; }
         public string nid { get; set; }
         public string date_created { get; set; }
