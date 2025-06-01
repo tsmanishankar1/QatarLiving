@@ -1,6 +1,5 @@
 @inherits DailyComponentBase
 @using QLN.Web.Shared.Components.Carousel
-@using QLN.Web.Shared.Components.TakeOverBanner
 @using QLN.Web.Shared.Pages.Content.Daily
 @using QLN.Web.Shared.Components.DailyFeaturedEventCard
 @using QLN.Web.Shared.Pages.Content.Daily.DailyNewsCard
@@ -46,9 +45,12 @@
                     <MudGrid GutterSize="10px">
                         @if (isLoading)
                         {
-                            <MudItem xs="12">
-                                <ItemSkeletonCard />
-                            </MudItem>
+                            @for (int i = 0; i < 2; i++)
+                            {
+                                <MudItem xs="12" sm="6" md="6" key="@i">
+                                    <ItemSkeletonCard />
+                                </MudItem>
+                            }
                         }
                         else if (TopStoryItem == null && HighlightedEvent == null)
                         {
@@ -67,6 +69,8 @@
                             </MudItem>
                         }
                     </MudGrid>
+
+
                 </MudItem>
                 <MudItem xs="12" md="4">
                     <DailyMoreArticle Items="@MoreArticles" isLoading="isLoading" />
@@ -115,7 +119,7 @@
             }
             else
             {
-                <EmptyCard Title="No event banners found." Subtitle="Please check back later for updates." />
+                <EmptyCard Title="No daily banners found." Subtitle="Please check back later for updates." />
             }
 
         </div>
@@ -148,7 +152,7 @@
             }
             else
             {
-                <EmptyCard Title="No event banners found." Subtitle="Please check back later for updates." />
+                <EmptyCard Title="No daily banners found." Subtitle="Please check back later for updates." />
             }
 
             @if (TopicQueue3.Count() > 0)

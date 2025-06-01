@@ -11,7 +11,6 @@
 @using QLN.Web.Shared.Components.ViewToggleButtons
 @using QLN.Web.Shared.Components.BannerSwiper
 @using QLN.Web.Shared.Pages.Content.Events
-@using QLN.Web.Shared.Components.TakeOverBanner
 @using QLN.Web.Shared.Components.BannerTakeOver
 @using QLN.Web.Shared.Components.EmptyCard
 @using QLN.Web.Shared.Pages.Content.News.MoreArticle
@@ -33,7 +32,7 @@
                 }
                 else
                 {
-                    <EmptyCard Title="No event banners found."
+                    <EmptyCard Title="No news banners found."
                             Subtitle="Please check back later for updates." />
                 } 
         </div>
@@ -105,7 +104,20 @@
                     </MudItem>
                 </MudGrid>
                <div class="flex-container" style="padding-bottom: 40px;">
-                     @if (moreArticleList != null && moreArticleList.Any())
+                    @if(isLoading){
+                        <div class="horizontal-stack"> 
+                        @for (int i = 0; i < 3; i++)
+                        {
+                            <MudPaper Elevation="0" Class="p-2" Style="max-width: 214px;">
+                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="120px" Width="214px" Animation="Animation.Wave" Class="mb-3 rounded" />
+                            <MudSkeleton SkeletonType="SkeletonType.Text" Height="20px" Width="100%" Animation="Animation.Wave" Class="mb-1" />
+                            <MudSkeleton SkeletonType="SkeletonType.Text" Height="20px" Width="80%" Animation="Animation.Wave" />
+                            </MudPaper>
+                        }
+                        </div>
+                        
+                    }
+                     else if (moreArticleList != null && moreArticleList.Any())
                     {
                      @foreach (var news in moreArticleList.Take(3))
                     { 
@@ -164,7 +176,20 @@
         <div class="news-container" style="padding-top: 30px;">   
             <div class="max-container">
                     <div class="flex-container">
-                          @if (moreArticleList != null && moreArticleList.Any())
+                        @if(isLoading){
+                        <div class="horizontal-stack"> 
+                        @for (int i = 0; i < 5; i++)
+                        {
+                            <MudPaper Elevation="0" Class="p-2" Style="max-width: 214px;">
+                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="120px" Width="214px" Animation="Animation.Wave" Class="mb-3 rounded" />
+                            <MudSkeleton SkeletonType="SkeletonType.Text" Height="20px" Width="100%" Animation="Animation.Wave" Class="mb-1" />
+                            <MudSkeleton SkeletonType="SkeletonType.Text" Height="20px" Width="80%" Animation="Animation.Wave" />
+                            </MudPaper>
+                        }
+                        </div>
+                        
+                    }
+                          else if (moreArticleList != null && moreArticleList.Any())
                         {
                         @foreach (var news in moreArticleList.Take(5))
                         { 
@@ -179,7 +204,7 @@
                         }
                     </div>
                     <div class="poular-article-container" >
-                            <PopularArticles Articles="@moreArticleList" selectedTab="@SelectedTab"/>
+                            <PopularArticles Articles="@moreArticleList" selectedTab="@SelectedTab" loading="@isLoading"/>
                             <img src="/qln-images/classifieds/detail_ad.svg"  alt="Product Image" />
                     </div>
                     <div class="grid-padding">
@@ -336,7 +361,7 @@
 .news-tabs {
     width: 100%;
     display: flex;
-    overflow-x: auto;
+    overflow-x: hidden;
     margin: 23px 0px;
     @* padding: 8px 16px; *@
     align-items:center;
@@ -366,24 +391,11 @@
     flex-wrap: wrap;
     gap: 16px;
 }
-@* .mud-grid {
+.horizontal-stack {
     display: flex;
-    flex-wrap: wrap;
-} 
- .mud-grid-spacing-xs-6>.mud-grid-item {
-    padding-left: 0px; 
-    padding-top: 24px;
-} 
-.mud-grid-spacing-xs-6>.mud-grid-item {
-    padding-left: 0px;
-    @* padding-top: 0px; 
-} *@
-@* .grid-padding {
-    padding-left: 110px;
-    padding-right: 110px;
-    padding-top: 60px
-} *@
-
+    flex-direction: row;
+    gap: 16px; 
+}
 
 .news-tab {
     padding: 10px 50px 10px 50px;
@@ -506,7 +518,7 @@
     align-items: flex-start;
     display: flex;
     flex-wrap: wrap;
-    gap: 0px; 
+    gap: 15px; 
 }
 .skeleton-container{
     justify-content: space-between;
@@ -719,6 +731,19 @@
     padding-left: 16px;
     padding-right: 16px;
 }
+}
+@@media (max-width: 768px) {
+    .news-tabs {
+         width: 100%;
+        display: flex;
+        overflow-x: auto;
+        margin: 23px 0px;
+        align-items: center;
+        gap: 8px;
+         white-space: nowrap;
+        justify-content: space-between;
+        padding: 0px 100px;
+    }
 }
 @@media (max-width: 425px){
      .poular-article-container {

@@ -10,8 +10,11 @@ public class PopularArticlesBase : ComponentBase
     protected NavigationManager navManager { get; set; }
     [Parameter]
     public string selectedTab { get; set; }
+     [Parameter]
+    public bool loading { get; set; } = false;
+
     protected void onclick(ContentPost news)
     {
-        navManager.NavigateTo($"/article/details/{news.Slug}");
+        navManager.NavigateTo($"/content/article/details/{news.Slug}");
     }
 }

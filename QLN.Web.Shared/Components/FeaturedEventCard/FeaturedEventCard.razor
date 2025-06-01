@@ -3,7 +3,14 @@
 <div class="category-event-card-section" @onclick="() => OnClick.InvokeAsync(Item)">
     <div class="card-contents">
         <div class="category-event-image-wrapper">
-            <img src="@Item.ImageUrl" alt="@Item.Title" class="category-event-image" />
+            @if (!imageLoaded)
+            {
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="200px" />
+            }
+
+            <img src="@Item.ImageUrl" alt="@Item.Title" class="category-event-image"
+                style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                @onerror="OnImageError" />
         </div>
         <h4 class="category-event-card-title">@Item.Title</h4>
     </div>

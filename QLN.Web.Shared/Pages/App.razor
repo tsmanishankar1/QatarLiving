@@ -68,7 +68,50 @@
             });
         };
     </script>
+    <script>
+        function updateBannerImagesForScreen() {
+            const isMobile = window.innerWidth <= 768;
 
+            document.querySelectorAll('.take-over-banner-image').forEach(img => {
+                const mobileSrc = img.getAttribute('data-mobile');
+                const desktopSrc = img.getAttribute('data-desktop');
+
+                if (isMobile && mobileSrc) {
+                    img.src = mobileSrc;
+                } else if (desktopSrc) {
+                    img.src = desktopSrc;
+                }
+            });
+        }
+
+        window.addEventListener('load', updateBannerImagesForScreen);
+
+        window.addEventListener('resize', updateBannerImagesForScreen);
+
+    </script>
+    <script>
+        function updateBannerImagesForScreen() {
+            const isMobile = window.innerWidth <= 768;
+
+            document.querySelectorAll('.banner-image').forEach(img => {
+                const mobileSrc = img.getAttribute('data-mobile');
+                const desktopSrc = img.getAttribute('data-desktop');
+
+                if (isMobile && mobileSrc) {
+                    img.src = mobileSrc;
+                } else if (desktopSrc) {
+                    img.src = desktopSrc;
+                }
+            });
+        }
+
+        // Initial call on page load
+        window.addEventListener('load', updateBannerImagesForScreen);
+
+        // Update images on window resize
+        window.addEventListener('resize', updateBannerImagesForScreen);
+
+    </script>
     <script>
         window.registerImageLoadCallback = (imageId, dotNetRef) => {
             const img = document.getElementById(imageId);
@@ -298,6 +341,21 @@
             }, 100);
         };
     </script>
+    <script>
+        Blazor.start({
+            reconnectionOptions: {
+                maxRetries: 5,
+                retryIntervalMilliseconds: 4000
+            },
+            onConnectionDown: (options, error) => {
+                console.warn('Connection down:', error);
+                setTimeout(() => {
+                    location.reload();
+                }, 30000); // reload after 30s if not reconnected
+            }
+        });
+    </script>
+
 </body>
 
 </html>

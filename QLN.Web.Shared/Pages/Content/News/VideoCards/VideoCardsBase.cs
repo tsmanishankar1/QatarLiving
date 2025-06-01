@@ -34,6 +34,6 @@ public class VideoCardsBase : ComponentBase
         Console.WriteLine("the clicked aritcle is " + news.Slug);
          if (news == null || string.IsNullOrEmpty(news.Slug))
             return;
-        navManager.NavigateTo($"/article/details/{news.Slug}");
+        navManager.NavigateTo($"/content/article/details/{news.Slug}");
     }
 }

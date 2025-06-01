@@ -5,33 +5,63 @@
 <div class="card-container">
 
     <h3><span class="accent-bar">|</span> More Articles</h3>
-@if (Articles != null && Articles.Any()){
-     @foreach (var article in Articles)
+    @if (Articles != null && Articles.Any())
     {
-        <div class="article-entry">
-            @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
+
+        @if (loading)
+        {
+            @for (int i = 0; i < 4; i++)
             {
-                <img src="@article.ImageUrl" class="article-image" />
+                <div class="skeleton-item">
+                    <!-- Image Skeleton -->
+                    <MudSkeleton Width="120px" Height="100px" Variant="Rectangle" />
+
+                    <!-- Text Skeletons -->
+                    <div class="skeleton-text">
+                        <MudSkeleton Height="20px" Width="100%" />
+                        <MudSkeleton Height="20px" Width="80%" class="skeleton-line-spacing" />
+                    </div>
+                </div>
             }
-            else{
-                                 <EmptyCard Title="No Images Available" Subtitle="" />
-                            }
-             <div class="article-content">
-                @if(selectedPost == article){
-                     <a class="selected-title" href="@($"/article/details/{article.Slug}")">
-                    @article.Title
-                    </a>
-                }
-                else{
-                    <a class="article-title" href="@($"/article/details/{article.Slug}")">
-                    @article.Title
-                    </a>
-                }
-            </div>
-        </div>
+        }
+        else
+        {
+            @foreach (var article in Articles)
+            {
+                <div class="article-entry">
+                    @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
+                    {
+                        <img src="@article.ImageUrl" class="article-image" />
+                    }
+                    else
+                    {
+                        <EmptyCard Title="No Images Available" Subtitle="" />
+                    }
+                    <div class="article-content">
+                        @if (selectedPost == article)
+                        {
+                            <a class="selected-title" href="@($"/content/article/details/{article.Slug}")">
+                                @article.Title
+                            </a>
+                        }
+                        else
+                        {
+                            <a class="article-title" href="@($"/content/article/details/{article.Slug}")">
+                                @article.Title
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
+        }
+
+
+
+
+
     }
-    }
-    else{
+    else
+    {
         <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
     }
 
@@ -44,6 +74,26 @@
         padding: 16px;
         border-radius: 12px;
         font-family: 'Public Sans';
+    }
+
+    .skeleton-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        height: 100px;
+        margin-bottom: 1.5rem;
+        /* equivalent to mb-4 */
+    }
+
+    .skeleton-text {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        flex: 1;
+    }
+
+    .skeleton-line-spacing {
+        margin-top: 8px;
     }
 
     .section-title {
@@ -147,7 +197,8 @@
         width: 100%;
         margin-top: 8px;
     }
-     .more-articles {
+
+    .more-articles {
         max-width: 600px;
         margin: 0 auto;
         font-family: 'Public Sans', sans-serif;
@@ -197,14 +248,16 @@
         border-radius: 6px;
         object-fit: cover;
     }
-     .accent-bar {
+
+    .accent-bar {
         color: #003865;
         font-weight: bold;
         margin-right: 4px;
     }
+
     .article-title {
         display: -webkit-box;
-        -webkit-line-clamp: 3;              
+        -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-decoration: none;
@@ -215,11 +268,12 @@
         font-weight: 500;
         color: var(--color-text-heading);
         line-height: 1.4;
-        max-height: calc(1.4em * 3);        
+        max-height: calc(1.4em * 3);
     }
+
     .selected-title {
         display: -webkit-box;
-        -webkit-line-clamp: 3;              
+        -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-decoration: none;
@@ -230,8 +284,6 @@
         font-weight: 500;
         color: var(--color-primary);
         line-height: 1.4;
-        max-height: calc(1.4em * 3);        
+        max-height: calc(1.4em * 3);
     }
 </style>
-
- 

@@ -88,7 +88,7 @@
     flex-direction: column;
     justify-content: center;
     flex: 1;
-    min-width: 0; /* Ensure content doesn't overflow and gets space */
+    min-width: 0; 
 }
 
 .daily-news-title {
@@ -106,7 +106,7 @@
 /* Media Queries */
 @@media (max-width: 768px) {
     .news-card {
-        flex-direction: row;
+        flex-direction: column;
         max-width: 100%;
     }
 
@@ -121,5 +121,23 @@
         padding: 8px;
     }
 }
-
+@@media (max-width: 425px) {
+    .news-card {
+        flex-direction: row;
+        width: 100%;
+    }
+    .daily-news-image {
+        width: 40%;
+        max-width: 140px;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+    }
+    .daily-news-content {
+        width: 60%;
+        padding: 8px;
+        flex: 1;
+        min-width: 0;
+    }
+}
 </style>

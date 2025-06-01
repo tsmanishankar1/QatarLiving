@@ -73,6 +73,23 @@ namespace QLN.Web.Shared.Pages.Content.News
         protected QlnNewsNewsLawPageResponse LawsNewsContent { get; set; } = new QlnNewsNewsLawPageResponse();
         protected QlnNewsNewsMiddleEastPageResponse MiddleEastNewsContent { get; set; } = new QlnNewsNewsMiddleEastPageResponse();
         protected QlnNewsNewsWorldPageResponse WorldNewsContent { get; set; } = new QlnNewsNewsWorldPageResponse();
+        protected QlnNewsLifestyleFoodDiningPageResponse FoodDiningNewsContent { get; set; } = new QlnNewsLifestyleFoodDiningPageResponse();
+        protected QlnNewsLifestyleTravelLeisurePageResponse TravelLeisureNewsContent { get; set; } = new QlnNewsLifestyleTravelLeisurePageResponse();
+        protected QlnNewsLifestyleArtsCulturePageResponse ArtsCultureNewsContent { get; set; } = new QlnNewsLifestyleArtsCulturePageResponse();
+        protected QlnNewsLifestyleEventsPageResponse EventsNewsContent { get; set; } = new QlnNewsLifestyleEventsPageResponse();
+        protected QlnNewsLifestyleFashionStylePageResponse FashionNewsContent { get; set; } = new QlnNewsLifestyleFashionStylePageResponse();
+        protected QlnNewsLifestyleHomeLivingPageResponse HomeLivingNewsContent { get; set; } = new QlnNewsLifestyleHomeLivingPageResponse();
+        // protected QlnNews QatarSportsNewsContent { get; set; } = new NewsQatarSportsPageResponse();
+
+
+
+
+
+
+
+
+
+
         protected async override Task OnInitializedAsync()
         {
             try
@@ -119,8 +136,8 @@ namespace QLN.Web.Shared.Pages.Content.News
             try
             {
                 var banners = await FetchBannerData();
-                DailyHeroBanners = banners?.DailyHero ?? new List<BannerItem>();
-                DailyTakeOverBanners = banners?.DailyTakeOver1 ?? new List<BannerItem>();
+                DailyHeroBanners = banners?.NewsQatarHero ?? new List<BannerItem>();
+                DailyTakeOverBanners = banners?.NewsQatarTakeOver1 ?? new List<BannerItem>();
             }
             finally
             {
@@ -228,6 +245,43 @@ namespace QLN.Web.Shared.Pages.Content.News
                     topNews = jobs?.TopStory?.Items?.FirstOrDefault();
                     moreArticleList = jobs?.MoreArticles?.Items ?? new List<ContentPost>();
                     break;
+                case "Food & Dining":
+                    FoodDiningNewsContent = await GetNewsAsync<QlnNewsLifestyleFoodDiningPageResponse>("Food & Dining");
+                    var foods = FoodDiningNewsContent?.QlNewsLifestyleFoodDining;
+                    topNews = foods?.TopStory?.Items?.FirstOrDefault();
+                    moreArticleList = foods?.MoreArticles?.Items ?? new List<ContentPost>();
+                    break;
+                case "Travel & Leisure":
+                    TravelLeisureNewsContent = await GetNewsAsync<QlnNewsLifestyleTravelLeisurePageResponse>("Travel & Leisure");
+                    var travel = TravelLeisureNewsContent?.QlnNewsLifestyleTravelLeisure;
+                    topNews = travel?.TopStory?.Items?.FirstOrDefault();
+                    moreArticleList = travel?.MoreArticles?.Items ?? new List<ContentPost>();
+                    break;
+                case "Arts & Culture":
+                    ArtsCultureNewsContent = await GetNewsAsync<QlnNewsLifestyleArtsCulturePageResponse>("Arts & Culture");
+                    var arts = ArtsCultureNewsContent?.QlnNewsLifestyleArtsCulture;
+                    topNews = arts?.TopStory?.Items?.FirstOrDefault();
+                    moreArticleList = arts?.MoreArticles?.Items ?? new List<ContentPost>();
+                    break;
+                case "Events":
+                    // EventsNewsContent = await GetNewsAsync<QlnNewsLifestyleEventsPageResponse>("Events");
+                    // var events = EventsNewsContent?.QlnEvents.QlnEventsFeaturedEvents;
+                    // topNews = events?.TopStory?.Items?.FirstOrDefault();
+                    // moreArticleList = events?.MoreArticles?.Items ?? new List<ContentPost>();
+                    // break;
+                case "Fashion & Style":
+                    FashionNewsContent = await GetNewsAsync<QlnNewsLifestyleFashionStylePageResponse>("Fashion & Style");
+                    var fashion = FashionNewsContent?.QlnNewsLifestyleFashionStyle;
+                    topNews = fashion?.TopStory?.Items?.FirstOrDefault();
+                    moreArticleList = fashion?.MoreArticles?.Items ?? new List<ContentPost>();
+                    break;
+                case "Home & Living":
+                    HomeLivingNewsContent = await GetNewsAsync<QlnNewsLifestyleHomeLivingPageResponse>("Home & Living");
+                    var home = HomeLivingNewsContent?.QlnNewsLifestyleHomeLiving;
+                    topNews = home?.TopStory?.Items?.FirstOrDefault();
+                    moreArticleList = home?.MoreArticles?.Items ?? new List<ContentPost>();
+                    break;
+                
 }
 
 isLoading = false;
@@ -368,7 +422,7 @@ StateHasChanged();
 
         protected void onclick(ContentPost news)
         {
-            navManager.NavigateTo($"/article/details/{news.Slug}");
+            navManager.NavigateTo($"/content/article/details/{news.Slug}");
         }
     }
 }

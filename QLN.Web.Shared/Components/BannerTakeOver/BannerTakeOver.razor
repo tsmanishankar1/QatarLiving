@@ -6,35 +6,34 @@
     <div class="swiper-wrapper">
         @if (BannerItems?.Count == 1)
         {
-            // Duplicate the banner to enable Swiper autoplay/loop
-            for (int i = 0; i < 2; i++)
+            @for (int i = 0; i < 2; i++)
             {
                 <div class="swiper-slide">
                     <a href="@BannerItems[0].Link" target="_blank" rel="noopener noreferrer">
-                        <img class="take-over-banner-image" src="@BannerItems[0].ImageDesktop"
-                            srcset="@BannerItems[0].ImageMobile 600w, @BannerItems[0].ImageDesktop 1024w"
-                            sizes="(max-width: 768px) 600px, 100vw" alt="Banner" />
+                        <img id="banner-img-0-@i" class="take-over-banner-image" src="@BannerItems[0].ImageDesktop"
+                            data-mobile="@BannerItems[0].ImageMobile" data-desktop="@BannerItems[0].ImageDesktop"
+                            alt="Banner" />
                     </a>
                 </div>
             }
         }
         else if (BannerItems?.Count > 1)
         {
-            foreach (var banner in BannerItems)
+            int index = 0;
+            @foreach (var banner in BannerItems)
             {
                 <div class="swiper-slide">
                     <a href="@banner.Link" target="_blank" rel="noopener noreferrer">
-                        <img class="take-over-banner-image" src="@banner.ImageDesktop"
-                            srcset="@banner.ImageMobile 600w, @banner.ImageDesktop 1024w"
-                            sizes="(max-width: 768px) 600px, 100vw" alt="Banner" />
+                        <img id="banner-img-@index" class="take-over-banner-image" src="@banner.ImageDesktop"
+                            data-mobile="@banner.ImageMobile" data-desktop="@banner.ImageDesktop" alt="Banner" />
                     </a>
                 </div>
+                index++;
             }
         }
-
     </div>
 
-    <div class="swiper-pagination"></div> <!-- Required for pagination -->
+    <div class="swiper-pagination"></div>
 </div>
 
 <style>
@@ -45,9 +44,22 @@
     .take-over-banner-image {
         width: 100%;
         border-radius: 3px;
-        height: 150px;
-        object-fit: contain;
         display: block;
+    }
+
+    @@media (max-width: 768px) {
+        .take-over-banner-image {
+            height: auto;
+            max-height: 200px;
+            object-fit: contain;
+        }
+    }
+
+    @@media (min-width: 769px) {
+        .take-over-banner-image {
+            height: 150px;
+            object-fit: cover;
+        }
     }
 </style>
 
@@ -63,8 +75,12 @@
         if (!_bannerInitialized && !Loading && BannerItems?.Any() == true)
         {
             _bannerInitialized = true;
+
+            // Initialize Swiper
             await JS.InvokeVoidAsync("initTakeOverBannerSwiper");
+
+            // Update banner images based on screen size
+            await JS.InvokeVoidAsync("updateBannerImagesForScreen");
         }
     }
-
 }

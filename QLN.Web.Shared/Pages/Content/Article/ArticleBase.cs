@@ -1,3 +1,4 @@
+
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using QLN.Web.Shared.Model;
@@ -11,14 +12,29 @@ public class ArticleBase : ComponentBase
 {
     [Parameter]
     public string slug { get; set; }
-    public bool isLoading { get; set; }
+    public bool isLoading { get; set; } = true;
     protected List<BannerItem> DailyHeroBanners { get; set; } = new();
     protected bool isLoadingBanners = true;
     public List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
     protected QlnNewsNewsQatarPageResponse QatarNewsContent { get; set; } = new QlnNewsNewsQatarPageResponse();
     protected List<ContentPost> moreArticleList { get; set; } = new List<ContentPost>();
     [Inject] private ILogger<NewsCardBase> Logger { get; set; }
-    public PostModel SelectedPost { get; set; }
+    public PostModel SelectedPost { get; set; } = new PostModel
+{
+    Id = string.Empty,
+    Category = string.Empty,
+    Title = string.Empty,
+    ImageUrl = null,
+    BodyPreview = string.Empty,
+    Author = string.Empty,
+    slug = string.Empty,
+    Time = DateTime.MinValue,
+    LikeCount = 0,
+    CommentCount = 0,
+    isCommented = false,
+    Slug = string.Empty,
+    Comments = new List<CommentModel>()
+};
     [Inject] private INewsService _newsService { get; set; }
     [Inject] private IEventService _eventService { get; set; }
     protected ContentPost newsArticle { get; set; } = new ContentPost();
@@ -29,12 +45,16 @@ public class ArticleBase : ComponentBase
         "/images/banner_image.svg",
         "/images/banner_image.svg"
     };
+    
     [Parameter]
     public NewsItem Item { get; set; }
     protected async override Task OnInitializedAsync()
     {
         try
         {
+
+            var bannersTask = LoadBanners();
+            await Task.WhenAll(bannersTask);
             isLoading = true;
             newsArticle = await GetNewsBySlugAsync();
             SelectedPost = new PostModel
@@ -70,7 +90,7 @@ public class ArticleBase : ComponentBase
             {
                 new() {   Label = "News",Url ="/content/news" },
                 new() { Label = "Sports", Url = "/content/news"},
-                new() { Label = newsArticle.Title, Url = "/article/details/{slug}", IsLast = true },
+                new() { Label = newsArticle.Title, Url = "/content/article/details/{slug}", IsLast = true },
             };
             QatarNewsContent = await GetNewsQatarAsync();
             moreArticleList = QatarNewsContent?.QlnNewsNewsQatar?.MoreArticles?.Items ?? new List<ContentPost>();
@@ -126,7 +146,7 @@ public class ArticleBase : ComponentBase
             try
             {
                 var banners = await FetchBannerData();
-                DailyHeroBanners = banners?.DailyHero ?? new List<BannerItem>();
+                DailyHeroBanners = banners?.NewsQatarHero ?? new List<BannerItem>();
             }
             finally
             {
@@ -151,3 +171,4 @@ public class ArticleBase : ComponentBase
     }
 }
 }
+

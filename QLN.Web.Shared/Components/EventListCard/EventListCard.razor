@@ -3,7 +3,15 @@
 
 <div class="Event-list-card" @onclick="() => OnClick.InvokeAsync(Item)">
     <div class="image-wrapper">
-        <img src="@Item.ImageUrl" class="card-img" alt="@Item.Title" />
+
+        @if (!imageLoaded)
+        {
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="214px" />
+        }
+
+        <img src="@Item.ImageUrl" class="card-img" alt="@Item.Title"
+            style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+            @onerror="OnImageError" />
         @if (!string.IsNullOrEmpty(Item.EventStart) && !string.IsNullOrEmpty(Item.EventEnd))
         {
             <div class="date">
@@ -128,10 +136,10 @@
         color: var(--color-primary);
     }
 
-        .price .currency {
-            font-size: 14px;
-            font-weight: 500;
-            margin-left: 4px;
-            color: var(--color-primary);
-        }
+    .price .currency {
+        font-size: 14px;
+        font-weight: 500;
+        margin-left: 4px;
+        color: var(--color-primary);
+    }
 </style>
