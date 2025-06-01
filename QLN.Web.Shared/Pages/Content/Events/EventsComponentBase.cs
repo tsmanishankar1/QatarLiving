@@ -13,7 +13,7 @@ namespace QLN.Web.Shared.Pages.Content.Events
 
         protected List<ContentEvent> ListOfEvents { get; set; } = [];
         protected List<EventCategory> EventCategories { get; set; } = [];
-        protected List<ContentPost> FeaturedEventData { get; set; } = [];
+        protected List<ContentEvent> FeaturedEventData { get; set; } = [];
 
         protected List<BannerItem> DailyHeroBanners { get; set; } = new();
         protected bool isLoadingBanners = true;
@@ -75,7 +75,7 @@ namespace QLN.Web.Shared.Pages.Content.Events
                 var featuredContent = await FetchFeaturedEventsData();
 
                 // Extract only the Featured Events items list and assign
-                FeaturedEventData = featuredContent?.ContentsDaily?.DailyFeaturedEvents?.Items ?? new List<ContentPost>();
+                FeaturedEventData = featuredContent?.ContentsDaily?.DailyFeaturedEvents?.Items ?? new List<ContentEvent>();
             }
             finally
             {
