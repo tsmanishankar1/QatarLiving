@@ -42,7 +42,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
             postBreadcrumbCategory = new()
             {
                 Label = slug ?? "Not Found",
-                Url = "/content/community",
+                //Url = "/content/community",
+                Url = $"/content/community"
             };
 
             breadcrumbItems = new List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem>
@@ -72,6 +73,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                     {
                         Id = fetched.nid,
                         Category = fetched.category,
+                        CategoryId = fetched.forum_id.ToString(),
                         Title = fetched.title,
                         BodyPreview = fetched.description,
                         Author = fetched.user_name ?? "Unknown User",
@@ -101,6 +103,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                     if (postBreadcrumbCategory is not null)
                     {
                         postBreadcrumbCategory.Label = SelectedPost.Category;
+                        postBreadcrumbCategory.Url = $"/content/community?categoryId={SelectedPost.CategoryId}";
                         StateHasChanged();
                     }
                 }

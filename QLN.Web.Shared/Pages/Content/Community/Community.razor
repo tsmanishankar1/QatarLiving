@@ -9,6 +9,7 @@
 @using QLN.Web.Shared.Pages.Content.Community.Components.CustomDropdown
 @using QLN.Web.Shared.Components.NewCustomSelect
 @using QLN.Web.Shared.Pages.Content.Community.Components.PaginationFooter
+@using QLN.Web.Shared.Components.EmptyCard
 
 @using QLN.Web.Shared.Pages.Content.Events
 @using QLN.Web.Shared.Components.BannerSwiper
@@ -30,7 +31,7 @@
             }
             else
             {
-                <EmptyCard Title="No event banners found." Subtitle="Please check back later for updates." />
+                <EmptyCard Title="No  banners found." Subtitle="Please check back later for updates." />
             }
 
             <CommunitySearchBarSection OnSearchCompleted="HandleSearchResults" OnCategoryChanged="HandleCategoryChanged" />

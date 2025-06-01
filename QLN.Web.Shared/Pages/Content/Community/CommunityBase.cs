@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
 using QLN.Common.Infrastructure.DTO_s;
+using QLN.Common.Infrastructure.Model;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Models;
@@ -18,7 +19,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         [Inject]
         public ISnackbar Snackbar { get; set; }
         [Inject]
-        public IDialogService DialogService { get;set; }
+        public IDialogService DialogService { get; set; }
 
         [Inject] private ILogger<CommunityBase> Logger { get; set; }
         [Inject] private ICommunityService CommunityService { get; set; }
@@ -36,8 +37,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
         // Pagination
         protected int CurrentPage { get; set; } = 1;
         protected int PageSize { get; set; } = 10;
-        protected int TotalPosts { get; set; } = 40;
-
+        protected int TotalPosts { get; set; } = 50;
+        //protected int TotalPosts { get; set; }
         // Newsletter subscription
         protected NewsLetterSubscriptionModel SubscriptionModel { get; set; } = new();
         protected string SubscriptionStatusMessage = string.Empty;
@@ -59,35 +60,20 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected bool isLoadingBanners = true;
         protected List<BannerItem> DailyHeroBanners { get; set; } = new();
-        protected async Task LoadBanners()
-        {
-            isLoadingBanners = true;
-            try
-            {
-                var banners = await FetchBannerData();
-                DailyHeroBanners = banners?.DailyHero ?? new();
-              
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading banners: {ex.Message}");
-            }
-            finally
-            {
-                isLoadingBanners = false;
-            }
-        }
 
+        [Parameter]
+        [SupplyParameterFromQuery]
+        public string? categoryId { get; set; }
+       
         protected async override Task OnInitializedAsync()
         {
             CategorySelectOptions = new List<SelectOption>
-    {
-        new() { Id = "Default", Label = "Default" },
-        new() { Id = "Popular", Label = "Most Popular" },
-        new() { Id = "Recent", Label = "Date : Recent First" },
-        new() { Id = "Oldest", Label = "Date : Oldest First" },
-
-    };
+              {
+                 new() { Id = "Default", Label = "Default" },
+                 new() { Id = "Popular", Label = "Most Popular" },
+                 new() { Id = "Recent", Label = "Date : Recent First" },
+                 new() { Id = "Oldest", Label = "Date : Oldest First" },
+            };
             SelectedCategoryId = "Default";
 
             try
@@ -101,6 +87,33 @@ namespace QLN.Web.Shared.Pages.Content.Community
             catch (Exception ex)
             {
                 Logger.LogError(ex, "OnInitializedAsync");
+            }
+        }
+
+        protected override async Task OnParametersSetAsync()
+        {
+            Console.WriteLine($"Received categoryId: {categoryId}");
+            if (!string.IsNullOrEmpty(categoryId))
+            {
+                SelectedForumId = categoryId;
+            }
+            else
+            {
+                SelectedForumId = null; 
+            }
+
+            try
+            {
+                PostList = await GetPostListAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to load posts");
+                HasError = true;
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
         private async Task<BannerResponse?> FetchBannerData()
@@ -120,7 +133,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 return null;
             }
         }
-    
+
         protected async Task HandleCategoryChanged(string forumId)
         {
             SelectedForumId = forumId;
@@ -156,6 +169,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                     return null;
                 }
 
+
                 var postModelList = dtoList.Select(dto => new PostModel
                 {
                     Id = dto.nid,
@@ -168,8 +182,9 @@ namespace QLN.Web.Shared.Pages.Content.Community
                     CommentCount = 0,
                     isCommented = false,
                     ImageUrl = dto.image_url,
-                    Slug = dto.slug
+                    Slug = dto.slug,
                 }).ToList();
+                //TotalPosts = postModelList.TotalCount;
 
                 return postModelList;
             }
@@ -205,7 +220,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected async Task HandlePageSizeChange(int newPageSize)
         {
             PageSize = newPageSize;
-            CurrentPage = 1; 
+            CurrentPage = 1;
             await GetPostListAsync();
         }
 
@@ -272,7 +287,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             StateHasChanged();
         }
 
-       
+
         [Parameter] public EventCallback<string> OnCategoryChanged { get; set; }
 
         protected Task OpenDialogAsync()
@@ -282,7 +297,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 MaxWidth = MaxWidth.Small,
                 FullWidth = true,
                 CloseOnEscapeKey = true,
-               
+
             };
             return DialogService.ShowAsync<AddPostDialog>("Post Dialog", options);
         }
@@ -291,6 +306,25 @@ namespace QLN.Web.Shared.Pages.Content.Community
         {
             SelectedCategoryId = newId;
             await OnCategoryChanged.InvokeAsync(newId);
+        }
+
+        protected async Task LoadBanners()
+        {
+            isLoadingBanners = true;
+            try
+            {
+                var banners = await FetchBannerData();
+                DailyHeroBanners = banners?.DailyHero ?? new();
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading banners: {ex.Message}");
+            }
+            finally
+            {
+                isLoadingBanners = false;
+            }
         }
     }
 }
