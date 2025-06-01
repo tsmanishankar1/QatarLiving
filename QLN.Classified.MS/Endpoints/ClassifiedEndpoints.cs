@@ -5,18 +5,20 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
-using QLN.Common.Infrastructure.DTO_s;
+using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.BannerService;
 using System.Security.Claims;
 using QLN.Common.Infrastructure.Model;
 using Microsoft.AspNetCore.Http.HttpResults;
-using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.Utilities;
 using QLN.Common.Infrastructure.CustomException;
 using System.ComponentModel.DataAnnotations;
+using QLN.Common.Infrastructure.IService.ISearchService;
+using QLN.Common.Infrastructure.Constants;
 
-namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
+namespace QLN.Classified.MS.Endpoints
 {
     public static class ClassifiedEndpoints
     {
@@ -25,7 +27,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             // SEARCH
             group.MapPost("/search", async (
                     [FromBody] CommonSearchRequest req,
-                    [FromServices] IClassifiedService svc,
+                    [FromServices] ISearchService svc,
                     [FromServices] ILoggerFactory logFac
                 ) =>
             {
@@ -44,7 +46,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var results = await svc.Search(req);
+                    var results = await svc.SearchAsync(ConstantValues.ClassifiedsVertical, req);
                     return Results.Ok(results);
                 }
                 catch (ArgumentException ex)
@@ -72,14 +74,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .WithName("SearchClassified")
             .WithTags("Classified")
             .WithSummary("Search classifieds")
-            .Produces<IEnumerable<ClassifiedIndexDto>>(StatusCodes.Status200OK)
+            .Produces<IEnumerable<ClassifiedsIndex>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
             // GET BY ID
             group.MapGet("/{id}", async (
                     [FromRoute] string id,
-                    [FromServices] IClassifiedService svc,
+                    [FromServices] ISearchService svc,
                     [FromServices] ILoggerFactory logFac
                 ) =>
             {
@@ -98,7 +100,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var ad = await svc.GetById(id);
+                    var ad = await svc.GetByIdAsync<ClassifiedsIndex>(ConstantValues.Verticals.Classifieds, id);
                     if (ad is null)
                         return Results.NotFound(new ProblemDetails
                         {
@@ -134,15 +136,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .WithName("GetClassifiedById")
             .WithTags("Classified")
             .WithSummary("Get a classified by its ID")
-            .Produces<ClassifiedIndexDto>(StatusCodes.Status200OK)
+            .Produces<ClassifiedsIndex>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
             // UPLOAD
             group.MapPost("/upload", async (
-                    [FromBody] ClassifiedIndexDto doc,
-                    [FromServices] IClassifiedService svc,
+                    [FromBody] ClassifiedsIndex doc,
+                    [FromServices] ISearchService svc,
                     [FromServices] ILoggerFactory logFac
                 ) =>
             {
@@ -158,10 +160,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Instance = $"/api/classified/upload"
                     });
                 }
-
+                var indexDocument = new CommonIndexRequest
+                {
+                    VerticalName = ConstantValues.Verticals.Classifieds,
+                    ClassifiedsItem = doc
+                };
                 try
                 {
-                    var msg = await svc.Upload(doc);
+                    var msg = await svc.UploadAsync(indexDocument);
                     return Results.Ok(msg);
                 }
                 catch (ArgumentException ex)
@@ -194,8 +200,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
             // UPDATE
-            group.MapPut("/update", async (
-                    [FromBody] ClassifiedIndexDto doc,
+           /* group.MapPut("/update", async (
+                    [FromBody] ClassifiedsIndex doc,
                     [FromServices] IClassifiedService svc,
                     [FromServices] ILoggerFactory logFac
                 ) =>
@@ -246,7 +252,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
-
+*/
             //adding category
 
             group.MapPost("/category", async Task<IResult> (
@@ -2590,47 +2596,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);          
-
-            // GET /api/classified/landing
-            group.MapGet("/landing", async (
-                    [FromServices] IClassifiedService svc,
-                    [FromServices] ILoggerFactory logFac
-                ) =>
-            {
-                var logger = logFac.CreateLogger("ClassifiedEndpoints");
-                try
-                {
-                    var model = await svc.GetLandingPage();
-                    return Results.Ok(model);
-                }
-                catch (ArgumentException ex)
-                {
-                    logger.LogWarning(ex, "Invalid landing request");
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Request",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/classified/landing"
-                    });
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Landing error");
-                    return Results.Problem(
-                        title: "Landing Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/classified/landing"
-                    );
-                }
-            })
-            .WithName("GetClassifiedLanding")
-            .WithTags("Classified")
-            .WithSummary("Get landing-page data for classifieds")
-            .Produces<ClassifiedLandingPageResponse>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
 
             // added save search

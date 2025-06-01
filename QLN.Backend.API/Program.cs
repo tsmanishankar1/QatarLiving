@@ -12,7 +12,6 @@ using QLN.Common.Infrastructure.IService;
 using Microsoft.OpenApi.Models;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
 using QLN.Backend.API.ServiceConfiguration;
-using QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.Subscriptions;
@@ -21,6 +20,8 @@ using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 using Microsoft.AspNetCore.Authorization;
 using QLN.SearchService.CustomEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
+using QLN.Classified.MS.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -167,12 +168,10 @@ builder.Services.AddActors(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
-// Register your subscription service
 builder.Services.AddSingleton<IExternalSubscriptionService, ExternalSubscriptionService>();
 
 builder.Services.AddDaprClient();
 
-// This looks like a custom extension method? Adjust if needed
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
 builder.Services.SearchServicesConfiguration(builder.Configuration);
@@ -202,7 +201,10 @@ var companyGroup = app.MapGroup("/api/companyprofile");
 companyGroup.MapCompanyEndpoints();
 
 var classifiedGroup = app.MapGroup("/api/classified");
-classifiedGroup.MapClassifiedLandingEndpoints();
+classifiedGroup.MapClassifiedsEndpoints();
+
+var servicesGroup = app.MapGroup("/api/services");
+servicesGroup.MapServicesEndpoints();
 
 var contentGroup = app.MapGroup("/api/content");
 contentGroup.MapContentLandingEndpoints();
@@ -215,6 +217,7 @@ app.MapGroup("/api/subscriptions")
     .RequireAuthorization();
 
 app.MapAllBackOfficeEndpoints();
+app.MapLandingPageEndpoints();
 
 app.UseHttpsRedirection();
 app.UseAuthorization();

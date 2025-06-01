@@ -11,6 +11,9 @@ using QLN.Common.Infrastructure.DbContext;
 using Microsoft.AspNetCore.Identity;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.ServiceConfiguration;
+using QLN.Classified.MS.Endpoints;
+using QLN.Classifieds.MS.ServiceConfiguration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,9 +45,8 @@ builder.Services.AddSwaggerGen(opts => {
 
 builder.Services.AddAuthorization();
 builder.Services.AddDaprClient();
+builder.Services.ClassifiedInternalServicesConfiguration(builder.Configuration);
 
-
-builder.Services.AddScoped<IClassifiedService, ClassifiedService>();
 
 var app = builder.Build();
 

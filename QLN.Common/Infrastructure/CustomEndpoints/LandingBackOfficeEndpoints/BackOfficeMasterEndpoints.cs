@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Http.HttpResults; // for Results<...> types
 using Microsoft.AspNetCore.Mvc;            // for [FromServices]
 using Microsoft.AspNetCore.Routing;       // for RouteGroupBuilder
 using QLN.Common.DTO_s;                   // for BackofficemasterIndex, CommonIndexRequest, SearchRequest, CommonResponse
+using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.ISearchService;  // for ISearchService
 
 namespace QLN.Common.Infrastructure.CustomEndpoints
@@ -45,10 +46,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
             string routeSegment,
             string entityType)
         {
-            // ──────────────────────────────────────────────────────────
-            // 1) POST /{routeSegment}
-            //    Upsert a single BackofficemasterIndex doc
-            // ──────────────────────────────────────────────────────────
             group.MapPost($"/{routeSegment}", async Task<Results<
                     Ok<object>,
                     BadRequest<ProblemDetails>,
@@ -69,12 +66,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
                     });
                 }
 
-                // Stamp Vertical & EntityType
                 doc.Vertical = vertical;
                 doc.EntityType = entityType;
-
-                // If Id is null or empty, generate a new composite Id:
-                // e.g. "services-FeaturedCategory-XXXXXXXX"
                 if (string.IsNullOrWhiteSpace(doc.Id))
                 {
                     var shortGuid = Guid.NewGuid().ToString("N").Substring(0, 8);
@@ -83,13 +76,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
 
                 var req = new CommonIndexRequest
                 {
-                    VerticalName = "backofficemaster",
+                    VerticalName = ConstantValues.backofficemaster,
                     MasterItem = doc
                 };
 
                 try
                 {
-                    // Calls ExternalSearchService.UploadAsync(req) via the injected ISearchService
                     await searchSvc.UploadAsync(req);
                     return TypedResults.Ok<object>(new { IndexedCount = 1 });
                 }
@@ -116,16 +108,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
             .WithSummary($"Upsert a single {entityType}")
             .WithDescription($"Upserts one {entityType} document into the backoffice-master search index.");
 
-            // ──────────────────────────────────────────────────────────
-            // 2) GET /{routeSegment}
-            //    Retrieve all docs filtered by vertical & entityType
-            // ──────────────────────────────────────────────────────────
             group.MapGet($"/{routeSegment}", async Task<IResult> (
                     [FromServices] ISearchService searchSvc,
                     CancellationToken cancellationToken
                 ) =>
             {
-                var searchReq = new SearchRequest
+                var searchReq = new CommonSearchRequest
                 {
                     Top = 100,
                     Filters = new Dictionary<string, object>
@@ -137,11 +125,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
 
                 try
                 {
-                    // Calls ExternalSearchService.SearchAsync("backofficemaster", searchReq)
-                    CommonResponse response = await searchSvc.SearchAsync("backofficemaster", searchReq);
+                    CommonSearchResponse response = await searchSvc.SearchAsync(ConstantValues.backofficemaster,searchReq);
                     var list = response.MasterItems ?? new List<BackofficemasterIndex>();
 
-                    // Double‐check that Vertical & EntityType match, just in case:
                     var filtered = list
                         .Where(d => d.Vertical == vertical && d.EntityType == entityType)
                         .ToList();
@@ -174,10 +160,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            // ──────────────────────────────────────────────────────────
-            // 3) GET /{routeSegment}/{id}
-            //    Retrieve a single doc by its composite Id
-            // ──────────────────────────────────────────────────────────
             group.MapGet($"/{routeSegment}/{{id}}", async Task<IResult> (
                     string id,
                     [FromServices] ISearchService searchSvc,
@@ -196,8 +178,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
 
                 try
                 {
-                    // Use the existing “GetByIdAsync<T>” helper in the external search service:
-                    var doc = await searchSvc.GetByIdAsync<BackofficemasterIndex>("backofficemaster", id);
+                    var doc = await searchSvc.GetByIdAsync<BackofficemasterIndex>(ConstantValues.backofficemaster, id);
 
                     if (doc is null)
                     {
@@ -208,9 +189,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
                             Status = StatusCodes.Status404NotFound
                         });
                     }
-
-                    // Optionally double‐check vertical/entityType fields, although GetByIdAsync
-                    // should already fetch the exact document by its composite key:
                     if (doc.Vertical != vertical || doc.EntityType != entityType)
                     {
                         return TypedResults.NotFound(new ProblemDetails

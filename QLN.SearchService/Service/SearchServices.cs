@@ -26,7 +26,7 @@ namespace QLN.SearchService.Service
             _logger = logger;
         }
 
-        public async Task<CommonResponse> SearchAsync(string vertical, SearchRequest req)
+        public async Task<CommonSearchResponse> SearchAsync(string vertical, CommonSearchRequest req)
         {
             if (string.IsNullOrWhiteSpace(vertical))
                 throw new ArgumentException("Vertical is required.", nameof(vertical));
@@ -54,7 +54,7 @@ namespace QLN.SearchService.Service
                 _logger.LogInformation("Applied OrderBy: {OrderBy}", orderExpr);
             }
 
-            var response = new CommonResponse
+            var response = new CommonSearchResponse
             {
                 VerticalName = vertical
             };

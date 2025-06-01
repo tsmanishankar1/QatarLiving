@@ -24,5 +24,22 @@ namespace QLN.Common.Infrastructure.Constants
         public const string DocTypeCategory = "Category";
         public const string DocTypeAd = "Ad";
         public const string DocTypeBanner = "Banner";
+        //Index constants
+        public const string backofficemaster = "backofficemaster";
+        public static class EntityTypes
+        {
+            public const string FeaturedCategory = "FeaturedCategory";
+            public const string Category = "Category";
+            public const string SeasonalPick = "SeasonalPick";
+            public const string SocialMediaLink = "SocialMediaLink";
+            public const string FaqItem = "FaqItem";
+            public const string CallToAction = "CallToAction";
+
+        }
+        public static class Verticals
+        {
+            public const string Classifieds = "classifieds";
+            public const string Services = "Services";
+        }
     }
 }

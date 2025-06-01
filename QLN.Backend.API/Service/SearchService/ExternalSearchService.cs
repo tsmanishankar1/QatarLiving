@@ -1,5 +1,4 @@
-﻿// File: QLN.Backend.API/Service/SearchService/ExternalSearchService.cs
-using System;
+﻿using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Dapr;
@@ -28,7 +27,7 @@ namespace QLN.Backend.API.Service.SearchService
         /// <summary>
         /// Calls SearchService’s POST /api/{vertical}/search
         /// </summary>
-        public async Task<CommonResponse> SearchAsync(string vertical, SearchRequest request)
+        public async Task<CommonSearchResponse> SearchAsync(string vertical, CommonSearchRequest request)
         {
             if (string.IsNullOrWhiteSpace(vertical))
                 throw new ArgumentException("Vertical is required.", nameof(vertical));
@@ -39,7 +38,7 @@ namespace QLN.Backend.API.Service.SearchService
             {
                 // Correct route: POST /api/{vertical}/search
                 var methodName = $"api/{vertical}/search";
-                var commonResp = await _dapr.InvokeMethodAsync<SearchRequest, CommonResponse>(
+                var commonResp = await _dapr.InvokeMethodAsync<CommonSearchRequest, CommonSearchResponse>(
                     HttpMethod.Post,
                     appId: SERVICE_APP_ID,
                     methodName: methodName,
@@ -139,44 +138,6 @@ namespace QLN.Backend.API.Service.SearchService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error in GetByIdAsync: vertical={Vertical}, key={Key}", vertical, key);
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Calls SearchService’s PUT /api/{vertical}/update
-        /// </summary>
-        public async Task<string> UpdateAsync(CommonIndexRequest request)
-        {
-            if (request == null)
-                throw new ArgumentNullException(nameof(request));
-
-            try
-            {
-                var vertical = request.VerticalName;
-                var methodName = $"api/{vertical}/update";
-                var result = await _dapr.InvokeMethodAsync<CommonIndexRequest, string>(
-                    HttpMethod.Put,
-                    appId: SERVICE_APP_ID,
-                    methodName: methodName,
-                    request
-                );
-
-                return result ?? string.Empty;
-            }
-            catch (ArgumentNullException ex)
-            {
-                _logger.LogWarning(ex, "UpdateAsync called with null request.");
-                throw;
-            }
-            catch (DaprException ex)
-            {
-                _logger.LogError(ex, "Dapr invocation failed in UpdateAsync: {@Request}", request);
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error in UpdateAsync: {@Request}", request);
                 throw;
             }
         }

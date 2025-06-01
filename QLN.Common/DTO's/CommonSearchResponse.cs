@@ -7,10 +7,11 @@ namespace QLN.Common.DTO_s
     /// <summary>
     /// Wrapper for a search response: vertical name + list of ClassifiedIndex items.
     /// </summary>
-    public class CommonResponse
+    public class CommonSearchResponse
     {
         public string VerticalName { get; set; } = string.Empty;
         public List<ClassifiedsIndex>? ClassifiedsItems { get; set; }
+        public List<ServicesIndex>? ServicesItems { get; set; }
         public List<BackofficemasterIndex>? MasterItems { get; set; }
     }
 

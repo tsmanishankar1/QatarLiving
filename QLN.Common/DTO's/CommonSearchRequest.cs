@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace QLN.Common.Infrastructure.DTO_s
+namespace QLN.Common.DTO_s
 {
     public class CommonSearchRequest
     {

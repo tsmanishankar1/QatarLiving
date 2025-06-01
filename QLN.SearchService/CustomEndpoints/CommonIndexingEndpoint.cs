@@ -21,7 +21,7 @@ namespace QLN.SearchService.CustomEndpoints
             // SEARCH
             group.MapPost("/search", async (
                     [FromRoute] string vertical,
-                    [FromBody] SearchRequest req,
+                    [FromBody] CommonSearchRequest req,
                     [FromServices] ISearchService svc,
                     [FromServices] ILoggerFactory logFac
                 ) =>
