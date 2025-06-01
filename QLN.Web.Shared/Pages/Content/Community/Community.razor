@@ -105,31 +105,19 @@
                             }   }
                     </MudItem>
 
-<<<<<<< HEAD
+
                     <!-- Right Section -->
                     <MudItem xs="12" md="4">
                         <CommunityRules />
 
                         <MudPaper Class="newsletter-box" Elevation="1">
 
-                            <img src="/images/content/Mail.svg" alt="mail icon" class="newsletter-icon" />
+                            <img src="/qln-images/content/Mail.svg" alt="mail icon" class="newsletter-icon" />
                             <MudText Typo="Typo.body1" Class="newsletter-text">
                                 Get The QL newsletter. Sign up to receive the top stories you need to know right now.
                             </MudText>
                             <MudForm @ref="_form">
-                                @* 
-=======
-                        <img src="/qln-images/content/Mail.svg" alt="mail icon" class="newsletter-icon" />
-                        <MudText Typo="Typo.body1" Class="newsletter-text">
-                            Get The QL newsletter. Sign up to receive the top stories you need to know right now.
-                        </MudText>
-                        <MudForm @ref="_form">
-                            @* 
->>>>>>> origin/qln-dev
-                            <MudTextField T="string" Placeholder="Enter your email" Variant="Variant.Outlined"
-                                          Class="newsletter-input" @bind-Value="SubscriptionModel.Email"
-                                          For="@(() => SubscriptionModel.Email)"
-                                          Immediate="true" /> *@
+                          
                                 <input type="email"
                                 class="newsletter-input"
                                 placeholder="Enter your email"
@@ -153,19 +141,15 @@
                         </MudPaper>
 
 
-<<<<<<< HEAD
+
                         <MudPaper Class="ad-wrapper" Elevation="0" Square="true">
-                            <MudImage Src="/images/content/Ad.png" Alt="Advertisement" Class="ad-image" />
+                            <MudImage Src="/qln-images/content/Ad.png" Alt="Advertisement" Class="ad-image" />
                         </MudPaper>
                     </MudItem>
                 </MudGrid>
-=======
                     <MudPaper Class="ad-wrapper" Elevation="0" Square="true">
                         <MudImage Src="/qln-images/content/Ad.png" Alt="Advertisement" Class="ad-image" />
                     </MudPaper>
-                </MudItem>
-            </MudGrid>
->>>>>>> origin/qln-dev
             </div>
             
         </MudContainer>
