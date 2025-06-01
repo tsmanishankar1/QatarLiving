@@ -11,7 +11,7 @@
             <h2 class="main-title">@SelectedVideo.Title</h2>
         </div>
 
-            <div class="video-overlay-center">
+            <div class="video-overlay-center" @onclick="() => NavigatetoArticle(SelectedVideo)">
                 <MudIcon Icon="@Icons.Material.Filled.PlayArrow" />
             </div>
     </div>
@@ -26,7 +26,7 @@
         <div class="video-list">
             @foreach (var video in Items)
             {
-                <div class="video-card" @onclick="() => SelectVideo(video)">
+                <div class="video-card" @onclick="() => NavigatetoArticle(video)">
                     <div class="thumbnail-container">
                         <img src="@video.ImageUrl" class="thumbnail" />
                         <div class="play-icon-daily">
@@ -46,7 +46,7 @@
                 </div>
             }
 
-            <div class="video-cards-view-all">
+            <div class="video-cards-view-all" @onclick="OnClickViewAll">
                 <span class="video-cards-view-all">View all videos</span>
                 <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowRight" />
             </div>

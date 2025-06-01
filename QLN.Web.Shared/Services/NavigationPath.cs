@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace QLN.Web.Shared.Services
+﻿namespace QLN.Web.Shared.Services
 {
     public class NavigationPath
     {
@@ -40,6 +34,7 @@ namespace QLN.Web.Shared.Services
         public string SocialYouTube { get; set; } = "https://www.youtube.com/channel/UCcsJRinZg4qYGLRDkFiVHcQ";
         public string SocialTikTok { get; set; } = "https://www.tiktok.com/notfound";
         public string Base { get; set; } = "https://www.qatarliving.com/";
+        public string AllVideos { get; set; } = "https://www.youtube.com/@QatarLivingOfficial/videos";
 
     }
 }

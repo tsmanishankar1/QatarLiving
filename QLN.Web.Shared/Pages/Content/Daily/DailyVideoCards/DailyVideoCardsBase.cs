@@ -1,20 +1,17 @@
 using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
+using Microsoft.Extensions.Options;
 using QLN.Common.Infrastructure.DTO_s;
+using QLN.Web.Shared.Services;
 
 public class DailyVideoCardsBase : ComponentBase
 {
-    [Inject]
-    protected IJSRuntime JSRuntime { get; set; }
+    [Inject] NavigationManager NavigationManager { get; set; }
 
-    [Parameter] public List<ContentPost> Items { get;set; }
-    public class VideoItem
-    {
-        public string Title { get; set; }
-        public string ThumbnailUrl { get; set; }
-    }
+    [Inject] IOptions<NavigationPath> Options { get; set; }
+    [Parameter] public List<ContentPost> Items { get; set; }
 
     protected ContentPost SelectedVideo;
+    protected NavigationPath NavigationPath => Options.Value;
 
     protected override void OnInitialized()
     {
@@ -26,19 +23,13 @@ public class DailyVideoCardsBase : ComponentBase
         SelectedVideo = video;
     }
 
-    protected async Task ToggleVideoPlay(ContentPost video)
+    protected void NavigatetoArticle(ContentPost video)
     {
-       
+        NavigationManager.NavigateTo($"/article/details/{video.Slug}");
     }
 
-    protected void ShowPlayButton(ContentPost video)
+    protected void OnClickViewAll()
     {
-
+        NavigationManager.NavigateTo(NavigationPath.AllVideos);
     }
-
-    protected void HidePlayButton(ContentPost video)
-    {
-
-    }
-
 }
