@@ -39,7 +39,7 @@ namespace QLN.Web.Shared.Pages.Content.Events.EventDetails
                 new BreadcrumbItem
                 {
                     Label = "Event Detail",
-                    Url = $"/events/details/{slug}",
+                    Url = $"/content/events/details/{slug}",
                     IsLast = true
                 }
             };
