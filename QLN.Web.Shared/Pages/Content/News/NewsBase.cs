@@ -119,8 +119,8 @@ namespace QLN.Web.Shared.Pages.Content.News
             try
             {
                 var banners = await FetchBannerData();
-                DailyHeroBanners = banners?.DailyHero ?? new List<BannerItem>();
-                DailyTakeOverBanners = banners?.DailyTakeOver1 ?? new List<BannerItem>();
+                DailyHeroBanners = banners?.NewsQatarHero ?? new List<BannerItem>();
+                DailyTakeOverBanners = banners?.NewsQatarTakeOver1 ?? new List<BannerItem>();
             }
             finally
             {

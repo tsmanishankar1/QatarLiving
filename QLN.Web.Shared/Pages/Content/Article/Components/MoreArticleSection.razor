@@ -6,6 +6,23 @@
 
     <h3><span class="accent-bar">|</span> More Articles</h3>
 @if (Articles != null && Articles.Any()){
+
+    @if(loading){
+       @for (int i = 0; i < 4; i++)
+{
+    <div class="skeleton-item">
+        <!-- Image Skeleton -->
+        <MudSkeleton Width="120px" Height="100px" Variant="Rectangle" />
+
+        <!-- Text Skeletons -->
+        <div class="skeleton-text">
+            <MudSkeleton Height="20px" Width="100%" />
+            <MudSkeleton Height="20px" Width="80%" class="skeleton-line-spacing" />
+        </div>
+    </div>
+}
+    }
+    else{
      @foreach (var article in Articles)
     {
         <div class="article-entry">
@@ -31,6 +48,12 @@
         </div>
     }
     }
+
+
+
+
+
+    }
     else{
         <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
     }
@@ -45,6 +68,24 @@
         border-radius: 12px;
         font-family: 'Public Sans';
     }
+    .skeleton-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    height: 100px;
+    margin-bottom: 1.5rem; /* equivalent to mb-4 */
+}
+
+.skeleton-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    flex: 1;
+}
+
+.skeleton-line-spacing {
+    margin-top: 8px;
+}
 
     .section-title {
         margin: 0;

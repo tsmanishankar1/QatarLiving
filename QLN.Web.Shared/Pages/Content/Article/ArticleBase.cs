@@ -29,12 +29,16 @@ public class ArticleBase : ComponentBase
         "/images/banner_image.svg",
         "/images/banner_image.svg"
     };
+    
     [Parameter]
     public NewsItem Item { get; set; }
     protected async override Task OnInitializedAsync()
     {
         try
         {
+
+            var bannersTask = LoadBanners();
+            await Task.WhenAll(bannersTask);
             isLoading = true;
             newsArticle = await GetNewsBySlugAsync();
             SelectedPost = new PostModel
@@ -126,7 +130,7 @@ public class ArticleBase : ComponentBase
             try
             {
                 var banners = await FetchBannerData();
-                DailyHeroBanners = banners?.DailyHero ?? new List<BannerItem>();
+                DailyHeroBanners = banners?.NewsQatarHero ?? new List<BannerItem>();
             }
             finally
             {
