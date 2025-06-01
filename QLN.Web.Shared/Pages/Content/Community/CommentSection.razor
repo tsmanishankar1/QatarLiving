@@ -75,7 +75,7 @@ else
 
                     </div>
                     <div class="comment-description">@c.Description</div>
-                    <div class="post-icons">
+                    <div class="post-icons-comment-section">
                         <div class="comment-wrapper">
                             <img src="qln-images/content/Like.svg" class="comment-interaction-icon" />
                             <span class="icon-text">@c.LikeCount</span>
@@ -148,7 +148,13 @@ else
         padding: 0 1rem;
     }
 
-
+    .post-icons-comment-section {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 4px;
+        margin-top: 10px;
+    }
 
     .empty-state {
         text-align: center;
@@ -210,6 +216,7 @@ else
         border-radius: 200px;
         border: 1.5px solid #F0F0F0;
         object-fit: cover;
+        margin-top:12px;
     }
 
     .comment-meta {
