@@ -1,4 +1,6 @@
-﻿using QLN.Web.Shared.Contracts;
+﻿using Google.Protobuf.WellKnownTypes;
+using Microsoft.AspNetCore.Components;
+using QLN.Web.Shared.Contracts;
 using System.Net.Http;
 
 namespace QLN.Web.Shared.Services
@@ -6,20 +8,25 @@ namespace QLN.Web.Shared.Services
     public class PostDialogService : ServiceBase<PostDialogService>, IPostDialogService
     {
         private readonly HttpClient _httpClient;
+        private readonly NavigationManager _navigationManager;
 
-        public PostDialogService(HttpClient httpClient) : base(httpClient)
+        public PostDialogService(HttpClient httpClient, NavigationManager navigationManager) : base(httpClient)
         {
             _httpClient = httpClient;
+            _navigationManager = navigationManager;
+
         }
         public async Task<bool> PostSelectedCategoryAsync(string selectedCategoryId)
         {
             try
             {
+                var baseUrl = _httpClient.BaseAddress?.ToString()?.TrimEnd('/');
 
-                var response = await _httpClient.GetAsync($"node/add/post?field_page={selectedCategoryId}");
+                //var response = await _httpClient.GetAsync($"node/add/post?field_page={selectedCategoryId}");
 
+                _navigationManager.NavigateTo($"{baseUrl}/node/add/post?field_page={selectedCategoryId}",forceLoad: true);
 
-                return response.IsSuccessStatusCode;
+                return true;
             }
             catch (Exception ex)
             {

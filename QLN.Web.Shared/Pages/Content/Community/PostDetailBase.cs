@@ -82,14 +82,14 @@ namespace QLN.Web.Shared.Pages.Content.Community
                         Slug = fetched.slug,
                         Comments = fetched.comments?.Select(c => new CommentModel
                         {
-                            CreatedBy = c.username ?? "Unknown User",
+                            CreatedBy = c.user_name ?? "Unknown User",
                             CreatedAt = c.created_date,      
                             Description = c.subject ?? "No content to display",
                             LikeCount = 0,
                             UnlikeCount = 0,
                             Avatar = !string.IsNullOrWhiteSpace(c.profile_picture)
                                 ? c.profile_picture
-                                : "/images/content/Sample.svg"
+                                : "/qln-images/content/Sample.svg"
                         }).ToList() ?? new List<CommentModel>()
                     };
 

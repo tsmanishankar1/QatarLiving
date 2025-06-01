@@ -56,18 +56,19 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected async Task RedirectToPostPage()
         {
+
             if (!string.IsNullOrEmpty(SelectedCategoryId))
             {
                 var success = await PostDialogService.PostSelectedCategoryAsync(SelectedCategoryId);
 
-                if (success)
-                {
-                    Snackbar.Add("Post was successfully.", Severity.Success);
-                }
-                else
-                {
-                    Snackbar.Add("Failed to post the selected category.", Severity.Error);
-                }
+                //if (success)
+                //{
+                //    Snackbar.Add("Post was successfully.", Severity.Success);
+                //}
+                //else
+                //{
+                //    Snackbar.Add("Failed to post the selected category.", Severity.Error);
+                //}
             }
             else
             {
