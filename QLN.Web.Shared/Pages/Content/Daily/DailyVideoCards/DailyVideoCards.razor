@@ -2,23 +2,18 @@
 @using MudBlazor;
 <div class="watch-section">
     <!-- Main Video -->
-    <div class="main-video-wrapper video-card" @onclick="() => ToggleVideoPlay(SelectedVideo)"
-        @onmouseenter="() => ShowPlayButton(SelectedVideo)" @onmouseleave="() => HidePlayButton(SelectedVideo)">
-
-        <video width="100%" height="100%" muted loop style="object-fit: cover; border-radius: 6px;"
-            src="@SelectedVideo.VideoUrl" @ref="SelectedVideo.VideoElement">
-        </video>
+    <div class="main-video-wrapper video-card">
+        <img width="100%" height="100%" muted loop style="object-fit: cover; border-radius: 6px;"
+            src="@SelectedVideo.ImageUrl" />
+        
         <div class="video-overlay-top">
             <span class="video-label">Video</span>
             <h2 class="main-title">@SelectedVideo.Title</h2>
         </div>
 
-        @if (!SelectedVideo.IsPlaying)
-        {
-            <div class="video-overlay-center">
+            <div class="video-overlay-center" @onclick="() => NavigatetoArticle(SelectedVideo)">
                 <MudIcon Icon="@Icons.Material.Filled.PlayArrow" />
             </div>
-        }
     </div>
 
     <!-- Video List -->
@@ -29,11 +24,11 @@
             </h3>
         </div>
         <div class="video-list">
-            @foreach (var video in VideoList)
+            @foreach (var video in Items)
             {
-                <div class="video-card" @onclick="() => SelectVideo(video)">
+                <div class="video-card" @onclick="() => NavigatetoArticle(video)">
                     <div class="thumbnail-container">
-                        <img src="@video.ThumbnailUrl" class="thumbnail" />
+                        <img src="@video.ImageUrl" class="thumbnail" />
                         <div class="play-icon-daily">
                             <MudIcon Icon="@Icons.Material.Filled.PlayArrow" />
                         </div>
@@ -51,7 +46,7 @@
                 </div>
             }
 
-            <div class="video-cards-view-all">
+            <div class="video-cards-view-all" @onclick="OnClickViewAll">
                 <span class="video-cards-view-all">View all videos</span>
                 <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowRight" />
             </div>

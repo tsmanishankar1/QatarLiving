@@ -9,7 +9,7 @@
     {
         <div class="article-entry">
             <div class="article-content">
-                <a href="#" class="article-title">@(article.Title)</a>
+                <a href="#" @onclick="() => NavigatetoArticle(article)" class="article-title">@(article.Title)</a>
             </div>
             @if (!string.IsNullOrWhiteSpace(@article.ImageUrl))
             {

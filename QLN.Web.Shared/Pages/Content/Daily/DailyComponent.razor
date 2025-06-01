@@ -19,7 +19,7 @@
         <div class="max-container">
             <!-- Carousel Banner -->
             <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
-                Transition="Transition.Slide" />
+                            Transition="Transition.Slide" />
         </div>
     </div>
     <div class="responsive-news-container">
@@ -43,18 +43,22 @@
             </MudGrid>
 
             <MudGrid GutterSize="16px">
-                <!-- Left column: news cards -->
-                <MudItem xs="12" md="9" lg="9">
-                    <MudGrid GutterSize="16px">
-                        @foreach (var item in Items)
-                        {
-                            <MudItem xs="12" sm="6" md="4" lg="4">
-                                <DailyNewsCard Item="item" IsHorizontal="false" />
-                            </MudItem>
-                        }
-                    </MudGrid>
-                </MudItem>
 
+                @if (TopicQueue1.Count() > 0)
+                {
+                    <!-- Left column: news cards -->
+                    <MudItem xs="12" md="9" lg="9">
+                        <MudGrid GutterSize="16px">
+                            @foreach (var item in TopicQueue1.Take(3))
+                            {
+                                <MudItem xs="12" sm="6" md="4" lg="4">
+                                    <DailyNewsCard Item="item" IsHorizontal="false" />
+                                </MudItem>
+                            }
+
+                        </MudGrid>
+                    </MudItem>
+                }
                 <!-- Right column: newsletter -->
                 <MudItem xs="12" md="3" lg="3">
                     <DailyNewsLetter />
@@ -67,7 +71,7 @@
     </div>
     <div class="responsive-news-container-daily">
         <div class="max-container">
-            <DailyFeaturedEvents FeaturedEvent="@featuredEeventData" Loading="isLoading" />
+            <DailyFeaturedEvents Items="@FeaturedEvents" Loading="isLoading" />
 
             <MoreEvents />
             <TakeOverBanner ImageUrl="/qln-images/takeover_banner.svg" />
@@ -75,73 +79,36 @@
         </div>
 
     </div>
-    <div class="max-container">
-        <DailyVideoCards />
-    </div>
+    @if (Videos.Count > 0)
+    {
+
+
+        <div class="max-container">
+
+            <DailyVideoCards Items="@Videos" />
+        </div>
+    }
     <div class="responsive-news-container">
 
         <div class="max-container">
-            <DailyHighlights />
+            @if (TopicQueue2.Count() > 0)
+            {
+                <DailyHighlights QueueLabel="@TopicQueue2Label" ListOfItems="TopicQueue2" />
+            }
+
             <TakeOverBanner ImageUrl="/qln-images/takeover_banner.svg" />
-            <DailyHighlights />
+
+            @if (TopicQueue3.Count() > 0)
+            {
+                <DailyHighlights QueueLabel="@TopicQueue3Label" ListOfItems="TopicQueue3" />
+            }
+            @if (TopicQueue4.Count() > 0)
+            {
+                <DailyHighlights QueueLabel="@TopicQueue4Label" ListOfItems="TopicQueue4" />
+            }
         </div>
     </div>
 </div>
-
-@code {
-    private List<string> carouselImages = new()
-{
-"/qln-images/banner_image.svg",
-"/qln-images/banner_image.svg",
-"/qln-images/banner_image.svg"
-};
-
-    private bool isLoading = false;
-
-    private List<DailyFeaturedEventCard.DailyEventItem> featuredEeventData = new()
-{
-new() { Category = "Qatar International Art Festival 2025 - 7th Edition", ImageUrl = "/qln-images/categories/new1.svg"
-},
-new() { Category = "FIFA Arab Cup - Doha 2025", ImageUrl = "/qln-images/categories/new2.svg" },
-new() { Category = "Qatar T100 Triathlon World Championship Final", ImageUrl = "/qln-images/categories/new3.svg" },
-new() { Category = "In the Realms of Mecca: A Journey through the Ritua", ImageUrl = "/qln-images/categories/new4.svg"
-},
-new() { Category = "Qatar Desert Trail Running Series 2025", ImageUrl = "/qln-images/categories/new5.svg" },
-new() { Category = "A Sneak Peek at Qatar Auto Museum Project", ImageUrl = "/qln-images/categories/new6.svg" }
-};
-
-
-    public List<NewsItem> Items { get; set; } = new();
-
-    private List<NewsItem> GoldNewsList = new()
-{
-new NewsItem
-{
-Category = "Finance",
-Title = "Qatar gold prices rise by 4.86% this week",
-ImageUrl = "/qln-images/gold.svg"
-},
-new NewsItem
-{
-Category = "Economy",
-Title = "Qatar’s inflation remains steady in 2025",
-ImageUrl = "/qln-images/gold.svg"
-},
-new NewsItem
-{
-Category = "Technology",
-Title = "New fintech regulations boost startups",
-ImageUrl = "/qln-images/gold.svg"
-},
-};
-
-    protected override void OnInitialized()
-    {
-        // Assign GoldNewsList to Items so it gets rendered
-        Items = GoldNewsList;
-    }
-}
-
 
 <style>
     .responsive-container {

@@ -9,13 +9,11 @@ namespace QLN.Web.Shared.Services
     {
         private readonly ILogger _logger;
         private readonly HttpClient _httpClient;
-        private readonly string _baseUrl;
 
         public NewsService(HttpClient httpClient, IOptions<ApiSettings> options, ILogger<NewsService> logger)
         {
             _httpClient = httpClient;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _baseUrl = "https://qlc-bo-dev.qatarliving.com/";
         }
          private readonly Dictionary<string, string> _tabEndpointMap = new()
         {
@@ -49,7 +47,6 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"{_baseUrl}/api/content/qln_news_news_community/landing");
                 Console.WriteLine("response is" + response);
                 return response;
             }
@@ -64,7 +61,7 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"{_baseUrl}/api/content/qln_news_news_health_education/landing");
+                var response = await _httpClient.GetAsync("/api/content/qln_news_news_health_education/landing");
                 return response;
             }
             catch (Exception ex)
@@ -78,7 +75,7 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"{_baseUrl}/api/content/qln_news_news_law/landing");
+                var response = await _httpClient.GetAsync("/api/content/qln_news_news_law/landing");
                 return response;
             }
             catch (Exception ex)
@@ -92,7 +89,7 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"{_baseUrl}/api/content/qln_news_news_middle_east/landing");
+                var response = await _httpClient.GetAsync("/api/content/qln_news_news_middle_east/landing");
                 return response;
             }
             catch (Exception ex)
@@ -106,7 +103,7 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"{_baseUrl}/api/content/qln_news_news_qatar/landing");
+                var response = await _httpClient.GetAsync("/api/content/qln_news_news_qatar/landing");
                 return response;
             }
             catch (Exception ex)
@@ -120,7 +117,7 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"{_baseUrl}/api/content/qln_news_news_world/landing");
+                var response = await _httpClient.GetAsync("/api/content/qln_news_news_world/landing");
                 return response;
             }
             catch (Exception ex)
@@ -129,11 +126,11 @@ namespace QLN.Web.Shared.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-        public async Task<HttpResponseMessage?> GetNewsBySlugAsync(string slug)
+        public async Task<HttpResponseMessage?> GetNewsBySlugAsync(string slug )
         {
             try
             {
-                var response = await _httpClient.GetAsync($"{_baseUrl}/api/content/news/{slug}");
+                var response = await _httpClient.GetAsync("/api/content/news/{slug}");
                 return response;
             }
             catch (Exception ex)
@@ -148,7 +145,7 @@ namespace QLN.Web.Shared.Services
             {
                   if (_tabEndpointMap.TryGetValue(tab, out var slug))
                 {
-                    var response = await _httpClient.GetAsync($"{_baseUrl}/api/content/{slug}/landing");
+                    var response = await _httpClient.GetAsync("/api/content/{slug}/landing");
                     Console.WriteLine("response is" + response);
                     return response;
                 }
