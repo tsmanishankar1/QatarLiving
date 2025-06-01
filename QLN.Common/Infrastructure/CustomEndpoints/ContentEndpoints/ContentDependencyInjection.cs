@@ -23,6 +23,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                 .MapNewsWorldEndpoint()
                 .MapNewsHealthEducationEndpoint()
                 .MapNewsLawEndpoint()
+                .MapFinanceEntrepreneurshipEndpoint()
+                .MapFinanceFinanceEndpoint()
+                .MapFinanceJobsCareersEndpoint()
+                .MapFinanceMarketUpdateEndpoint()
+                .MapFinanceQatarEndpoint()
+                .MapFinanceRealEstateEndpoint()
                 .MapContentQueueEndpoint()
                 .MapCommunityMorePostsEndpoint()
                 .MapGetPostBySlugEndpoint()
@@ -32,7 +38,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                 .MapPostForumPostEndpoint()
                 .MapChangePostLikeStatusEndpoint()
                 .MapChangeCommentLikeStatusEndpoint()
-                .MapContentGetCommentsEndpoint();
+                .MapContentGetCommentsEndpoint()
+                .MapContentVideosEndpoint();
 
             return group;
         }

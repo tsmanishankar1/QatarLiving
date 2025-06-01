@@ -124,10 +124,6 @@ OpenInNewTab = true
 
     private string CurrentUrl => Navigation.ToAbsoluteUri(Navigation.Uri).ToString();
 
-    private void OnCalendarConfirmed()
-    {
-        // Add calendar logic
-    }
 
     RenderFragment EventInfoBlock() => __builder =>
     {
@@ -187,8 +183,7 @@ OpenInNewTab = true
             <MudIcon Icon="@Icons.Material.Filled.Event" Style="margin-right: 6px;" />
         </button>
 
-        <AddToCalendarDialog @bind-IsVisible="IsModalOpen" Message="You will be notified 1 day ahead of this event"
-            OnConfirm="OnCalendarConfirmed" />
+        <AddToCalendarDialog @bind-IsVisible="IsModalOpen" Message="You will be notified 1 day ahead of this event" />
     };
 }
 
@@ -302,12 +297,31 @@ OpenInNewTab = true
         gap: 12px;
     }
 
+    .event-description a {
+        word-break: break-word;
+        overflow-wrap: break-word;
+        color: var(--color-primary);
+        text-decoration: underline;
+        display: inline-block;
+        max-width: 100%;
+    }
+
     .event-description {
-        margin-top: 20px;
-        font-size: 14px;
-        line-height: 26px;
-        letter-spacing: 0;
-        color: var(--color-text-heading);
+        overflow-wrap: break-word;
+        word-break: break-word;
+        max-width: 100%;
+    }
+
+    .event-description p {
+        margin-bottom: 1rem;
+    }
+
+    .event-description img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 1rem auto;
+        border-radius: 8px;
     }
 
     .card-container {

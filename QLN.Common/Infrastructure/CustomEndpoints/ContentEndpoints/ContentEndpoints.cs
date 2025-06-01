@@ -21,7 +21,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            group.GenerateLandingEndpoint<ContentsDailyPageResponse>(DrupalContentConstants.QlnContentsDaily, "GetContentsDaily"); 
+            group.GenerateLandingEndpoint<ContentsDailyPageResponse>(DrupalContentConstants.QlnContentsDaily, "GetContentsDaily");
 
             return group;
         }
@@ -87,6 +87,82 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             // GET /api/content/landing
             group.GenerateLandingEndpoint<CommunityMorePostsResponse>(DrupalContentConstants.QlnCommunityMorePosts, "GetCommunityMorePosts");
 
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapFinanceEntrepreneurshipEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            //group.GenerateLandingEndpoint<FinanceEntrepreneurshipPageResponse>(DrupalContentConstants.QlnNewsFinanceEntrepreneurship, "GetFinanceEntrepreneurship");
+            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsFinanceEntrepreneurship, "GetFinanceEntrepreneurship");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapFinanceFinanceEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            //group.GenerateLandingEndpoint<FinanceFinancePageResponse>(DrupalContentConstants.QlnNewsFinanceFinance, "GetFinanceFinance");
+            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsFinanceFinance, "GetFinanceFinance");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapFinanceJobsCareersEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            //group.GenerateLandingEndpoint<FinanceJobsCareersPageResponse>(DrupalContentConstants.QlnNewsFinanceJobsCareers, "GetFinanceJobsCareers");
+            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsFinanceJobsCareers, "GetFinanceJobsCareers");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapFinanceMarketUpdateEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            //group.GenerateLandingEndpoint<FinanceMarketUpdatePageResponse>(DrupalContentConstants.QlnNewsFinanceMarketUpdate, "GetFinanceMarketUpdate");
+            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsFinanceMarketUpdate, "GetFinanceMarketUpdate");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapFinanceQatarEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            //group.GenerateLandingEndpoint<FinanceQatarPageResponse>(DrupalContentConstants.QlnNewsFinanceQatar, "GetFinanceQatar");
+            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsFinanceQatar, "GetFinanceQatar");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapFinanceRealEstateEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            //group.GenerateLandingEndpoint<FinanceRealEstatePageResponse>(DrupalContentConstants.QlnNewsFinanceRealEstate, "GetFinanceRealEstate");
+            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsFinanceRealEstate, "GetFinanceRealEstate");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapContentVideosEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<ContentsVideosResponse>(DrupalContentConstants.QlnContentVideos, "GetVideos");
+            
             return group;
 
         }
@@ -181,7 +257,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             // GET /api/content/categories
             group.MapGet("/community", async (
                     HttpContext context,
-                    [FromQuery] string forum_id,
+                    [FromQuery] string? forum_id,
                     [FromQuery] string? order,
                     [FromQuery] int? page,
                     [FromQuery] int? page_size,
@@ -193,8 +269,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                 try
                 {
                     var model = await svc.GetCommunitiesFromDrupalAsync(
-                        forum_id,
                         cancellationToken,
+                        forum_id,
                         order,
                         page,
                         page_size);
@@ -208,7 +284,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                 catch (Exception ex)
                 {
                     return Results.Problem(
-                        title: "Content Categories Error",
+                        title: "Content Communities Error",
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError);
                 }
@@ -564,6 +640,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             })
             .WithName("GetPostBySlug")
             .WithTags("Content");
+
+            return group;
+        }
+
+        private static RouteGroupBuilder GenerateLandingEndpoint(this RouteGroupBuilder group, string QueueName, string Name)
+        {
+            
 
             return group;
         }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
@@ -8,43 +9,164 @@ namespace QLN.Web.Shared.Pages.Content.Events
     public class EventsComponentBase : LayoutComponentBase
     {
         [Inject] private IEventService _eventService { get; set; }
-        protected List<ContentEvent> ListOfEvents { get; set; } = [];
+        [Inject] private ILogger<EventsComponentBase> Logger { get; set; }
 
-        protected async override Task OnInitializedAsync()
+        protected List<ContentEvent> ListOfEvents { get; set; } = [];
+        protected List<EventCategory> EventCategories { get; set; } = [];
+        protected List<ContentPost> FeaturedEventData { get; set; } = [];
+
+        protected List<BannerItem> DailyHeroBanners { get; set; } = new();
+        protected bool isLoadingBanners = true;
+
+        protected bool isLoadingEvents = true;
+        protected bool isLoadingCategories = true;
+        protected bool isLoadingFeatured = true;
+
+        protected override async Task OnInitializedAsync()
         {
+            try
+            {
+                // Start tasks in parallel
+                var allEventsTask = LoadAllEvents();
+                var categoriesTask = LoadCategories();
+                var featuredTask = LoadFeaturedEvents();
+                    var bannersTask = LoadBanners();
+
+                await Task.WhenAll(allEventsTask, categoriesTask, featuredTask, bannersTask);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitializedAsync error.");
+            }
+        }
+
+        private async Task LoadAllEvents()
+        {
+            isLoadingEvents = true;
             try
             {
                 ListOfEvents = await GetAllEvents() ?? [];
             }
-            catch (Exception ex)
+            finally
             {
-                Console.WriteLine(ex.Message, "OnInitializedAsync");
+                isLoadingEvents = false;
             }
         }
 
-        /// <summary>
-        /// Gets Content Events Landing Page data.
-        /// </summary>
-        /// <returns>List of Content Events</returns>
+        private async Task LoadCategories()
+        {
+            isLoadingCategories = true;
+            try
+            {
+                EventCategories = await GetEventCategories() ?? [];
+            }
+            finally
+            {
+                isLoadingCategories = false;
+            }
+        }
+
+        private async Task LoadFeaturedEvents()
+        {
+            isLoadingFeatured = true;
+            try
+            {
+                // Fetch the full response object
+                var featuredContent = await FetchFeaturedEventsData();
+
+                // Extract only the Featured Events items list and assign
+                FeaturedEventData = featuredContent?.ContentsDaily?.DailyFeaturedEvents?.Items ?? new List<ContentPost>();
+            }
+            finally
+            {
+                isLoadingFeatured = false;
+            }
+        }
+        private async Task LoadBanners()
+        {
+            isLoadingBanners = true;
+            try
+            {
+                var banners = await FetchBannerData();
+                DailyHeroBanners = banners?.DailyHero ?? new List<BannerItem>();
+            }
+            finally
+            {
+                isLoadingBanners = false;
+            }
+        }
+
         protected async Task<List<ContentEvent>> GetAllEvents()
         {
             try
             {
-                var apiResponse = await _eventService.GetAllEventsAsync() ?? new HttpResponseMessage();
-
-                if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
+                var response = await _eventService.GetAllEventsAsync();
+                if (response.IsSuccessStatusCode && response.Content != null)
                 {
-                    var response = await apiResponse.Content.ReadFromJsonAsync<List<ContentEvent>>();
-                    return response ?? [];
+                    return await response.Content.ReadFromJsonAsync<List<ContentEvent>>() ?? [];
                 }
-
                 return [];
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message, "OnInitializedAsync");
+                Logger.LogError(ex, "GetAllEvents error.");
                 return [];
             }
         }
+
+        protected async Task<List<EventCategory>> GetEventCategories()
+        {
+            try
+            {
+                var response = await _eventService.GetEventCategAndLoc();
+                if (response.IsSuccessStatusCode && response.Content != null)
+                {
+                    var data = await response.Content.ReadFromJsonAsync<CategoriesResponse>();
+                    return data?.EventCategories ?? [];
+                }
+                return [];
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetEventCategories error.");
+                return [];
+            }
+        }
+
+        private async Task<ContentsDailyPageResponse?> FetchFeaturedEventsData()
+        {
+            try
+            {
+                var response = await _eventService.GetFeaturedEventsAsync();
+                if (response.IsSuccessStatusCode && response.Content != null)
+                {
+                    return await response.Content.ReadFromJsonAsync<ContentsDailyPageResponse>();
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "FetchFeaturedEventsData error.");
+                return null;
+            }
+        }
+
+private async Task<BannerResponse?> FetchBannerData()
+{
+    try
+    {
+        var response = await _eventService.GetBannerAsync();
+        if (response.IsSuccessStatusCode && response.Content != null)
+        {
+            return await response.Content.ReadFromJsonAsync<BannerResponse>();
+        }
+        return null;
+    }
+    catch (Exception ex)
+    {
+        Logger.LogError(ex, "FetchBannerData error.");
+        return null;
+    }
+}
     }
 }
