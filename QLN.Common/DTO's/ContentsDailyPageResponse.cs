@@ -12,34 +12,36 @@ namespace QLN.Common.Infrastructure.DTO_s
     // Unique Queue Responses for Daily Content
     public class ContentsDaily
     {
-        [JsonPropertyName("daily_top_story")]
+        const string QueuePrefix = DrupalContentConstants.QlnContentsDaily;
+
+        [JsonPropertyName($"{QueuePrefix}_top_story")]
         public BaseQueueResponse<ContentPost> DailyTopStory { get; set; }
 
-        [JsonPropertyName("daily_event")]
+        [JsonPropertyName($"{QueuePrefix}_event")]
         public BaseQueueResponse<ContentEvent> DailyEvent { get; set; }
 
-        [JsonPropertyName("daily_featured_events")]
+        [JsonPropertyName($"{QueuePrefix}_featured_events")]
         public BaseQueueResponse<ContentPost> DailyFeaturedEvents { get; set; }
 
-        [JsonPropertyName("daily_watch_on_qatar_living")]
+        [JsonPropertyName($"{QueuePrefix}_watch_on_qatar_living")]
         public BaseQueueResponse<ContentPost> DailyWatchOnQatarLiving { get; set; }
 
-        [JsonPropertyName("daily_more_articles")]
+        [JsonPropertyName($"{QueuePrefix}_more_articles")]
         public BaseQueueResponse<ContentPost> DailyMoreArticles { get; set; }
 
-        [JsonPropertyName("daily_topics_1")]
+        [JsonPropertyName($"{QueuePrefix}_topics_1")]
         public BaseQueueResponse<ContentPost> DailyTopics1 { get; set; }
 
-        [JsonPropertyName("daily_topics_2")]
+        [JsonPropertyName($"{QueuePrefix}_topics_2")]
         public BaseQueueResponse<ContentPost> DailyTopics2 { get; set; }
 
-        [JsonPropertyName("daily_topics_3")]
+        [JsonPropertyName($"{QueuePrefix}_topics_3")]
         public BaseQueueResponse<ContentPost> DailyTopics3 { get; set; }
 
-        [JsonPropertyName("daily_topics_4")]
+        [JsonPropertyName($"{QueuePrefix}_topics_4")]
         public BaseQueueResponse<ContentPost> DailyTopics4 { get; set; }
 
-        [JsonPropertyName("daily_topics_5")]
+        [JsonPropertyName($"{QueuePrefix}_topics_5")]
         public BaseQueueResponse<ContentPost> DailyTopics5 { get; set; }
     }
 
