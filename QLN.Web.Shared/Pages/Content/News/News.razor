@@ -57,20 +57,20 @@
                     <MudItem xs="12" md="8">
                         <div class="main-article">
                             <div class="main-content">
-                                <div class="main-category" @onclick="@(() => onclick(topNews))">
+                                <div class="main-category" @onclick="@(() => onclick(topNewsSlot))">
                                     @if (isLoading){
                                         <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="400px" Width="100%" Animation="Animation.Wave" />
                                     }
-                                    else if (topNews == null || string.IsNullOrEmpty(topNews.Title))
+                                    else if (topNewsSlot == null || string.IsNullOrEmpty(topNewsSlot.Title))
                                     {
                                         <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
                                     }
                                     else{
-                                        @if(string.IsNullOrEmpty(topNews.ImageUrl)){
+                                        @if(string.IsNullOrEmpty(topNewsSlot.ImageUrl)){
                                              <EmptyCard Title="No Image Available" Subtitle="" />
                                         }
                                         else{
-                                        <img src="@topNews.ImageUrl" class="main-image" />
+                                        <img src="@topNewsSlot.ImageUrl" class="main-image" />
                                         }
                                     }
                                     @if (isLoading){
@@ -78,12 +78,12 @@
                                          <MudSkeleton Class="mb-2" SkeletonType="SkeletonType.Text" Height="30px" Width="100%" Animation="Animation.Wave" />
                                         <MudSkeleton Class="mb-2" SkeletonType="SkeletonType.Text" Height="30px" Width="200px" Animation="Animation.Wave" />
                                     }
-                                     else if (topNews == null || string.IsNullOrEmpty(topNews.Title))
+                                     else if (topNewsSlot == null || string.IsNullOrEmpty(topNewsSlot.Title))
                                     {
                                     }
                                     else{
                                         <span class="category-style">Sports</span>
-                                        <h2 class="main-title">@topNews.Title</h2>
+                                        <h2 class="main-title">@topNewsSlot.Title</h2>
                                         <div class="author-wrapper">
                                             <div class="main-author">
                                                 Ismat Zerin • <a href="#" class="main-source">Qatar Living</a>  
@@ -100,7 +100,7 @@
                         </div>
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <MoreArticle Articles="@moreArticleList" loading="@isLoading" selectedTab="@SelectedTab"/>
+                        <MoreArticle Articles="@moreArticleListSlot" loading="@isLoading" selectedTab="@SelectedTab"/>
                     </MudItem>
                 </MudGrid>
                <div class="flex-container" style="padding-bottom: 40px;">
@@ -117,12 +117,12 @@
                         </div>
                         
                     }
-                     else if (moreArticleList != null && moreArticleList.Any())
+                    else if (topNewsListSlot != null && topNewsListSlot.Any())
                     {
-                     @foreach (var news in moreArticleList.Take(3))
+                        @foreach (var news in topNewsListSlot.Take(3))
                     { 
                         <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)"/>
-                         @if(news != moreArticleList.Last()){
+                         @if(news != topNewsListSlot.Last()){
                             <div style="width: 1px; height: auto; background-color: #F0F0F0; align-self: stretch; margin: 0 14px"></div>
                         } 
                     } 
@@ -159,7 +159,7 @@
         <div class="video-container">  
             <div class="max-container">
                 @* <div class="video-padding"> *@
-                <VideoCards Articles="@moreArticleList" selectedTab="@SelectedTab" loading="@isLoading" />
+                <VideoCards Articles="@mostWatchedArticleListSlot" selectedTab="@SelectedTab" loading="@isLoading" />
                 @* </div> *@
             </div>
         </div> 
@@ -189,12 +189,12 @@
                         </div>
                         
                     }
-                          else if (moreArticleList != null && moreArticleList.Any())
+                else if (articleListSlot1 != null && articleListSlot1.Any())
                         {
-                        @foreach (var news in moreArticleList.Take(5))
+                    @foreach (var news in articleListSlot1.Take(5))
                         { 
                             <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)"/>
-                            @if(news != moreArticleList.Last()){
+                            @if(news != articleListSlot1.Last()){
                             <div style="width: 1px; height: auto; background-color: #F0F0F0; align-self: stretch; margin: 0 14px"></div>
                             }
                         }
@@ -204,7 +204,7 @@
                         }
                     </div>
                     <div class="poular-article-container" >
-                            <PopularArticles Articles="@moreArticleList" selectedTab="@SelectedTab" loading="@isLoading"/>
+                <PopularArticles Articles="@popularArticleListSlot" selectedTab="@SelectedTab" loading="@isLoading" />
                             <img src="/qln-images/classifieds/detail_ad.svg"  alt="Product Image" />
                     </div>
                     <div class="grid-padding">
@@ -245,11 +245,11 @@
                             </MudItem>
                         }
                         }
-                        else if (moreArticleList != null && moreArticleList.Any())
+                    else if (articleListSlot2 != null && articleListSlot2.Any())
                         {
-                             @for (int i = 0; i < moreArticleList.Take(9).Count(); i++)
-                            {   
-                            var news = moreArticleList[i];
+                        @for (int i = 0; i < articleListSlot2.Take(9).Count(); i++)
+                        {
+                            var news = articleListSlot2[i];
                             <MudItem xs="12" sm="6" md="4"> 
                             <div class="card-with-divider">
                             <NewsCard news="news" IsHorizontal="true" OnClick="() => onclick(news)" />
