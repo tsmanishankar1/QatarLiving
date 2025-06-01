@@ -8,8 +8,10 @@ using System.Threading.Tasks;
 using Dapr;
 using Dapr.Client;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
@@ -28,6 +30,7 @@ namespace QLN.Classified.MS.Service
         private const string UnifiedStore = "adstore";
         private const string UnifiedIndexKey = "ad-index";               
         private readonly ILogger<ClassifiedService> _logger;
+        private readonly string jsonPath = "itemsAdsMock.json";
 
         public ClassifiedService(Dapr.Client.DaprClient dapr, ILogger<ClassifiedService> logger, IWebHostEnvironment env)
         {
@@ -1304,7 +1307,6 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-
         public async Task<List<CategoriesDto>> GetAllZones(CancellationToken cancellationToken = default)
         {
             try
@@ -1326,7 +1328,73 @@ namespace QLN.Classified.MS.Service
             {
                 throw new InvalidOperationException("Unexpected error occurred while retrieving all zones.", ex);
             }
-        }   
+        }
+
+        public async Task<CategoryHierarchyDto> GetCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (categoryId == Guid.Empty)
+                    throw new ArgumentException("Invalid category ID.", nameof(categoryId));
+
+                var allKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+
+                var allCategories = new List<Category>();
+                foreach (var key in allKeys)
+                {
+                    if (!key.StartsWith("cat_")) continue; 
+                    var item = await _dapr.GetStateAsync<Category>(UnifiedStore, key);
+                    if (item != null) allCategories.Add(item);
+                }
+
+                var rootCategory = allCategories.FirstOrDefault(c => c.Id == categoryId && c.TypePrefix == GetTypePrefix(AdInformation.Category));
+                if (rootCategory == null)
+                    throw new KeyNotFoundException($"Category with ID '{categoryId}' not found.");
+
+                var subCategories = allCategories
+                    .Where(c => c.ParentId == rootCategory.Id && c.TypePrefix == GetTypePrefix(AdInformation.SubCategory))
+                    .ToList();
+
+                var brands = allCategories
+                    .Where(c => subCategories.Select(sc => sc.Id).Contains(c.ParentId) && c.TypePrefix == GetTypePrefix(AdInformation.Brand))
+                    .ToList();
+
+                var models = allCategories
+                    .Where(c => brands.Select(b => b.Id).Contains(c.ParentId) && c.TypePrefix == GetTypePrefix(AdInformation.Model))
+                    .ToList();
+
+                var ram = allCategories
+                    .Where(c => models.Select(m => m.Id).Contains(c.ParentId) && c.TypePrefix == GetTypePrefix(AdInformation.Ram))
+                    .ToList();
+
+                var processor = allCategories
+                    .Where(c => models.Select(m => m.Id).Contains(c.ParentId) && c.TypePrefix == GetTypePrefix(AdInformation.Processor))
+                    .ToList();
+
+                var resolution = allCategories
+                    .Where(c => models.Select(m => m.Id).Contains(c.ParentId) && c.TypePrefix == GetTypePrefix(AdInformation.Resolution))
+                    .ToList();
+
+                return new CategoryHierarchyDto
+                {
+                    Category = new CategoriesDto { Id = rootCategory.Id, Name = rootCategory.Name },
+                    SubCategories = subCategories.Select(c => new CategoriesDto { Id = c.Id, Name = c.Name }).ToList(),
+                    Brands = brands.Select(c => new CategoriesDto { Id = c.Id, Name = c.Name }).ToList(),
+                    Models = models.Select(c => new CategoriesDto { Id = c.Id, Name = c.Name }).ToList(),
+                    Rams = ram.Select(c => new CategoriesDto { Id = c.Id, Name = c.Name }).ToList(),
+                    Processors = processor.Select(c => new CategoriesDto { Id = c.Id, Name = c.Name }).ToList(),
+                    Resolutions = resolution.Select(c => new CategoriesDto { Id = c.Id, Name = c.Name }).ToList()
+                };
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error occurred while retrieving all lists.", ex);
+            }
+        }
 
         public async Task<ClassifiedLandingPageResponse> GetLandingPage()
         {
@@ -1547,5 +1615,92 @@ namespace QLN.Classified.MS.Service
         {
             throw new NotImplementedException();
         }
+
+        private async Task<List<ItemAd>> ReadAllItemsAdsFromFile()
+        {
+            try
+            {
+                var jsonString = await File.ReadAllTextAsync(jsonPath);
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                return JsonSerializer.Deserialize<List<ItemAd>>(jsonString, options) ?? new();
+            }
+            catch
+            {
+                return new List<ItemAd>();
+            }
+        }
+
+        public async Task<AdsGroupedResult> GetAllItemsAds(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var allAds = await ReadAllItemsAdsFromFile();
+             
+                var userAds = allAds.Where(ad => ad.UserId == userId);
+
+                var result = new AdsGroupedResult
+                {
+                    PublishedAds = userAds
+                .Where(ad => ad.IsPublished == true)
+                .OrderByDescending(ad => ad.CreatedDate)
+                .ToList(),
+
+                    UnpublishedAds = userAds
+                .Where(ad => ad.IsPublished != true)
+                .OrderByDescending(ad => ad.CreatedDate)
+                .ToList()
+                };
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error occurred while retrieving ads.", ex);
+            }
+        }
+
+        public async Task<ItemDashboardDto> GetUserItemsAdsDashboard(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var allAds = await ReadAllItemsAdsFromFile();
+                var userAds = allAds.Where(ad => ad.UserId == userId);
+
+
+                var publishedCount = userAds.Count(ad => ad.IsPublished == true);
+                var promotedCount = userAds.Count(ad => ad.IsPromoted == true);
+                var featuredCount = userAds.Count(ad => ad.IsFeaturedItem == true || ad.IsFeaturedStore == true || ad.IsFeaturedCategory == true);
+                var refreshCount = userAds.Count(ad => ad.RefreshExpiry != null);                
+                var totalImpressions = userAds.Sum(ad => ad.Impressions ?? 0);
+                var totalViews = userAds.Sum(ad => ad.Views ?? 0);
+                var totalWhatsappClicks = userAds.Sum(ad => ad.WhatsAppClicks ?? 0);
+                var totalCalls = userAds.Sum(ad => ad.Calls ?? 0);
+
+                var AdWithRefresh = userAds.Where(ad => ad.RefreshExpiry != null)
+                    .OrderByDescending(ad => ad.RefreshExpiry)
+                    .FirstOrDefault();
+
+                return new ItemDashboardDto
+                {
+                    PublishedAds = publishedCount,
+                    PromotedAds = promotedCount,
+                    FeaturedAds = featuredCount,
+                    Refreshes = refreshCount,
+                    Impressions = totalImpressions,
+                    Views = totalViews,
+                    WhatsAppClicks = totalWhatsappClicks,
+                    Calls = totalCalls,
+                    RemainingRefreshes = AdWithRefresh?.RemainingRefreshes ?? 0,
+                    TotalAllowedRefreshes = AdWithRefresh?.TotalAllowedRefreshes ?? 0,
+                    RefreshExpiry = AdWithRefresh?.RefreshExpiry
+                };
+
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Error while generating ad summary.", ex);
+            }
+        }
+
     }
 }

@@ -1,4 +1,5 @@
-﻿using QLN.Common.Infrastructure.DTO_s;
+﻿using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.Model;
 using System;
 using System.Collections.Generic;
@@ -46,8 +47,11 @@ namespace QLN.Common.Infrastructure.IService
         Task<List<CategoriesDto>> GetAllSizeTypes(CancellationToken cancellationToken = default);
         Task<Category> AddZone(string name, CancellationToken cancellationToken = default);
         Task<List<CategoriesDto>> GetAllZones(CancellationToken cancellationToken = default);
+        Task<CategoryHierarchyDto> GetCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default);
         Task<bool> SaveSearch(SaveSearchRequestDto dto, Guid userId, CancellationToken cancellationToken = default);
         Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default);
         Task<List<SavedSearchResponseDto>> GetSearches(string userId, CancellationToken cancellationToken = default);
+        Task<AdsGroupedResult> GetAllItemsAds(Guid userId, CancellationToken cancellationToken = default);
+        Task<ItemDashboardDto> GetUserItemsAdsDashboard(Guid userId, CancellationToken cancellationToken = default);
     }
 }

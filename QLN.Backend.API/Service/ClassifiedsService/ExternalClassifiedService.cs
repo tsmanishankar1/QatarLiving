@@ -10,6 +10,7 @@ using Dapr;
 using Dapr.Client;
 using Google.Api;
 using Microsoft.Extensions.Hosting;
+using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.EventLogger;
@@ -771,6 +772,68 @@ namespace QLN.Backend.API.Service.ClassifiedService
         }   
 
 
+        public async Task<CategoryHierarchyDto> GetCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (categoryId == Guid.Empty)
+                    throw new ArgumentException("Invalid category ID", nameof(categoryId));
+
+                var result = await _dapr.InvokeMethodAsync<CategoryHierarchyDto>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/{Vertical}/category-hierarchy/{categoryId}",
+                    cancellationToken
+                );
+
+                return result ?? throw new KeyNotFoundException($"No hierarchy found for category ID: {categoryId}");
+            }
+            catch(Exception ex)
+            {
+                _log.LogException(ex);
+                throw;
+            }
+        }
+
+        public async Task<AdsGroupedResult> GetAllItemsAds(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<AdsGroupedResult>(
+                   HttpMethod.Get,
+                   SERVICE_APP_ID,
+                   $"api/classifieds/itemsAd/{userId}",
+                   cancellationToken
+                   );
+
+                return result;
+            }
+            catch(Exception ex)
+            {
+                _log.LogException(ex);
+                throw;
+            }
+        }
+
+        public async Task<ItemDashboardDto> GetUserItemsAdsDashboard(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<ItemDashboardDto>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/itemDashboard-summary/{userId}",
+                    cancellationToken
+                );
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                throw;
+            }
+        }
 
         public async Task<bool> SaveSearch(SaveSearchRequestDto dto ,Guid userId, CancellationToken cancellationToken = default)
         {

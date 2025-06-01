@@ -132,4 +132,15 @@ namespace QLN.Common.Infrastructure.DTO_s
     {
         public string Name { get; set; }
     }
+
+    public class CategoryHierarchyDto
+    {
+        public CategoriesDto Category { get; set; }
+        public List<CategoriesDto> SubCategories { get; set; } = new();
+        public List<CategoriesDto> Brands { get; set; } = new();
+        public List<CategoriesDto> Models { get; set; } = new();
+        public List<CategoriesDto> Rams { get; set; } = new();
+        public List<CategoriesDto> Processors { get; set; } = new();
+        public List<CategoriesDto> Resolutions { get; set; } = new();
+    }
 }

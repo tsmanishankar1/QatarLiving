@@ -2589,7 +2589,65 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .WithDescription("Fetches all zone numbers from the store.")
             .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);          
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            // Get /categoryById hierachy 
+            group.MapGet("/category-hierarchy/{categoryId}", async Task<IResult> (
+                Guid categoryId,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                try
+                {
+                    if (categoryId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Category ID must be a valid non-empty GUID.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.GetCategoryHierarchy(categoryId, token);
+                    return TypedResults.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Argument",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: "An unexpected error occurred while loading category hierarchy.",
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+                .WithName("GetCategoryHierarchy")
+                .WithTags("ClassifiedsDropdown")
+                .WithSummary("Get a category with all its sub-related data")
+                .WithDescription("Fetches a category along with all .")
+                .Produces<CategoryHierarchyDto>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
             // GET /api/classified/landing
             group.MapGet("/landing", async (
@@ -2886,6 +2944,101 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<List<SavedSearchResponseDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("itemsAd/{userId}", async Task<IResult> (
+                Guid userId,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                try
+                {
+                    if (userId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "User ID must not be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var ads = await service.GetAllItemsAds(userId, token);
+                    if (ads == null || (!ads.PublishedAds.Any() && !ads.UnpublishedAds.Any()))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "No Ads Found",
+                            Detail = $"No ads were found for user ID '{userId}'.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+
+                    return TypedResults.Ok(ads);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Operation",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: "An unexpected error occurred while retrieving ads.",
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+                .WithName("GetAllItemAdsByUser")
+                .WithTags("Items")
+                .WithSummary("Get all ads of a user")
+                .WithDescription("Fetches both published and unpublished ads for a given user ID.")
+                .Produces<AdsGroupedResult>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("itemDashboard-summary/{userId}", async Task<IResult> (
+                Guid userId,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                try
+                {
+                    if (userId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "User ID is required",
+                            Status = 400
+                        });
+                    }
+
+                    var summary = await service.GetUserItemsAdsDashboard(userId, token);
+                    return TypedResults.Ok(summary);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: 500
+                    );
+                }
+            })
+                .WithName("GetUserAdsSummary")
+                .WithTags("Items")
+                .WithSummary("Get dashboard summary")
+                .WithDescription("Returns summary statistics for user's ads.")
+                .Produces<ItemDashboardDto>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
             return group;
         }
