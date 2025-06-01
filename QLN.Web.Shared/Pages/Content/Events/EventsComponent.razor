@@ -8,6 +8,7 @@
 @using QLN.Web.Shared.Pages.Content.Events
 @using QLN.Web.Shared.Pages.Content.Events.EventsList
 @using QLN.Web.Shared.Components.FeaturedEventCard
+@using QLN.Web.Shared.Components.EmptyCard
 @inherits EventsComponentBase
 
 <PageTitle>All the events in Qatar you don&#039;t want to miss | Qatar Living Events</PageTitle>
@@ -17,14 +18,20 @@
         <div class="carousel-responsive-container">
 
             <!-- Carousel Banner Swiper -->
-            @if (isLoadingBanners)
-            {
-                <BannerSkleton />
-            }
-            else if (DailyHeroBanners?.Any() == true)
-            {
-                <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
-            }
+          @if (isLoadingBanners)
+                {
+                    <BannerSkleton />
+                }
+                else if (DailyHeroBanners?.Any() == true)
+                {
+                    <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+                }
+                else
+                {
+                    <EmptyCard Title="No event banners found."
+                            Subtitle="Please check back later for updates." />
+                }
+
 
         </div>
 

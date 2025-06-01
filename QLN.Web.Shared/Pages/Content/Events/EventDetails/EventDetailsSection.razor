@@ -104,12 +104,12 @@
     private List<MenuItem> shareMenuItems => new()
 {
 new MenuItem {
-ImageSrc = "/images/facebook_share_icon.svg",
+ImageSrc = "/qln-images/facebook_share_icon.svg",
 Route = SocialShareHelper.GetFacebookUrl(CurrentUrl),
 OpenInNewTab = true
 },
 new MenuItem {
-ImageSrc = "/images/whatsApp_share_icon.svg",
+ImageSrc = "/qln-images/whatsApp_share_icon.svg",
 Route = SocialShareHelper.GetWhatsAppUrl(CurrentUrl),
 OpenInNewTab = true
 }
@@ -132,7 +132,7 @@ OpenInNewTab = true
             {
                 <div class="info-item">
 
-                    <img src="/images/events_date_icon.svg" alt="Date Icon" class="info-icon" />
+                    <img src="/qln-images/events_date_icon.svg" alt="Date Icon" class="info-icon" />
                     <span class="info-text">
                         @if (!string.IsNullOrWhiteSpace(Item?.EventStart))
                         {

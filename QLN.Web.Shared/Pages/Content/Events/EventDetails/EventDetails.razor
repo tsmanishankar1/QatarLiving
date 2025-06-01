@@ -11,15 +11,19 @@
 
 <div style="width: 100%; background-color: var(--color-secondary-background);">
     <div class="responsive-container">
-
-        @if (isLoadingBanners)
+        @if (isLoadingEventBanners)
         {
             <BannerSkleton />
         }
         else if (DailyHeroBanners?.Any() == true)
         {
-            <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+            <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingEventBanners" />
         }
+        else
+        {
+            <EmptyCard Title="No event banners found." Subtitle="Please check back later for updates." />
+        }
+
 
 
         <Breadcrumb Items="breadcrumbItems" />

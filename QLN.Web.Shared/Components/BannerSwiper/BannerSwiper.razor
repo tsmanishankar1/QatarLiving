@@ -4,7 +4,21 @@
 
 <div class="swiper banner-swiper">
     <div class="swiper-wrapper">
-        @if (BannerItems?.Any() == true)
+        @if (BannerItems?.Count == 1)
+        {
+            // Duplicate the banner to enable Swiper autoplay/loop
+            for (int i = 0; i < 2; i++)
+            {
+                <div class="swiper-slide">
+                    <a href="@BannerItems[0].Link" target="_blank" rel="noopener noreferrer">
+                        <img class="banner-image" src="@BannerItems[0].ImageDesktop"
+                            srcset="@BannerItems[0].ImageMobile 600w, @BannerItems[0].ImageDesktop 1024w"
+                            sizes="(max-width: 768px) 600px, 100vw" alt="Banner" />
+                    </a>
+                </div>
+            }
+        }
+        else if (BannerItems?.Count > 1)
         {
             foreach (var banner in BannerItems)
             {
@@ -17,6 +31,7 @@
                 </div>
             }
         }
+
     </div>
 
     <div class="swiper-pagination"></div> <!-- Required for pagination -->
@@ -29,6 +44,7 @@
 
     .banner-image {
         width: 100%;
+        border-radius: 3px;
         object-fit: cover;
         display: block;
     }
@@ -59,7 +75,8 @@
         if (!_bannerInitialized && !Loading && BannerItems?.Any() == true)
         {
             _bannerInitialized = true;
-            await JS.InvokeVoidAsync("initBannerSwiper", BannerItems.Count);
+            await JS.InvokeVoidAsync("initBannerSwiper");
         }
     }
+
 }
