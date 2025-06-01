@@ -1,6 +1,9 @@
 @using MudBlazor
 @using QLN.Web.Shared.Components.FeaturedEventCard
 @using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.Skeletons.FeaturedCategorySkeleton
+@using QLN.Common.Infrastructure.DTO_s;
+@using QLN.Web.Shared.Components.EmptyCard
+@inject NavigationManager Navigation
 
 <div class="categories-wrapper">
     <div class="categories-header">
@@ -13,9 +16,10 @@
     {
         <FeaturedCategorySkeleton />
     }
-    else if (FeaturedEvent?.Any() != true)
+    else if (FeaturedEvent == null || !FeaturedEvent.Any())
     {
-        <MudText>No featured categories found.</MudText>
+
+        <EmptyCard Title="No featured items found." Subtitle="Please check back later or explore other categories." />
     }
     else
     {
@@ -30,10 +34,10 @@
                 </div>
 
                 <div class="swiper-wrapper">
-                    @foreach (var events in FeaturedEvent)
+                    @foreach (var item in FeaturedEvent)
                     {
                         <div class="swiper-slide swiper-slide-Card">
-                            <FeaturedEventCard Item="events" OnClick="HandleCategoryClick" />
+                            <FeaturedEventCard Item="item" OnClick="HandleCategoryClick" />
                         </div>
                     }
                 </div>
@@ -46,27 +50,30 @@
 
 @code {
     [Parameter]
-    public bool Loading { get; set; } = false;
+    public List<ContentPost> FeaturedEvent { get; set; } = new();
 
     [Parameter]
-    public List<FeaturedEventCard.EventItem> FeaturedEvent { get; set; } = new();
+    public bool Loading { get; set; } = false;
 
     [Inject]
     private IJSRuntime JSRuntime { get; set; } = default!;
 
     private bool _categoriesSwiperInitialized = false;
 
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!_categoriesSwiperInitialized)
+        if (!_categoriesSwiperInitialized && !Loading && FeaturedEvent?.Any() == true)
         {
             _categoriesSwiperInitialized = true;
             await JSRuntime.InvokeVoidAsync("initCategoriesSwiper");
         }
     }
-    private void HandleCategoryClick(FeaturedEventCard.EventItem item)
+
+    private void HandleCategoryClick(ContentPost clickedItem)
     {
-        Console.WriteLine($"Clicked category: {item.Category}");
+        Navigation.NavigateTo($"/events/details/{clickedItem.Slug}");
+        // Handle click logic here or raise EventCallback if needed
     }
 }
 
@@ -77,6 +84,12 @@
         font-family: 'Public Sans';
         margin-bottom: 30px;
     }
+
+    /* Only apply center alignment if swiper-center class is present */
+    .swiper-categories .swiper-wrapper {
+        justify-content: center !important;
+    }
+
 
     .categories-header {
         padding: 1rem 0;

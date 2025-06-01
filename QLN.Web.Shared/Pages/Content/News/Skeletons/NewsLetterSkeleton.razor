@@ -1,0 +1,115 @@
+@using MudBlazor;
+<div class="skeleton-container" style="padding-bottom: 30px;">
+    <!-- News Cards -->
+    <div class="skeleton-cards">
+        @for (int i = 0; i < 3; i++)
+        {
+            <div class="skeleton-card">
+                 <MudSkeleton 
+                                SkeletonType="SkeletonType.Rectangle" 
+                                Height="100px" 
+                                Width="100%" 
+                                Animation="Animation.Wave" 
+                                Class="rounded skeleton-img" />
+                
+                <MudSkeleton 
+                                SkeletonType="SkeletonType.Rectangle" 
+                                Height="20px" 
+                                Width="200px" 
+                                Animation="Animation.Wave" 
+                                Class="rounded" />
+                                <MudSkeleton 
+                                SkeletonType="SkeletonType.Rectangle" 
+                                Height="20px" 
+                                Width="200px" 
+                                Animation="Animation.Wave" 
+                                Class="rounded" />
+            </div>
+        }
+    </div>
+
+    <!-- Newsletter Skeleton -->
+    <div class="skeleton-newsletter">
+       <MudSkeleton 
+                                SkeletonType="SkeletonType.Rectangle" 
+                                Height="150px" 
+                                Width="300px" 
+                                Animation="Animation.Wave" 
+                                Class="rounded" />
+    </div>
+</div>
+
+<style>
+    .skeleton-container {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.skeleton-cards {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+.skeleton-card {
+    width: 214px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.skeleton-newsletter {
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Skeleton Effect */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e6e6e6 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.2s infinite;
+    border-radius: 6px;
+}
+
+.skeleton-img {
+    width: 100%;
+    height: 140px;
+    border-radius: 12px;
+}
+
+.skeleton-line {
+    height: 20px;
+    width: 100%;
+}
+
+.skeleton-line.short {
+    width: 70%;
+}
+
+.skeleton-line.heading {
+    width: 80%;
+    height: 24px;
+}
+
+.skeleton-input {
+    height: 48px;
+    width: 100%;
+    border-radius: 8px;
+}
+
+.skeleton-button {
+    height: 40px;
+    width: 100%;
+    border-radius: 8px;
+}
+
+@@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+</style>

@@ -16,6 +16,6 @@ public class MoreArticleBase : ComponentBase
     [Parameter] public EventCallback<ContentPost> OnClick { get; set; }
     protected void onclick(ContentPost news)
     {
-        navManager.NavigateTo($"/article/details/{Uri.EscapeDataString(news.Slug)}/{selectedTab}");
+        navManager.NavigateTo($"/article/details/{news.Slug}");
     }
 }

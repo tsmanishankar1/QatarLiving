@@ -21,22 +21,43 @@
 
 
 <header class="site-header mud-elevation-1">
+
     <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleMobileMenu" Class="mobile-menu-button" />
 
     <div class="header-left">
         <NavLink href="/">
-            <MudImage id="logoImage" Src="/qln-images/Headerlogo.svg" Alt="Qatar Living" Width="126" Height="48" />
+
+            <MudImage id="logoImage" Src="/qln-images/Headerlogo.svg" Alt="Qatar Living" Class="logo-img" />
         </NavLink>
     </div>
     <div style="display: flex; align-items: center; gap: 36px;">
         <div class="@($"nav-container {(showMobileMenu ? "mobile-menu-open" : "")}")">
             <nav class="nav-links">
-                <NavLink id="propertiesLink" href=@{navigationPath.Properties} class="nav-link">Properties</NavLink>
-                <NavLink id="vehiclesLink" href=@{navigationPath.Vehicles} class="nav-link">Vehicles</NavLink>
-                <NavLink id="classifiedsLink" href=@{navigationPath.Classifieds} class="nav-link">Classifieds</NavLink>
-                <NavLink id="servicesLink" href=@{navigationPath.Services} class="nav-link">Services</NavLink>
-                <NavLink id="jobsLink" href=@{navigationPath.Jobs} class="nav-link">Jobs</NavLink>
-                <NavLink id="rewardsLink" href=@{navigationPath.Rewards} class="nav-link">Rewards</NavLink>
+                <NavLink id="propertiesLink" href=@{
+                navigationPath.Properties
+                                }
+ class="nav-link">Properties</NavLink>
+                <NavLink id="vehiclesLink" href=@{
+                                navigationPath.Vehicles
+                                }
+ class="nav-link">Vehicles</NavLink>
+                <NavLink id="classifiedsLink" href=@{
+                                navigationPath.Classifieds
+                                }
+ class="nav-link">Classifieds
+                </NavLink>
+                <NavLink id="servicesLink" href=@{
+                                navigationPath.Services
+                                }
+ class="nav-link">Services</NavLink>
+                <NavLink id="jobsLink" href=@{
+                                navigationPath.Jobs
+                                }
+ class="nav-link">Jobs</NavLink>
+                <NavLink id="rewardsLink" href=@{
+                                navigationPath.Rewards
+                                }
+ class="nav-link">Rewards</NavLink>
                 <NavLink id="rewardsLink" class="nav-link d-flex align-items-center">
                     More
                     <img src="/qln-images/header/arrow_down.svg" alt="Down arrow"
@@ -73,16 +94,14 @@
     </div>
 
     <div class="header-right">
-        <MudAvatar Size="Size.Medium" Style="background-color: #E8F2FE;">
-            <img id="favouriteIcon" src="/qln-images/header/favourite_icon.svg" alt="Account"
-                style="width: 70%; height: 70%; padding: 4px;" />
+        <MudAvatar Size="Size.Medium" Class="avatar-custom">
+            <img id="favouriteIcon" src="/qln-images/header/favourite_icon.svg" alt="Favourite" class="avatar-icon" />
         </MudAvatar>
         <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
             <ActivatorContent>
                 <div id="userIcon" style="display: flex; align-items: center; gap: 0.5rem;" class="cursor-pointer">
-                    <MudAvatar Size="Size.Medium" Style="background-color: #D6E8F2;">
-                        <img src="/qln-images/header/account.svg" alt="Account"
-                            style="width: 70%; height: 70%; padding: 4px;" />
+                    <MudAvatar Size="Size.Medium" Class="avatar-custom">
+                        <img src="/qln-images/header/account.svg" alt="Account" class="avatar-icon" />
                     </MudAvatar>
                     <MudTooltip Text="@Name">
                         <span class="user-name">
@@ -117,16 +136,14 @@
                     <MudButton id="loginButton" Variant="Variant.Outlined" Color="Color.Warning"
                         StartIcon="@Icons.Material.Filled.Login"
                         Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
-                        OnClick="@(() => NavManager.NavigateTo(navigationPath.Login))"
-                        Class="no-capitalize">
+                        OnClick="@(() => NavManager.NavigateTo(navigationPath.Login))" Class="no-capitalize">
                         Login
                     </MudButton>
 
                     <MudButton id="SignupButton" Variant="Variant.Filled" Color="Color.Warning"
                         StartIcon="@Icons.Material.Filled.PersonAdd"
                         Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
-                        OnClick="@(() => NavManager.NavigateTo(navigationPath.Register))"
-                        Class="no-capitalize">
+                        OnClick="@(() => NavManager.NavigateTo(navigationPath.Register))" Class="no-capitalize">
                         Sign Up
                     </MudButton>
                 }
@@ -257,6 +274,10 @@ Route = "/more-features-coming-soon"
         display: inline-flex;
     }
 
+    .post-button-wrapper {
+        margin: 0
+    }
+
     .mobile-post-icon {
         display: none;
         width: 32px;
@@ -315,6 +336,37 @@ Route = "/more-features-coming-soon"
 
     .nav-link.active {
         color: #FF7F38;
+    }
+
+    .avatar-custom {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 2px;
+        background-color: #D6E8F2;
+    }
+
+    .avatar-icon {
+        width: 25px;
+        height: 25px;
+    }
+
+    .logo-img {
+        width: 126px;
+        height: 48px;
+    }
+
+    /* Responsive media query: shrink avatar icons on larger screens (>450px) */
+    @@media (max-width: 450px) {
+        .avatar-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .logo-img {
+            width: 80px;
+            height: 30px;
+        }
     }
 
 

@@ -16,6 +16,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
         protected QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem? postBreadcrumbItem;
+        protected QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem? postBreadcrumbCategory;
 
         protected string search = string.Empty;
         protected string sortOption = "Popular";
@@ -38,11 +39,16 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 Url = $"/content/community/post/detail/{slug}",
                 IsLast = true
             };
+            postBreadcrumbCategory = new()
+            {
+                Label = slug ?? "Not Found",
+                Url = "/content/community",
+            };
 
             breadcrumbItems = new List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem>
             {
                 new() { Label = "Community", Url = "/content/community" },
-                new() { Label = "Discussion", Url = "/content/community" },
+               postBreadcrumbCategory,
                 postBreadcrumbItem
             };
 
@@ -90,6 +96,11 @@ namespace QLN.Web.Shared.Pages.Content.Community
                     if (postBreadcrumbItem is not null)
                     {
                         postBreadcrumbItem.Label = SelectedPost.Title;
+                        StateHasChanged();
+                    }
+                    if (postBreadcrumbCategory is not null)
+                    {
+                        postBreadcrumbCategory.Label = SelectedPost.Category;
                         StateHasChanged();
                     }
                 }

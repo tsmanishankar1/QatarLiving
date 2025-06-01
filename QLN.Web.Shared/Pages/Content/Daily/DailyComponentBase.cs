@@ -2,11 +2,11 @@
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
-using System.Text.RegularExpressions;
+
 
 namespace QLN.Web.Shared.Pages.Content.Daily
 {
-    public class DailyComponentBase : LayoutComponentBase
+    public class DailyComponentBase : ComponentBase
     {
         [Inject] private IContentService _contentService { get; set; }
 
@@ -16,17 +16,43 @@ namespace QLN.Web.Shared.Pages.Content.Daily
         protected List<ContentPost> FeaturedEvents { get; set; } = [];
         protected List<ContentPost> MoreArticles { get; set; } = [];
         protected List<ContentPost> Videos { get; set; } = [];
+        protected List<string> carouselImages = new()
+        {
+        "/qln-images/banner_image.svg",
+        "/qln-images/banner_image.svg",
+        "/qln-images/banner_image.svg"
+        };
+
+        protected bool isLoading = false;
+
+        protected List<ContentPost> TopicQueue1 { get; set; } = [];
+        protected List<ContentPost> TopicQueue2 { get; set; } = [];
+        protected List<ContentPost> TopicQueue3 { get; set; } = [];
+        protected List<ContentPost> TopicQueue4 { get; set; } = [];
+
+        protected string TopicQueue1Label { get; set; } = string.Empty;
+        protected string TopicQueue2Label { get; set; } = string.Empty;
+        protected string TopicQueue3Label { get; set; } = string.Empty;
+        protected string TopicQueue4Label { get; set; } = string.Empty;
 
         protected async override Task OnInitializedAsync()
         {
             try
             {
                 LandingContent = await GetContentLandingAsync() ?? new();
-                TopStoryItem = LandingContent.ContentsDaily?.DailyTopStory?.Items.First() ?? new();
-                HighlightedEvent = LandingContent.ContentsDaily?.DailyEvent?.Items.First() ?? new();
-                FeaturedEvents = LandingContent.ContentsDaily?.DailyFeaturedEvents?.Items ?? [];
-                MoreArticles = LandingContent.ContentsDaily?.DailyMoreArticles?.Items ?? [];
-                Videos = LandingContent.ContentsDaily?.DailyWatchOnQatarLiving.Items ?? [];
+                TopStoryItem = LandingContent?.ContentsDaily?.DailyTopStory?.Items.First() ?? new();
+                HighlightedEvent = LandingContent?.ContentsDaily?.DailyEvent?.Items.First() ?? new();
+                FeaturedEvents = LandingContent?.ContentsDaily?.DailyFeaturedEvents?.Items ?? [];
+                MoreArticles = LandingContent?.ContentsDaily?.DailyMoreArticles?.Items ?? [];
+                Videos = LandingContent?.ContentsDaily?.DailyWatchOnQatarLiving?.Items ?? [];
+                TopicQueue1Label = LandingContent?.ContentsDaily?.DailyTopics1?.QueueLabel ?? "";
+                TopicQueue2Label = LandingContent?.ContentsDaily?.DailyTopics2?.QueueLabel ?? "";
+                TopicQueue3Label = LandingContent?.ContentsDaily?.DailyTopics3?.QueueLabel ?? "";
+                TopicQueue4Label = LandingContent?.ContentsDaily?.DailyTopics4?.QueueLabel ?? "";
+                TopicQueue1 = LandingContent?.ContentsDaily?.DailyTopics1?.Items ?? [];
+                TopicQueue2 = LandingContent?.ContentsDaily?.DailyTopics2?.Items ?? [];
+                TopicQueue3 = LandingContent?.ContentsDaily?.DailyTopics3?.Items ?? [];
+                TopicQueue4 = LandingContent?.ContentsDaily?.DailyTopics4?.Items ?? [];
             }
             catch (Exception ex)
             {

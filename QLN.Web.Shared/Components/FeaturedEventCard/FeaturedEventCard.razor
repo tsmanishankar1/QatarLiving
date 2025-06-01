@@ -3,9 +3,9 @@
 <div class="category-event-card-section" @onclick="() => OnClick.InvokeAsync(Item)">
     <div class="card-contents">
         <div class="category-event-image-wrapper">
-            <img src="@Item.ImageUrl" alt="@Item.Category" class="category-event-image" />
+            <img src="@Item.ImageUrl" alt="@Item.Title" class="category-event-image" />
         </div>
-        <h4 class="category-event-card-title">@Item.Category</h4>
+        <h4 class="category-event-card-title">@Item.Title</h4>
     </div>
 </div>
 
@@ -49,6 +49,8 @@
         font-size: 18px;
         font-weight: 500;
         color: #242424;
+        overflow: hidden;
+        display: -webkit-box;
         text-overflow: ellipsis;
         -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;

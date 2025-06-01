@@ -12,6 +12,6 @@ public class PopularArticlesBase : ComponentBase
     public string selectedTab { get; set; }
     protected void onclick(ContentPost news)
     {
-        navManager.NavigateTo($"/article/details/{Uri.EscapeDataString(news.Slug)}/{selectedTab}");
+        navManager.NavigateTo($"/article/details/{news.Slug}");
     }
 }

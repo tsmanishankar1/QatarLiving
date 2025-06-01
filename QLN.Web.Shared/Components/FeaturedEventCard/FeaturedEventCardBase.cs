@@ -1,19 +1,16 @@
 using Microsoft.AspNetCore.Components;
+using QLN.Common.Infrastructure.DTO_s;
 
 namespace QLN.Web.Shared.Components.FeaturedEventCard
 {
     public partial class FeaturedEventCardBase : ComponentBase
     {
-        [Parameter]
-        public EventItem Item { get; set; } = new();
+      [Parameter]
+    public ContentPost Item { get; set; }
+
 
         [Parameter]
-        public EventCallback<EventItem> OnClick { get; set; }
+        public EventCallback<ContentPost> OnClick { get; set; }
 
-        public class EventItem
-        {
-            public string Category { get; set; } = string.Empty;
-            public string ImageUrl { get; set; } = string.Empty;
-        }
     }
 }
