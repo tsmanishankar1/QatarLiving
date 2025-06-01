@@ -3,14 +3,33 @@
 @inherits PostDetailBase
 @inject NavigationManager Navigation
 @using QLN.Web.Shared.Components.BreadCrumb
+@using QLN.Web.Shared.Pages.Content.Events
+@using QLN.Web.Shared.Components.BannerSwiper
+@using QLN.Web.Shared.Components.EmptyCard
 
 <div class="container">
     <div class="container-inner-wrapper">
 
-        <!-- Carousel Banner -->
+      @*   <!-- Carousel Banner -->
         <div class="category-banner-wrapper">
             <img src="/qln-images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
-        </div>
+        </div> *@
+           @if (isLoadingBanners)
+            {
+                <BannerSkleton />
+            }
+            else if (DailyHeroBanners?.Any() == true)
+            {
+            <div class="category-banner-wrapper">
+
+                <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+            </div>
+        }
+            else
+            {
+                <EmptyCard Title="No  banners found." Subtitle="Please check back later for updates." />
+            }
+
 
         <Breadcrumb Items="breadcrumbItems" />
 
