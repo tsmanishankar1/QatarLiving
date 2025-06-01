@@ -16,6 +16,11 @@ namespace QLN.Web.Shared.Pages.Content.Daily
         protected List<ContentPost> FeaturedEvents { get; set; } = [];
         protected List<ContentPost> MoreArticles { get; set; } = [];
         protected List<ContentPost> Videos { get; set; } = [];
+        protected List<BannerItem> DailyHeroBanners { get; set; } = new();
+        protected List<BannerItem> DailyTakeOver1Banners { get; set; } = new();
+        protected List<BannerItem> DailyTakeOver2Banners { get; set; } = new();
+        protected bool isLoadingBanners = true;
+        
         protected List<string> carouselImages = new()
         {
         "/qln-images/banner_image.svg",
@@ -35,7 +40,26 @@ namespace QLN.Web.Shared.Pages.Content.Daily
         protected string TopicQueue3Label { get; set; } = string.Empty;
         protected string TopicQueue4Label { get; set; } = string.Empty;
 
-        protected async override Task OnInitializedAsync()
+        protected async Task LoadBanners()
+        {
+            isLoadingBanners = true;
+            try
+            {
+                var banners = await FetchBannerData();
+                DailyHeroBanners = banners?.DailyHero ?? new();
+                DailyTakeOver1Banners = banners?.DailyTakeOver1 ?? new();
+                DailyTakeOver2Banners = banners?.DailyTakeOver2 ?? new();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading banners: {ex.Message}");
+            }
+               finally
+            {
+                isLoadingBanners = false;
+            }
+        }
+                protected async override Task OnInitializedAsync()
         {
             try
             {
@@ -53,6 +77,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
                 TopicQueue2 = LandingContent?.ContentsDaily?.DailyTopics2?.Items ?? [];
                 TopicQueue3 = LandingContent?.ContentsDaily?.DailyTopics3?.Items ?? [];
                 TopicQueue4 = LandingContent?.ContentsDaily?.DailyTopics4?.Items ?? [];
+                await LoadBanners();
             }
             catch (Exception ex)
             {
@@ -84,6 +109,22 @@ namespace QLN.Web.Shared.Pages.Content.Daily
                 return new ContentsDailyPageResponse();
             }
         }
-
+ private async Task<BannerResponse?> FetchBannerData()
+        {
+            try
+            {
+                var response = await _contentService.GetBannerAsync();
+                if (response.IsSuccessStatusCode && response.Content != null)
+                {
+                    return await response.Content.ReadFromJsonAsync<BannerResponse>();
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"FetchBannerData error: {ex.Message}");
+                return null;
+            }
+        }
     }
 }

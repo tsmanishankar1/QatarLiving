@@ -145,6 +145,45 @@
             console.log("Banner Swiper initialized with autoplay:", autoplayEnabled);
         }
 
+        let takeoverbannerSwiperInstance;
+
+        function initTakeOverBannerSwiper() {
+            const swiperEl = document.querySelector('.takeouverbanner-swiper');
+            if (!swiperEl) {
+                console.warn("Banner swiper element not found");
+                return;
+            }
+
+            const bannerCount = swiperEl.querySelectorAll('.swiper-slide').length;
+            const autoplayEnabled = bannerCount > 1;
+
+            if (takeoverbannerSwiperInstance) {
+                takeoverbannerSwiperInstance.destroy(true, true);
+            }
+
+            takeoverbannerSwiperInstance = new Swiper(swiperEl, {
+                slidesPerView: 1,
+                loop: autoplayEnabled,
+                autoplay: autoplayEnabled
+                    ? {
+                        delay: 5000,
+                        disableOnInteraction: false,
+                        pauseOnMouseEnter: true
+                    }
+                    : false,
+                pagination: {
+                    el: '.swiper-pagination',
+                    clickable: true
+                }
+            });
+
+            const paginationEl = swiperEl.querySelector('.swiper-pagination');
+            if (paginationEl) {
+                paginationEl.style.display = "none";
+            }
+
+            console.log("Banner Swiper initialized with autoplay:", autoplayEnabled);
+        }
 
         let featuredSwiperInstance;
 

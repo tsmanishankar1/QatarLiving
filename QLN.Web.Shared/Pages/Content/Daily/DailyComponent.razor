@@ -10,6 +10,10 @@
 @using QLN.Web.Shared.Pages.Content.Daily.DailyHighlights
 @using QLN.Web.Shared.Pages.Content.Daily.DailyIntheKnow
 @using QLN.Web.Shared.Pages.Content.Daily.MoreEvents
+@using QLN.Web.Shared.Components.EmptyCard
+@using QLN.Web.Shared.Pages.Content.Events
+@using QLN.Web.Shared.Components.BannerSwiper
+@using QLN.Web.Shared.Components.BannerTakeOver
 @layout ContentLayout
 
 <PageTitle>Qatar Living | The go-to place for lifestyle, news, and events</PageTitle>
@@ -18,8 +22,19 @@
     <div class="carousel-responsive-container">
         <div class="max-container">
             <!-- Carousel Banner -->
-            <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
-                            Transition="Transition.Slide" />
+            @if (isLoadingBanners)
+            {
+                <BannerSkleton />
+            }
+            else if (DailyHeroBanners?.Any() == true)
+            {
+                <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+            }
+            else
+            {
+                <EmptyCard Title="No event banners found." Subtitle="Please check back later for updates." />
+            }
+
         </div>
     </div>
     <div class="responsive-news-container">
@@ -74,7 +89,18 @@
             <DailyFeaturedEvents Items="@FeaturedEvents" Loading="isLoading" />
 
             <MoreEvents />
-            <TakeOverBanner ImageUrl="/qln-images/takeover_banner.svg" />
+            @if (isLoadingBanners)
+            {
+                <BannerSkleton />
+            }
+            else if (DailyTakeOver1Banners?.Any() == true)
+            {
+                <BannerTakeOver BannerItems="DailyTakeOver1Banners" Loading="isLoadingBanners" />
+            }
+            else
+            {
+                <EmptyCard Title="No event banners found." Subtitle="Please check back later for updates." />
+            }
 
         </div>
 
@@ -96,7 +122,18 @@
                 <DailyHighlights QueueLabel="@TopicQueue2Label" ListOfItems="TopicQueue2" />
             }
 
-            <TakeOverBanner ImageUrl="/qln-images/takeover_banner.svg" />
+            @if (isLoadingBanners)
+            {
+                <BannerSkleton />
+            }
+            else if (DailyTakeOver2Banners?.Any() == true)
+            {
+                <BannerTakeOver BannerItems="DailyTakeOver2Banners" Loading="isLoadingBanners" />
+            }
+            else
+            {
+                <EmptyCard Title="No event banners found." Subtitle="Please check back later for updates." />
+            }
 
             @if (TopicQueue3.Count() > 0)
             {

@@ -7,6 +7,11 @@
         /// </summary>
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetDailyLPAsync();
+         /// <summary>
+        /// Gets Featured Events for Events Landing Page.
+        /// </summary>
+        /// <returns>HttpResponseMessage</returns>
+        Task<HttpResponseMessage?> GetBannerAsync();
 
         Task<HttpResponseMessage?> GetPostBySlugAsync(string slug, CancellationToken cancellationToken);
         Task<HttpResponseMessage?> GetEventBySlugAsync(string slug, CancellationToken cancellationToken);
