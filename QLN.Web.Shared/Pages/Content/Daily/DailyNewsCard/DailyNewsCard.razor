@@ -1,16 +1,12 @@
 @using QLN.Web.Shared.Helpers
 @inherits DailyNewsCardBase
-@if (!string.IsNullOrEmpty(Item.ImageUrl) || !string.IsNullOrEmpty(Item.EventCategory) || !string.IsNullOrEmpty(Item.Title))
+@if (!string.IsNullOrEmpty(Item.ImageUrl) || !string.IsNullOrEmpty(Item.Category) || !string.IsNullOrEmpty(Item.Title))
 {
     <div class="daily-news-card @(IsHorizontal ? "horizontal" : "")" @onclick="NavigateToEventDetail">
         <img src="@Item.ImageUrl" alt="img-alt" class="daily-news-image" />
         <div class="daily-news-content">
             <div class="daily-news-category">@Item.Category</div>
             <div class="daily-news-title">@Item.Title</div>
-            @if (!string.IsNullOrEmpty(Item.EventStart) && !string.IsNullOrEmpty(Item.EventEnd))
-            {
-                <p class="date">@DateHelper.FormatDate(Item.EventStart) to @DateHelper.FormatDate(Item.EventEnd)</p>
-            }
         </div>
     </div>
 }

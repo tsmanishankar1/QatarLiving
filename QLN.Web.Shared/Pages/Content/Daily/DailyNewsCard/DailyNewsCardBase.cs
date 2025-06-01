@@ -4,7 +4,7 @@ public class DailyNewsCardBase : ComponentBase
 {
     [Inject] NavigationManager NavigationManager { get; set; }
     [Parameter]
-    public ContentEvent Item { get; set; }
+    public ContentPost Item { get; set; }
     [Parameter]
     public bool IsHorizontal { get; set; } = false;
 

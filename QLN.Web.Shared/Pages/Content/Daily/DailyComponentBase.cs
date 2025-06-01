@@ -25,10 +25,10 @@ namespace QLN.Web.Shared.Pages.Content.Daily
 
         protected bool isLoading = false;
 
-        protected List<ContentEvent> TopicQueue1 { get; set; } = [];
-        protected List<ContentEvent> TopicQueue2 { get; set; } = [];
-        protected List<ContentEvent> TopicQueue3 { get; set; } = [];
-        protected List<ContentEvent> TopicQueue4 { get; set; } = [];
+        protected List<ContentPost> TopicQueue1 { get; set; } = [];
+        protected List<ContentPost> TopicQueue2 { get; set; } = [];
+        protected List<ContentPost> TopicQueue3 { get; set; } = [];
+        protected List<ContentPost> TopicQueue4 { get; set; } = [];
 
         protected string TopicQueue1Label { get; set; } = string.Empty;
         protected string TopicQueue2Label { get; set; } = string.Empty;

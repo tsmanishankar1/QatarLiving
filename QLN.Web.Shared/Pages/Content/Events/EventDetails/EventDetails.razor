@@ -27,29 +27,6 @@
     </div>
 </div>
 
-@code {
-    private List<string> carouselImages = new()
-{
-"/images/banner_image.svg",
-"/images/banner_image.svg",
-"/images/banner_image.svg"
-};
-private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
-     protected override void OnInitialized()
-        {
-            breadcrumbItems = new()
-        {
-            <EventDetailsSection item="eventDetails" />
-        }
-        else
-        {
-            <EmptyCard Title="Featured event details not found."
-                Subtitle="Please try again later or explore other available events." />
-        }
-
-    </div>
-</div>
-
 <style>
     .responsive-container {
         width: 100%;

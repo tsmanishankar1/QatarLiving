@@ -9,7 +9,6 @@ namespace QLN.Web.Shared.Pages.Content.Daily.DailyHighlights
         public string QueueLabel {  get; set; }
 
         [Parameter]
-        public List<ContentEvent> ListOfItems { get; set; }
-
+        public List<ContentPost> ListOfItems { get; set; }
     }
 }
