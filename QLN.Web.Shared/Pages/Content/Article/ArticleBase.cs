@@ -74,7 +74,7 @@ public class ArticleBase : ComponentBase
             {
                 new() {   Label = "News",Url ="/content/news" },
                 new() { Label = "Sports", Url = "/content/news"},
-                new() { Label = newsArticle.Title, Url = "/article/details/{slug}", IsLast = true },
+                new() { Label = newsArticle.Title, Url = "/content/article/details/{slug}", IsLast = true },
             };
             QatarNewsContent = await GetNewsQatarAsync();
             moreArticleList = QatarNewsContent?.QlnNewsNewsQatar?.MoreArticles?.Items ?? new List<ContentPost>();

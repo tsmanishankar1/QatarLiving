@@ -46,9 +46,12 @@
                     <MudGrid GutterSize="10px">
                         @if (isLoading)
                         {
-                            <MudItem xs="12">
-                                <ItemSkeletonCard />
-                            </MudItem>
+                            @for (int i = 0; i < 2; i++)
+                            {
+                                <MudItem xs="12" sm="6" md="6" key="@i">
+                                    <ItemSkeletonCard />
+                                </MudItem>
+                            }
                         }
                         else if (TopStoryItem == null && HighlightedEvent == null)
                         {
@@ -67,6 +70,8 @@
                             </MudItem>
                         }
                     </MudGrid>
+
+
                 </MudItem>
                 <MudItem xs="12" md="4">
                     <DailyMoreArticle Items="@MoreArticles" isLoading="isLoading" />

@@ -368,7 +368,7 @@ StateHasChanged();
 
         protected void onclick(ContentPost news)
         {
-            navManager.NavigateTo($"/article/details/{news.Slug}");
+            navManager.NavigateTo($"/content/article/details/{news.Slug}");
         }
     }
 }

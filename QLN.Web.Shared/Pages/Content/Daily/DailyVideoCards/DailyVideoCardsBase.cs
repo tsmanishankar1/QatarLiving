@@ -25,7 +25,7 @@ public class DailyVideoCardsBase : ComponentBase
 
     protected void NavigatetoArticle(ContentPost video)
     {
-        NavigationManager.NavigateTo($"/article/details/{video.Slug}");
+        NavigationManager.NavigateTo($"/content/article/details/{video.Slug}");
     }
 
     protected void OnClickViewAll()
