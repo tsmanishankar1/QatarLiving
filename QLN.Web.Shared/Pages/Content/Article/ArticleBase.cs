@@ -1,3 +1,4 @@
+
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using QLN.Web.Shared.Model;
@@ -11,14 +12,29 @@ public class ArticleBase : ComponentBase
 {
     [Parameter]
     public string slug { get; set; }
-    public bool isLoading { get; set; }
+    public bool isLoading { get; set; } = true;
     protected List<BannerItem> DailyHeroBanners { get; set; } = new();
     protected bool isLoadingBanners = true;
     public List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
     protected NewsQatarPageResponse QatarNewsContent { get; set; } = new NewsQatarPageResponse();
     protected List<ContentPost> moreArticleList { get; set; } = new List<ContentPost>();
     [Inject] private ILogger<NewsCardBase> Logger { get; set; }
-    public PostModel SelectedPost { get; set; }
+    public PostModel SelectedPost { get; set; } = new PostModel
+{
+    Id = string.Empty,
+    Category = string.Empty,
+    Title = string.Empty,
+    ImageUrl = null,
+    BodyPreview = string.Empty,
+    Author = string.Empty,
+    slug = string.Empty,
+    Time = DateTime.MinValue,
+    LikeCount = 0,
+    CommentCount = 0,
+    isCommented = false,
+    Slug = string.Empty,
+    Comments = new List<CommentModel>()
+};
     [Inject] private INewsService _newsService { get; set; }
     [Inject] private IEventService _eventService { get; set; }
     protected ContentPost newsArticle { get; set; } = new ContentPost();
@@ -155,3 +171,4 @@ public class ArticleBase : ComponentBase
     }
 }
 }
+

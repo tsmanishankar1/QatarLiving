@@ -12,38 +12,35 @@
 @using MudBlazor
 
 <div style="width: 100%; background-color: var(--color-secondary-background);">
+
     <div class="responsive-container">
         <!-- Carousel Banner -->
-        @if (isLoadingBanners)
-        {
-            <BannerSkleton />
-        }
-        else if (DailyHeroBanners?.Any() == true)
-        {
-            <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
-        }
-        else
-        {
-            <EmptyCard Title="No event banners found." Subtitle="Please check back later for updates." />
-        }
-        @if (isLoading)
-        {
-            <MudSkeleton SkeletonType="SkeletonType.Text" Height="24px" Width="40%" Animation="Animation.Wave" />
-        }
-        else
-        {
-            <Breadcrumb Items="breadcrumbItems" />
-        }
+         @if (isLoadingBanners)
+                {
+                    <BannerSkleton />
+                }
+                else if (DailyHeroBanners?.Any() == true)
+                {
+                    <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+                }
+                else
+                {
+                    <EmptyCard Title="No news banners found."
+                            Subtitle="Please check back later for updates." />
+                } 
+                @if(isLoading){
+                     <MudSkeleton SkeletonType="SkeletonType.Text" Height="24px" Width="40%" Animation="Animation.Wave" /> 
+                }
+                else{
+                    <Breadcrumb Items="breadcrumbItems" />
+                }
         <MudGrid Class="py-4" GutterSize="16px">
             <MudItem xs="12" md="8">
-                <ArticleDetailCard Post="newsArticle" loading="isLoading" />
-                @* @foreach (var post in PostsList)
-                    { *@
-                @* <CommentSection Comment="SelectedPost"/>    *@
-                @* }  *@
+                <ArticleDetailCard Post="newsArticle" loading="isLoading"/>
+                         <CommentSection Comment="SelectedPost"/>    
             </MudItem>
             <MudItem xs="12" md="4">
-                <MoreArticleSection Articles="@moreArticleList" loading="@isLoading" />
+                <MoreArticleSection Articles="@moreArticleList" loading="@isLoading"/>
             </MudItem>
         </MudGrid>
     </div>
@@ -53,18 +50,22 @@
 
 <style>
     .responsive-container {
+        max-width: 1170px;
+        margin: 0 auto;
         width: 100%;
-        padding: 0 40px;
-        box-sizing: border-box;
     }
-
+    .article-container {
+        max-width: 1170px;
+        margin: 0 auto;
+        width: 100%;
+    }
     .disclaimer-section {
         background-color: #FFF8EC;
         padding: 12px 16px;
         display: flex;
         align-items: center;
         border-radius: 4px;
-        margin-top: 10px;
+        margin-top:10px;
     }
 
     .disclaimer-icon {
@@ -93,4 +94,5 @@
             padding: 0 5px;
         }
     }
+    
 </style>
