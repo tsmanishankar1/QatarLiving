@@ -19,7 +19,13 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected bool IsLiked { get; set; } = false;
         protected bool IsDisliked { get; set; } = false;
+        protected bool isMenuOpen = false;
 
+        protected void OnMenuToggle(bool open)
+        {
+            isMenuOpen = open;
+            StateHasChanged();
+        }
         protected void OnReport()
         {
             Console.WriteLine($"Reporting post: {Post.Title}");
@@ -27,7 +33,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected void NavigateToPostDetail()
         {
 
-            Navigation.NavigateTo($"/content/community/post/detail/{Uri.EscapeDataString(Post.Slug)}");
+            Navigation.NavigateTo($"/content/community/post/detail/{Post.Slug}");
         }
         protected async Task ToggleLikeAsync()
         {
@@ -70,6 +76,10 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
             JS.InvokeVoidAsync("open", shareUrl, "_blank");
         }
-
+        protected async Task OnReportClick()
+        {
+            isMenuOpen = true;
+            StateHasChanged();
+        }
     }
 }
