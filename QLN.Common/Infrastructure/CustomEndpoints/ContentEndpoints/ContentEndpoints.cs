@@ -46,7 +46,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            group.GenerateLandingEndpoint<NewsCommunityPageResponse>(DrupalContentConstants.QlnNewsNewsCommunity, "GetNewsCommunity");
+            group.GenerateLandingEndpoint<QlnNewsNewsCommunityPageResponse>(DrupalContentConstants.QlnNewsNewsCommunity, "GetNewsCommunity");
 
             return group;
         }
@@ -55,7 +55,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            group.GenerateLandingEndpoint<NewsMiddleEastPageResponse>(DrupalContentConstants.QlnNewsNewsMiddleEast, "GetNewsMiddleEast");
+            group.GenerateLandingEndpoint<QlnNewsNewsMiddleEastPageResponse>(DrupalContentConstants.QlnNewsNewsMiddleEast, "GetNewsMiddleEast");
 
             return group;
         }
@@ -64,7 +64,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            group.GenerateLandingEndpoint<NewsWorldPageResponse>(DrupalContentConstants.QlnNewsNewsWorld, "GetNewsWorld");
+            group.GenerateLandingEndpoint<QlnNewsNewsWorldPageResponse>(DrupalContentConstants.QlnNewsNewsWorld, "GetNewsWorld");
 
             return group;
         }
@@ -73,7 +73,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            group.GenerateLandingEndpoint<NewsHealthEducationPageResponse>(DrupalContentConstants.QlnNewsNewsHealthEducation, "GetNewsHealthEducation");
+            group.GenerateLandingEndpoint<QlnNewsNewsHealthEducationPageResponse>(DrupalContentConstants.QlnNewsNewsHealthEducation, "GetNewsHealthEducation");
 
             return group;
         }
@@ -82,7 +82,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            group.GenerateLandingEndpoint<NewsLawPageResponse>(DrupalContentConstants.QlnNewsNewsLaw, "GetNewsLaw");
+            group.GenerateLandingEndpoint<QlnNewsNewsLawPageResponse>(DrupalContentConstants.QlnNewsNewsLaw, "GetNewsLaw");
 
             return group;
         }
@@ -91,7 +91,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            group.GenerateLandingEndpoint<NewsQatarPageResponse>(DrupalContentConstants.QlnNewsNewsQatar, "GetNewsQatar");
+            group.GenerateLandingEndpoint<QlnNewsNewsQatarPageResponse>(DrupalContentConstants.QlnNewsNewsQatar, "GetNewsQatar");
 
             return group;
 
@@ -197,7 +197,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            group.GenerateLandingEndpoint<FinanceEntrepreneurshipPageResponse>(DrupalContentConstants.QlnNewsFinanceEntrepreneurship, "GetFinanceEntrepreneurship");
+            group.GenerateLandingEndpoint<QlnNewsFinanceEntrepreneurshipPageResponse>(DrupalContentConstants.QlnNewsFinanceEntrepreneurship, "GetFinanceEntrepreneurship");
 
             return group;
 
@@ -207,7 +207,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            group.GenerateLandingEndpoint<FinanceFinancePageResponse>(DrupalContentConstants.QlnNewsFinanceFinance, "GetFinanceFinance");
+            group.GenerateLandingEndpoint<QlnNewsFinanceFinancePageResponse>(DrupalContentConstants.QlnNewsFinanceFinance, "GetFinanceFinance");
 
             return group;
 
@@ -217,7 +217,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            group.GenerateLandingEndpoint<FinanceJobsCareersPageResponse>(DrupalContentConstants.QlnNewsFinanceJobsCareers, "GetFinanceJobsCareers");
+            group.GenerateLandingEndpoint<QlnNewsFinanceJobsCareersPageResponse>(DrupalContentConstants.QlnNewsFinanceJobsCareers, "GetFinanceJobsCareers");
 
             return group;
 
@@ -227,7 +227,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            group.GenerateLandingEndpoint<FinanceMarketUpdatePageResponse>(DrupalContentConstants.QlnNewsFinanceMarketUpdate, "GetFinanceMarketUpdate");
+            group.GenerateLandingEndpoint<QlnNewsFinanceMarketUpdatePageResponse>(DrupalContentConstants.QlnNewsFinanceMarketUpdate, "GetFinanceMarketUpdate");
 
             return group;
 
@@ -237,7 +237,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            group.GenerateLandingEndpoint<FinanceQatarPageResponse>(DrupalContentConstants.QlnNewsFinanceQatar, "GetFinanceQatar");
+            group.GenerateLandingEndpoint<QlnNewsFinanceQatarPageResponse>(DrupalContentConstants.QlnNewsFinanceQatar, "GetFinanceQatar");
 
             return group;
 
@@ -247,13 +247,74 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
 
             // GET /api/content/landing
-            //group.GenerateLandingEndpoint<FinanceRealEstatePageResponse>(DrupalContentConstants.QlnNewsFinanceRealEstate, "GetFinanceRealEstate");
-            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsFinanceRealEstate, "GetFinanceRealEstate");
+            group.GenerateLandingEndpoint<QlnNewsFinanceRealEstatePageResponse>(DrupalContentConstants.QlnNewsFinanceRealEstate, "GetFinanceRealEstate");
 
             return group;
 
         }
         #endregion
+        #region Lifestyle
+        public static RouteGroupBuilder MapLifestyleArtsCultureEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<QlnNewsLifestyleArtsCulturePageResponse>(DrupalContentConstants.QlnNewsLifestyleArtsCulture, "GetLifestyleArtsCulture");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapLifestyleEventsEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<QlnNewsLifestyleEventsPageResponse>(DrupalContentConstants.QlnNewsLifestyleEvents, "GetLifestyleEvents");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapLifestyleFoodDiningEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<QlnNewsLifestyleFoodDiningPageResponse>(DrupalContentConstants.QlnNewsLifestyleFoodDining, "GetLifestyleFoodDining");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapLifestyleTravelLeisureEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<QlnNewsLifestyleTravelLeisurePageResponse>(DrupalContentConstants.QlnNewsLifestyleTravelLeisure, "GetLifestyleTravelLeisure");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapLifestyleHomeLivingEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<QlnNewsLifestyleHomeLivingPageResponse>(DrupalContentConstants.QlnNewsLifestyleHomeLiving, "GetLifestyleHomeLiving");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapLifestyleFashionStyleEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<QlnNewsLifestyleFashionStylePageResponse>(DrupalContentConstants.QlnNewsLifestyleFashionStyle, "GetLifestyleFashionStyle");
+
+            return group;
+
+        }
+        #endregion
+        #region Videos
         public static RouteGroupBuilder MapContentVideosEndpoint(this RouteGroupBuilder group)
         {
 
@@ -263,7 +324,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             return group;
 
         }
-
+        #endregion
         #region Support
         public static RouteGroupBuilder MapContentQueueEndpoint(this RouteGroupBuilder group)
         {

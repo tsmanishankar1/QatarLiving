@@ -10,30 +10,30 @@ using System.Threading.Tasks;
 namespace QLN.Common.Infrastructure.DTO_s
 {
 
-    public class QlnNewsFinanceFinance
+    public class QlnNewsLifestyleArtsCulture
     {
-        const string _prefix = "qln_news_finance_finance";
+        const string QueuePrefix = DrupalContentConstants.QlnNewsLifestyleArtsCulture;
 
-        [JsonPropertyName($"{_prefix}_top_story")]
+        [JsonPropertyName($"{QueuePrefix}_top_story")]
         public BaseQueueResponse<ContentPost> TopStory { get; set; }
 
-        [JsonPropertyName($"{_prefix}_more_articles")]
+        [JsonPropertyName($"{QueuePrefix}_more_articles")]
         public BaseQueueResponse<ContentPost> MoreArticles { get; set; }
 
-        [JsonPropertyName($"{_prefix}_articles_1")]
+        [JsonPropertyName($"{QueuePrefix}_articles_1")]
         public BaseQueueResponse<ContentPost> Articles1 { get; set; }
 
-        [JsonPropertyName($"{_prefix}_articles_2")]
+        [JsonPropertyName($"{QueuePrefix}_articles_2")]
         public BaseQueueResponse<ContentPost> Articles2 { get; set; }
 
-        [JsonPropertyName($"{_prefix}_most_popular_articles")]
+        [JsonPropertyName($"{QueuePrefix}_most_popular_articles")]
         public BaseQueueResponse<ContentPost> MostPopularArticles { get; set; }
     }
 
-    public class NewsFinanceQatarPageResponse
+    public class QlnNewsLifestyleArtsCulturePageResponse
     {
-        [JsonPropertyName(DrupalContentConstants.QlnNewsFinanceFinance)]
-        public QlnNewsFinanceFinance QlnNewsFinanceFinance { get; set; }
+        [JsonPropertyName(DrupalContentConstants.QlnNewsLifestyleArtsCulture)]
+        public QlnNewsLifestyleArtsCulture QlnNewsLifestyleArtsCulture { get; set; }
     }
 }
 

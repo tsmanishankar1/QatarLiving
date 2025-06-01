@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.DTO_s
 {
-    public class QlnNewsNewsCommunity
+    public class QlnNewsNewsLaw
     {
-        const string QueuePrefix = DrupalContentConstants.QlnNewsNewsCommunity;
+        const string QueuePrefix = DrupalContentConstants.QlnNewsNewsLaw;
 
         [JsonPropertyName($"{QueuePrefix}_top_story")]
         public BaseQueueResponse<ContentPost> TopStory { get; set; }
@@ -29,9 +29,9 @@ namespace QLN.Common.Infrastructure.DTO_s
         public BaseQueueResponse<ContentPost> MostPopularArticles { get; set; }
     }
 
-    public class NewsCommunityPageResponse
+    public class QlnNewsNewsLawPageResponse
     {
-        [JsonPropertyName(DrupalContentConstants.QlnNewsNewsCommunity)]
-        public QlnNewsNewsCommunity QlnNewsNewsCommunity { get; set; }
+        [JsonPropertyName(DrupalContentConstants.QlnNewsNewsLaw)]
+        public QlnNewsNewsLaw QlnNewsNewsLaw { get; set; }
     }
 }

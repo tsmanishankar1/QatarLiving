@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Http.Features;
 using QLN.Common.Infrastructure.Constants;
 using System;
 using System.Collections.Generic;
@@ -9,11 +9,10 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.DTO_s
 {
-    // Unique Queue Responses for News World
 
-    public class QlnNewsNewsWorld
+    public class QlnNewsLifestyleTravelLeisure
     {
-        const string QueuePrefix = DrupalContentConstants.QlnNewsNewsWorld;
+        const string QueuePrefix = DrupalContentConstants.QlnNewsLifestyleTravelLeisure;
 
         [JsonPropertyName($"{QueuePrefix}_top_story")]
         public BaseQueueResponse<ContentPost> TopStory { get; set; }
@@ -31,10 +30,11 @@ namespace QLN.Common.Infrastructure.DTO_s
         public BaseQueueResponse<ContentPost> MostPopularArticles { get; set; }
     }
 
-    public class NewsWorldPageResponse
+    public class QlnNewsLifestyleTravelLeisurePageResponse
     {
-        [JsonPropertyName(DrupalContentConstants.QlnNewsNewsWorld)]
-        public QlnNewsNewsWorld QlnNewsNewsWorld { get; set; }
+        [JsonPropertyName(DrupalContentConstants.QlnNewsLifestyleTravelLeisure)]
+        public QlnNewsLifestyleTravelLeisure QlnNewsLifestyleTravelLeisure { get; set; }
     }
-
 }
+
+

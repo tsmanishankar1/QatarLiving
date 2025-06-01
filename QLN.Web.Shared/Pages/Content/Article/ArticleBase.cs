@@ -13,7 +13,7 @@ public class ArticleBase : ComponentBase
     public string slug { get; set; }
     public bool isLoading { get; set; }
     public List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
-    protected NewsQatarPageResponse QatarNewsContent { get; set; } = new NewsQatarPageResponse();
+    protected QlnNewsNewsQatarPageResponse QatarNewsContent { get; set; } = new QlnNewsNewsQatarPageResponse();
     protected List<ContentPost> moreArticleList { get; set; } = new List<ContentPost>();
     [Inject] private ILogger<NewsCardBase> Logger { get; set; }
     public PostModel SelectedPost { get; set; }
@@ -99,22 +99,22 @@ public class ArticleBase : ComponentBase
             return new ContentPost();
         }
     }
-    protected async Task<NewsQatarPageResponse> GetNewsQatarAsync()
+    protected async Task<QlnNewsNewsQatarPageResponse> GetNewsQatarAsync()
     {
             try
             {
                 var apiResponse = await _newsService.GetNewsQatarAsync() ?? new HttpResponseMessage();
                 if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
                 {
-                    var response = await apiResponse.Content.ReadFromJsonAsync<NewsQatarPageResponse>();
-                    return response ?? new NewsQatarPageResponse();
+                    var response = await apiResponse.Content.ReadFromJsonAsync<QlnNewsNewsQatarPageResponse>();
+                    return response ?? new QlnNewsNewsQatarPageResponse();
                 }
-                return new NewsQatarPageResponse();
+                return new QlnNewsNewsQatarPageResponse();
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "GetNewsQatarAsync");
-                return new NewsQatarPageResponse();
+                return new QlnNewsNewsQatarPageResponse();
             }
     }
 }

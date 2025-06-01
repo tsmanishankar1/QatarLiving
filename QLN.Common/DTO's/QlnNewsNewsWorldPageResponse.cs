@@ -9,11 +9,11 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.DTO_s
 {
-    // Unique Queue Responses for News Middle East
+    // Unique Queue Responses for News World
 
-    public class QlnNewsNewsMiddleEast
+    public class QlnNewsNewsWorld
     {
-        const string QueuePrefix = DrupalContentConstants.QlnNewsNewsMiddleEast;
+        const string QueuePrefix = DrupalContentConstants.QlnNewsNewsWorld;
 
         [JsonPropertyName($"{QueuePrefix}_top_story")]
         public BaseQueueResponse<ContentPost> TopStory { get; set; }
@@ -31,9 +31,10 @@ namespace QLN.Common.Infrastructure.DTO_s
         public BaseQueueResponse<ContentPost> MostPopularArticles { get; set; }
     }
 
-    public class NewsMiddleEastPageResponse
+    public class QlnNewsNewsWorldPageResponse
     {
-        [JsonPropertyName(DrupalContentConstants.QlnNewsNewsMiddleEast)]
-        public QlnNewsNewsMiddleEast QlnNewsNewsMiddleEast { get; set; }
+        [JsonPropertyName(DrupalContentConstants.QlnNewsNewsWorld)]
+        public QlnNewsNewsWorld QlnNewsNewsWorld { get; set; }
     }
+
 }

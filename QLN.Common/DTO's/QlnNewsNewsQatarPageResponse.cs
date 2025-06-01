@@ -31,7 +31,7 @@ namespace QLN.Common.Infrastructure.DTO_s
         public BaseQueueResponse<ContentPost> MostPopularArticles { get; set; }
     }
 
-    public class NewsQatarPageResponse
+    public class QlnNewsNewsQatarPageResponse
     {
         [JsonPropertyName(DrupalContentConstants.QlnNewsNewsQatar)]
         public QlnNewsNewsQatar QlnNewsNewsQatar { get; set; }

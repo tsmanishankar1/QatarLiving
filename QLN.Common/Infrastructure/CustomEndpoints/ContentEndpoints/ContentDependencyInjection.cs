@@ -40,7 +40,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                 .MapChangeCommentLikeStatusEndpoint()
                 .MapContentGetCommentsEndpoint()
                 .MapContentVideosEndpoint()
-                .MapFeaturedEventsEndpoint();
+                .MapFeaturedEventsEndpoint()
+                .MapLifestyleArtsCultureEndpoint()
+                .MapLifestyleEventsEndpoint()
+                .MapLifestyleFoodDiningEndpoint()
+                .MapLifestyleFashionStyleEndpoint()
+                .MapLifestyleHomeLivingEndpoint()
+                .MapLifestyleTravelLeisureEndpoint()
+                ;
 
             return group;
         }
