@@ -32,6 +32,11 @@ if (string.IsNullOrWhiteSpace(newsLetterSubscriptionAPIUrl))
 {
     throw new InvalidOperationException("NewsletterSubscriptionAPI URL is missing in configuration.");
 }
+var qatarLivingAPI = builder.Configuration["ServiceUrlPaths:QatarLivingAPI"];
+if (string.IsNullOrWhiteSpace(qatarLivingAPI))
+{
+    throw new InvalidOperationException("QatarLivingAPI URL is missing in configuration.");
+}
 
 // });
 
@@ -149,6 +154,10 @@ builder.Services.AddHttpClient<INewsService, NewsService>(client =>
 builder.Services.AddHttpClient<IEventService, EventService>(client =>
 {
     client.BaseAddress = new Uri(contentVerticalAPIUrl);
+});
+builder.Services.AddHttpClient<IPostDialogService, PostDialogService>(client =>
+{
+    client.BaseAddress = new Uri(qatarLivingAPI);
 });
 
 
