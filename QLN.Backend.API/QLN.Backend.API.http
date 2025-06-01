@@ -3,7 +3,7 @@
 # @QLN.Backend.API_HostAddress = https://qlc-bo-qa.qatarliving.com
 # @QLN.Backend.API_HostAddress = https://qlm-bo.qatarliving.com
 
-@DrupalQueue = qln_videos
+@DrupalQueue = qln_contents_daily
 
 GET {{QLN.Backend.API_HostAddress}}/api/content/{{DrupalQueue}}/landing
 Accept: application/json
@@ -35,7 +35,7 @@ GET {{QLN.Backend.API_HostAddress}}/api/content/community
 Accept: application/json
 
 ###
-GET {{QLN.Backend.API_HostAddress}}/api/content/community?forum_id=20000006
+GET {{QLN.Backend.API_HostAddress}}/api/content/community?forum_id=20000006&page=1&page_size=1
 Accept: application/json
 
 ###
@@ -74,9 +74,9 @@ Accept: application/json
 
 ###################################
 
-@QLN.Drupal.API_HostAddress = https://test.qatarliving.com
+# @QLN.Drupal.API_HostAddress = https://test.qatarliving.com
 # @QLN.Drupal.API_HostAddress = https://qa.qatarliving.com
-# @QLN.Drupal.API_HostAddress = https://www.qatarliving.com
+@QLN.Drupal.API_HostAddress = https://www.qatarliving.com
 
 GET {{QLN.Drupal.API_HostAddress}}/qlnapi/categories
 Accept: application/json
