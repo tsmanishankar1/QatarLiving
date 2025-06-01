@@ -35,7 +35,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                 .MapGetEventBySlugEndpoint()
                 .MapGetNewsBySlugEndpoint()
                 .MapPostCommentEndpoint()
-                .MapPostForumPostEndpoint()
+                .MapPostDiscussionPostEndpoint()
                 .MapChangePostLikeStatusEndpoint()
                 .MapChangeCommentLikeStatusEndpoint()
                 .MapContentGetCommentsEndpoint()

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.DTO_s
 {
-    public class CreatePostRequest
+    public class CreateDiscussionPostRequest
     {
         [JsonPropertyName("type")]
         public string Type { get; set; }

@@ -14,9 +14,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
 {
     public static class ContentEndpoints
     {
-        /// <summary>
-        /// Maps Content endpoints: detail and landing.
-        /// </summary>
+        #region Content Daily
         public static RouteGroupBuilder MapContentsDailyEndpoint(this RouteGroupBuilder group)
         {
 
@@ -26,20 +24,29 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             return group;
         }
 
-        public static RouteGroupBuilder MapNewsCommunityEndpoint(this RouteGroupBuilder group)
-        {
 
-            // GET /api/content/landing
-            group.GenerateLandingEndpoint<NewsCommunityPageResponse>(DrupalContentConstants.QlnNewsNewsCommunity, "GetNewsCommunity");
-
-            return group;
-        }
-
+        #endregion
+        #region Featured Events
         public static RouteGroupBuilder MapFeaturedEventsEndpoint(this RouteGroupBuilder group)
         {
 
             // GET /api/content/landing
             group.GenerateLandingEndpoint<QlnFeaturedEventsPageResponse>(DrupalContentConstants.QlnFeaturedEvents, "GetFeaturedEvents");
+
+            return group;
+        }
+
+
+        #endregion
+        #region News
+        /// <summary>
+        /// Maps Content endpoints: detail and landing.
+        /// </summary>
+        public static RouteGroupBuilder MapNewsCommunityEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<NewsCommunityPageResponse>(DrupalContentConstants.QlnNewsNewsCommunity, "GetNewsCommunity");
 
             return group;
         }
@@ -89,7 +96,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             return group;
 
         }
-
+        #endregion
+        #region Community
         public static RouteGroupBuilder MapCommunityMorePostsEndpoint(this RouteGroupBuilder group)
         {
 
@@ -99,168 +107,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             return group;
 
         }
-
-        public static RouteGroupBuilder MapFinanceEntrepreneurshipEndpoint(this RouteGroupBuilder group)
-        {
-
-            // GET /api/content/landing
-            //group.GenerateLandingEndpoint<FinanceEntrepreneurshipPageResponse>(DrupalContentConstants.QlnNewsFinanceEntrepreneurship, "GetFinanceEntrepreneurship");
-            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsFinanceEntrepreneurship, "GetFinanceEntrepreneurship");
-
-            return group;
-
-        }
-
-        public static RouteGroupBuilder MapFinanceFinanceEndpoint(this RouteGroupBuilder group)
-        {
-
-            // GET /api/content/landing
-            //group.GenerateLandingEndpoint<FinanceFinancePageResponse>(DrupalContentConstants.QlnNewsFinanceFinance, "GetFinanceFinance");
-            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsFinanceFinance, "GetFinanceFinance");
-
-            return group;
-
-        }
-
-        public static RouteGroupBuilder MapFinanceJobsCareersEndpoint(this RouteGroupBuilder group)
-        {
-
-            // GET /api/content/landing
-            //group.GenerateLandingEndpoint<FinanceJobsCareersPageResponse>(DrupalContentConstants.QlnNewsFinanceJobsCareers, "GetFinanceJobsCareers");
-            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsFinanceJobsCareers, "GetFinanceJobsCareers");
-
-            return group;
-
-        }
-
-        public static RouteGroupBuilder MapFinanceMarketUpdateEndpoint(this RouteGroupBuilder group)
-        {
-
-            // GET /api/content/landing
-            //group.GenerateLandingEndpoint<FinanceMarketUpdatePageResponse>(DrupalContentConstants.QlnNewsFinanceMarketUpdate, "GetFinanceMarketUpdate");
-            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsFinanceMarketUpdate, "GetFinanceMarketUpdate");
-
-            return group;
-
-        }
-
-        public static RouteGroupBuilder MapFinanceQatarEndpoint(this RouteGroupBuilder group)
-        {
-
-            // GET /api/content/landing
-            //group.GenerateLandingEndpoint<FinanceQatarPageResponse>(DrupalContentConstants.QlnNewsFinanceQatar, "GetFinanceQatar");
-            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsFinanceQatar, "GetFinanceQatar");
-
-            return group;
-
-        }
-
-        public static RouteGroupBuilder MapFinanceRealEstateEndpoint(this RouteGroupBuilder group)
-        {
-
-            // GET /api/content/landing
-            //group.GenerateLandingEndpoint<FinanceRealEstatePageResponse>(DrupalContentConstants.QlnNewsFinanceRealEstate, "GetFinanceRealEstate");
-            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsFinanceRealEstate, "GetFinanceRealEstate");
-
-            return group;
-
-        }
-
-        public static RouteGroupBuilder MapContentVideosEndpoint(this RouteGroupBuilder group)
-        {
-
-            // GET /api/content/landing
-            group.GenerateLandingEndpoint<ContentsVideosResponse>(DrupalContentConstants.QlnContentVideos, "GetVideos");
-            
-            return group;
-
-        }
-
-        public static RouteGroupBuilder MapContentQueueEndpoint(this RouteGroupBuilder group)
-        {
-
-            // GET /api/content/landing
-            group.MapGet("{queue}/landing", async (
-                    [FromRoute] string queue,
-                    [FromServices] IContentService svc,
-                    CancellationToken cancellationToken
-                    )
-                =>
-            {
-                try
-                {
-                    var model = await svc.GetPostsFromDrupalAsync<dynamic>(queue, cancellationToken);
-
-                    //if (model != null)
-                    //{
-                    //    var genericResponse = new GenericNewsPageResponse
-                    //    {
-                    //        Results = new GenericNewsResults
-                    //        {
-                    //            TopStory = model.Results.TopStory,
-                    //        }
-                    //    };
-
-                    //    return Results.Ok(genericResponse);
-
-                    //}
-
-                    //return Results.NotFound();
-                    return Results.Ok(model);
-
-                }
-                catch (ArgumentException ex)
-                {
-                    return Results.BadRequest(new { Message = ex.Message });
-                }
-                catch (Exception ex)
-                {
-                    return Results.Problem(
-                        title: "Landing Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-            .WithName("GetLandingByQueue")
-            .WithDescription("Tester method for testing out as yet unmapped Drupal queues - returns a dynamic object so isnt very efficient")
-            .WithTags("Content");
-
-            return group;
-        }
-
-        public static RouteGroupBuilder MapContentEventsEndpoint(this RouteGroupBuilder group)
-        {
-
-            // GET /api/content/events
-            group.MapGet("/events", async (
-                    [FromServices] IContentService svc,
-                    CancellationToken cancellationToken
-                    )
-                =>
-            {
-                try
-                {
-                    var model = await svc.GetEventsFromDrupalAsync(cancellationToken);
-                    return Results.Ok(model);
-                }
-                catch (ArgumentException ex)
-                {
-                    return Results.BadRequest(new { Message = ex.Message });
-                }
-                catch (Exception ex)
-                {
-                    return Results.Problem(
-                        title: "Content Events Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-            .WithName("GetContentEvents")
-            .WithTags("Content");
-
-            return group;
-        }
-
         public static RouteGroupBuilder MapContentCommunityEndpoint(this RouteGroupBuilder group)
         {
             // GET /api/content/categories
@@ -344,6 +190,166 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
 
             return group;
         }
+
+        #endregion
+        #region Finance
+        public static RouteGroupBuilder MapFinanceEntrepreneurshipEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<FinanceEntrepreneurshipPageResponse>(DrupalContentConstants.QlnNewsFinanceEntrepreneurship, "GetFinanceEntrepreneurship");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapFinanceFinanceEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<FinanceFinancePageResponse>(DrupalContentConstants.QlnNewsFinanceFinance, "GetFinanceFinance");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapFinanceJobsCareersEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<FinanceJobsCareersPageResponse>(DrupalContentConstants.QlnNewsFinanceJobsCareers, "GetFinanceJobsCareers");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapFinanceMarketUpdateEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<FinanceMarketUpdatePageResponse>(DrupalContentConstants.QlnNewsFinanceMarketUpdate, "GetFinanceMarketUpdate");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapFinanceQatarEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<FinanceQatarPageResponse>(DrupalContentConstants.QlnNewsFinanceQatar, "GetFinanceQatar");
+
+            return group;
+
+        }
+
+        public static RouteGroupBuilder MapFinanceRealEstateEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            //group.GenerateLandingEndpoint<FinanceRealEstatePageResponse>(DrupalContentConstants.QlnNewsFinanceRealEstate, "GetFinanceRealEstate");
+            group.GenerateLandingEndpoint<dynamic>(DrupalContentConstants.QlnNewsFinanceRealEstate, "GetFinanceRealEstate");
+
+            return group;
+
+        }
+        #endregion
+        public static RouteGroupBuilder MapContentVideosEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<ContentsVideosResponse>(DrupalContentConstants.QlnContentVideos, "GetVideos");
+            
+            return group;
+
+        }
+
+        #region Support
+        public static RouteGroupBuilder MapContentQueueEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/landing
+            group.MapGet("{queue}/landing", async (
+                    [FromRoute] string queue,
+                    [FromServices] IContentService svc,
+                    CancellationToken cancellationToken
+                    )
+                =>
+            {
+                try
+                {
+                    var model = await svc.GetPostsFromDrupalAsync<dynamic>(queue, cancellationToken);
+
+                    //if (model != null)
+                    //{
+                    //    var genericResponse = new GenericNewsPageResponse
+                    //    {
+                    //        Results = new GenericNewsResults
+                    //        {
+                    //            TopStory = model.Results.TopStory,
+                    //        }
+                    //    };
+
+                    //    return Results.Ok(genericResponse);
+
+                    //}
+
+                    //return Results.NotFound();
+                    return Results.Ok(model);
+
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { Message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Landing Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("GetLandingByQueue")
+            .WithDescription("Tester method for testing out as yet unmapped Drupal queues - returns a dynamic object so isnt very efficient")
+            .WithTags("Content");
+
+            return group;
+        }
+        #endregion
+        public static RouteGroupBuilder MapContentEventsEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/events
+            group.MapGet("/events", async (
+                    [FromServices] IContentService svc,
+                    CancellationToken cancellationToken
+                    )
+                =>
+            {
+                try
+                {
+                    var model = await svc.GetEventsFromDrupalAsync(cancellationToken);
+                    return Results.Ok(model);
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { Message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Content Events Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("GetContentEvents")
+            .WithTags("Content");
+
+            return group;
+        }
+
         public static RouteGroupBuilder MapContentCategoriesEndpoint(this RouteGroupBuilder group)
         {
             const int CATEGORY_CACHE_EXPIRY_IN_MINS = 60;
@@ -459,13 +465,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             return group;
         }
 
-        public static RouteGroupBuilder MapPostForumPostEndpoint(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapPostDiscussionPostEndpoint(this RouteGroupBuilder group)
         {
 
 
             // GET /api/content/post/save
             group.MapPost("/post/save", async (
-                    [FromBody] CreatePostRequest request,
+                    [FromBody] CreateDiscussionPostRequest request,
                     [FromServices] IContentService svc,
                     CancellationToken cancellationToken
                     )
@@ -473,7 +479,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             {
                 try
                 {
-                    var comment = await svc.CreatePostOnDrupalAsync(request, cancellationToken);
+                    var comment = await svc.CreateDiscussionPostOnDrupalAsync(request, cancellationToken);
                     return comment is null ? Results.NotFound() : Results.Ok(comment);
                 }
                 catch (ArgumentException ex)
@@ -653,6 +659,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             return group;
         }
 
+        #region Private endpoints
         private static RouteGroupBuilder GenerateLandingEndpoint(this RouteGroupBuilder group, string QueueName, string Name)
         {
             
@@ -693,6 +700,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
 
             return group;
         }
+        #endregion
     }
 }
 

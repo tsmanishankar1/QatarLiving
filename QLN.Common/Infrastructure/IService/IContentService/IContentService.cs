@@ -18,7 +18,7 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         Task<List<CommunityPost>?> GetCommunitiesFromDrupalAsync(CancellationToken cancellationToken, string? forum_id, string? order = "asc", int? page_size = 10, int? page = 1);
         Task<ContentPost?> GetNewsBySlugAsync(string slug, CancellationToken cancellationToken);
         Task<CreateCommentResponse?> CreateCommentOnDrupalAsync(CreateCommentRequest request, CancellationToken cancellationToken);
-        Task<CreatePostResponse?> CreatePostOnDrupalAsync(CreatePostRequest request, CancellationToken cancellationToken);
+        Task<CreatePostResponse?> CreateDiscussionPostOnDrupalAsync(CreateDiscussionPostRequest request, CancellationToken cancellationToken);
         Task<ChangeLikeStatusResponse?> ChangeLikeStatusOnDrupalAsync(ChangeLikeStatusRequest request, CancellationToken cancellationToken);
         Task<GetCommentsResponse?> GetCommentsFromDrupalAsync(string forum_id, CancellationToken cancellationToken, int? page = 1, int? page_size = 10);
     }
