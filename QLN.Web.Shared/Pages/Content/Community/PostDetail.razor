@@ -14,26 +14,27 @@
         <div class="category-banner-wrapper">
             <img src="/qln-images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
         </div> *@
-           @if (isLoadingBanners)
+          
+
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-4" Style="max-width:1170px">
+            @if (isLoadingBanners)
             {
                 <BannerSkleton />
             }
             else if (DailyHeroBanners?.Any() == true)
             {
-            <div class="category-banner-wrapper">
+                <div class="category-banner-wrapper">
 
-                <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
-            </div>
-        }
+                    <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+                </div>
+            }
             else
             {
                 <EmptyCard Title="No Banners found." Subtitle="Please check back later for updates." />
             }
 
 
-        <Breadcrumb Items="breadcrumbItems" />
-
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-4">
+            <Breadcrumb Items="breadcrumbItems" />
             <MudGrid>
                 <!-- Left Section -->
                 <MudItem xs="12" md="8">
