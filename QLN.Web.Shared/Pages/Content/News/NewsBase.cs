@@ -12,6 +12,8 @@ namespace QLN.Web.Shared.Pages.Content.News
     public class NewsBase : ComponentBase
     {
         public bool isLoading = true;
+        protected bool isLoadingBanners = true;
+        protected List<BannerItem> DailyTakeOverBanners = new();
         public List<Category> Categories { get; set; } = new List<Category>
     {
         new Category
@@ -51,10 +53,12 @@ namespace QLN.Web.Shared.Pages.Content.News
         protected string _selectedView = "news";
         protected string[] Tabs = new[] { "Qatar", "Middle East", "World", "Health & Education", "Community", "Law" };
         protected string SelectedTab = "Qatar";
+        protected List<BannerItem> DailyHeroBanners { get; set; } = new();
         [Inject]
         protected NavigationManager navManager { get; set; }
         [Inject] private ILogger<NewsCardBase> Logger { get; set; }
         [Inject] private INewsService _newsService { get; set; }
+        [Inject] private IEventService _eventService { get; set; }
         protected ContentPost topNews { get; set; } = new ContentPost();
         protected List<ContentPost> moreArticleList { get; set; } = new List<ContentPost>();
         protected NewsQatarPageResponse QatarNewsContent { get; set; } = new NewsQatarPageResponse();
@@ -73,6 +77,8 @@ namespace QLN.Web.Shared.Pages.Content.News
         {
             try
             {
+                var bannersTask = LoadBanners();
+                await Task.WhenAll(bannersTask);
                 QatarNewsContent = await GetNewsQatarAsync();
 
                 if (QatarNewsContent?.QlnNewsNewsQatar?.MoreArticles?.Items != null)
@@ -107,6 +113,37 @@ namespace QLN.Web.Shared.Pages.Content.News
                 Tabs = Array.Empty<string>();
             }
         }
+        private async Task LoadBanners()
+        {
+            isLoadingBanners = true;
+            try
+            {
+                var banners = await FetchBannerData();
+                DailyHeroBanners = banners?.DailyHero ?? new List<BannerItem>();
+                DailyTakeOverBanners = banners?.DailyTakeOver1 ?? new List<BannerItem>();
+            }
+            finally
+            {
+                isLoadingBanners = false;
+            }
+        }
+        private async Task<BannerResponse?> FetchBannerData()
+    {
+    try
+    {
+        var result = await _eventService.GetBannerAsync();
+        if (result.IsSuccessStatusCode && result.Content != null)
+        {
+            return await result.Content.ReadFromJsonAsync<BannerResponse>();
+        }
+        return null;
+    }
+    catch (Exception ex)
+    {
+        Logger.LogError(ex, "FetchBannerData error.");
+        return null;
+    }
+}
         protected async void SelectTab(string tab)
         {
             isLoading = true;
@@ -335,4 +372,5 @@ StateHasChanged();
         }
     }
 }
+
 

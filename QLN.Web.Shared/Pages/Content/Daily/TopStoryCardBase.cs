@@ -12,7 +12,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
 
         protected void NavigateToEventDetail()
         {
-            NavigationManager.NavigateTo($"/events/details/{Item.Slug}");
+            NavigationManager.NavigateTo($"/content/events/details/{Item.Slug}");
         }
     }
 }

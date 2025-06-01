@@ -23,14 +23,18 @@ namespace QLN.Web.Shared.Components
             InvokeAsync(StateHasChanged);
         }
 
-        protected void UpdateActiveTab(string currentUri)
+      protected void UpdateActiveTab(string currentUri)
+    {
+        var currentPath = new Uri(currentUri).AbsolutePath.ToLower();
+
+        foreach (var item in Tabs)
         {
-            var uri = currentUri.ToLower();
-            foreach (var item in Tabs)
-            {
-                item.IsActive = uri.Contains(item.Route.ToLower());
-            }
+            var tabPath = new Uri(NavigationManager.BaseUri + item.Route.TrimStart('/')).AbsolutePath.ToLower();
+            item.IsActive = currentPath.StartsWith(tabPath);
         }
+    }
+
+
 
         protected async Task OnTabSelected(TabItem selected)
         {
