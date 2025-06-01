@@ -28,6 +28,22 @@
 
         <Breadcrumb Items="breadcrumbItems" />
 
+        @if (isLoading)
+        {
+            <EventdetailsSkeletons />
+        }
+        else if (eventDetails != null)
+        {
+            <EventDetailsSection item="eventDetails" />
+        }
+        else
+        {
+            <EmptyCard Title="Featured event details not found."
+                Subtitle="Please try again later or explore other available events." />
+        }
+
+
+
     </div>
 </div>
 
