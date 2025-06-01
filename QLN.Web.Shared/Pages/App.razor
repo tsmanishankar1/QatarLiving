@@ -298,6 +298,21 @@
             }, 100);
         };
     </script>
+    <script>
+        Blazor.start({
+            reconnectionOptions: {
+                maxRetries: 5,
+                retryIntervalMilliseconds: 4000
+            },
+            onConnectionDown: (options, error) => {
+                console.warn('Connection down:', error);
+                setTimeout(() => {
+                    location.reload();
+                }, 30000); // reload after 30s if not reconnected
+            }
+        });
+    </script>
+
 </body>
 
 </html>
