@@ -64,7 +64,7 @@
                         <div class="disclaimer-section">
                             <img src="qln-images/content/Warning.svg" alt="Disclaimer Icon" class="disclaimer-icon" />
                             <span class="disclaimer-text">
-                                Disclaimer: Community posts and comments reflect the views of users and are not published or endorsed by Qatar Living.
+                                Disclaimer: <span class="disclaimer-content-text"> Community posts and comments reflect the views of users and are not published or endorsed by Qatar Living.</span>
                             </span>
                         </div>
                         <CommentSection Comment="SelectedPost" />
@@ -109,7 +109,9 @@
         align-items: center;
         border-radius: 4px;
         margin-top:10px;
+        border: 1px solid #FEF0C7;
     }
+
 
     .disclaimer-icon {
         width: 48px;
@@ -121,6 +123,14 @@
     .disclaimer-text {
         font-family: 'Public Sans', sans-serif;
         font-weight: 700;
+        font-size: 14px;
+        line-height: 22px;
+        color: #646464;
+    }
+
+    .disclaimer-content-text {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
         font-size: 14px;
         line-height: 22px;
         color: #646464;
