@@ -62,7 +62,7 @@ public class ArticleBase : ComponentBase
                 new() { Label = newsArticle.Title, Url = "/article/details/{slug}", IsLast = true },
             };
             QatarNewsContent = await GetNewsQatarAsync();
-            moreArticleList = QatarNewsContent.QlnNewsNewsQatar.MoreArticles.Items;
+            moreArticleList = QatarNewsContent?.QlnNewsNewsQatar?.MoreArticles?.Items ?? [];
         }
         catch (Exception ex)
         {
