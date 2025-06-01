@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 namespace QLN.Common.Infrastructure.DTO_s
 {
 
-    public class QlnNewsLifestyleArtsCulture
+    public class QlnNewsFinanceJobsCareers
     {
-        const string QueuePrefix = DrupalContentConstants.QlnNewsLifestyleArtsCulture;
+        const string QueuePrefix = DrupalContentConstants.QlnNewsFinanceJobsCareers;
 
         [JsonPropertyName($"{QueuePrefix}_top_story")]
         public BaseQueueResponse<ContentPost> TopStory { get; set; }
@@ -30,10 +30,10 @@ namespace QLN.Common.Infrastructure.DTO_s
         public BaseQueueResponse<ContentPost> MostPopularArticles { get; set; }
     }
 
-    public class QlnNewsLifestyleArtsCulturePageResponse
+    public class QlnNewsFinanceJobsCareersPageResponse
     {
-        [JsonPropertyName(DrupalContentConstants.QlnNewsLifestyleArtsCulture)]
-        public QlnNewsLifestyleArtsCulture QlnNewsLifestyleArtsCulture { get; set; }
+        [JsonPropertyName(DrupalContentConstants.QlnNewsFinanceJobsCareers)]
+        public QlnNewsFinanceJobsCareers QlnNewsFinanceJobsCareers { get; set; }
     }
 }
 

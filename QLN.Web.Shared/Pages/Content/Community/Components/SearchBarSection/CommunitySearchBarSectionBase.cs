@@ -29,12 +29,7 @@ public class CommunitySearchBarSectionBase : ComponentBase
         try
         {
             CategorySelectOptions = await CommunityService.GetForumCategoriesAsync();
-            if (CategorySelectOptions?.Count > 0)
-            {
-                SelectedCategoryId = CategorySelectOptions[1].Id;
-                await OnCategoryChanged.InvokeAsync(SelectedCategoryId);
-
-            }
+           
         }
         catch (Exception ex)
         {

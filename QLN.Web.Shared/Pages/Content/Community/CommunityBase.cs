@@ -67,6 +67,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
             try
             {
+                PostList = await GetPostListAsync();
 
                 Ad = await GetAdAsync();
 
@@ -94,12 +95,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
             {
                 IsLoading = true;
                 HasError = false;
-                var forumId = int.TryParse(SelectedForumId, out var parsedId) ? parsedId : 0;
-                if (forumId <= 0)
-                {
-                    IsForumIdNotLoadedError = true;
-                    return null;
-                }
+                int? forumId = int.TryParse(SelectedForumId, out var parsedId) ? parsedId : null;
+
                 var dtoList = await CommunityService.GetPostsAsync(
                     forumId: forumId,
                     order: GetOrderFromSortOption(),

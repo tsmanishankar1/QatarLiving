@@ -15,7 +15,7 @@ namespace QLN.Web.Shared.Services
             _httpClient = httpClient;
         }
 
-        public async Task<List<PostListDto>> GetPostsAsync(int forumId, string order, int page, int pageSize)
+        public async Task<List<PostListDto>> GetPostsAsync(int? forumId, string order, int page, int pageSize)
         {
 
             try
@@ -87,26 +87,7 @@ namespace QLN.Web.Shared.Services
             [JsonPropertyName("forum_categories")]
             public List<ForumCategory> Forum_Categories { get; set; }
         }
-        public async Task<bool> PostSelectedCategoryAsync(string selectedCategoryId)
-        {
-            //try
-            //{
-            //    var url = $"https://www.qatarliving.com/node/add/post?field_page={selectedCategoryId}";
-
-            //    var response = await _httpClient.GetAsync(url);
-
-
-            //    return response.IsSuccessStatusCode;
-            //}
-            //catch (Exception ex)
-            //{
-            //    Console.WriteLine($"API Error in PostSelectedCategoryAsync: {ex.Message}");
-            //    return false;
-            //}
-            throw new NotImplementedException("PostSelectedCategoryAsync is not implemented ");
-        }
-
-
+        
 
     }
 }

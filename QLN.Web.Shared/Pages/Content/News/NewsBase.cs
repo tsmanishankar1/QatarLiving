@@ -61,6 +61,7 @@ namespace QLN.Web.Shared.Pages.Content.News
         [Inject] private IEventService _eventService { get; set; }
         protected ContentPost topNews { get; set; } = new ContentPost();
         protected List<ContentPost> moreArticleList { get; set; } = new List<ContentPost>();
+<<<<<<< HEAD
         protected NewsQatarPageResponse QatarNewsContent { get; set; } = new NewsQatarPageResponse();
         protected NewsEconomyPageResponse EconomyNewsContent { get; set; } = new NewsEconomyPageResponse();
         protected NewsRealEstatePageResponse RealEstateNewsContent { get; set; } = new NewsRealEstatePageResponse();
@@ -87,6 +88,20 @@ namespace QLN.Web.Shared.Pages.Content.News
         protected NewsQatarSportsPageResponse QatarSportsNewsContent { get; set; } = new NewsQatarSportsPageResponse();
 
 
+=======
+        protected QlnNewsNewsQatarPageResponse QatarNewsContent { get; set; } = new QlnNewsNewsQatarPageResponse();
+        protected QlnNewsFinanceEntrepreneurshipPageResponse FinanceEntrepreneurshipNewsContent { get; set; } = new QlnNewsFinanceEntrepreneurshipPageResponse();
+        protected QlnNewsFinanceRealEstatePageResponse RealEstateNewsContent { get; set; } = new QlnNewsFinanceRealEstatePageResponse();
+        protected QlnNewsFinanceQatarPageResponse FinanceQatarNewsContent { get; set; } = new QlnNewsFinanceQatarPageResponse();
+        protected QlnNewsFinanceMarketUpdatePageResponse MarketUpdateNewsContent { get; set; } = new QlnNewsFinanceMarketUpdatePageResponse();
+        protected QlnNewsFinanceJobsCareersPageResponse JobCareersNewsContent { get; set; } = new QlnNewsFinanceJobsCareersPageResponse();
+        protected QlnNewsFinanceFinancePageResponse FinanceFinanceNewsContent { get; set; } = new QlnNewsFinanceFinancePageResponse();
+        protected QlnNewsNewsCommunityPageResponse CommunityNewsContent { get; set; } = new QlnNewsNewsCommunityPageResponse();
+        protected QlnNewsNewsHealthEducationPageResponse HealthEducationNewsContent { get; set; } = new QlnNewsNewsHealthEducationPageResponse();
+        protected QlnNewsNewsLawPageResponse LawsNewsContent { get; set; } = new QlnNewsNewsLawPageResponse();
+        protected QlnNewsNewsMiddleEastPageResponse MiddleEastNewsContent { get; set; } = new QlnNewsNewsMiddleEastPageResponse();
+        protected QlnNewsNewsWorldPageResponse WorldNewsContent { get; set; } = new QlnNewsNewsWorldPageResponse();
+>>>>>>> 7977dcfd93180d837c6e1a791c71a0bb9bf97bb3
         protected async override Task OnInitializedAsync()
         {
             try
@@ -165,79 +180,84 @@ namespace QLN.Web.Shared.Pages.Content.News
             switch (tab)
             {
                 case "Qatar":
-                    QatarNewsContent = await GetNewsAsync<NewsQatarPageResponse>("Qatar");
+                    QatarNewsContent = await GetNewsAsync<QlnNewsNewsQatarPageResponse>("Qatar");
                     var qatar = QatarNewsContent?.QlnNewsNewsQatar;
                     topNews = qatar?.TopStory?.Items?.FirstOrDefault();
                     moreArticleList = qatar?.MoreArticles?.Items ?? new List<ContentPost>();
                     break;
 
                 case "Community":
-                    CommunityNewsContent = await GetNewsAsync<NewsCommunityPageResponse>("Community");
+                    CommunityNewsContent = await GetNewsAsync<QlnNewsNewsCommunityPageResponse>("Community");
                     var community = CommunityNewsContent?.QlnNewsNewsCommunity;
                     topNews = community?.TopStory?.Items?.FirstOrDefault();
                     moreArticleList = community?.MoreArticles?.Items ?? new List<ContentPost>();
                     break;
 
                 case "Law":
-                    LawsNewsContent = await GetNewsAsync<NewsLawPageResponse>("Law");
+                    LawsNewsContent = await GetNewsAsync<QlnNewsNewsLawPageResponse>("Law");
                     var law = LawsNewsContent?.QlnNewsNewsLaw;
                     topNews = law?.TopStory?.Items?.FirstOrDefault();
                     moreArticleList = law?.MoreArticles.Items ?? new List<ContentPost>();
                     break;
 
                 case "Health & Education":
-                    HealthEducationNewsContent = await GetNewsAsync<NewsHealthEducationPageResponse>("Health & Education");
+                    HealthEducationNewsContent = await GetNewsAsync<QlnNewsNewsHealthEducationPageResponse>("Health & Education");
                     var health = HealthEducationNewsContent?.QlnNewsNewsHealthEducation;
                     topNews = health?.TopStory?.Items?.FirstOrDefault();
                     moreArticleList = health?.MoreArticles?.Items ?? new List<ContentPost>();
                     break;
 
                 case "Middle East":
-                    MiddleEastNewsContent = await GetNewsAsync<NewsMiddleEastPageResponse>("Middle East");
+                    MiddleEastNewsContent = await GetNewsAsync<QlnNewsNewsMiddleEastPageResponse>("Middle East");
                     var middleEast = MiddleEastNewsContent?.QlnNewsNewsMiddleEast;
                     topNews = middleEast?.TopStory?.Items?.FirstOrDefault();
                     moreArticleList = middleEast?.MoreArticles?.Items ?? new List<ContentPost>();
                     break;
 
                 case "Qatar Economy":
-                    EconomyNewsContent = await GetNewsAsync<NewsEconomyPageResponse>("Qatar Economy");
-                    var economy = EconomyNewsContent?.QlnNewsFinanceQatar;
+                    FinanceQatarNewsContent = await GetNewsAsync<QlnNewsFinanceQatarPageResponse>("Qatar Economy");
+                    var economy = FinanceQatarNewsContent?.QlnNewsFinanceQatar;
                     topNews = economy?.TopStory?.Items?.FirstOrDefault();
                     moreArticleList = economy?.MoreArticles?.Items ?? new List<ContentPost>();
                     break;
 
                 case "World":
-                    WorldNewsContent = await GetNewsAsync<NewsWorldPageResponse>("World");
+                    WorldNewsContent = await GetNewsAsync<QlnNewsNewsWorldPageResponse>("World");
                     var world = WorldNewsContent?.QlnNewsNewsWorld;
                     topNews = world?.TopStory?.Items?.FirstOrDefault();
                     moreArticleList = world?.MoreArticles?.Items ?? new List<ContentPost>();
                     break;
                 case "Market Updates":
-                    MarketUpdateNewsContent = await GetNewsAsync<NewsMarketUpdatePageResponse>("Market Updates");
+                    MarketUpdateNewsContent = await GetNewsAsync<QlnNewsFinanceMarketUpdatePageResponse>("Market Updates");
                     var market = MarketUpdateNewsContent?.QlnNewsFinanceMarketUpdate;
                     topNews = market?.TopStory?.Items?.FirstOrDefault();
                     moreArticleList = market?.MoreArticles?.Items ?? new List<ContentPost>();
                     break;
                 case "Real Estate":
-                    RealEstateNewsContent = await GetNewsAsync<NewsRealEstatePageResponse>("Real Estate");
+                    RealEstateNewsContent = await GetNewsAsync<QlnNewsFinanceRealEstatePageResponse>("Real Estate");
                     var realEstate = RealEstateNewsContent?.QlnNewsFinanceRealEstate;
                     topNews = realEstate?.TopStory?.Items?.FirstOrDefault();
                     moreArticleList = realEstate?.MoreArticles?.Items ?? new List<ContentPost>();
                     break;
                 case "Entrepreneurship":
-                    EntrepeneurshipNewsContent = await GetNewsAsync<NewsEntrepreneurshipPageResponse>("Entrepreneurship");
-                    var entrepreneurship = EntrepeneurshipNewsContent?.QlnNewsFinanceEntrepreneurship;
+                    FinanceEntrepreneurshipNewsContent = await GetNewsAsync<QlnNewsFinanceEntrepreneurshipPageResponse>("Entrepreneurship");
+                    var entrepreneurship = FinanceEntrepreneurshipNewsContent?.QlnNewsFinanceEntrepreneurship;
                     topNews = entrepreneurship?.TopStory?.Items?.FirstOrDefault();
                     moreArticleList = entrepreneurship?.MoreArticles?.Items ?? new List<ContentPost>();
                     break;
                 case "Finance":
+<<<<<<< HEAD
                     FinanceQatarNewsContent = await GetNewsAsync<NewsFinanceQatarPageResponse>("Finance");
                     var finance = FinanceQatarNewsContent?.QlnNewsFinanceFinance;
+=======
+                    FinanceFinanceNewsContent = await GetNewsAsync<QlnNewsFinanceFinancePageResponse>("Finance");
+                    var finance = FinanceFinanceNewsContent?.QlnNewsFinanceFinance;
+>>>>>>> 7977dcfd93180d837c6e1a791c71a0bb9bf97bb3
                     topNews = finance?.TopStory?.Items?.FirstOrDefault();
                     moreArticleList = finance?.MoreArticles?.Items ?? new List<ContentPost>();
                     break;
                 case "Jobs & Careers":
-                    JobCareersNewsContent = await GetNewsAsync<NewsJobCareersPageResponse>("Jobs & Careers");
+                    JobCareersNewsContent = await GetNewsAsync<QlnNewsFinanceJobsCareersPageResponse>("Jobs & Careers");
                     var jobs = JobCareersNewsContent?.QlnNewsFinanceJobsCareers;
                     topNews = jobs?.TopStory?.Items?.FirstOrDefault();
                     moreArticleList = jobs?.MoreArticles?.Items ?? new List<ContentPost>();
@@ -337,25 +357,25 @@ StateHasChanged();
             return new T();
         }
         }
-                protected async Task<NewsQatarPageResponse> GetNewsQatarAsync()
+                protected async Task<QlnNewsNewsQatarPageResponse> GetNewsQatarAsync()
         {
             try
             {
                 var apiResponse = await _newsService.GetNewsQatarAsync() ?? new HttpResponseMessage();
                 if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
                 {
-                    var response = await apiResponse.Content.ReadFromJsonAsync<NewsQatarPageResponse>();
-                    return response ?? new NewsQatarPageResponse();
+                    var response = await apiResponse.Content.ReadFromJsonAsync<QlnNewsNewsQatarPageResponse>();
+                    return response ?? new QlnNewsNewsQatarPageResponse();
                 }
-                return new NewsQatarPageResponse();
+                return new QlnNewsNewsQatarPageResponse();
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "GetNewsQatarAsync");
-                return new NewsQatarPageResponse();
+                return new QlnNewsNewsQatarPageResponse();
             }
         }
-        protected async Task<NewsCommunityPageResponse> GetNewsCommunityAsync()
+        protected async Task<QlnNewsNewsCommunityPageResponse> GetNewsCommunityAsync()
         {
             try
             {
@@ -364,18 +384,18 @@ StateHasChanged();
 
                 if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
                 {
-                    var response = await apiResponse.Content.ReadFromJsonAsync<NewsCommunityPageResponse>();
-                    return response ?? new NewsCommunityPageResponse();
+                    var response = await apiResponse.Content.ReadFromJsonAsync<QlnNewsNewsCommunityPageResponse>();
+                    return response ?? new QlnNewsNewsCommunityPageResponse();
                 }
-                return new NewsCommunityPageResponse();
+                return new QlnNewsNewsCommunityPageResponse();
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "GetNewsCommunityAsync");
-                return new NewsCommunityPageResponse();
+                return new QlnNewsNewsCommunityPageResponse();
             }
         }
-        protected async Task<NewsHealthEducationPageResponse> GetNewsHealthAndEducationAsync()
+        protected async Task<QlnNewsNewsHealthEducationPageResponse> GetNewsHealthAndEducationAsync()
         {
             try
             {
@@ -383,18 +403,18 @@ StateHasChanged();
 
                 if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
                 {
-                    var response = await apiResponse.Content.ReadFromJsonAsync<NewsHealthEducationPageResponse>();
-                    return response ?? new NewsHealthEducationPageResponse();
+                    var response = await apiResponse.Content.ReadFromJsonAsync<QlnNewsNewsHealthEducationPageResponse>();
+                    return response ?? new QlnNewsNewsHealthEducationPageResponse();
                 }
-                return new NewsHealthEducationPageResponse();
+                return new QlnNewsNewsHealthEducationPageResponse();
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "GetNewsHealthAndEducationAsync");
-                return new NewsHealthEducationPageResponse();
+                return new QlnNewsNewsHealthEducationPageResponse();
             }
         }
-        protected async Task<NewsLawPageResponse> GetNewsLawAsync()
+        protected async Task<QlnNewsNewsLawPageResponse> GetNewsLawAsync()
         {
             try
             {
@@ -402,18 +422,18 @@ StateHasChanged();
 
                 if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
                 {
-                    var response = await apiResponse.Content.ReadFromJsonAsync<NewsLawPageResponse>();
-                    return response ?? new NewsLawPageResponse();
+                    var response = await apiResponse.Content.ReadFromJsonAsync<QlnNewsNewsLawPageResponse>();
+                    return response ?? new QlnNewsNewsLawPageResponse();
                 }
-                return new NewsLawPageResponse();
+                return new QlnNewsNewsLawPageResponse();
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "GGetNewsLawAsync");
-                return new NewsLawPageResponse();
+                return new QlnNewsNewsLawPageResponse();
             }
         }
-        protected async Task<NewsMiddleEastPageResponse> GetNewsMiddleEastAsync()
+        protected async Task<QlnNewsNewsMiddleEastPageResponse> GetNewsMiddleEastAsync()
         {
             try
             {
@@ -421,18 +441,18 @@ StateHasChanged();
 
                 if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
                 {
-                    var response = await apiResponse.Content.ReadFromJsonAsync<NewsMiddleEastPageResponse>();
-                    return response ?? new NewsMiddleEastPageResponse();
+                    var response = await apiResponse.Content.ReadFromJsonAsync<QlnNewsNewsMiddleEastPageResponse>();
+                    return response ?? new QlnNewsNewsMiddleEastPageResponse();
                 }
-                return new NewsMiddleEastPageResponse();
+                return new QlnNewsNewsMiddleEastPageResponse();
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "GetNewsMiddleEastAsync");
-                return new NewsMiddleEastPageResponse();
+                return new QlnNewsNewsMiddleEastPageResponse();
             }
         }
-        protected async Task<NewsWorldPageResponse> GetNewsWorldAsync()
+        protected async Task<QlnNewsNewsWorldPageResponse> GetNewsWorldAsync()
         {
             try
             {
@@ -440,15 +460,15 @@ StateHasChanged();
 
                 if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
                 {
-                    var response = await apiResponse.Content.ReadFromJsonAsync<NewsWorldPageResponse>();
-                    return response ?? new NewsWorldPageResponse();
+                    var response = await apiResponse.Content.ReadFromJsonAsync<QlnNewsNewsWorldPageResponse>();
+                    return response ?? new QlnNewsNewsWorldPageResponse();
                 }
-                return new NewsWorldPageResponse();
+                return new QlnNewsNewsWorldPageResponse();
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "GetNewsWorldAsync");
-                return new NewsWorldPageResponse();
+                return new QlnNewsNewsWorldPageResponse();
             }
         }
 
