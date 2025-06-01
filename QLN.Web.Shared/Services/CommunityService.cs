@@ -15,7 +15,7 @@ namespace QLN.Web.Shared.Services
             _httpClient = httpClient;
         }
 
-        public async Task<List<PostListDto>> GetPostsAsync(int forumId, string order, int page, int pageSize)
+        public async Task<List<PostListDto>> GetPostsAsync(int? forumId, string order, int page, int pageSize)
         {
 
             try
