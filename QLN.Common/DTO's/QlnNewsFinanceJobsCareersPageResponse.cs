@@ -17,7 +17,7 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonPropertyName($"{QueuePrefix}_top_story")]
         public BaseQueueResponse<ContentPost> TopStory { get; set; }
 
-        [JsonPropertyName($"{QueuePrefix}_more_articles")]
+        [JsonPropertyName($"{QueuePrefix}more_articles")]
         public BaseQueueResponse<ContentPost> MoreArticles { get; set; }
 
         [JsonPropertyName($"{QueuePrefix}_articles_1")]
