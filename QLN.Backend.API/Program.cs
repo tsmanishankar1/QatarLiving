@@ -1,31 +1,31 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Dapr.Client;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using QLN.Common.Infrastructure.DbContext;
-using QLN.Common.Infrastructure.Model;
-using QLN.Common.Infrastructure.ServiceConfiguration;
-using QLN.Common.Infrastructure.TokenProvider;
-using System.Text;
-using Dapr.Client;
-using QLN.Common.Infrastructure.IService;
 using Microsoft.OpenApi.Models;
-using QLN.Common.Infrastructure.CustomEndpoints.User;
-
 using QLN.Backend.API.ServiceConfiguration;
-using QLN.Common.Swagger;
+using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
-using QLN.Common.Infrastructure.Subscriptions;
-using System.Text.Json.Serialization;
-using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
-using QLN.Common.Infrastructure.IService;
-using Microsoft.AspNetCore.Authorization;
-using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication;
 using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
+using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.User;
+using QLN.Common.Infrastructure.DbContext;
+using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.ServiceConfiguration;
+using QLN.Common.Infrastructure.Subscriptions;
+using QLN.Common.Infrastructure.TokenProvider;
+using QLN.Common.Swagger;
+using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -193,7 +193,7 @@ var app = builder.Build();
 
 app.UseResponseCaching();                // Enable the middleware
 
-if (app.Environment.IsDevelopment())
+if (builder.Configuration.GetValue<bool>("EnableSwagger"))
 {
     app.UseSwagger();
     app.UseSwaggerUI(options =>
