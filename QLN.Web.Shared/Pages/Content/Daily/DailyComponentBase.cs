@@ -63,7 +63,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
                 TopicQueue2 = LandingContent?.ContentsDaily?.DailyTopics2?.Items ?? [];
                 TopicQueue3 = LandingContent?.ContentsDaily?.DailyTopics3?.Items ?? [];
                 TopicQueue4 = LandingContent?.ContentsDaily?.DailyTopics4?.Items ?? [];
-                var ListOfTopStories = LandingContent?.ContentsDaily.DailyTopStories.Items ?? [];
+                var ListOfTopStories = LandingContent?.ContentsDaily?.DailyTopStories?.Items ?? [];
 
                 TopStories = [.. ListOfTopStories.Take(3)]; // Just 3 should display
 
