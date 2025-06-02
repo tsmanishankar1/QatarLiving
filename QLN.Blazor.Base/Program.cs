@@ -160,6 +160,10 @@ builder.Services.AddHttpClient<IPostDialogService, PostDialogService>(client =>
     client.BaseAddress = new Uri(qatarLivingAPI);
 });
 
+builder.Services.AddHttpClient<ISearchService, CommunitySearchService>(client =>
+{
+    client.BaseAddress = new Uri(qatarLivingAPI);
+});
 
 
 builder.Services.AddHttpContextAccessor();
