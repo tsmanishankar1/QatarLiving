@@ -82,17 +82,27 @@
                                     {
                                     }
                                     else{
-                                        <span class="category-style">Sports</span>
-                                        <h2 class="main-title">@topNews.Title</h2>
+                                       @if (!string.IsNullOrWhiteSpace(topNews?.Category))
+                                        {
+                                            <span class="category-style">@topNews.Category</span>
+                                        }
+                                         @if (!string.IsNullOrWhiteSpace(topNews?.Title))
+                                        {
+                                            <h2 class="main-title">@topNews.Title</h2>
+                                        }
                                         <div class="author-wrapper">
-                                            <div class="main-author">
-                                                Ismat Zerin • <a href="#" class="main-source">Qatar Living</a>  
-                                                <img src="/qln-images/tick.svg" alt="Qatarliving" />
-                                            </div>
-                                            <div class="comment-badge">
-                                                <img src="/qln-images/comment_icon.svg" alt="Comments" class="comment-icon" />
-                                                <span class="count">12</span>
-                                            </div> 
+                                        <div class="main-author">
+                                        @if (!string.IsNullOrWhiteSpace(topNews?.UserName))
+                                        {
+                                            @topNews.UserName <span>•</span>
+                                        }
+                                        <a href="#" class="main-source">Qatar Living</a>  
+                                        <img src="/qln-images/tick.svg" alt="Qatarliving" />
+                                        </div>
+                                        <div class="comment-badge">
+                                        <img src="/qln-images/comment_icon.svg" alt="Comments" class="comment-icon" />
+                                        <span class="count">12</span>
+                                        </div> 
                                         </div>
                                     }
                                 </div>
@@ -115,14 +125,13 @@
                             </MudPaper>
                         }
                         </div>
-                        
                     }
-                     else if (moreArticleList != null && moreArticleList.Any())
+                     else if (secondArticleList != null && secondArticleList.Any())
                     {
-                     @foreach (var news in moreArticleList.Take(3))
+                     @foreach (var news in secondArticleList.Take(3))
                     { 
                         <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)"/>
-                         @if(news != moreArticleList.Last()){
+                         @if(news != secondArticleList.Last()){
                             <div style="width: 1px; height: auto; background-color: #F0F0F0; align-self: stretch; margin: 0 14px"></div>
                         } 
                     } 
@@ -368,7 +377,7 @@
     gap: 8px;
     white-space: nowrap;
     justify-content: space-between;
-    padding: 0px 100px;
+    @* padding: 0px 100px; *@
 }
 .ad-style{
     padding-right: 100px;
@@ -470,7 +479,6 @@
 .main-article {
     background: white;
     border-radius: 8px;
-    padding: 16px;
     display: flex;
     flex-direction: column;
 }
@@ -708,6 +716,12 @@
     }
 }
 @@media (max-width: 1024px) {
+    .max-container {
+        max-width: 1170px;
+        margin: 0 auto;
+        width: 100%;
+        padding: 0px 25px;
+    }
     .poular-article-container {
         display: flex;
         flex-direction: row;
@@ -730,7 +744,28 @@
     .grid-padding {
     padding-left: 16px;
     padding-right: 16px;
-}
+    }
+    .news-tabs {
+    width: 100%;
+    display: flex;
+    overflow-x: hidden;
+    margin: 23px 0px;
+    align-items:center;
+    gap: 8px;
+    white-space: nowrap;
+    justify-content: space-between;
+    padding: 0px 30px; 
+    }   
+    .news-tab {
+    padding: 10px 25px 10px 25px;
+    font-family: 'Public Sans', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    height:44px;
+    color: var(--color-text-heading);
+    cursor: pointer;
+    flex-shrink: 0;
+    }
 }
 @@media (max-width: 768px) {
     .news-tabs {
