@@ -9,8 +9,9 @@
             <!-- Search Field -->
             <div class="flex-grow-1 flex-md-grow-4 w-100 w-md-auto">
                 <div class="search-field search-input">
-                    <img src="/qln-images/content/Search.svg" alt="mail icon" class="left-icon" />
-                    <input type="text" id="community-search-input" placeholder="Search" class="text-input" />
+                    <img src="/qln-images/content/Search.svg" alt="mail icon" class="left-icon"  />
+                    <input type="text" id="community-search-input" placeholder="Search" class="text-input" @bind="searchText"
+                           @bind:event="oninput" />
                 </div>
             </div>
 

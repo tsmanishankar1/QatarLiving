@@ -8,11 +8,7 @@
 @inject ISnackbar Snackbar
 @using Microsoft.AspNetCore.Http;
 @using QLN.Web.Shared.Services
-
-@inject IOptions<NavigationPath> options
-@{
-    var navigationPath = options.Value;
-}
+@inject IOptions<NavigationPath> options;
 
 <MudThemeProvider />
 <MudDialogProvider />
@@ -89,12 +85,12 @@
             </MudMenu>
 
             <img src="/qln-images/header/add_post_svg.svg" alt="Post" class="mobile-post-icon"
-                @onclick="@(() => NavManager.NavigateTo("/"))" />
+                @onclick="@(() => NavManager.NavigateTo(navigationPath.PostingRules))" />
         </div>
     </div>
 
     <div class="header-right">
-        @* <MudAvatar Size="Size.Medium" Class="avatar-custom">
+        <MudAvatar Size="Size.Medium" Class="avatar-custom" onclick=@(() => GoToFavourites())>
             <img id="favouriteIcon" src="/qln-images/header/favourite_icon.svg" alt="Favourite" class="avatar-icon" />
         </MudAvatar> *@
         <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
@@ -127,7 +123,7 @@
                     <MudButton id="logoutButton" Variant="Variant.Filled" Color="Color.Warning"
                         StartIcon="@Icons.Material.Filled.Logout"
                         Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
-                        OnClick="@logout" Class="no-capitalize">
+                        OnClick=@GoToLogout" Class="no-capitalize">
                         Logout
                     </MudButton>
                 }
@@ -136,14 +132,14 @@
                     <MudButton id="loginButton" Variant="Variant.Outlined" Color="Color.Warning"
                         StartIcon="@Icons.Material.Filled.Login"
                         Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
-                        OnClick="@(() => NavManager.NavigateTo(navigationPath.Login))" Class="no-capitalize">
+                        OnClick="@GoToLogin" Class="no-capitalize">
                         Login
                     </MudButton>
 
                     <MudButton id="SignupButton" Variant="Variant.Filled" Color="Color.Warning"
                         StartIcon="@Icons.Material.Filled.PersonAdd"
                         Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
-                        OnClick="@(() => NavManager.NavigateTo(navigationPath.Register))" Class="no-capitalize">
+                        OnClick="@GoToRegister" Class="no-capitalize">
                         Sign Up
                     </MudButton>
                 }
@@ -161,11 +157,15 @@
 
 @code {
     private bool showMobileMenu = false;
-    public string Name { get; set; }
+    public string Name { get; set; } = String.Empty;
     public bool IsLoggedIn { get; set; } = false;
+
+    private NavigationPath navigationPath;
 
     protected override async Task OnInitializedAsync()
     {
+        navigationPath = options.Value;
+
         @* await base.OnInitializedAsync();   *@
         var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
         if (authState != null)
@@ -178,6 +178,7 @@
             }
         }
     }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender) return;
@@ -206,22 +207,56 @@
         showMobileMenu = !showMobileMenu;
     }
 
-    private void GoToProfile()
+    private void GoToFavourites()
     {
-        NavManager.NavigateTo("/profilePage");
+        NavManager.NavigateTo($"{navigationPath.Base}/user/0/wishlist"); // need to check if this should be the user Id.
     }
 
-    public void logout()
+    private void GoToProfile()
+    {
+        NavManager.NavigateTo(navigationPath.Profile);
+    }
+
+    private void GoToRegister()
+    {
+        var destination = GetDestination();
+
+        NavManager.NavigateTo($"{navigationPath.Register}?destination={destination}");
+    }
+
+    private void GoToLogin()
+    {
+        var destination = GetDestination();
+
+        NavManager.NavigateTo($"{navigationPath.Login}?destination={destination}");
+    }
+
+    public void GoToLogout()
     {
         // CookieAuthenticationStateProvider.LogoutUser();
         Name = string.Empty;
         IsLoggedIn = false;
-        NavManager.NavigateTo("/login");
+
+        var destination = GetDestination();
+
+        NavManager.NavigateTo($"{navigationPath.Logout}?destination={destination}");
     }
-    private void OnPostClicked()
+
+    private string GetDestination()
     {
-        NavManager.NavigateTo("https://www.qatarliving.com/node/add/classified");
+        // string the first value which is always a "/"
+        var destination = new Uri(NavManager.Uri).AbsolutePath.Substring(1);
+
+        if (string.IsNullOrEmpty(destination)) return "content/daily"; // default to this value
+
+        return destination;
     }
+
+    // private void OnPostClicked()
+    // {
+    //     NavManager.NavigateTo("https:www.qatarliving.com/node/add/classified");
+    // }
+
     private List<MenuItem> postMenuItems = new List<MenuItem>
 {
 new MenuItem {

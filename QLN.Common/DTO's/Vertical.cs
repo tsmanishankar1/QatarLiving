@@ -7,8 +7,12 @@ namespace QLN.Common.Infrastructure.Subscriptions
 
         Vehicles = 0,
         Properties = 1,
+        [JsonPropertyName("Rewards")]
         Rewards = 2,
-        Classifieds=3 
+        [JsonPropertyName("Classifieds")]
+        Classifieds = 3,
+        [JsonPropertyName("Services")]
+        Services = 4
     }
     public enum SubscriptionCategory
     {
@@ -22,5 +26,6 @@ namespace QLN.Common.Infrastructure.Subscriptions
         Active = 1,
         Suspended = 2,
         Expired = 3
+
     }
 }

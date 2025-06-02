@@ -1,9 +1,9 @@
 ﻿using Azure.Search.Documents.Indexes;
 using System.Text.Json.Serialization;
 
-namespace QLN.SearchService.IndexModels
+namespace QLN.Common.DTO_s
 {
-    public class ClassifiedIndex
+    public class ClassifiedsIndex
     {
         [SimpleField(IsKey = true)]
         public string Id { get; set; } = Guid.NewGuid().ToString();

@@ -35,7 +35,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\QLN.Classified.MS\QLN.Classified.MS.csproj" />
     <ProjectReference Include="..\QLN.Common\QLN.Common.csproj" />
+    <ProjectReference Include="..\QLN.SearchService\QLN.SearchService.csproj" />
   </ItemGroup>
 
 </Project>
