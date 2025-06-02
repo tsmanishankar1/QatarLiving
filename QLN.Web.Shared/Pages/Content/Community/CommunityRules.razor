@@ -1,8 +1,9 @@
 ﻿@inherits CommunityRulesBase
+
 <div Class="community-paper" >
     <div class="header-row">
         <div class="color-bar"></div>
-        <MudText Class="community-rules-title">Community Rules</MudText>
+        <MudText Class="community-rules-title">Rules & Guidelines</MudText>
     </div>
     <div class="d-flex flex-column gap-2 mt-4">
         @foreach (var rule in rules.Select((text, index) => new { text, index }))

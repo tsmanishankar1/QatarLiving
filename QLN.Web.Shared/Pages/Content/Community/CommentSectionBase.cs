@@ -17,6 +17,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
             Comment.Comments?.Skip((CurrentPage - 1) * PageSize).Take(PageSize) ?? Enumerable.Empty<CommentModel>();
 
         protected bool isMenuOpen = false;
+        protected bool IsLiked { get; set; } = false;
+
 
         protected void OnMenuToggle(bool open)
         {
@@ -49,5 +51,10 @@ namespace QLN.Web.Shared.Pages.Content.Community
             PageSize = size;
             CurrentPage = 1; 
         }
+        protected async Task ToggleLikeAsync()
+        {
+            IsLiked = !IsLiked;
+        }
+
     }
 }
