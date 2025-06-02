@@ -24,7 +24,7 @@ namespace QLN.Web.Shared.Services
 
                 //var response = await _httpClient.GetAsync($"node/add/post?field_page={selectedCategoryId}");
 
-                _navigationManager.NavigateTo($"{baseUrl}/node/add/post?field_page={selectedCategoryId}",forceLoad: true);
+                _navigationManager.NavigateTo($"{baseUrl}/node/add/post?field_page={selectedCategoryId}", forceLoad: true);
 
                 return true;
             }
