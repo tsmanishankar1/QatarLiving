@@ -69,7 +69,7 @@ namespace QLN.Backend.API.Service.ContentService
             string? date = null,
             string? order = "asc",
             int? page = 1, 
-            int? page_size = 10
+            int? page_size = 20
             )
         {
             string requestUri = $"{DrupalContentConstants.EventsPath}?page={page}&page_size={page_size}&order={order}";

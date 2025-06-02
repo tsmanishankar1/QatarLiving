@@ -20,7 +20,7 @@ namespace QLN.Common.Infrastructure.IService.IContentService
             string? date = null,
             string? order = "asc",
             int? page = 1,
-            int? page_size = 10
+            int? page_size = 20 // show 20 events by default
             );
         Task<CategoriesResponse?> GetCategoriesFromDrupalAsync(CancellationToken cancellationToken);
         Task<CommunitiesResponse?> GetCommunitiesFromDrupalAsync(CancellationToken cancellationToken, string? forum_id, string? order = "asc", int? page_size = 10, int? page = 1);
