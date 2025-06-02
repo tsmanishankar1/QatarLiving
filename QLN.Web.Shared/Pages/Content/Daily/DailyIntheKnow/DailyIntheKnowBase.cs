@@ -26,7 +26,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily.DailyIntheKnow
 
         protected void OnClickCommunityCateg(string qlCategLink)
         {
-            NavigationManager.NavigateTo($"{NavigationPath.Base}{qlCategLink}");
+            NavigationManager.NavigateTo("/content/news");
         }
 
         protected void OnClickCommunityViewAll()
