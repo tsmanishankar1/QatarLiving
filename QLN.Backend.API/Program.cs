@@ -25,7 +25,23 @@ using QLN.Common.Infrastructure.Subscriptions;
 using QLN.Common.Infrastructure.TokenProvider;
 using QLN.Common.Swagger;
 using System.Text;
+using Dapr.Client;
+using Microsoft.OpenApi.Models;
+using QLN.Common.Infrastructure.CustomEndpoints.User;
+using QLN.Backend.API.ServiceConfiguration;
+using QLN.Common.Swagger;
+using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using System.Text.Json.Serialization;
+using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
+using QLN.Common.Infrastructure.IService;
+using Microsoft.AspNetCore.Authorization;
+using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
+using System.Security.Claims;
+using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,7 +52,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpClient("DaprClient")
     .ConfigureHttpClient(client =>
     {
-        client.Timeout = TimeSpan.FromMinutes(5); // increased timeout to 5 minutes
+        client.Timeout = TimeSpan.FromMinutes(5); 
     });
 
 #endregion
@@ -148,13 +164,11 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
+        RoleClaimType = ClaimTypes.Role, 
     };
 
     options.MapInboundClaims = false;
-
-    options.TokenValidationParameters.RoleClaimType = "role";
-    options.TokenValidationParameters.NameClaimType = "name";
 });
 #endregion
 
@@ -174,12 +188,10 @@ builder.Services.AddActors(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
-builder.Services.AddResponseCaching();   // Register Response Caching service
+builder.Services.AddResponseCaching();   
 
 
 builder.Services.AddDaprClient();
-
-// This looks like a custom extension method? Adjust if needed
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
 builder.Services.ContentServicesConfiguration(builder.Configuration);
@@ -191,7 +203,7 @@ builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
 var app = builder.Build();
 
-app.UseResponseCaching();                // Enable the middleware
+app.UseResponseCaching();                
 
 if (builder.Configuration.GetValue<bool>("EnableSwagger"))
 {
@@ -209,8 +221,8 @@ var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
 
 var companyGroup = app.MapGroup("/api/companyprofile");
-companyGroup.MapCompanyEndpoints();
-
+companyGroup.MapCompanyEndpoints()
+    .RequireAuthorization();
 var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedEndpoints();
 

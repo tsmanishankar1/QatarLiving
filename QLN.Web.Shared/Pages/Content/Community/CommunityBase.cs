@@ -64,15 +64,16 @@ namespace QLN.Web.Shared.Pages.Content.Community
         [Parameter]
         [SupplyParameterFromQuery]
         public string? categoryId { get; set; }
+
+
        
         protected async override Task OnInitializedAsync()
         {
             CategorySelectOptions = new List<SelectOption>
               {
                  new() { Id = "Default", Label = "Default" },
-                 new() { Id = "Popular", Label = "Most Popular" },
-                 new() { Id = "Recent", Label = "Date : Recent First" },
-                 new() { Id = "Oldest", Label = "Date : Oldest First" },
+                 new() { Id = "desc", Label = "Date : Recent First" },
+                 new() { Id = "asc", Label = "Date : Oldest First" },
             };
             SelectedCategoryId = "Default";
 
@@ -203,19 +204,26 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         private string GetOrderFromSortOption()
         {
-            return sortOption switch
+            Logger.LogInformation($"SelectedCategoryId: {SelectedCategoryId}");
+           Console.WriteLine($"SelectedCategoryId: {SelectedCategoryId}");
+            //return SelectedCategoryId == "Default" ? null : SelectedCategoryId;
+
+            return SelectedCategoryId switch
             {
-                "Recent" => "desc",
-                "Oldest" => "asc",
-                _ => "desc"
+                "desc" => "desc", 
+                "asc" => "asc",   
+                _ => null        
             };
         }
 
-        protected async Task HandleSortChange(string newSortOption)
+        protected async Task OnSortChanged(string newSortId)
         {
-            sortOption = newSortOption;
+            Logger.LogInformation($"Sort changed to: {newSortId}");
+            Console.WriteLine($"Sort changed to: {newSortId}");
+            SelectedCategoryId = newSortId;
             CurrentPage = 1;
-            await GetPostListAsync();
+            PostList =await GetPostListAsync();
+            StateHasChanged();
         }
         protected async Task HandlePageSizeChange(int newPageSize)
         {
@@ -305,7 +313,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected async Task OnCategoryChange(string newId)
         {
             SelectedCategoryId = newId;
-            await OnCategoryChanged.InvokeAsync(newId);
+            CurrentPage = 1;  
+            PostList = await GetPostListAsync();
         }
 
         protected async Task LoadBanners()
