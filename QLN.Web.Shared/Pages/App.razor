@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap"
-          rel="stylesheet">
+        rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
     <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
     <link rel="icon" type="image/svg+xml" href="fav-icon.svg">
@@ -112,6 +112,26 @@
         window.addEventListener('resize', updateBannerImagesForScreen);
 
     </script>
+    <script>
+        function adBannerForScreen() {
+            const isMobile = window.innerWidth <= 768;
+
+            document.querySelectorAll('.add-image').forEach(img => {
+                const mobileSrc = img.getAttribute('data-mobile');
+                const desktopSrc = img.getAttribute('data-desktop');
+
+                if (isMobile && mobileSrc) {
+                    img.src = mobileSrc;
+                } else if (desktopSrc) {
+                    img.src = desktopSrc;
+                }
+            });
+        }
+
+        window.addEventListener('load', adBannerForScreen);
+        window.addEventListener('resize', adBannerForScreen);
+    </script>
+
     <script>
         window.registerImageLoadCallback = (imageId, dotNetRef) => {
             const img = document.getElementById(imageId);

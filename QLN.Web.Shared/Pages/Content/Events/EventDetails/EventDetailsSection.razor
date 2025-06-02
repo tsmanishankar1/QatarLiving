@@ -1,6 +1,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @using QLN.Common.Infrastructure.DTO_s
+@using QLN.Web.Shared.Components.AdBanner
 @using QLN.Web.Shared.Helpers
 
 <MudGrid Class="py-4" GutterSize="16px">
@@ -98,12 +99,16 @@
                     </iframe>
                 }
             </div>
-            <img src="/qln-images/classifieds/detail_ad.svg" alt="Ad" class="ad-banner" />
+
+            <AdBanner BannerItems="EventSideBanners" />
         </div>
     </MudItem>
 </MudGrid>
 
 @code {
+    [Parameter] public ContentEvent Item { get; set; }
+    [Parameter] public List<BannerItem> EventSideBanners { get; set; }
+
     private bool IsModalOpen { get; set; } = false;
     protected bool imageLoaded = false;
     protected override void OnParametersSet()
@@ -122,7 +127,6 @@
         imageLoaded = true; // stop skeleton on error
         StateHasChanged();
     }
-    [Parameter] public ContentEvent Item { get; set; }
     private List<MenuItem> shareMenuItems => new()
 {
 new MenuItem {
@@ -213,13 +217,16 @@ OpenInNewTab = true
         switch (calendarId)
         {
             case "google":
-                url = $"https://calendar.google.com/calendar/render?action=TEMPLATE&text={title}&dates={startUtc}/{endUtc}&details={description}&location={location}";
+                url =
+                $"https://calendar.google.com/calendar/render?action=TEMPLATE&text={title}&dates={startUtc}/{endUtc}&details={description}&location={location}";
                 break;
             case "outlook":
-                url = $"https://outlook.live.com/calendar/0/deeplink/compose?subject={title}&body={description}&startdt={startDate:yyyy-MM-ddTHH:mm:ss}&enddt={endDate:yyyy-MM-ddTHH:mm:ss}&location={location}";
+                url =
+                $"https://outlook.live.com/calendar/0/deeplink/compose?subject={title}&body={description}&startdt={startDate:yyyy-MM-ddTHH:mm:ss}&enddt={endDate:yyyy-MM-ddTHH:mm:ss}&location={location}";
                 break;
             case "webapp":
-                url = $"https://outlook.office.com/calendar/0/deeplink/compose?subject={title}&body={description}&startdt={startDate:yyyy-MM-ddTHH:mm:ss}&enddt={endDate:yyyy-MM-ddTHH:mm:ss}&location={location}";
+                url =
+                $"https://outlook.office.com/calendar/0/deeplink/compose?subject={title}&body={description}&startdt={startDate:yyyy-MM-ddTHH:mm:ss}&enddt={endDate:yyyy-MM-ddTHH:mm:ss}&location={location}";
                 break;
             case "yahoo":
                 url = $"https://calendar.yahoo.com/?v=60&title={title}&st={startUtc}&et={endUtc}&desc={description}&in_loc={location}";
@@ -242,7 +249,8 @@ OpenInNewTab = true
             <MudIcon Icon="@Icons.Material.Filled.Event" Style="margin-right: 6px;" />
         </button>
 
-        <AddToCalendarDialog @bind-IsVisible="IsModalOpen" Message="You will be notified 1 day ahead of this event" OnConfirm="OnCalendarConfirmed" />
+        <AddToCalendarDialog @bind-IsVisible="IsModalOpen" Message="You will be notified 1 day ahead of this event"
+            OnConfirm="OnCalendarConfirmed" />
     };
 }
 
@@ -496,11 +504,6 @@ OpenInNewTab = true
         height: 200px;
         border: none;
         border-radius: 8px;
-    }
-
-    .ad-banner {
-        margin-top: 24px;
-        width: 100%;
     }
 
     /* Responsive styles */

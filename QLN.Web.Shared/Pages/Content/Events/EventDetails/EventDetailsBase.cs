@@ -19,6 +19,7 @@ namespace QLN.Web.Shared.Pages.Content.Events.EventDetails
         protected bool isLoadingEventBanners { get; set; } = true;
 
         protected List<BannerItem> DailyHeroBanners { get; set; } = new();
+        protected List<BannerItem> EventSideBanners { get; set; } = new();
         protected ContentEvent eventDetails { get; set; }
 
         protected List<string> carouselImages = new()
@@ -84,6 +85,7 @@ namespace QLN.Web.Shared.Pages.Content.Events.EventDetails
             {
                 var banners = await FetchBannerData();
                 DailyHeroBanners = banners?.ContentEventsDetailHero ?? new List<BannerItem>();
+                EventSideBanners = banners?.ContentEventsDetailSide ?? new List<BannerItem>();
             }
             catch (Exception ex)
             {
