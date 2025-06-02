@@ -13,7 +13,15 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         Task<ContentPost?> GetPostBySlugAsync(string slug, CancellationToken cancellationToken);
         Task<ContentEvent?> GetEventBySlugAsync(string slug, CancellationToken cancellationToken);
         Task<T?> GetPostsFromDrupalAsync<T>(string queue_name, CancellationToken cancellationToken);
-        Task<List<ContentEvent>?> GetEventsFromDrupalAsync(CancellationToken cancellationToken);
+        Task<ContentEventsResponse?> GetEventsFromDrupalAsync(
+            CancellationToken cancellationToken,
+            string? category_id = null,
+            string? location_id = null,
+            string? date = null,
+            string? order = "asc",
+            int? page = 1,
+            int? page_size = 10
+            );
         Task<CategoriesResponse?> GetCategoriesFromDrupalAsync(CancellationToken cancellationToken);
         Task<CommunitiesResponse?> GetCommunitiesFromDrupalAsync(CancellationToken cancellationToken, string? forum_id, string? order = "asc", int? page_size = 10, int? page = 1);
         Task<ContentPost?> GetNewsBySlugAsync(string slug, CancellationToken cancellationToken);
