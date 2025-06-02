@@ -1,4 +1,6 @@
-﻿namespace QLN.Web.Shared.Model
+﻿using System.Text.Json.Serialization;
+
+namespace QLN.Web.Shared.Model
 {
     public class PostModel
     {
@@ -45,11 +47,7 @@
         public int UnlikeCount { get; set; }
         public bool IsByCurrentUser { get; set; }
     }
-    public class PostListResponse
-    {
-        public List<PostListDto> Posts { get; set; }
-    }
-
+  
     public class PostListDto
     {
         public string forum_id { get; set; }
@@ -90,6 +88,13 @@
         public string profile_picture { get; set; }
 
     }
+    public class PostListResponse
+    {
+        [JsonPropertyName("items")]
+        public List<PostListDto> items { get; set; }
 
+        [JsonPropertyName("total")]
+        public int total { get; set; }
+    }
 
 }

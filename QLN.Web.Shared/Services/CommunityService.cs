@@ -15,7 +15,7 @@ namespace QLN.Web.Shared.Services
             _httpClient = httpClient;
         }
 
-        public async Task<List<PostListDto>> GetPostsAsync(int? forumId, string order, int page, int pageSize)
+        public async Task<(List<PostListDto> Posts, int TotalCount)> GetPostsAsync(int? forumId, string order, int page, int pageSize)
         {
 
             try
@@ -27,13 +27,13 @@ namespace QLN.Web.Shared.Services
                           $"page_size={pageSize}";
 
 
-                var response = await _httpClient.GetFromJsonAsync<List<PostListDto>>(url);
-                return response ?? new List<PostListDto>();
+                var response = await _httpClient.GetFromJsonAsync<PostListResponse>(url);
+                return (response.items , response.total);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"API Error: {ex.Message}");
-                return new List<PostListDto>();
+                return (null, 0);
             }
         }
         public async Task<PostDetailsDto> GetPostBySlugAsync(string slug)

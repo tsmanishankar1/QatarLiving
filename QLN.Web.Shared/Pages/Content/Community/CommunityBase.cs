@@ -64,9 +64,18 @@ namespace QLN.Web.Shared.Pages.Content.Community
         [Parameter]
         [SupplyParameterFromQuery]
         public string? categoryId { get; set; }
+        protected string _newComment;
+        protected string newComment
+        {
+            get => _newComment;
+            set
+            {
+                _newComment = value;
+                StateHasChanged();
+            }
+        }
 
 
-       
         protected async override Task OnInitializedAsync()
         {
             CategorySelectOptions = new List<SelectOption>
@@ -79,7 +88,9 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
             try
             {
-                PostList = await GetPostListAsync();
+                var (posts, totalCount) = await GetPostListAsync();
+                PostList = posts;
+                TotalPosts = totalCount;
                 await LoadBanners();
 
                 Ad = await GetAdAsync();
@@ -100,12 +111,14 @@ namespace QLN.Web.Shared.Pages.Content.Community
             }
             else
             {
-                SelectedForumId = null; 
+                SelectedForumId = null;
             }
 
             try
             {
-                PostList = await GetPostListAsync();
+                var (posts, totalCount) = await GetPostListAsync();
+                PostList = posts;
+                TotalPosts = totalCount;
             }
             catch (Exception ex)
             {
@@ -139,7 +152,9 @@ namespace QLN.Web.Shared.Pages.Content.Community
         {
             SelectedForumId = forumId;
             CurrentPage = 1;
-            PostList = await GetPostListAsync();
+            var (posts, totalCount) = await GetPostListAsync();
+            PostList = posts;
+            TotalPosts = totalCount;
         }
 
         protected async Task HandleSearchResults()
@@ -147,7 +162,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             Console.WriteLine("Search completed.");
         }
 
-        protected async Task<List<PostModel>> GetPostListAsync()
+        protected async Task<(List<PostModel> Posts, int TotalCount)> GetPostListAsync()
         {
             try
             {
@@ -158,16 +173,16 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 int? forumId = int.TryParse(SelectedForumId, out var parsedId) ? parsedId : null;
                 Console.WriteLine("current page in GetPostListAsync", CurrentPage);
 
-                var dtoList = await CommunityService.GetPostsAsync(
-                    forumId: forumId,
-                    order: GetOrderFromSortOption(),
-                    page: CurrentPage,
-                    pageSize: PageSize
-                );
+                var (dtoList, totalCount) = await CommunityService.GetPostsAsync(
+             forumId: forumId,
+             order: GetOrderFromSortOption(),
+             page: CurrentPage,
+             pageSize: PageSize
+         );
                 if (dtoList == null || !dtoList.Any())
                 {
                     HasError = true;
-                    return null;
+                    return (null, 0);
                 }
 
 
@@ -187,13 +202,13 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 }).ToList();
                 //TotalPosts = postModelList.TotalCount;
 
-                return postModelList;
+                return (postModelList, totalCount);
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Get Community Post Async");
                 HasError = true;
-                return null;
+                return (null, 0);
             }
             finally
             {
@@ -205,14 +220,14 @@ namespace QLN.Web.Shared.Pages.Content.Community
         private string GetOrderFromSortOption()
         {
             Logger.LogInformation($"SelectedCategoryId: {SelectedCategoryId}");
-           Console.WriteLine($"SelectedCategoryId: {SelectedCategoryId}");
+            Console.WriteLine($"SelectedCategoryId: {SelectedCategoryId}");
             //return SelectedCategoryId == "Default" ? null : SelectedCategoryId;
 
             return SelectedCategoryId switch
             {
-                "desc" => "desc", 
-                "asc" => "asc",   
-                _ => null        
+                "desc" => "desc",
+                "asc" => "asc",
+                _ => null
             };
         }
 
@@ -222,7 +237,9 @@ namespace QLN.Web.Shared.Pages.Content.Community
             Console.WriteLine($"Sort changed to: {newSortId}");
             SelectedCategoryId = newSortId;
             CurrentPage = 1;
-            PostList =await GetPostListAsync();
+            var (posts, totalCount) = await GetPostListAsync();
+            PostList = posts;
+            TotalPosts = totalCount;
             StateHasChanged();
         }
         protected async Task HandlePageSizeChange(int newPageSize)
@@ -238,7 +255,9 @@ namespace QLN.Web.Shared.Pages.Content.Community
             Console.WriteLine("current page", CurrentPage);
             Logger.LogInformation($"Page changed to: {CurrentPage}");
 
-            PostList = await GetPostListAsync() ?? new List<PostModel>();
+            var (posts, totalCount) = await GetPostListAsync();
+            PostList = posts;
+            TotalPosts = totalCount;
             StateHasChanged();
         }
 
@@ -313,8 +332,10 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected async Task OnCategoryChange(string newId)
         {
             SelectedCategoryId = newId;
-            CurrentPage = 1;  
-            PostList = await GetPostListAsync();
+            CurrentPage = 1;
+            var (posts, totalCount) = await GetPostListAsync();
+            PostList = posts;
+            TotalPosts = totalCount;
         }
 
         protected async Task LoadBanners()
