@@ -10,14 +10,14 @@
     <div class="daily-category-group">
         @foreach (var item in DailyCategories)
         {
-            <button class="daily-category-btn" @onclick="() => OnClickCommunityCateg(item.QLCategLink)">
+            <button class="daily-category-btn" @onclick="() => OnClickNewsCateg(item.QLCategLink)">
                 <img src="@item.Icon" alt="@item.Label" class="btn-icon" />
                 @item.Label
             </button>
         }
 
 
-        <button class="view-all-btn" @onclick="OnClickCommunityViewAll">
+        <button class="view-all-btn" @onclick="OnClickViewAll">
             View all
             <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowRight" class="arrow-icon" />
         </button>
