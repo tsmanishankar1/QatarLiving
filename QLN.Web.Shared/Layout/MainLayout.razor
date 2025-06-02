@@ -54,11 +54,11 @@
                                 navigationPath.Rewards
                                 }
  class="nav-link">Rewards</NavLink>
-                <NavLink id="rewardsLink" class="nav-link d-flex align-items-center">
+                @* <NavLink id="rewardsLink" class="nav-link d-flex align-items-center">
                     More
                     <img src="/qln-images/header/arrow_down.svg" alt="Down arrow"
                         style="width: 20px; height: 20px; margin-left: 5px;" />
-                </NavLink>
+                </NavLink> *@
             </nav>
         </div>
 
@@ -92,7 +92,7 @@
     <div class="header-right">
         <MudAvatar Size="Size.Medium" Class="avatar-custom" onclick=@(() => GoToFavourites())>
             <img id="favouriteIcon" src="/qln-images/header/favourite_icon.svg" alt="Favourite" class="avatar-icon" />
-        </MudAvatar>
+        </MudAvatar> *@
         <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
             <ActivatorContent>
                 <div id="userIcon" style="display: flex; align-items: center; gap: 0.5rem;" class="cursor-pointer">
