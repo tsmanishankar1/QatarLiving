@@ -1,4 +1,6 @@
-﻿namespace QLN.Web.Shared.Model
+﻿using System.Text.Json.Serialization;
+
+namespace QLN.Web.Shared.Model
 {
     public class PostModel
     {
@@ -47,7 +49,10 @@
     }
     public class PostListResponse
     {
+        [JsonPropertyName("items")]
         public List<PostListDto> Posts { get; set; }
+        [JsonPropertyName("total")]
+        public string Total { get; set; }
     }
 
     public class PostListDto
@@ -62,7 +67,10 @@
         public string slug { get; set; }
         public string description { get; set; }
         public string image_url { get; set; }
-        public List<CommentDto> comments { get; set; } = new();
+        public string category { get; set; }
+        public string like_count { get; set; }
+        public string comment_count { get; set; }
+        //public List<CommentDto> comments { get; set; } = new();
 
     }
     public class PostDetailsDto
