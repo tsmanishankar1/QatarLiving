@@ -4,8 +4,34 @@
 @inherits PopularArticlesBase
 <div class="popular-articles">
     <h3 class="title">Most Popular Articles</h3>
-
-     @if (Articles != null && Articles.Any()){
+    @if(loading){
+                    @for (int i = 0; i < 4; i++)
+{
+    <div class="d-flex mb-4" style="gap: 16px;">
+        <div>
+            <MudSkeleton 
+                SkeletonType="SkeletonType.Rectangle" 
+                Height="100px" 
+                Width="200px" 
+                Animation="Animation.Wave" 
+                Class="rounded" />
+        </div>
+        <div class="d-flex flex-column justify-center" style="gap: 8px;">
+            <MudSkeleton 
+                SkeletonType="SkeletonType.Text" 
+                Height="20px" 
+                Width="200px" 
+                Animation="Animation.Wave" />
+            <MudSkeleton 
+                SkeletonType="SkeletonType.Text" 
+                Height="20px" 
+                Width="200px" 
+                Animation="Animation.Wave" />
+        </div>
+    </div>
+}
+    }
+     else if (Articles != null && Articles.Any()){
      @foreach (var article in Articles.Take(5))
     {
         <div class="article-item" @onclick="@(() => onclick(article))">
@@ -15,7 +41,14 @@
                 </div>
              }
              else{
-                <img src="@article.ImageUrl" alt="News Image" class="article-image" />
+                @if (!imageLoaded)
+                {
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle"  />
+                }
+ 
+            <img src="@article.ImageUrl" alt="News Image" class="article-image"
+                style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                @onerror="OnImageError" />
              }
             <div class="article-text">@article.Title</div>
         </div>

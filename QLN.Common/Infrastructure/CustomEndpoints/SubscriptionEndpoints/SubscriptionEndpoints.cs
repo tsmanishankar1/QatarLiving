@@ -45,6 +45,7 @@ public static class SubscriptionEndpoints
                 );
             }
         })
+        .RequireAuthorization(policy => policy.RequireRole("Admin")) 
         .WithName("CreateSubscription")
         .WithTags("Subscription")
         .WithSummary("Create a new subscription")
@@ -55,6 +56,7 @@ public static class SubscriptionEndpoints
 
         return group;
     }
+
     public static RouteGroupBuilder MapGetdetails(this RouteGroupBuilder group)
     {
         group.MapGet("/getsubscription", async Task<IResult> (

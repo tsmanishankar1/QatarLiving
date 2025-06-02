@@ -11,7 +11,24 @@ namespace QLN.Web.Shared.Components.EventListCard
 
         [Parameter]
         public EventCallback<ContentEvent> OnClick { get; set; }
+        protected bool imageLoaded = false;
 
+         protected override void OnParametersSet()
+        {
+            imageLoaded = false; // reset loading state
+        }
+
+        protected void OnImageLoaded()
+        {
+            imageLoaded = true;
+            StateHasChanged();
+        }
+
+        protected void OnImageError()
+        {
+            imageLoaded = true; // stop skeleton on error
+            StateHasChanged();
+        }
         public class EventItem
         {
             public string Title { get; set; } = string.Empty;

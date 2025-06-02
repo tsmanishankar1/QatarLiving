@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore.Migrations.Operations;
+using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Service;
 using System;
 using System.Collections.Generic;
@@ -14,6 +16,7 @@ namespace QLN.Common.Infrastructure.DTO_s
     {
         [Required]
         public VerticalType VerticalId { get; set; }
+        public CompanyCategory? CategoryId { get; set; }
         public Guid UserId { get; set; }
         [Required]
         public string CompanyLogo { get; set; } = string.Empty;
@@ -46,9 +49,9 @@ namespace QLN.Common.Infrastructure.DTO_s
         [Required]
         public string NatureOfBusiness { get; set; } = string.Empty;
         [Required]
-        public string CompanySize { get; set; } = string.Empty;
+        public CompanySize CompanySize { get; set; }
         [Required]
-        public string CompanyType { get; set; } = string.Empty;
+        public CompanyType CompanyType { get; set; } 
         [Required]
         public string UserDesignation { get; set; } = string.Empty;
         [Required, MaxLength(300)]
@@ -58,12 +61,13 @@ namespace QLN.Common.Infrastructure.DTO_s
         [Required]
         public string CRDocument { get; set; } = string.Empty;
         public bool? IsVerified { get; set; } = false;
-        public string? Status { get; set; }
+        public CompanyStatus? Status { get; set; }
     }
     public class CompanyProfileEntity
     {
         public Guid Id { get; set; }
         public VerticalType VerticalId { get; set; }
+        public CompanyCategory? CategoryId { get; set; } 
         public Guid UserId { get; set; }
         public string CompanyLogo { get; set; } = string.Empty;
         public string BusinessName { get; set; } = string.Empty;
@@ -81,14 +85,14 @@ namespace QLN.Common.Infrastructure.DTO_s
         public TimeSpan StartHour { get; set; }
         public TimeSpan EndHour { get; set; }
         public string NatureOfBusiness { get; set; } = string.Empty;
-        public string CompanySize { get; set; } = string.Empty;
-        public string CompanyType { get; set; } = string.Empty;
+        public CompanySize CompanySize { get; set; }
+        public CompanyType CompanyType { get; set; } 
         public string UserDesignation { get; set; } = string.Empty;
         public string BusinessDescription { get; set; } = string.Empty;
         public int CRNumber { get; set; }
         public string CRDocument { get; set; } = string.Empty;
         public bool? IsVerified { get; set; } = false;
-        public string? Status { get; set; }
+        public CompanyStatus? Status { get; set; }
         public bool IsActive { get; set; }
         public Guid CreatedBy { get; set; }
         public DateTime CreatedUtc { get; set; }
@@ -97,29 +101,32 @@ namespace QLN.Common.Infrastructure.DTO_s
     }
     public class CompanyProfileCompletionStatusDto
     {
+        public Guid CompanyId { get; set; }
+        public string? BusinessName { get; set; }
         public int CompletionPercentage { get; set; }
         public List<string> PendingFields { get; set; } = new();
     }
     public class CompanyProfileVerificationStatusDto
     {
-        public Guid UserId { get; set; }
+        public Guid CompanyId { get; set; }
+        public string BusinessName { get; set; } = null!;
         public VerticalType VerticalId { get; set; }
         public bool? IsVerified { get; set; }
         public string Status { get; set; } = "Pending"; 
     }
-    public class UpdateCompanyProfileVerificationStatusDto
+    public class CompanyApproveDto
     {
-        [Required]
-        public Guid UserId { get; set; }
-
-        [Required]
-        public VerticalType VerticalId { get; set; }
-
-        [Required]
-        public bool IsVerified { get; set; }
-
-        [Required]
-        [RegularExpression("Pending|Verified|Blocked|Suspended|Unblocked", ErrorMessage = "Invalid status")]
-        public string Status { get; set; } = "Pending";
+        public Guid CompanyId { get; set; }
+        public bool? IsVerified { get; set; }
+        public CompanyStatus? Status { get; set; }
+    }
+    public class CompanyApprovalResponseDto
+    {
+        public Guid CompanyId { get; set; }
+        public string Name { get; set; } = default!;
+        public bool? IsVerified { get; set; }
+        public CompanyStatus? StatusId { get; set; }
+        public string StatusName { get; set; } = default!;
+        public DateTime? UpdatedUtc { get; set; }
     }
 }

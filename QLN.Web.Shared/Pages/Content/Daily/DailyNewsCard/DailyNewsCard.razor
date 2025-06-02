@@ -2,7 +2,7 @@
 @inherits DailyNewsCardBase
 @if (!string.IsNullOrEmpty(Item.ImageUrl) || !string.IsNullOrEmpty(Item.Category) || !string.IsNullOrEmpty(Item.Title))
 {
-    <div class="daily-news-card @(IsHorizontal ? "horizontal" : "")" @onclick="NavigateToEventDetail">
+    <div class="daily-news-card @(IsHorizontal ? "horizontal" : "")" @onclick="NavigateToDetailPage">
         <img src="@Item.ImageUrl" alt="img-alt" class="daily-news-image" />
         <div class="daily-news-content">
             <div class="daily-news-category">@Item.Category</div>

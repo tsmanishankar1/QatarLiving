@@ -25,12 +25,12 @@ namespace QLN.Backend.API.Service.ContentService
             return null;
         }
 
-        public async Task<CreatePostResponse?> CreatePostOnDrupalAsync(CreatePostRequest request, CancellationToken cancellationToken)
+        public async Task<CreatePostResponse?> CreateDiscussionPostOnDrupalAsync(CreateDiscussionPostRequest request, CancellationToken cancellationToken)
         {
 
             //httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwtWoken);
 
-            var httpRequest = await httpClient.PostAsJsonAsync<CreatePostRequest>(DrupalContentConstants.PostsSavePath, request, cancellationToken);
+            var httpRequest = await httpClient.PostAsJsonAsync<CreateDiscussionPostRequest>(DrupalContentConstants.PostsSavePath, request, cancellationToken);
 
             if (httpRequest.IsSuccessStatusCode)
             {
@@ -72,7 +72,7 @@ namespace QLN.Backend.API.Service.ContentService
             return await httpClient.GetFromJsonAsync<CategoriesResponse>(DrupalContentConstants.CategoriesPath, cancellationToken);
         }
 
-        public async Task<List<CommunityPost>?> GetCommunitiesFromDrupalAsync(CancellationToken cancellationToken, string? forum_id = null, string? order = "asc", int? page = 1, int? page_size = 10)
+        public async Task<CommunitiesResponse?> GetCommunitiesFromDrupalAsync(CancellationToken cancellationToken, string? forum_id = null, string? order = "asc", int? page = 1, int? page_size = 10)
         {
             string requestUri = $"{DrupalContentConstants.CommunityPath}?page={page}&page_size={page_size}&order={order}";
             if (!string.IsNullOrEmpty(forum_id))
@@ -80,7 +80,7 @@ namespace QLN.Backend.API.Service.ContentService
                 requestUri += $"&forum_id={forum_id}";
             }
 
-            return await httpClient.GetFromJsonAsync<List<CommunityPost>>(requestUri, cancellationToken);
+            return await httpClient.GetFromJsonAsync<CommunitiesResponse>(requestUri, cancellationToken);
         }
 
         public async Task<GetCommentsResponse?> GetCommentsFromDrupalAsync(string forum_id, CancellationToken cancellationToken, int? page = 1, int? page_size = 10)

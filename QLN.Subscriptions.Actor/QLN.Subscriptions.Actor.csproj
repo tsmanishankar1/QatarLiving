@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\QLN.Backend.API\QLN.Backend.API.csproj" />
     <ProjectReference Include="..\QLN.Common\QLN.Common.csproj" />
   </ItemGroup>
 

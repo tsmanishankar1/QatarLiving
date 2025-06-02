@@ -12,8 +12,14 @@
             </div>
 
             <div class="event-image-container">
+
+                @if (!imageLoaded)
+                {
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="421px" />
+                }
                 <img src="@(!string.IsNullOrWhiteSpace(Item?.ImageUrl) ? Item.ImageUrl : "/images/not_found.svg")"
-                    alt="Event Image" class="event-image" />
+                    alt="Event Image" class="event-image" style="@(imageLoaded ? "display: block;" : "display: none;")"
+                    @onload="OnImageLoaded" @onerror="OnImageError" />
 
 
                 <div class="event-info-bar">
@@ -51,7 +57,7 @@
                 @EventInfoBlock()
 
                 @* Register/Calendar Buttons *@
-                @* @ActionButtons() *@
+                @ActionButtons()
             </div>
 
             @if (!string.IsNullOrWhiteSpace(Item?.Description))
@@ -78,7 +84,7 @@
                                 }
 
                 @EventInfoBlock()
-                @* @ActionButtons() *@
+                @ActionButtons()
             </div>
 
             <!-- Always visible map & ad -->
@@ -92,14 +98,30 @@
                     </iframe>
                 }
             </div>
-            <img src="/images/classifieds/detail_ad.svg" alt="Ad" class="ad-banner" />
+            <img src="/qln-images/classifieds/detail_ad.svg" alt="Ad" class="ad-banner" />
         </div>
     </MudItem>
 </MudGrid>
 
 @code {
     private bool IsModalOpen { get; set; } = false;
+    protected bool imageLoaded = false;
+    protected override void OnParametersSet()
+    {
+        imageLoaded = false; // reset loading state
+    }
 
+    protected void OnImageLoaded()
+    {
+        imageLoaded = true;
+        StateHasChanged();
+    }
+
+    protected void OnImageError()
+    {
+        imageLoaded = true; // stop skeleton on error
+        StateHasChanged();
+    }
     [Parameter] public ContentEvent Item { get; set; }
     private List<MenuItem> shareMenuItems => new()
 {
@@ -172,6 +194,43 @@ OpenInNewTab = true
 
     };
 
+    private async Task OnCalendarConfirmed(string calendarId)
+    {
+        // Use the Item object for event data
+        var title = Uri.EscapeDataString(Item?.Title ?? "");
+        var description = Uri.EscapeDataString(Item?.Description ?? "");
+        var location = Uri.EscapeDataString(Item?.EventVenue ?? "");
+
+        // Parse start and end dates from Item
+        DateTime startDate = DateTime.TryParse(Item?.EventStart, out var dtStart) ? dtStart : DateTime.Now;
+        DateTime endDate = DateTime.TryParse(Item?.EventEnd, out var dtEnd) ? dtEnd : startDate.AddHours(2);
+
+        string startUtc = startDate.ToUniversalTime().ToString("yyyyMMddTHHmmssZ");
+        string endUtc = endDate.ToUniversalTime().ToString("yyyyMMddTHHmmssZ");
+
+        string url = "";
+
+        switch (calendarId)
+        {
+            case "google":
+                url = $"https://calendar.google.com/calendar/render?action=TEMPLATE&text={title}&dates={startUtc}/{endUtc}&details={description}&location={location}";
+                break;
+            case "outlook":
+                url = $"https://outlook.live.com/calendar/0/deeplink/compose?subject={title}&body={description}&startdt={startDate:yyyy-MM-ddTHH:mm:ss}&enddt={endDate:yyyy-MM-ddTHH:mm:ss}&location={location}";
+                break;
+            case "webapp":
+                url = $"https://outlook.office.com/calendar/0/deeplink/compose?subject={title}&body={description}&startdt={startDate:yyyy-MM-ddTHH:mm:ss}&enddt={endDate:yyyy-MM-ddTHH:mm:ss}&location={location}";
+                break;
+            case "yahoo":
+                url = $"https://calendar.yahoo.com/?v=60&title={title}&st={startUtc}&et={endUtc}&desc={description}&in_loc={location}";
+                break;
+            default:
+                return;
+        }
+
+        await JSRuntime.InvokeVoidAsync("window.open", url, "_blank");
+    }
+
     RenderFragment ActionButtons() => __builder =>
     {
         <button class="register-button">
@@ -183,7 +242,7 @@ OpenInNewTab = true
             <MudIcon Icon="@Icons.Material.Filled.Event" Style="margin-right: 6px;" />
         </button>
 
-        <AddToCalendarDialog @bind-IsVisible="IsModalOpen" Message="You will be notified 1 day ahead of this event" />
+        <AddToCalendarDialog @bind-IsVisible="IsModalOpen" Message="You will be notified 1 day ahead of this event" OnConfirm="OnCalendarConfirmed" />
     };
 }
 

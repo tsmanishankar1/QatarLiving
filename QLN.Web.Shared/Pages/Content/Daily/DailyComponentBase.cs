@@ -13,14 +13,14 @@ namespace QLN.Web.Shared.Pages.Content.Daily
         protected ContentsDailyPageResponse LandingContent { get; set; } = new ContentsDailyPageResponse();
         protected ContentPost TopStoryItem { get; set; } = new ContentPost();
         protected ContentEvent HighlightedEvent { get; set; } = new ContentEvent();
-        protected List<ContentPost> FeaturedEvents { get; set; } = [];
-        protected List<ContentPost> MoreArticles { get; set; } = [];
-        protected List<ContentPost> Videos { get; set; } = [];
+        protected List<ContentEvent> FeaturedEvents { get; set; } = [];
+        protected List<ContentEvent> MoreArticles { get; set; } = [];
+        protected List<ContentVideo> Videos { get; set; } = [];
         protected List<BannerItem> DailyHeroBanners { get; set; } = new();
         protected List<BannerItem> DailyTakeOver1Banners { get; set; } = new();
         protected List<BannerItem> DailyTakeOver2Banners { get; set; } = new();
         protected bool isLoadingBanners = true;
-        
+
         protected List<string> carouselImages = new()
         {
         "/qln-images/banner_image.svg",
@@ -30,36 +30,21 @@ namespace QLN.Web.Shared.Pages.Content.Daily
 
         protected bool isLoading = true;
 
-        protected List<ContentPost> TopicQueue1 { get; set; } = [];
-        protected List<ContentPost> TopicQueue2 { get; set; } = [];
-        protected List<ContentPost> TopicQueue3 { get; set; } = [];
-        protected List<ContentPost> TopicQueue4 { get; set; } = [];
+        protected List<ContentEvent> TopicQueue1 { get; set; } = [];
+        protected List<ContentEvent> TopicQueue2 { get; set; } = [];
+        protected List<ContentEvent> TopicQueue3 { get; set; } = [];
+        protected List<ContentEvent> TopicQueue4 { get; set; } = [];
+        protected List<ContentEvent> TopicQueue5 { get; set; } = [];
 
         protected string TopicQueue1Label { get; set; } = string.Empty;
         protected string TopicQueue2Label { get; set; } = string.Empty;
         protected string TopicQueue3Label { get; set; } = string.Empty;
         protected string TopicQueue4Label { get; set; } = string.Empty;
+        protected string TopicQueue5Label { get; set; } = string.Empty;
+        protected List<ContentPost> TopStories { get; set; } = [];
+        protected List<ContentVideo> VideoList { get; set; } = [];
 
-        protected async Task LoadBanners()
-        {
-            isLoadingBanners = true;
-            try
-            {
-                var banners = await FetchBannerData();
-                DailyHeroBanners = banners?.DailyHero ?? new();
-                DailyTakeOver1Banners = banners?.DailyTakeOver1 ?? new();
-                DailyTakeOver2Banners = banners?.DailyTakeOver2 ?? new();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading banners: {ex.Message}");
-            }
-               finally
-            {
-                isLoadingBanners = false;
-            }
-        }
-                protected async override Task OnInitializedAsync()
+        protected async override Task OnInitializedAsync()
         {
             isLoading = true;
             try
@@ -78,12 +63,24 @@ namespace QLN.Web.Shared.Pages.Content.Daily
                 TopicQueue2 = LandingContent?.ContentsDaily?.DailyTopics2?.Items ?? [];
                 TopicQueue3 = LandingContent?.ContentsDaily?.DailyTopics3?.Items ?? [];
                 TopicQueue4 = LandingContent?.ContentsDaily?.DailyTopics4?.Items ?? [];
+                var ListOfTopStories = LandingContent?.ContentsDaily?.DailyTopStories?.Items ?? [];
+
+                TopStories = [.. ListOfTopStories.Take(3)]; // Just 3 should display
+
+                TopicQueue5 = LandingContent?.ContentsDaily?.DailyTopics5?.Items ?? [];
+                TopicQueue5Label = LandingContent?.ContentsDaily?.DailyTopics5?.QueueLabel ?? "";
+
+
+                var videoContent = await GetContentVideoLandingAsync();
+                VideoList = videoContent?.QlnVideos?.QlnVideosTopVideos?.Items ?? [];
+
                 await LoadBanners();
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message, "OnInitializedAsync");
-            }  finally
+            }
+            finally
             {
                 isLoading = false;
             }
@@ -109,11 +106,11 @@ namespace QLN.Web.Shared.Pages.Content.Daily
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message, "OnInitializedAsync");
+                Console.WriteLine(ex.Message, "GetContentLandingAsync");
                 return new ContentsDailyPageResponse();
             }
         }
- private async Task<BannerResponse?> FetchBannerData()
+        private async Task<BannerResponse?> FetchBannerData()
         {
             try
             {
@@ -128,6 +125,51 @@ namespace QLN.Web.Shared.Pages.Content.Daily
             {
                 Console.WriteLine($"FetchBannerData error: {ex.Message}");
                 return null;
+            }
+        }
+
+        protected async Task LoadBanners()
+        {
+            isLoadingBanners = true;
+            try
+            {
+                var banners = await FetchBannerData();
+                DailyHeroBanners = banners?.DailyHero ?? new();
+                DailyTakeOver1Banners = banners?.DailyTakeOver1 ?? new();
+                DailyTakeOver2Banners = banners?.DailyTakeOver2 ?? new();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading banners: {ex.Message}");
+            }
+            finally
+            {
+                isLoadingBanners = false;
+            }
+        }
+
+        /// <summary>
+        /// Gets Content Videos Page data
+        /// </summary>
+        /// <returns>ContentsVideosResponse</returns>
+        protected async Task<ContentsVideosResponse> GetContentVideoLandingAsync()
+        {
+            try
+            {
+                var apiResponse = await _contentService.GetVideosLPAsync() ?? new HttpResponseMessage();
+
+                if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
+                {
+                    var response = await apiResponse.Content.ReadFromJsonAsync<ContentsVideosResponse>();
+                    return response ?? new ContentsVideosResponse();
+                }
+
+                return new ContentsVideosResponse();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message, "GetContentVideoLandingAsync");
+                return new ContentsVideosResponse();
             }
         }
     }

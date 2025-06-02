@@ -5,7 +5,7 @@
     <div class="event-title">@Post.Title</div>
 
     <div class="event-image-container">
-         @if (loading){
+                        @if (loading){
                             <MudSkeleton 
                                 SkeletonType="SkeletonType.Rectangle" 
                                 Animation="Animation.Wave" 
@@ -19,14 +19,20 @@
                                  <EmptyCard Title="No Images Available" Subtitle="" />
                             }
                             else{
-                            <img src="@Post.ImageUrl" alt="Michael Bublé" class="event-image" />
+                                @if (!imageLoaded)
+                                {
+                                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Class="event-image" />
+                                }
+                                <img src="@Post.ImageUrl" alt="News Image" class="event-image"
+                                style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                                @onerror="OnImageError" />
                             }
                         }
 
-             <div class="author-wrapper">
+                    <div class="author-wrapper">
                     <div class="main-author">
-                        <div>
-                        Ismat Zerin • <a href="#" class="main-source">Qatar Living</a>  
+                        <div style="gap: 8px;">
+                        @(string.IsNullOrWhiteSpace(Post.UserName) ? "" : Post.UserName) • <a href="#" class="main-source">Qatar Living</a>  
                             <img src="/qln-images/tick.svg" alt="Qatarliving" />
                          <h3 class="main-title">@FormattedDate</h3>
                          </div>
@@ -34,8 +40,19 @@
                     
 
                     <div class="icons">
-                        <MudIcon Icon="@Icons.Material.Filled.FavoriteBorder" class="icon-circle-border" />
-                        <MudIcon Icon="@Icons.Material.Filled.Share" class="icon-circle-border" />
+                     <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu">
+                            <ActivatorContent>
+                                <MudIconButton Icon="@Icons.Material.Filled.Share" Class="icons-color" />
+                            </ActivatorContent>
+                            <ChildContent>
+                                @foreach (var item in shareMenuItems)
+                                {
+                                    <MudMenuItem Href="@item.Route" Target="@(item.OpenInNewTab ? "_blank" : "_self")">
+                                        <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                    </MudMenuItem>
+                                }
+                            </ChildContent>
+                        </MudMenu>
 
                     <div class="comment-badge">
                         <img src="/qln-images/comment_icon.svg" alt="Comments"  />
@@ -44,9 +61,19 @@
             </div>
         </div>
     </div>
+     @if (loading){
+        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="100%" Animation="Animation.Wave" />
+        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="60%" Animation="Animation.Wave" />
+        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="100%" Animation="Animation.Wave" />
+        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="60%" Animation="Animation.Wave" />
+        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="100%" Animation="Animation.Wave" />
+        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="60%" Animation="Animation.Wave" />
+     }
+     else{
     <div class="event-description">
         <div>@ParsedDescription</div>
     </div>
+    }
 </div>
 
 <style>

@@ -186,7 +186,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 }
 
 
-                var postModelList = dtoList.Select(dto => new PostModel
+                var postModelList = dtoList.Posts.Select(dto => new PostModel
                 {
                     Id = dto.nid,
                     Category = dto.forum_category,
@@ -194,13 +194,13 @@ namespace QLN.Web.Shared.Pages.Content.Community
                     BodyPreview = dto.description,
                     Author = dto.user_name,
                     Time = DateTime.TryParse(dto.date_created, out var parsedDate) ? parsedDate : DateTime.MinValue,
-                    LikeCount = 0,
-                    CommentCount = 0,
-                    isCommented = false,
+                    LikeCount = int.TryParse(dto.like_count, out var like_result) ? like_result : 0,
+                    CommentCount = int.TryParse(dto.comment_count, out var comment_result) ? comment_result : 0,
+                    isCommented = comment_result > 0,
                     ImageUrl = dto.image_url,
                     Slug = dto.slug,
                 }).ToList();
-                //TotalPosts = postModelList.TotalCount;
+                TotalPosts = int.TryParse(dtoList.Total, out var total_result) ? total_result : 0;
 
                 return (postModelList, totalCount);
             }

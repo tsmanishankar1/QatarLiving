@@ -1,10 +1,9 @@
+@page "/content/daily"
 @inherits DailyComponentBase
 @using QLN.Web.Shared.Components.Carousel
-@using QLN.Web.Shared.Components.TakeOverBanner
 @using QLN.Web.Shared.Pages.Content.Daily
 @using QLN.Web.Shared.Components.DailyFeaturedEventCard
 @using QLN.Web.Shared.Pages.Content.Daily.DailyNewsCard
-@using QLN.Web.Shared.Pages.Content.Daily.DailyVideoCards
 @using QLN.Web.Shared.Pages.Content.Daily.DailyNewsLetter
 @using QLN.Web.Shared.Pages.Content.Daily.DailyMoreArticle
 @using QLN.Web.Shared.Pages.Content.Daily.DailyHighlights
@@ -46,9 +45,12 @@
                     <MudGrid GutterSize="10px">
                         @if (isLoading)
                         {
-                            <MudItem xs="12">
-                                <ItemSkeletonCard />
-                            </MudItem>
+                            @for (int i = 0; i < 2; i++)
+                            {
+                                <MudItem xs="12" sm="6" md="6" key="@i">
+                                    <ItemSkeletonCard />
+                                </MudItem>
+                            }
                         }
                         else if (TopStoryItem == null && HighlightedEvent == null)
                         {
@@ -67,6 +69,8 @@
                             </MudItem>
                         }
                     </MudGrid>
+
+
                 </MudItem>
                 <MudItem xs="12" md="4">
                     <DailyMoreArticle Items="@MoreArticles" isLoading="isLoading" />
@@ -75,12 +79,12 @@
 
             <MudGrid GutterSize="16px">
 
-                @if (TopicQueue1.Count() > 0)
+                @if (TopStories.Count() > 0)
                 {
                     <!-- Left column: news cards -->
                     <MudItem xs="12" md="9" lg="9">
                         <MudGrid GutterSize="16px">
-                            @foreach (var item in TopicQueue1.Take(3))
+                            @foreach (var item in TopStories)
                             {
                                 <MudItem xs="12" sm="6" md="4" lg="4">
                                     <DailyNewsCard Item="item" IsHorizontal="false" />
@@ -90,6 +94,7 @@
                         </MudGrid>
                     </MudItem>
                 }
+
                 <!-- Right column: newsletter -->
                 <MudItem xs="12" md="3" lg="3">
                     <DailyNewsLetter />
@@ -115,24 +120,28 @@
             }
             else
             {
-                <EmptyCard Title="No event banners found." Subtitle="Please check back later for updates." />
+                <EmptyCard Title="No daily banners found." Subtitle="Please check back later for updates." />
             }
 
         </div>
 
     </div>
-    @if (Videos.Count > 0)
+    @if (VideoList.Count > 0)
     {
-
-
         <div class="max-container">
 
-            <DailyVideoCards Items="@Videos" />
+            <DailyVideoCards Items="@VideoList" />
         </div>
     }
     <div class="responsive-news-container">
 
         <div class="max-container">
+
+            @if (TopicQueue1.Count() > 0)
+            {
+                <DailyHighlights QueueLabel="@TopicQueue1Label" ListOfItems="TopicQueue1" />
+            }
+
             @if (TopicQueue2.Count() > 0)
             {
                 <DailyHighlights QueueLabel="@TopicQueue2Label" ListOfItems="TopicQueue2" />
@@ -148,7 +157,7 @@
             }
             else
             {
-                <EmptyCard Title="No event banners found." Subtitle="Please check back later for updates." />
+                <EmptyCard Title="No daily banners found." Subtitle="Please check back later for updates." />
             }
 
             @if (TopicQueue3.Count() > 0)
@@ -158,6 +167,10 @@
             @if (TopicQueue4.Count() > 0)
             {
                 <DailyHighlights QueueLabel="@TopicQueue4Label" ListOfItems="TopicQueue4" />
+            }
+            @if (TopicQueue5.Count() > 0)
+            {
+                <DailyHighlights QueueLabel="@TopicQueue5Label" ListOfItems="TopicQueue5" />
             }
         </div>
     </div>

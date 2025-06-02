@@ -35,11 +35,25 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                 .MapGetEventBySlugEndpoint()
                 .MapGetNewsBySlugEndpoint()
                 .MapPostCommentEndpoint()
-                .MapPostForumPostEndpoint()
+                .MapPostDiscussionPostEndpoint()
                 .MapChangePostLikeStatusEndpoint()
                 .MapChangeCommentLikeStatusEndpoint()
                 .MapContentGetCommentsEndpoint()
-                .MapContentVideosEndpoint();
+                .MapContentVideosEndpoint()
+                .MapFeaturedEventsEndpoint()
+                .MapLifestyleArtsCultureEndpoint()
+                .MapLifestyleEventsEndpoint()
+                .MapLifestyleFoodDiningEndpoint()
+                .MapLifestyleFashionStyleEndpoint()
+                .MapLifestyleHomeLivingEndpoint()
+                .MapLifestyleTravelLeisureEndpoint()
+                .MapSportsAthleteFeaturesEndpoint()
+                .MapSportsFootballEndpoint()
+                .MapSportsInternationalEndpoint()
+                .MapSportsOlympicsEndpoint()
+                .MapSportsQatarSportsEndpoint()
+                .MapSportsMotorsportsEndpoint()
+                ;
 
             return group;
         }

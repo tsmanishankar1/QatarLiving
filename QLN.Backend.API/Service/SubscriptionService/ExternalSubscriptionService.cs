@@ -1,8 +1,6 @@
 ﻿using Dapr.Actors;
 using Dapr.Actors.Client;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using QLN.Common.DTO_s;
 using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.IService.ISubscriptionService;
 using QLN.Common.Infrastructure.Model;
@@ -369,6 +367,10 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         {
             return startDate.AddYears(value);
         }
+        if (duration.Contains("minute"))
+        {
+            return startDate.AddMinutes(value);
+        }
 
         throw new ArgumentException($"Unsupported duration format: {duration}");
     }
@@ -383,8 +385,246 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
        
     }
-   
+    public async Task<string[]> GetUserRolesAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("[UserManagementService] Getting roles for user {UserId}", userId);
 
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null)
+            {
+                _logger.LogWarning("[UserManagementService] User not found with ID: {UserId}", userId);
+                return Array.Empty<string>();
+            }
 
+            var roles = await _userManager.GetRolesAsync(user);
+            return roles.ToArray();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[UserManagementService] Error getting roles for user {UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task<bool> AddUserToRoleAsync(Guid userId, string roleName, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("[UserManagementService] Adding user {UserId} to role {Role}", userId, roleName);
+
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null)
+            {
+                _logger.LogWarning("[UserManagementService] User not found with ID: {UserId}", userId);
+                return false;
+            }
+
+            // Ensure role exists
+            if (!await _roleManager.RoleExistsAsync(roleName))
+            {
+                var createRoleResult = await _roleManager.CreateAsync(new IdentityRole<Guid>(roleName));
+                if (!createRoleResult.Succeeded)
+                {
+                    _logger.LogError("[UserManagementService] Failed to create role {Role}", roleName);
+                    return false;
+                }
+            }
+
+            var result = await _userManager.AddToRoleAsync(user, roleName);
+            if (result.Succeeded)
+            {
+                _logger.LogInformation("[UserManagementService] Successfully added user {UserId} to role {Role}", userId, roleName);
+                return true;
+            }
+
+            _logger.LogError("[UserManagementService] Failed to add user {UserId} to role {Role}: {Errors}",
+                userId, roleName, string.Join(", ", result.Errors.Select(e => e.Description)));
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[UserManagementService] Error adding user {UserId} to role {Role}", userId, roleName);
+            throw;
+        }
+    }
+
+    public async Task<bool> RemoveUserFromRoleAsync(Guid userId, string roleName, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("[UserManagementService] Removing user {UserId} from role {Role}", userId, roleName);
+
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null)
+            {
+                _logger.LogWarning("[UserManagementService] User not found with ID: {UserId}", userId);
+                return false;
+            }
+
+            var result = await _userManager.RemoveFromRoleAsync(user, roleName);
+            if (result.Succeeded)
+            {
+                _logger.LogInformation("[UserManagementService] Successfully removed user {UserId} from role {Role}", userId, roleName);
+                return true;
+            }
+
+            _logger.LogError("[UserManagementService] Failed to remove user {UserId} from role {Role}: {Errors}",
+                userId, roleName, string.Join(", ", result.Errors.Select(e => e.Description)));
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[UserManagementService] Error removing user {UserId} from role {Role}", userId, roleName);
+            throw;
+        }
+    }
+
+    public async Task<bool> IsUserInRoleAsync(Guid userId, string roleName, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("[UserManagementService] Checking if user {UserId} is in role {Role}", userId, roleName);
+
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null)
+            {
+                _logger.LogWarning("[UserManagementService] User not found with ID: {UserId}", userId);
+                return false;
+            }
+
+            var result = await _userManager.IsInRoleAsync(user, roleName);
+            _logger.LogInformation("[UserManagementService] User {UserId} in role {Role}: {Result}", userId, roleName, result);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[UserManagementService] Database connection error checking if user {UserId} is in role {Role}", userId, roleName);
+            throw;
+        }
+    }
+
+    public async Task<bool> ChangeUserRoleAsync(Guid userId, string newRole, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("[UserManagementService] Changing role for user {UserId} to {NewRole}", userId, newRole);
+
+            // Find the user
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null)
+            {
+                _logger.LogWarning("[UserManagementService] User not found with ID: {UserId}", userId);
+                return false;
+            }
+
+            // Ensure the target role exists
+            var roleExists = await _roleManager.RoleExistsAsync(newRole);
+            if (!roleExists)
+            {
+                var createRoleResult = await _roleManager.CreateAsync(new IdentityRole<Guid>(newRole));
+                if (!createRoleResult.Succeeded)
+                {
+                    _logger.LogError("[UserManagementService] Failed to create role {Role}: {Errors}",
+                        newRole, string.Join(", ", createRoleResult.Errors.Select(e => e.Description)));
+                    return false;
+                }
+                _logger.LogInformation("[UserManagementService] Created new role: {Role}", newRole);
+            }
+
+     
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            _logger.LogInformation("[UserManagementService] User {UserId} current roles: {Roles}",
+                userId, string.Join(", ", currentRoles));
+
+  
+            if (currentRoles.Contains(newRole))
+            {
+                _logger.LogInformation("[UserManagementService] User {UserId} already has role {Role}", userId, newRole);
+                return true;
+            }
+
+            // Remove from all current roles
+            if (currentRoles.Any())
+            {
+                var removeResult = await _userManager.RemoveFromRolesAsync(user, currentRoles);
+                if (!removeResult.Succeeded)
+                {
+                    _logger.LogError("[UserManagementService] Failed to remove user {UserId} from current roles: {Errors}",
+                        userId, string.Join(", ", removeResult.Errors.Select(e => e.Description)));
+                    return false;
+                }
+                _logger.LogInformation("[UserManagementService] Removed user {UserId} from roles: {Roles}",
+                    userId, string.Join(", ", currentRoles));
+            }
+
+            // Add to new role
+            var addResult = await _userManager.AddToRoleAsync(user, newRole);
+            if (addResult.Succeeded)
+            {
+                _logger.LogInformation("[UserManagementService] Successfully added user {UserId} to role {Role}", userId, newRole);
+                return true;
+            }
+            else
+            {
+                _logger.LogError("[UserManagementService] Failed to add user {UserId} to role {Role}: {Errors}",
+                    userId, newRole, string.Join(", ", addResult.Errors.Select(e => e.Description)));
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[UserManagementService] Error changing role for user {UserId} to {NewRole}", userId, newRole);
+            throw;
+        }
+    }
+
+    public async Task<bool> HandleSubscriptionExpiryAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("[UserManagementService] Handling subscription expiry for user {UserId}", userId);
+
+            // Check if user is currently a subscriber - with proper error handling
+            bool isSubscriber;
+            try
+            {
+                isSubscriber = await IsUserInRoleAsync(userId, "Subscriber", cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[UserManagementService] Database error while checking subscriber status for user {UserId}. Cannot proceed with expiry handling.", userId);
+                return false;
+            }
+
+            if (!isSubscriber)
+            {
+                _logger.LogInformation("[UserManagementService] User {UserId} is not a subscriber, no action needed", userId);
+                return true;
+            }
+
+            // Change role from Subscriber to User
+            var success = await ChangeUserRoleAsync(userId, "User", cancellationToken);
+            if (success)
+            {
+                _logger.LogInformation("[UserManagementService] Successfully handled subscription expiry for user {UserId}", userId);
+            }
+            else
+            {
+                _logger.LogError("[UserManagementService] Failed to handle subscription expiry for user {UserId}", userId);
+            }
+
+            return success;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[UserManagementService] Error handling subscription expiry for user {UserId}", userId);
+            return false;
+        }
+    }
 }
+
+
+
 
