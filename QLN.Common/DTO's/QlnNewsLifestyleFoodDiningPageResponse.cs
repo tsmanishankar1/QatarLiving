@@ -12,7 +12,7 @@ namespace QLN.Common.Infrastructure.DTO_s
 
     public class QlnNewsLifestyleFoodDining
     {
-        const string QueuePrefix = DrupalContentConstants.QlnNewsLifestyleFoodDining;
+        const string QueuePrefix = "qln_news_lifestyle_food_dining";
 
         [JsonPropertyName($"{QueuePrefix}_top_story")]
         public BaseQueueResponse<ContentPost> TopStory { get; set; }
