@@ -90,9 +90,9 @@
     </div>
 
     <div class="header-right">
-        <MudAvatar Size="Size.Medium" Class="avatar-custom" onclick=@(() => GoToFavourites())>
+        @* <MudAvatar Size="Size.Medium" Class="avatar-custom" @onclick="() => GoToFavourites()">
             <img id="favouriteIcon" src="/qln-images/header/favourite_icon.svg" alt="Favourite" class="avatar-icon" />
-        </MudAvatar>
+        </MudAvatar>  *@
         <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
             <ActivatorContent>
                 <div id="userIcon" style="display: flex; align-items: center; gap: 0.5rem;" class="cursor-pointer">
@@ -123,7 +123,7 @@
                     <MudButton id="logoutButton" Variant="Variant.Filled" Color="Color.Warning"
                         StartIcon="@Icons.Material.Filled.Logout"
                         Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
-                        OnClick=@GoToLogout" Class="no-capitalize">
+                        OnClick="@GoToLogout" Class="no-capitalize">
                         Logout
                     </MudButton>
                 }
@@ -209,26 +209,26 @@
 
     private void GoToFavourites()
     {
-        NavManager.NavigateTo($"{navigationPath.Base}/user/0/wishlist"); // need to check if this should be the user Id.
+        NavManager.NavigateTo($"{navigationPath.Base}/user/0/wishlist", forceLoad: true); // need to check if this should be the user Id.
     }
 
     private void GoToProfile()
     {
-        NavManager.NavigateTo(navigationPath.Profile);
+        NavManager.NavigateTo(navigationPath.Profile, forceLoad: true);
     }
 
     private void GoToRegister()
     {
         var destination = GetDestination();
 
-        NavManager.NavigateTo($"{navigationPath.Register}?destination={destination}");
+        NavManager.NavigateTo($"{navigationPath.Register}?destination={destination}", forceLoad: true);
     }
 
     private void GoToLogin()
     {
         var destination = GetDestination();
 
-        NavManager.NavigateTo($"{navigationPath.Login}?destination={destination}", true); // true = force reload
+        NavManager.NavigateTo($"{navigationPath.Login}?destination={destination}", forceLoad: true); // true = force reload
     }
 
     public void GoToLogout()
@@ -239,7 +239,7 @@
 
         var destination = GetDestination();
 
-        NavManager.NavigateTo($"{navigationPath.Logout}?destination={destination}");
+        NavManager.NavigateTo($"{navigationPath.Logout}?destination={destination}", forceLoad: true);
     }
 
     private string GetDestination()
@@ -412,7 +412,7 @@ Route = "/more-features-coming-soon"
 
         .mobile-post-icon {
             display: inline-block !important;
-        }
+        }s
     }
 
     @@media (max-width: 992px) {

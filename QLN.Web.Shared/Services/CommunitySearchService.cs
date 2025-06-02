@@ -21,7 +21,7 @@ namespace QLN.Web.Shared.Services
                 var baseUrl = _httpClient.BaseAddress?.ToString()?.TrimEnd('/');
 
 
-                _navigationManager.NavigateTo($"{baseUrl}/custom-search/google?name={searchText}/#gsc.tab=0&gsc.q=test&gsc.sort=");
+                _navigationManager.NavigateTo($"{baseUrl}/custom-search/google?name={searchText}/#gsc.tab=0&gsc.q=test&gsc.sort=", forceLoad: true);
 
                 return true;
             }
