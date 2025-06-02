@@ -1,4 +1,5 @@
 ﻿using Azure;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
@@ -7,7 +8,7 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using System;
 
-namespace QLN.SearchService.CustomEndpoints
+namespace QLN.Common.Infrastructure.CustomEndpoints
 {
     public static class AnalyticsEndpoints
     {

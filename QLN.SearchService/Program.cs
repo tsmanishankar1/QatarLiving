@@ -1,11 +1,9 @@
 ﻿using Azure;
 using Azure.Search.Documents.Indexes;
 using Microsoft.Extensions.Options;
+using QLN.Common.Infrastructure.CustomEndpoints;
 using QLN.SearchService;
-using QLN.SearchService.CustomEndpoints;
 using QLN.SearchService.IndexModels;
-using QLN.SearchService.Repository;
-using QLN.SearchService.Service;
 using QLN.SearchService.ServiceConfiguration;
 using System.Text.Json;
 
