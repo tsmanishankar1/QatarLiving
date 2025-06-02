@@ -14,7 +14,7 @@
     <div class="card-list">
         @foreach (var item in ListOfItems.Take(3))
         {
-            <div class="news-card with-divider">
+            <div class="news-card with-divider" @onclick="() => NavigateToDetailPage(item)">
                 <img class="daily-news-image" src="@item.ImageUrl" alt="img" />
                 <div class="text-content">
                     <p class="tag">@item.Category</p>

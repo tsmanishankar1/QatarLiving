@@ -15,7 +15,7 @@ public class DailyVideoCardsBase : ComponentBase
 
     protected override void OnInitialized()
     {
-        SelectedVideo = Items.FirstOrDefault();
+        SelectedVideo = Items?.FirstOrDefault() ?? new();
     }
 
     protected void SelectVideo(ContentVideo video)

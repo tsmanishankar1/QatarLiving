@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using QLN.Web.Shared.Services.Interface;
+﻿using QLN.Web.Shared.Services.Interface;
 using System.Net;
 
 namespace QLN.Web.Shared.Services
@@ -49,19 +47,33 @@ namespace QLN.Web.Shared.Services
             throw new NotImplementedException();
         }
 
-           public async Task<HttpResponseMessage?> GetBannerAsync()
-{
-    try
-    {
-        var response = await _httpClient.GetAsync("api/banner");
-        return response;
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine("GetBannerAsync: " + ex);
-        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
-    }
-}
+        public async Task<HttpResponseMessage?> GetBannerAsync()
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync("api/banner");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("GetBannerAsync: " + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
 
+        /// <inheritdoc/>
+        public async Task<HttpResponseMessage?> GetVideosLPAsync()
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync("/api/content/qln_videos/landing");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("GetVideosLPAsync: " + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
     }
 }
