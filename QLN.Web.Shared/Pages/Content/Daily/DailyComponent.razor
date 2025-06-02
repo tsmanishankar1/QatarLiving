@@ -139,18 +139,7 @@
 
             @if (TopicQueue1.Count() > 0)
             {
-                <!-- Left column: news cards -->
-                <MudItem xs="12" md="9" lg="9">
-                    <MudGrid GutterSize="16px">
-                        @foreach (var item in TopicQueue1.Take(3))
-                        {
-                            <MudItem xs="12" sm="6" md="4" lg="4">
-                                <DailyNewsCard Item="item" IsHorizontal="false" />
-                            </MudItem>
-                        }
-
-                    </MudGrid>
-                </MudItem>
+                <DailyHighlights QueueLabel="@TopicQueue1Label" ListOfItems="TopicQueue1" />
             }
 
             @if (TopicQueue2.Count() > 0)
