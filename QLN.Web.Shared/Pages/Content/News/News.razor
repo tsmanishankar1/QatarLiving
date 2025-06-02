@@ -125,12 +125,12 @@
                         }
                         </div>
                     }
-                    else if (topNewsListSlot != null && topNewsListSlot.Any())
+                    else if (articleListSlot1 != null && articleListSlot1.Any())
                     {
-                        @foreach (var news in topNewsListSlot.Take(3))
+                        @foreach (var news in articleListSlot1.Take(3))
                     { 
                         <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)"/>
-                         @if(news != topNewsListSlot.Last()){
+                         @if(news != articleListSlot1.Last()){
                             <div style="width: 1px; height: auto; background-color: #F0F0F0; align-self: stretch; margin: 0 14px"></div>
                         } 
                     } 
@@ -197,12 +197,12 @@
                         </div>
                         
                     }
-                else if (articleListSlot1 != null && articleListSlot1.Any())
+                else if (articleListSlot2 != null && articleListSlot2.Any())
                         {
-                    @foreach (var news in articleListSlot1.Take(5))
+                    @foreach (var news in articleListSlot2.Take(5))
                         { 
                             <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)"/>
-                            @if(news != articleListSlot1.Last()){
+                            @if(news != articleListSlot2.Last()){
                                 <div class="divider-vertical"></div>
                             }
                         }
@@ -253,11 +253,11 @@
                             </MudItem>
                         }
                         }
-                    else if (articleListSlot2 != null && articleListSlot2.Any())
+                    else if (moreArticleListSlot != null && moreArticleListSlot.Any())
                         {
-                        @for (int i = 0; i < articleListSlot2.Take(9).Count(); i++)
+                        @for (int i = 0; i < moreArticleListSlot.Take(9).Count(); i++)
                         {
-                            var news = articleListSlot2[i];
+                            var news = moreArticleListSlot[i];
                             <MudItem xs="12" sm="6" md="4"> 
                             <div class="card-with-divider">
                             <NewsCard news="news" IsHorizontal="true" OnClick="() => onclick(news)" />
