@@ -34,11 +34,14 @@ namespace QLN.Web.Shared.Pages.Content.Daily
         protected List<ContentEvent> TopicQueue2 { get; set; } = [];
         protected List<ContentEvent> TopicQueue3 { get; set; } = [];
         protected List<ContentEvent> TopicQueue4 { get; set; } = [];
+        protected List<ContentEvent> TopicQueue5 { get; set; } = [];
 
         protected string TopicQueue1Label { get; set; } = string.Empty;
         protected string TopicQueue2Label { get; set; } = string.Empty;
         protected string TopicQueue3Label { get; set; } = string.Empty;
         protected string TopicQueue4Label { get; set; } = string.Empty;
+        protected string TopicQueue5Label { get; set; } = string.Empty;
+
 
         protected List<ContentPost> TopStories { get; set; } = [];
 
@@ -83,6 +86,9 @@ namespace QLN.Web.Shared.Pages.Content.Daily
                 var ListOfTopStories = LandingContent?.ContentsDaily.DailyTopStories.Items ?? [];
 
                 TopStories = [.. ListOfTopStories.Take(3)]; // Just 3 should display
+
+                TopicQueue5 = LandingContent?.ContentsDaily?.DailyTopics5?.Items ?? [];
+                TopicQueue5Label = LandingContent?.ContentsDaily?.DailyTopics5?.QueueLabel ?? "";
 
                 await LoadBanners();
             }
