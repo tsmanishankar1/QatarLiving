@@ -1,7 +1,9 @@
 ﻿using QLN.Backend.API.Service.BannerService;
 using QLN.Backend.API.Service.ClassifiedService;
+using QLN.Backend.API.Service.CompanyService;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.BannerService;
+using QLN.Common.Infrastructure.IService.ICompanyService;
 
 namespace QLN.Backend.API.ServiceConfiguration
 {
@@ -14,7 +16,10 @@ namespace QLN.Backend.API.ServiceConfiguration
 
             return services;
         }
-
-
+        public static IServiceCollection CompanyConfiguration(this IServiceCollection services, IConfiguration config)
+        {
+            services.AddTransient<ICompanyService, ExternalCompanyService>();
+            return services;
+        }
     }
 }

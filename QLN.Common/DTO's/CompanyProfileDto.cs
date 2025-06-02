@@ -101,12 +101,15 @@ namespace QLN.Common.Infrastructure.DTO_s
     }
     public class CompanyProfileCompletionStatusDto
     {
+        public Guid CompanyId { get; set; }
+        public string? BusinessName { get; set; }
         public int CompletionPercentage { get; set; }
         public List<string> PendingFields { get; set; } = new();
     }
     public class CompanyProfileVerificationStatusDto
     {
-        public Guid UserId { get; set; }
+        public Guid CompanyId { get; set; }
+        public string BusinessName { get; set; } = null!;
         public VerticalType VerticalId { get; set; }
         public bool? IsVerified { get; set; }
         public string Status { get; set; } = "Pending"; 
@@ -116,7 +119,6 @@ namespace QLN.Common.Infrastructure.DTO_s
         public Guid CompanyId { get; set; }
         public bool? IsVerified { get; set; }
         public CompanyStatus? Status { get; set; }
-        public DateTime UpdatedUtc { get; set; }
     }
     public class CompanyApprovalResponseDto
     {
