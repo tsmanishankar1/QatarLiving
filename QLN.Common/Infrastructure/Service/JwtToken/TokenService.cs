@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using QLN.Common.Infrastructure.IService.ITokenService;
 using QLN.Common.Infrastructure.Model;
@@ -12,9 +13,13 @@ namespace QLN.Common.Infrastructure.Service.JwtTokenService
     public class TokenService : ITokenService
     {
         private readonly IConfiguration _config;
-        public TokenService(IConfiguration config)
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly RoleManager<IdentityRole<Guid>> _roleManager;
+        public TokenService(IConfiguration config, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole<Guid>> roleManager)
         {
             _config = config;
+            _userManager = userManager;
+            _roleManager = roleManager;
         }
         public async Task<string> GenerateAccessToken(ApplicationUser user)
         {
@@ -31,6 +36,15 @@ namespace QLN.Common.Infrastructure.Service.JwtTokenService
                 new("PhoneNumber", user.PhoneNumber ?? string.Empty),                
             };
 
+            var roles = await _userManager.GetRolesAsync(user);
+
+            foreach (var role in roles)
+            {
+                if (await _roleManager.RoleExistsAsync(role))
+                {
+                    authClaims.Add(new Claim(ClaimTypes.Role, role));
+                }
+            }
             var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
 
             var token = new JwtSecurityToken(
