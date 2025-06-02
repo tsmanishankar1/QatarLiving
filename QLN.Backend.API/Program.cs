@@ -19,7 +19,25 @@ using QLN.Common.Infrastructure.TokenProvider;
 using QLN.Common.Swagger;
 using System.Security.Claims;
 using System.Text;
+using Dapr.Client;
+using Microsoft.OpenApi.Models;
+using QLN.Common.Infrastructure.CustomEndpoints.User;
+using QLN.Backend.API.ServiceConfiguration;
+using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using System.Text.Json.Serialization;
+using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
+using Microsoft.AspNetCore.Authorization;
+using QLN.SearchService.CustomEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
+using QLN.Classified.MS.Endpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,8 +72,6 @@ builder.Services.AddSwaggerGen(options =>
         In = ParameterLocation.Header,
         Description = "Enter 'Bearer' followed by your JWT token."
     });
-
-    options.OperationFilter<SwaggerFileUploadFilter>();
 
     options.MapType<IFormFile>(() => new OpenApiSchema
     {
@@ -168,12 +184,14 @@ builder.Services.AddActors(options =>
 
 builder.Services.AddResponseCaching();   
 
-
 builder.Services.AddDaprClient();
+
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
+builder.Services.SearchServicesConfiguration(builder.Configuration);
 builder.Services.ContentServicesConfiguration(builder.Configuration);
 builder.Services.BannerServicesConfiguration(builder.Configuration);
+builder.Services.AnalyticsServicesConfiguration(builder.Configuration);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
@@ -202,13 +220,19 @@ var companyGroup = app.MapGroup("/api/companyprofile");
 companyGroup.MapCompanyEndpoints()
     .RequireAuthorization();
 var classifiedGroup = app.MapGroup("/api/classified");
-classifiedGroup.MapClassifiedEndpoints();
+classifiedGroup.MapClassifiedsEndpoints();
+
+var servicesGroup = app.MapGroup("/api/services");
+servicesGroup.MapServicesEndpoints();
 
 var contentGroup = app.MapGroup("/api/content");
 contentGroup.MapContentLandingEndpoints();
 
 var bannerGroup = app.MapGroup("/api/banner");
 bannerGroup.MapBannerEndpoints();
+
+var analyticGroup = app.MapGroup("/api/analytics");
+analyticGroup.MapAnalyticsEndpoints();
 
 app.MapGroup("/api/subscriptions")
    .MapSubscriptionEndpoints();
@@ -220,6 +244,9 @@ app.MapGroup("/api/subscriptions")
 app.MapGroup("/api/PayToPublish")
     .MapPayToPublishEndpoints();
 
+
+app.MapAllBackOfficeEndpoints();
+app.MapLandingPageEndpoints();
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
