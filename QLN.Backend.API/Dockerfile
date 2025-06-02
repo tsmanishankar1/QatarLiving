@@ -14,8 +14,8 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["QLN.Backend.API/QLN.Backend.API.csproj", "QLN.Backend.API/"]
 COPY ["QLN.Common/QLN.Common.csproj", "QLN.Common/"]
-COPY ["QLN.Classified.MS/QLN.Classified.MS.csproj", "QLN.Common/"]
-COPY ["QLN.SearchService/QLN.SearchService.csproj", "QLN.Common/"]
+COPY ["QLN.Classified.MS/QLN.Classified.MS.csproj", "QLN.Classified.MS/"]
+COPY ["QLN.SearchService/QLN.SearchService.csproj", "QLN.SearchService/"]
 RUN dotnet restore "./QLN.Backend.API/QLN.Backend.API.csproj"
 COPY . .
 WORKDIR "/src/QLN.Backend.API"
