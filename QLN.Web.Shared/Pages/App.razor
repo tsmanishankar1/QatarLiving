@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap"
-        rel="stylesheet">
+          rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
     <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
     <link rel="icon" type="image/svg+xml" href="fav-icon.svg">
@@ -26,6 +26,49 @@
     <script src="_framework/blazor.web.js"></script>
     <script src="_content/GoogleAnalytics.Blazor/googleanalytics.blazor.js"></script>
     <script src="_content/Extensions.MudBlazor.StaticInput/NavigationObserver.js?v=3.2.0"></script>
+    <script>
+        (function start() {
+            // Get the current URL
+            var currentUrl = window.location.href;
+
+            // Check if the URL is localhost or 127.0.0.1
+            if (currentUrl.includes('localhost') || currentUrl.includes('127.0.0.1')) {
+                // Do not run this function on localhost
+                return;
+            }
+
+            // Remove protocol and get the host part
+            var urlObj = new URL(currentUrl);
+            var host = urlObj.host; // e.g. "mycompany.com:5001" or "qa.mycompany.com"
+
+            // Determine environment based on subdomain
+            // If host starts with "test." => Development
+            // If host starts with "qa." => Staging
+            // Otherwise => Production
+            var prefix = '';
+            if (host.startsWith('test.')) {
+                prefix = 'qln-dev';
+            } else if (host.startsWith('qa.')) {
+                prefix = 'qln-qa';
+            } else {
+                prefix = 'qln';
+            }
+            // Remove any existing subdomain and add the new prefix
+            var hostParts = host.split('.');
+            if (hostParts.length > 2) {
+                // Remove the first part (subdomain)
+                hostParts.shift();
+            }
+            var newHost = prefix + '.' + hostParts.join('.');
+
+            // Build the new SignalR URL
+            var signalUrl = window.location.protocol + '//' + newHost + '/_blazor';
+
+            Blazor.start({
+                configureSignalR: builder => builder.withUrl(signalUrl)
+            });
+        })()
+    </script>
     <script>
         window.setVideoFirstFrame = function (videoElement) {
             videoElement.addEventListener('loadedmetadata', function () {
