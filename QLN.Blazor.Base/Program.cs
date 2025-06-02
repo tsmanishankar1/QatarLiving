@@ -18,25 +18,64 @@ using QLN.Web.Shared.Contracts;
 using GoogleAnalytics.Blazor;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-builder.Services.AddMudServices();
 
 var contentVerticalAPIUrl = builder.Configuration["ServiceUrlPaths:ContentVerticalAPI"];
+var qatarLivingAPI = builder.Configuration["ServiceUrlPaths:QatarLivingAPI"];
+
+Console.WriteLine($"ContentVerticalAPI URL: {contentVerticalAPIUrl}");
+
 if (string.IsNullOrWhiteSpace(contentVerticalAPIUrl))
 {
     throw new InvalidOperationException("ContentVerticalAPI URL is missing in configuration.");
 }
+
+Console.WriteLine($"QatarLivingAPI URL: {qatarLivingAPI}");
+
+if (string.IsNullOrWhiteSpace(qatarLivingAPI))
+{
+    throw new InvalidOperationException("QatarLivingAPI URL is missing in configuration.");
+}
+
+builder.Services.AddCors(options =>
+{
+
+
+    string[] origins = { 
+                // add more as necessary
+                contentVerticalAPIUrl,
+                qatarLivingAPI
+    };
+
+    // filter out distinct URLs
+    origins = origins.Distinct().ToArray();
+
+    options.AddDefaultPolicy(policy =>
+    {
+        policy
+            .WithOrigins(origins)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+
+    Console.WriteLine("CORS Enabled for the following origins");
+    foreach(var o in origins) { Console.WriteLine($"{o}"); }
+});
+
+
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
+builder.Services.AddMudServices();
+
+
+
 var newsLetterSubscriptionAPIUrl = builder.Configuration["ServiceUrlPaths:NewsletterSubscriptionAPI"];
 if (string.IsNullOrWhiteSpace(newsLetterSubscriptionAPIUrl))
 {
     throw new InvalidOperationException("NewsletterSubscriptionAPI URL is missing in configuration.");
 }
-var qatarLivingAPI = builder.Configuration["ServiceUrlPaths:QatarLivingAPI"];
-if (string.IsNullOrWhiteSpace(qatarLivingAPI))
-{
-    throw new InvalidOperationException("QatarLivingAPI URL is missing in configuration.");
-}
+
+
 
 // });
 
@@ -173,27 +212,7 @@ builder.Services.AddGBService(options =>
     options.TrackingId = builder.Configuration["GoogleAnalytics:TrackingId"];
 });
 
-builder.Services.AddCors(options =>
-{
-    string[] origins = [ 
-        // add more as necessary
-        contentVerticalAPIUrl, 
-        qatarLivingAPI 
-        ];
-    
-    // filter out distinct URLs
 
-    origins = origins.Distinct().ToArray();
-
-    options.AddDefaultPolicy(policy =>
-    {
-        policy
-                .WithOrigins(origins)
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials();
-    });
-});
 
 var app = builder.Build();
 
