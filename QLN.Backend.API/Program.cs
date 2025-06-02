@@ -8,13 +8,11 @@ using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Common.Infrastructure.TokenProvider;
 using System.Text;
 using Dapr.Client;
-using QLN.Common.Infrastructure.IService;
 using Microsoft.OpenApi.Models;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
 using QLN.Backend.API.ServiceConfiguration;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
-using QLN.Common.Infrastructure.Subscriptions;
 using System.Text.Json.Serialization;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 using Microsoft.AspNetCore.Authorization;
@@ -38,7 +36,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpClient("DaprClient")
     .ConfigureHttpClient(client =>
     {
-        client.Timeout = TimeSpan.FromMinutes(5); // increased timeout to 5 minutes
+        client.Timeout = TimeSpan.FromMinutes(5); 
     });
 
 #endregion
@@ -149,14 +147,10 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
-        RoleClaimType = ClaimTypes.Role
-
+        RoleClaimType = ClaimTypes.Role, 
     };
 
     options.MapInboundClaims = false;
-
-    options.TokenValidationParameters.RoleClaimType = "role";
-    options.TokenValidationParameters.NameClaimType = "name";
 });
 #endregion
 
@@ -176,7 +170,7 @@ builder.Services.AddActors(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
-builder.Services.AddResponseCaching();   // Register Response Caching service
+builder.Services.AddResponseCaching();   
 
 builder.Services.AddDaprClient();
 
@@ -193,7 +187,7 @@ builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
 var app = builder.Build();
 
-app.UseResponseCaching();              
+app.UseResponseCaching();                
 
 if (app.Environment.IsDevelopment())
 {
@@ -211,8 +205,8 @@ var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
 
 var companyGroup = app.MapGroup("/api/companyprofile");
-companyGroup.MapCompanyEndpoints();
-
+companyGroup.MapCompanyEndpoints()
+    .RequireAuthorization();
 var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedsEndpoints();
 

@@ -3,7 +3,9 @@
     public class NavigationPath
     {
         public string Login { get; set; } = "https://www.qatarliving.com/user/login";
+        public string Logout { get; set; } = "https://www.qatarliving.com/user/logout";
         public string Register { get; set; } = "https://www.qatarliving.com/user/register";
+        public string Profile { get; set; } = "https://www.qatarliving.com/user/profile";
         public string Properties { get; set; } = "https://www.qatarliving.com/properties";
         public string Classifieds { get; set; } = "https://www.qatarliving.com/classifieds";
         public string Community { get; set; } = "https://www.qatarliving.com/community";
