@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Options;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Services;
+using System.Text;
 
 public class DailyVideoCardsBase : ComponentBase
 {
@@ -13,19 +14,44 @@ public class DailyVideoCardsBase : ComponentBase
     protected ContentVideo SelectedVideo;
     protected NavigationPath NavigationPath => Options.Value;
 
+    protected bool IsVisiblePlayButton { get; set; } = true;
+
     protected override void OnInitialized()
     {
-        SelectedVideo = Items?.FirstOrDefault() ?? new();
+        SelectedVideo = Items?.Where(x => !string.IsNullOrEmpty(x.VideoUrl)).FirstOrDefault() ?? new();
+
+        SelectedVideo.VideoUrl = ConvertToEmbedUrl(SelectedVideo.VideoUrl);
     }
 
-    protected void SelectVideo(ContentVideo video)
+    protected void PlayVideo(ContentVideo video)
     {
+        IsVisiblePlayButton = false;
         SelectedVideo = video;
+
+        SelectedVideo.VideoUrl = ConvertToEmbedUrl(video.VideoUrl);
     }
 
-    protected void NavigatetoArticle(ContentVideo video)
+    protected string ConvertToEmbedUrl(string url)
     {
-        NavigationManager.NavigateTo($"/content/article/details/{video.Slug}");
+        try
+        {
+            var uri = new Uri(url);
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            string videoId = query["v"];
+
+            if (!string.IsNullOrEmpty(videoId))
+            {
+                return $"https://www.youtube.com/embed/{videoId}";
+            }
+
+            return url;
+        }
+        catch (Exception ex)
+        {
+
+            Console.WriteLine($"{ex.Message} ConvertToEmbedUrl");
+            return url;
+        }
     }
 
     protected void OnClickViewAll()
