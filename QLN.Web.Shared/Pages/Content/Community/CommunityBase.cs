@@ -344,8 +344,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             try
             {
                 var banners = await FetchBannerData();
-                DailyHeroBanners = banners?.ContentDailyHero ?? new();
-
+                DailyHeroBanners = banners?.ContentCommunityHero ?? new();
             }
             catch (Exception ex)
             {
