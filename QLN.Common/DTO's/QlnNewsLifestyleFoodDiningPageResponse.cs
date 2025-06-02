@@ -12,7 +12,7 @@ namespace QLN.Common.Infrastructure.DTO_s
 
     public class QlnNewsLifestyleFoodDining
     {
-        const string QueuePrefix = "qln_news_lifestyle_food_dining";
+        const string QueuePrefix = "qln_news_lifestyle";
 
         [JsonPropertyName($"{QueuePrefix}_top_story")]
         public BaseQueueResponse<ContentPost> TopStory { get; set; }
@@ -20,10 +20,10 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonPropertyName($"{QueuePrefix}_more_articles")]
         public BaseQueueResponse<ContentPost> MoreArticles { get; set; }
 
-        [JsonPropertyName($"{QueuePrefix}_articles_1")]
+        [JsonPropertyName($"{QueuePrefix}_food_dining_articles_1")]
         public BaseQueueResponse<ContentPost> Articles1 { get; set; }
 
-        [JsonPropertyName($"{QueuePrefix}_articles_2")]
+        [JsonPropertyName($"{QueuePrefix}_food_dining_articles_2")]
         public BaseQueueResponse<ContentPost> Articles2 { get; set; }
 
         [JsonPropertyName($"{QueuePrefix}_most_popular_articles")]
