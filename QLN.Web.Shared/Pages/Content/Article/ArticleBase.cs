@@ -13,6 +13,8 @@ public class ArticleBase : ComponentBase
     [Parameter]
     public string slug { get; set; }
     public bool isLoading { get; set; } = true;
+     protected bool imageLoaded = false;
+ 
     protected List<BannerItem> DailyHeroBanners { get; set; } = new();
     protected bool isLoadingBanners = true;
     public List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
@@ -52,7 +54,7 @@ public class ArticleBase : ComponentBase
     {
         try
         {
-
+            isLoading = true;
             var bannersTask = LoadBanners();
             await Task.WhenAll(bannersTask);
             isLoading = true;
@@ -104,6 +106,7 @@ public class ArticleBase : ComponentBase
             isLoading = false;
         }
     }
+
     protected async Task<ContentPost> GetNewsBySlugAsync()
     {
         try
