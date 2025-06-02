@@ -47,13 +47,7 @@ namespace QLN.Web.Shared.Model
         public int UnlikeCount { get; set; }
         public bool IsByCurrentUser { get; set; }
     }
-    public class PostListResponse
-    {
-        [JsonPropertyName("items")]
-        public List<PostListDto> Posts { get; set; }
-        [JsonPropertyName("total")]
-        public string Total { get; set; }
-    }
+
 
     public class PostListDto
     {
