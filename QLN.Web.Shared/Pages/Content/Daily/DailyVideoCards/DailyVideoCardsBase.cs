@@ -14,6 +14,8 @@ public class DailyVideoCardsBase : ComponentBase
     protected ContentVideo SelectedVideo;
     protected NavigationPath NavigationPath => Options.Value;
 
+    protected bool IsVisiblePlayButton { get; set; } = true;
+
     protected override void OnInitialized()
     {
         SelectedVideo = Items?.Where(x => !string.IsNullOrEmpty(x.VideoUrl)).FirstOrDefault() ?? new();
@@ -23,6 +25,7 @@ public class DailyVideoCardsBase : ComponentBase
 
     protected void PlayVideo(ContentVideo video)
     {
+        IsVisiblePlayButton = false;
         SelectedVideo = video;
 
         SelectedVideo.VideoUrl = ConvertToEmbedUrl(video.VideoUrl);

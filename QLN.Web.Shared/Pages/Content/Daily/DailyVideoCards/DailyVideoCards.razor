@@ -3,10 +3,6 @@
 <div class="watch-section">
     <!-- Main Video -->
     <div class="main-video-wrapper video-card">
-        <!--    <iframe width="100%" height="100%" muted loop style="object-fit: cover; border-radius: 6px;"
-                src="@SelectedVideo.VideoUrl">
-        </iframe> Main Video -->
-
         <iframe width="100%" height="100%" muted loop style="object-fit: cover; border-radius: 6px;"
                 src="@SelectedVideo.VideoUrl">
         </iframe>
@@ -16,9 +12,12 @@
             <h2 class="main-title">@SelectedVideo.Title</h2>
         </div>
 
-        <div class="video-overlay-center" @onclick="() => PlayVideo(SelectedVideo)">
-            <MudIcon Icon="@Icons.Material.Filled.PlayArrow" />
-        </div>
+        @if (IsVisiblePlayButton)
+        {
+            <div class="video-overlay-center" @onclick="() => PlayVideo(SelectedVideo)">
+                <MudIcon Icon="@Icons.Material.Filled.PlayArrow" />
+            </div>
+        }
     </div>
 
     <!-- Video List -->
