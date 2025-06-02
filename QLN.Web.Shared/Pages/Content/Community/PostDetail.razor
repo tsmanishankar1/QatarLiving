@@ -1,0 +1,133 @@
+﻿@page "/content/community/post/detail/{*slug}"
+@layout ContentLayout
+@inherits PostDetailBase
+@inject NavigationManager Navigation
+@using QLN.Web.Shared.Components.BreadCrumb
+
+<div class="container">
+    <div class="container-inner-wrapper">
+
+        <!-- Carousel Banner -->
+        <div class="category-banner-wrapper">
+            <img src="/qln-images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
+        </div>
+
+        <Breadcrumb Items="breadcrumbItems" />
+
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-4">
+            <MudGrid>
+                <!-- Left Section -->
+                <MudItem xs="12" md="8">
+                    @if (IsLoading)
+                    {
+                        <MudPaper Class="pa-4">
+                            <MudSkeleton Height="200px" Width="100%" Animation="Animation.Wave" />
+                            <MudSkeleton Height="32px" Width="70%" Animation="Animation.Wave" Class="my-2" />
+                            <MudSkeleton Height="20px" Width="90%" Animation="Animation.Wave" />
+                            <MudSkeleton Height="20px" Width="80%" Animation="Animation.Wave" />
+                            <MudSkeleton Height="20px" Width="60%" Animation="Animation.Wave" />
+                        </MudPaper>
+                    }
+                    else if (HasError)
+                    {
+                        <MudPaper Class="pa-4 mt-8" Color="Color.Error" Elevation="0">
+                            <MudText Typo="Typo.h6" Color="Color.Error">
+                                Oops! Something went wrong while loading community posts.
+                            </MudText>
+                            <MudText Typo="Typo.body2">
+                                Please try again later.
+                            </MudText>
+                        </MudPaper>
+                    }
+                    else if (SelectedPost != null)
+                    {
+                        <PostCard Post="SelectedPost" IsDetailView="true" />
+                        <div class="disclaimer-section">
+                            <img src="qln-images/content/Warning.svg" alt="Disclaimer Icon" class="disclaimer-icon" />
+                            <span class="disclaimer-text">
+                                Disclaimer: Community posts and comments reflect the views of users and are not published or endorsed by Qatar Living.
+                            </span>
+                        </div>
+                        <CommentSection Comment="SelectedPost" />
+
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Warning">Post not found</MudAlert>
+                    }
+
+                    
+                </MudItem>
+
+                <!-- Right Section -->
+                <MudItem xs="12" md="4">
+                    <div>
+                        <PostList />
+                    </div>
+                    <MudImage Src="/qln-images/content/Ad.png" Alt="Advertisement" Style="width: 340px; height: 402px;margin-top:12px" />
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+
+
+    </div>
+</div>
+
+<style>
+    .container {
+        width: 100%;
+        background-color: var(--color-secondary-background);
+    }
+
+    .container-inner-wrapper {
+        width: 100%;
+        padding: 0px 50px 50px 50px;
+    }
+    .disclaimer-section {
+        background-color: #FFF8EC;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        border-radius: 4px;
+        margin-top:10px;
+    }
+
+    .disclaimer-icon {
+        width: 48px;
+        height: 48px;
+        margin-right: 12px;
+        vertical-align: middle;
+    }
+
+    .disclaimer-text {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 700;
+        font-size: 14px;
+        line-height: 22px;
+        color: #646464;
+    }
+    .category-banner-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+    
+    .category-banner-image {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        object-fit: cover;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+
+    @@media (max-width: 700px) and (min-width: 375px) {
+        .container-inner-wrapper {
+            padding: 0 8px 25px 8px;
+        }
+
+        .ad-image {
+            max-width: 100%;
+        }
+    }
+</style>

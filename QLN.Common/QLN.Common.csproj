@@ -42,8 +42,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Infrastructure\CustomEndpoints\ServicesEndpoints\" />
     <Folder Include="Infrastructure\IService\IServicesService\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Properties\launchSettings.json">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

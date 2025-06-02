@@ -8,6 +8,8 @@ namespace QLN.Common.DTO_s
 {
     public class LandingPageDto
     {
+        public IEnumerable<BackofficemasterIndex>? FeaturedItems { get; set; }
+        public IEnumerable<BackofficemasterIndex>? FeaturedServices { get; set; }
         public IEnumerable<BackofficemasterIndex>? FeaturedCategories { get; set; }
         public IEnumerable<BackofficemasterIndex>? Categories { get; set; }
         public IEnumerable<BackofficemasterIndex>? SeasonalPicks { get; set; }

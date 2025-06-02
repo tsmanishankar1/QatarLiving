@@ -14,8 +14,19 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
     {
         public static void MapAllBackOfficeEndpoints(this WebApplication app)
         {
-            // ======== Services Vertical ========
-            var servicesGroup = app.MapGroup("/api/services").WithTags("LandingPageMaster");
+            var servicesGroup = app.MapGroup("/api/services/landing").WithTags("ServicesLandingPageMaster");
+
+            servicesGroup.MapBackOfficeMasterEndpoints(
+              vertical: ConstantValues.Verticals.Services,
+              routeSegment: "hero-banner",
+              entityType: ConstantValues.EntityTypes.HeroBanner
+          );
+
+            servicesGroup.MapBackOfficeMasterEndpoints(
+               vertical: ConstantValues.Verticals.Services,
+               routeSegment: "featured-services",
+               entityType: ConstantValues.EntityTypes.FeaturedServices
+           );
 
             servicesGroup.MapBackOfficeMasterEndpoints(
                 vertical: ConstantValues.Verticals.Services,
@@ -53,8 +64,19 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
             );
 
 
-            // ======== Classifieds Vertical ========
-            var classifiedsGroup = app.MapGroup("/api/classifieds").WithTags("LandingPageMaster");
+            var classifiedsGroup = app.MapGroup("/api/classifieds/landing").WithTags("ClassifiedsLandingPageMaster");
+
+            classifiedsGroup.MapBackOfficeMasterEndpoints(
+              vertical: ConstantValues.Verticals.Classifieds,
+              routeSegment: "hero-banner",
+              entityType: ConstantValues.EntityTypes.HeroBanner
+            );
+
+            classifiedsGroup.MapBackOfficeMasterEndpoints(
+               vertical: ConstantValues.Verticals.Classifieds,
+               routeSegment: "featured-items",
+               entityType: ConstantValues.EntityTypes.FeaturedItems
+            );
 
             classifiedsGroup.MapBackOfficeMasterEndpoints(
                 vertical: ConstantValues.Verticals.Classifieds,

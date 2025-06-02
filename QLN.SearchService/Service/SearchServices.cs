@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 using Azure.Search.Documents;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.ISearchService;
-using QLN.Common.Infrastructure.IRepository;
+using QLN.Common.Infrastructure.IRepository.ISearchServiceRepository;
 
 namespace QLN.SearchService.Service
 {
@@ -31,7 +31,6 @@ namespace QLN.SearchService.Service
             if (string.IsNullOrWhiteSpace(vertical))
                 throw new ArgumentException("Vertical is required.", nameof(vertical));
 
-            // build shared SearchOptions
             var opts = new SearchOptions
             {
                 Size = req.Top > 0 ? req.Top : 50,
@@ -41,7 +40,7 @@ namespace QLN.SearchService.Service
             if (req.Filters != null && req.Filters.Any())
             {
                 var clauses = req.Filters
-                    .Select(kv => BuildClause<object>(kv.Key, kv.Value))  // we'll swap T in each branch
+                    .Select(kv => BuildClause<object>(kv.Key, kv.Value)) 
                     .ToList();
                 opts.Filter = string.Join(" and ", clauses);
                 _logger.LogInformation("Applied filter: {Filter}", opts.Filter);
@@ -49,7 +48,7 @@ namespace QLN.SearchService.Service
 
             if (!string.IsNullOrWhiteSpace(req.OrderBy))
             {
-                var orderExpr = ParseOrderBy<object>(req.OrderBy);       // swap T in each branch
+                var orderExpr = ParseOrderBy<object>(req.OrderBy);     
                 opts.OrderBy.Add(orderExpr);
                 _logger.LogInformation("Applied OrderBy: {OrderBy}", orderExpr);
             }
@@ -72,12 +71,6 @@ namespace QLN.SearchService.Service
                         vertical, opts, req.Text);
                     response.MasterItems = masters.ToList();
                     break;
-
-                // add more verticals here as needed:
-                // case "services":
-                //     var services = await _repo.SearchAsync<ServiceIndex>(vertical, opts, req.Text);
-                //     response.ServiceItems = services.ToList();
-                //     break;
 
                 default:
                     throw new NotSupportedException($"Unknown vertical '{vertical}'");
@@ -196,6 +189,30 @@ namespace QLN.SearchService.Service
                 if (je.ValueKind == JsonValueKind.String) return je.GetString()!;
             }
             return Convert.ToString(val, CultureInfo.InvariantCulture)!;
+        }
+        public async Task DeleteAsync(string vertical, string key)
+        {
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical is required.", nameof(vertical));
+            if (string.IsNullOrWhiteSpace(key))
+                throw new ArgumentException("Key is required.", nameof(key));
+
+            try
+            {
+                _logger.LogInformation("Service: deleting '{Key}' from '{Vertical}'", key, vertical);
+                await _repo.DeleteAsync(vertical, key);
+                _logger.LogInformation("Service: deleted '{Key}' from '{Vertical}'", key, vertical);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "DeleteAsync called with invalid argument: {Param}", ex.ParamName);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in DeleteAsync: vertical={Vertical}, key={Key}", vertical, key);
+                throw;
+            }
         }
     }
 }

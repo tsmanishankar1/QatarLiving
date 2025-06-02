@@ -1,0 +1,78 @@
+@inherits NewsLetterBase
+@using QLN.Web.Shared.Components.CustomButton
+<div class="newsletter-container">
+    <h2 style="text-align: center;">Get The QL newsletter. Sign up to receive the top stories you need to know right now.</h2>
+    <input type="email" placeholder="Enter your email" class="email-input" required />
+
+    <CustomButton id="forgetPasswordButton" BackgroundColor="#FF7F38" TextColor="#FFFFFF" Text="Subscribe" Disabled="@IsSubscribingToNewsletter"
+                  OnClick="@SubscribeAsync" Class="reset-button">
+        @if (IsSubscribingToNewsletter)
+        {
+            <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" />
+            @("Subscribing...")
+        }
+        else
+        {
+            @("Subscribe")
+        }
+    </CustomButton>
+</div>
+
+<style>
+    .newsletter-container {
+        width: 100%;
+        @* max-width: 500px; *@
+  margin: 0 auto;
+        padding: 24px;
+        box-sizing: border-box;
+        border: 1px solid #F0F0F0;
+        border-radius: 6px;
+        background-color: #FFFFFF;
+        font-family: sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .newsletter-container h2 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            font-family: 'Public Sans', sans-serif;
+            color: #222;
+        }
+
+    .error-message {
+        color: red;
+        font-size: 13px;
+        margin-bottom: 12px;
+        text-align: left;
+    }
+
+
+    .email-input {
+        width: 100%;
+        padding: 14px;
+        font-size: 16px;
+        border: 1px solid #D0D5DD;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        box-sizing: border-box;
+    }
+
+        .email-input:focus {
+            border-color: var(--color-accent);
+        }
+
+
+    .signup-button:hover {
+        background-color: #e56c21;
+    }
+
+    .reset-button {
+        border-radius: 4px;
+        height: 44px;
+    }
+</style>
+

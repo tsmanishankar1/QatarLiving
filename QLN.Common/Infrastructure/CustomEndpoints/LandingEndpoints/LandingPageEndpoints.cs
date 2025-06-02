@@ -1,15 +1,13 @@
-﻿// File: QLN.Common.Infrastructure.CustomEndpoints.LandingPageEndpoints.cs
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;         // for WebApplication, RouteHandlerBuilder
-using Microsoft.AspNetCore.Http;            // for IResult, TypedResults, StatusCodes
-using Microsoft.AspNetCore.Mvc;             // for [FromServices]
-using QLN.Common.DTO_s;                     // for LandingPageDto, BackofficemasterIndex
-using QLN.Common.Infrastructure.Constants;  // for ConstantValues and BackOfficeConstants
-using QLN.Common.Infrastructure.IService.ISearchService;  // for ISearchService
+using Microsoft.AspNetCore.Builder;        
+using Microsoft.AspNetCore.Http;           
+using Microsoft.AspNetCore.Mvc;            
+using QLN.Common.DTO_s;                    
+using QLN.Common.Infrastructure.Constants; 
+using QLN.Common.Infrastructure.IService.ISearchService; 
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
 {
@@ -26,18 +24,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
     {
         public static void MapLandingPageEndpoints(this WebApplication app)
         {
-            // ──────────────────────────────────────────────────────────
-            // 1) GET /api/landing/services
-            //    Fetch all back‐office segments for vertical = "services"
-            // ──────────────────────────────────────────────────────────
             app.MapGet("/api/landing/services", async (
                     [FromServices] ISearchService searchSvc
                 ) =>
             {
-                // The vertical we’re targeting:
                 var vertical = ConstantValues.Verticals.Services;
 
-                // Helper: build a search request for a single entityType
                 Task<IEnumerable<BackofficemasterIndex>> FetchSegmentAsync(string entityType)
                 {
                     var sr = new CommonSearchRequest
@@ -45,7 +37,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                         Top = 100,
                         Filters = new Dictionary<string, object>
                         {
-                            // filter by Vertical and EntityType in the back‐office index
                             { "Vertical",   vertical     },
                             { "EntityType", entityType   }
                         }
@@ -55,7 +46,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                         vertical, entityType);
                 }
 
-                // Fire off one call per segment
+                var featuredServicesTask = FetchSegmentAsync(ConstantValues.EntityTypes.FeaturedServices);
                 var featuredTask = FetchSegmentAsync( ConstantValues.EntityTypes.FeaturedCategory);
                 var categoriesTask = FetchSegmentAsync( ConstantValues.EntityTypes.Category);
                 var seasonalTask = FetchSegmentAsync( ConstantValues.EntityTypes.SeasonalPick);
@@ -63,10 +54,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                 var faqTask = FetchSegmentAsync( ConstantValues.EntityTypes.FaqItem);
                 var ctaTask = FetchSegmentAsync( ConstantValues.EntityTypes.CallToAction);
 
-                await Task.WhenAll(featuredTask, categoriesTask, seasonalTask, socialTask, faqTask, ctaTask);
+                await Task.WhenAll(featuredServicesTask, featuredTask, categoriesTask, seasonalTask, socialTask, faqTask, ctaTask);
 
                 var dto = new LandingPageDto
                 {
+                    FeaturedServices = await featuredServicesTask,
                     FeaturedCategories = await featuredTask,
                     Categories = await categoriesTask,
                     SeasonalPicks = await seasonalTask,
@@ -84,10 +76,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
             .WithSummary("Get all landing‐page data for Services")
             .WithDescription("Returns featured categories, categories, seasonal picks, social links, faqs, and CTAs for the Services landing page.");
 
-            // ──────────────────────────────────────────────────────────
-            // 2) GET /api/landing/classifieds
-            //    Fetch all back‐office segments for vertical = "classifieds"
-            // ──────────────────────────────────────────────────────────
+
             app.MapGet("/api/landing/classifieds", async (
                     [FromServices] ISearchService searchSvc
                 ) =>
@@ -109,7 +98,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                     return FetchDocsFromIndexAsync(searchSvc, ConstantValues.backofficemaster, sr,
                         vertical, entityType);
                 }
-
+                var featuredItemsTask = FetchSegmentAsync(ConstantValues.EntityTypes.FeaturedItems);
                 var featuredTask = FetchSegmentAsync( ConstantValues.EntityTypes.FeaturedCategory);
                 var categoriesTask = FetchSegmentAsync( ConstantValues.EntityTypes.Category);
                 var seasonalTask = FetchSegmentAsync( ConstantValues.EntityTypes.SeasonalPick);
@@ -117,10 +106,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                 var faqTask = FetchSegmentAsync( ConstantValues.EntityTypes.FaqItem);
                 var ctaTask = FetchSegmentAsync( ConstantValues.EntityTypes.CallToAction);
 
-                await Task.WhenAll(featuredTask, categoriesTask, seasonalTask, socialTask, faqTask, ctaTask);
+                await Task.WhenAll(featuredItemsTask, featuredTask, categoriesTask, seasonalTask, socialTask, faqTask, ctaTask);
 
                 var dto = new LandingPageDto
                 {
+                    FeaturedItems = await featuredItemsTask,
                     FeaturedCategories = await featuredTask,
                     Categories = await categoriesTask,
                     SeasonalPicks = await seasonalTask,

@@ -1,26 +1,19 @@
-﻿// File: QLN.Common.Infrastructure.CustomEndpoints.BackOfficeMasterEndpoints.cs
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;       // for RouteGroupBuilder
-using Microsoft.AspNetCore.Http;          // for IResult, TypedResults, StatusCodes
-using Microsoft.AspNetCore.Http.HttpResults; // for Results<...> types
-using Microsoft.AspNetCore.Mvc;            // for [FromServices]
-using Microsoft.AspNetCore.Routing;       // for RouteGroupBuilder
-using QLN.Common.DTO_s;                   // for BackofficemasterIndex, CommonIndexRequest, SearchRequest, CommonResponse
+using Microsoft.AspNetCore.Builder;      
+using Microsoft.AspNetCore.Http;         
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;           
+using Microsoft.AspNetCore.Routing;       
+using QLN.Common.DTO_s;                   
 using QLN.Common.Infrastructure.Constants;
-using QLN.Common.Infrastructure.IService.ISearchService;  // for ISearchService
+using QLN.Common.Infrastructure.IService.ISearchService;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints
 {
-    /// <summary>
-    /// Provides extension methods to map Back‐Office master‐data POST/GET endpoints
-    /// for any vertical and entityType. Each route stamps DocVertical and EntityType
-    /// on incoming BackofficemasterIndex DTOs, then calls ISearchService for upload/search/getById.
-    /// </summary>
     public static class BackOfficeMasterEndpoints
     {
         /// <summary>
@@ -28,7 +21,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
         ///   • POST  /{routeSegment}           → Upsert (create or update) a BackofficemasterIndex doc  
         ///   • GET   /{routeSegment}           → Retrieve all BackofficemasterIndex docs filtered by vertical & entityType  
         ///   • GET   /{routeSegment}/{id}      → Retrieve a single BackofficemasterIndex by its composite Id  
-        ///
+        ///   • DELETE /{routeSegment}/{id}     → Delete a single BackofficemasterIndex document
         /// Each BackofficemasterIndex is stamped with:
         ///   d.Vertical   = vertical;
         ///   d.EntityType = entityType;
@@ -47,7 +40,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
             string entityType)
         {
             group.MapPost($"/{routeSegment}", async Task<Results<
-                    Ok<object>,
+                    Ok<string>,
                     BadRequest<ProblemDetails>,
                     ProblemHttpResult>>
                 (
@@ -83,7 +76,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
                 try
                 {
                     await searchSvc.UploadAsync(req);
-                    return TypedResults.Ok<object>(new { IndexedCount = 1 });
+                    return TypedResults.Ok("Record created successfully");
                 }
                 catch (ArgumentException ex)
                 {
@@ -104,7 +97,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
                 }
             })
             .WithName($"Upsert_{vertical}_{entityType}")
-            .WithTags("LandingPageMaster")
             .WithSummary($"Upsert a single {entityType}")
             .WithDescription($"Upserts one {entityType} document into the backoffice-master search index.");
 
@@ -153,7 +145,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
                 }
             })
             .WithName($"GetAll_{vertical}_{entityType}")
-            .WithTags("LandingPageMaster")
             .WithSummary($"Get all {entityType}")
             .WithDescription($"Retrieves all {entityType} documents for vertical '{vertical}'.")
             .Produces<IEnumerable<BackofficemasterIndex>>(StatusCodes.Status200OK)
@@ -220,13 +211,65 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
                 }
             })
             .WithName($"GetById_{vertical}_{entityType}")
-            .WithTags("LandingPageMaster")
             .WithSummary($"Get a single {entityType} by Id")
             .WithDescription($"Retrieves one {entityType} document by its Id for vertical '{vertical}'.")
             .Produces<BackofficemasterIndex>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapDelete($"/{routeSegment}/{{id}}", async Task<IResult> (
+                    string id,
+                    [FromServices] ISearchService searchSvc,
+                    CancellationToken cancellationToken
+                ) =>
+            {
+                if (string.IsNullOrWhiteSpace(id))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Bad Request",
+                        Detail = "Id must be provided in the URL.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                try
+                {
+                    // Delete from the “backofficemaster” index:
+                    await searchSvc.DeleteAsync(
+                        ConstantValues.backofficemaster,
+                        id
+                    );
+
+                    // On success (or if it wasn't found), return 204 No Content
+                    return TypedResults.NoContent();
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Argument",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName($"Delete_{vertical}_{entityType}")
+            .WithSummary($"Delete a single {entityType} by Id")
+            .WithDescription($"Deletes one {entityType} document by its Id for vertical '{vertical}'.")
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
             return group;
         }

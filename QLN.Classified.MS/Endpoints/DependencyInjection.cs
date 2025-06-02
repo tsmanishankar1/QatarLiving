@@ -6,7 +6,7 @@ namespace QLN.Classified.MS.Endpoints
     {
         public static RouteGroupBuilder MapClassifiedsEndpoints(this RouteGroupBuilder group)
         {
-            group.MapClassifiedLandingEndpoints()
+            group.MapClassifiedEndpoints()
                 .MapClassifiedsFeaturedItemEndpoint();
 
             return group;

@@ -36,7 +36,6 @@ namespace QLN.Backend.API.Service.SearchService
 
             try
             {
-                // Correct route: POST /api/{vertical}/search
                 var methodName = $"api/{vertical}/search";
                 var commonResp = await _dapr.InvokeMethodAsync<CommonSearchRequest, CommonSearchResponse>(
                     HttpMethod.Post,
@@ -74,7 +73,6 @@ namespace QLN.Backend.API.Service.SearchService
 
             try
             {
-                // Expect req.VerticalName to be the vertical (e.g. "services" or "backofficemaster")
                 var vertical = request.VerticalName;
                 var methodName = $"api/{vertical}/upload";
                 var result = await _dapr.InvokeMethodAsync<CommonIndexRequest, string>(
@@ -115,7 +113,6 @@ namespace QLN.Backend.API.Service.SearchService
 
             try
             {
-                // Correct route: GET /api/{vertical}/{key}
                 var methodName = $"api/{vertical}/{key}";
                 var doc = await _dapr.InvokeMethodAsync<T?>(
                     HttpMethod.Get,
@@ -138,6 +135,43 @@ namespace QLN.Backend.API.Service.SearchService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error in GetByIdAsync: vertical={Vertical}, key={Key}", vertical, key);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Calls SearchService’s Delete /api/{vertical}/{key}
+        /// </summary>
+        public async Task DeleteAsync(string vertical, string key)
+        {
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical is required.", nameof(vertical));
+            if (string.IsNullOrWhiteSpace(key))
+                throw new ArgumentException("Key is required.", nameof(key));
+
+            try
+            {
+                var methodName = $"api/{vertical}/{key}";
+                await _dapr.InvokeMethodAsync(
+                    HttpMethod.Delete,
+                    appId: SERVICE_APP_ID,
+                    methodName: methodName
+                );
+                _logger.LogInformation("Deleted document '{Key}' from vertical '{Vertical}'", key, vertical);
+            }
+            catch (ArgumentNullException ex)
+            {
+                _logger.LogWarning(ex, "DeleteAsync called with null argument: {Param}", ex.ParamName);
+                throw;
+            }
+            catch (DaprException ex)
+            {
+                _logger.LogError(ex, "Dapr invocation failed in DeleteAsync: vertical={Vertical}, key={Key}", vertical, key);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in DeleteAsync: vertical={Vertical}, key={Key}", vertical, key);
                 throw;
             }
         }

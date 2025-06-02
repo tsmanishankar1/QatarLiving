@@ -62,8 +62,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.MapGroup("/api/classifieds")
-   .MapClassifiedLandingEndpoints();
-
-app.MapControllers();
+   .MapClassifiedEndpoints();
 
 app.Run();

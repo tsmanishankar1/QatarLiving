@@ -1,4 +1,4 @@
-﻿using QLN.Common.Infrastructure.IRepository;
+﻿using QLN.Common.Infrastructure.IRepository.ISearchServiceRepository;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.SearchService.Repository;
 using QLN.SearchService.Service;

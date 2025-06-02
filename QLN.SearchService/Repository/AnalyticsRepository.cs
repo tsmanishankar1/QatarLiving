@@ -6,7 +6,7 @@ using Azure.Search.Documents.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using QLN.Common.DTO_s;
-using QLN.Common.Infrastructure.IRepository;
+using QLN.Common.Infrastructure.IRepository.ISearchServiceRepository;
 using QLN.SearchService.IndexModels;
 
 namespace QLN.SearchService.Repository

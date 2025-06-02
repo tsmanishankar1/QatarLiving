@@ -162,7 +162,47 @@ namespace QLN.SearchService.CustomEndpoints
             .WithName("CommonUpdate")
             .WithTags("Indexing");
 
+
+            group.MapDelete("/{id}", async (
+                   [FromRoute] string vertical,
+                   [FromRoute] string id,
+                   [FromServices] ISearchService svc,
+                   [FromServices] ILoggerFactory logFac
+               ) =>
+            {
+                var logger = logFac.CreateLogger("CommonIndexing");
+                if (string.IsNullOrWhiteSpace(vertical))
+                {
+                    return Results.BadRequest(new ProblemDetails { Title = "Bad Request", Detail = "Vertical must be provided", Status = 400 });
+                }
+                if (string.IsNullOrWhiteSpace(id))
+                {
+                    return Results.BadRequest(new ProblemDetails { Title = "Bad Request", Detail = "Id must be provided", Status = 400 });
+                }
+
+                try
+                {
+                    await svc.DeleteAsync(vertical, id);
+                    return Results.NoContent();
+                }
+                catch (ArgumentException ex)
+                {
+                    logger.LogWarning(ex, "Invalid vertical or id: '{Vertical}', '{Id}'", vertical, id);
+                    return Results.BadRequest(new ProblemDetails { Title = "Invalid Argument", Detail = ex.Message, Status = 400 });
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Delete error for '{Vertical}/{Id}'", vertical, id);
+                    return Results.Problem("Delete Error", ex.Message, 500);
+                }
+            })
+           .WithName("CommonDeleteById")
+           .WithTags("Indexing")
+           .WithSummary("Delete a document by vertical and id")
+           .WithDescription("Deletes the document from the specified vertical/index");
+
             return group;
         }
+
     }
 }

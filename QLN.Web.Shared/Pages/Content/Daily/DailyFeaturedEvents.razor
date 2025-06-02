@@ -1,0 +1,170 @@
+@inherits DailyFeaturedEventsBase
+@using QLN.Web.Shared.Components.DailyFeaturedEventCard
+@using QLN.Web.Shared.Components.EmptyCard
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.Skeletons.FeaturedCategorySkeleton
+
+<div class="daily-categories-wrapper">
+    <div class="daily-categories-header">
+        <MudContainer MaxWidth="MaxWidth.False">
+            <h3 class="daily-section-header">Featured Events</h3>
+        </MudContainer>
+    </div>
+
+    @if (Loading)
+    {
+        <FeaturedCategorySkeleton />
+    }
+    else if (Items == null || !Items.Any())
+    {
+
+        <EmptyCard Title="No featured items found." Subtitle="Please check back later or explore other categories." />
+    }
+    else
+    {
+        <div class="swiper-categories-container">
+            <div class="swiper-categories swiper">
+                <!-- Navigation arrows -->
+                <div class="swiper-categories-button-prev arrow-button left">
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronLeft" />
+                </div>
+                <div class="swiper-categories-button-next arrow-button right">
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+                </div>
+
+                <div class="swiper-wrapper">
+                    @foreach (var item in Items)
+                    {
+                        <div class="swiper-slide swiper-slide-Card">
+                            <DailyFeaturedEventCard Item="item" OnClickCallback="OnClickEvent" />
+                        </div>
+                    }
+                </div>
+            </div>
+            <!-- Pagination dots -->
+            <div class="swiper-categories-pagination"></div>
+        </div>
+    }
+</div>
+
+<style>
+    .daily-categories-wrapper {
+        width: 100%;
+        font-family: 'Public Sans';
+    }
+
+    .daily-categories-header {
+        padding: 1rem 0;
+    }
+
+    .daily-section-header {
+        font-weight: 500;
+        text-align: center;
+        font-size: 25px;
+        color: var(--color-text-heading);
+    }
+
+    /* Only apply center alignment if swiper-center class is present */
+    .swiper-categories .swiper-wrapper {
+        justify-content: center !important;
+    }
+
+    .swiper-categories-container {
+        position: relative;
+        width: 100%;
+        padding: 0rem 2.5rem;
+    }
+
+    .swiper-categories {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 0;
+    }
+
+    .swiper-slide-Card {
+        padding: 0.5rem;
+        box-sizing: border-box;
+    }
+
+    .swiper-slide {
+        width: auto;
+        box-sizing: border-box;
+        flex-shrink: 0;
+    }
+
+    /* Navigation Buttons - hidden initially */
+    .arrow-button {
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        position: absolute;
+        top: 40%;
+        transform: translateY(-50%);
+        z-index: 10;
+        background-color: white;
+        border-radius: 50%;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    /* Position left/right arrows */
+    .arrow-button.left {
+        left: 20px;
+    }
+
+    .arrow-button.right {
+        right: 20px;
+    }
+
+    /* Swiper pagination dots styling */
+    .swiper-categories-pagination {
+        text-align: center;
+        margin-top: 5px;
+        user-select: none;
+    }
+
+    .swiper-categories-pagination .swiper-pagination-bullet {
+        width: 8px;
+        height: 8px;
+        background: #bbb;
+        display: inline-block;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .swiper-categories-pagination .swiper-pagination-bullet-active {
+        width: 10px;
+        height: 10px;
+        background: #00426D;
+    }
+
+
+    /* Show arrows on hover only for desktop */
+    @@media (min-width: 770px) {
+        .swiper-categories-container:hover .arrow-button {
+            opacity: 1;
+        }
+    }
+
+    /* Hide arrows permanently on mobile */
+    @@media (max-width: 770px) {
+        .arrow-button {
+            display: none !important;
+        }
+
+        .swiper-categories-container {
+            position: relative;
+            width: 100%;
+            padding: 5px;
+        }
+
+        .swiper-categories-pagination {
+            margin-top: 0px;
+        }
+    }
+</style>

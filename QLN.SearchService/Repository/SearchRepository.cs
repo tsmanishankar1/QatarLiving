@@ -7,7 +7,7 @@ using Azure.Search.Documents.Indexes.Models;
 using Azure.Search.Documents.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using QLN.Common.Infrastructure.IRepository;
+using QLN.Common.Infrastructure.IRepository.ISearchServiceRepository;
 using QLN.SearchService.IndexModels;
 
 namespace QLN.SearchService.Repository
@@ -93,6 +93,29 @@ namespace QLN.SearchService.Repository
             {
                 _logger.LogWarning("Document '{Key}' not found in '{Vertical}'", key, vertical);
                 return default;
+            }
+        }
+        public async Task DeleteAsync(string vertical, string key)
+        {
+            var client = GetClient(vertical);
+            try
+            {
+                _logger.LogInformation("Deleting document '{Key}' from '{Vertical}'", key, vertical);
+
+                var batch = IndexDocumentsBatch.Delete("Id", new[] { key });
+                await client.IndexDocumentsAsync(batch);
+
+                _logger.LogInformation("Deleted document '{Key}' from '{Vertical}'", key, vertical);
+            }
+            catch (RequestFailedException ex) when (ex.Status == 404)
+            {
+                _logger.LogWarning("Document '{Key}' not found for deletion in '{Vertical}'", key, vertical);
+                throw;
+            }
+            catch (RequestFailedException ex)
+            {
+                _logger.LogError(ex, "Azure Search delete failed for '{Key}' in '{Vertical}'", key, vertical);
+                throw;
             }
         }
     }

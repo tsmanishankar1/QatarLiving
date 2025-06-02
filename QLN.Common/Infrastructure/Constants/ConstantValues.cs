@@ -28,6 +28,9 @@ namespace QLN.Common.Infrastructure.Constants
         public const string backofficemaster = "backofficemaster";
         public static class EntityTypes
         {
+            public const string HeroBanner = "HeroBanner";
+            public const string FeaturedItems = "FeaturedItems";
+            public const string FeaturedServices = "FeaturedServices";
             public const string FeaturedCategory = "FeaturedCategory";
             public const string Category = "Category";
             public const string SeasonalPick = "SeasonalPick";

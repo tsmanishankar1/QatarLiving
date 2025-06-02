@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
-using QLN.Common.Infrastructure.IService.BannerService;
 using System.Security.Claims;
 using QLN.Common.Infrastructure.Model;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -22,7 +21,7 @@ namespace QLN.Classified.MS.Endpoints
 {
     public static class ClassifiedEndpoints
     {
-        public static RouteGroupBuilder MapClassifiedLandingEndpoints(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapClassifiedEndpoints(this RouteGroupBuilder group)
         {
             // SEARCH
             group.MapPost("/search", async (
@@ -32,13 +31,18 @@ namespace QLN.Classified.MS.Endpoints
                 ) =>
             {
                 var logger = logFac.CreateLogger("ClassifiedEndpoints");
-                if (req is null)
+
+                var validationContext = new ValidationContext(req);
+                var validationResults = new List<ValidationResult>();
+                if (!Validator.TryValidateObject(req, validationContext, validationResults, validateAllProperties: true))
                 {
-                    logger.LogWarning("Search called with null payload");
+                    var errorMessages = string.Join("; ", validationResults.Select(v => v.ErrorMessage));
+                    logger.LogWarning("Validation failed: {Errors}", errorMessages);
+
                     return Results.BadRequest(new ProblemDetails
                     {
-                        Title = "Bad Request",
-                        Detail = "Search payload is required.",
+                        Title = "Validation Failed",
+                        Detail = errorMessages,
                         Status = StatusCodes.Status400BadRequest,
                         Instance = $"/api/classified/search"
                     });
@@ -62,7 +66,7 @@ namespace QLN.Classified.MS.Endpoints
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Search error");
+                    logger.LogError(ex, "Unhandled exception during search");
                     return Results.Problem(
                         title: "Search Error",
                         detail: ex.Message,
@@ -109,6 +113,7 @@ namespace QLN.Classified.MS.Endpoints
                             Status = StatusCodes.Status404NotFound,
                             Instance = $"/api/classified/{id}"
                         });
+
                     return Results.Ok(ad);
                 }
                 catch (ArgumentException ex)
@@ -140,6 +145,7 @@ namespace QLN.Classified.MS.Endpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
+
 
             // UPLOAD
             group.MapPost("/upload", async (
@@ -2599,7 +2605,7 @@ namespace QLN.Classified.MS.Endpoints
 
 
             // added save search
-            group.MapPost("/search/by-category", async Task<Results<
+            group.MapPost("/search/saveSearch", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
@@ -2758,7 +2764,7 @@ namespace QLN.Classified.MS.Endpoints
            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // get save search
-            group.MapGet("/search/save", async Task<Results<
+            group.MapGet("/search/getsavedSearches", async Task<Results<
                 Ok<List<SavedSearchResponseDto>>,
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
@@ -2849,6 +2855,64 @@ namespace QLN.Classified.MS.Endpoints
             .WithDescription("Get all saved searches for the current users.")
             .ExcludeFromDescription()
             .Produces<List<SavedSearchResponseDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+
+        public static RouteGroupBuilder MapClassifiedsFeaturedItemEndpoint(this RouteGroupBuilder group)
+        {
+
+            group.MapGet("/featured-items", async Task<IResult> (
+                    [FromServices] ISearchService searchSvc,
+                    CancellationToken cancellationToken
+                ) =>
+            {
+                var searchReq = new CommonSearchRequest
+                {
+                    Top = 100,
+                    Filters = new Dictionary<string, object>
+                   {
+                        { "IsFeaturedItem",   true },
+                        { "SubVertical", "Items" }
+                    }
+                };
+
+                try
+                {
+                    CommonSearchResponse response = await searchSvc.SearchAsync(
+                        ConstantValues.Verticals.Classifieds,
+                        searchReq
+                    );
+
+                    var list = response.ClassifiedsItems ?? new List<ClassifiedsIndex>();
+
+                    return TypedResults.Ok(list);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Argument",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName($"GetFeatured_{ConstantValues.Verticals.Classifieds}_Items")
+            .WithTags("Classified")
+            .WithSummary("Get all featured classified items")
+            .WithDescription("Fetches every ClassifiedsIndex document where IsFeatured = true.")
+            .Produces<IEnumerable<ClassifiedsIndex>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
