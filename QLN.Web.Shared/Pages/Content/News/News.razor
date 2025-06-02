@@ -2,6 +2,7 @@
 @inherits NewsBase
 @layout ContentLayout
 @using MudBlazor
+@using QLN.Web.Shared.Pages.Content.Daily.DailyVideoCards
 @using QLN.Web.Shared.Pages.Content.News.NewsCard
 @using QLN.Web.Shared.Pages.Content.News.NewsLetter
 @using QLN.Web.Shared.Pages.Content.News.PopularArticles
@@ -167,22 +168,14 @@
             </div>
             </div>
         </div>  
+    @if (VideoList.Count > 0)
+    {
         <div class="video-container">  
             <div class="max-container">
-                @* <div class="video-padding"> *@
-                <VideoCards Articles="@moreArticleListSlot" selectedTab="@SelectedTab" loading="@isLoading" />
-                @* </div> *@
+            <DailyVideoCards Items="@VideoList" />
             </div>
         </div> 
-    </div> 
-    
-
-
-
-
-   
-   
-
+    }
     
         <div class="news-container" style="padding-top: 30px;">   
             <div class="max-container">
@@ -283,7 +276,7 @@
 
 </div>
 
-
+</div>
 <style>
     .card-with-divider {
     position: relative;

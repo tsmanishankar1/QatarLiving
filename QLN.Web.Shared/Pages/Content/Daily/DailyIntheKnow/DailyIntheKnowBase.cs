@@ -24,14 +24,14 @@ namespace QLN.Web.Shared.Pages.Content.Daily.DailyIntheKnow
         new CategoryItem { Icon = "/qln-images/content/travel_icon.svg", Label = "Travel & Leisure", QLCategLink ="travel-tourism"},
         ];
 
-        protected void OnClickCommunityCateg(string qlCategLink)
+        protected void OnClickNewsCateg(string qlNewsCategLink)
         {
             NavigationManager.NavigateTo("/content/news");
         }
 
-        protected void OnClickCommunityViewAll()
+        protected void OnClickViewAll()
         {
-            NavigationManager.NavigateTo("/content/community");
+            NavigationManager.NavigateTo("/content/news");
         }
     }
 }
