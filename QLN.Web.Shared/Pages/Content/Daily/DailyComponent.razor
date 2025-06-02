@@ -3,7 +3,6 @@
 @using QLN.Web.Shared.Pages.Content.Daily
 @using QLN.Web.Shared.Components.DailyFeaturedEventCard
 @using QLN.Web.Shared.Pages.Content.Daily.DailyNewsCard
-@using QLN.Web.Shared.Pages.Content.Daily.DailyVideoCards
 @using QLN.Web.Shared.Pages.Content.Daily.DailyNewsLetter
 @using QLN.Web.Shared.Pages.Content.Daily.DailyMoreArticle
 @using QLN.Web.Shared.Pages.Content.Daily.DailyHighlights
@@ -14,7 +13,8 @@
 @using QLN.Web.Shared.Components.BannerSwiper
 @using QLN.Web.Shared.Components.BannerTakeOver
 @using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.Skeletons.FeaturedItemSkeleton
-@layout ContentLayout
+@using Content
+@layout Contentlayout
 
 <PageTitle>Qatar Living | The go-to place for lifestyle, news, and events</PageTitle>
 
@@ -126,13 +126,11 @@
         </div>
 
     </div>
-    @if (Videos.Count > 0)
+    @if (VideoList.Count > 0)
     {
-
-
         <div class="max-container">
 
-            <DailyVideoCards Items="@Videos" />
+            <DailyVideoCards Items="@VideoList" />
         </div>
     }
     <div class="responsive-news-container">
