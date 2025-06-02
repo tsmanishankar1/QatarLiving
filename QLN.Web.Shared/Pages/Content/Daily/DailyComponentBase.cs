@@ -134,9 +134,9 @@ namespace QLN.Web.Shared.Pages.Content.Daily
             try
             {
                 var banners = await FetchBannerData();
-                DailyHeroBanners = banners?.DailyHero ?? new();
-                DailyTakeOver1Banners = banners?.DailyTakeOver1 ?? new();
-                DailyTakeOver2Banners = banners?.DailyTakeOver2 ?? new();
+                DailyHeroBanners = banners?.ContentDailyHero ?? new();
+                DailyTakeOver1Banners = banners?.ContentDailyTakeoverFirst ?? new();
+                DailyTakeOver2Banners = banners?.ContentDailyTakeoverSecond ?? new();
             }
             catch (Exception ex)
             {

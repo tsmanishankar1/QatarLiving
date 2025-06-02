@@ -111,7 +111,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         {
             // GET /api/content/categories
             group.MapGet("/community", async (
-                    HttpContext context,
                     [FromQuery] string? forum_id,
                     [FromQuery] string? order,
                     [FromQuery] int? page,
@@ -427,6 +426,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
 
             // GET /api/content/events
             group.MapGet("/events", async (
+                    [FromQuery] string? category_id,
+                    [FromQuery] string? location_id,
+                    [FromQuery] string? date,
+                    [FromQuery] string? order,
+                    [FromQuery] int? page,
+                    [FromQuery] int? page_size,
                     [FromServices] IContentService svc,
                     CancellationToken cancellationToken
                     )
@@ -434,8 +439,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             {
                 try
                 {
-                    var model = await svc.GetEventsFromDrupalAsync(cancellationToken);
-                    return Results.Ok(model);
+                    var model = await svc.GetEventsFromDrupalAsync(
+                        cancellationToken,
+                        category_id,
+                        location_id,
+                        date,
+                        order,
+                        page,
+                        page_size);
+            return Results.Ok(model);
                 }
                 catch (ArgumentException ex)
                 {
