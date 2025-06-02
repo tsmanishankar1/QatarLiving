@@ -14,7 +14,7 @@
 @using QLN.Web.Shared.Pages.Content.Events
 @using QLN.Web.Shared.Components.BannerSwiper
 
-<div class="container">
+<div class="community-container">
     <div class="container-inner-wrapper">
 
         <MudContainer MaxWidth="MaxWidth.ExtraLarge" Style="max-width: 1170px;">
@@ -161,7 +161,7 @@
 
 
 <style>
-    .container {
+    .community-container {
         width: 100%;
         background-color: var(--color-secondary-background);
     }
@@ -348,9 +348,9 @@
         display: block;
     }
 
-    @@media (max-width: 700px) and (min-width: 375px) {
+    @@media (max-width: 700px) and (min-width: 240px) {
         .container-inner-wrapper {
-            padding: 0 8px 25px 8px;
+            padding: 0 2px 20px 2px;
         }
 
         .newsletter-box,
@@ -360,6 +360,8 @@
             width: 100% !important;
             max-width: 100% !important;
         }
+
+     
     }
 
     @@media (min-width: 960px) and (max-width: 1145px) {
@@ -373,4 +375,20 @@
             padding: 10px !important
         }
     }
+
+    @@media (max-width: 350px) and (min-width: 240px) {
+        .community-header {
+            display: flex;
+            
+            height: 50px;
+            flex-direction: column;
+            margin-top: 0px;
+            gap: 10px;
+        }
+
+        .postcard-margin-top{
+            margin-top:50px;
+        }
+    }
+   
 </style>
