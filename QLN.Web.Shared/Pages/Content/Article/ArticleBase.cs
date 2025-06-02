@@ -149,7 +149,7 @@ public class ArticleBase : ComponentBase
             try
             {
                 var banners = await FetchBannerData();
-                DailyHeroBanners = banners?.NewsQatarHero ?? new List<BannerItem>();
+                DailyHeroBanners = banners?.ContentDailyHero ?? new List<BannerItem>();
             }
             finally
             {
