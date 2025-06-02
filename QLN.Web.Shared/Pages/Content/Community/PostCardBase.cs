@@ -37,19 +37,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         }
         protected async Task ToggleLikeAsync()
         {
-            var success = await PostInteractionService.LikeOrUnlikeAsync(new PostInteractionRequest
-            {
-                PostId = Guid.Parse(Post.Id),
-                IsLike = true
-            });
-
-            if (success)
-            {
-                IsLiked = !IsLiked;
-                if (IsLiked) IsDisliked = false;
-
-                Post.LikeCount += IsLiked ? 1 : -1;
-            }
+            IsLiked = !IsLiked;
         }
 
         protected async Task ToggleDislikeAsync()

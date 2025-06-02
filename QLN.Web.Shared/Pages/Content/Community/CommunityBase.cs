@@ -64,6 +64,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
         [Parameter]
         [SupplyParameterFromQuery]
         public string? categoryId { get; set; }
+
+
        
         protected async override Task OnInitializedAsync()
         {

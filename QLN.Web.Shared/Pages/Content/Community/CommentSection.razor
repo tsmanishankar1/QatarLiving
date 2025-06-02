@@ -76,16 +76,18 @@ else
                     </div>
                     <div class="comment-description">@c.Description</div>
                     <div class="post-icons-comment-section">
-                        <div class="comment-wrapper">
-                            <img src="qln-images/content/Like.svg" class="comment-interaction-icon" />
-                            <span class="icon-text">@c.LikeCount</span>
-                        </div>
+                        <div class="comment-wrapper" @onclick="ToggleLikeAsync">
 
-                        <div class="comment-wrapper">
+                            <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="comment-interaction-icon" />
+@*                             <span class="icon-text">@c.LikeCount</span>
+ *@                       
+</div>
+
+                       @*  <div class="comment-wrapper">
 
                             <img src="qln-images/content/Dislike.svg" class="comment-interaction-icon" />
                             <span class="icon-text">@c.LikeCount</span>
-                        </div>
+                        </div> *@
                     </div>
                 </div>
 
@@ -249,7 +251,7 @@ else
         font-family: 'Public Sans', sans-serif;
         font-weight: 400;
         font-size: 16px;
-      
+        margin-top: -6px;
         color: #242424;
     }
 
