@@ -209,26 +209,26 @@
 
     private void GoToFavourites()
     {
-        NavManager.NavigateTo($"{navigationPath.Base}/user/0/wishlist"); // need to check if this should be the user Id.
+        NavManager.NavigateTo($"{navigationPath.Base}/user/0/wishlist", forceLoad: true); // need to check if this should be the user Id.
     }
 
     private void GoToProfile()
     {
-        NavManager.NavigateTo(navigationPath.Profile);
+        NavManager.NavigateTo(navigationPath.Profile, forceLoad: true);
     }
 
     private void GoToRegister()
     {
         var destination = GetDestination();
 
-        NavManager.NavigateTo($"{navigationPath.Register}?destination={destination}");
+        NavManager.NavigateTo($"{navigationPath.Register}?destination={destination}", forceLoad: true);
     }
 
     private void GoToLogin()
     {
         var destination = GetDestination();
 
-        NavManager.NavigateTo($"{navigationPath.Login}?destination={destination}", true); // true = force reload
+        NavManager.NavigateTo($"{navigationPath.Login}?destination={destination}", forceLoad: true); // true = force reload
     }
 
     public void GoToLogout()
@@ -239,7 +239,7 @@
 
         var destination = GetDestination();
 
-        NavManager.NavigateTo($"{navigationPath.Logout}?destination={destination}");
+        NavManager.NavigateTo($"{navigationPath.Logout}?destination={destination}", forceLoad: true);
     }
 
     private string GetDestination()
