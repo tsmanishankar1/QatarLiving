@@ -14,6 +14,7 @@ namespace QLN.Web.Shared.Pages.Content.News
         public bool isLoading = true;
         protected bool isLoadingBanners = true;
         protected List<BannerItem> DailyTakeOverBanners = new();
+        protected bool imageLoaded = false;
         public List<Category> Categories { get; set; } = new List<Category>
     {
         new Category
@@ -84,16 +85,12 @@ namespace QLN.Web.Shared.Pages.Content.News
         protected QlnNewsLifestyleEventsPageResponse EventsNewsContent { get; set; } = new QlnNewsLifestyleEventsPageResponse();
         protected QlnNewsLifestyleFashionStylePageResponse FashionNewsContent { get; set; } = new QlnNewsLifestyleFashionStylePageResponse();
         protected QlnNewsLifestyleHomeLivingPageResponse HomeLivingNewsContent { get; set; } = new QlnNewsLifestyleHomeLivingPageResponse();
-        // protected QlnNews QatarSportsNewsContent { get; set; } = new NewsQatarSportsPageResponse();
-
-
-
-
-
-
-
-
-
+        protected QlnNewsSportsQatarSportsPageResponse QatarSportsNewsContent { get; set; } = new QlnNewsSportsQatarSportsPageResponse();
+        protected QlnNewsSportsFootballPageResponse FoodBallNewsContent { get; set; } = new QlnNewsSportsFootballPageResponse();
+        protected QlnNewsSportsInternationalPageResponse InternationalNewsContent { get; set; } = new QlnNewsSportsInternationalPageResponse();
+        protected QlnNewsSportsMotorsportsPageResponse MotorSportsNewsContent { get; set; } = new QlnNewsSportsMotorsportsPageResponse();
+        protected QlnNewsSportsOlympicsPageResponse OlympicsNewsContent { get; set; } = new QlnNewsSportsOlympicsPageResponse();
+        protected QlnNewsSportsAthleteFeaturesPageResponse AthleteNewsContent { get; set; } = new QlnNewsSportsAthleteFeaturesPageResponse();
 
         protected async override Task OnInitializedAsync()
         {
@@ -102,7 +99,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                 var bannersTask = LoadBanners();
                 await Task.WhenAll(bannersTask);
                 QatarNewsContent = await GetNewsQatarAsync();
-                
+
                 // Top News Slot
                 var topStoryItems = QatarNewsContent?.QlnNewsNewsQatar?.TopStory?.Items;
                 if (topStoryItems != null && topStoryItems.Any())
@@ -165,6 +162,21 @@ namespace QLN.Web.Shared.Pages.Content.News
             {
                 Tabs = Array.Empty<string>();
             }
+        }
+        protected void OnImageLoaded()
+        {
+            imageLoaded = true;
+            StateHasChanged();
+        }
+        protected override void OnParametersSet()
+        {
+            imageLoaded = false; 
+        }
+ 
+        protected void OnImageError()
+        {
+            imageLoaded = true;
+            StateHasChanged();
         }
         private async Task LoadBanners()
         {
@@ -377,16 +389,16 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot2 = arts?.Articles2?.Items ?? new List<ContentPost>();
                     break;
                 case "Events":
-                EventsNewsContent = await GetNewsAsync<QlnNewsLifestyleEventsPageResponse>("Events");
-                var events = EventsNewsContent?.QlnNewsLifestyleEvents;
-                topNewsSlot = events?.TopStory?.Items?.FirstOrDefault();
-                topNewsListSlot = events?.MoreArticles?.Items ?? new List<ContentPost>();
-                moreArticleListSlot = events?.MoreArticles?.Items ?? new List<ContentPost>();
-                mostWatchedArticleListSlot = new List<ContentVideo>();
-                articleListSlot1 = events?.Articles1?.Items ?? new List<ContentPost>();
-                popularArticleListSlot = events?.MostPopularArticles?.Items ?? new List<ContentPost>();
-                articleListSlot2 = events?.Articles2?.Items ?? new List<ContentPost>();
-                break;
+                    EventsNewsContent = await GetNewsAsync<QlnNewsLifestyleEventsPageResponse>("Events");
+                    var events = EventsNewsContent?.QlnNewsLifestyleEvents;
+                    topNewsSlot = events?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = events?.MoreArticles?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = events?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = events?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = events?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    articleListSlot2 = events?.Articles2?.Items ?? new List<ContentPost>();
+                    break;
                 case "Fashion & Style":
                     FashionNewsContent = await GetNewsAsync<QlnNewsLifestyleFashionStylePageResponse>("Fashion & Style");
                     var fashion = FashionNewsContent?.QlnNewsLifestyleFashionStyle;
@@ -409,8 +421,73 @@ namespace QLN.Web.Shared.Pages.Content.News
                     popularArticleListSlot = home?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = home?.Articles2?.Items ?? new List<ContentPost>();
                     break;
+                case "Qatar Sports":
+                    QatarSportsNewsContent = await GetNewsAsync<QlnNewsSportsQatarSportsPageResponse>("Qatar Sports");
+                    var sports = QatarSportsNewsContent?.QlnNewsSportsQatarSports;
+                    topNewsSlot = sports?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = sports?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = sports?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = sports?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = sports?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    articleListSlot2 = sports?.Articles2?.Items ?? new List<ContentPost>();
+                    break;
+                case "Football":
+                    FoodBallNewsContent = await GetNewsAsync<QlnNewsSportsFootballPageResponse>("Football");
+                    var football = FoodBallNewsContent?.QlnNewsSportsFootball;
+                    topNewsSlot = football?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = football?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = football?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = football?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = football?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    articleListSlot2 = football?.Articles2?.Items ?? new List<ContentPost>();
+                    break;
+                case "International":
+                    InternationalNewsContent = await GetNewsAsync<QlnNewsSportsInternationalPageResponse>("International");
+                    var international = InternationalNewsContent?.QlnNewsSportsInternational;
+                    topNewsSlot = international?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = international?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = international?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = international?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = international?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    articleListSlot2 = international?.Articles2?.Items ?? new List<ContentPost>();
+                    break;
+                case "Motorsports":
+                    MotorSportsNewsContent = await GetNewsAsync<QlnNewsSportsMotorsportsPageResponse>("Motorsports");
+                    var motorSports = MotorSportsNewsContent?.QlnNewsSportsMotorsports;
+                    topNewsSlot = motorSports?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = motorSports?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = motorSports?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = motorSports?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = motorSports?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    articleListSlot2 = motorSports?.Articles2?.Items ?? new List<ContentPost>();
+                    break;
+                case "Olympics":
+                    OlympicsNewsContent = await GetNewsAsync<QlnNewsSportsOlympicsPageResponse>("Olympics");
+                    var olympics = OlympicsNewsContent?.QlnNewsSportsOlympics;
+                    topNewsSlot = olympics?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = olympics?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = olympics?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = olympics?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = olympics?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    articleListSlot2 = olympics?.Articles2?.Items ?? new List<ContentPost>();
+                    break;
+                case "Athlete Features":
+                    AthleteNewsContent = await GetNewsAsync<QlnNewsSportsAthleteFeaturesPageResponse>("Athlete Features");
+                    var athelete = AthleteNewsContent?.QlnNewsSportsAthleteFeatures;
+                    topNewsSlot = athelete?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = athelete?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = athelete?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = athelete?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = athelete?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    articleListSlot2 = athelete?.Articles2?.Items ?? new List<ContentPost>();
+                    break;
             }
-
             isLoading = false;
             StateHasChanged();
         }

@@ -10,7 +10,8 @@ public class ArticleDetailCardBase : ComponentBase
 {
     [Parameter]
     public ContentPost Post { get; set; }
-     [Inject]
+    protected bool imageLoaded = false;
+    [Inject]
     private NavigationManager Navigation { get; set; }
     [Parameter]
     public bool loading { get; set; }
@@ -36,12 +37,13 @@ public class ArticleDetailCardBase : ComponentBase
             Route = SocialShareHelper.GetWhatsAppUrl(CurrentUrl),
             OpenInNewTab = true
         }
-    };    protected int commentsCount = 0;
+    }; protected int commentsCount = 0;
     public string DescriptionHtml { get; set; }
     public string FormattedDate { get; set; }
     protected MarkupString ParsedDescription => new MarkupString(DescriptionHtml);
     protected override void OnParametersSet()
     {
+        imageLoaded = false; 
         if (Post != null)
         {
             DescriptionHtml = Post.Description;
@@ -53,7 +55,7 @@ public class ArticleDetailCardBase : ComponentBase
         }
 
     }
-     protected string FormatDateToReadable(string inputDate)
+    protected string FormatDateToReadable(string inputDate)
     {
         if (DateTime.TryParseExact(inputDate, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out DateTime parsedDate))
         {
@@ -61,6 +63,17 @@ public class ArticleDetailCardBase : ComponentBase
             var dateInTimeZone = TimeZoneInfo.ConvertTimeFromUtc(parsedDate, timeZone);
             return $"{dateInTimeZone:MMMM d, yyyy 'at' h:mm tt} GMT{timeZone.BaseUtcOffset.Hours:+#;-#;+0}";
         }
-        return inputDate; 
+        return inputDate;
     }
+        protected void OnImageLoaded()
+        {
+            imageLoaded = true;
+            StateHasChanged();
+        }
+ 
+        protected void OnImageError()
+        {
+            imageLoaded = true; 
+            StateHasChanged();
+        }
 }

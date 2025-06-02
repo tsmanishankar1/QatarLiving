@@ -69,7 +69,13 @@
                                              <EmptyCard Title="No Image Available" Subtitle="" />
                                         }
                                         else{
-                                        <img src="@topNewsSlot.ImageUrl" class="main-image" />
+                                        @if (!imageLoaded)
+                                        {
+                                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="200px" Class="main-image" />
+                                        }
+                                            <img src="@topNewsSlot.ImageUrl" alt="News Image" class="main-image"
+                                            style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                                            @onerror="OnImageError" />
                                         }
                                     }
                                     @if (isLoading){
@@ -197,7 +203,7 @@
                         { 
                             <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)"/>
                             @if(news != articleListSlot1.Last()){
-                            <div style="width: 1px; height: auto; background-color: #F0F0F0; align-self: stretch; margin: 0 14px"></div>
+                                <div class="divider-vertical"></div>
                             }
                         }
                         }
@@ -348,6 +354,13 @@
     padding-right: 0;
     padding-bottom: 32px;
 }   
+.divider-vertical {
+    width: 1px;
+    height: auto;
+    background-color: #F0F0F0;
+    align-self: stretch;
+    margin: 0 14px;
+}
 .video-container{
     width: 100%;
     padding: 32px 0 22px 0;
@@ -649,7 +662,7 @@
     flex-direction: column;
     display: flex;
     flex-wrap: wrap;
-    gap: 0px; 
+    gap: 10px; 
 }
 }
 @@media (max-width: 375px) {
@@ -781,6 +794,9 @@
         padding-left: 16px;      
         padding-right: 16px;
         align-items: center;  
+    }
+     .divider-vertical {
+        display: none;
     }
     .flex-container {
         width: 100%;

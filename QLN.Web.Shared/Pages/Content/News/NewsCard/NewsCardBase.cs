@@ -8,6 +8,23 @@ public class NewsCardBase : ComponentBase
     protected NavigationManager navManager { get; set; }
      [Parameter]
     public ContentPost news { get; set; } = new ContentPost();
+    protected bool imageLoaded = false;
+    protected override void OnParametersSet()
+    {
+            imageLoaded = false; 
+    }
+    protected void OnImageLoaded()
+    {
+        imageLoaded = true;
+        StateHasChanged();
+    }
+    protected void OnImageError()
+    {
+            imageLoaded = true; 
+            StateHasChanged();
+    }
+ 
+ 
     [Parameter]
     public bool IsHorizontal { get; set; } = false;
     [Parameter] public EventCallback<ContentPost> OnClick { get; set; }
