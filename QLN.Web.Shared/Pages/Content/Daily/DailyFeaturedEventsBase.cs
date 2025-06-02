@@ -9,7 +9,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
         [Inject] NavigationManager NavigationManager { get; set; }
         [Inject] IJSRuntime JSRuntime { get; set; }
         [Parameter] public bool Loading { get; set; } = false;
-        [Parameter] public List<ContentPost> Items { get; set; } = [];
+        [Parameter] public List<ContentEvent> Items { get; set; } = [];
 
         private bool _categoriesSwiperInitialized = false;
 
@@ -22,7 +22,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
             }
         }
 
-        protected void OnClickEvent(ContentPost item)
+        protected void OnClickEvent(ContentEvent item)
         {
             NavigationManager.NavigateTo($"/content/events/details/{item.Slug}");
         }

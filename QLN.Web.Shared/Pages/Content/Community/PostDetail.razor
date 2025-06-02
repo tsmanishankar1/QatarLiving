@@ -3,18 +3,38 @@
 @inherits PostDetailBase
 @inject NavigationManager Navigation
 @using QLN.Web.Shared.Components.BreadCrumb
+@using QLN.Web.Shared.Pages.Content.Events
+@using QLN.Web.Shared.Components.BannerSwiper
+@using QLN.Web.Shared.Components.EmptyCard
 
 <div class="container">
     <div class="container-inner-wrapper">
 
-        <!-- Carousel Banner -->
+      @*   <!-- Carousel Banner -->
         <div class="category-banner-wrapper">
             <img src="/qln-images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
-        </div>
+        </div> *@
+          
 
-        <Breadcrumb Items="breadcrumbItems" />
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-4" Style="max-width:1170px">
+            @if (isLoadingBanners)
+            {
+                <BannerSkleton />
+            }
+            else if (DailyHeroBanners?.Any() == true)
+            {
+                <div class="category-banner-wrapper">
 
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-4">
+                    <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+                </div>
+            }
+            else
+            {
+                <EmptyCard Title="No Banners found." Subtitle="Please check back later for updates." />
+            }
+
+
+            <Breadcrumb Items="breadcrumbItems" />
             <MudGrid>
                 <!-- Left Section -->
                 <MudItem xs="12" md="8">
@@ -45,7 +65,7 @@
                         <div class="disclaimer-section">
                             <img src="qln-images/content/Warning.svg" alt="Disclaimer Icon" class="disclaimer-icon" />
                             <span class="disclaimer-text">
-                                Disclaimer: Community posts and comments reflect the views of users and are not published or endorsed by Qatar Living.
+                                Disclaimer: <span class="disclaimer-content-text"> Community posts and comments reflect the views of users and are not published or endorsed by Qatar Living.</span>
                             </span>
                         </div>
                         <CommentSection Comment="SelectedPost" />
@@ -90,7 +110,9 @@
         align-items: center;
         border-radius: 4px;
         margin-top:10px;
+        border: 1px solid #FEF0C7;
     }
+
 
     .disclaimer-icon {
         width: 48px;
@@ -102,6 +124,14 @@
     .disclaimer-text {
         font-family: 'Public Sans', sans-serif;
         font-weight: 700;
+        font-size: 14px;
+        line-height: 22px;
+        color: #646464;
+    }
+
+    .disclaimer-content-text {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
         font-size: 14px;
         line-height: 22px;
         color: #646464;

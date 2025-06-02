@@ -14,13 +14,13 @@ namespace QLN.Common.Infrastructure.DTO_s
     public class QlnVideos
     {
         [JsonPropertyName("qln_videos_top_videos")]
-        public BaseQueueResponse<ContentPost> QlnVideosTopVideos { get; set; }
+        public BaseQueueResponse<ContentVideo> QlnVideosTopVideos { get; set; }
 
         [JsonPropertyName("qln_videos_more_videos_1")]
-        public BaseQueueResponse<ContentPost> QlnVideosMoreVideos1 { get; set; }
+        public BaseQueueResponse<ContentVideo> QlnVideosMoreVideos1 { get; set; }
 
         [JsonPropertyName("qln_videos_more_videos_2")]
-        public BaseQueueResponse<ContentPost> QlnVideosMoreVideos2 { get; set; }
+        public BaseQueueResponse<ContentVideo> QlnVideosMoreVideos2 { get; set; }
     }
 
 

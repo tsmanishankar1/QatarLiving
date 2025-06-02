@@ -59,11 +59,13 @@ namespace QLN.Web.Shared.Pages.Content.News
         [Inject] private ILogger<NewsCardBase> Logger { get; set; }
         [Inject] private INewsService _newsService { get; set; }
         [Inject] private IEventService _eventService { get; set; }
-        protected ContentPost topNews { get; set; } = new ContentPost();
-        protected List<ContentPost> moreArticleList { get; set; } = new List<ContentPost>();
-        protected List<ContentPost> secondArticleList { get; set; } = new List<ContentPost>();
-        protected List<ContentPost> popularArticleList { get; set; } = new List<ContentPost>();
-        protected List<ContentPost> finalArticleList { get; set; } = new List<ContentPost>();
+        protected ContentPost topNewsSlot { get; set; } = new ContentPost();
+        protected List<ContentPost> topNewsListSlot { get; set; } = new List<ContentPost>();
+        protected List<ContentPost> moreArticleListSlot { get; set; } = new List<ContentPost>();
+        protected List<ContentVideo> mostWatchedArticleListSlot { get; set; } = new List<ContentVideo>();
+        protected List<ContentPost> articleListSlot1 { get; set; } = new List<ContentPost>(); // making this an event slot for now
+        protected List<ContentPost> popularArticleListSlot { get; set; } = new List<ContentPost>();
+        protected List<ContentPost> articleListSlot2 { get; set; } = new List<ContentPost>(); // making this an event slot for now
         protected QlnNewsNewsQatarPageResponse QatarNewsContent { get; set; } = new QlnNewsNewsQatarPageResponse();
         protected QlnNewsFinanceEntrepreneurshipPageResponse FinanceEntrepreneurshipNewsContent { get; set; } = new QlnNewsFinanceEntrepreneurshipPageResponse();
         protected QlnNewsFinanceRealEstatePageResponse RealEstateNewsContent { get; set; } = new QlnNewsFinanceRealEstatePageResponse();
@@ -100,18 +102,45 @@ namespace QLN.Web.Shared.Pages.Content.News
                 var bannersTask = LoadBanners();
                 await Task.WhenAll(bannersTask);
                 QatarNewsContent = await GetNewsQatarAsync();
-
-                if (QatarNewsContent?.QlnNewsNewsQatar?.MoreArticles?.Items != null)
-                    moreArticleList = QatarNewsContent.QlnNewsNewsQatar.MoreArticles.Items;
-                if (QatarNewsContent?.QlnNewsNewsQatar?.Articles1?.Items != null)
-                    secondArticleList = QatarNewsContent.QlnNewsNewsQatar.Articles1.Items;
-                 if (QatarNewsContent?.QlnNewsNewsQatar?.Articles2?.Items != null)
-                    finalArticleList = QatarNewsContent.QlnNewsNewsQatar.Articles2.Items;
-                if (QatarNewsContent?.QlnNewsNewsQatar?.MostPopularArticles?.Items != null)
-                    popularArticleList = QatarNewsContent.QlnNewsNewsQatar.MostPopularArticles.Items;
+                
+                // Top News Slot
                 var topStoryItems = QatarNewsContent?.QlnNewsNewsQatar?.TopStory?.Items;
                 if (topStoryItems != null && topStoryItems.Any())
-                    topNews = topStoryItems.First();
+                    topNewsSlot = topStoryItems.First();
+
+                // Top News Stories Slot
+                // this doesnt appear in the dataset as yet
+
+                if (QatarNewsContent?.QlnNewsNewsQatar?.TopStory?.Items != null) // replace
+                    topNewsListSlot = QatarNewsContent.QlnNewsNewsQatar.TopStory.Items; // replace
+
+                // More Articles Slot
+
+                if (QatarNewsContent?.QlnNewsNewsQatar?.MoreArticles?.Items != null)
+                    moreArticleListSlot = QatarNewsContent.QlnNewsNewsQatar.MoreArticles.Items;
+
+                // Most Watched Slot
+
+                if (QatarNewsContent?.QlnNewsNewsQatar?.MostPopularArticles?.Items != null) // replace
+                    mostWatchedArticleListSlot = new List<ContentVideo>(); // QatarNewsContent.QlnNewsNewsQatar.MostPopularArticles.Items; //replace
+
+                // Articles 1 Slot
+
+                if (QatarNewsContent?.QlnNewsNewsQatar?.Articles1?.Items != null)
+                    articleListSlot1 = QatarNewsContent.QlnNewsNewsQatar.Articles1.Items;
+
+                // Most Popular Articles Slot
+
+                if (QatarNewsContent?.QlnNewsNewsQatar?.MostPopularArticles?.Items != null)
+                    popularArticleListSlot = QatarNewsContent.QlnNewsNewsQatar.MostPopularArticles.Items;
+
+                // Articles 2 Slot
+
+                if (QatarNewsContent?.QlnNewsNewsQatar?.Articles2?.Items != null)
+                    articleListSlot2 = QatarNewsContent.QlnNewsNewsQatar.Articles2.Items;
+
+
+
                 isLoading = false;
             }
             catch (Exception ex)
@@ -179,143 +208,173 @@ namespace QLN.Web.Shared.Pages.Content.News
                 case "Qatar":
                     QatarNewsContent = await GetNewsAsync<QlnNewsNewsQatarPageResponse>("Qatar");
                     var qatar = QatarNewsContent?.QlnNewsNewsQatar;
-                    topNews = qatar?.TopStory?.Items?.FirstOrDefault();
-                    moreArticleList = qatar?.MoreArticles?.Items ?? new List<ContentPost>();
-                    secondArticleList = qatar?.Articles1?.Items ?? new List<ContentPost>();
-                    finalArticleList = qatar?.Articles2?.Items ?? new List<ContentPost>();
-                    popularArticleList = qatar?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    topNewsSlot = qatar?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = qatar?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = qatar?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = qatar?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = qatar?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    articleListSlot2 = qatar?.Articles2?.Items ?? new List<ContentPost>();
                     break;
 
                 case "Community":
                     CommunityNewsContent = await GetNewsAsync<QlnNewsNewsCommunityPageResponse>("Community");
                     var community = CommunityNewsContent?.QlnNewsNewsCommunity;
-                    topNews = community?.TopStory?.Items?.FirstOrDefault();
-                    moreArticleList = community?.MoreArticles?.Items ?? new List<ContentPost>();
-                     secondArticleList = community?.Articles1?.Items ?? new List<ContentPost>();
-                    finalArticleList = community?.Articles2?.Items ?? new List<ContentPost>();
-                    popularArticleList = community?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    topNewsSlot = community?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = community?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = community?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = community?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = community?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    articleListSlot2 = community?.Articles2?.Items ?? new List<ContentPost>();
                     break;
 
                 case "Law":
                     LawsNewsContent = await GetNewsAsync<QlnNewsNewsLawPageResponse>("Law");
                     var law = LawsNewsContent?.QlnNewsNewsLaw;
-                    topNews = law?.TopStory?.Items?.FirstOrDefault();
-                    moreArticleList = law?.MoreArticles.Items ?? new List<ContentPost>();
-                    secondArticleList = law?.Articles1?.Items ?? new List<ContentPost>();
-                    finalArticleList = law?.Articles2?.Items ?? new List<ContentPost>();
-                    popularArticleList = law?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    topNewsSlot = law?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = law?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = law?.MoreArticles.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = law?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = law?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    articleListSlot2 = law?.Articles2?.Items ?? new List<ContentPost>();
                     break;
 
                 case "Health & Education":
                     HealthEducationNewsContent = await GetNewsAsync<QlnNewsNewsHealthEducationPageResponse>("Health & Education");
                     var health = HealthEducationNewsContent?.QlnNewsNewsHealthEducation;
-                    topNews = health?.TopStory?.Items?.FirstOrDefault();
-                    moreArticleList = health?.MoreArticles?.Items ?? new List<ContentPost>();
-                    secondArticleList = health?.Articles1?.Items ?? new List<ContentPost>();
-                    finalArticleList = health?.Articles2?.Items ?? new List<ContentPost>();
-                    popularArticleList = health?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    topNewsSlot = health?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = health?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = health?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = health?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = health?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    articleListSlot2 = health?.Articles2?.Items ?? new List<ContentPost>();
                     break;
 
                 case "Middle East":
                     MiddleEastNewsContent = await GetNewsAsync<QlnNewsNewsMiddleEastPageResponse>("Middle East");
                     var middleEast = MiddleEastNewsContent?.QlnNewsNewsMiddleEast;
-                    topNews = middleEast?.TopStory?.Items?.FirstOrDefault();
-                    moreArticleList = middleEast?.MoreArticles?.Items ?? new List<ContentPost>();
-                    secondArticleList = middleEast?.Articles1?.Items ?? new List<ContentPost>();
-                    finalArticleList = middleEast?.Articles2?.Items ?? new List<ContentPost>();
-                    popularArticleList = middleEast?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    topNewsSlot = middleEast?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = middleEast?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = middleEast?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = middleEast?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = middleEast?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    articleListSlot2 = middleEast?.Articles2?.Items ?? new List<ContentPost>();
                     break;
 
                 case "Qatar Economy":
                     FinanceQatarNewsContent = await GetNewsAsync<QlnNewsFinanceQatarPageResponse>("Qatar Economy");
                     var economy = FinanceQatarNewsContent?.QlnNewsFinanceQatar;
-                    topNews = economy?.TopStory?.Items?.FirstOrDefault();
-                    moreArticleList = economy?.MoreArticles?.Items ?? new List<ContentPost>();
-                    secondArticleList = economy?.Articles1?.Items ?? new List<ContentPost>();
-                    finalArticleList = economy?.Articles2?.Items ?? new List<ContentPost>();
-                    popularArticleList = economy?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    topNewsSlot = economy?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = economy?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = economy?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = economy?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = economy?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    articleListSlot2 = economy?.Articles2?.Items ?? new List<ContentPost>();
                     break;
 
                 case "World":
                     WorldNewsContent = await GetNewsAsync<QlnNewsNewsWorldPageResponse>("World");
                     var world = WorldNewsContent?.QlnNewsNewsWorld;
-                    topNews = world?.TopStory?.Items?.FirstOrDefault();
-                    moreArticleList = world?.MoreArticles?.Items ?? new List<ContentPost>();
-                    secondArticleList = world?.Articles1?.Items ?? new List<ContentPost>();
-                    finalArticleList = world?.Articles2?.Items ?? new List<ContentPost>();
-                    popularArticleList = world?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    topNewsSlot = world?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = world?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = world?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = world?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = world?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    articleListSlot2 = world?.Articles2?.Items ?? new List<ContentPost>();
                     break;
                 case "Market Updates":
                     MarketUpdateNewsContent = await GetNewsAsync<QlnNewsFinanceMarketUpdatePageResponse>("Market Updates");
                     var market = MarketUpdateNewsContent?.QlnNewsFinanceMarketUpdate;
-                    topNews = market?.TopStory?.Items?.FirstOrDefault();
-                    moreArticleList = market?.MoreArticles?.Items ?? new List<ContentPost>();
-                    secondArticleList = market?.Articles1?.Items ?? new List<ContentPost>();
-                    finalArticleList = market?.Articles2?.Items ?? new List<ContentPost>();
-                    popularArticleList = market?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    topNewsSlot = market?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = market?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = market?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = market?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = market?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    articleListSlot2 = market?.Articles2?.Items ?? new List<ContentPost>();
                     break;
                 case "Real Estate":
                     RealEstateNewsContent = await GetNewsAsync<QlnNewsFinanceRealEstatePageResponse>("Real Estate");
                     var realEstate = RealEstateNewsContent?.QlnNewsFinanceRealEstate;
-                    topNews = realEstate?.TopStory?.Items?.FirstOrDefault();
-                    moreArticleList = realEstate?.MoreArticles?.Items ?? new List<ContentPost>();
-                    secondArticleList = realEstate?.Articles1?.Items ?? new List<ContentPost>();
-                    finalArticleList = realEstate?.Articles2?.Items ?? new List<ContentPost>();
-                    popularArticleList = realEstate?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    topNewsSlot = realEstate?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = realEstate?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = realEstate?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = realEstate?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = realEstate?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    articleListSlot2 = realEstate?.Articles2?.Items ?? new List<ContentPost>();
                     break;
                 case "Entrepreneurship":
                     FinanceEntrepreneurshipNewsContent = await GetNewsAsync<QlnNewsFinanceEntrepreneurshipPageResponse>("Entrepreneurship");
                     var entrepreneurship = FinanceEntrepreneurshipNewsContent?.QlnNewsFinanceEntrepreneurship;
-                    topNews = entrepreneurship?.TopStory?.Items?.FirstOrDefault();
-                    moreArticleList = entrepreneurship?.MoreArticles?.Items ?? new List<ContentPost>();
-                    secondArticleList = entrepreneurship?.Articles1?.Items ?? new List<ContentPost>();
-                    finalArticleList = entrepreneurship?.Articles2?.Items ?? new List<ContentPost>();
-                    popularArticleList = entrepreneurship?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    topNewsSlot = entrepreneurship?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = entrepreneurship?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = entrepreneurship?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = entrepreneurship?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = entrepreneurship?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    articleListSlot2 = entrepreneurship?.Articles2?.Items ?? new List<ContentPost>();
                     break;
                 case "Finance":
                     FinanceFinanceNewsContent = await GetNewsAsync<QlnNewsFinanceFinancePageResponse>("Finance");
                     var finance = FinanceFinanceNewsContent?.QlnNewsFinanceFinance;
-                    topNews = finance?.TopStory?.Items?.FirstOrDefault();
-                    moreArticleList = finance?.MoreArticles?.Items ?? new List<ContentPost>();
-                     secondArticleList = finance?.Articles1?.Items ?? new List<ContentPost>();
-                    finalArticleList = finance?.Articles2?.Items ?? new List<ContentPost>();
-                    popularArticleList = finance?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    topNewsSlot = finance?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = finance?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = finance?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = finance?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = finance?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    articleListSlot2 = finance?.Articles2?.Items ?? new List<ContentPost>();
                     break;
                 case "Jobs & Careers":
                     JobCareersNewsContent = await GetNewsAsync<QlnNewsFinanceJobsCareersPageResponse>("Jobs & Careers");
                     var jobs = JobCareersNewsContent?.QlnNewsFinanceJobsCareers;
-                    topNews = jobs?.TopStory?.Items?.FirstOrDefault();
-                    moreArticleList = jobs?.MoreArticles?.Items ?? new List<ContentPost>();
-                    secondArticleList = jobs?.Articles1?.Items ?? new List<ContentPost>();
-                    finalArticleList = jobs?.Articles2?.Items ?? new List<ContentPost>();
-                    popularArticleList = jobs?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    topNewsSlot = jobs?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = jobs?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = jobs?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = jobs?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = jobs?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    articleListSlot2 = jobs?.Articles2?.Items ?? new List<ContentPost>();
                     break;
                 case "Food & Dining":
                     FoodDiningNewsContent = await GetNewsAsync<QlnNewsLifestyleFoodDiningPageResponse>("Food & Dining");
                     var foods = FoodDiningNewsContent?.QlNewsLifestyleFoodDining;
-                    topNews = foods?.TopStory?.Items?.FirstOrDefault();
-                    moreArticleList = foods?.MoreArticles?.Items ?? new List<ContentPost>();
-                    secondArticleList = foods?.Articles1?.Items ?? new List<ContentPost>();
-                    finalArticleList = foods?.Articles2?.Items ?? new List<ContentPost>();
-                    popularArticleList = foods?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    topNewsSlot = foods?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = foods?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = foods?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = foods?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = foods?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    articleListSlot2 = foods?.Articles2?.Items ?? new List<ContentPost>();
                     break;
                 case "Travel & Leisure":
                     TravelLeisureNewsContent = await GetNewsAsync<QlnNewsLifestyleTravelLeisurePageResponse>("Travel & Leisure");
                     var travel = TravelLeisureNewsContent?.QlnNewsLifestyleTravelLeisure;
-                    topNews = travel?.TopStory?.Items?.FirstOrDefault();
-                    moreArticleList = travel?.MoreArticles?.Items ?? new List<ContentPost>();
-                    secondArticleList = travel?.Articles1?.Items ?? new List<ContentPost>();
-                    finalArticleList = travel?.Articles2?.Items ?? new List<ContentPost>();
-                    popularArticleList = travel?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    topNewsSlot = travel?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = travel?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = travel?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = travel?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = travel?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    articleListSlot2 = travel?.Articles2?.Items ?? new List<ContentPost>();
                     break;
                 case "Arts & Culture":
                     ArtsCultureNewsContent = await GetNewsAsync<QlnNewsLifestyleArtsCulturePageResponse>("Arts & Culture");
                     var arts = ArtsCultureNewsContent?.QlnNewsLifestyleArtsCulture;
-                    topNews = arts?.TopStory?.Items?.FirstOrDefault();
-                    moreArticleList = arts?.MoreArticles?.Items ?? new List<ContentPost>();
-                    secondArticleList = arts?.Articles1?.Items ?? new List<ContentPost>();
-                    finalArticleList = arts?.Articles2?.Items ?? new List<ContentPost>();
-                    popularArticleList = arts?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    topNewsSlot = arts?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = arts?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = arts?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = arts?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = arts?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    articleListSlot2 = arts?.Articles2?.Items ?? new List<ContentPost>();
                     break;
                 case "Events":
                 EventsNewsContent = await GetNewsAsync<QlnNewsLifestyleEventsPageResponse>("Events");
@@ -329,20 +388,24 @@ namespace QLN.Web.Shared.Pages.Content.News
                 case "Fashion & Style":
                     FashionNewsContent = await GetNewsAsync<QlnNewsLifestyleFashionStylePageResponse>("Fashion & Style");
                     var fashion = FashionNewsContent?.QlnNewsLifestyleFashionStyle;
-                    topNews = fashion?.TopStory?.Items?.FirstOrDefault();
-                    moreArticleList = fashion?.MoreArticles?.Items ?? new List<ContentPost>();
-                    secondArticleList = fashion?.Articles1?.Items ?? new List<ContentPost>();
-                    finalArticleList = fashion?.Articles2?.Items ?? new List<ContentPost>();
-                    popularArticleList = fashion?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    topNewsSlot = fashion?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = fashion?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = fashion?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = fashion?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = fashion?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    articleListSlot2 = fashion?.Articles2?.Items ?? new List<ContentPost>();
                     break;
                 case "Home & Living":
                     HomeLivingNewsContent = await GetNewsAsync<QlnNewsLifestyleHomeLivingPageResponse>("Home & Living");
                     var home = HomeLivingNewsContent?.QlnNewsLifestyleHomeLiving;
-                    topNews = home?.TopStory?.Items?.FirstOrDefault();
-                    moreArticleList = home?.MoreArticles?.Items ?? new List<ContentPost>();
-                    secondArticleList = home?.Articles1?.Items ?? new List<ContentPost>();
-                    finalArticleList = home?.Articles2?.Items ?? new List<ContentPost>();
-                    popularArticleList = home?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                    topNewsSlot = home?.TopStory?.Items?.FirstOrDefault();
+                    topNewsListSlot = home?.TopStory?.Items ?? new List<ContentPost>();
+                    moreArticleListSlot = home?.MoreArticles?.Items ?? new List<ContentPost>();
+                    mostWatchedArticleListSlot = new List<ContentVideo>();
+                    articleListSlot1 = home?.Articles1?.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = home?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    articleListSlot2 = home?.Articles2?.Items ?? new List<ContentPost>();
                     break;
             }
 
@@ -368,7 +431,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                 return new T();
             }
         }
-                protected async Task<QlnNewsNewsQatarPageResponse> GetNewsQatarAsync()
+        protected async Task<QlnNewsNewsQatarPageResponse> GetNewsQatarAsync()
         {
             try
             {

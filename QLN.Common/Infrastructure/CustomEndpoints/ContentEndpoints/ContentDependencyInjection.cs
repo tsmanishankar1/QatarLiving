@@ -47,6 +47,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                 .MapLifestyleFashionStyleEndpoint()
                 .MapLifestyleHomeLivingEndpoint()
                 .MapLifestyleTravelLeisureEndpoint()
+                .MapSportsAthleteFeaturesEndpoint()
+                .MapSportsFootballEndpoint()
+                .MapSportsInternationalEndpoint()
+                .MapSportsOlympicsEndpoint()
+                .MapSportsQatarSportsEndpoint()
+                .MapSportsMotorsportsEndpoint()
                 ;
 
             return group;

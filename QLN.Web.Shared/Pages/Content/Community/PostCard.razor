@@ -14,9 +14,8 @@
                     <MudIconButton DisableRipple="true"
                                    Class="menu-icon-button">
 
-                        @*                     <img src="@($"qln-images/content/{(isMenuOpen ? "Menu-Selected.svg" : "Menu.svg")}")" alt="More" class="menu-icon" />
- *@               
-      <img src="qln-images/content/Menu.svg"
+
+                        <img src="qln-images/content/Menu.svg"
                              alt="Menu"
                              class="@($"menu-icon {(isMenuOpen ? "menu-open" : "")}")" />
 
@@ -35,59 +34,109 @@
     </div>
     <div class="post-title">@Post.Title</div>
 
-    @if (!string.IsNullOrWhiteSpace(Post.ImageUrl))
+    @if (IsDetailView)
     {
-        <img src="@($"{Post.ImageUrl}")" alt="Post Image" class="post-image" />
-    }
+        <!-- Detail View - Show both image and full body -->
+        @if (!string.IsNullOrWhiteSpace(Post.ImageUrl))
+        {
+            <img src="@($"{Post.ImageUrl}")" alt="Post Image" class="post-image" />
+        }
+        <div class="post-footer">
+            <div class="post-footer-left">
+                <img src="/qln-images/content/Sample.svg" alt="User Avatar" class="post-footer-avatar" />
+                <span class="post-meta">
 
-    else if (!string.IsNullOrWhiteSpace(Post.BodyPreview))
-    {
-        <div class="post-body">@((MarkupString)Post.BodyPreview)</div>
+                    <span class="author">@Post.Author  • <span class="date-time">@Post.Time.ToString("MMM dd, yyyy - hh:mm tt")</span></span>
+                </span>
+
+            </div>
+
+            <div class="post-icons">
+                <div class="like-wrapper" @onclick="ToggleLikeAsync">
+
+                    <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="icon" />
+                    @*                     <span class="icon-text">@Post.LikeCount</span>
+ *@               
+    </div>
+               @*  <div class="like-wrapper" @onclick="ToggleDislikeAsync">
+
+                    <img src="@($"qln-images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
+                </div> *@
+                <div class="share-wrapper" @onclick="SharePost">
+
+                    <img src="qln-images/content/Share.svg" class="icon" />
+                </div>
+             @*    <div class="post-card-comment-wrapper">
+
+                    <img src="qln-images/content/Comment.svg" class="icon" />
+                    <span class="icon-text">@Post.CommentCount</span>
+                </div> *@
+            </div>
+        </div>
+        <div class="post-body-preview-details">@StripHtml(Post.BodyPreview)</div>
+        <div class="post-details-report-section">
+            <MudChip T="string" Class="report-chip" Variant="Variant.Outlined">
+                <img src="qln-images/content/ReportSVG.svg" class="report-icon" alt="Report" />
+                <span class="report-text">Report</span>
+            </MudChip>
+        </div>
     }
     else
     {
+        <!-- Listing View - Show either image or preview text -->
+        @if (!string.IsNullOrWhiteSpace(Post.ImageUrl))
+        {
+            <img src="@($"{Post.ImageUrl}")" alt="Post Image" class="post-image" />
+        }
+        else if (!string.IsNullOrWhiteSpace(Post.BodyPreview))
+        {
+            <div class="post-body-preview">@((MarkupString)Post.BodyPreview)</div>
+        }
+        else
+        {
+            <MudPaper Class="pa-4 mt-8" Color="Color.Error" Elevation="0">
+                <MudText Typo="Typo.h6" Color="Color.Error">
+                    Oops! Something went wrong while loading community posts.
+                </MudText>
+                <MudText Typo="Typo.body2">
+                    Please try again later.
+                </MudText>
+            </MudPaper>
+        }
+        <div class="post-footer">
+            <div class="post-footer-left">
+                <img src="/qln-images/content/Sample.svg" alt="User Avatar" class="post-footer-avatar" />
+                <span class="post-meta">
 
-        <MudPaper Class="pa-4 mt-8" Color="Color.Error" Elevation="0">
-            <MudText Typo="Typo.h6" Color="Color.Error">
-                Oops! Something went wrong while loading community posts.
-            </MudText>
-            <MudText Typo="Typo.body2">
-                Please try again later.
-            </MudText>
-        </MudPaper>
+                    <span class="author">@Post.Author  • <span class="date-time">@Post.Time.ToString("MMM dd, yyyy - hh:mm tt")</span></span>
+                </span>
+
+            </div>
+
+            <div class="post-icons">
+                <div class="like-wrapper" @onclick="ToggleLikeAsync">
+
+                    <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="icon" />
+                    @*                     <span class="icon-text">@Post.LikeCount</span>
+ *@                </div>
+                @*  <div class="like-wrapper" @onclick="ToggleDislikeAsync">
+
+                    <img src="@($"qln-images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
+                </div> *@
+                <div class="share-wrapper" @onclick="SharePost">
+
+                    <img src="qln-images/content/Share.svg" class="icon" />
+                </div>
+                @*    <div class="post-card-comment-wrapper">
+
+                    <img src="qln-images/content/Comment.svg" class="icon" />
+                    <span class="icon-text">@Post.CommentCount</span>
+                </div> *@
+            </div>
+        </div>
     }
 
-    <div class="post-footer">
-        <div class="post-footer-left">
-            <img src="/qln-images/content/Sample.svg" alt="User Avatar" class="post-footer-avatar" />
-            <span class="post-meta">
 
-                <span class="author">@Post.Author  • <span class="date-time">@Post.Time.ToString("MMM dd, yyyy - hh:mm tt")</span></span>
-            </span>
-
-        </div>
-
-        <div class="post-icons">
-            <div class="like-wrapper" @onclick="ToggleLikeAsync">
-
-                <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="icon" />
-                <span class="icon-text">@Post.LikeCount</span>
-            </div>
-            <div class="like-wrapper" @onclick="ToggleDislikeAsync">
-
-                <img src="@($"qln-images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
-            </div>
-            <div class="share-wrapper" @onclick="SharePost">
-
-                <img src="qln-images/content/Share.svg" class="icon" />
-            </div>
-            <div class="post-card-comment-wrapper">
-
-                <img src="qln-images/content/Comment.svg" class="icon" />
-                <span class="icon-text">@Post.CommentCount</span>
-            </div>
-        </div>
-    </div>
 </MudPaper>
 
 
@@ -168,7 +217,7 @@
         }
     }
 
-    .post-body {
+    .post-body-preview {
         font-family: 'Public Sans', sans-serif;
         font-size: 14px;
         color: #242424;
@@ -180,6 +229,18 @@
         -webkit-box-orient: vertical;
         line-height: 2;
     }
+
+    .post-body-preview-details {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        color: #242424;
+        margin-bottom: 12px;
+        font-weight: 600;
+        overflow: hidden;
+        margin-top: 4px;
+        line-height: 2;
+    }
+
 
     .post-footer {
         display: flex;
@@ -300,4 +361,42 @@
         border: 1px solid #F0F0F0;
     }
 
+    .post-details-report-section {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 8px;
+    }
+
+    .report-chip {
+        width: 72px;
+        height: 22px;
+        border-radius: 999px;
+        border: 1px solid #FF7F38;
+        padding: 4px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background-color: #FF7F38;
+        color: white;
+    }
+
+        .report-chip:hover {
+            background-color: #e6702e;
+        }
+
+    .report-icon {
+        width: 14px;
+        height: 14px;
+    @*         filter: brightness(0) invert(1);
+ *@   
+    }
+
+    .report-text {
+        color: white;
+        font-size: 12px;
+        font-weight: 500;
+        font-family: 'Public Sans', sans-serif;
+        margin-left: 4px;
+    }
 </style>

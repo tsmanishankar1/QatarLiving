@@ -8,9 +8,9 @@ public class DailyVideoCardsBase : ComponentBase
     [Inject] NavigationManager NavigationManager { get; set; }
 
     [Inject] IOptions<NavigationPath> Options { get; set; }
-    [Parameter] public List<ContentPost> Items { get; set; }
+    [Parameter] public List<ContentVideo> Items { get; set; }
 
-    protected ContentPost SelectedVideo;
+    protected ContentVideo SelectedVideo;
     protected NavigationPath NavigationPath => Options.Value;
 
     protected override void OnInitialized()
@@ -18,12 +18,12 @@ public class DailyVideoCardsBase : ComponentBase
         SelectedVideo = Items.FirstOrDefault();
     }
 
-    protected void SelectVideo(ContentPost video)
+    protected void SelectVideo(ContentVideo video)
     {
         SelectedVideo = video;
     }
 
-    protected void NavigatetoArticle(ContentPost video)
+    protected void NavigatetoArticle(ContentVideo video)
     {
         NavigationManager.NavigateTo($"/content/article/details/{video.Slug}");
     }

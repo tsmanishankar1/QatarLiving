@@ -314,6 +314,50 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
 
         }
         #endregion
+        #region Sports
+        public static RouteGroupBuilder MapSportsAthleteFeaturesEndpoint(this RouteGroupBuilder group)
+        {
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<QlnNewsSportsAthleteFeaturesPageResponse>(DrupalContentConstants.QlnNewsSportsAthleteFeatures, "GetSportsAthleteFeatures");
+            return group;
+        }
+
+        public static RouteGroupBuilder MapSportsFootballEndpoint(this RouteGroupBuilder group)
+        {
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<QlnNewsSportsFootballPageResponse>(DrupalContentConstants.QlnNewsSportsFootball, "GetSportsFootball");
+            return group;
+        }
+
+        public static RouteGroupBuilder MapSportsInternationalEndpoint(this RouteGroupBuilder group)
+        {
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<QlnNewsSportsInternationalPageResponse>(DrupalContentConstants.QlnNewsSportsInternational, "GetSportsInternational");
+            return group;
+        }
+
+        public static RouteGroupBuilder MapSportsMotorsportsEndpoint(this RouteGroupBuilder group)
+        {
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<QlnNewsSportsMotorsportsPageResponse>(DrupalContentConstants.QlnNewsSportsMotorsports, "GetSportsMotorsports");
+            return group;
+        }
+
+        public static RouteGroupBuilder MapSportsOlympicsEndpoint(this RouteGroupBuilder group)
+        {
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<QlnNewsSportsOlympicsPageResponse>(DrupalContentConstants.QlnNewsSportsOlympics, "GetSportsOlympics");
+            return group;
+        }
+
+        public static RouteGroupBuilder MapSportsQatarSportsEndpoint(this RouteGroupBuilder group)
+        {
+            // GET /api/content/landing
+            group.GenerateLandingEndpoint<QlnNewsSportsQatarSportsPageResponse>(DrupalContentConstants.QlnNewsSportsQatarSports, "GetSportsQatarSports");
+            return group;
+        }
+
+        #endregion
         #region Videos
         public static RouteGroupBuilder MapContentVideosEndpoint(this RouteGroupBuilder group)
         {

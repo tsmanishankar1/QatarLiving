@@ -50,7 +50,7 @@ else
         @foreach (var c in PagedComments)
         {
             <div class="comment-item @(c.IsByCurrentUser ? "my-comment" : "other-comment")">
-                <img src="@(c.Avatar ?? "/qln-images/content/Sample.svg")" alt="User Avatar" class="post-footer-avatar" />
+                <img src="@(c.Avatar ?? "/qln-images/content/Sample.svg")" alt="User Avatar" class="post-footer-comment-avatar" />
                 <div class="comment-content">
                     <div class="comment-header">
                         <div class="comment-meta">
@@ -76,16 +76,18 @@ else
                     </div>
                     <div class="comment-description">@c.Description</div>
                     <div class="post-icons-comment-section">
-                        <div class="comment-wrapper">
-                            <img src="qln-images/content/Like.svg" class="comment-interaction-icon" />
-                            <span class="icon-text">@c.LikeCount</span>
-                        </div>
+                        <div class="comment-wrapper" @onclick="ToggleLikeAsync">
 
-                        <div class="comment-wrapper">
+                            <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="comment-interaction-icon" />
+@*                             <span class="icon-text">@c.LikeCount</span>
+ *@                       
+</div>
+
+                       @*  <div class="comment-wrapper">
 
                             <img src="qln-images/content/Dislike.svg" class="comment-interaction-icon" />
                             <span class="icon-text">@c.LikeCount</span>
-                        </div>
+                        </div> *@
                     </div>
                 </div>
 
@@ -210,7 +212,7 @@ else
         font-size: 0.8rem;
     }
 
-    .post-footer-avatar {
+    .post-footer-comment-avatar {
         width: 24px;
         height: 24px;
         border-radius: 200px;
@@ -249,7 +251,7 @@ else
         font-family: 'Public Sans', sans-serif;
         font-weight: 400;
         font-size: 16px;
-      
+        margin-top: -6px;
         color: #242424;
     }
 

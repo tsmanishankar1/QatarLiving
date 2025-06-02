@@ -1,9 +1,12 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Services;
+using QLN.Web.Shared.Services.Interface;
+using System.Net.Http.Json;
 
 
 namespace QLN.Web.Shared.Pages.Content.Community
@@ -13,6 +16,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         [Inject] protected ICommunityService CommunityService { get; set; } = default!;
         [Inject] protected ILogger<PostDetailBase> Logger { get; set; } = default!;
+        [Inject] private IContentService _contentService { get; set; }
 
         protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
         protected QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem? postBreadcrumbItem;
@@ -29,9 +33,14 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected PostModel? post;
 
-       
+        protected bool isLoadingBanners = true;
+        protected List<BannerItem> DailyHeroBanners { get; set; } = new();
+
+
         protected override async Task OnParametersSetAsync()
         {
+            await LoadBanners();
+
             // Update breadcrumb for current slug
             postBreadcrumbItem = new()
             {
@@ -42,7 +51,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
             postBreadcrumbCategory = new()
             {
                 Label = slug ?? "Not Found",
-                Url = "/content/community",
+                //Url = "/content/community",
+                Url = $"/content/community"
             };
 
             breadcrumbItems = new List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem>
@@ -72,6 +82,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                     {
                         Id = fetched.nid,
                         Category = fetched.category,
+                        CategoryId = fetched.forum_id.ToString(),
                         Title = fetched.title,
                         BodyPreview = fetched.description,
                         Author = fetched.user_name ?? "Unknown User",
@@ -101,6 +112,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                     if (postBreadcrumbCategory is not null)
                     {
                         postBreadcrumbCategory.Label = SelectedPost.Category;
+                        postBreadcrumbCategory.Url = $"/content/community?categoryId={SelectedPost.CategoryId}";
                         StateHasChanged();
                     }
                 }
@@ -116,6 +128,40 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 StateHasChanged();
             }
         }
+        protected async Task LoadBanners()
+        {
+            isLoadingBanners = true;
+            try
+            {
+                var banners = await FetchBannerData();
+                DailyHeroBanners = banners?.DailyHero ?? new();
 
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading banners: {ex.Message}");
+            }
+            finally
+            {
+                isLoadingBanners = false;
+            }
+        }
+        private async Task<BannerResponse?> FetchBannerData()
+        {
+            try
+            {
+                var response = await _contentService.GetBannerAsync();
+                if (response.IsSuccessStatusCode && response.Content != null)
+                {
+                    return await response.Content.ReadFromJsonAsync<BannerResponse>();
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"FetchBannerData error: {ex.Message}");
+                return null;
+            }
+        }
     }
 }
