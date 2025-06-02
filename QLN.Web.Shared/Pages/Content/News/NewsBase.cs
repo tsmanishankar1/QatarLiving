@@ -201,8 +201,8 @@ namespace QLN.Web.Shared.Pages.Content.News
         {
             isLoading = true;
             SelectedTab = tab;
-            topNews = new ContentPost();
-            moreArticleList.Clear();
+            // topNews = new ContentPost();
+            // moreArticleList.Clear();
             switch (tab)
             {
                 case "Qatar":
@@ -237,7 +237,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     moreArticleListSlot = law?.MoreArticles.Items ?? new List<ContentPost>();
                     mostWatchedArticleListSlot = new List<ContentVideo>();
                     articleListSlot1 = law?.Articles1?.Items ?? new List<ContentPost>();
-                    popularArticleListSlot = law?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = law?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = law?.Articles2?.Items ?? new List<ContentPost>();
                     break;
 
@@ -249,7 +249,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     moreArticleListSlot = health?.MoreArticles?.Items ?? new List<ContentPost>();
                     mostWatchedArticleListSlot = new List<ContentVideo>();
                     articleListSlot1 = health?.Articles1?.Items ?? new List<ContentPost>();
-                    popularArticleListSlot = health?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = health?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = health?.Articles2?.Items ?? new List<ContentPost>();
                     break;
 
@@ -261,7 +261,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     moreArticleListSlot = middleEast?.MoreArticles?.Items ?? new List<ContentPost>();
                     mostWatchedArticleListSlot = new List<ContentVideo>();
                     articleListSlot1 = middleEast?.Articles1?.Items ?? new List<ContentPost>();
-                    popularArticleListSlot = middleEast?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = middleEast?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = middleEast?.Articles2?.Items ?? new List<ContentPost>();
                     break;
 
@@ -273,7 +273,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     moreArticleListSlot = economy?.MoreArticles?.Items ?? new List<ContentPost>();
                     mostWatchedArticleListSlot = new List<ContentVideo>();
                     articleListSlot1 = economy?.Articles1?.Items ?? new List<ContentPost>();
-                    popularArticleListSlot = economy?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = economy?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = economy?.Articles2?.Items ?? new List<ContentPost>();
                     break;
 
@@ -285,7 +285,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     moreArticleListSlot = world?.MoreArticles?.Items ?? new List<ContentPost>();
                     mostWatchedArticleListSlot = new List<ContentVideo>();
                     articleListSlot1 = world?.Articles1?.Items ?? new List<ContentPost>();
-                    popularArticleListSlot = world?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = world?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = world?.Articles2?.Items ?? new List<ContentPost>();
                     break;
                 case "Market Updates":
@@ -296,7 +296,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     moreArticleListSlot = market?.MoreArticles?.Items ?? new List<ContentPost>();
                     mostWatchedArticleListSlot = new List<ContentVideo>();
                     articleListSlot1 = market?.Articles1?.Items ?? new List<ContentPost>();
-                    popularArticleListSlot = market?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = market?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = market?.Articles2?.Items ?? new List<ContentPost>();
                     break;
                 case "Real Estate":
@@ -307,7 +307,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     moreArticleListSlot = realEstate?.MoreArticles?.Items ?? new List<ContentPost>();
                     mostWatchedArticleListSlot = new List<ContentVideo>();
                     articleListSlot1 = realEstate?.Articles1?.Items ?? new List<ContentPost>();
-                    popularArticleListSlot = realEstate?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = realEstate?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = realEstate?.Articles2?.Items ?? new List<ContentPost>();
                     break;
                 case "Entrepreneurship":
@@ -318,7 +318,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     moreArticleListSlot = entrepreneurship?.MoreArticles?.Items ?? new List<ContentPost>();
                     mostWatchedArticleListSlot = new List<ContentVideo>();
                     articleListSlot1 = entrepreneurship?.Articles1?.Items ?? new List<ContentPost>();
-                    popularArticleListSlot = entrepreneurship?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = entrepreneurship?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = entrepreneurship?.Articles2?.Items ?? new List<ContentPost>();
                     break;
                 case "Finance":
@@ -329,7 +329,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     moreArticleListSlot = finance?.MoreArticles?.Items ?? new List<ContentPost>();
                     mostWatchedArticleListSlot = new List<ContentVideo>();
                     articleListSlot1 = finance?.Articles1?.Items ?? new List<ContentPost>();
-                    popularArticleListSlot = finance?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = finance?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = finance?.Articles2?.Items ?? new List<ContentPost>();
                     break;
                 case "Jobs & Careers":
@@ -340,7 +340,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     moreArticleListSlot = jobs?.MoreArticles?.Items ?? new List<ContentPost>();
                     mostWatchedArticleListSlot = new List<ContentVideo>();
                     articleListSlot1 = jobs?.Articles1?.Items ?? new List<ContentPost>();
-                    popularArticleListSlot = jobs?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = jobs?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = jobs?.Articles2?.Items ?? new List<ContentPost>();
                     break;
                 case "Food & Dining":
@@ -351,7 +351,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     moreArticleListSlot = foods?.MoreArticles?.Items ?? new List<ContentPost>();
                     mostWatchedArticleListSlot = new List<ContentVideo>();
                     articleListSlot1 = foods?.Articles1?.Items ?? new List<ContentPost>();
-                    popularArticleListSlot = foods?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = foods?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = foods?.Articles2?.Items ?? new List<ContentPost>();
                     break;
                 case "Travel & Leisure":
@@ -362,7 +362,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     moreArticleListSlot = travel?.MoreArticles?.Items ?? new List<ContentPost>();
                     mostWatchedArticleListSlot = new List<ContentVideo>();
                     articleListSlot1 = travel?.Articles1?.Items ?? new List<ContentPost>();
-                    popularArticleListSlot = travel?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = travel?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = travel?.Articles2?.Items ?? new List<ContentPost>();
                     break;
                 case "Arts & Culture":
@@ -373,17 +373,19 @@ namespace QLN.Web.Shared.Pages.Content.News
                     moreArticleListSlot = arts?.MoreArticles?.Items ?? new List<ContentPost>();
                     mostWatchedArticleListSlot = new List<ContentVideo>();
                     articleListSlot1 = arts?.Articles1?.Items ?? new List<ContentPost>();
-                    popularArticleListSlot = arts?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = arts?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = arts?.Articles2?.Items ?? new List<ContentPost>();
                     break;
                 case "Events":
                 EventsNewsContent = await GetNewsAsync<QlnNewsLifestyleEventsPageResponse>("Events");
                 var events = EventsNewsContent?.QlnNewsLifestyleEvents;
-                topNews = events?.TopStory?.Items?.FirstOrDefault();
-                moreArticleList = events?.MoreArticles?.Items ?? new List<ContentPost>();
-                secondArticleList = events?.Articles1?.Items ?? new List<ContentPost>();
-                finalArticleList = events?.Articles2?.Items ?? new List<ContentPost>();
-                popularArticleList = events?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                topNewsSlot = events?.TopStory?.Items?.FirstOrDefault();
+                topNewsListSlot = events?.MoreArticles?.Items ?? new List<ContentPost>();
+                moreArticleListSlot = events?.MoreArticles?.Items ?? new List<ContentPost>();
+                mostWatchedArticleListSlot = new List<ContentVideo>();
+                articleListSlot1 = events?.Articles1?.Items ?? new List<ContentPost>();
+                popularArticleListSlot = events?.MostPopularArticles?.Items ?? new List<ContentPost>();
+                articleListSlot2 = events?.Articles2?.Items ?? new List<ContentPost>();
                 break;
                 case "Fashion & Style":
                     FashionNewsContent = await GetNewsAsync<QlnNewsLifestyleFashionStylePageResponse>("Fashion & Style");
@@ -393,7 +395,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     moreArticleListSlot = fashion?.MoreArticles?.Items ?? new List<ContentPost>();
                     mostWatchedArticleListSlot = new List<ContentVideo>();
                     articleListSlot1 = fashion?.Articles1?.Items ?? new List<ContentPost>();
-                    popularArticleListSlot = fashion?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = fashion?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = fashion?.Articles2?.Items ?? new List<ContentPost>();
                     break;
                 case "Home & Living":
@@ -404,7 +406,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     moreArticleListSlot = home?.MoreArticles?.Items ?? new List<ContentPost>();
                     mostWatchedArticleListSlot = new List<ContentVideo>();
                     articleListSlot1 = home?.Articles1?.Items ?? new List<ContentPost>();
-                    popularArticleListSlot = home?.MostPopularArticles.Items ?? new List<ContentPost>();
+                    popularArticleListSlot = home?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = home?.Articles2?.Items ?? new List<ContentPost>();
                     break;
             }

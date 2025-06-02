@@ -85,9 +85,9 @@
                                         <h2 class="main-title">@topNewsSlot.Title</h2>
                                         <div class="author-wrapper">
                                         <div class="main-author">
-                                        @if (!string.IsNullOrWhiteSpace(topNews?.UserName))
+                                        @if (!string.IsNullOrWhiteSpace(@topNewsSlot?.UserName))
                                         {
-                                            @topNews.UserName <span>•</span>
+                                            @topNewsSlot.UserName <span>•</span>
                                         }
                                         <a href="#" class="main-source">Qatar Living</a>  
                                         <img src="/qln-images/tick.svg" alt="Qatarliving" />
