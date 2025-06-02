@@ -19,7 +19,13 @@
                                  <EmptyCard Title="No Images Available" Subtitle="" />
                             }
                             else{
-                            <img src="@Post.ImageUrl" alt="Michael Bublé" class="event-image" />
+                                @if (!imageLoaded)
+                                {
+                                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Class="event-image" />
+                                }
+                                <img src="@Post.ImageUrl" alt="News Image" class="event-image"
+                                style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                                @onerror="OnImageError" />
                             }
                         }
 

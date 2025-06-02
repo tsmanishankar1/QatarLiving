@@ -5,33 +5,33 @@
 <div class="card-container">
 
     <h3><span class="accent-bar">|</span> More Articles</h3>
-    @if (Articles != null && Articles.Any())
-    {
-
-        @if (loading)
+    @if (loading)
         {
             @for (int i = 0; i < 4; i++)
             {
                 <div class="skeleton-item">
-                    <!-- Image Skeleton -->
-                    <MudSkeleton Width="120px" Height="100px" Variant="Rectangle" />
-
-                    <!-- Text Skeletons -->
+                    <MudSkeleton Width="120px" SkeletonType="SkeletonType.Rectangle" Height="70px" Variant="Rectangle" Class="rounded" />
                     <div class="skeleton-text">
-                        <MudSkeleton Height="20px" Width="100%" />
-                        <MudSkeleton Height="20px" Width="80%" class="skeleton-line-spacing" />
+                        <MudSkeleton Height="20px" SkeletonType="SkeletonType.Text" Width="100%" />
+                        <MudSkeleton Height="20px" SkeletonType="SkeletonType.Text" Width="80%" class="skeleton-line-spacing" />
                     </div>
                 </div>
             }
         }
-        else
-        {
+    else if (Articles != null && Articles.Any())
+    {
             @foreach (var article in Articles)
             {
                 <div class="article-entry">
                     @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
                     {
-                        <img src="@article.ImageUrl" class="article-image" />
+                        @if (!imageLoaded)
+                        {
+                                <MudSkeleton SkeletonType="SkeletonType.Rectangle" class="article-image" />
+                        }
+                        <img src="@article.ImageUrl" alt="" class="article-image"
+                        style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                        @onerror="OnImageError" />
                     }
                     else
                     {
@@ -53,11 +53,7 @@
                     </div>
                 </div>
             }
-        }
-
-
-
-
+        
 
     }
     else
@@ -78,11 +74,10 @@
 
     .skeleton-item {
         display: flex;
+        flex-direction: row;
         align-items: flex-start;
-        gap: 10px;
+        gap: 4px;
         height: 100px;
-        margin-bottom: 1.5rem;
-        /* equivalent to mb-4 */
     }
 
     .skeleton-text {

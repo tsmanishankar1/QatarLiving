@@ -10,10 +10,6 @@ namespace QLN.Common.Infrastructure.IService
 {
     public interface IClassifiedService
     {
-        Task<IEnumerable<ClassifiedIndexDto>> Search(CommonSearchRequest request);
-        Task<ClassifiedIndexDto?> GetById(string id);
-        Task<string> Upload(ClassifiedIndexDto document);
-        Task<ClassifiedLandingPageResponse> GetLandingPage();
         Task<Category> AddCategory(string categoryName, CancellationToken cancellationToken = default);
         Task<List<CategoriesDto>> GetAllCategories(CancellationToken cancellationToken = default);
         Task<Category> AddSubCategory(string name, Guid categoryId, CancellationToken cancellationToken = default);

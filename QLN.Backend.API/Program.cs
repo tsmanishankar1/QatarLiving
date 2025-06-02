@@ -1,29 +1,28 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Dapr.Client;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using QLN.Backend.API.ServiceConfiguration;
+using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
+using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.User;
 using QLN.Common.Infrastructure.DbContext;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Common.Infrastructure.TokenProvider;
-using System.Text;
-using Dapr.Client;
-using Microsoft.OpenApi.Models;
-using QLN.Common.Infrastructure.CustomEndpoints.User;
-using QLN.Backend.API.ServiceConfiguration;
-using QLN.Common.Swagger;
-using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
-using System.Text.Json.Serialization;
-using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
-using QLN.Common.Infrastructure.IService;
-using Microsoft.AspNetCore.Authorization;
-using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication;
-using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
 using System.Security.Claims;
-using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
+using System.Text;
+using System.Text.Json.Serialization;
+using QLN.SearchService.CustomEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
+using QLN.Classified.MS.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,8 +57,6 @@ builder.Services.AddSwaggerGen(options =>
         In = ParameterLocation.Header,
         Description = "Enter 'Bearer' followed by your JWT token."
     });
-
-    options.OperationFilter<SwaggerFileUploadFilter>();
 
     options.MapType<IFormFile>(() => new OpenApiSchema
     {
@@ -172,12 +169,14 @@ builder.Services.AddActors(options =>
 
 builder.Services.AddResponseCaching();   
 
-
 builder.Services.AddDaprClient();
+
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
+builder.Services.SearchServicesConfiguration(builder.Configuration);
 builder.Services.ContentServicesConfiguration(builder.Configuration);
 builder.Services.BannerServicesConfiguration(builder.Configuration);
+builder.Services.AnalyticsServicesConfiguration(builder.Configuration);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
@@ -187,7 +186,7 @@ var app = builder.Build();
 
 app.UseResponseCaching();                
 
-if (app.Environment.IsDevelopment())
+if (builder.Configuration.GetValue<bool>("EnableSwagger"))
 {
     app.UseSwagger();
     app.UseSwaggerUI(options =>
@@ -206,13 +205,19 @@ var companyGroup = app.MapGroup("/api/companyprofile");
 companyGroup.MapCompanyEndpoints()
     .RequireAuthorization();
 var classifiedGroup = app.MapGroup("/api/classified");
-classifiedGroup.MapClassifiedEndpoints();
+classifiedGroup.MapClassifiedsEndpoints();
+
+var servicesGroup = app.MapGroup("/api/services");
+servicesGroup.MapServicesEndpoints();
 
 var contentGroup = app.MapGroup("/api/content");
 contentGroup.MapContentLandingEndpoints();
 
 var bannerGroup = app.MapGroup("/api/banner");
 bannerGroup.MapBannerEndpoints();
+
+var analyticGroup = app.MapGroup("/api/analytics");
+analyticGroup.MapAnalyticsEndpoints();
 
 app.MapGroup("/api/subscriptions")
    .MapSubscriptionEndpoints();
@@ -224,6 +229,9 @@ app.MapGroup("/api/subscriptions")
 app.MapGroup("/api/PayToPublish")
     .MapPayToPublishEndpoints();
 
+
+app.MapAllBackOfficeEndpoints();
+app.MapLandingPageEndpoints();
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
