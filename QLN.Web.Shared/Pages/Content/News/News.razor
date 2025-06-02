@@ -87,7 +87,9 @@
                                     {
                                     }
                                     else{
-                                        <span class="category-style">Sports</span>
+                                         @if (!string.IsNullOrWhiteSpace(topNewsSlot?.Category)){
+                                            <span class="category-style">@topNewsSlot?.Category</span>
+                                         }
                                         <h2 class="main-title">@topNewsSlot.Title</h2>
                                         <div class="author-wrapper">
                                         <div class="main-author">
@@ -127,13 +129,14 @@
                     }
                     else if (topNewsListSlot != null && topNewsListSlot.Any())
                     {
-                        @foreach (var news in topNewsListSlot.Take(3))
-                    { 
-                        <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)"/>
-                         @if(news != topNewsListSlot.Last()){
-                            <div style="width: 1px; height: auto; background-color: #F0F0F0; align-self: stretch; margin: 0 14px"></div>
-                        } 
-                    } 
+                       @foreach (var news in topNewsListSlot.Skip(1).Take(2))
+                        {
+                            <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)" />
+                            @if (news != topNewsListSlot.Skip(1).Take(2).Last())
+                            {
+                                <div style="width: 1px; height: auto; background-color: #F0F0F0; align-self: stretch; margin: 0 14px"></div>
+                            }
+                        }
                     }
                     else{
                         <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
@@ -183,7 +186,7 @@
     
         <div class="news-container" style="padding-top: 30px;">   
             <div class="max-container">
-                    <div class="flex-container">
+                    <div class="content-list-container">
                         @if(isLoading){
                         <div class="horizontal-stack"> 
                         @for (int i = 0; i < 5; i++)
@@ -359,7 +362,7 @@
     height: auto;
     background-color: #F0F0F0;
     align-self: stretch;
-    margin: 0 14px;
+    margin: 0 10px;
 }
 .video-container{
     width: 100%;
@@ -527,12 +530,21 @@
 
 .flex-container {
     width: 100%;
-    @* justify-content: flex-start; *@
+    @* justify-content: flex-start;  *@
+    @* justify-content: space-between; *@
+    justify-content: flex-start;
+    align-items: flex-end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0px; 
+}
+.content-list-container {
+    width: 100%;
     justify-content: space-between;
     align-items: flex-start;
     display: flex;
     flex-wrap: wrap;
-    gap: 15px; 
+    gap: 0px; 
 }
 .skeleton-container{
     justify-content: space-between;
@@ -664,6 +676,12 @@
     flex-wrap: wrap;
     gap: 10px; 
 }
+.content-list-container {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0px; 
+}
 }
 @@media (max-width: 375px) {
     .custom-text {
@@ -686,6 +704,13 @@
     flex-wrap: wrap;
     gap: 10px; 
     }
+    .content-list-container {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 0px; 
+}
     .poular-article-container {
         display: flex;
         flex-direction: column;
@@ -712,6 +737,13 @@
         flex-wrap: wrap;
         gap: 0px; 
     }
+    .content-list-container {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 0px; 
+}
     .poular-article-container {
         display: flex;
         flex-direction: column;
@@ -747,6 +779,14 @@
         padding-right: 5px;
         gap: 0px; 
     }
+    .content-list-container {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    gap: 0px; 
+}
+    
     .grid-padding {
     padding-left: 16px;
     padding-right: 16px;
@@ -785,6 +825,13 @@
         justify-content: space-between;
         padding: 0px 100px;
     }
+    .content-list-container {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    gap: 0px; 
+}
 }
 @@media (max-width: 425px){
      .poular-article-container {
@@ -805,6 +852,15 @@
         flex-direction: column;
         display: flex;
         flex-wrap: wrap;
+        padding-left: 5px;      
+        padding-right: 5px;
+        gap: 0px; 
+    }
+    .content-list-container {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        flex-direction: column;
         padding-left: 5px;      
         padding-right: 5px;
         gap: 0px; 
