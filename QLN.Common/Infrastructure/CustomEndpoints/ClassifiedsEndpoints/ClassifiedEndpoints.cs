@@ -17,7 +17,7 @@ using System.ComponentModel.DataAnnotations;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Constants;
 
-namespace QLN.Classified.MS.Endpoints
+namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 {
     public static class ClassifiedEndpoints
     {

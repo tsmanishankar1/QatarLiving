@@ -12,7 +12,6 @@ using Microsoft.AspNetCore.Identity;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.ServiceConfiguration;
-using QLN.Classified.MS.Endpoints;
 using QLN.Classifieds.MS.ServiceConfiguration;
 
 var builder = WebApplication.CreateBuilder(args);
