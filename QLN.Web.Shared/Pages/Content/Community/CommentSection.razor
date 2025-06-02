@@ -7,10 +7,18 @@
         <div class="comment-title">Comments</div>
 
         <div class="comment-input-wrapper @(string.IsNullOrWhiteSpace(newComment) ? "" : "has-text")">
-            <input class="comment-input"
-                   @bind="newComment"
-                   @bind:event="oninput"
-                   placeholder="Add a comment..." />
+
+            <MudTextField T="string"
+                          Value="@newComment"
+                          ValueChanged="@(val => { newComment = val; StateHasChanged(); })"
+                          Immediate="true"
+                          Placeholder="Add a comment"
+                          Variant="Variant.Text"
+                          Underline="false"
+                          AutoGrow
+                          Class="comment-input no-underline"
+                          @ref="multilineReference"
+                          OnAdornmentClick="@(() => multilineReference.SelectAsync())" />
 
             @if (!string.IsNullOrWhiteSpace(newComment))
             {
@@ -34,11 +42,17 @@ else
         <div class="comment-title">Comments</div>
 
         <div class="comment-input-wrapper @(string.IsNullOrWhiteSpace(newComment) ? "" : "has-text")">
-            <input class="comment-input"
-                   @bind="newComment"
-                   @bind:event="oninput"
-                   placeholder="Add a comment..." />
-
+            <MudTextField T="string"
+                          Value="@newComment"
+                          ValueChanged="@(val => { newComment = val; StateHasChanged(); })"
+                          Immediate="true"
+                          Placeholder="Add a comment"
+                          Variant="Variant.Text"
+                          Underline="false"
+                          AutoGrow
+                          Class="comment-input no-underline"
+                          @ref="multilineReference"
+                          OnAdornmentClick="@(() => multilineReference.SelectAsync())" />
             @if (!string.IsNullOrWhiteSpace(newComment))
             {
                 <MudButton Class="comment-post-btn" OnClick="PostComment">Post</MudButton>
@@ -140,6 +154,18 @@ else
         outline: none;
         font-size: 1rem;
         margin-top:10px;
+        line-height: 1.5;
+        max-height: calc(1.5em * 3); 
+        min-height: calc(1.5em * 1.5);
+        overflow-y: auto;
+        overflow-y: auto;
+        resize: none;
+        background: transparent;
+    }
+
+    .no-underline .mud-input-slot {
+        border-bottom: none !important;
+        box-shadow: none !important;
     }
 
     .comment-post-btn {
