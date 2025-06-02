@@ -10,7 +10,7 @@ namespace QLN.Web.Shared.Services
     {
         private readonly HttpClient _httpClient;
 
-        public CommunityService(HttpClient httpClient): base(httpClient)
+        public CommunityService(HttpClient httpClient) : base(httpClient)
         {
             _httpClient = httpClient;
         }
@@ -28,34 +28,7 @@ namespace QLN.Web.Shared.Services
 
 
                 var response = await _httpClient.GetFromJsonAsync<PostListResponse>(url);
-
-                //if(response != null && response.Items.Any())
-                //{
-                //    var postList = new List<PostListDto>();
-
-                //    foreach (var item in response.Items)
-                //    {
-                //        postList.Add(new PostListDto
-                //        {
-                //            category_id = item.CategoryId,
-                //            date_created = item.DateCreated,
-                //            description = item.Description,
-                //            image_url = item.ImageUrl,
-                //            nid = item.Nid,
-                //            forum_category = item.ForumCategory,
-                //            forum_id = item.ForumId,
-                //            slug = item.Slug,
-                //            title = item.Title,
-                //            user_name = item.UserName,
-                //            comment_count = item.CommentCount
-                //        });
-                //    }
-
-                //    return postList;
-                //}
-
-                var response = await _httpClient.GetFromJsonAsync<PostListResponse>(url);
-                return (response.items , response.total);
+                return (response.items, response.total);
             }
             catch (Exception ex)
             {
@@ -114,7 +87,7 @@ namespace QLN.Web.Shared.Services
             [JsonPropertyName("forum_categories")]
             public List<ForumCategory> Forum_Categories { get; set; }
         }
-        
+
 
     }
 }
