@@ -205,60 +205,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
-            // UPDATE
-           /* group.MapPut("/update", async (
-                    [FromBody] ClassifiedsIndex doc,
-                    [FromServices] IClassifiedService svc,
-                    [FromServices] ILoggerFactory logFac
-                ) =>
-            {
-                var logger = logFac.CreateLogger("ClassifiedEndpoints");
-                if (doc is null || string.IsNullOrWhiteSpace(doc.Id))
-                {
-                    logger.LogWarning("Update called with invalid payload");
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Bad Request",
-                        Detail = "Document payload with valid Id is required.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/classified/update"
-                    });
-                }
-
-                try
-                {
-                    var msg = await svc.Upload(doc);
-                    return Results.Ok(msg);
-                }
-                catch (ArgumentException ex)
-                {
-                    logger.LogWarning(ex, "Invalid update request");
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Request",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/classified/update"
-                    });
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Update error");
-                    return Results.Problem(
-                        title: "Update Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/classified/update"
-                    );
-                }
-            })
-            .WithName("UpdateClassified")
-            .WithTags("Classified")
-            .WithSummary("Update an existing classified item")
-            .Produces<string>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status500InternalServerError);
-*/
             //adding category
 
             group.MapPost("/category", async Task<IResult> (
@@ -2916,7 +2862,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("itemsAd/{userId}", async Task<IResult> (
+            group.MapGet("itemsAd-dashboard/{userId}", async Task<IResult> (
                 Guid userId,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -2933,8 +2879,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    var ads = await service.GetAllItemsAds(userId, token);
-                    if (ads == null || (!ads.PublishedAds.Any() && !ads.UnpublishedAds.Any()))
+                    var result = await service.GetUserItemsAdsWithDashboard(userId, token);
+
+                    if ((result?.ItemsAds.PublishedAds?.Any() != true) &&
+                        (result?.ItemsAds.UnpublishedAds?.Any() != true))
                     {
                         return TypedResults.NotFound(new ProblemDetails
                         {
@@ -2944,7 +2892,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    return TypedResults.Ok(ads);
+                    return TypedResults.Ok(result);
                 }
                 catch (InvalidOperationException ex)
                 {
@@ -2955,65 +2903,29 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Status = StatusCodes.Status400BadRequest
                     });
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     return TypedResults.Problem(
                         title: "Internal Server Error",
-                        detail: "An unexpected error occurred while retrieving ads.",
+                        detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError
                     );
                 }
             })
-                .WithName("GetAllItemAdsByUser")
+                .WithName("GetUserItemsAdsWithDashboard")
                 .WithTags("Items")
-                .WithSummary("Get all ads of a user")
-                .WithDescription("Fetches both published and unpublished ads for a given user ID.")
-                .Produces<AdsGroupedResult>(StatusCodes.Status200OK)
+                .WithSummary("Get all user ads and dashboard")
+                .WithDescription("Returns both published/unpublished ads and dashboard metrics for a given user ID.")
+                .Produces<ItemAdsAndDashboardResponse>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("itemDashboard-summary/{userId}", async Task<IResult> (
+
+            group.MapGet("prelovedAd-dashboard/{userId}", async Task<IResult> (
                 Guid userId,
                 IClassifiedService service,
                 CancellationToken token) =>
-            {
-                try
-                {
-                    if (userId == Guid.Empty)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Validation Error",
-                            Detail = "User ID is required",
-                            Status = 400
-                        });
-                    }
-
-                    var summary = await service.GetUserItemsAdsDashboard(userId, token);
-                    return TypedResults.Ok(summary);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: 500
-                    );
-                }
-            })
-                .WithName("GetItemsUserAdsSummary")
-                .WithTags("Items")
-                .WithSummary("Get dashboard summary")
-                .WithDescription("Returns summary statistics for user's ads.")
-                .Produces<ItemDashboardDto>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            group.MapGet("prelovedAd/{userId}", async Task<IResult> (
-              Guid userId,
-              IClassifiedService service,
-              CancellationToken token) =>
             {
                 try
                 {
@@ -3027,18 +2939,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    var ads = await service.GetAllPrelovedAds(userId, token);
-                    if (ads == null || (!ads.PublishedAds.Any() && !ads.UnpublishedAds.Any()))
+                    var result = await service.GetUserPrelovedAdsAndDashboard(userId, token);
+
+                    if ((result?.PrelovedAds.PublishedAds?.Any() != true) &&
+                        (result?.PrelovedAds.UnpublishedAds?.Any() != true))
                     {
                         return TypedResults.NotFound(new ProblemDetails
                         {
                             Title = "No Ads Found",
-                            Detail = $"No ads were found for user ID '{userId}'.",
+                            Detail = $"No Preloved ads were found for user ID '{userId}'.",
                             Status = StatusCodes.Status404NotFound
                         });
                     }
 
-                    return TypedResults.Ok(ads);
+                    return TypedResults.Ok(result);
                 }
                 catch (InvalidOperationException ex)
                 {
@@ -3049,60 +2963,24 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Status = StatusCodes.Status400BadRequest
                     });
                 }
-                catch (Exception)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: "An unexpected error occurred while retrieving ads.",
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }
-            })
-              .WithName("GetAllPrelovedAdsByUser")
-              .WithTags("Preloved")
-              .WithSummary("Get all ads of a user")
-              .WithDescription("Fetches both published and unpublished ads for a given user ID.")
-              .Produces<AdsGroupedResult>(StatusCodes.Status200OK)
-              .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-              .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-              .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            group.MapGet("prelovedDashboard-summary/{userId}", async Task<IResult> (
-            Guid userId,
-            IClassifiedService service,
-            CancellationToken token) =>
-            {
-                try
-                {
-                    if (userId == Guid.Empty)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Validation Error",
-                            Detail = "User ID is required",
-                            Status = 400
-                        });
-                    }
-
-                    var summary = await service.GetUserPrelovedAdsDashboard(userId, token);
-                    return TypedResults.Ok(summary);
-                }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem(
                         title: "Internal Server Error",
                         detail: ex.Message,
-                        statusCode: 500
+                        statusCode: StatusCodes.Status500InternalServerError
                     );
                 }
             })
-            .WithName("GetprelovedUserAdsSummary")
-            .WithTags("Preloved")
-            .WithSummary("Get dashboard summary")
-            .WithDescription("Returns summary statistics for user's ads.")
-            .Produces<ItemDashboardDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                .WithName("GetUserPrelovedAdsWithDashboard")
+                .WithTags("Preloved")
+                .WithSummary("Get all user Preloved ads and dashboard")
+                .WithDescription("Returns both published/unpublished Preloved ads and dashboard metrics for a given user ID.")
+                .Produces<PrelovedAdsAndDashboardResponse>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
             return group;
         }

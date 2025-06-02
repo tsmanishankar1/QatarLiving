@@ -711,34 +711,14 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdsGroupedResult> GetAllItemsAds(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<ItemAdsAndDashboardResponse> GetUserItemsAdsWithDashboard(Guid userId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<AdsGroupedResult>(
-                   HttpMethod.Get,
-                   SERVICE_APP_ID,
-                   $"api/classifieds/itemsAd/{userId}",
-                   cancellationToken
-                   );
-
-                return result;
-            }
-            catch(Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<ItemDashboardDto> GetUserItemsAdsDashboard(Guid userId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<ItemDashboardDto>(
+                var result = await _dapr.InvokeMethodAsync<ItemAdsAndDashboardResponse>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"api/classifieds/itemDashboard-summary/{userId}",
+                    $"api/classifieds/itemsAd-dashboard/{userId}",
                     cancellationToken
                 );
 
@@ -751,34 +731,14 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdsGroupedPrelovedResult> GetAllPrelovedAds(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<PrelovedAdsAndDashboardResponse> GetUserPrelovedAdsAndDashboard(Guid userId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.InvokeMethodAsync<AdsGroupedPrelovedResult>(
-                   HttpMethod.Get,
-                   SERVICE_APP_ID,
-                   $"api/classifieds/prelovedAd/{userId}",
-                   cancellationToken
-                   );
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<PrelovedDashboardDto> GetUserPrelovedAdsDashboard(Guid userId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<PrelovedDashboardDto>(
+                var result = await _dapr.InvokeMethodAsync<PrelovedAdsAndDashboardResponse>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"api/classifieds/prelovedDashboard-summary/{userId}",
+                    $"api/classifieds/prelovedAd-dashboard/{userId}",
                     cancellationToken
                 );
 
@@ -790,7 +750,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw;
             }
         }
-
         public async Task<bool> SaveSearch(SaveSearchRequestDto dto ,Guid userId, CancellationToken cancellationToken = default)
         {
             try

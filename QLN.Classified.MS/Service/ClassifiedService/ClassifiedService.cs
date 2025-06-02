@@ -1421,57 +1421,42 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdsGroupedResult> GetAllItemsAds(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<ItemAdsAndDashboardResponse> GetUserItemsAdsWithDashboard(Guid userId, CancellationToken cancellationToken = default)
         {
             try
             {
                 var allAds = await ReadAllItemsAdsFromFile();
-             
-                var userAds = allAds.Where(ad => ad.UserId == userId);
+                var userAds = allAds.Where(ad => ad.UserId == userId).ToList();
+                               
 
-                var result = new AdsGroupedResult
+                var groupedAds = new AdsGroupedResult
                 {
                     PublishedAds = userAds
-                .Where(ad => ad.IsPublished == true)
-                .OrderByDescending(ad => ad.CreatedDate)
-                .ToList(),
+                        .Where(ad => ad.IsPublished == true)
+                        .OrderByDescending(ad => ad.CreatedDate)
+                        .ToList(),
 
                     UnpublishedAds = userAds
-                .Where(ad => ad.IsPublished != true)
-                .OrderByDescending(ad => ad.CreatedDate)
-                .ToList()
+                        .Where(ad => ad.IsPublished != true)
+                        .OrderByDescending(ad => ad.CreatedDate)
+                        .ToList()
                 };
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error occurred while retrieving ads.", ex);
-            }
-        }
-
-        public async Task<ItemDashboardDto> GetUserItemsAdsDashboard(Guid userId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var allAds = await ReadAllItemsAdsFromFile();
-                var userAds = allAds.Where(ad => ad.UserId == userId);
-
-
+                
                 var publishedCount = userAds.Count(ad => ad.IsPublished == true);
                 var promotedCount = userAds.Count(ad => ad.IsPromoted == true);
                 var featuredCount = userAds.Count(ad => ad.IsFeaturedItem == true || ad.IsFeaturedStore == true || ad.IsFeaturedCategory == true);
-                var refreshCount = userAds.Count(ad => ad.RefreshExpiry != null);                
+                var refreshCount = userAds.Count(ad => ad.RefreshExpiry != null);
                 var totalImpressions = userAds.Sum(ad => ad.Impressions ?? 0);
                 var totalViews = userAds.Sum(ad => ad.Views ?? 0);
                 var totalWhatsappClicks = userAds.Sum(ad => ad.WhatsAppClicks ?? 0);
                 var totalCalls = userAds.Sum(ad => ad.Calls ?? 0);
 
-                var AdWithRefresh = userAds.Where(ad => ad.RefreshExpiry != null)
+                var adWithRefresh = userAds
+                    .Where(ad => ad.RefreshExpiry != null)
                     .OrderByDescending(ad => ad.RefreshExpiry)
                     .FirstOrDefault();
 
-                return new ItemDashboardDto
+                var dashboard = new ItemDashboardDto
                 {
                     PublishedAds = publishedCount,
                     PromotedAds = promotedCount,
@@ -1481,17 +1466,23 @@ namespace QLN.Classified.MS.Service
                     Views = totalViews,
                     WhatsAppClicks = totalWhatsappClicks,
                     Calls = totalCalls,
-                    RemainingRefreshes = AdWithRefresh?.RemainingRefreshes ?? 0,
-                    TotalAllowedRefreshes = AdWithRefresh?.TotalAllowedRefreshes ?? 0,
-                    RefreshExpiry = AdWithRefresh?.RefreshExpiry
+                    RemainingRefreshes = adWithRefresh?.RemainingRefreshes ?? 0,
+                    TotalAllowedRefreshes = adWithRefresh?.TotalAllowedRefreshes ?? 0,
+                    RefreshExpiry = adWithRefresh?.RefreshExpiry
                 };
 
+                return new ItemAdsAndDashboardResponse
+                {                    
+                    ItemsDashboard = dashboard,
+                    ItemsAds = groupedAds
+                };
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException("Error while generating ad summary.", ex);
+                throw new InvalidOperationException("Unexpected error occurred while retrieving item ads and dashboard summary.", ex);
             }
         }
+
 
         private async Task<List<PrelovedAd>> ReadAllPrelovedAdsFromFile()
         {
@@ -1507,72 +1498,46 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdsGroupedPrelovedResult> GetAllPrelovedAds(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<PrelovedAdsAndDashboardResponse> GetUserPrelovedAdsAndDashboard(Guid userId, CancellationToken cancellationToken = default)
         {
             try
             {
                 var allAds = await ReadAllPrelovedAdsFromFile();
-                var userAds = allAds.Where(ad => ad.UserId == userId);
+                var userAds = allAds.Where(ad => ad.UserId == userId).ToList();
 
-                var result = new AdsGroupedPrelovedResult
+                var groupedAds = new AdsGroupedPrelovedResult
                 {
                     PublishedAds = userAds
                         .Where(ad => ad.IsPublished == true)
                         .OrderByDescending(ad => ad.CreatedDate)
                         .ToList(),
-
                     UnpublishedAds = userAds
                         .Where(ad => ad.IsPublished != true)
                         .OrderByDescending(ad => ad.CreatedDate)
                         .ToList()
                 };
-                return result;
-            }
-            catch(Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error occurred while retrieving Preloved ads.", ex);
-            }
-        }
 
-        public async Task<PrelovedDashboardDto> GetUserPrelovedAdsDashboard(Guid userId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var allAds = await ReadAllPrelovedAdsFromFile();
-                var userAds = allAds.Where(ad => ad.UserId == userId);
-
-                var publishedCount = userAds.Count(ad => ad.IsPublished == true);
-                var promotedCount = userAds.Count(ad => ad.IsPromoted == true);
-                var featuredCount = userAds.Count(ad => ad.IsFeaturedItem == true || ad.IsFeaturedStore == true || ad.IsFeaturedCategory == true);
-                var refreshCount = userAds.Count(ad => ad.RefreshExpiry != null);
-                var totalImpressions = userAds.Sum(ad => ad.Impressions ?? 0);
-                var totalViews = userAds.Sum(ad => ad.Views ?? 0);
-                var totalWhatsappClicks = userAds.Sum(ad => ad.WhatsAppClicks ?? 0);
-                var totalCalls = userAds.Sum(ad => ad.Calls ?? 0);
-
-                var AdWithRefresh = userAds.Where(ad => ad.RefreshExpiry != null)
-                    .OrderByDescending(ad => ad.RefreshExpiry)
-                    .FirstOrDefault();
-
-                return new PrelovedDashboardDto
+                var dashboard = new PrelovedDashboardDto
                 {
-                    PublishedAds = publishedCount,
-                    PromotedAds = promotedCount,
-                    FeaturedAds = featuredCount,
-                    Refreshes = refreshCount,
-                    Impressions = totalImpressions,
-                    Views = totalViews,
-                    WhatsAppClicks = totalWhatsappClicks,
-                    Calls = totalCalls,
-                    RemainingRefreshes = AdWithRefresh?.RemainingRefreshes ?? 0,
-                    TotalAllowedRefreshes = AdWithRefresh?.TotalAllowedRefreshes ?? 0,
-                    RefreshExpiry = AdWithRefresh?.RefreshExpiry
+                    PublishedAds = userAds.Count(ad => ad.IsPublished == true),
+                    PromotedAds = userAds.Count(ad => ad.IsPromoted == true),
+                    FeaturedAds = userAds.Count(ad => ad.IsFeaturedItem == true || ad.IsFeaturedStore == true || ad.IsFeaturedCategory == true),
+                    Impressions = userAds.Sum(ad => ad.Impressions ?? 0),
+                    Views = userAds.Sum(ad => ad.Views ?? 0),
+                    WhatsAppClicks = userAds.Sum(ad => ad.WhatsAppClicks ?? 0),
+                    Calls = userAds.Sum(ad => ad.Calls ?? 0)
+                };
+
+                return new PrelovedAdsAndDashboardResponse
+                {                                        
+                    PrelovedAds = groupedAds,
+                    PrelovedDashboard = dashboard
                 };
 
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
-                throw new InvalidOperationException("Error while generating ad summary.", ex);
+                throw new InvalidOperationException("Unexpected error occurred while generating Preloved ads and dashboard summary.", ex);
             }
         }
     }
