@@ -83,7 +83,7 @@ namespace QLN.Web.Shared.Pages.Content.Events.EventDetails
             try
             {
                 var banners = await FetchBannerData();
-                DailyHeroBanners = banners?.DailyHero ?? new List<BannerItem>();
+                DailyHeroBanners = banners?.ContentDailyHero ?? new List<BannerItem>();
             }
             catch (Exception ex)
             {
