@@ -7,10 +7,18 @@
         <div class="comment-title">Comments</div>
 
         <div class="comment-input-wrapper @(string.IsNullOrWhiteSpace(newComment) ? "" : "has-text")">
-            <input class="comment-input"
-                   @bind="newComment"
-                   @bind:event="oninput"
-                   placeholder="Add a comment..." />
+
+            <MudTextField T="string"
+                          Value="@newComment"
+                          ValueChanged="@(val => { newComment = val; StateHasChanged(); })"
+                          Immediate="true"
+                          Placeholder="Add a comment"
+                          Variant="Variant.Text"
+                          Underline="false"
+                          AutoGrow
+                          Class="comment-input no-underline"
+                          @ref="multilineReference"
+                          OnAdornmentClick="@(() => multilineReference.SelectAsync())" />
 
             @if (!string.IsNullOrWhiteSpace(newComment))
             {
@@ -34,11 +42,17 @@ else
         <div class="comment-title">Comments</div>
 
         <div class="comment-input-wrapper @(string.IsNullOrWhiteSpace(newComment) ? "" : "has-text")">
-            <input class="comment-input"
-                   @bind="newComment"
-                   @bind:event="oninput"
-                   placeholder="Add a comment..." />
-
+            <MudTextField T="string"
+                          Value="@newComment"
+                          ValueChanged="@(val => { newComment = val; StateHasChanged(); })"
+                          Immediate="true"
+                          Placeholder="Add a comment"
+                          Variant="Variant.Text"
+                          Underline="false"
+                          AutoGrow
+                          Class="comment-input no-underline"
+                          @ref="multilineReference"
+                          OnAdornmentClick="@(() => multilineReference.SelectAsync())" />
             @if (!string.IsNullOrWhiteSpace(newComment))
             {
                 <MudButton Class="comment-post-btn" OnClick="PostComment">Post</MudButton>
@@ -50,8 +64,9 @@ else
         @foreach (var c in PagedComments)
         {
             <div class="comment-item @(c.IsByCurrentUser ? "my-comment" : "other-comment")">
-                <img src="@(c.Avatar ?? "/qln-images/content/Sample.svg")" alt="User Avatar" class="post-footer-comment-avatar" />
-                <div class="comment-content">
+@*                 <img src="@(c.Avatar ?? "/qln-images/content/Sample.svg")" alt="User Avatar" class="post-footer-comment-avatar" />
+ *@               
+ <div class="comment-content">
                     <div class="comment-header">
                         <div class="comment-meta">
                             <span class="created-by">@c.CreatedBy</span>  •
@@ -75,20 +90,23 @@ else
 
                     </div>
                     <div class="comment-description">@c.Description</div>
-                    <div class="post-icons-comment-section">
-                        <div class="comment-wrapper" @onclick="ToggleLikeAsync">
+@*  
+                        <div class="post-icons-comment-section">
+
+    <div class="comment-wrapper" @onclick="ToggleLikeAsync">
 
                             <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="comment-interaction-icon" />
-@*                             <span class="icon-text">@c.LikeCount</span>
- *@                       
-</div>
+                           <span class="icon-text">@c.LikeCount</span></div>
+                           
+ *@
 
                        @*  <div class="comment-wrapper">
 
                             <img src="qln-images/content/Dislike.svg" class="comment-interaction-icon" />
                             <span class="icon-text">@c.LikeCount</span>
-                        </div> *@
-                    </div>
+                        </div>
+                                            </div>
+*@
                 </div>
 
             </div>
@@ -96,7 +114,7 @@ else
 
         }
         <div class="pagination-container">
-            <PaginationFooter TotalItems="30"
+            <PaginationFooter TotalItems="10"
                               CurrentPage="@CurrentPage"
                               PageSize="@PageSize"
                               OnPageChange="HandlePageChange"
@@ -140,6 +158,18 @@ else
         outline: none;
         font-size: 1rem;
         margin-top:10px;
+        line-height: 1.5;
+        max-height: calc(1.5em * 3); 
+        min-height: calc(1.5em * 1.5);
+        overflow-y: auto;
+        overflow-y: auto;
+        resize: none;
+        background: transparent;
+    }
+
+    .no-underline .mud-input-slot {
+        border-bottom: none !important;
+        box-shadow: none !important;
     }
 
     .comment-post-btn {
@@ -148,6 +178,7 @@ else
         min-width: 70px;
         height: 36px;
         padding: 0 1rem;
+        text-transform: none;
     }
 
     .post-icons-comment-section {
