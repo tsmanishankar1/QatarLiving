@@ -12,9 +12,12 @@
             <h2 class="main-title">@SelectedVideo.Title</h2>
         </div>
 
-            <div class="video-overlay-center" @onclick="() => NavigatetoArticle(SelectedVideo)">
+        @if (IsVisiblePlayButton)
+        {
+            <div class="video-overlay-center" @onclick="() => PlayVideo(SelectedVideo)">
                 <MudIcon Icon="@Icons.Material.Filled.PlayArrow" />
             </div>
+        }
     </div>
 
     <!-- Video List -->
@@ -27,9 +30,9 @@
         <div class="video-list">
             @foreach (var item in Items)
             {
-                <div class="video-card" @onclick="() => NavigatetoArticle(item)">
+                <div class="video-card" @onclick="() => PlayVideo(item)">
                     <div class="thumbnail-container">
-                        <img src="@item.VideoUrl." class="thumbnail" />
+                        <img src="@item.ImageUrl" class="thumbnail" />
                         <div class="play-icon-daily">
                             <MudIcon Icon="@Icons.Material.Filled.PlayArrow" />
                         </div>
@@ -113,13 +116,13 @@
         z-index: 2;
     }
 
-    .video-overlay-center .mud-icon-root {
-        background-color: rgba(0, 0, 0, 0.6);
-        padding: 5px;
-        border-radius: 50%;
-        font-size: 80px;
-        color: #f26522;
-    }
+        .video-overlay-center .mud-icon-root {
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 5px;
+            border-radius: 50%;
+            font-size: 80px;
+            color: #f26522;
+        }
 
     .play-icon-daily {
         position: absolute;
@@ -129,13 +132,13 @@
         z-index: 2;
     }
 
-    .play-icon-daily .mud-icon-root {
-        background-color: rgba(0, 0, 0, 0.6);
-        padding: 2px;
-        border-radius: 50%;
-        font-size: 40px;
-        color: #f26522;
-    }
+        .play-icon-daily .mud-icon-root {
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 2px;
+            border-radius: 50%;
+            font-size: 40px;
+            color: #f26522;
+        }
 
     .main-video-wrapper video {
         width: 100%;
@@ -149,10 +152,10 @@
         height: 416px;
     }
 
-    .video-list h2 {
-        font-size: 20px;
-        margin-bottom: 20px;
-    }
+        .video-list h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
 
     .video-card {
         display: flex;
@@ -281,7 +284,6 @@
     .video-list-container {
         width: 35%;
         order: 1;
-
     }
 
     .video-list {
@@ -313,6 +315,5 @@
         .video-list {
             height: auto;
         }
-
     }
 </style>

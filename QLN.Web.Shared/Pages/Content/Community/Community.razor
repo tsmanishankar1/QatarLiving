@@ -14,7 +14,7 @@
 @using QLN.Web.Shared.Pages.Content.Events
 @using QLN.Web.Shared.Components.BannerSwiper
 
-<div class="container">
+<div class="community-container">
     <div class="container-inner-wrapper">
 
         <MudContainer MaxWidth="MaxWidth.ExtraLarge" Style="max-width: 1170px;">
@@ -161,7 +161,7 @@
 
 
 <style>
-    .container {
+    .community-container {
         width: 100%;
         background-color: var(--color-secondary-background);
     }
@@ -251,19 +251,19 @@
 
         /* Selected item text color */
         .sort-select .mud-select-input {
-            color: #000000 !important; /* Black text for selected value */
+            color: #000000 !important; 
         }
 
         /* Dropdown items */
         .sort-select .mud-list-item.mud-selected-item {
-            color: #000000 !important; /* Black text for selected option in dropdown */
-            background-color: rgba(255, 127, 56, 0.08) !important; /* Light orange background */
+            color: #000000 !important;
+            background-color: rgba(255, 127, 56, 0.08) !important; 
         }
 
             /* Check icon styling */
             .sort-select .mud-list-item.mud-selected-item .mud-list-item-icon {
-                color: #FF7F38 !important; /* Orange checkmark */
-                margin-left: auto !important; /* Push to right */
+                color: #FF7F38 !important;
+                margin-left: auto !important;
                 margin-right: 0 !important;
                 min-width: unset !important;
             }
@@ -348,15 +348,20 @@
         display: block;
     }
 
-    @@media (max-width: 700px) and (min-width: 375px) {
+    @@media (max-width: 700px) and (min-width: 240px) {
         .container-inner-wrapper {
-            padding: 0 8px 25px 8px;
+            padding: 0 2px 20px 2px;
         }
 
         .newsletter-box,
-        .ad-image {
-            max-width: 100%;
+        .post-ad-wrapper,
+        .mud-paper.newsletter-box,
+        .mud-paper.post-ad-wrapper {
+            width: 100% !important;
+            max-width: 100% !important;
         }
+
+     
     }
 
     @@media (min-width: 960px) and (max-width: 1145px) {
@@ -370,4 +375,20 @@
             padding: 10px !important
         }
     }
+
+    @@media (max-width: 350px) and (min-width: 240px) {
+        .community-header {
+            display: flex;
+            
+            height: 50px;
+            flex-direction: column;
+            margin-top: 0px;
+            gap: 10px;
+        }
+
+        .postcard-margin-top{
+            margin-top:50px;
+        }
+    }
+   
 </style>

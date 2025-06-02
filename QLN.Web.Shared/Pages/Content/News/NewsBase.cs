@@ -11,6 +11,7 @@ namespace QLN.Web.Shared.Pages.Content.News
 {
     public class NewsBase : ComponentBase
     {
+        [Inject] IContentService _contentService { get; set; }
         public bool isLoading = true;
         protected bool isLoadingBanners = true;
         protected List<BannerItem> DailyTakeOverBanners = new();
@@ -92,6 +93,8 @@ namespace QLN.Web.Shared.Pages.Content.News
         protected QlnNewsSportsOlympicsPageResponse OlympicsNewsContent { get; set; } = new QlnNewsSportsOlympicsPageResponse();
         protected QlnNewsSportsAthleteFeaturesPageResponse AthleteNewsContent { get; set; } = new QlnNewsSportsAthleteFeaturesPageResponse();
 
+        protected List<ContentVideo> VideoList { get; set; } = [];
+
         protected async override Task OnInitializedAsync()
         {
             try
@@ -136,7 +139,8 @@ namespace QLN.Web.Shared.Pages.Content.News
                 if (QatarNewsContent?.QlnNewsNewsQatar?.Articles2?.Items != null)
                     articleListSlot2 = QatarNewsContent.QlnNewsNewsQatar.Articles2.Items;
 
-
+                var videoContent = await GetContentVideoLandingAsync();
+                VideoList = videoContent?.QlnVideos?.QlnVideosTopVideos?.Items ?? [];
 
                 isLoading = false;
             }
@@ -628,6 +632,32 @@ namespace QLN.Web.Shared.Pages.Content.News
         protected void onclick(ContentPost news)
         {
             navManager.NavigateTo($"/content/article/details/{news.Slug}");
+        }
+
+
+        /// <summary>
+        /// Gets Content Videos Page data
+        /// </summary>
+        /// <returns>ContentsVideosResponse</returns>
+        protected async Task<ContentsVideosResponse> GetContentVideoLandingAsync()
+        {
+            try
+            {
+                var apiResponse = await _contentService.GetVideosLPAsync() ?? new HttpResponseMessage();
+
+                if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
+                {
+                    var response = await apiResponse.Content.ReadFromJsonAsync<ContentsVideosResponse>();
+                    return response ?? new ContentsVideosResponse();
+                }
+
+                return new ContentsVideosResponse();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message, "GetContentVideoLandingAsync");
+                return new ContentsVideosResponse();
+            }
         }
     }
 }
