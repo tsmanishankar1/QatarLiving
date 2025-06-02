@@ -10,7 +10,7 @@
         }
         else
         {
-            <img src="/images/categories/game_image.svg" alt="No image available" class="list-card-img" />
+            <img src="/qln-images/categories/game_image.svg" alt="No image available" class="list-card-img" />
         }
 
 
@@ -53,7 +53,7 @@
             @if (!string.IsNullOrEmpty(Item.Colour))
             {
                 <div class="feature-item">
-                    <img src="/images/classifieds/colour_icon.svg" alt="Color" class="feature-icon" />
+                    <img src="/qln-images/classifieds/colour_icon.svg" alt="Color" class="feature-icon" />
                     <span class="feature-name">@Item.Colour</span>
                 </div>
                 <div class="divider"></div>
@@ -62,7 +62,7 @@
             @if (!string.IsNullOrEmpty(Item.Storage))
             {
                 <div class="feature-item">
-                    <img src="/images/classifieds/storage_icon.svg" alt="Storage" class="feature-icon" />
+                    <img src="/qln-images/classifieds/storage_icon.svg" alt="Storage" class="feature-icon" />
                     <span class="feature-name">@Item.Storage</span>
                 </div>
                 <div class="divider"></div>
@@ -71,7 +71,7 @@
             @if (Item.BatteryPercentage.HasValue)
             {
                 <div class="feature-item">
-                    <img src="/images/classifieds/battery_icons.svg" alt="Battery" class="feature-icon" />
+                    <img src="/qln-images/classifieds/battery_icons.svg" alt="Battery" class="feature-icon" />
                     <span class="feature-name">@($"{Item.BatteryPercentage.Value}%")</span>
                 </div>
                 <div class="divider"></div>
@@ -80,7 +80,7 @@
             @if (!string.IsNullOrEmpty(Item.Processor))
             {
                 <div class="feature-item">
-                    <img src="/images/classifieds/chip_icons.svg" alt="Processor" class="feature-icon" />
+                    <img src="/qln-images/classifieds/chip_icons.svg" alt="Processor" class="feature-icon" />
                     <span class="feature-name">@Item.Processor</span>
                 </div>
             }
@@ -89,7 +89,7 @@
         <div class="list-card-price">@($"{Item.Price:N0} QAR")</div>
 
         <div class="list-card-company">
-            <img src="@(!string.IsNullOrEmpty(Item.CompanyLogoUrl) ? Item.CompanyLogoUrl : "/images/classifieds/item_logo.svg")"
+            <img src="@(!string.IsNullOrEmpty(Item.CompanyLogoUrl) ? Item.CompanyLogoUrl : "/qln-images/classifieds/item_logo.svg")"
                 <div>
             <div class="list-card-company-name">@Item.Company</div>
             <div class="list-card-location">

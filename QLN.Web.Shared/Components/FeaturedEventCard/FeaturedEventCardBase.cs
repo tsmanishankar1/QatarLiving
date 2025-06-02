@@ -1,19 +1,33 @@
 using Microsoft.AspNetCore.Components;
+using QLN.Common.Infrastructure.DTO_s;
 
 namespace QLN.Web.Shared.Components.FeaturedEventCard
 {
     public partial class FeaturedEventCardBase : ComponentBase
     {
-        [Parameter]
-        public EventItem Item { get; set; } = new();
+        protected bool imageLoaded = false;
 
         [Parameter]
-        public EventCallback<EventItem> OnClick { get; set; }
+        public ContentPost Item { get; set; }
 
-        public class EventItem
+        [Parameter]
+        public EventCallback<ContentPost> OnClick { get; set; }
+
+        protected override void OnParametersSet()
         {
-            public string Category { get; set; } = string.Empty;
-            public string ImageUrl { get; set; } = string.Empty;
+            imageLoaded = false; // reset loading state
+        }
+
+        protected void OnImageLoaded()
+        {
+            imageLoaded = true;
+            StateHasChanged();
+        }
+
+        protected void OnImageError()
+        {
+            imageLoaded = true; // stop skeleton on error
+            StateHasChanged();
         }
     }
 }

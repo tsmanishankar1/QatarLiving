@@ -1,7 +1,6 @@
 ﻿using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using System.Text.Json;
-using System.Windows.Input;
 using Dapr.Client;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IFileStorage;
@@ -29,25 +28,24 @@ namespace QLN.Company.MS.Service
             {
                 var id = Guid.NewGuid();
                 var entity = await ConvertDtoToEntity(dto, id, cancellationToken);
-                entity.IsActive = true;
-                entity.CreatedUtc = DateTime.UtcNow;
-                entity.CreatedBy = dto.UserId;
+
                 await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, id.ToString(), entity);
+
                 var keys = await GetIndex();
                 if (!keys.Contains(id.ToString()))
                 {
                     keys.Add(id.ToString());
                     await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, ConstantValues.CompanyIndexKey, keys);
                 }
+
                 return "Company Created successfully";
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
-                _logger.LogError(ex, "Error while creating company profile.");
+                _logger.LogError(ex, "Error while creating company profile for user ID: {UserId}", dto.UserId);
                 throw;
             }
         }
-
         public async Task<CompanyProfileEntity?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
         {
             try
@@ -84,15 +82,24 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<CompanyProfileEntity> UpdateCompany(Guid id, CompanyProfileDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateCompany(CompanyProfileDto dto, Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
                 var entity = await ConvertDtoToEntity(dto, id, cancellationToken);
                 entity.UpdatedUtc = DateTime.UtcNow;
                 entity.UpdatedBy = dto.UserId;
+
                 await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, id.ToString(), entity);
-                return entity;
+
+                var keys = await GetIndex();
+                if (!keys.Contains(id.ToString()))
+                {
+                    keys.Add(id.ToString());
+                    await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, ConstantValues.CompanyIndexKey, keys);
+                }
+
+                return "Company Profile Updated Successfully"; 
             }
             catch (Exception ex)
             {
@@ -135,10 +142,10 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        private async Task<CompanyProfileEntity> ConvertDtoToEntity(
-            CompanyProfileDto dto,
-            Guid id,
-            CancellationToken cancellationToken = default)
+       private async Task<CompanyProfileEntity> ConvertDtoToEntity(
+          CompanyProfileDto dto,
+          Guid id,
+          CancellationToken cancellationToken = default)
         {
             try
             {
@@ -161,6 +168,7 @@ namespace QLN.Company.MS.Service
                 {
                     Id = id,
                     VerticalId = dto.VerticalId,
+                    CategoryId = dto.CategoryId,
                     UserId = dto.UserId,
                     BusinessName = dto.BusinessName,
                     Country = dto.Country,
@@ -185,7 +193,10 @@ namespace QLN.Company.MS.Service
                     CompanyLogo = logoPath,
                     CRDocument = crPath,
                     IsVerified = dto.IsVerified,
-                    Status = dto.Status
+                    Status = dto.Status,
+                    CreatedBy = dto.UserId,
+                    CreatedUtc = DateTime.UtcNow,
+                    IsActive = true
                 };
             }
             catch (Exception ex)
@@ -194,6 +205,7 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
+
         private string? ToRelative(string? physicalPath)
         {
             if (string.IsNullOrWhiteSpace(physicalPath))
@@ -244,85 +256,180 @@ namespace QLN.Company.MS.Service
             return ToRelative(savedPath);
         }
 
-        public async Task<CompanyProfileCompletionStatusDto> GetCompanyProfileCompletionStatus(
-         Guid userId,
-         string vertical,
-         CancellationToken cancellationToken = default)
+        public async Task<List<CompanyProfileCompletionStatusDto>> GetCompanyProfileCompletionStatus(
+        Guid userId,
+        VerticalType vertical,
+        CancellationToken cancellationToken = default)
         {
-            if (!Enum.TryParse<VerticalType>(vertical, ignoreCase: true, out var verticalType))
-                throw new ArgumentException("Invalid vertical type.", nameof(vertical));
             try
             {
                 var allCompanies = await GetAllCompanies(cancellationToken);
-                var company = allCompanies.FirstOrDefault(c =>
-                    c.UserId == userId &&
-                    Enum.IsDefined(typeof(VerticalType), c.VerticalId) &&
-                    (VerticalType)c.VerticalId == verticalType);
-
-                if (company == null)
-                    throw new KeyNotFoundException("Company not found.");
-
-                var requiredFields = new Dictionary<string, Func<CompanyProfileEntity, bool>>
-                {
-                    { "CompanyLogo", c => !string.IsNullOrWhiteSpace(c.CompanyLogo) },
-                    { "BusinessName", c => !string.IsNullOrWhiteSpace(c.BusinessName) },
-                    { "Country", c => !string.IsNullOrWhiteSpace(c.Country) },
-                    { "City", c => !string.IsNullOrWhiteSpace(c.City) },
-                    { "PhoneNumber", c => !string.IsNullOrWhiteSpace(c.PhoneNumber) },
-                    { "Email", c => !string.IsNullOrWhiteSpace(c.Email) },
-                    { "StartDay", c => !string.IsNullOrWhiteSpace(c.StartDay) },
-                    { "EndDay", c => !string.IsNullOrWhiteSpace(c.EndDay) },
-                    { "NatureOfBusiness", c => !string.IsNullOrWhiteSpace(c.NatureOfBusiness) },
-                    { "CompanySize", c => !string.IsNullOrWhiteSpace(c.CompanySize) },
-                    { "CompanyType", c => !string.IsNullOrWhiteSpace(c.CompanyType) },
-                    { "UserDesignation", c => !string.IsNullOrWhiteSpace(c.UserDesignation) },
-                    { "BusinessDescription", c => !string.IsNullOrWhiteSpace(c.BusinessDescription) },
-                    { "CRNumber", c => c.CRNumber > 0 },
-                    { "CRDocument", c => !string.IsNullOrWhiteSpace(c.CRDocument) },
-                };
-
-                var pendingFields = requiredFields
-                    .Where(kvp => !kvp.Value(company))
-                    .Select(kvp => kvp.Key)
+                var companies = allCompanies
+                    .Where(c => c.UserId == userId &&
+                                Enum.IsDefined(typeof(VerticalType), c.VerticalId) &&
+                                (VerticalType)c.VerticalId == vertical)
                     .ToList();
 
-                var completion = 100 - (pendingFields.Count * 100 / requiredFields.Count);
+                var list = new List<CompanyProfileCompletionStatusDto>();
 
-                return new CompanyProfileCompletionStatusDto
+                foreach (var company in companies)
                 {
-                    CompletionPercentage = completion,
-                    PendingFields = pendingFields
-                };
+                    var requiredFields = new Dictionary<string, Func<CompanyProfileEntity, bool>>
+            {
+                { "CompanyLogo", c => !string.IsNullOrWhiteSpace(c.CompanyLogo) },
+                { "BusinessName", c => !string.IsNullOrWhiteSpace(c.BusinessName) },
+                { "Country", c => !string.IsNullOrWhiteSpace(c.Country) },
+                { "City", c => !string.IsNullOrWhiteSpace(c.City) },
+                { "PhoneNumber", c => !string.IsNullOrWhiteSpace(c.PhoneNumber) },
+                { "Email", c => !string.IsNullOrWhiteSpace(c.Email) },
+                { "StartDay", c => !string.IsNullOrWhiteSpace(c.StartDay) },
+                { "EndDay", c => !string.IsNullOrWhiteSpace(c.EndDay) },
+                { "StartHour", c => c.StartHour != TimeSpan.Zero },
+                { "EndHour", c => c.EndHour != TimeSpan.Zero },
+                { "NatureOfBusiness", c => !string.IsNullOrWhiteSpace(c.NatureOfBusiness) },
+                { "CompanySize", c => c.CompanySize != default },
+                { "CompanyType", c => c.CompanyType != default },
+                { "UserDesignation", c => !string.IsNullOrWhiteSpace(c.UserDesignation) },
+                { "BusinessDescription", c => !string.IsNullOrWhiteSpace(c.BusinessDescription) },
+                { "CRNumber", c => c.CRNumber > 0 },
+                { "VerticalId", c => c.VerticalId > 0 },
+                { "CRDocument", c => !string.IsNullOrWhiteSpace(c.CRDocument) },
+            };
+
+                    var pendingFields = requiredFields
+                        .Where(kvp => !kvp.Value(company))
+                        .Select(kvp => kvp.Key)
+                        .ToList();
+
+                    var completion = 100 - (pendingFields.Count * 100 / requiredFields.Count);
+
+                    list.Add(new CompanyProfileCompletionStatusDto
+                    {
+                        CompletionPercentage = completion,
+                        PendingFields = pendingFields,
+                        BusinessName = company.BusinessName,
+                        CompanyId = company.Id
+                    });
+                }
+
+                return list;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while calculating the company profile completion status");
+                _logger.LogError(ex, "Error calculating profile completion status");
                 throw;
             }
         }
-        public async Task<CompanyProfileVerificationStatusDto> GetVerificationStatus(Guid userId, VerticalType verticalType, CancellationToken cancellationToken = default)
+
+        public async Task<List<CompanyProfileVerificationStatusDto>> GetVerificationStatus(
+        Guid userId,
+        VerticalType verticalType,
+        CancellationToken cancellationToken = default)
         {
             try
             {
                 var allCompanies = await GetAllCompanies(cancellationToken);
-                var company = allCompanies.FirstOrDefault(c =>
-                    c.UserId == userId &&
-                    Enum.IsDefined(typeof(VerticalType), c.VerticalId) &&
-                    (VerticalType)c.VerticalId == verticalType);
+                var companies = allCompanies
+                    .Where(c => c.UserId == userId &&
+                                Enum.IsDefined(typeof(VerticalType), c.VerticalId) &&
+                                (VerticalType)c.VerticalId == verticalType)
+                    .ToList();
+
+                return companies.Select(c => new CompanyProfileVerificationStatusDto
+                {
+                    CompanyId = c.Id,
+                    BusinessName = c.BusinessName,
+                    VerticalId = c.VerticalId,
+                    IsVerified = c.IsVerified,
+                    Status = c.Status?.ToString() ?? "Pending"
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting verification status list");
+                throw;
+            }
+        }
+
+        public async Task<string> ApproveCompany(Guid userId, CompanyApproveDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var allCompanies = await GetAllCompanies(cancellationToken);
+                var company = allCompanies.FirstOrDefault(c => c.Id == dto.CompanyId);
 
                 if (company == null)
-                    throw new KeyNotFoundException($"Company verification status not found for UserId: {userId}, Vertical: {verticalType}");
+                    throw new KeyNotFoundException($"Company with ID {dto.CompanyId} not found.");
 
-                return new CompanyProfileVerificationStatusDto
+                company.IsVerified = dto.IsVerified ?? false;
+                company.Status = dto.Status;
+                company.UpdatedUtc = DateTime.UtcNow;
+                company.UpdatedBy = userId;
+
+                await _dapr.SaveStateAsync(
+                   ConstantValues.CompanyStoreName,
+                   company.Id.ToString(),
+                   company,
+                   cancellationToken: cancellationToken
+                );
+
+                return "Company Profile Approved Successfully";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving company with ID {CompanyId}", dto.CompanyId);
+                throw;
+            }
+        }
+
+        public async Task<CompanyApprovalResponseDto?> GetCompanyApprovalInfo(Guid companyId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var allCompanies = await GetAllCompanies(cancellationToken);
+                var company = allCompanies.FirstOrDefault(c => c.Id == companyId);
+
+                if (company == null) return null;
+
+                return new CompanyApprovalResponseDto
                 {
-                    UserId = company.UserId,
-                    VerticalId = company.VerticalId,
-                    IsVerified = company.IsVerified
+                    CompanyId = company.Id,
+                    Name = company.BusinessName,
+                    IsVerified = company.IsVerified,
+                    StatusId = company.Status,
+                    StatusName = company.Status.ToString(),
+                    UpdatedUtc = company.UpdatedUtc ?? DateTime.UtcNow
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting verification status for user {UserId} and vertical {Vertical}", userId, verticalType);
+                _logger.LogError(ex, "Error fetching company with ID {CompanyId}");
+                throw;
+            }
+        }
+        public async Task<List<CompanyProfileVerificationStatusDto>> VerificationStatus(Guid userId, bool isVerified, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var allCompanies = await GetAllCompanies(cancellationToken);
+
+                var filtered = allCompanies
+                    .Where(c => c.UserId == userId && c.IsVerified == isVerified)
+                    .Select(c => new CompanyProfileVerificationStatusDto
+                    {
+                        CompanyId = c.Id,
+                        BusinessName = c.BusinessName,
+                        VerticalId = c.VerticalId,
+                        IsVerified = c.IsVerified,
+                        Status = c.Status?.ToString() ?? "Pending"
+                    })
+                    .ToList();
+
+                return filtered;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching verification status for user {UserId} with isVerified = {IsVerified}", userId, isVerified);
                 throw;
             }
         }

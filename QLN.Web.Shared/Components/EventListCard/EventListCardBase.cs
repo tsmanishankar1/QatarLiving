@@ -1,16 +1,34 @@
 using Microsoft.AspNetCore.Components;
-using System;
+using QLN.Common.Infrastructure.DTO_s;
+using System.Globalization;
 
 namespace QLN.Web.Shared.Components.EventListCard
 {
-    public partial class EventListCardBase : ComponentBase
+    public class EventListCardBase : ComponentBase
     {
         [Parameter]
-        public EventItem Item { get; set; } = new();
+        public ContentEvent Item { get; set; } = new();
 
         [Parameter]
-        public EventCallback<EventItem> OnClick { get; set; }
+        public EventCallback<ContentEvent> OnClick { get; set; }
+        protected bool imageLoaded = false;
 
+         protected override void OnParametersSet()
+        {
+            imageLoaded = false; // reset loading state
+        }
+
+        protected void OnImageLoaded()
+        {
+            imageLoaded = true;
+            StateHasChanged();
+        }
+
+        protected void OnImageError()
+        {
+            imageLoaded = true; // stop skeleton on error
+            StateHasChanged();
+        }
         public class EventItem
         {
             public string Title { get; set; } = string.Empty;
@@ -22,6 +40,20 @@ namespace QLN.Web.Shared.Components.EventListCard
             public string ImageUrl { get; set; } = string.Empty;
             public DateTime StartDate { get; set; }
             public DateTime EndDate { get; set; }
+        }
+
+
+        protected static string FormatDate(string dateString)
+        {
+            try
+            {
+                var parsed = DateTime.ParseExact(dateString, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+                return parsed.ToString("dd MMM");
+            }
+            catch
+            {
+                return "Invalid date";
+            }
         }
     }
 }

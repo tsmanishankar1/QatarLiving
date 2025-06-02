@@ -1,25 +1,52 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@using QLN.Common.Infrastructure.DTO_s
+@using QLN.Web.Shared.Helpers
 
 <MudGrid Class="py-4" GutterSize="16px">
     <!-- Main Content -->
     <MudItem xs="12" md="8">
         <div class="event-card">
             <div class="event-header">
-                <h2 class="event-title">Beach Volleyball Championship</h2>
+                <h2 class="event-title">@Item.Title</h2>
             </div>
 
             <div class="event-image-container">
-                <img src="/images/event_image.svg" alt="Beach Volleyball" class="event-image" />
+
+                @if (!imageLoaded)
+                {
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="421px" />
+                }
+                <img src="@(!string.IsNullOrWhiteSpace(Item?.ImageUrl) ? Item.ImageUrl : "/images/not_found.svg")"
+                    alt="Event Image" class="event-image" style="@(imageLoaded ? "display: block;" : "display: none;")"
+                    @onload="OnImageLoaded" @onerror="OnImageError" />
+
 
                 <div class="event-info-bar">
-                    <div class="location">
-                        <MudIcon Icon="@Icons.Material.Filled.LocationOn" class="location-icon" />
-                        <span class="location-text">Al Mayassa Hall, QNCC, Doha</span>
-                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Item?.EventVenue))
+                    {
+                        <div class="location">
+                            <MudIcon Icon="@Icons.Material.Filled.LocationOn" class="location-icon" />
+                            <span class="location-text">@Item.EventVenue</span>
+                        </div>
+                    }
+
                     <div class="icons">
-                        <MudIconButton Icon="@Icons.Material.Filled.FavoriteBorder" Class="icons-color" />
-                        <MudIconButton Icon="@Icons.Material.Filled.Share" Class="icons-color" />
+                        @* <MudIconButton Icon="@Icons.Material.Filled.FavoriteBorder" Class="icons-color" /> *@
+                        <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu">
+                            <ActivatorContent>
+                                <MudIconButton Icon="@Icons.Material.Filled.Share" Class="icons-color" />
+                            </ActivatorContent>
+                            <ChildContent>
+                                @foreach (var item in shareMenuItems)
+                                {
+                                    <MudMenuItem Href="@item.Route" Target="@(item.OpenInNewTab ? "_blank" : "_self")">
+                                        <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                    </MudMenuItem>
+                                }
+                            </ChildContent>
+                        </MudMenu>
+
                     </div>
                 </div>
             </div>
@@ -30,15 +57,16 @@
                 @EventInfoBlock()
 
                 @* Register/Calendar Buttons *@
-                @ActionButtons()
+                @* @ActionButtons() *@
             </div>
 
-            <div class="event-description mt-4">
-                <p>
-                    Experience the thrill of the Beach Volleyball Championship! Watch top teams compete in an
-                    electrifying tournament. Enjoy the sun, sand, and sporting spirit with friends and family.
-                </p>
-            </div>
+            @if (!string.IsNullOrWhiteSpace(Item?.Description))
+            {
+                <div class="event-description mt-4">
+                    @((MarkupString)Item.Description)
+                </div>
+            }
+
         </div>
     </MudItem>
 
@@ -46,69 +74,138 @@
     <MudItem xs="12" md="4">
         <div class="card-container">
             <div class="card-desktop-only">
-                <h3 class="section-title">Sports & Activities</h3>
+                @if (!string.IsNullOrWhiteSpace(Item?.EventCategory) || !string.IsNullOrWhiteSpace(Item?.Category))
+                {
+                    <h3 class="section-title">
+                        @(!string.IsNullOrWhiteSpace(Item?.EventCategory)
+                                            ? Item.EventCategory
+                                            : Item.Category )
+                </h3>
+                                }
+
                 @EventInfoBlock()
-                @ActionButtons()
+                @* @ActionButtons() *@
             </div>
 
             <!-- Always visible map & ad -->
             <div class="map-container">
-                <span class="map-access-name">Location:</span>
-                <iframe frameborder="0" scrolling="no" marginheight="0" marginwidth="0"
-                    src="https://www.openstreetmap.org/export/embed.html?bbox=51.505%2C25.295%2C51.515%2C25.305&layer=mapnik&marker=25.300%2C51.510"
-                    class="map-frame">
-                </iframe>
+                @if (!string.IsNullOrWhiteSpace(Item?.EventLat) && !string.IsNullOrWhiteSpace(Item?.EventLong))
+                {
+                    <span class="map-access-name">Location:</span>
+                    <iframe frameborder="0" scrolling="no" marginheight="0" marginwidth="0"
+                        src="https://www.openstreetmap.org/export/embed.html?bbox=@Item.EventLong,@Item.EventLat,@Item.EventLong,@Item.EventLat&layer=mapnik&marker=@Item.EventLat,@Item.EventLong"
+                        class="map-frame">
+                    </iframe>
+                }
             </div>
-            <img src="/images/classifieds/detail_ad.svg" alt="Ad" class="ad-banner" />
+            <img src="/qln-images/classifieds/detail_ad.svg" alt="Ad" class="ad-banner" />
         </div>
     </MudItem>
 </MudGrid>
 
 @code {
     private bool IsModalOpen { get; set; } = false;
-
-    private void OnCalendarConfirmed()
+    protected bool imageLoaded = false;
+    protected override void OnParametersSet()
     {
-        // Add calendar logic
+        imageLoaded = false; // reset loading state
     }
+
+    protected void OnImageLoaded()
+    {
+        imageLoaded = true;
+        StateHasChanged();
+    }
+
+    protected void OnImageError()
+    {
+        imageLoaded = true; // stop skeleton on error
+        StateHasChanged();
+    }
+    [Parameter] public ContentEvent Item { get; set; }
+    private List<MenuItem> shareMenuItems => new()
+{
+new MenuItem {
+ImageSrc = "/qln-images/facebook_share_icon.svg",
+Route = SocialShareHelper.GetFacebookUrl(CurrentUrl),
+OpenInNewTab = true
+},
+new MenuItem {
+ImageSrc = "/qln-images/whatsApp_share_icon.svg",
+Route = SocialShareHelper.GetWhatsAppUrl(CurrentUrl),
+OpenInNewTab = true
+}
+};
+    public class MenuItem
+    {
+        public string Text { get; set; }
+        public string ImageSrc { get; set; }
+        public string Route { get; set; }
+        public bool OpenInNewTab { get; set; } = false;
+    }
+
+    private string CurrentUrl => Navigation.ToAbsoluteUri(Navigation.Uri).ToString();
+
 
     RenderFragment EventInfoBlock() => __builder =>
     {
         <div class="info-section">
-            <div class="info-item">
-                <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Style="color: #555;" />
-                <span class="info-text">12 Dec 2025 to 13 Jan 2026</span>
-            </div>
-            <div class="info-item">
+            @if (!string.IsNullOrWhiteSpace(Item?.EventStart) || !string.IsNullOrWhiteSpace(Item?.EventEnd))
+            {
+                <div class="info-item">
+
+                    <img src="/qln-images/events_date_icon.svg" alt="Date Icon" class="info-icon" />
+                    <span class="info-text">
+                        @if (!string.IsNullOrWhiteSpace(Item?.EventStart))
+                        {
+                            @DateHelper.FormatDate(Item.EventStart)
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Item?.EventStart) && !string.IsNullOrWhiteSpace(Item?.EventEnd))
+                        {
+                            <text> to </text>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Item?.EventEnd))
+                        {
+                            @DateHelper.FormatDate(Item.EventEnd)
+                        }
+                    </span>
+                </div>
+            }
+
+            @* <div class="info-item">
                 <MudIcon Icon="@Icons.Material.Filled.AccessTime" Style="color: #555;" />
                 <span class="info-text">12:00 PM</span>
-            </div>
+            </div> *@
         </div>
 
-        <div class="info-Access">
+        @* <div class="info-Access">
             <span class="access-name">Access Fees:</span>
             <span class="price-text">250 - 3,500 <span class="qar">QAR</span></span>
-        </div>
+        </div> *@
 
-        <div class="location-secondary">
-            <MudIcon Icon="@Icons.Material.Filled.LocationOn" class="location-icon" />
-            <span class="location-text">Al Mayassa Hall, QNCC, Doha</span>
-        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Item?.EventVenue))
+        {
+            <div class="location-secondary">
+                <MudIcon Icon="@Icons.Material.Filled.LocationOn" class="location-icon" />
+                <span class="location-text">@Item.EventVenue</span>
+            </div>
+        }
+
     };
 
     RenderFragment ActionButtons() => __builder =>
     {
         <button class="register-button">
             Register Now
-            <MudIcon Icon="@Icons.Material.Filled.Event" Style="margin-right: 6px;" />
+            <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowRight" Style="margin-right: 6px; color:white" />
         </button>
         <button class="calendar-button" @onclick="() => IsModalOpen = true">
             Add to Calendar
             <MudIcon Icon="@Icons.Material.Filled.Event" Style="margin-right: 6px;" />
         </button>
 
-        <AddToCalendarDialog @bind-IsVisible="IsModalOpen" Message="You will be notified 1 day ahead of this event"
-            OnConfirm="OnCalendarConfirmed" />
+        <AddToCalendarDialog @bind-IsVisible="IsModalOpen" Message="You will be notified 1 day ahead of this event" />
     };
 }
 
@@ -120,6 +217,19 @@
         padding: 24px;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
         font-family: 'Public Sans';
+    }
+
+    .custom-share-menu .mud-popover {
+        border-radius: 40px !important;
+        overflow: hidden;
+    }
+
+
+    .share-icon {
+        margin: 0;
+        width: 20px;
+        height: 20px;
+        margin-right: 8px;
     }
 
     .event-title {
@@ -159,6 +269,13 @@
         display: flex;
         align-items: center;
         color: var(--color-primary);
+    }
+
+    .info-icon {
+        width: 20px;
+        height: 20px;
+        margin-right: 8px;
+        vertical-align: middle;
     }
 
     .location-secondary {
@@ -202,11 +319,31 @@
         gap: 12px;
     }
 
+    .event-description a {
+        word-break: break-word;
+        overflow-wrap: break-word;
+        color: var(--color-primary);
+        text-decoration: underline;
+        display: inline-block;
+        max-width: 100%;
+    }
+
     .event-description {
-        margin-top: 20px;
-        font-size: 16px;
-        line-height: 1.6;
-        color: #444;
+        overflow-wrap: break-word;
+        word-break: break-word;
+        max-width: 100%;
+    }
+
+    .event-description p {
+        margin-bottom: 1rem;
+    }
+
+    .event-description img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 1rem auto;
+        border-radius: 8px;
     }
 
     .card-container {
@@ -254,7 +391,9 @@
 
     .info-text {
         font-size: 14px;
-        color: #454545;
+        line-height: 26px;
+        letter-spacing: 0;
+        color: var(--color-text-heading);
         font-weight: 500;
     }
 
@@ -273,7 +412,9 @@
     .map-access-name {
         font-size: 14px;
         font-weight: 500;
-        padding: 5px 0;
+        line-height: 26px;
+        letter-spacing: 0;
+        padding: 10px 0;
         color: var(--color-text-heading);
     }
 

@@ -1,81 +1,79 @@
 @using MudBlazor
-
+@inherits ArticleDetailCardBase
+@using QLN.Web.Shared.Components.EmptyCard
 <div class="event-card">
-    <div class="event-title">Al Sadd lift fourth Qatar Cup title with thrilling win over Al Duhail</div>
+    <div class="event-title">@Post.Title</div>
 
     <div class="event-image-container">
-        <img src="/images/sample_news.svg" alt="Michael Bublé" class="event-image" />
+                        @if (loading){
+                            <MudSkeleton 
+                                SkeletonType="SkeletonType.Rectangle" 
+                                Animation="Animation.Wave" 
+                                Class="rounded shadow-container" />
+                        }
+                        else if(@Post==null){
+                             <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
+                        }
+                        else{
+                            @if(string.IsNullOrEmpty(Post.ImageUrl)){
+                                 <EmptyCard Title="No Images Available" Subtitle="" />
+                            }
+                            else{
+                                @if (!imageLoaded)
+                                {
+                                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Class="event-image" />
+                                }
+                                <img src="@Post.ImageUrl" alt="News Image" class="event-image"
+                                style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                                @onerror="OnImageError" />
+                            }
+                        }
 
-             <div class="author-wrapper">
+                    <div class="author-wrapper">
                     <div class="main-author">
-                        <div>
-                        Ismat Zerin • <a href="#" class="main-source">Qatar Living</a>  
-                        <img src="/images/tick.svg" alt="Qatarliving" />
-                         <h3 class="main-title">May 10, 2025 at 8:22 PM GMT+1 3 min read</h3>
+                        <div style="gap: 8px;">
+                        @(string.IsNullOrWhiteSpace(Post.UserName) ? "" : Post.UserName) • <a href="#" class="main-source">Qatar Living</a>  
+                            <img src="/qln-images/tick.svg" alt="Qatarliving" />
+                         <h3 class="main-title">@FormattedDate</h3>
                          </div>
                     </div> 
                     
 
                     <div class="icons">
-                        <MudIcon Icon="@Icons.Material.Filled.FavoriteBorder" class="icon-circle-border" />
-                        <MudIcon Icon="@Icons.Material.Filled.Share" class="icon-circle-border" />
+                     <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu">
+                            <ActivatorContent>
+                                <MudIconButton Icon="@Icons.Material.Filled.Share" Class="icons-color" />
+                            </ActivatorContent>
+                            <ChildContent>
+                                @foreach (var item in shareMenuItems)
+                                {
+                                    <MudMenuItem Href="@item.Route" Target="@(item.OpenInNewTab ? "_blank" : "_self")">
+                                        <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                    </MudMenuItem>
+                                }
+                            </ChildContent>
+                        </MudMenu>
 
                     <div class="comment-badge">
-                        <img src="/images/comment_icon.svg" alt="Comments" class="comment-icon" />
-                        <span class="count">12</span>
+                        <img src="/qln-images/comment_icon.svg" alt="Comments"  />
+                        <span class="count">@commentsCount</span>
                     </div>
             </div>
         </div>
     </div>
-
+     @if (loading){
+        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="100%" Animation="Animation.Wave" />
+        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="60%" Animation="Animation.Wave" />
+        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="100%" Animation="Animation.Wave" />
+        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="60%" Animation="Animation.Wave" />
+        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="100%" Animation="Animation.Wave" />
+        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="60%" Animation="Animation.Wave" />
+     }
+     else{
     <div class="event-description">
-        <p>
-            Reigning Qatar Stars League champions Al Sadd clinched their second trophy of the season —
-            the Qatar Cup — after edging arch-enemies Al Duhail 3-2 in a thrilling penalty shoot-out at the
-            Jassim bin Hamad Stadium on Saturday.
-        </p>
-        <p>
-            The two teams had been tied 2-2 at the end of regular time before Sadd went on to clinch their
-            fourth Qatar Cup title in history.
-        </p>
-        <p>
-            Qatar Olympic Committee President HE Sheikh Joaan bin Hamad Al Thani crowned the winners and handed
-            over the coveted trophy to Al Sadd captain Hassan Al Haydos.
-        </p>
-        <p>
-            Goalkeeper Meshaal Barsham, brother of decorated high-jumper and reigning Olympic champion Mutaz Essa Barsham, proved to be the hero of the night. He produced two crucial saves in the shootout, diving to his left and then right, to gift the Wolves the title.
-
-        </p>
-        <p>
-            Al Haydos, Akram Afif, Rafa Mujica, and Claudinho converted their spot-kicks for Al Sadd while Pedro Miguel missed. Meanwhile, Almoez Ali, Edmilson Jr, and Benjamin Bourigeaud were on target for Al Duhail, with Michael Olunga and Karim Boudiaf being denied by Barsham.
-
-        </p>
-        <p>
-            Duhail started the game strongly, putting Sadd under pressure. Barsham stood as a strong wall, but the Red Knights broke the deadlock in the 49th minute when Olunga headed home from a corner.
-
-        </p>
-        <p>
-            Sadd equalised in the 63rd, through a penalty, after Pedro Miguel was brought down during a corner. Claudinho calmly converted to make it 1-1. However, just three minutes later, Duhail regained the upper hand through Bourigeaud.
-        </p>
-        <p> In the 86th, Mujica rose high to head home Sadd’s equaliser. The game went into extra time and then penalty shootouts. Al Sadd made the most of the home advantage to emerge as champions. It was Al Sadd’s fourth Qatar Cup title, after winning it in 2017, 2020, and 2021.
-        </p>
+        <div>@ParsedDescription</div>
     </div>
-    <img src="/images/sample_articleImage.svg" alt="Michael Bublé" class="event-image" />
-    <div class="event-description">
-        <p>
-           Al Sadd coach Felix Sanchez praised his players for the tough win.
-        </p>
-        <p>
-            “We played a strong match against a strong team. We were behind twice and came back. I think we deserved the title. It was an enjoyable match for everyone. It went to penalties, and I’m really happy with the players, their performance, and their comeback,” he said.
-
-        </p>
-        <p>
-            He was all praise for goalkeeper Barsham.
-        </p>
-        <p>
-        “Barsham was a star. We said if it went to penalties, he would help us and he did. He did it with the national team, and now again with Al Sadd,” Sanchez, who trained Qatar during the 2022 FIFA World Cup, said.
-        </p>
-    </div>
+    }
 </div>
 
 <style>
@@ -126,6 +124,10 @@
         display: flex;
         align-items: center;
         color: var(--color-primary);
+    }
+    .shadow-container{
+        width: 100%;
+        height: 421px;
     }
 
     .icons-item {
@@ -180,16 +182,20 @@
     .event-description p {
         margin-bottom: 2rem;
     }
+    .event-description img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1rem auto; 
+    border-radius: 8px;
+    }
     .comment-badge {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid #E3E3E3; 
+    border: 1px solid #E3E3E3; 
     border-radius: 50px;
     padding: 8px 10px;
-    gap: 8px;
-    width: fit-content;
-}
+    gap: 5px;
+    }
 
 .comment-badge .icon {
     color: var(--color-primary) ; 
@@ -228,6 +234,21 @@
     width: 100%;
     padding: 16px;
 }
+@@media (max-width: 768px) {
+    .author-wrapper {
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 10px;
+    flex-direction: column; 
+    align-items: flex-start;
+    }
+    @@media (max-width: 600px) {
+        .shadow-container{
+            width: 100%;
+            height: 200px;
+        }
+    }
 </style>
 
  

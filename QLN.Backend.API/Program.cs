@@ -1,29 +1,28 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Dapr.Client;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using QLN.Backend.API.ServiceConfiguration;
+using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
+using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.User;
 using QLN.Common.Infrastructure.DbContext;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Common.Infrastructure.TokenProvider;
-using System.Text;
-using Dapr.Client;
-using QLN.Common.Infrastructure.IService;
-using Microsoft.OpenApi.Models;
-using QLN.Common.Infrastructure.CustomEndpoints.User;
-
-using QLN.Backend.API.ServiceConfiguration;
-using QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints;
-using QLN.Common.Swagger;
-using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
-using QLN.Common.Infrastructure.Subscriptions;
-using System.Text.Json.Serialization;
-using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
-
-using Microsoft.AspNetCore.Authorization;
-using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
 using System.Security.Claims;
+using System.Text;
+using System.Text.Json.Serialization;
+using QLN.SearchService.CustomEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
+using QLN.Classified.MS.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,8 +57,6 @@ builder.Services.AddSwaggerGen(options =>
         In = ParameterLocation.Header,
         Description = "Enter 'Bearer' followed by your JWT token."
     });
-
-    options.OperationFilter<SwaggerFileUploadFilter>();
 
     options.MapType<IFormFile>(() => new OpenApiSchema
     {
@@ -128,7 +125,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
 .AddDefaultTokenProviders();
 #endregion
 
-#region Authentication
+#region Authentication - New JWT Bearer configuration
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -146,14 +143,12 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
-        RoleClaimType = ClaimTypes.Role 
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
+        RoleClaimType = ClaimTypes.Role, 
     };
 
-
-    options.MapInboundClaims = false; 
+    options.MapInboundClaims = false;
 });
-
 #endregion
 
 builder.Services.AddAuthorization();
@@ -172,22 +167,25 @@ builder.Services.AddActors(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
-
+builder.Services.AddResponseCaching();   
 
 builder.Services.AddDaprClient();
 
-// This looks like a custom extension method? Adjust if needed
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
+builder.Services.SearchServicesConfiguration(builder.Configuration);
 builder.Services.ContentServicesConfiguration(builder.Configuration);
-
+builder.Services.BannerServicesConfiguration(builder.Configuration);
+builder.Services.AnalyticsServicesConfiguration(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
 builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+app.UseResponseCaching();                
+
+if (builder.Configuration.GetValue<bool>("EnableSwagger"))
 {
     app.UseSwagger();
     app.UseSwaggerUI(options =>
@@ -203,13 +201,22 @@ var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
 
 var companyGroup = app.MapGroup("/api/companyprofile");
-companyGroup.MapCompanyEndpoints();
-
+companyGroup.MapCompanyEndpoints()
+    .RequireAuthorization();
 var classifiedGroup = app.MapGroup("/api/classified");
-classifiedGroup.MapClassifiedEndpoints();
+classifiedGroup.MapClassifiedsEndpoints();
+
+var servicesGroup = app.MapGroup("/api/services");
+servicesGroup.MapServicesEndpoints();
 
 var contentGroup = app.MapGroup("/api/content");
 contentGroup.MapContentLandingEndpoints();
+
+var bannerGroup = app.MapGroup("/api/banner");
+bannerGroup.MapBannerEndpoints();
+
+var analyticGroup = app.MapGroup("/api/analytics");
+analyticGroup.MapAnalyticsEndpoints();
 
 app.MapGroup("/api/subscriptions")
    .MapSubscriptionEndpoints();
@@ -221,6 +228,9 @@ app.MapGroup("/api/subscriptions")
 app.MapGroup("/api/PayToPublish")
     .MapPayToPublishEndpoints();
 
+
+app.MapAllBackOfficeEndpoints();
+app.MapLandingPageEndpoints();
 
 app.UseHttpsRedirection();
 app.UseAuthorization();

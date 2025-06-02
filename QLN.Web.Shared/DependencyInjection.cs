@@ -3,11 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace QLN.Web.Shared
 {

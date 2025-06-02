@@ -1,0 +1,142 @@
+@inherits DailyMoreArticleBase
+@using QLN.Web.Shared.Components.EmptyCard
+
+<div class="more-articles side-spacing">
+    <h3 class="section-heading">
+        <span class="accent-bar"></span>More Articles
+    </h3>
+
+    @if (isLoading)
+    {
+        @for (int i = 0; i < 4; i++)
+        {
+            <MudGrid Class="ps-3 py-1">
+                <MudItem xs="9">
+                    <MudSkeleton SkeletonType="SkeletonType.Text" Width="80%" Height="20px" Animation="Animation.Wave"
+                        Class="mb-1" />
+                    <MudSkeleton SkeletonType="SkeletonType.Text" Width="95%" Height="20px" Animation="Animation.Wave"
+                        Class="mb-1" />
+                    <MudSkeleton SkeletonType="SkeletonType.Text" Width="70%" Height="20px" Animation="Animation.Wave" />
+                </MudItem>
+                <MudItem xs="3">
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="70px" Width="100%" Animation="Animation.Wave"
+                        Class="rounded" />
+                </MudItem>
+            </MudGrid>
+        }
+    }
+    else if (Items == null || !Items.Any())
+    {
+        <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
+    }
+    else
+    {
+        @foreach (var article in Items)
+        {
+            <div class="article-entry">
+                <div class="article-content">
+                    <a href="#" @onclick="() => NavigatetoArticle(article)" class="article-title">@(article.Title)</a>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(@article.ImageUrl))
+                {
+                    <img src="@(article.ImageUrl)" class="article-image" />
+                }
+            </div>
+        }
+    }
+</div>
+
+<style>
+    .section-heading {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        font-family: 'Public Sans';
+        font-size: 25px;
+        font-weight: 600;
+        color: var(--color-text-heading);
+        padding: 0px 0px 12px 0px;
+    }
+
+    .accent-bar {
+        display: inline-block;
+        width: 6px;
+        height: 26px;
+        background-color: var(--color-primary);
+        margin-right: 8px;
+    }
+
+    .more-articles {
+        max-width: 600px;
+        font-family: 'Public Sans';
+    }
+
+    .heading-style {
+        margin-right: 4px;
+        font-size: 25px;
+        font-weight: 600;
+        font-family: 'Public Sans';
+        color: var(--color-text-heading);
+    }
+
+    h3 {
+        font-size: 20px;
+        margin-bottom: 20px;
+    }
+
+    .article-entry {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 0px 0px 6px 0px;
+        border-bottom: 1px solid #F0F0F0;
+    }
+
+    .article-entry:last-child {
+        border-bottom: none;
+    }
+
+    .article-content {
+        flex: 1;
+        padding-right: 12px;
+    }
+
+    .article-meta {
+        color: #FF7F38;
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
+
+    .article-title {
+        font-size: 16px;
+        font-weight: 600;
+        text-decoration: none;
+        color: var(--color-text-heading);
+        line-height: 26px;
+        letter-spacing: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .article-title:hover {
+        text-decoration: underline;
+        color: var(--color-primary);
+    }
+
+    .article-image {
+        width: 124px;
+        height: 70px;
+        border-radius: 6px;
+        object-fit: cover;
+    }
+
+    @@media (max-width: 768px) {
+        .side-spacing {
+            padding: 0 16px;
+        }
+    }
+</style>

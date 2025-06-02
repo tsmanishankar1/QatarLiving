@@ -1,28 +1,28 @@
 ﻿@inherits CommunityRulesBase
-<MudPaper Class="community-paper" Elevation="0">
+
+<div Class="community-paper" >
     <div class="header-row">
         <div class="color-bar"></div>
-        <MudText Class="community-title ">Community Rules</MudText>
+        <MudText Class="community-rules-title">Rules & Guidelines</MudText>
     </div>
     <div class="d-flex flex-column gap-2 mt-4">
         @foreach (var rule in rules.Select((text, index) => new { text, index }))
         {
-            <div class="d-flex flex-row gap-2" style="align-items:center">
+            <div class="d-flex flex-row gap-2  mt-2" style="align-items:center">
                 <div class="rule-index">@((rule.index + 1).ToString())</div>
                 <div class="rule-text">@rule.text</div>
             </div>
         }
     </div>
-</MudPaper>
+</div>
 
 
 
 <style>
 
     .community-paper {
-        border: 1px solid #E0E0E0;
-        border-radius: 8px;
-        padding: 20px;
+        padding: 10px;
+        max-width: 340px;
     }
 
     .header-row {
@@ -30,6 +30,7 @@
         flex-direction: row;
         align-items: center;
         gap: 8px;
+
     }
 
     .color-bar {
@@ -37,9 +38,9 @@
         height: 26px;
         background-color: #00426D;
     }
-    .community-title {
-        font-family: 'Public Sans';
-        font-weight: 600;
+    .community-rules-title {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
         font-size: 25px;
         color: #242424;
     }

@@ -21,14 +21,15 @@
             <!-- Property Type Select -->
             <div class="select-field">
                 <NewCustomSelect TItem="SelectOption" Items="@PropertyTypes" Label="Category" Placeholder="Choose"
-                    SelectedId="@SelectedPropertyTypeId" SelectedIdChanged="id => SelectedPropertyTypeId = id"
+                    SelectedId="@SelectedPropertyTypeId" SelectedIdChanged="@HandleCategoryChanged"
                     GetLabel="x => x.Label" GetId="x => x.Id" BorderRadius="@(IsMobile ? "8px" : "0px")"
                     Padding="8px 10px" />
             </div>
 
             <!-- Date Picker Field -->
             <div class="select-field date-picker-field" @onclick="ToggleDatePicker">
-                <label class="select-label">Dates</label>
+
+                <div class="select-label">Dates</div>
                 <div class="date-choose-wrapper">
                     <div class="date-labels">
                         <label
@@ -37,25 +38,27 @@
                         </label>
                     </div>
                     <div class="date-icon">
-                        <MudIcon Icon="@Icons.Material.Filled.ArrowDropDown" Class="white-text" />
+                        <MudIcon
+                            Icon="@(_showDatePicker? Icons.Material.Filled.KeyboardArrowUp : Icons.Material.Filled.KeyboardArrowDown)"
+                            Class="white-text" />
                     </div>
                 </div>
                 <MudPopover Open="@_showDatePicker" AnchorOrigin="Origin.BottomCenter"
                     TransformOrigin="Origin.TopCenter" Elevation="6" Class="popover-container">
-                    <div class="picker-overlay my-orange-theme" @onclick:stopPropagation>
-                        <MudDateRangePicker @bind-DateRange="_dateRange" DisplayMonths="1"
-                            PickerVariant="PickerVariant.Static" DisableToolbar="true" ShowToolbar="false" />
+                    <div class="picker-overlay my-orange-theme" @ref="_popoverDiv">
+
+                        <MudDatePicker @bind-Date="_selectedDate" PickerVariant="PickerVariant.Static"
+                            DisableToolbar="true" ShowToolbar="false" />
 
                         <div class="picker-actions">
                             <button class="cancel-button" @onclick="CancelDatePicker">Cancel</button>
-                            <button class="apply-button" @onclick="ApplyDatePicker"
-                                disabled="@(_dateRange?.Start == null || _dateRange?.End == null)">
+                            <button class="apply-button" @onclick="ApplyDatePicker" disabled="@(_selectedDate == null)">
                                 Apply
                             </button>
                         </div>
-
                     </div>
                 </MudPopover>
+
 
             </div>
 
@@ -65,7 +68,7 @@
 
 
         <!-- Toggle Row -->
-        <div class="toggle-row">
+        @* <div class="toggle-row">
             <div class="left-toggle">
                 <label class="toggle-wrapper">
                     <input type="checkbox" checked />
@@ -76,7 +79,7 @@
             <div class="right-clear">
                 <span class="clear-text">Clear All</span>
             </div>
-        </div>
+        </div> *@
 
     </div>
 </div>
@@ -87,7 +90,7 @@
     .search-bar {
         background-color: #e6e6e6;
         border-radius: 10px;
-        padding: 60px 10px 40px 10px;
+        padding: 40px 10px 40px 10px;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -99,7 +102,7 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        width: 88%;
+        width: 94%;
         font-family: 'Public Sans';
     }
 
@@ -176,6 +179,7 @@
     }
 
     .select-label {
+        margin: 0;
         font-size: 12px;
         font-weight: 500;
         color: white;
@@ -203,6 +207,7 @@
         /* Align children to the start of the main axis (horizontal) */
         align-items: center;
         padding: 0;
+        margin-bottom: 5px;
     }
 
     .date-labels {
@@ -237,10 +242,11 @@
         gap: 6px;
         width: 100%;
         padding: 8px 10px;
-        border-radius: 8px;
+        border-radius: 4px;
         font-weight: bold;
         border: none;
         cursor: pointer;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
     }
 
     .cancel-button:disabled {
@@ -268,6 +274,7 @@
         .mud-picker-calendar .mud-day.mud-range-selection:hover,
         .mud-picker-calendar .mud-day.mud-range-end,
         .mud-picker-calendar .mud-day.mud-range-start:hover,
+        .mud-picker-calendar .mud-day.mud-range.mud-range-between,
         .mud-picker-calendar .mud-day.mud-range-end:hover {
             background-color: var(--color-accent) !important;
             color: white !important;
@@ -279,15 +286,15 @@
 
 
         .mud-button-outlined.mud-button-outlined-primary {
+            background-color: var(--color-accent) !important;
+            color: white !important;
             border-color: var(--color-accent) !important;
-            color: var(--color-accent) !important;
+
         }
 
         .mud-button-outlined.mud-button-outlined-primary:hover {
-            background-color: var(--color-accent) !important;
-            /* lighter orange on hover */
-            color: white !important;
             border-color: var(--color-accent) !important;
+            color: var(--color-accent) !important;
         }
 
 
@@ -342,6 +349,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        cursor: pointer;
     }
 
     .toggle-wrapper input[type="checkbox"] {
