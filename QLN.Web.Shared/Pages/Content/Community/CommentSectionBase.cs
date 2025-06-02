@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
+using MudBlazor;
 using QLN.Web.Shared.Model;
 
 
@@ -18,6 +20,17 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected bool isMenuOpen = false;
         protected bool IsLiked { get; set; } = false;
+
+        [Inject] private IJSRuntime JS { get; set; }
+
+
+        protected MudTextField<string> multilineReference;
+
+
+
+        private MudTextField<string> textFieldRef;
+
+       
 
 
         protected void OnMenuToggle(bool open)

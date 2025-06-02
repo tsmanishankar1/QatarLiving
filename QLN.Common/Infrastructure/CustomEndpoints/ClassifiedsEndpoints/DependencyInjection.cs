@@ -1,6 +1,7 @@
-﻿using QLN.Common.Infrastructure.CustomEndpoints;
+﻿using Microsoft.AspNetCore.Routing;
+using QLN.Common.Infrastructure.CustomEndpoints;
 
-namespace QLN.Classified.MS.Endpoints
+namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 {
     public static class DependencyInjection
     {

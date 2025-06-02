@@ -29,7 +29,7 @@
         public const string QlnNewsFinanceRealEstate = "qln_news_finance_real_estate";
 
         // Lifestyle
-        public const string QlnNewsLifestyleFoodDining = "qln_news_lifestyle_food_dining";
+        public const string QlnNewsLifestyleFoodDining = "ql_news_lifestyle_food_dining";
         public const string QlnNewsLifestyleArtsCulture = "qln_news_lifestyle_arts_culture";
         public const string QlnNewsLifestyleEvents = "qln_news_lifestyle_events";
         public const string QlnNewsLifestyleFashionStyle = "qln_news_lifestyle_fashion_style";

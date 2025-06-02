@@ -6,7 +6,7 @@ trigger:
     include:
     - search-ms-azure-pipelines.yml
     - QLN.SearchService/*
-    - QLN.Common/*
+    # - QLN.Common/*
 
 variables:
  - name: acrRegistry

@@ -228,7 +228,7 @@
     {
         var destination = GetDestination();
 
-        NavManager.NavigateTo($"{navigationPath.Login}?destination={destination}");
+        NavManager.NavigateTo($"{navigationPath.Login}?destination={destination}", true); // true = force reload
     }
 
     public void GoToLogout()

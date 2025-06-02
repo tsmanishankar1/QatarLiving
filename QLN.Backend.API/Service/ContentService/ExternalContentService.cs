@@ -61,10 +61,35 @@ namespace QLN.Backend.API.Service.ContentService
         {
             return await httpClient.GetFromJsonAsync<T>($"{DrupalContentConstants.LandingPath}/{queue_name}", cancellationToken);
         }
-
-        public async Task<List<ContentEvent>?> GetEventsFromDrupalAsync(CancellationToken cancellationToken)
+        // qlnapi/events?category_id=126205&location_id=102701&date=2025-01-01'
+        public async Task<ContentEventsResponse?> GetEventsFromDrupalAsync(
+            CancellationToken cancellationToken, 
+            string? category_id = null,
+            string? location_id = null,
+            string? date = null,
+            string? order = "asc",
+            int? page = 1, 
+            int? page_size = 10
+            )
         {
-            return await httpClient.GetFromJsonAsync<List<ContentEvent>>(DrupalContentConstants.EventsPath, cancellationToken);
+            string requestUri = $"{DrupalContentConstants.EventsPath}?page={page}&page_size={page_size}&order={order}";
+            if (!string.IsNullOrEmpty(category_id))
+            {
+                requestUri += $"&forum_id={category_id}";
+            }
+
+            if (!string.IsNullOrEmpty(location_id))
+            {
+                requestUri += $"&location_id={location_id}";
+            }
+
+            if (!string.IsNullOrEmpty(date))
+            {
+                requestUri += $"&date={date}";
+            }
+
+
+            return await httpClient.GetFromJsonAsync<ContentEventsResponse>(DrupalContentConstants.EventsPath, cancellationToken);
         }
 
         public async Task<CategoriesResponse?> GetCategoriesFromDrupalAsync(CancellationToken cancellationToken)

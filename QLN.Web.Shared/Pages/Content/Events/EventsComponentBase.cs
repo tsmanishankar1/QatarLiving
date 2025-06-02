@@ -11,7 +11,7 @@ namespace QLN.Web.Shared.Pages.Content.Events
         [Inject] private IEventService _eventService { get; set; }
         [Inject] private ILogger<EventsComponentBase> Logger { get; set; }
 
-        protected List<ContentEvent> ListOfEvents { get; set; } = [];
+        protected ContentEventsResponse ListOfEvents { get; set; } = new ContentEventsResponse();
         protected List<EventCategory> EventCategories { get; set; } = [];
         protected List<ContentEvent> FeaturedEventData { get; set; } = [];
 
@@ -45,7 +45,7 @@ namespace QLN.Web.Shared.Pages.Content.Events
             isLoadingEvents = true;
             try
             {
-                ListOfEvents = await GetAllEvents() ?? [];
+                ListOfEvents = await GetAllEvents() ?? new ContentEventsResponse();
             }
             finally
             {
@@ -88,7 +88,7 @@ namespace QLN.Web.Shared.Pages.Content.Events
             try
             {
                 var banners = await FetchBannerData();
-                DailyHeroBanners = banners?.DailyHero ?? new List<BannerItem>();
+                DailyHeroBanners = banners?.ContentDailyHero ?? new List<BannerItem>();
             }
             finally
             {
@@ -96,21 +96,21 @@ namespace QLN.Web.Shared.Pages.Content.Events
             }
         }
 
-        protected async Task<List<ContentEvent>> GetAllEvents()
+        protected async Task<ContentEventsResponse> GetAllEvents()
         {
             try
             {
                 var response = await _eventService.GetAllEventsAsync();
                 if (response.IsSuccessStatusCode && response.Content != null)
                 {
-                    return await response.Content.ReadFromJsonAsync<List<ContentEvent>>() ?? [];
+                    return await response.Content.ReadFromJsonAsync<ContentEventsResponse>() ?? new ContentEventsResponse();
                 }
-                return [];
+                return new ContentEventsResponse();
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "GetAllEvents error.");
-                return [];
+                return new ContentEventsResponse();
             }
         }
 
