@@ -79,12 +79,12 @@
 
             <MudGrid GutterSize="16px">
 
-                @if (TopicQueue1.Count() > 0)
+                @if (TopStories.Count() > 0)
                 {
                     <!-- Left column: news cards -->
                     <MudItem xs="12" md="9" lg="9">
                         <MudGrid GutterSize="16px">
-                            @foreach (var item in TopicQueue1.Take(3))
+                            @foreach (var item in TopStories)
                             {
                                 <MudItem xs="12" sm="6" md="4" lg="4">
                                     <DailyNewsCard Item="item" IsHorizontal="false" />
@@ -94,6 +94,7 @@
                         </MudGrid>
                     </MudItem>
                 }
+
                 <!-- Right column: newsletter -->
                 <MudItem xs="12" md="3" lg="3">
                     <DailyNewsLetter />
@@ -137,6 +138,23 @@
     <div class="responsive-news-container">
 
         <div class="max-container">
+
+            @if (TopicQueue1.Count() > 0)
+            {
+                <!-- Left column: news cards -->
+                <MudItem xs="12" md="9" lg="9">
+                    <MudGrid GutterSize="16px">
+                        @foreach (var item in TopicQueue1.Take(3))
+                        {
+                            <MudItem xs="12" sm="6" md="4" lg="4">
+                                <DailyNewsCard Item="item" IsHorizontal="false" />
+                            </MudItem>
+                        }
+
+                    </MudGrid>
+                </MudItem>
+            }
+
             @if (TopicQueue2.Count() > 0)
             {
                 <DailyHighlights QueueLabel="@TopicQueue2Label" ListOfItems="TopicQueue2" />

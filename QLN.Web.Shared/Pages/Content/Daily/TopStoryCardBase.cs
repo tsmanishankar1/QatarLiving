@@ -10,9 +10,16 @@ namespace QLN.Web.Shared.Pages.Content.Daily
         [Parameter]
         public ContentPost Item { get; set; } = new();
 
-        protected void NavigateToEventDetail()
+        protected void NavigateToDetailPage()
         {
-            NavigationManager.NavigateTo($"/content/events/details/{Item.Slug}");
+            if (Item.NodeType.Contains("post") && !string.IsNullOrWhiteSpace(Item.Slug))
+            {
+                NavigationManager.NavigateTo($"/content/article/details/{Item.Slug}");
+            }
+            else if (Item.NodeType.Contains("event") && !string.IsNullOrWhiteSpace(Item.Slug))
+            {
+                NavigationManager.NavigateTo($"/content/events/details/{Item.Slug}");
+            }
         }
     }
 }
