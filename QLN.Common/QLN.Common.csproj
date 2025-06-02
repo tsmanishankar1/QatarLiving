@@ -7,6 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Infrastructure\RepositoryConfiguration\**" />
+    <Compile Remove="Infrastructure\Repository\**" />
+    <EmbeddedResource Remove="Infrastructure\RepositoryConfiguration\**" />
+    <EmbeddedResource Remove="Infrastructure\Repository\**" />
+    <None Remove="Infrastructure\RepositoryConfiguration\**" />
+    <None Remove="Infrastructure\Repository\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Azure.Search.Documents" Version="11.6.0" />
     <PackageReference Include="Dapr.Actors" Version="1.13.1" />
     <PackageReference Include="Dapr.Actors.AspNetCore" Version="1.13.1" />
@@ -33,9 +42,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Infrastructure\IRepository\" />
-    <Folder Include="Infrastructure\RepositoryConfiguration\" />
-    <Folder Include="Infrastructure\Repository\" />
+    <Folder Include="Infrastructure\IService\IServicesService\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Properties\launchSettings.json">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

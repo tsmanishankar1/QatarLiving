@@ -1,0 +1,250 @@
+@page "/content/daily"
+@inherits DailyComponentBase
+@using QLN.Web.Shared.Components.Carousel
+@using QLN.Web.Shared.Pages.Content.Daily
+@using QLN.Web.Shared.Components.DailyFeaturedEventCard
+@using QLN.Web.Shared.Pages.Content.Daily.DailyNewsCard
+@using QLN.Web.Shared.Pages.Content.Daily.DailyVideoCards
+@using QLN.Web.Shared.Pages.Content.Daily.DailyNewsLetter
+@using QLN.Web.Shared.Pages.Content.Daily.DailyMoreArticle
+@using QLN.Web.Shared.Pages.Content.Daily.DailyHighlights
+@using QLN.Web.Shared.Pages.Content.Daily.DailyIntheKnow
+@using QLN.Web.Shared.Pages.Content.Daily.MoreEvents
+@using QLN.Web.Shared.Components.EmptyCard
+@using QLN.Web.Shared.Pages.Content.Events
+@using QLN.Web.Shared.Components.BannerSwiper
+@using QLN.Web.Shared.Components.BannerTakeOver
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.Skeletons.FeaturedItemSkeleton
+@layout ContentLayout
+
+<PageTitle>Qatar Living | The go-to place for lifestyle, news, and events</PageTitle>
+
+<div style="width: 100%;background-color: var(--color-secondary-background);">
+    <div class="carousel-responsive-container">
+        <div class="max-container">
+            <!-- Carousel Banner -->
+            @if (isLoadingBanners)
+            {
+                <BannerSkleton />
+            }
+            else if (DailyHeroBanners?.Any() == true)
+            {
+                <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+            }
+            else
+            {
+                <EmptyCard Title="No event banners found." Subtitle="Please check back later for updates." />
+            }
+
+        </div>
+    </div>
+    <div class="responsive-news-container">
+        <div class="max-container">
+
+            <MudGrid GutterSize="5px" Style="margin-bottom: 20px;">
+                <MudItem xs="12" md="8">
+                    <MudGrid GutterSize="10px">
+                        @if (isLoading)
+                        {
+                            @for (int i = 0; i < 2; i++)
+                            {
+                                <MudItem xs="12" sm="6" md="6" key="@i">
+                                    <ItemSkeletonCard />
+                                </MudItem>
+                            }
+                        }
+                        else if (TopStoryItem == null && HighlightedEvent == null)
+                        {
+                            <MudItem xs="12">
+                                <EmptyCard Title="No event banners found."
+                                    Subtitle="Please check back later for updates." />
+                            </MudItem>
+                        }
+                        else
+                        {
+                            <MudItem xs="12" sm="6" md="6">
+                                <TopStoryCard Item="@TopStoryItem" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6" md="6">
+                                <TopEventCard Item="@HighlightedEvent" />
+                            </MudItem>
+                        }
+                    </MudGrid>
+
+
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <DailyMoreArticle Items="@MoreArticles" isLoading="isLoading" />
+                </MudItem>
+            </MudGrid>
+
+            <MudGrid GutterSize="16px">
+
+                @if (TopicQueue1.Count() > 0)
+                {
+                    <!-- Left column: news cards -->
+                    <MudItem xs="12" md="9" lg="9">
+                        <MudGrid GutterSize="16px">
+                            @foreach (var item in TopicQueue1.Take(3))
+                            {
+                                <MudItem xs="12" sm="6" md="4" lg="4">
+                                    <DailyNewsCard Item="item" IsHorizontal="false" />
+                                </MudItem>
+                            }
+
+                        </MudGrid>
+                    </MudItem>
+                }
+                <!-- Right column: newsletter -->
+                <MudItem xs="12" md="3" lg="3">
+                    <DailyNewsLetter />
+                </MudItem>
+            </MudGrid>
+
+
+            <DailyIntheKnow />
+        </div>
+    </div>
+    <div class="responsive-news-container-daily">
+        <div class="max-container">
+            <DailyFeaturedEvents Items="@FeaturedEvents" Loading="isLoading" />
+
+            <MoreEvents />
+            @if (isLoadingBanners)
+            {
+                <BannerSkleton />
+            }
+            else if (DailyTakeOver1Banners?.Any() == true)
+            {
+                <BannerTakeOver BannerItems="DailyTakeOver1Banners" Loading="isLoadingBanners" />
+            }
+            else
+            {
+                <EmptyCard Title="No daily banners found." Subtitle="Please check back later for updates." />
+            }
+
+        </div>
+
+    </div>
+    @if (Videos.Count > 0)
+    {
+
+
+        <div class="max-container">
+
+            <DailyVideoCards Items="@Videos" />
+        </div>
+    }
+    <div class="responsive-news-container">
+
+        <div class="max-container">
+            @if (TopicQueue2.Count() > 0)
+            {
+                <DailyHighlights QueueLabel="@TopicQueue2Label" ListOfItems="TopicQueue2" />
+            }
+
+            @if (isLoadingBanners)
+            {
+                <BannerSkleton />
+            }
+            else if (DailyTakeOver2Banners?.Any() == true)
+            {
+                <BannerTakeOver BannerItems="DailyTakeOver2Banners" Loading="isLoadingBanners" />
+            }
+            else
+            {
+                <EmptyCard Title="No daily banners found." Subtitle="Please check back later for updates." />
+            }
+
+            @if (TopicQueue3.Count() > 0)
+            {
+                <DailyHighlights QueueLabel="@TopicQueue3Label" ListOfItems="TopicQueue3" />
+            }
+            @if (TopicQueue4.Count() > 0)
+            {
+                <DailyHighlights QueueLabel="@TopicQueue4Label" ListOfItems="TopicQueue4" />
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .responsive-container {
+        width: 100%;
+        padding: 0 30px;
+        box-sizing: border-box;
+    }
+
+    .max-container {
+        max-width: 1170px;
+        margin: 0 auto;
+    }
+
+    .carousel-responsive-container {
+        width: 100%;
+        padding: 0px 30px;
+        margin-bottom: 40px;
+        box-sizing: border-box;
+    }
+
+    .responsive-news-container {
+        width: 100%;
+        padding: 0px 30px;
+        box-sizing: border-box;
+        background-color: #FFFFFF;
+    }
+
+    .responsive-news-container-daily {
+        width: 100%;
+        padding: 0px 30px;
+        box-sizing: border-box;
+        background: linear-gradient(to top, #FFFFFF 0%, #FFFFFF 20%, #F5F6FA 100%);
+    }
+
+    .side-padding {
+        padding: 10px;
+    }
+
+    .daily-highlights {
+        width: 100%;
+        background-color: #FFFFFF;
+    }
+
+    @@media (max-width: 770px) {
+        .responsive-container {
+            padding: 0 16px;
+        }
+
+        .responsive-news-container {
+            padding: 0px 16px;
+        }
+
+        .responsive-news-container-daily {
+            padding: 0px 16px;
+        }
+
+        .carousel-responsive-container {
+            margin-bottom: 10px;
+            padding: 0 16px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .responsive-container {
+            padding: 0 5px;
+        }
+
+        .responsive-news-container {
+            padding: 0px 5px;
+        }
+
+        .responsive-news-container-daily {
+            padding: 0px 5px;
+        }
+
+        .carousel-responsive-container {
+            margin-bottom: 5px;
+            padding: 0 5px;
+        }
+    }
+</style>

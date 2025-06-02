@@ -1,0 +1,6 @@
+@QLN.Services.MS_HostAddress = http://localhost:5268
+
+GET {{QLN.Services.MS_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

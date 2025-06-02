@@ -6,6 +6,7 @@ namespace QLN.Web.Shared.Components.ViewToggleButtons
     {
         [Parameter] 
         public List<ViewToggleOption> Items { get; set; }
+        [Parameter] public string? TextClass { get; set; }
 
         [Parameter] 
         public string SelectedValue { get; set; }
@@ -15,7 +16,7 @@ namespace QLN.Web.Shared.Components.ViewToggleButtons
 
         public class ViewToggleOption
         {
-            public string ImageUrl { get; set; }
+            public string? ImageUrl { get; set; }
             public string Label { get; set; }
             public string Value { get; set; }
         }

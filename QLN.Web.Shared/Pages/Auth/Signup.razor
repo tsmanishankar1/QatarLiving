@@ -19,7 +19,7 @@
 @inject IDialogService DialogService
 @inject HttpClient Http
 
-
+<MudThemeProvider Theme="@CustomPaletteTheme" /> 
 @if (signUpSucesss)
 {
     <div class="popup-overlay">
@@ -42,20 +42,21 @@
             <MudTextField T="string"
                           id="signUpFirstName"
                           For="@(() => _model.FirstName)"
-                          Label="First Name"
+                          Placeholder="First Name"
                           @bind-Value="_model.FirstName"
                           Immediate="true"
                           Required="true"
                           Variant="Variant.Outlined"
                           style="background-color: var(--color-background)"
                           MaxLength="50"
-                          FullWidth="true" />
+                          FullWidth="true"
+                          Class="mt-4" />
             <MudText  Class="label-text">
                 Last Name
             </MudText>
             <MudTextField T="string"
                           id="signUpLastName"
-                          Label="Last Name"
+                          Placeholder="Last Name"
                           For="@(() => _model.LastName)"
                           @bind-Value="_model.LastName"
                           Variant="Variant.Outlined"
@@ -63,13 +64,14 @@
                           Required="true"
                           MaxLength="50"
                           FullWidth="true"
-                          style="background-color: var(--color-background)" />
+                          style="background-color: var(--color-background)" 
+                          Class="mt-4"/>
             <MudText  Class="label-text">
                 Username
             </MudText>
             <MudTextField T="string"
                           id="signUpUserName"
-                          Label="Username"
+                          Placeholder="Username"
                           For="@(() => _model.UserName)"
                           @bind-Value="_model.UserName"
                           Variant="Variant.Outlined"
@@ -77,7 +79,8 @@
                           Required="true"
                           FullWidth="true"
                           Immediate="true"
-                          style="background-color: var(--color-background)" />
+                          style="background-color: var(--color-background)" 
+                          Class="mt-4"/>
             <MudText  Class="label-text mb-1">
                 Phone Number
             </MudText>
@@ -162,12 +165,12 @@
                     <div class="phone-flex">
                         <MudTextField T="string"
                                       id="phoneVerifcationCode"
-                                      Label="Verification Code"
+                                      Placeholder="Verification Code"
                                       @bind-Value="PhoneVerificationCode"
                                       MaxLength="6"
                                       FullWidth="true"
                                       Immediate="true"
-                                      Class="phone-input mobile-input" />
+                                      Class="phone-input mobile-input mt-4" />
                         <div class="verify-container">
                             @if (_phoneCodeVerifying)
                             {
@@ -228,7 +231,7 @@
                 <div class="phone-flex">
                     <MudTextField T="string"
                                   id="signUnEmail"
-                                  Label="Email Address*"
+                                  Placeholder="Email Address*"
                                   For="@(() => _model.EmailAddress)"
                                   MaxLength="50"
                                   ValueChanged="OnEmailChanged"
@@ -278,7 +281,7 @@
                     <div class="phone-flex">
                         <MudTextField T="string"
                                       id="emailCodeField"
-                                      Label="Verification Code"
+                                      Placeholder="Verification Code"
                                       @bind-Value="EmailVerificationCode"
                                       MaxLength="6"
                                       FullWidth="true"
@@ -339,7 +342,7 @@
             </MudText>
             <MudSelect T="string"
                        id="nationalityDropDown"
-                       Label="Nationality"
+                       Class="mt-4"
                        Placeholder="Choose"
                        Variant="Variant.Outlined"
                        Required="true"
@@ -358,7 +361,6 @@
             </MudText>
             <MudSelect T="string"
                        id="languageDropDown"
-                       Label="Language"
                        Placeholder="Choose"
                        Variant="Variant.Outlined"
                        Dense="false"
@@ -376,33 +378,33 @@
             <MudText Typo="Typo.body1" Class="label-text">
                 Date of Birth
             </MudText>
-            <MudThemeProvider Theme="@CustomPaletteTheme" />    
-                <MudDatePicker @bind-Date="_dateOfBirth"
-                            T="DateTime?"
-                            Label="Date of Birth"
-                            Variant="Variant.Outlined"
-                            Required="true"
-                            style="background-color: var(--color-background)"
-                            Color="Color.Primary"
-                            RequiredError="Date of Birth is required"
-                            PickerVariant="PickerVariant.Inline"
-                            MaxDate="@DateTime.Today.AddDays(-1)"
-                            InputAttributes="@(new Dictionary<string, object>
-                {
-                    ["aria-label"] = "Date of Birth",
-                    ["data-testid"] = "date-of-birth-picker"
-                })" />
+            <MudDatePicker @bind-Date="_dateOfBirth"
+                        T="DateTime?"
+                        Class="mt-4"
+                        Placeholder="Date of Birth"
+                        Variant="Variant.Outlined"
+                        Required="true"
+                        style="background-color: var(--color-background)"
+                        Color="Color.Primary"
+                        RequiredError="Date of Birth is required"
+                        PickerVariant="PickerVariant.Inline"
+                        MaxDate="@DateTime.Today.AddDays(-1)"
+                        InputAttributes="@(new Dictionary<string, object>
+            {
+                ["aria-label"] = "Date of Birth",
+                ["data-testid"] = "date-of-birth-picker"
+            })" />
             <MudText Typo="Typo.body1" Class="label-text">
                 Password
             </MudText>
             <MudTextField T="string"
                           id="passwordInput"
-                          Label="Password"
+                          Placeholder="Password"
                           Variant="Variant.Outlined"
                           MaxLength="50"
                           InputType="@(_showPassword ? InputType.Text : InputType.Password)"
                           FullWidth="true"
-                          Class="password-input"
+                          Class="password-input mt-4"
                           OnInput="@OnPasswordInput"
                           @bind-Value="_model.Password"
                           Immediate="true"
@@ -422,7 +424,7 @@
             </MudText>
             <MudTextField T="string"
                           id="confirmPasswordInput"
-                          Label="Confirm Password"
+                          Placeholder="Confirm Password"
                           Variant="Variant.Outlined"
                           Immediate="true"
                           MaxLength="50"
@@ -435,7 +437,8 @@
                           Adornment="Adornment.End"
                           AdornmentIcon="@(_showConfirmPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
                           OnAdornmentClick="ToggleConfirmVisibility"
-                          AdornmentColor="Color.Default" />
+                          AdornmentColor="Color.Default" 
+                          Class="mt-4"/>
             <div style="width: 100%; padding-top: 16px;">
                 <MudCheckBox id="agreeToTermsCheckBox"
                  @bind-Value="_model.AgreeToTerms"
@@ -495,22 +498,22 @@
             <MudGrid Class="social-buttons-container">
             <MudItem xs="2">
                 <MudButton id="googleLoginButton" Variant="Variant.Outlined" Class="social-login-button">
-                <img src="/images/google.svg" alt="Google" style="height: 24px;" />
+                <img src="/qln-images/google.svg" alt="Google" style="height: 24px;" />
                 </MudButton>
             </MudItem>
             <MudItem xs="2">
                 <MudButton id="appleLoginButton" Variant="Variant.Outlined" Class="social-login-button">
-                <img src="/images/apple.svg" alt="Google" style="height: 24px;" />
+                <img src="/qln-images/apple.svg" alt="Google" style="height: 24px;" />
                 </MudButton>
             </MudItem>
             <MudItem xs="2">
                 <MudButton id="microsoftLoginButton" Variant="Variant.Outlined" Class="social-login-button">
-                <img src="/images/microsoft.svg" alt="Microsoft" style="height: 24px;" />
+                <img src="/qln-images/microsoft.svg" alt="Microsoft" style="height: 24px;" />
                 </MudButton>
             </MudItem>
             <MudItem xs="2">
                 <MudButton id="facebookLoginButton" Variant="Variant.Outlined" Class="social-login-button" >
-                <img src="/images/facebook.svg" alt="Facebook" />
+                <img src="/qln-images/facebook.svg" alt="Facebook" />
             </MudButton>
             </MudItem>
             </MudGrid>
@@ -532,8 +535,8 @@
     private bool _loading = false;
     private string _confirmPassword = String.Empty;
     private bool EnableTwoFactor { get; set; } = false;
-    private string EmailFieldClass => string.IsNullOrWhiteSpace(emailErrorMessage) ? "pa-2 custom-paper" : "pa-2 custom-paper  error-border";
-    private string MobileFieldClass => string.IsNullOrWhiteSpace(phoneErrorMessage) ? "pa-2 custom-paper" : "pa-2 custom-paper error-border";
+    private string EmailFieldClass => string.IsNullOrWhiteSpace(emailErrorMessage) ? "pa-2 custom-paper mt-4" : "pa-2 custom-paper mt-4  error-border";
+    private string MobileFieldClass => string.IsNullOrWhiteSpace(phoneErrorMessage) ? "pa-2 custom-paper  mt-4" : "pa-2 custom-paper  mt-4 error-border";
     private string EmailCodeClass => string.IsNullOrWhiteSpace(emailCodeErrorMessage) ? "pa-2 custom-paper mt-2" : "pa-2 custom-paper mt-2 error-border";
     private string MobileCodeClass => string.IsNullOrWhiteSpace(phoneCodeErrorMessage) ? "pa-2 custom-paper mt-2" : "pa-2 custom-paper mt-2 error-border";
     private bool MarketingOptIn { get; set; }
@@ -926,7 +929,7 @@
         }
         finally
         {
-            _emailCodeVerifying = false;
+             _phoneCodeVerifying = false;
         }
     }
     private void CountdownCallback(object? state)
@@ -1076,8 +1079,15 @@
     .verify-button {
         background-color: var(--color-accent);
         color: white;
-        min-width: 70px;
-        padding-right: 2px;
+        min-width: 64px;
+        min-height: 28px;
+        padding: 0px 12px 0px 12px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        border-radius: 4px;
+        box-shadow: none !important;
     }
 
         .verify-button:disabled {
@@ -1120,19 +1130,19 @@
     }
 
     .selected-country-flag {
-        width: 30px;
-        height: 22px;
+        width: 20px;
+        height: 20px;
         margin-right: 5px;
         border-radius: 50%;
         border: 1px solid #ccc;
-        object-fit: cover;
+        object-fit: fill;
         display: inline-block;
     }
 
     .country-option {
         display: flex;
         align-items: center;
-        padding: 8px;
+        padding: 8px 6px 8px 6px;
     }
 
     .country-flag {
@@ -1144,8 +1154,8 @@
 
     .country-code-text {
         white-space: nowrap;
-        font-size: 18px;
-        margin-bottom: 4px;
+        font-size: 15px;
+        font-family: 500;
     }
 
     .mud-select .mud-select-input {

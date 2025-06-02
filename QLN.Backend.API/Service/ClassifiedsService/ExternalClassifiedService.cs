@@ -36,90 +36,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public async Task<IEnumerable<ClassifiedIndexDto>> Search(CommonSearchRequest request)
-        {
-            if (request is null) throw new ArgumentNullException(nameof(request));
-
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<
-                    CommonSearchRequest,
-                    ClassifiedIndexDto[]>(
-                        HttpMethod.Post,
-                        SERVICE_APP_ID,
-                        $"/api/{Vertical}/search",
-                        request
-                    );
-
-                return result ?? Array.Empty<ClassifiedIndexDto>();
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<ClassifiedIndexDto?> GetById(string id)
-        {
-            if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException("Id is required", nameof(id));
-
-            try
-            {
-                return await _dapr.InvokeMethodAsync<ClassifiedIndexDto>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"/api/{Vertical}/{id}"
-                );
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<string> Upload(ClassifiedIndexDto document)
-        {
-            if (document is null) throw new ArgumentNullException(nameof(document));
-
-            try
-            {
-                return await _dapr.InvokeMethodAsync<ClassifiedIndexDto, string>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"/api/{Vertical}/upload",
-                    document,
-                    CancellationToken.None
-                );
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw new InvalidOperationException(
-                    $"Dapr invoke to '/api/{Vertical}/upload' failed: {ex.Message}",
-                    ex
-                );
-            }
-        }
-
-        public async Task<ClassifiedLandingPageResponse> GetLandingPage()
-        {
-            try
-            {
-                return await _dapr.InvokeMethodAsync<ClassifiedLandingPageResponse>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"/api/{Vertical}/landing"
-                );
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
         public async Task<Category> AddCategory(string categoryName, CancellationToken cancellationToken = default)
         {
             try
@@ -900,7 +816,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             catch (Exception ex)
             {
                 _log.LogException(ex);
-                throw new InvalidOperationException("Failed to save search due to internal error.", ex);
+                throw;
             }
         }
 
@@ -923,12 +839,12 @@ namespace QLN.Backend.API.Service.ClassifiedService
             catch (DaprException dex)
             {
                 _log.LogException(dex);
-                throw new InvalidOperationException("Failed to fetch saved searches due to Dapr error.", dex);
+                throw;
             }
             catch (Exception ex)
             {
                 _log.LogException(ex);
-                throw new InvalidOperationException("An unexpected error occurred while fetching saved searches.", ex);
+                throw;
             }
         }       
 
