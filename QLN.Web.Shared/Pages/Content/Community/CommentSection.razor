@@ -89,20 +89,23 @@ else
 
                     </div>
                     <div class="comment-description">@c.Description</div>
-                    <div class="post-icons-comment-section">
-                        <div class="comment-wrapper" @onclick="ToggleLikeAsync">
+@*  
+                        <div class="post-icons-comment-section">
+
+    <div class="comment-wrapper" @onclick="ToggleLikeAsync">
 
                             <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="comment-interaction-icon" />
-@*                             <span class="icon-text">@c.LikeCount</span>
- *@                       
-</div>
+                           <span class="icon-text">@c.LikeCount</span></div>
+                           
+ *@
 
                        @*  <div class="comment-wrapper">
 
                             <img src="qln-images/content/Dislike.svg" class="comment-interaction-icon" />
                             <span class="icon-text">@c.LikeCount</span>
-                        </div> *@
-                    </div>
+                        </div>
+                                            </div>
+*@
                 </div>
 
             </div>
@@ -110,7 +113,7 @@ else
 
         }
         <div class="pagination-container">
-            <PaginationFooter TotalItems="30"
+            <PaginationFooter TotalItems="10"
                               CurrentPage="@CurrentPage"
                               PageSize="@PageSize"
                               OnPageChange="HandlePageChange"
