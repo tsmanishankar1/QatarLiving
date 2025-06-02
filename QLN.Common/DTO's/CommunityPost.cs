@@ -18,6 +18,12 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonPropertyName("forum_category")]
         public string ForumCategory { get; set; }
 
+        [JsonPropertyName("category_id")]
+        public string CategoryId { get; set; }
+
+        [JsonPropertyName("category")]
+        public string Category { get; set; }
+
         [JsonPropertyName("user_name")]
         public string UserName { get; set; }
 
@@ -29,6 +35,12 @@ namespace QLN.Common.Infrastructure.DTO_s
 
         [JsonPropertyName("title")]
         public string Title { get; set; }
+
+        [JsonPropertyName("like_count")]
+        public string LikeCount { get; set; }
+
+        [JsonPropertyName("comment_count")]
+        public string CommentCount { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("image_url")]

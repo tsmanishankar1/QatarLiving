@@ -15,7 +15,7 @@ namespace QLN.Web.Shared.Services
             _httpClient = httpClient;
         }
 
-        public async Task<List<PostListDto>> GetPostsAsync(int? forumId, string order, int page, int pageSize)
+        public async Task<PostListResponse> GetPostsAsync(int? forumId, string order, int page, int pageSize)
         {
 
             try
@@ -27,13 +27,39 @@ namespace QLN.Web.Shared.Services
                           $"page_size={pageSize}";
 
 
-                var response = await _httpClient.GetFromJsonAsync<List<PostListDto>>(url);
-                return response ?? new List<PostListDto>();
+                var response = await _httpClient.GetFromJsonAsync<PostListResponse>(url);
+
+                //if(response != null && response.Items.Any())
+                //{
+                //    var postList = new List<PostListDto>();
+
+                //    foreach (var item in response.Items)
+                //    {
+                //        postList.Add(new PostListDto
+                //        {
+                //            category_id = item.CategoryId,
+                //            date_created = item.DateCreated,
+                //            description = item.Description,
+                //            image_url = item.ImageUrl,
+                //            nid = item.Nid,
+                //            forum_category = item.ForumCategory,
+                //            forum_id = item.ForumId,
+                //            slug = item.Slug,
+                //            title = item.Title,
+                //            user_name = item.UserName,
+                //            comment_count = item.CommentCount
+                //        });
+                //    }
+
+                //    return postList;
+                //}
+
+                return response ?? new PostListResponse();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"API Error: {ex.Message}");
-                return new List<PostListDto>();
+                return new PostListResponse();
             }
         }
         public async Task<PostDetailsDto> GetPostBySlugAsync(string slug)
