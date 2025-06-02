@@ -173,6 +173,28 @@ builder.Services.AddGBService(options =>
     options.TrackingId = builder.Configuration["GoogleAnalytics:TrackingId"];
 });
 
+builder.Services.AddCors(options =>
+{
+    string[] origins = [ 
+        // add more as necessary
+        contentVerticalAPIUrl, 
+        qatarLivingAPI 
+        ];
+    
+    // filter out distinct URLs
+
+    origins = origins.Distinct().ToArray();
+
+    options.AddDefaultPolicy(policy =>
+    {
+        policy
+                .WithOrigins(origins)
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -190,6 +212,7 @@ else
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
