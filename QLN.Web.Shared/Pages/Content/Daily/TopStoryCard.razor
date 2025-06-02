@@ -1,11 +1,11 @@
 @inherits TopStoryCardBase
 <div class="top-story-list-card">
     <div class="top-story-image-wrapper">
-        <a @onclick="() => NavigateToEventDetail()"> <img src="@Item.ImageUrl" class="top-story-card-img" alt="Top Story Image" /></a>
+        <a @onclick="() => NavigateToDetailPage()"> <img src="@Item.ImageUrl" class="top-story-card-img" alt="Top Story Image" /></a>
     </div>
     <div class="top-story-card-body">
         <div class="top-story-category">Top Story</div>
-        <a @onclick="() => NavigateToEventDetail()">
+        <a @onclick="() => NavigateToDetailPage()">
             <h3 class="top-story-title">
                 @Item.Title
             </h3>

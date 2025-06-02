@@ -1,14 +1,5 @@
 @page "/"
-@using QLN.Web.Shared.Layout
-@layout RedirectLayout
+@using QLN.Web.Shared.Pages.Content.Daily
+@layout ContentLayout
 
-@inject NavigationManager Navigation
-
-@code {
-
-    protected override Task OnAfterRenderAsync(bool firstRender)
-    {
-        Navigation.NavigateTo("/content/daily", true); // true = force reload
-        return base.OnAfterRenderAsync(firstRender);
-    }
-}
+<DailyComponent />

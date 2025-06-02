@@ -5,15 +5,15 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
-using QLN.SearchService.IndexModels;
 using System.Data;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.DTOs;
 using QLN.Common.DTO_s;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.AspNetCore.Builder;
 
-namespace QLN.SearchService.CustomEndpoints
-{
+namespace QLN.Common.Infrastructure.CustomEndpoints;
+
     public static class CommonIndexingEndpoints
     {
         public static RouteGroupBuilder MapCommonIndexingEndpoints(this RouteGroupBuilder group)
@@ -205,4 +205,3 @@ namespace QLN.SearchService.CustomEndpoints
         }
 
     }
-}
