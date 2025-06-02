@@ -1,6 +1,7 @@
 ﻿@using System.Globalization
 @inherits PostCardBase
 @using MudBlazor
+@using QLN.Web.Shared.Components.EmptyCard
 
 <MudPaper Class="post-card p-4" Elevation="0" @onclick="() => { if (!IsDetailView) NavigateToPostDetail(); }">
     <div class="post-header d-flex justify-space-between align-center">
@@ -94,14 +95,9 @@
         }
         else
         {
-            <MudPaper Class="pa-4 mt-8" Color="Color.Error" Elevation="0">
-                <MudText Typo="Typo.h6" Color="Color.Error">
-                    Oops! Something went wrong while loading community posts.
-                </MudText>
-                <MudText Typo="Typo.body2">
-                    Please try again later.
-                </MudText>
-            </MudPaper>
+            
+            <EmptyCard Title="Data could not be loaded" Subtitle="Please check back later for updates." />
+
         }
         <div class="post-footer">
             <div class="post-footer-left">

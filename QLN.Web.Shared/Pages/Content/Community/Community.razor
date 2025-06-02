@@ -57,7 +57,7 @@
                                 <SortDropdown TItem="SelectOption"
                                               Items="@CategorySelectOptions"
                                               SelectedId="@SelectedCategoryId"
-                                              SelectedIdChanged="id => SelectedCategoryId = id"
+                                              SelectedIdChanged="OnSortChanged"
                                               GetLabel="x => x.Label"
                                               GetId="x => x.Id"
                                               BorderRadius="0px"
