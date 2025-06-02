@@ -7,13 +7,13 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 public class VideoCardsBase : ComponentBase
 {
     [Parameter]
-    public List<ContentVideo> Articles { get; set; } = new List<ContentVideo>();
-    [Parameter] public EventCallback<ContentVideo> OnClick { get; set; }
+    public List<ContentPost> Articles { get; set; } = new List<ContentPost>();
+    [Parameter] public EventCallback<ContentPost> OnClick { get; set; }
     [Parameter]
     public string selectedTab { get; set; }
     [Parameter] public bool loading { get; set; }
     [Inject] protected NavigationManager navManager { get; set; }
-    protected ContentVideo SelectedArticle { get; set; }
+    protected ContentPost SelectedArticle { get; set; }
     
 
     protected override void OnParametersSet()
@@ -24,14 +24,12 @@ public class VideoCardsBase : ComponentBase
         }
     }
 
-    protected void SelectVideo(ContentVideo article)
+    protected void SelectVideo(ContentPost article)
     {
         SelectedArticle = article;
     }
-    protected void onclick(ContentVideo news)
+    protected void onclick(ContentPost news)
     {
-        Console.WriteLine("the clicked aritcle is " + news.Title);
-        Console.WriteLine("the clicked aritcle is " + news.Slug);
          if (news == null || string.IsNullOrEmpty(news.Slug))
             return;
         navManager.NavigateTo($"/content/article/details/{news.Slug}");
