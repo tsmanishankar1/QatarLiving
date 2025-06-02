@@ -1,0 +1,107 @@
+@using MudBlazor
+
+<MudCard Style="max-width: 400px; border-radius: 12px; overflow: hidden;">
+    <!-- Header -->
+    <MudCardHeader>
+        <MudAvatar Icon="Icons.Material.Filled.AccountCircle" />
+        <MudText Class="text-username">qatarliving</MudText>
+        <MudIcon Icon="@Icons.Material.Filled.Verified" Class="ml-1 verified-icon" />
+        <MudSpacer />
+        <MudButton Variant="Variant.Text" Size="Size.Small">View profile</MudButton>
+    </MudCardHeader>
+
+    <!-- Video Preview Image -->
+    <MudImage Src="/qln-images/fifa-preview.jpg"
+              Alt="FIFA World Cup 2022"
+              Style="width: 100%; aspect-ratio: 9 / 16; object-fit: cover;" />
+
+    <!-- Play overlay -->
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+        <MudIcon Icon="Icons.Material.Filled.PlayCircleOutline" Size="Size.Large" Class="play-overlay" />
+    </div>
+
+    <!-- Footer -->
+    <MudCardContent>
+        <MudText Class="text-likes">38,634 likes</MudText>
+        <MudText Class="text-username">qatarliving</MudText>
+        <MudText Class="text-caption">
+            Going down the memory lane! ✨<br />
+            One year ago today, Qatar hosted the biggest event in the region, FIFA World Cup 2022.
+            <br /><br />
+            Here's a glimpse of some of the fond memories.
+            <br /><br />
+            What do you miss the most from FIFA World Cup 2022? Let us know in the comments below! 👇
+        </MudText>
+        <MudText Class="text-hashtags">#Doha #Qatar #QatarLiving</MudText>
+    </MudCardContent>
+
+    <!-- Actions -->
+    <MudCardActions>
+        <MudIconButton Icon="@Icons.Material.Filled.FavoriteBorder" />
+        <MudIconButton Icon="@Icons.Material.Filled.ModeComment" />
+        <MudIconButton Icon="@Icons.Material.Filled.Send" />
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.BookmarkBorder" />
+    </MudCardActions>
+
+    <!-- Comments -->
+    <MudCardContent>
+        <MudText Class="text-view-comments">View all 297 comments</MudText>
+        <MudText Class="text-add-comment">Add a comment...</MudText>
+    </MudCardContent>
+</MudCard>
+
+<style>
+    .text-username {
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #000;
+    margin-left: 0.5rem;
+}
+
+.text-likes {
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #000;
+}
+
+.text-caption {
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.text-hashtags {
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #0077b6;
+}
+
+.text-view-comments {
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #666;
+}
+
+.text-add-comment {
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: #999;
+}
+
+.play-overlay {
+    font-size: 48px;
+    color: white;
+}
+
+.verified-icon {
+    color: #1DA1F2;
+}
+</style>

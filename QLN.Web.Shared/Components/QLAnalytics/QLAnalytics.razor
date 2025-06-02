@@ -1,0 +1,42 @@
+﻿@using QLN.Web.Shared.Components.BrowserSession  
+@using QLN.Web.Shared.Services  
+@using QLN.Web.Shared.Services.Interface  
+@using Microsoft.AspNetCore.Components  
+@using Microsoft.AspNetCore.Http  
+@inject IQLAnalyticsService QLAnalyticsService  
+
+<BrowserSession @ref="BrowserSessionRef" />  
+
+@code {  
+    [CascadingParameter] HttpContext HttpContext { get; set; } = default!;  
+
+    [Parameter]  
+    public required QLAnalyticsCallProps AnalyticsProps { get; set; }  
+
+    private BrowserSession? BrowserSessionRef;  
+
+    protected override async Task OnInitializedAsync()  
+    {  
+        // Get the "qat" cookie value using HttpContext  
+        string? qatToken = HttpContext?.Request.Cookies["qat"];  
+        string browserId = string.Empty;  
+        string sessionId = string.Empty;  
+
+        // Get browserId and sessionId from BrowserSession component  
+        if (BrowserSessionRef != null)  
+        {  
+            browserId = BrowserSessionRef.BrowserId;  
+            sessionId = BrowserSessionRef.SessionId;  
+        }
+
+        // Call the QLAnalyticsService with the provided props and session details
+        await QLAnalyticsService.TrackEventAsync(  
+            AnalyticsProps,  
+            browserId,  
+            sessionId
+        );
+
+        await base.OnInitializedAsync();  
+    }  
+
+}

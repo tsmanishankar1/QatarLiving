@@ -1,179 +1,136 @@
 @using MudBlazor
+@inject IJSRuntime JS
 
 <div class="seasonal-wrapper">
     <MudText Typo="Typo.h6" Align="Align.Center" Class="seasonal-title">
         Seasonal Picks
     </MudText>
 
-    <div class="carousel-container">
-        <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
-                       OnClick="@PrevSlide"
-                       Disabled="@IsFirstSlide"
-                       Class="custom-arrow-button left" />
+    <!-- Parent container for arrows + swiper -->
+    <div class="swiper-container">
+        <!-- Arrow buttons OUTSIDE .swiper -->
+        <div class="swiper-seasonal-button-prev custom-arrow-button left"></div>
+        <div class="swiper-seasonal-button-next custom-arrow-button right"></div>
 
-        <div class="carousel-viewport">
-            <div class="carousel-track" style="transform:@TrackOffset">
+        <!-- Swiper slider -->
+        <div class="swiper swiper-seasonal">
+            <div class="swiper-wrapper">
                 @foreach (var imageUrl in seasonalImages)
                 {
-                    <div class="seasonal-card">
+                    <div class="swiper-slide seasonal-card">
                         <img src="@imageUrl" alt="Seasonal Pick" />
                     </div>
                 }
             </div>
         </div>
-
-        <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
-                       OnClick="@NextSlide"
-                       Disabled="@IsLastSlide"
-                       Class="custom-arrow-button right" />
     </div>
 </div>
 
 @code {
     private List<string> seasonalImages = new()
+{
+"/qln-images/seasonal_image1.svg",
+"/qln-images/seasonal_image2.svg",
+"/qln-images/seasonal_image3.svg",
+"/qln-images/seasonal_image1.svg",
+"/qln-images/seasonal_image2.svg",
+"/qln-images/seasonal_image3.svg"
+};
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        "/images/seasonal_image1.svg",
-        "/images/seasonal_image2.svg",
-        "/images/seasonal_image3.svg",
-        "/images/seasonal_image1.svg",
-        "/images/seasonal_image2.svg",
-        "/images/seasonal_image3.svg",
-        "/images/seasonal_image1.svg",
-        "/images/seasonal_image2.svg",
-        "/images/seasonal_image3.svg"
-    };
-
-    private int groupIndex = 0;
-    private int itemsPerGroup = 3;
-    private int cardWidthPx = 300 + 16; // 300px card + 16px margin-right
-
-    private int TotalGroups => (int)Math.Ceiling((double)seasonalImages.Count / itemsPerGroup);
-
-    private void NextSlide()
-    {
-        if (groupIndex < TotalGroups - 1)
-            groupIndex++;
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("initSeasonalSwiper");
+        }
     }
-
-    private void PrevSlide()
-    {
-        if (groupIndex > 0)
-            groupIndex--;
-    }
-
-    private string TrackOffset => $"translateX(-{groupIndex * cardWidthPx * itemsPerGroup}px)";
-    private bool IsFirstSlide => groupIndex == 0;
-    private bool IsLastSlide => groupIndex >= TotalGroups - 1;
 }
-
 
 <style>
- .seasonal-wrapper {
-    padding: 2rem 1rem;
-}
-
-.seasonal-title {
-    font-weight: 600;
-    color: var(--color-text-secondary);
-    margin-bottom: 2rem;
-    text-align: center;
-}
-
-.carousel-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-}
-
-.carousel-viewport {
-    overflow: hidden;
-    width: 100%;
-    max-width: 90%;
-}
-
-.carousel-track {
-    display: flex;
-    transition: transform 0.5s ease-in-out;
-    width: fit-content;
-}
-
-.seasonal-card {
-    max-width: 350px;
-    margin-right: 16px;
-    border-radius: 12px;
-    overflow: hidden;
-    background-color: var(--color-background);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    flex-shrink: 0;
-}
-
-.seasonal-card img {
-    width: 100%;
-    height: auto;
-    max-height: 200px;
-    object-fit: cover;
-    display: block;
-}
-
-.custom-arrow-button {
-    background-color: var(--color-background);
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    width: 40px;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-.custom-arrow-button.left {
-    left: 0;
-}
-
-.custom-arrow-button.right {
-    right: 0;
-}
-
-@@media (max-width: 768px) {
-    .custom-arrow-button {
-        display: none;
+    .swiper-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 0 40px;
+        /* Creates space for arrows */
     }
 
-    .carousel-viewport {
-        overflow-x: auto;
-        scroll-behavior: smooth;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .carousel-track {
-        transform: none !important;
-        flex-wrap: nowrap;
-        width: max-content;
+    .swiper-seasonal {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 1rem;
     }
 
     .seasonal-card {
-        width: 80%;
-        margin-right: 16px;
+        max-width: 350px;
+        border-radius: 12px;
+        overflow: hidden;
     }
 
-    /* Hide scrollbars */
-    .carousel-viewport::-webkit-scrollbar {
-        display: none;
+    .seasonal-card img {
+        width: 100%;
+        height: auto;
+        max-height: 200px;
+        object-fit: cover;
+        display: block;
     }
 
-    .carousel-viewport {
-        -ms-overflow-style: none;  /* IE/Edge */
-        scrollbar-width: none;     /* Firefox */
+    /* Arrow positioning (now relative to .swiper-container) */
+    .custom-arrow-button {
+        background-color: var(--color-background);
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        width: 40px;
+        height: 80%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #000;
+        z-index: 10;
+        cursor: pointer;
+        position: absolute;
+        /* Positioned relative to .swiper-container */
+        top: 50%;
+        transform: translateY(-50%);
     }
-}
 
-}
+    .custom-arrow-button::after {
+        font-size: 18px;
+        font-weight: bold;
+        color: black;
+    }
 
 
+    .left {
+        left: 0;
+        /* Place outside left edge */
+    }
 
+    .right {
+        right: 0;
+        /* Place outside right edge */
+    }
+
+    @@media (max-width: 768px) {
+        .swiper-container {
+            position: relative;
+            width: 100%;
+            padding: 0 10px;
+            /* Creates space for arrows */
+        }
+
+        .swiper {
+            width: 100%;
+            padding: 2rem 1rem;
+        }
+
+        .seasonal-card {
+            width: 238px;
+        }
+
+    }
 </style>

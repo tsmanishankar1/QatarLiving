@@ -24,16 +24,17 @@ namespace QLN.Common.Infrastructure.Service.JwtTokenService
         public async Task<string> GenerateAccessToken(ApplicationUser user)
         {
             var authClaims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new(ClaimTypes.Name, user.UserName ?? string.Empty),
-            new(ClaimTypes.Email, user.Email ?? string.Empty),
-            new(ClaimTypes.MobilePhone, user.PhoneNumber ?? string.Empty),
-            new("UserId", user.Id.ToString()),
-            new("UserName", user.UserName ?? string.Empty),
-            new("Email", user.Email ?? string.Empty),
-            new("PhoneNumber", user.PhoneNumber ?? string.Empty)
-        };
+            {
+                new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new(ClaimTypes.Name, user.UserName ?? string.Empty),
+                new(ClaimTypes.Email, user.Email ?? string.Empty),
+                new(ClaimTypes.MobilePhone, user.PhoneNumber ?? string.Empty),
+                new(ClaimTypes.Role, user.IsCompany ? "Company" : "User"),
+                new("UserId", user.Id.ToString()),
+                new("UserName", user.UserName ?? string.Empty),
+                new("Email", user.Email ?? string.Empty),
+                new("PhoneNumber", user.PhoneNumber ?? string.Empty),                
+            };
 
             var roles = await _userManager.GetRolesAsync(user);
 

@@ -1,18 +1,11 @@
 ﻿using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using System.Text.Json;
-using System.Windows.Input;
 using Dapr.Client;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp;
-using System.Net;
-using QLN.Common.Infrastructure.Model;
-using QLN.Common.DTO_s;
-using QLN.Common.Infrastructure.Service.SmtpService;
-using QLN.Common.Infrastructure.IService.IEmailService;
-using FirebaseAdmin.Auth;
 
 namespace QLN.Company.MS.Service
 {

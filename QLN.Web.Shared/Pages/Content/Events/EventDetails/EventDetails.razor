@@ -1,0 +1,70 @@
+@page "/content/events/details/{*slug}"
+@using QLN.Web.Shared.Components.Carousel
+@using MudBlazor
+@using QLN.Web.Shared.Pages.Content.Events.EventDetails
+@using QLN.Web.Shared.Pages.Content.Events
+@layout ContentLayout
+@using QLN.Web.Shared.Components.BreadCrumb
+@using QLN.Web.Shared.Components.EmptyCard
+@using QLN.Web.Shared.Components.BannerSwiper
+@inherits EventDetailsBase
+
+<div style="width: 100%; background-color: var(--color-secondary-background);">
+    <div class="responsive-container">
+        @if (isLoadingEventBanners)
+        {
+            <BannerSkleton />
+        }
+        else if (DailyHeroBanners?.Any() == true)
+        {
+            <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingEventBanners" />
+        }
+        else
+        {
+            <EmptyCard Title="No event banners found." Subtitle="Please check back later for updates." />
+        }
+
+
+
+        <Breadcrumb Items="breadcrumbItems" />
+
+        @if (isLoading)
+        {
+            <EventdetailsSkeletons />
+        }
+        else if (eventDetails != null)
+        {
+            <EventDetailsSection item="eventDetails" />
+        }
+        else
+        {
+            <EmptyCard Title="Featured event details not found."
+                Subtitle="Please try again later or explore other available events." />
+        }
+
+
+
+    </div>
+</div>
+
+<style>
+    .responsive-container {
+        width: 100%;
+        padding: 0 40px;
+        box-sizing: border-box;
+        max-width: 1170px;
+        margin: 0 auto;
+    }
+
+    @@media (max-width: 768px) {
+        .responsive-container {
+            padding: 0 16px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .responsive-container {
+            padding: 0 5px;
+        }
+    }
+</style>

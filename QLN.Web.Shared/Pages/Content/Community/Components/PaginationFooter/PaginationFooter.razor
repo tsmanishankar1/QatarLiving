@@ -1,0 +1,193 @@
+@using MudBlazor
+@using QLN.Web.Shared.Components.CustomPagination
+@using QLN.Web.Shared.Components.NewCustomSelect
+
+<div class="footer-pagination-container">
+    <div class="pagination-row">
+        <!-- Previous Button -->
+        <MudButton Variant="Variant.Outlined" Disabled="@IsFirstPage" OnClick="@GoToPreviousPage"
+            Class="pagination-button">
+            <MudIcon Icon="@Icons.Material.Filled.ArrowBack" Class="me-1 pagination-icon" />
+            <span class="pagination-text">Previous</span>
+
+        </MudButton>
+
+        <!-- Custom Pagination -->
+        <CustomPagination TotalItems="TotalItems" PageSize="PageSize" CurrentPage="CurrentPage"
+            OnPageChange="HandlePageChanged" />
+
+
+        <!-- Next Button -->
+        <MudButton Variant="Variant.Outlined" Disabled="@IsLastPage" OnClick="@GoToNextPage" Class="pagination-button">
+            <span class="pagination-text">Next</span>
+            <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Class="ms-1 pagination-icon" />
+        </MudButton>
+    </div>
+
+ 
+</div>
+
+
+@code {
+    [Parameter] public int TotalItems { get; set; }
+    [Parameter] public int CurrentPage { get; set; }
+    [Parameter] public int PageSize { get; set; }
+    [Parameter] public EventCallback<int> OnPageChange { get; set; }
+    [Parameter] public EventCallback<int> OnPageSizeChange { get; set; }
+    private int TotalPages => (int)Math.Ceiling((double)TotalItems / PageSize);
+
+    // Page size options list
+    private List<int> PageSizeOptions = new() { 12, 24, 36 };
+
+    private bool IsFirstPage => CurrentPage <= 1;
+    private bool IsLastPage => CurrentPage * PageSize >= TotalItems;
+    private List<int> GetPageNumbers()
+    {
+        const int maxVisiblePages = 5;
+        var pages = new List<int>();
+
+        int start = Math.Max(1, CurrentPage - 2);
+        int end = Math.Min(TotalPages, start + maxVisiblePages - 1);
+
+        // Shift window if near end
+        if (end - start < maxVisiblePages - 1)
+            start = Math.Max(1, end - maxVisiblePages + 1);
+
+        for (int i = start; i <= end; i++)
+            pages.Add(i);
+
+        return pages;
+    }
+    private async Task GoToPreviousPage()
+    {
+        if (!IsFirstPage)
+            await OnPageChange.InvokeAsync(CurrentPage - 1);
+    }
+
+    private async Task GoToNextPage()
+    {
+        if (!IsLastPage)
+            await OnPageChange.InvokeAsync(CurrentPage + 1);
+    }
+
+    private async Task HandlePageChanged(int page)
+    {
+        await OnPageChange.InvokeAsync(page);
+    }
+
+    // Convert SelectedId string to int and propagate change
+    private async Task OnPageSizeChanged(string selectedId)
+    {
+        if (int.TryParse(selectedId, out var newSize) && newSize != PageSize)
+        {
+            await OnPageSizeChange.InvokeAsync(newSize);
+            await OnPageChange.InvokeAsync(1); 
+        }
+    }
+}
+<style>
+    .footer-pagination-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        padding: 24px 0;
+        margin-bottom: 10px;
+        width: 100%;
+    }
+
+
+    .pagination-row {
+        display: flex;
+        width: 100%;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .pagination-button {
+        background-color: white;
+        color: #667085;
+        text-transform: capitalize;
+        border-radius: 8px;
+        min-height: 40px;
+        min-width: 100px;
+        box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+        transition: background-color 0.2s ease;
+    }
+
+    .pagination-button:hover {
+        background-color: #F9FAFB;
+        color: #344054;
+    }
+
+
+    .pagination-icon {
+        font-size: 20px;
+        color: #475467;
+
+    }
+
+
+    .custom-pagination .mud-button {
+        font-weight: 500;
+        color: #667085;
+        background-color: transparent;
+        border-radius: 8px;
+        min-width: 36px;
+        height: 36px;
+        transition: background-color 0.2s ease;
+    }
+
+    .custom-pagination .mud-button:hover,
+    .custom-pagination .mud-button:hover span {
+        background-color: #F2F4F7;
+        color: #344054;
+    }
+
+    .custom-pagination .mud-button.mud-button-active,
+    .custom-pagination .mud-button.mud-button-active span {
+        background-color: #E4E7EC;
+        color: #344054;
+        font-weight: 600;
+    }
+
+
+    .page-size-container {
+        display: flex;
+        justify-content: center;
+        max-width: 100%;
+
+    }
+
+    .page-size-dropdown {
+        min-width: 290px;
+        color: #344054;
+    }
+
+    .pagination-text {
+        display: inline;
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 24px;
+        letter-spacing: 0;
+        color: #475467;
+    }
+
+    @@media (max-width: 600px) {
+        .pagination-text {
+            display: none;
+        }
+
+        .pagination-button {
+            min-width: 40px !important;
+            padding: 0 !important;
+            justify-content: center;
+        }
+
+        .pagination-icon {
+            margin: 0 !important;
+        }
+    }
+</style>

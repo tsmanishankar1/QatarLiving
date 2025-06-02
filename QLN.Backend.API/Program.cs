@@ -11,12 +11,19 @@ using Dapr.Client;
 using Microsoft.OpenApi.Models;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
 using QLN.Backend.API.ServiceConfiguration;
-using QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints;
 using QLN.Common.Swagger;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using System.Text.Json.Serialization;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
+using QLN.Common.Infrastructure.IService;
+using Microsoft.AspNetCore.Authorization;
+using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
 using System.Security.Claims;
+using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -121,7 +128,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
 .AddDefaultTokenProviders();
 #endregion
 
-#region Authentication
+#region Authentication - New JWT Bearer configuration
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -163,13 +170,22 @@ builder.Services.AddActors(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
-builder.Services.AddSingleton<IExternalSubscriptionService, ExternalSubscriptionService>();
+builder.Services.AddResponseCaching();   
+
+
 builder.Services.AddDaprClient();
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
+builder.Services.ContentServicesConfiguration(builder.Configuration);
+builder.Services.BannerServicesConfiguration(builder.Configuration);
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
+builder.Services.SubscriptionConfiguration(builder.Configuration);
+builder.Services.PayToPublishConfiguration(builder.Configuration);
 var app = builder.Build();
+
+app.UseResponseCaching();                
 
 if (app.Environment.IsDevelopment())
 {
@@ -185,16 +201,30 @@ if (app.Environment.IsDevelopment())
 
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
+
 var companyGroup = app.MapGroup("/api/companyprofile");
 companyGroup.MapCompanyEndpoints()
     .RequireAuthorization();
 var classifiedGroup = app.MapGroup("/api/classified");
-classifiedGroup.MapClassifiedsEndpoints();
+classifiedGroup.MapClassifiedEndpoints();
+
+var contentGroup = app.MapGroup("/api/content");
+contentGroup.MapContentLandingEndpoints();
+
+var bannerGroup = app.MapGroup("/api/banner");
+bannerGroup.MapBannerEndpoints();
+
 app.MapGroup("/api/subscriptions")
-   .MapSubscriptionEndpoints()
-    .RequireAuthorization(); 
+   .MapSubscriptionEndpoints();
+
+   app.MapGroup("/api/payments")
+    .MapPaymentEndpoints()
+    .RequireAuthorization();
+
+app.MapGroup("/api/PayToPublish")
+    .MapPayToPublishEndpoints();
+
+
 app.UseHttpsRedirection();
-app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
 app.Run();

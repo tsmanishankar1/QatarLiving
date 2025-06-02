@@ -1,11 +1,18 @@
 ﻿@inherits LayoutComponentBase
+@using Microsoft.Extensions.Options
 @using QLN.Web.Shared.Components.FooterFolder
-@inject CustomAuthStateProvider CustomAuthenticationStateProvider;
+@inject CookieAuthStateProvider CookieAuthenticationStateProvider;
 @inject NavigationManager NavManager
 @using System.Security.Claims;
 
 @inject ISnackbar Snackbar
 @using Microsoft.AspNetCore.Http;
+@using QLN.Web.Shared.Services
+
+@inject IOptions<NavigationPath> options
+@{
+    var navigationPath = options.Value;
+}
 
 <MudThemeProvider />
 <MudDialogProvider />
@@ -14,41 +21,61 @@
 
 
 <header class="site-header mud-elevation-1">
+
     <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleMobileMenu" Class="mobile-menu-button" />
 
     <div class="header-left">
         <NavLink href="/">
-            <MudImage id="logoImage" Src="/images/Headerlogo.svg" Alt="Qatar Living" Width="126" Height="48" />
+
+            <MudImage id="logoImage" Src="/qln-images/Headerlogo.svg" Alt="Qatar Living" Class="logo-img" />
         </NavLink>
     </div>
     <div style="display: flex; align-items: center; gap: 36px;">
         <div class="@($"nav-container {(showMobileMenu ? "mobile-menu-open" : "")}")">
             <nav class="nav-links">
-                <NavLink id="propertiesLink" href="/properties" class="nav-link">Properties</NavLink>
-                <NavLink id="vehiclesLink" href="/vehicles" class="nav-link">Vehicles</NavLink>
-                <NavLink id="classifiedsLink" href="/classifieds" class="nav-link">Classifieds</NavLink>
-                <NavLink id="servicesLink" href="/services" class="nav-link">Services</NavLink>
-                <NavLink id="jobsLink" href="/jobs" class="nav-link">Jobs</NavLink>
-                <NavLink id="rewardsLink" href="/rewards" class="nav-link">Rewards</NavLink>
-                <NavLink id="rewardsLink"  class="nav-link d-flex align-items-center">
-                More
-                <img src="/images/header/arrow_down.svg" alt="Down arrow" style="width: 20px; height: 20px; margin-left: 5px;" />
+                <NavLink id="propertiesLink" href=@{
+                navigationPath.Properties
+                                }
+ class="nav-link">Properties</NavLink>
+                <NavLink id="vehiclesLink" href=@{
+                                navigationPath.Vehicles
+                                }
+ class="nav-link">Vehicles</NavLink>
+                <NavLink id="classifiedsLink" href=@{
+                                navigationPath.Classifieds
+                                }
+ class="nav-link">Classifieds
+                </NavLink>
+                <NavLink id="servicesLink" href=@{
+                                navigationPath.Services
+                                }
+ class="nav-link">Services</NavLink>
+                <NavLink id="jobsLink" href=@{
+                                navigationPath.Jobs
+                                }
+ class="nav-link">Jobs</NavLink>
+                <NavLink id="rewardsLink" href=@{
+                                navigationPath.Rewards
+                                }
+ class="nav-link">Rewards</NavLink>
+                <NavLink id="rewardsLink" class="nav-link d-flex align-items-center">
+                    More
+                    <img src="/qln-images/header/arrow_down.svg" alt="Down arrow"
+                        style="width: 20px; height: 20px; margin-left: 5px;" />
                 </NavLink>
             </nav>
         </div>
 
         <div class="post-button-wrapper">
-                <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+            <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
                 <ActivatorContent>
-                <MudButton id="headerPostButton" Variant="Variant.Filled"
-                    Style="background-color: #FF7F38; color: white;"
-                    Size="Size.Medium"
-                    StartIcon="@Icons.Material.Filled.Add"
-                    Class="post-ad-btn desktop-post-btn">
-                    <span class="post-ad-text">Post Ad</span>
-                </MudButton>
-           </ActivatorContent>
-                <ChildContent>
+                    <MudButton id="headerPostButton" Variant="Variant.Filled"
+                        Style="background-color: #FF7F38; color: white;" Size="Size.Medium"
+                        StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn desktop-post-btn">
+                        <span class="post-ad-text">Post Ad</span>
+                    </MudButton>
+                </ActivatorContent>
+                @* <ChildContent>
                 @foreach (var item in postMenuItems)
                 {
                   <MudMenuItem  OnClick="@(() => NavManager.NavigateTo(item.Route))" Class="menu-item">
@@ -58,31 +85,30 @@
                 </div>
             </MudMenuItem>
                     }
-                </ChildContent>
+                </ChildContent> *@
             </MudMenu>
 
-            <img src="/images/header/add_post_svg.svg" alt="Post" class="mobile-post-icon"
+            <img src="/qln-images/header/add_post_svg.svg" alt="Post" class="mobile-post-icon"
                 @onclick="@(() => NavManager.NavigateTo("/"))" />
         </div>
     </div>
 
     <div class="header-right">
-        <MudAvatar Size="Size.Medium" Style="background-color: #E8F2FE;">
-            <img id="favouriteIcon" src="/images/header/favourite_icon.svg" alt="Account" style="width: 70%; height: 70%; padding: 4px;" />
+        <MudAvatar Size="Size.Medium" Class="avatar-custom">
+            <img id="favouriteIcon" src="/qln-images/header/favourite_icon.svg" alt="Favourite" class="avatar-icon" />
         </MudAvatar>
         <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
             <ActivatorContent>
                 <div id="userIcon" style="display: flex; align-items: center; gap: 0.5rem;" class="cursor-pointer">
-                    <MudAvatar Size="Size.Medium" Style="background-color: #D6E8F2;">
-                        <img src="/images/header/account.svg" alt="Account"
-                            style="width: 70%; height: 70%; padding: 4px;" />
+                    <MudAvatar Size="Size.Medium" Class="avatar-custom">
+                        <img src="/qln-images/header/account.svg" alt="Account" class="avatar-icon" />
                     </MudAvatar>
                     <MudTooltip Text="@Name">
-                    <span class="user-name">
-                        @((Name?.Length > 10) ? Name.Substring(0, 10) + "..." :
-                                                Name)
-                    </span>
-                    </MudTooltip> 
+                        <span class="user-name">
+                            @((Name?.Length > 10) ? Name.Substring(0, 10) + "..." :
+                                                        Name)
+                        </span>
+                    </MudTooltip>
                 </div>
             </ActivatorContent>
 
@@ -98,7 +124,8 @@
                         My Profile
                     </MudButton>
 
-                    <MudButton id="logoutButton" Variant="Variant.Filled" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Logout"
+                    <MudButton id="logoutButton" Variant="Variant.Filled" Color="Color.Warning"
+                        StartIcon="@Icons.Material.Filled.Logout"
                         Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
                         OnClick="@logout" Class="no-capitalize">
                         Logout
@@ -106,15 +133,17 @@
                 }
                 else
                 {
-                    <MudButton id="loginButton" Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Login"
+                    <MudButton id="loginButton" Variant="Variant.Outlined" Color="Color.Warning"
+                        StartIcon="@Icons.Material.Filled.Login"
                         Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
-                        OnClick="@(() => NavManager.NavigateTo("/login"))" Class="no-capitalize">
+                        OnClick="@(() => NavManager.NavigateTo(navigationPath.Login))" Class="no-capitalize">
                         Login
                     </MudButton>
 
-                    <MudButton id="SignupButton" Variant="Variant.Filled" Color="Color.Warning" StartIcon="@Icons.Material.Filled.PersonAdd"
+                    <MudButton id="SignupButton" Variant="Variant.Filled" Color="Color.Warning"
+                        StartIcon="@Icons.Material.Filled.PersonAdd"
                         Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
-                        OnClick="@(() => NavManager.NavigateTo("/signup"))" Class="no-capitalize">
+                        OnClick="@(() => NavManager.NavigateTo(navigationPath.Register))" Class="no-capitalize">
                         Sign Up
                     </MudButton>
                 }
@@ -138,7 +167,7 @@
     protected override async Task OnInitializedAsync()
     {
         @* await base.OnInitializedAsync();   *@
-        var authState = await CustomAuthenticationStateProvider.GetAuthenticationStateAsync();
+        var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
         if (authState != null)
         {
             var user = authState.User;
@@ -152,7 +181,7 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender) return;
-        var authState = await CustomAuthenticationStateProvider.GetAuthenticationStateAsync();
+        var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
         if (authState != null)
         {
             var user = authState.User;
@@ -184,41 +213,45 @@
 
     public void logout()
     {
-        CustomAuthenticationStateProvider.LogoutUser();
+        // CookieAuthenticationStateProvider.LogoutUser();
         Name = string.Empty;
         IsLoggedIn = false;
         NavManager.NavigateTo("/login");
+    }
+    private void OnPostClicked()
+    {
+        NavManager.NavigateTo("https://www.qatarliving.com/node/add/classified");
     }
     private List<MenuItem> postMenuItems = new List<MenuItem>
 {
 new MenuItem {
 Text = "Properties",
-ImageSrc = "/images/post-icons/ad_properties.svg",
+ImageSrc = "/qln-images/post-icons/ad_properties.svg",
 Route = "/more-features-coming-soon"
 },
 new MenuItem {
 Text = "Vehicles",
-ImageSrc = "/images/post-icons/ad_vehicles.svg",
+ImageSrc = "/qln-images/post-icons/ad_vehicles.svg",
 Route = "/more-features-coming-soon"
 },
 new MenuItem {
 Text = "Classifieds",
-ImageSrc = "/images/post-icons/ad_classifieds.svg",
+ImageSrc = "/qln-images/post-icons/ad_classifieds.svg",
 Route = "/classifieds/createform"
 },
 new MenuItem {
 Text = "Services",
-ImageSrc = "/images/post-icons/ad_services.svg",
+ImageSrc = "/qln-images/post-icons/ad_services.svg",
 Route = "/more-features-coming-soon"
 },
 new MenuItem {
 Text = "Jobs",
-ImageSrc = "/images/post-icons/ad_jobs.svg",
+ImageSrc = "/qln-images/post-icons/ad_jobs.svg",
 Route = "/more-features-coming-soon"
 },
 new MenuItem {
 Text = "Rewards",
-ImageSrc = "/images/post-icons/ad_rewards.svg",
+ImageSrc = "/qln-images/post-icons/ad_rewards.svg",
 Route = "/more-features-coming-soon"
 }
 };
@@ -241,6 +274,10 @@ Route = "/more-features-coming-soon"
         display: inline-flex;
     }
 
+    .post-button-wrapper {
+        margin: 0
+    }
+
     .mobile-post-icon {
         display: none;
         width: 32px;
@@ -248,7 +285,7 @@ Route = "/more-features-coming-soon"
         cursor: pointer;
     }
 
- .menu-item {
+    .menu-item {
         padding: 0;
         min-height: 40px;
     }
@@ -280,6 +317,7 @@ Route = "/more-features-coming-soon"
         color: var(--color-text-heading);
         flex-grow: 1;
     }
+
     .post-ad-text {
         text-decoration: none;
         font-weight: 600;
@@ -287,6 +325,7 @@ Route = "/more-features-coming-soon"
         letter-spacing: 0.5px;
         text-transform: none !important;
     }
+
     .nav-link {
         color: white;
         text-decoration: none;
@@ -295,9 +334,40 @@ Route = "/more-features-coming-soon"
         font-family: 'Public Sans', sans-serif;
     }
 
-        .nav-link.active {
-            color: #FF7F38;
+    .nav-link.active {
+        color: #FF7F38;
+    }
+
+    .avatar-custom {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 2px;
+        background-color: #D6E8F2;
+    }
+
+    .avatar-icon {
+        width: 25px;
+        height: 25px;
+    }
+
+    .logo-img {
+        width: 126px;
+        height: 48px;
+    }
+
+    /* Responsive media query: shrink avatar icons on larger screens (>450px) */
+    @@media (max-width: 450px) {
+        .avatar-icon {
+            width: 20px;
+            height: 20px;
         }
+
+        .logo-img {
+            width: 80px;
+            height: 30px;
+        }
+    }
 
 
     @@media (max-width: 1024px) {
@@ -341,6 +411,6 @@ Route = "/more-features-coming-soon"
             margin-bottom: 2rem;
         }
 
-       
+
     }
 </style>

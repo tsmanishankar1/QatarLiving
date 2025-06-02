@@ -2,10 +2,14 @@
     @foreach (var item in Items)
     {
         <div class="view-toggle-item @(SelectedValue == item.Value ? "active" : "")"
-            @onclick="() => OnSelected.InvokeAsync(item.Value)">
-            <img src="@item.ImageUrl" alt="@item.Label"
-                class="toggle-icon @(SelectedValue == item.Value ? "filter-white" : "filter-gray")" />
-            <span>@item.Label</span>
+             @onclick="() => OnSelected.InvokeAsync(item.Value)">
+            
+            @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+            {
+                <img src="@item.ImageUrl" alt="@item.Label"
+                     class="toggle-icon @(SelectedValue == item.Value ? "filter-white" : "filter-gray")" />
+            }
+            <span class="@TextClass">@item.Label</span>
         </div>
     }
 </div>
@@ -13,12 +17,15 @@
 
 <style>
     .view-toggle-wrapper {
-        display: flex;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         padding: 6px;
         border-radius: 6px;
+        height: 60px; 
         gap: 4px;
-        border: 1px solid var(--color-captcha-box);
         background-color: var(--color-background);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
     .view-toggle-item {
@@ -32,7 +39,7 @@
         transition: background-color 0.2s;
         font-weight: 500;
         font-size: 14px;
-        color: #333;
+        color: #646464;
     }
 
     .view-toggle-item.active {
