@@ -246,7 +246,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                         break;
                     case "World":
                         DailyTakeOverBanners = banners?.MiddleEastTakeover ?? new List<BannerItem>();
-                        DailyHeroBanners = banners?.NewsWorldTakeOver ?? new List<BannerItem>();
+                        DailyHeroBanners = banners?.NewsWorldHero ?? new List<BannerItem>();
                         break;
                     default:
                         DailyTakeOverBanners = banners?.ContentNewsHero ?? new List<BannerItem>();
