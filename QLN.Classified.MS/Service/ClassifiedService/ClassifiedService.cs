@@ -8,7 +8,9 @@ using System.Threading.Tasks;
 using Dapr;
 using Dapr.Client;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration.UserSecrets;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
@@ -21,14 +23,14 @@ namespace QLN.Classified.MS.Service
 {
     public class ClassifiedService : IClassifiedService
     {
-        private const string SERVICE_APP_ID = ConstantValues.SearchServiceApp;
-        private const string Vertical = ConstantValues.ClassifiedsVertical;
         private readonly IWebHostEnvironment _env;
         private readonly Dapr.Client.DaprClient _dapr;
 
         private const string UnifiedStore = "adstore";
         private const string UnifiedIndexKey = "ad-index";
         private readonly ILogger<ClassifiedService> _logger;
+        private readonly string itemJsonPath = Path.Combine("ClassifiedMockData", "itemsAdsMock.json");
+        private readonly string prelovedJsonPath = Path.Combine("ClassifiedMockData", "prelovedAdsMock.json");
         private readonly string jsonPath = "collectables.json";
         public ClassifiedService(Dapr.Client.DaprClient dapr, ILogger<ClassifiedService> logger, IWebHostEnvironment env)
         {
@@ -36,95 +38,6 @@ namespace QLN.Classified.MS.Service
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _env = env;
         }
-
-        public async Task<IEnumerable<ClassifiedIndexDto>> Search(CommonSearchRequest request)
-        {
-            if (request is null)
-                throw new ArgumentNullException(nameof(request));
-
-            _logger.LogInformation("SearchAsync start");
-            try
-            {
-                var common = await _dapr.InvokeMethodAsync<CommonSearchRequest, SearchResponse>(
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/search",
-                    request
-                );
-
-                var items = common?.ClassifiedsItems ?? Enumerable.Empty<ClassifiedIndexDto>();
-
-                var adsOnly = items
-                    .Where(i => string.Equals(
-                        i.DocType,
-                        ConstantValues.DocTypeAd,
-                        StringComparison.OrdinalIgnoreCase
-                    ));
-
-                return adsOnly;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in SearchAsync");
-                throw;
-            }
-        }
-
-        public async Task<ClassifiedIndexDto?> GetById(string id)
-        {
-            if (string.IsNullOrWhiteSpace(id))
-                throw new ArgumentException("Id must be provided", nameof(id));
-
-            _logger.LogInformation("GetByIdAsync start: id={Id}", id);
-            try
-            {
-                var raw = await _dapr.InvokeMethodAsync<object>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/{id}"
-                );
-
-                var json = JsonSerializer.Serialize(raw);
-                return JsonSerializer.Deserialize<ClassifiedIndexDto>(
-                    json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in GetByIdAsync for id={Id}", id);
-                throw;
-            }
-        }
-
-        public async Task<string> Upload(ClassifiedIndexDto document)
-        {
-            if (document is null) throw new ArgumentNullException(nameof(document));
-
-            if (string.IsNullOrWhiteSpace(document.Id))
-                document.Id = Guid.NewGuid().ToString();
-
-            var req = new CommonIndexRequest
-            {
-                VerticalName = Vertical,
-                ClassifiedsItem = document
-            };
-
-            try
-            {
-                return await _dapr.InvokeMethodAsync<CommonIndexRequest, string>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"/api/{Vertical}/upload",
-                    req
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "UploadAsync failed for id={Id}", document.Id);
-                throw;
-            }
-        }
-
         private async Task<Category> AddItem(Category item)
         {
             if (item == null)
@@ -1305,7 +1218,6 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-
         public async Task<List<CategoriesDto>> GetAllZones(CancellationToken cancellationToken = default)
         {
             try
@@ -1329,140 +1241,87 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<ClassifiedLandingPageResponse> GetLandingPage()
+        public async Task<CategoryHierarchyDto> GetCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("GetLandingPageAsync start");
+            if (categoryId == Guid.Empty)
+                throw new ArgumentException("Invalid category ID.", nameof(categoryId));
+
             try
             {
-                var all = await GetAllItems(new CommonSearchRequest { Text = "*", Top = 1000 });
-                var banners = all
-                    .Where(i => string.Equals(i.DocType, ConstantValues.DocTypeBanner, StringComparison.OrdinalIgnoreCase)
-                             && !string.IsNullOrWhiteSpace(i.BannerTitle)
-                             && !string.IsNullOrWhiteSpace(i.BannerImageUrl))
-                    .Select(i => new LandingBannerInfo
-                    {
-                        BannerTitle = i.BannerTitle!,
-                        bannerUrl = i.BannerImageUrl!
-                    })
-                    .Distinct();
-                var featuredItems = all
-                    .Where(i => string.Equals(i.DocType, ConstantValues.DocTypeAd, StringComparison.OrdinalIgnoreCase)
-                             && i.IsFeaturedItem == true);
+                var allKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
 
-                var featuredCategories = all
-                    .Where(i => string.Equals(i.DocType, ConstantValues.DocTypeCategory, StringComparison.OrdinalIgnoreCase)
-                             && i.IsFeaturedCategory == true
-                             && !string.IsNullOrWhiteSpace(i.Category)
-                             && !string.IsNullOrWhiteSpace(i.CategoryImageUrl))
-                    .GroupBy(i => i.Category)
-                    .Select(g => new LandingCategoryInfo
-                    {
-                        Category = g.Key,
-                        ImageUrl = g.Select(x => x.CategoryImageUrl!)
-                                    .First(url => !string.IsNullOrWhiteSpace(url))
-                    });
+                
+                var allCategories = new List<Category>();
 
-                var featuredStoreGroups = all
-                    .Where(i =>
-                        string.Equals(i.DocType, ConstantValues.DocTypeStore, StringComparison.OrdinalIgnoreCase)
-                        && i.IsFeaturedStore == true
-                        && !string.IsNullOrWhiteSpace(i.StoreName)
-                        && !string.IsNullOrWhiteSpace(i.StoreLogoUrl)
-                    )
-                    .GroupBy(i => i.StoreName!, StringComparer.OrdinalIgnoreCase);
-
-                var featuredStores = featuredStoreGroups
-                    .Select(g =>
-                    {
-                        var storeName = g.Key;
-                        var logoUrl = g
-                            .Select(x => x.StoreLogoUrl!)
-                            .First(url => !string.IsNullOrWhiteSpace(url));
-
-                        var itemCount = all.Count(i =>
-                            string.Equals(i.DocType, ConstantValues.DocTypeAd, StringComparison.OrdinalIgnoreCase)
-                            && string.Equals(i.StoreName, storeName, StringComparison.OrdinalIgnoreCase)
-                        );
-
-                        return new LandingStoreInfo
-                        {
-                            StoreName = storeName,
-                            LogoUrl = logoUrl,
-                            ItemCount = itemCount
-                        };
-                    });
-
-                var categoryCounts = all
-                    .Where(i =>
-                        string.Equals(i.DocType, ConstantValues.DocTypeCategory, StringComparison.OrdinalIgnoreCase)
-                        && i.IsFeaturedCategory == false
-                        && !string.IsNullOrWhiteSpace(i.Category)
-                    )
-                    .GroupBy(i => i.Category!, StringComparer.OrdinalIgnoreCase)
-                    .Select(g =>
-                    {
-                        var catName = g.Key;
-                        var imageUrl = g
-                            .Select(x => x.CategoryImageUrl)
-                            .FirstOrDefault(url => !string.IsNullOrWhiteSpace(url));
-
-                        var adCount = all
-                            .Count(i =>
-                                string.Equals(i.DocType, ConstantValues.DocTypeAd, StringComparison.OrdinalIgnoreCase)
-                                && string.Equals(i.Category, catName, StringComparison.OrdinalIgnoreCase)
-                            );
-
-                        return new CategoryAdCount
-                        {
-                            Category = catName,
-                            ImageUrl = imageUrl,
-                            Count = adCount
-                        };
-                    });
-
-                return new ClassifiedLandingPageResponse
+                foreach (var key in allKeys)
                 {
-                    ClassifiedBanners = banners,
-                    FeaturedItems = featuredItems,
-                    FeaturedCategories = featuredCategories,
-                    FeaturedStores = featuredStores,
-                    CategoryAdCounts = categoryCounts
+                    var item = await _dapr.GetStateAsync<Category>(UnifiedStore, key);
+                    if (item != null)
+                        allCategories.Add(item);
+                }
+
+                
+                var catPrefix = GetTypePrefix(AdInformation.Category);
+                var subCatPrefix = GetTypePrefix(AdInformation.SubCategory);
+                var brandPrefix = GetTypePrefix(AdInformation.Brand);
+                var modelPrefix = GetTypePrefix(AdInformation.Model);
+                var ramPrefix = GetTypePrefix(AdInformation.Ram);
+                var procPrefix = GetTypePrefix(AdInformation.Processor);
+                var resoPrefix = GetTypePrefix(AdInformation.Resolution);
+
+                // Root category
+                var rootCategory = allCategories.FirstOrDefault(c => c.Id == categoryId && c.TypePrefix == catPrefix);
+                if (rootCategory == null)
+                    throw new KeyNotFoundException($"Category with ID '{categoryId}' not found.");
+
+                // Filter related levels
+                var subCategories = allCategories
+                    .Where(c => c.TypePrefix == subCatPrefix && c.ParentId == categoryId)
+                    .ToList();
+
+                var brands = allCategories
+                    .Where(c => c.TypePrefix == brandPrefix && subCategories.Any(sc => sc.Id == c.ParentId))
+                    .ToList();
+
+                var models = allCategories
+                    .Where(c => c.TypePrefix == modelPrefix && brands.Any(b => b.Id == c.ParentId))
+                    .ToList();
+
+                var rams = allCategories
+                    .Where(c => c.TypePrefix == ramPrefix && models.Any(m => m.Id == c.ParentId))
+                    .ToList();
+
+                var processors = allCategories
+                    .Where(c => c.TypePrefix == procPrefix && models.Any(m => m.Id == c.ParentId))
+                    .ToList();
+
+                var resolutions = allCategories
+                    .Where(c => c.TypePrefix == resoPrefix && models.Any(m => m.Id == c.ParentId))
+                    .ToList();
+
+                
+                return new CategoryHierarchyDto
+                {
+                    Category = new CategoriesDto { Id = rootCategory.Id, Name = rootCategory.Name },
+                    SubCategories = subCategories.Select(s => new CategoriesDto { Id = s.Id, Name = s.Name }).ToList(),
+                    Brands = brands.Select(b => new CategoriesDto { Id = b.Id, Name = b.Name }).ToList(),
+                    Models = models.Select(m => new CategoriesDto { Id = m.Id, Name = m.Name }).ToList(),
+                    Rams = rams.Select(r => new CategoriesDto { Id = r.Id, Name = r.Name }).ToList(),
+                    Processors = processors.Select(p => new CategoriesDto { Id = p.Id, Name = p.Name }).ToList(),
+                    Resolutions = resolutions.Select(r => new CategoriesDto { Id = r.Id, Name = r.Name }).ToList()
                 };
             }
-            catch (Exception ex)
+            catch (ArgumentException)
             {
-                _logger.LogError(ex, "Error in GetLandingPageAsync");
                 throw;
             }
-        }
-
-        private async Task<IEnumerable<ClassifiedIndexDto>> GetAllItems(CommonSearchRequest request)
-        {
-            if (request is null)
-                throw new ArgumentNullException(nameof(request));
-
-            _logger.LogInformation("SearchAsync start");
-            try
+            catch (KeyNotFoundException)
             {
-                var common = await _dapr.InvokeMethodAsync<CommonSearchRequest, SearchResponse>(
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/search",
-                    request
-                );
-
-                var items = common?.ClassifiedsItems ?? Enumerable.Empty<ClassifiedIndexDto>();
-                var json = JsonSerializer.Serialize(items);
-                var dto = JsonSerializer.Deserialize<ClassifiedIndexDto[]>(
-                                json,
-                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                            );
-
-                return dto ?? Array.Empty<ClassifiedIndexDto>();
+                throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in SearchAsync");
-                throw;
+                throw new InvalidOperationException("Unexpected error occurred while retrieving the category hierarchy.", ex);
             }
         }
 
@@ -1548,6 +1407,141 @@ namespace QLN.Classified.MS.Service
         {
             throw new NotImplementedException();
         }
+
+        private async Task<List<ItemAd>> ReadAllItemsAdsFromFile()
+        {
+            try
+            {
+                var jsonString = await File.ReadAllTextAsync(itemJsonPath);
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                return JsonSerializer.Deserialize<List<ItemAd>>(jsonString, options) ?? new();
+            }
+            catch
+            {
+                return new List<ItemAd>();
+            }
+        }
+
+        public async Task<ItemAdsAndDashboardResponse> GetUserItemsAdsWithDashboard(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var allAds = await ReadAllItemsAdsFromFile();
+                var userAds = allAds.Where(ad => ad.UserId == userId).ToList();
+                               
+
+                var groupedAds = new AdsGroupedResult
+                {
+                    PublishedAds = userAds
+                        .Where(ad => ad.Status == AdStatus.Published)
+                        .OrderByDescending(ad => ad.CreatedDate)
+                        .ToList(),
+
+                    UnpublishedAds = userAds
+                        .Where(ad => ad.Status != AdStatus.Published)
+                        .OrderByDescending(ad => ad.CreatedDate)
+                        .ToList()
+                };
+                
+                var publishedCount = userAds.Count(ad => ad.Status == AdStatus.Published);
+                var promotedCount = userAds.Count(ad => ad.IsPromoted == true);
+                var featuredCount = userAds.Count(ad => ad.IsFeatured == true);
+                var refreshCount = userAds.Count(ad => ad.RefreshExpiry != null);
+                var totalImpressions = userAds.Sum(ad => ad.Impressions ?? 0);
+                var totalViews = userAds.Sum(ad => ad.Views ?? 0);
+                var totalWhatsappClicks = userAds.Sum(ad => ad.WhatsAppClicks ?? 0);
+                var totalCalls = userAds.Sum(ad => ad.Calls ?? 0);
+
+                var adWithRefresh = userAds
+                    .Where(ad => ad.RefreshExpiry != null)
+                    .OrderByDescending(ad => ad.RefreshExpiry)
+                    .FirstOrDefault();
+
+                var dashboard = new ItemDashboardDto
+                {
+                    PublishedAds = publishedCount,
+                    PromotedAds = promotedCount,
+                    FeaturedAds = featuredCount,
+                    Refreshes = refreshCount,
+                    Impressions = totalImpressions,
+                    Views = totalViews,
+                    WhatsAppClicks = totalWhatsappClicks,
+                    Calls = totalCalls,
+                    RemainingRefreshes = adWithRefresh?.RemainingRefreshes ?? 0,
+                    TotalAllowedRefreshes = adWithRefresh?.TotalAllowedRefreshes ?? 0,
+                    RefreshExpiry = adWithRefresh?.RefreshExpiry
+                };
+
+                return new ItemAdsAndDashboardResponse
+                {                    
+                    ItemsDashboard = dashboard,
+                    ItemsAds = groupedAds
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error occurred while retrieving item ads and dashboard summary.", ex);
+            }
+        }
+
+
+        private async Task<List<PrelovedAd>> ReadAllPrelovedAdsFromFile()
+        {
+            try
+            {                
+                var jsonString = await File.ReadAllTextAsync(prelovedJsonPath);
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                return JsonSerializer.Deserialize<List<PrelovedAd>>(jsonString, options) ?? new();
+            }
+            catch
+            {
+                return new List<PrelovedAd>();
+            }
+        }
+
+        public async Task<PrelovedAdsAndDashboardResponse> GetUserPrelovedAdsAndDashboard(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var allAds = await ReadAllPrelovedAdsFromFile();
+                var userAds = allAds.Where(ad => ad.UserId == userId).ToList();
+
+                var groupedAds = new AdsGroupedPrelovedResult
+                {
+                    PublishedAds = userAds
+                        .Where(ad => ad.Status == AdStatus.Published)
+                        .OrderByDescending(ad => ad.CreatedDate)
+                        .ToList(),
+                    UnpublishedAds = userAds
+                        .Where(ad => ad.Status != AdStatus.Published)
+                        .OrderByDescending(ad => ad.CreatedDate)
+                        .ToList()
+                };
+
+                var dashboard = new PrelovedDashboardDto
+                {
+                    PublishedAds = userAds.Count(ad => ad.Status == AdStatus.Published),
+                    PromotedAds = userAds.Count(ad => ad.IsPromoted == true),
+                    FeaturedAds = userAds.Count(ad => ad.IsFeatured == true),
+                    Impressions = userAds.Sum(ad => ad.Impressions ?? 0),
+                    Views = userAds.Sum(ad => ad.Views ?? 0),
+                    WhatsAppClicks = userAds.Sum(ad => ad.WhatsAppClicks ?? 0),
+                    Calls = userAds.Sum(ad => ad.Calls ?? 0)
+                };
+
+                return new PrelovedAdsAndDashboardResponse
+                {                                        
+                    PrelovedAds = groupedAds,
+                    PrelovedDashboard = dashboard
+                };
+
+            }
+            catch(Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error occurred while generating Preloved ads and dashboard summary.", ex);
+            }
+        }
+
         public async Task<CollectiblesResponse> GetCollectibles(string userId, CancellationToken cancellationToken = default)
         {
             try

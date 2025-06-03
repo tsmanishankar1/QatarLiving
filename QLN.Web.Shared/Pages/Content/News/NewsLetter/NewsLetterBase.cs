@@ -1,44 +1,54 @@
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
+using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
-using QLN.Web.Shared.Models;
 public class NewsLetterBase : ComponentBase
 {
-    public string Email { get; set; }
-    public bool IsLoading { get; set; } = false;
-    public string ErrorMessage { get; set; }
+    [Inject] INewsLetterSubscription newsLetterSubscriptionService { get; set; }
+    [Inject] ISnackbar Snackbar { get; set; }
+    protected NewsLetterSubscriptionModel SubscriptionModel { get; set; } = new();
+    protected string SubscriptionStatusMessage = string.Empty;
+    protected bool IsSubscribingToNewsletter { get; set; } = false;
 
-    public void  HandleResetPassword()
+    protected MudForm _form;
+
+    protected async Task SubscribeAsync()
     {
-       ErrorMessage = null;
+        IsSubscribingToNewsletter = true;
+        await _form.Validate();
 
-        if (string.IsNullOrWhiteSpace(Email))
+        if (_form.IsValid)
         {
-            ErrorMessage = "Email is required.";
-            return;
-        }
+            try
+            {
+                var success = await newsLetterSubscriptionService.SubscribeAsync(SubscriptionModel);
+                SubscriptionStatusMessage = success ? "Subscribed successfully!" : "Failed to subscribe.";
+                if (success)
+                {
+                    Snackbar.Add("Subscription successful!", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("Failed to subscribe. Please try again later.", Severity.Error);
+                }
 
-        if (!IsValidEmail(Email))
-        {
-            ErrorMessage = "Please enter a valid email address.";
-            return;
-        }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"{ex.Message} Newsletter subscription failed.");
+                SubscriptionStatusMessage = "An error occurred while subscribing.";
+                Snackbar.Add($"Failed to subscribe: {ex.Message}", Severity.Error);
 
-        IsLoading = true;
+            }
+            finally
+            {
+                IsSubscribingToNewsletter = false;
+            }
+        }
+        else
+        {
+            Snackbar.Add("Failed to subscribe. Please try again later.", Severity.Error);
 
-        try
-        {
-            Email = string.Empty;
         }
-        finally
-        {
-            IsLoading = false;
-        }
-     
     }
-     public bool IsValidEmail(string email)
-    {
-        var pattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
-        return System.Text.RegularExpressions.Regex.IsMatch(email, pattern);
-    }
-
 }

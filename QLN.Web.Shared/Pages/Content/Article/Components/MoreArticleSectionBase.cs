@@ -1,57 +1,31 @@
 using Microsoft.AspNetCore.Components;
+using QLN.Common.Infrastructure.DTO_s;
 public class MoreArticleSectionBase : ComponentBase
 {
-    public class Article
+    [Parameter]
+    public List<ContentPost> Articles { get; set; } = new List<ContentPost>();
+    [Parameter]
+    public bool loading { get; set; }
+    protected bool imageLoaded = false;
+    public ContentPost selectedPost { get; set; }
+    protected void SelectArticle(ContentPost article)
     {
-        public string Category { get; set; }
-        public string Title { get; set; }
-        public string ImageUrl { get; set; }
-        public string Url { get; set; }
+        selectedPost = article;
     }
-
-    protected List<Article> Articles = new()
-    {
-        new Article
+    protected override void OnParametersSet()
         {
-            Category = "Lifestyle",
-            Title = "How to spot scam websites & social media accounts in Qatar",
-            Url = "#",
-            ImageUrl = "/images/sample_article.svg"
-        },
-        new Article
-        {
-            Category = "Finance",
-            Title = "Qatar gold prices rise by 4.86% this week",
-            Url = "#",
-            ImageUrl = "/images/sample_article.svg"
-        },
-        new Article
-        {
-            Category = "International",
-            Title = "Saudi Arabia announces Umrah season calendar",
-            Url = "#",
-            ImageUrl = "/images/sample_article.svg"
-        },
-        new Article
-        {
-            Category = "Entertainment",
-            Title = "Qatar Museums to feature new publications at 34th Doha International Book Fair",
-            Url = "#",
-            ImageUrl = "/images/sample_article.svg"
-        },
-        new Article
-        {
-            Category = "Sports",
-            Title = "Qatar to play Bahrain in the final of the Arab Handball Cup on Sunday",
-            Url = "#",
-            ImageUrl = "/images/sample_article.svg"
-        },
-        new Article
-        {
-            Category = "Sports",
-            Title = "Qatar to play Bahrain in the final of the Arab Handball Cup on Sunday",
-            Url = "#",
-            ImageUrl = "/images/sample_article.svg"
+            imageLoaded = false; 
         }
-    };
+        protected void OnImageLoaded()
+        {
+            imageLoaded = true;
+            StateHasChanged();
+        }
+
+        protected void OnImageError()
+        {
+            imageLoaded = true; 
+            StateHasChanged();
+        }
+
 }

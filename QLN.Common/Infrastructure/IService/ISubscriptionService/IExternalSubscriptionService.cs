@@ -13,7 +13,12 @@ public interface IExternalSubscriptionService
 
       Task<bool> DeleteSubscriptionAsync(Guid id, CancellationToken cancellationToken = default);
     Task<Guid> CreatePaymentAsync(PaymentTransactionRequestDto request, Guid userId, CancellationToken cancellationToken = default);
-
-
-
+    Task<string[]> GetUserRolesAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<bool> AddUserToRoleAsync(Guid userId, string roleName, CancellationToken cancellationToken = default);
+    Task<bool> RemoveUserFromRoleAsync(Guid userId, string roleName, CancellationToken cancellationToken = default);
+    Task<bool> IsUserInRoleAsync(Guid userId, string roleName, CancellationToken cancellationToken = default);
+    Task<bool> ChangeUserRoleAsync(Guid userId, string newRole, CancellationToken cancellationToken = default);
+    Task<bool> HandleSubscriptionExpiryAsync(Guid userId, CancellationToken cancellationToken = default);
 }
+
+

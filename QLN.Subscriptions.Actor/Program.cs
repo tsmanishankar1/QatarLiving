@@ -1,21 +1,38 @@
 using Dapr.Client;
 using Google.Api;
 using QLN.Common.Infrastructure.Service;
+using QLN.Common.Infrastructure.IService.ISubscriptionService;
 using QLN.Subscriptions.Actor.ActorClass;
 using System.Text.Json.Serialization;
-
+using Microsoft.AspNetCore.Identity;
+using QLN.Common.Infrastructure.DbContext;
+using Microsoft.EntityFrameworkCore;
+using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.TokenProvider;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// adding DAPR support
-//var daprClient = new DaprClientBuilder().Build();
-//builder.Services.AddSingleton<DaprClient>(daprClient);
 
+builder.Services.AddScoped<IExternalSubscriptionService, ExternalSubscriptionService>();
+
+builder.Services
+  .AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
+  {
+      options.Tokens.EmailConfirmationTokenProvider = "emailconfirmation";
+  })
+  .AddTokenProvider<
+      QLN.Common.Infrastructure.TokenProvider.EmailTokenProvider<ApplicationUser>
+  >("emailconfirmation")
+  .AddEntityFrameworkStores<QatarlivingDevContext>()
+  .AddDefaultTokenProviders();
+
+
+builder.Services.AddDbContext<QatarlivingDevContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddActors(options =>
 {
@@ -32,7 +49,9 @@ builder.Services.AddActors(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+PaymentTransactionActor.ServiceProvider = app.Services;
+
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -40,8 +59,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.MapActorsHandlers();
 
 app.Run();
-

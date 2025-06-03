@@ -1,0 +1,73 @@
+﻿@page "/cookiecheck"
+@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Components.Authorization
+
+<CascadingAuthenticationState>
+    <h3>CookieCheck</h3>
+
+    <p>This page is used to check if the cookies are set correctly.</p>
+
+    <p>
+        @Token
+    </p>
+
+    <p>
+        User Name: @UserName
+    </p>
+</CascadingAuthenticationState>
+
+@code {
+    [CascadingParameter] public HttpContext HttpContext { get; set; } = default!;
+    [CascadingParameter] private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
+
+    private const string AUTH_TOKEN_NAME = "qat"; // Replace with your actual token cookie name
+
+    private string Token { get; set; } = string.Empty;
+    private string UserName { get; set; } = string.Empty;
+
+    protected override async void OnInitialized()
+    {
+        // Try to get the token from cookies
+        // if (HttpContext.Request.Cookies.TryGetValue(AUTH_TOKEN_NAME, out var token) && !IsTokenExpired(token))
+        // {
+        //     Token = token;
+        // }
+
+        var authState = await AuthenticationStateTask;
+        var user = authState.User;
+        UserName = user.Identity?.IsAuthenticated == true ? user.Identity.Name ?? "(no name)" : "(not authenticated)";
+        StateHasChanged();
+    }
+
+    private bool IsTokenExpired(string? token)
+    {
+        if (string.IsNullOrEmpty(token)) return false;
+
+        try
+        {
+            // JWT format: header.payload.signature
+            var parts = token.Split('.');
+            if (parts.Length != 3)
+                return true;
+
+            var payload = parts[1];
+            // Pad base64 string if needed
+            int mod4 = payload.Length % 4;
+            if (mod4 > 0)
+            {
+                payload += new string('=', 4 - mod4);
+            }
+            var jsonBytes = Convert.FromBase64String(payload);
+            var json = System.Text.Encoding.UTF8.GetString(jsonBytes);
+
+            var exp = System.Text.Json.JsonDocument.Parse(json).RootElement.GetProperty("exp").GetInt64();
+            var expirationTime = DateTimeOffset.FromUnixTimeSeconds(exp);
+            return expirationTime < DateTimeOffset.UtcNow;
+        }
+        catch
+        {
+            // If parsing fails, treat as expired
+            return true;
+        }
+    }
+}

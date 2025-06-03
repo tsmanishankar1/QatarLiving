@@ -1,76 +1,64 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using QLN.Web.Shared.Components.Classifieds.FeaturedItemCard;
+using QLN.Web.Shared.Contracts;
+using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services;
-using static QLN.Web.Shared.Helpers.HttpErrorHelper;
 
 public class CommunitySearchBarSectionBase : ComponentBase
 {
-    [Inject] protected ISnackbar Snackbar { get; set; }
-    [Inject] protected ApiService Api { get; set; }
 
-    [Parameter] public EventCallback<List<FeaturedItemCard.FeaturedItem>> OnSearchCompleted { get; set; }
+    [Inject] protected ISnackbar Snackbar { get; set; }
+    [Inject] protected ICommunityService CommunityService { get; set; }
+    [Inject] protected ISearchService CommunitySearchService { get; set; }
+    [Parameter] public EventCallback<Dictionary<string, object>> OnSearchCompleted { get; set; }
+    [Parameter] public EventCallback<string> OnCategoryChanged { get; set; }
+
+
+
 
     protected string searchText;
     protected string selectedCategory;
     protected bool loading = false;
 
-    protected List<string> categoryOptions = new()
-    {
-         "Qatar Living Lounge",
-    "Advice & Help",
-    "Welcome to Qatar",
-    "Visas and Permits",
-    "Motoring",
-    "Qatari Culture",
-    "Ramadan & Eid",
-    "Parent's Corner",
-    "Missing home!",
-    "Salary & Allowances",
-    "Business & Finance",
-    "Education",
-    "Dining & Restaurants",
-    "Electronics & Gadgets",
-    "Technology & Internet",
-    "Fashion & Beauty",
-    "Environment",
-    "Pets & Animals",
-    "Movies & Cinemas",
-    "Travel and Tourism"
-    };
+    protected string SelectedCategoryId { get; set; }
 
-    protected async Task PerformSearch()
-    {
-   
+    protected List<SelectOption> CategorySelectOptions { get; set; }
 
-        loading = true;
-
-       var payload = new Dictionary<string, object>
+    protected override async Task OnInitializedAsync()
     {
-        ["text"] = searchText
-    };
-
-    if (!string.IsNullOrWhiteSpace(selectedCategory))
-    {
-        payload["filters"] = new Dictionary<string, object>
-        {
-            ["Category"] = selectedCategory
-        };
-    }
 
         try
         {
-            var result = await Api.PostAsync<object, List<FeaturedItemCard.FeaturedItem>>("api/classified/search", payload);
-
-            await OnSearchCompleted.InvokeAsync(result);
+            CategorySelectOptions = await CommunityService.GetForumCategoriesAsync();
+           
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex)
         {
-            HandleHttpException(ex, Snackbar);
-        }
-        finally
-        {
-            loading = false;
+            Snackbar.Add("Failed to load categories", Severity.Error);
+            Console.WriteLine(ex.Message);
+            CategorySelectOptions = new List<SelectOption>();
         }
     }
+
+
+    protected async Task OnCategoryChange(string newId)
+    {
+        SelectedCategoryId = newId;
+        await OnCategoryChanged.InvokeAsync(newId); 
+    }
+
+    protected async Task PerformSearch()
+    {
+        
+
+        if (!string.IsNullOrEmpty(searchText))
+        {
+            var success = await CommunitySearchService.PerformSearchAsync(searchText);
+        }
+        else
+        {
+            Snackbar.Add("Please enter text to search", Severity.Warning);
+        }
+    }
+  
 }

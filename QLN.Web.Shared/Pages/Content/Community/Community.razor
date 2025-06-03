@@ -6,80 +6,158 @@
 @inject NavigationManager Navigation
 @using QLN.Web.Shared.Pages.Content.Community.Components.SearchBarSection
 @using QLN.Web.Shared.Components.Carousel
+@using QLN.Web.Shared.Pages.Content.Community.Components.CustomDropdown
+@using QLN.Web.Shared.Components.NewCustomSelect
+@using QLN.Web.Shared.Pages.Content.Community.Components.PaginationFooter
+@using QLN.Web.Shared.Components.EmptyCard
 
-
+@using QLN.Web.Shared.Pages.Content.Events
+@using QLN.Web.Shared.Components.BannerSwiper
 
 <div class="container">
     <div class="container-inner-wrapper">
 
-        <div class="category-banner-wrapper">
-            <img src="/images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
-        </div>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Style="max-width: 1170px;">
+          @*   <div class="category-banner-wrapper">
+                <img src="/qln-images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
+            </div> *@
+              @if (isLoadingBanners)
+            {
+                <BannerSkleton />
+            }
+            else if (DailyHeroBanners?.Any() == true)
+            {
+                <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+            }
+            else
+            {
+                <EmptyCard Title="No  banners found." Subtitle="Please check back later for updates." />
+            }
 
-        <CommunitySearchBarSection OnSearchCompleted="HandleSearchResults" />
+            <CommunitySearchBarSection OnSearchCompleted="HandleSearchResults" OnCategoryChanged="HandleCategoryChanged" />
+            <div class="section-container">
 
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="section-container">
-            <MudGrid>
-                <!-- Left Section -->
-                <MudItem xs="12" md="8">
-                    <div class=" community-header">
-                        <MudText Typo="Typo.h5" Class="community-title">
-                            Community Posts
-                        </MudText>
+                <MudGrid>
+                    <!-- Left Section -->
+                    <MudItem xs="12" md="8">
+                        <div class="community-header">
+                            <MudText Typo="Typo.h5" Class="community-title">
+                                Community Posts <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                                               Style="color: #F26D1E;"
+                                                               OnClick="OpenDialogAsync"
+                                                               Class="ms-2" />
+                            </MudText>
 
-                        <div class="sort-section">
-                            <div class="sort-label">
-                                Sort by:
+                            <div class="sort-section">
+                                <div class="sort-label">
+                                    Sort by:
+                                </div>
+
+
+                                <SortDropdown TItem="SelectOption"
+                                              Items="@CategorySelectOptions"
+                                              SelectedId="@SelectedCategoryId"
+                                              SelectedIdChanged="OnSortChanged"
+                                              GetLabel="x => x.Label"
+                                              GetId="x => x.Id"
+                                              BorderRadius="0px"
+                                              Padding="8px 10px" />
                             </div>
-
-                            <MudSelect T="string" @bind-Value="sortOption" Variant="Variant.Outlined"
-                                Class="sort-select" Dense="true">
-
-                                <MudSelectItem T="string" Value=@(null)>Default</MudSelectItem>
-                                <MudSelectItem Value=@("Popular")>Most Popular</MudSelectItem>
-                                <MudSelectItem Value=@("Recent")>Date : Recent First</MudSelectItem>
-                                <MudSelectItem Value=@("Oldest")>Date : Oldest First</MudSelectItem>
-                            </MudSelect>
-
                         </div>
-                    </div>
+                        @if (IsLoading)
+                        {
+                            @for (int i = 0; i < 3; i++)
+                            {
+                                <div class="postcard-margin-top">
+                                    <MudSkeleton Width="100%" Height="200px" Animation="Animation.Pulse" />
+                                     <MudSkeleton Height="32px" Width="70%" Animation="Animation.Wave" Class="my-2" />
+                                     <MudSkeleton Height="20px" Width="90%" Animation="Animation.Wave" />
+                           
+                                </div>
+                            }
+                        }
 
-                    @foreach (var post in PostList)
-                    {
-                        <div class="postcard-margin-top">
-
-                            <PostCard Post="post" IsDetailView="false" />
-                        </div>
-
-                    }
-                </MudItem>
-
-                <!-- Right Section -->
-                <MudItem xs="12" md="4">
-                    <CommunityRules />
-
-                    <MudPaper Class="newsletter-box" Elevation="1">
-
-                        <img src="/images/content/Mail.svg" alt="mail icon" class="newsletter-icon" />
-                        <MudText Typo="Typo.body1" Class="newsletter-text">
-                            Get The QL newsletter. Sign up to receive the top stories you need to know right now.
-                        </MudText>
-
-                        <MudTextField T="string" Placeholder="Your email" Variant="Variant.Outlined"
-                            Class="newsletter-input" />
-
-                        <MudButton Variant="Variant.Filled" Class="newsletter-button">
-                            Subscribe
-                        </MudButton>
-                    </MudPaper>
+                        else if (HasError)
+                        {
+                           
+                            <EmptyCard Title="No Posts found." Subtitle="Please check back later for updates." />
 
 
-                    <MudImage Src="/images/content/Ad.png" Alt="Advertisement" Class="ad-image" />
-                </MudItem>
-            </MudGrid>
+                        }
+                        else if (PostList == null)
+                        {
+                            <EmptyCard Title="No Posts found." Subtitle="Please check back later for updates." />
+
+                        }
+                        else
+                        {
+                            @foreach (var post in PostList)
+                            {
+                                <div class="postcard-margin-top">
+
+                                    <PostCard Post="post" IsDetailView="false" />
+                                </div>
+                               
+
+                            }
+                            <div class="pagination-container">
+                                <PaginationFooter TotalItems="@TotalPosts"
+                                                  CurrentPage="@CurrentPage"
+                                                  PageSize="@PageSize"
+                                                  OnPageChange="HandlePageChange"
+                                                  OnPageSizeChange="HandlePageSizeChange" />
+                            </div>
+                        }
+                    </MudItem>
+
+
+                    <!-- Right Section -->
+                    <MudItem xs="12" md="4">
+                        <CommunityRules />
+
+                        <MudPaper Class="newsletter-box" Elevation="1">
+
+                            <img src="/qln-images/content/Mail.svg" alt="mail icon" class="newsletter-icon" />
+                            <MudText Typo="Typo.body1" Class="newsletter-text">
+                                Get The QL newsletter. Sign up to receive the top stories you need to know right now.
+                            </MudText>
+                            <MudForm @ref="_form">
+
+                                <input type="email"
+                                       class="newsletter-input"
+                                       placeholder="Enter your email"
+                                       @bind="SubscriptionModel.Email"
+                                       @bind:event="oninput" />
+                                <MudButton Variant="Variant.Filled"
+                                           Class="newsletter-button"
+                                           Disabled="@IsSubscribingToNewsletter"
+                                           OnClick="SubscribeAsync">
+                                    @if (IsSubscribingToNewsletter)
+                                    {
+                                        <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" />
+                                        @("Subscribing...")
+                                    }
+                                    else
+                                    {
+                                        @("Subscribe")
+                                    }
+                                </MudButton>
+                            </MudForm>
+                        </MudPaper>
+
+                        <MudPaper Class="post-ad-wrapper" Elevation="0" Square="true">
+                            <MudImage Src="/qln-images/content/Ad.png" Alt="Advertisement" Class="ad-image" />
+                        </MudPaper>
+                    </MudItem>
+                </MudGrid>
+
+            </div>
+
         </MudContainer>
     </div>
 </div>
+
+
 
 
 <style>
@@ -90,7 +168,7 @@
 
     .container-inner-wrapper {
         width: 100%;
-        padding: 10px 40px;
+        padding: 0px 50px 50px 50px;
     }
 
     .section-container {
@@ -121,6 +199,7 @@
         justify-content: space-between;
         align-items: center;
         height: 32px;
+        margin-top: 16px;
     }
 
     .community-title {
@@ -135,7 +214,6 @@
     }
 
     .sort-section {
-        width: 300px;
         display: flex;
         flex-direction: row;
         gap: 10px;
@@ -146,19 +224,55 @@
         font-family: 'Public Sans';
         font-weight: 500;
         font-size: 13px;
-        line-height: 22px;
+        white-space: nowrap;
         color: #242424;
         margin-bottom: 4px;
     }
 
     .sort-select {
         min-width: 180px;
-
+        background-color: #FFFFFF;
+    }
+    /* Select container */
+    .sort-select {
+        min-width: 180px;
         background-color: #FFFFFF;
     }
 
+        /* Focus/orange border styling */
+        .sort-select .mud-input-control-outlined:hover .mud-input-outlined-border {
+            border-color: #FF7F38 !important;
+        }
 
+        .sort-select .mud-input-control-outlined.mud-focused .mud-input-outlined-border {
+            border-color: #FF7F38 !important;
+            border-width: 2px !important;
+        }
 
+        /* Selected item text color */
+        .sort-select .mud-select-input {
+            color: #000000 !important; /* Black text for selected value */
+        }
+
+        /* Dropdown items */
+        .sort-select .mud-list-item.mud-selected-item {
+            color: #000000 !important; /* Black text for selected option in dropdown */
+            background-color: rgba(255, 127, 56, 0.08) !important; /* Light orange background */
+        }
+
+            /* Check icon styling */
+            .sort-select .mud-list-item.mud-selected-item .mud-list-item-icon {
+                color: #FF7F38 !important; /* Orange checkmark */
+                margin-left: auto !important; /* Push to right */
+                margin-right: 0 !important;
+                min-width: unset !important;
+            }
+
+        /* Dropdown panel styling */
+        .sort-select .mud-popover {
+            border-radius: 6px !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+        }
 
     .newsletter-box {
         text-align: center;
@@ -178,16 +292,28 @@
     }
 
     .newsletter-text {
-        font-family: 'Public Sans';
-        font-weight: 600;
+        font-family: 'Public Sans',sans-serif;
+        font-weight: 500;
         font-size: 14px;
         line-height: 24px;
-        letter-spacing: 0%;
         text-align: center;
+        color: #242424;
     }
 
     .newsletter-input {
         width: 292px;
+        height: 44px;
+        padding: 10px 16px;
+        border: 1px solid #D0D5DD;
+        border-radius: 6px;
+    }
+
+        .newsletter-input::placeholder {
+            padding-left: 14px;
+        }
+
+    .newsletter-html-input:focus {
+        border-color: #FF7F38;
     }
 
     .newsletter-button {
@@ -198,11 +324,50 @@
         padding: 6px 40px;
         background-color: #FF7F38;
         color: white;
+        margin-top: 16px;
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 24px;
+        letter-spacing: 0;
+        text-transform: capitalize;
+    }
+
+    .post-ad-wrapper {
+        padding: 0;
+        margin-top: 16px;
+        width: 340px;
+        height: 402px;
+        overflow: hidden;
     }
 
     .ad-image {
-        width: 340px;
-        height: 402px;
-        margin-top: 18px;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    @@media (max-width: 700px) and (min-width: 375px) {
+        .container-inner-wrapper {
+            padding: 0 8px 25px 8px;
+        }
+
+        .newsletter-box,
+        .ad-image {
+            max-width: 100%;
+        }
+    }
+
+    @@media (min-width: 960px) and (max-width: 1145px) {
+        .container-inner-wrapper {
+            padding: 0 24px 50px 24px;
+        }
+
+        .newsletter-box {
+            max-width: 100%;
+            width: 100%;
+            padding: 10px !important
+        }
     }
 </style>

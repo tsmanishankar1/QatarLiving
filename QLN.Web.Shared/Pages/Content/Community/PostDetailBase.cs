@@ -1,68 +1,167 @@
 ﻿using Microsoft.AspNetCore.Components;
-using QLN.Web.Shared.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using QLN.Common.Infrastructure.DTO_s;
+using QLN.Web.Shared.Contracts;
+using QLN.Web.Shared.Model;
+using QLN.Web.Shared.Services;
+using QLN.Web.Shared.Services.Interface;
+using System.Net.Http.Json;
+
 
 namespace QLN.Web.Shared.Pages.Content.Community
 {
     public class PostDetailBase : ComponentBase
     {
-        [Parameter]
-        public string PostId { get; set; }
+
+        [Inject] protected ICommunityService CommunityService { get; set; } = default!;
+        [Inject] protected ILogger<PostDetailBase> Logger { get; set; } = default!;
+        [Inject] private IContentService _contentService { get; set; }
+
         protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
+        protected QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem? postBreadcrumbItem;
+        protected QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem? postBreadcrumbCategory;
+
         protected string search = string.Empty;
         protected string sortOption = "Popular";
-        protected List<PostModel> posts = new()
-    {
-        new PostModel
+        [Parameter]
+        public string slug { get; set; }
+
+        protected bool IsLoading { get; set; } = true;
+        protected bool HasError { get; set; } = false;
+        protected PostModel SelectedPost { get; private set; }
+
+        protected PostModel? post;
+
+        protected bool isLoadingBanners = true;
+        protected List<BannerItem> DailyHeroBanners { get; set; } = new();
+
+
+        protected override async Task OnParametersSetAsync()
         {
-            Category = "Advice & Help",
-            Title = "Anyone wanna buy 5x Seated Travis Scott Tickets?",
-            ImageUrl = "images/content/Post1.svg",
-            Author = "Ismat Zerin",
-            Time = DateTime.Now.AddHours(-2),
-            LikeCount = 3,
-            CommentCount = 12,
-            isCommented=true,
-            Comments = new List<CommentModel>
-    {
-        new CommentModel
-        {
-            Avatar = "images/avatars/user1.png",
-            CreatedBy = "Jas",
-            CreatedAt = DateTime.Now.AddMinutes(-10),
-            Description = "I might be interested, can you DM the price?",
-            LikeCount = 2,
-            UnlikeCount = 0,
-            IsByCurrentUser = true
-        },
-        new CommentModel
-        {
-            Avatar = "images/avatars/user2.png",
-            CreatedBy = "Alex Morgan",
-            CreatedAt = DateTime.Now.AddMinutes(-5),
-            Description = "It was a great game, watched it from the stadium. Go Al Sadd 🏆🎉",
-            LikeCount = 0,
-            UnlikeCount = 1,
-            IsByCurrentUser = false
+            await LoadBanners();
+
+            // Update breadcrumb for current slug
+            postBreadcrumbItem = new()
+            {
+                Label = slug ?? "Not Found",
+                Url = $"/content/community/post/detail/{slug}",
+                IsLast = true
+            };
+            postBreadcrumbCategory = new()
+            {
+                Label = slug ?? "Not Found",
+                //Url = "/content/community",
+                Url = $"/content/community"
+            };
+
+            breadcrumbItems = new List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem>
+            {
+                new() { Label = "Community", Url = "/content/community" },
+               postBreadcrumbCategory,
+                postBreadcrumbItem
+            };
+
+            await LoadPostAsync();
         }
-    }
 
-     },
-
-    };
-
-        protected override async void OnInitialized()
+        private async Task LoadPostAsync()
         {
-            breadcrumbItems = new()
-        {
-            new() { Label = "Community", Url = "/content/community" },
-            new() { Label = "Discussion", Url = "/post-detail/{PostId:int}",IsLast=true }
-        };
+            try
+            {
+                SelectedPost = null;
+                IsLoading = true;
+                HasError = false;
+                StateHasChanged();
 
+                var fetched = await CommunityService.GetPostBySlugAsync(slug);
+
+                if (fetched != null)
+                {
+                    SelectedPost = new PostModel
+                    {
+                        Id = fetched.nid,
+                        Category = fetched.category,
+                        CategoryId = fetched.forum_id.ToString(),
+                        Title = fetched.title,
+                        BodyPreview = fetched.description,
+                        Author = fetched.user_name ?? "Unknown User",
+                        Time = DateTime.TryParse(fetched.date_created, out var parsedDate) ? parsedDate : DateTime.MinValue,
+                        LikeCount = 0,
+                        CommentCount = fetched.comments?.Count ?? 0,
+                        ImageUrl = fetched.image_url,
+                        Slug = fetched.slug,
+                        Comments = fetched.comments?.Select(c => new CommentModel
+                        {
+                            CreatedBy = c.user_name ?? "Unknown User",
+                            CreatedAt = c.created_date,      
+                            Description = c.subject ?? "No content to display",
+                            LikeCount = 0,
+                            UnlikeCount = 0,
+                            Avatar = !string.IsNullOrWhiteSpace(c.profile_picture)
+                                ? c.profile_picture
+                                : "/qln-images/content/Sample.svg"
+                        }).ToList() ?? new List<CommentModel>()
+                    };
+
+                    if (postBreadcrumbItem is not null)
+                    {
+                        postBreadcrumbItem.Label = SelectedPost.Title;
+                        StateHasChanged();
+                    }
+                    if (postBreadcrumbCategory is not null)
+                    {
+                        postBreadcrumbCategory.Label = SelectedPost.Category;
+                        postBreadcrumbCategory.Url = $"/content/community?categoryId={SelectedPost.CategoryId}";
+                        StateHasChanged();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to load post with slug: {Slug}", slug);
+                HasError = true;
+            }
+            finally
+            {
+                IsLoading = false;
+                StateHasChanged();
+            }
+        }
+        protected async Task LoadBanners()
+        {
+            isLoadingBanners = true;
+            try
+            {
+                var banners = await FetchBannerData();
+                DailyHeroBanners = banners?.DailyHero ?? new();
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading banners: {ex.Message}");
+            }
+            finally
+            {
+                isLoadingBanners = false;
+            }
+        }
+        private async Task<BannerResponse?> FetchBannerData()
+        {
+            try
+            {
+                var response = await _contentService.GetBannerAsync();
+                if (response.IsSuccessStatusCode && response.Content != null)
+                {
+                    return await response.Content.ReadFromJsonAsync<BannerResponse>();
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"FetchBannerData error: {ex.Message}");
+                return null;
+            }
         }
     }
 }

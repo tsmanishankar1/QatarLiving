@@ -10,6 +10,7 @@ using Dapr;
 using Dapr.Client;
 using Google.Api;
 using Microsoft.Extensions.Hosting;
+using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.EventLogger;
@@ -33,90 +34,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
             _log = log ?? throw new ArgumentNullException(nameof(log));
             _httpContextAccessor = httpContextAccessor;
-        }
-
-        public async Task<IEnumerable<ClassifiedIndexDto>> Search(CommonSearchRequest request)
-        {
-            if (request is null) throw new ArgumentNullException(nameof(request));
-
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<
-                    CommonSearchRequest,
-                    ClassifiedIndexDto[]>(
-                        HttpMethod.Post,
-                        SERVICE_APP_ID,
-                        $"/api/{Vertical}/search",
-                        request
-                    );
-
-                return result ?? Array.Empty<ClassifiedIndexDto>();
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<ClassifiedIndexDto?> GetById(string id)
-        {
-            if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException("Id is required", nameof(id));
-
-            try
-            {
-                return await _dapr.InvokeMethodAsync<ClassifiedIndexDto>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"/api/{Vertical}/{id}"
-                );
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<string> Upload(ClassifiedIndexDto document)
-        {
-            if (document is null) throw new ArgumentNullException(nameof(document));
-
-            try
-            {
-                return await _dapr.InvokeMethodAsync<ClassifiedIndexDto, string>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"/api/{Vertical}/upload",
-                    document,
-                    CancellationToken.None
-                );
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw new InvalidOperationException(
-                    $"Dapr invoke to '/api/{Vertical}/upload' failed: {ex.Message}",
-                    ex
-                );
-            }
-        }
-
-        public async Task<ClassifiedLandingPageResponse> GetLandingPage()
-        {
-            try
-            {
-                return await _dapr.InvokeMethodAsync<ClassifiedLandingPageResponse>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"/api/{Vertical}/landing"
-                );
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
         }
 
         public async Task<Category> AddCategory(string categoryName, CancellationToken cancellationToken = default)
@@ -771,6 +688,68 @@ namespace QLN.Backend.API.Service.ClassifiedService
         }   
 
 
+        public async Task<CategoryHierarchyDto> GetCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (categoryId == Guid.Empty)
+                    throw new ArgumentException("Invalid category ID", nameof(categoryId));
+
+                var result = await _dapr.InvokeMethodAsync<CategoryHierarchyDto>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/{Vertical}/category-hierarchy/{categoryId}",
+                    cancellationToken
+                );
+
+                return result ?? throw new KeyNotFoundException($"No hierarchy found for category ID: {categoryId}");
+            }
+            catch(Exception ex)
+            {
+                _log.LogException(ex);
+                throw;
+            }
+        }
+
+        public async Task<ItemAdsAndDashboardResponse> GetUserItemsAdsWithDashboard(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<ItemAdsAndDashboardResponse>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/{Vertical}/itemsAd-dashboard-byId?userId={userId}",
+                    cancellationToken
+                );
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                throw;
+            }
+        }
+
+        public async Task<PrelovedAdsAndDashboardResponse> GetUserPrelovedAdsAndDashboard(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<PrelovedAdsAndDashboardResponse>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/{Vertical}/prelovedAd-dashboard-byId?userId={userId}",
+                    cancellationToken
+                );
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                throw;
+            }
+        }
 
         public async Task<bool> SaveSearch(SaveSearchRequestDto dto ,Guid userId, CancellationToken cancellationToken = default)
         {
@@ -797,7 +776,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             catch (Exception ex)
             {
                 _log.LogException(ex);
-                throw new InvalidOperationException("Failed to save search due to internal error.", ex);
+                throw;
             }
         }
 
@@ -820,12 +799,12 @@ namespace QLN.Backend.API.Service.ClassifiedService
             catch (DaprException dex)
             {
                 _log.LogException(dex);
-                throw new InvalidOperationException("Failed to fetch saved searches due to Dapr error.", dex);
+                throw;
             }
             catch (Exception ex)
             {
                 _log.LogException(ex);
-                throw new InvalidOperationException("An unexpected error occurred while fetching saved searches.", ex);
+                throw;
             }
         }
 
