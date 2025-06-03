@@ -47,4 +47,23 @@
     <ProjectReference Include="..\QLN.Common\QLN.Common.csproj" />
   </ItemGroup>
 
+	<ItemGroup>
+	  <Compile Update="Locales\Resources.en_US.Designer.cs">
+	    <DesignTime>True</DesignTime>
+	    <AutoGen>True</AutoGen>
+	    <DependentUpon>Resources.en_US.resx</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Update="Locales\Resources.en_US.resx">
+	    <SubType>Designer</SubType>
+	    <Generator></Generator>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Locales\Resources.en_US.resx">
+	    <Generator>PublicResXFileCodeGenerator</Generator>
+	    <LastGenOutput>Resources.en_US.Designer.cs</LastGenOutput>
+	  </EmbeddedResource>
+	</ItemGroup>
+
 </Project>

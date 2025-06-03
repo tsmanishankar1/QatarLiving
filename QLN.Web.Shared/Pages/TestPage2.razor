@@ -1,0 +1,14 @@
+﻿@page "/testpage2"
+@using Microsoft.Extensions.Localization
+@using QLN.Web.Shared.Locales;
+@using System.Globalization
+@inject IStringLocalizer<Resources> localizer
+
+<Microsoft.AspNetCore.Components.Web.PageTitle>@localizer["Home"]</Microsoft.AspNetCore.Components.Web.PageTitle>
+
+@Thread.CurrentThread.CurrentCulture;
+@Thread.CurrentThread.CurrentUICulture;
+
+<h1>@localizer["HomeTitle"]</h1>
+
+@localizer["HomeText"]
