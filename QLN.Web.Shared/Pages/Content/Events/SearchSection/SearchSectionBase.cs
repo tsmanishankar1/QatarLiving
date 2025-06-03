@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.Logging;
-using QLN.Common.Infrastructure.DTO_s;
 using Microsoft.JSInterop;
 using MudBlazor;
+using QLN.Common.Infrastructure.DTO_s;
+using QLN.Web.Shared.Pages.Content.News;
 
 namespace QLN.Web.Shared.Components.NewCustomSelect
 {
@@ -13,6 +14,8 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
         [Inject] protected IJSRuntime JSRuntime { get; set; }
         [Inject] protected ILogger<SearchSectionBase> Logger { get; set; }
 [Inject] protected NavigationManager NavigationManager { get; set; }
+
+        [Parameter] public EventCallback<string> OnCategoryChanged { get; set; }
 
         [Parameter] public List<EventCategory> Categories { get; set; } = [];
 
@@ -73,15 +76,17 @@ protected void CancelDatePicker()
             _dateRange = range;
         }
 
-      protected void HandleCategoryChanged(string id)
+      protected async Task HandleCategoryChanged(string id)
         {
             SelectedPropertyTypeId = id;
 
+            await OnCategoryChanged.InvokeAsync(id);
+
             //if (!string.IsNullOrWhiteSpace(id))
             //{
-                // Navigate to new URL with type query string
-                //var targetUrl = $"https://www.qatarliving.com/events?type={id}";
-                //NavigationManager.NavigateTo(targetUrl, forceLoad: true); // forceLoad to trigger full page load
+            // Navigate to new URL with type query string
+            //var targetUrl = $"https://www.qatarliving.com/events?type={id}";
+            //NavigationManager.NavigateTo(targetUrl, forceLoad: true); // forceLoad to trigger full page load
             //}
         }
         protected void HandleDatePickerFocusOut(FocusEventArgs e)

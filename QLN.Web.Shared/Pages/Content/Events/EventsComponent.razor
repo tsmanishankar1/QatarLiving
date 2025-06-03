@@ -45,7 +45,7 @@
             }
             else if (EventCategories?.Any() == true)
             {
-                <SearchSection Categories="EventCategories" />
+                <SearchSection Categories="EventCategories" OnCategoryChanged="GetAllEvents" />
             }
 
 
