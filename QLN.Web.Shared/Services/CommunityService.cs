@@ -82,6 +82,20 @@ namespace QLN.Web.Shared.Services
                 return new List<SelectOption>();
             }
         }
+        public async Task<bool> PostCommentAsync(CommentPostRequest request)
+        {
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/content/comment/save", request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error posting comment: {ex.Message}");
+                return false;
+            }
+        }
+
         public class CategoryResponse
         {
             [JsonPropertyName("forum_categories")]

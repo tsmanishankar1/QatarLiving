@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using QLN.Common.Infrastructure.DTO_s;
+using QLN.Web.Shared.Pages.Content.Community;
 using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
+using static QLN.Web.Shared.Components.EventListCard.EventListCardBase;
 
 namespace QLN.Web.Shared.Pages.Content.Events
 {
@@ -65,7 +67,12 @@ namespace QLN.Web.Shared.Pages.Content.Events
                 isLoadingCategories = false;
             }
         }
-
+        protected async Task HandleCategoryChanged(string forumId)
+        {
+            //SelectedForumId = forumId;
+            //var FeaturedEventData = await LoadAllEvents();
+          
+        }
         private async Task LoadFeaturedEvents()
         {
             isLoadingFeatured = true;
@@ -75,7 +82,7 @@ namespace QLN.Web.Shared.Pages.Content.Events
                 var featuredContent = await FetchFeaturedEventsData();
 
                 // Extract only the Featured Events items list and assign
-                FeaturedEventData = featuredContent?.ContentsDaily?.DailyFeaturedEvents?.Items ?? new List<ContentEvent>();
+                FeaturedEventData = featuredContent?.QlnEvents?.QlnEventsFeaturedEvents?.Items ;
             }
             finally
             {
@@ -133,14 +140,14 @@ namespace QLN.Web.Shared.Pages.Content.Events
             }
         }
 
-        private async Task<ContentsDailyPageResponse?> FetchFeaturedEventsData()
+        private async Task<QlnEventsResponse?> FetchFeaturedEventsData()
         {
             try
             {
                 var response = await _eventService.GetFeaturedEventsAsync();
                 if (response.IsSuccessStatusCode && response.Content != null)
                 {
-                    return await response.Content.ReadFromJsonAsync<ContentsDailyPageResponse>();
+                    return await response.Content.ReadFromJsonAsync<QlnEventsResponse>();
                 }
                 return null;
             }

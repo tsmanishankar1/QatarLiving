@@ -10,6 +10,7 @@
 @using QLN.Web.Shared.Components.NewCustomSelect
 @using QLN.Web.Shared.Pages.Content.Community.Components.PaginationFooter
 @using QLN.Web.Shared.Components.EmptyCard
+@using QLN.Web.Shared.Components.AdBanner
 
 @using QLN.Web.Shared.Pages.Content.Events
 @using QLN.Web.Shared.Components.BannerSwiper
@@ -18,10 +19,10 @@
     <div class="container-inner-wrapper">
 
         <MudContainer MaxWidth="MaxWidth.ExtraLarge" Style="max-width: 1170px;">
-          @*   <div class="category-banner-wrapper">
+            @*   <div class="category-banner-wrapper">
                 <img src="/qln-images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
             </div> *@
-              @if (isLoadingBanners)
+            @if (isLoadingBanners)
             {
                 <BannerSkleton />
             }
@@ -70,16 +71,16 @@
                             {
                                 <div class="postcard-margin-top">
                                     <MudSkeleton Width="100%" Height="200px" Animation="Animation.Pulse" />
-                                     <MudSkeleton Height="32px" Width="70%" Animation="Animation.Wave" Class="my-2" />
-                                     <MudSkeleton Height="20px" Width="90%" Animation="Animation.Wave" />
-                           
+                                    <MudSkeleton Height="32px" Width="70%" Animation="Animation.Wave" Class="my-2" />
+                                    <MudSkeleton Height="20px" Width="90%" Animation="Animation.Wave" />
+
                                 </div>
                             }
                         }
 
                         else if (HasError)
                         {
-                           
+
                             <EmptyCard Title="No Posts found." Subtitle="Please check back later for updates." />
 
 
@@ -97,7 +98,7 @@
 
                                     <PostCard Post="post" IsDetailView="false" />
                                 </div>
-                               
+
 
                             }
                             <div class="pagination-container">
@@ -145,9 +146,23 @@
                             </MudForm>
                         </MudPaper>
 
-                        <MudPaper Class="post-ad-wrapper" Elevation="0" Square="true">
+                        @*   <MudPaper Class="post-ad-wrapper" Elevation="0" Square="true">
                             <MudImage Src="/qln-images/content/Ad.png" Alt="Advertisement" Class="ad-image" />
-                        </MudPaper>
+                        </MudPaper> *@
+                        <div class="post-ad-wrapper">
+                            @if (isLoadingBanners)
+                            {
+                                <BannerSkleton />
+                            }
+                            else if (CommunitySideBanners?.Any() == true)
+                            {
+                                <AdBanner BannerItems="CommunitySideBanners" />
+                            }
+                            else
+                            {
+                                <EmptyCard Title="No  banners found." Subtitle="Please check back later for updates." />
+                            }
+                        </div>
                     </MudItem>
                 </MudGrid>
 
@@ -251,13 +266,13 @@
 
         /* Selected item text color */
         .sort-select .mud-select-input {
-            color: #000000 !important; 
+            color: #000000 !important;
         }
 
         /* Dropdown items */
         .sort-select .mud-list-item.mud-selected-item {
             color: #000000 !important;
-            background-color: rgba(255, 127, 56, 0.08) !important; 
+            background-color: rgba(255, 127, 56, 0.08) !important;
         }
 
             /* Check icon styling */
@@ -360,8 +375,6 @@
             width: 100% !important;
             max-width: 100% !important;
         }
-
-     
     }
 
     @@media (min-width: 960px) and (max-width: 1145px) {
@@ -379,16 +392,14 @@
     @@media (max-width: 350px) and (min-width: 240px) {
         .community-header {
             display: flex;
-            
             height: 50px;
             flex-direction: column;
             margin-top: 0px;
             gap: 10px;
         }
 
-        .postcard-margin-top{
-            margin-top:50px;
+        .postcard-margin-top {
+            margin-top: 50px;
         }
     }
-   
 </style>

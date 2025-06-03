@@ -35,6 +35,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected bool isLoadingBanners = true;
         protected List<BannerItem> DailyHeroBanners { get; set; } = new();
+        protected List<BannerItem> CommunitySideBanners { get; set; } = new();
 
 
         protected override async Task OnParametersSetAsync()
@@ -134,7 +135,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
             try
             {
                 var banners = await FetchBannerData();
-                DailyHeroBanners = banners?.ContentCommunityHero ?? new();
+                DailyHeroBanners = banners?.ContentCommunityPostHero ?? new();
+                CommunitySideBanners = banners?.ContentCommunityPostSide ?? new (); 
 
             }
             catch (Exception ex)

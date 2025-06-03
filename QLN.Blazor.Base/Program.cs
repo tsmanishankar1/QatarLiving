@@ -67,7 +67,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddMudServices();
 
-
+builder.Services.AddLocalization();
 
 var newsLetterSubscriptionAPIUrl = builder.Configuration["ServiceUrlPaths:NewsletterSubscriptionAPI"];
 if (string.IsNullOrWhiteSpace(newsLetterSubscriptionAPIUrl))
@@ -215,6 +215,14 @@ builder.Services.AddGBService(options =>
 
 
 var app = builder.Build();
+
+string[] supportedCultures = ["en-US"];
+var localizationOptions = new RequestLocalizationOptions()
+    .SetDefaultCulture(supportedCultures[0])
+    .AddSupportedCultures(supportedCultures)
+    .AddSupportedUICultures(supportedCultures);
+
+app.UseRequestLocalization(localizationOptions);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
