@@ -54,12 +54,12 @@
             </div>
 
             <div class="post-icons">
-                <div class="like-wrapper" @onclick="ToggleLikeAsync">
+                @* <div class="like-wrapper" @onclick="ToggleLikeAsync">
 
-                  @*   <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="icon" />
-                                     <span class="icon-text">@Post.LikeCount</span> *@
+                  <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="icon" />
+                                     <span class="icon-text">@Post.LikeCount</span> 
     
-    </div>
+    </div> *@
                @*  <div class="like-wrapper" @onclick="ToggleDislikeAsync">
 
                     <img src="@($"qln-images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
@@ -75,7 +75,11 @@
                 </div> *@
             </div>
         </div>
-        <div class="post-body-preview-details">@StripHtml(Post.BodyPreview)</div>
+     if (!string.IsNullOrWhiteSpace(Post.BodyPreview))
+    {
+    <div class="post-body-preview-details">
+        @((MarkupString)Post.BodyPreview)</div>
+    }
         <div class="post-details-report-section">
             <MudChip T="string" Class="report-chip" Variant="Variant.Outlined">
                 <img src="qln-images/content/ReportSVG.svg" class="report-icon" alt="Report" />
@@ -238,7 +242,18 @@
         line-height: 2;
     }
 
+    .post-body-preview-details img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 1rem auto;
+        border-radius: 8px;
+    }
 
+    .post-body-preview-details a {
+        color: #00426D !important; 
+        text-decoration: underline !important;
+    }
     .post-footer {
         display: flex;
         justify-content: space-between;
