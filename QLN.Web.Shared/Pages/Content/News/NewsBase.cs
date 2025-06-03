@@ -192,10 +192,7 @@ namespace QLN.Web.Shared.Pages.Content.News
             }
             else if (localCategory == "lifestyle")
             {
-                if (!string.IsNullOrEmpty(localSubcategory))
-                {
-                    SetViewMode("lifestyle");
-                }
+                SetViewMode("lifestyle");
                 if (localSubcategory == "food-dining")
                 {
                     Console.WriteLine("the subcategory is selected" + localSubcategory);
