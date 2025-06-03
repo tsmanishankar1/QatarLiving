@@ -8,6 +8,8 @@ public class MoreArticleSectionBase : ComponentBase
     public bool loading { get; set; }
     protected bool imageLoaded = false;
     public ContentPost selectedPost { get; set; }
+    [Parameter]
+    public List<BannerItem> ArticleSideBanners { get; set; } = new();
     protected void SelectArticle(ContentPost article)
     {
         selectedPost = article;
