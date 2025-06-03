@@ -355,7 +355,20 @@
             }
         });
     </script>
-
+    <script>
+        document.addEventListener("visibilitychange", async function () {
+            if (document.visibilityState === 'visible') {
+                // Check if Blazor is still connected
+                try {
+                    await DotNet.invokeMethodAsync('QLN.Web.Shared.Services', 'CheckConnection');
+                    console.log("Connection active");
+                } catch (error) {
+                    console.log("Connection lost, reloading page...");
+                    window.location.reload();
+                }
+            }
+        });
+    </script>
 </body>
 
 </html>
