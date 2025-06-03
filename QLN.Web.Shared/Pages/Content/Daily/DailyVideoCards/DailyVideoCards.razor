@@ -40,11 +40,11 @@
                     <div class="video-title">
                         @if (item == SelectedVideo)
                         {
-                            <span class="selected-title">@item.Title</span>
+                            <span class="selected-title vedio-title-text">@item.Title</span>
                         }
                         else
                         {
-                            <a class="list-title" href="#">@item.Title</a>
+                            <a class="list-title vedio-title-text" href="#">@item.Title</a>
                         }
                     </div>
                 </div>
@@ -194,6 +194,19 @@
         display: flex;
         align-items: center;
         font-size: 14px;
+    }
+
+    .vedio-title-text {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;           /* Limit to 3 lines */
+        -webkit-box-orient: vertical;
+        overflow: hidden;                /* Hide overflow and scrollbars */
+        text-overflow: ellipsis;
+        white-space: normal;
+        scrollbar-width: none;           /* Hide scrollbar in Firefox */
+    }
+    .vedio-title-text::-webkit-scrollbar {
+        display: none;                   /* Hide scrollbar in Webkit browsers */
     }
 
     .section-heading {

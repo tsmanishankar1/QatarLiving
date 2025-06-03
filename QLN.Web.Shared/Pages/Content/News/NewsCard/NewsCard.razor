@@ -24,11 +24,11 @@
         border-radius: 6px;
         overflow: hidden;
         font-family: 'Public Sans';
-        width: 214px;
-        @* width: 100%; *@
+        width: 100%;           /* Always take full parent width */
+        max-width: 100%;       /* Prevent overflow */
         flex-direction: column;
+        box-sizing: border-box;
     }
-
     .news-card.horizontal {
         display: flex;
             flex-direction: row;
@@ -133,6 +133,11 @@
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
+        white-space: normal;
+        scrollbar-width: none;           /* Hide scrollbar in Firefox */
+    }
+    .daily-news-title::-webkit-scrollbar {
+        display: none;                   /* Hide scrollbar in Webkit browsers */
     }
 
     /* Media Queries */
@@ -157,23 +162,23 @@
 
     @@media (max-width: 425px) {
         .news-card {
-            @* flex-direction: row;
+            display: flex;
+            flex-direction: row;
             width: 100%;
-            margin-bottom: 5px; *@
-             display: flex; /* Ensure flex layout is applied */
-    flex-direction: row;
-    width: 100%; /* Occupy all available horizontal space */
-    margin-bottom: 5px;
-    box-sizing: border-box; /* Prevent padding/border from overflowing */
+            max-width:100% !important;
+            margin-bottom: 5px;
+            box-sizing: border-box;
+            align-items: center; /* Ensure vertical alignment */
         }
-        
 
         .daily-news-image {
-            width: 40%;
-            max-width: 140px;
-            height: auto;
-            aspect-ratio: 16 / 9;
+            height: 100px;
+            width: auto;
+            max-width: 50%;
             object-fit: cover;
+            border-radius: 6px;
+            flex-shrink: 0;
+            aspect-ratio: 16/9;
         }
 
         .daily-news-content {
@@ -181,6 +186,29 @@
             padding: 8px;
             flex: 1;
             min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Vertically center text */
+            height: 100px; /* Match image height */
+            box-sizing: border-box;
+        }
+
+        .daily-news-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--color-text-heading);
+            line-height: 26px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;              /* Show up to 3 lines */
+            -webkit-box-orient: vertical;
+            overflow: hidden;                   /* Hide overflow and scrollbars */
+            text-overflow: ellipsis;
+            text-align: left;                 /* Center the text */
+            white-space: normal;                /* Allow wrapping */
+            scrollbar-width: none;              /* Hide scrollbar in Firefox */
+        }
+        .daily-news-title::-webkit-scrollbar {
+            display: none;                      /* Hide scrollbar in Webkit browsers */
         }
     }
     @@media (max-width: 430px) {
@@ -190,6 +218,7 @@
         width: 100%; 
         margin-bottom: 5px;
         box-sizing: border-box; 
+        max-width: 100% !important;
         }
         }
 </style>
