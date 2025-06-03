@@ -297,11 +297,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status404NotFound
                         });
                     }
-                        return TypedResults.Problem(
-                            title: "Internal Server Error",
-                            detail: "An unexpected error occurred.",
-                            statusCode: StatusCodes.Status500InternalServerError
-                            );
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: "An unexpected error occurred.",
+                        statusCode: StatusCodes.Status500InternalServerError
+                        );
                 }
             })
                 .WithName("AddCategory")
@@ -428,7 +428,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (Exception ex)
                 {
-                     if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
                     {
                         return TypedResults.NotFound(new ProblemDetails
                         {
@@ -436,7 +436,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Detail = $"sub category not found.",
                             Status = StatusCodes.Status404NotFound
                         });
-                    }                  
+                    }
                     return TypedResults.Problem(new ProblemDetails
                     {
                         Title = "Unexpected Error",
@@ -837,7 +837,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     {
                         Title = "Operation Failed",
                         Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict 
+                        Status = StatusCodes.Status409Conflict
                     });
                 }
                 catch (Exception ex)
@@ -1103,7 +1103,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .WithSummary("Add a condition")
                 .WithDescription("Adds a new product condition to the store.")
                 .Produces<Category>(StatusCodes.Status201Created)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)                
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // Get all Condition
@@ -1188,7 +1188,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-                        var result = await service.AddColor(dto.Name, token);
+                    var result = await service.AddColor(dto.Name, token);
 
                     if (result == null)
                     {
@@ -2440,7 +2440,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-         
+
             // POST /zone
             group.MapPost("/zone", async Task<IResult> (
                 [FromBody] AdZoneRequest dto,
@@ -2589,7 +2589,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .WithDescription("Fetches all zone numbers from the store.")
             .Produces<List<CategoriesDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);          
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // GET /api/classified/landing
             group.MapGet("/landing", async (
@@ -2680,7 +2680,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var success = await service.SaveSearch(dto,userId);
+                    var success = await service.SaveSearch(dto, userId);
                     if (success)
                     {
                         return TypedResults.Ok("Search saved successfully.");
@@ -2783,8 +2783,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     );
                 }
             })
-           .WithName("SaveSearcssh")
-           .WithTags("Searchss")
+           .WithName("SaveSearchById")
+           .WithTags("Search")
            .WithSummary("Save user searcssh")
            .WithDescription("Save the search criteria using user ID from frontendss.")
            .ExcludeFromDescription()
@@ -2831,7 +2831,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     }
                 }
             })
-            .WithName("GetSavedSearches")
+            .WithName("GetSavedSearch")
             .WithTags("Search")
             .WithSummary("Get saved searches")
             .WithDescription("Get all saved searches for the current user.")
@@ -2850,7 +2850,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext context
             ) =>
             {
-                if ( userId == Guid.Empty)
+                if (userId == Guid.Empty)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -2878,7 +2878,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     }
                 }
             })
-            .WithName("GetSavedSearchess")
+            .WithName("GetSavedSearcheById")
             .WithTags("Searchs")
             .WithSummary("Get saved searchess")
             .WithDescription("Get all saved searches for the current users.")
@@ -2887,7 +2887,124 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+
+            group.MapGet("/collectibles", async Task<Results<
+                Ok<CollectiblesResponse>,
+                BadRequest<ProblemDetails>,
+                UnauthorizedHttpResult,
+                ProblemHttpResult>>
+             (
+                 IClassifiedService service,
+                 HttpContext context,
+                 CancellationToken cancellationToken
+             ) =>
+            {
+                Guid? userId = context.User.GetId();
+
+                if (userId == null || userId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Valid User ID must be provided in the token.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+
+                try
+                {
+                    var result = await service.GetCollectibles(userId.ToString(), cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (FileNotFoundException fileEx)
+                {
+                    return TypedResults.Problem(
+                        title: "File Not Found",
+                        detail: fileEx.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        instance: context.Request.Path);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path);
+                }
+            })
+             .WithName("GetCollectibles")
+             .WithTags("Collectibles")
+             .WithSummary("Get collectibles for the logged-in user")
+             .WithDescription("Returns collectibles data for the current user based on token.")
+             .Produces<CollectiblesResponse>(StatusCodes.Status200OK)
+             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+             .Produces(StatusCodes.Status401Unauthorized)
+             .RequireAuthorization();
+
+
+
+            group.MapGet("/collectibles-by-id", async Task<Results<
+                  Ok<CollectiblesResponse>,
+                  BadRequest<ProblemDetails>,
+                  ProblemHttpResult>>
+              (
+                  [Required][FromQuery] Guid userId,
+                  IClassifiedService service,
+                  HttpContext context,
+                  CancellationToken cancellationToken
+              ) =>
+            {
+                if (userId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Valid User ID must be provided in the query.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+
+                try
+                {
+                    var result = await service.GetCollectibles(userId.ToString(), cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (FileNotFoundException fileEx)
+                {
+                    return TypedResults.Problem(
+                        title: "File Not Found",
+                        detail: fileEx.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        instance: context.Request.Path);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path);
+                }
+            })
+            .WithName("GetCollectiblesById")
+            .WithTags("Collectibles")
+            .WithSummary("Get collectibles for a specified user ID")
+            .WithDescription("Returns collectibles data for a given user ID passed as query parameter.")
+            .Produces<CollectiblesResponse>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .ExcludeFromDescription()
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
             return group;
         }
+
+
     }
 }
