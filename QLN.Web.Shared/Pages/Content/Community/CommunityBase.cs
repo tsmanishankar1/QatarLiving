@@ -60,6 +60,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected bool isLoadingBanners = true;
         protected List<BannerItem> DailyHeroBanners { get; set; } = new();
+        protected List<BannerItem> CommunitySideBanners { get; set; } = new();
 
         [Parameter]
         [SupplyParameterFromQuery]
@@ -345,6 +346,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
             {
                 var banners = await FetchBannerData();
                 DailyHeroBanners = banners?.ContentCommunityHero ?? new();
+                CommunitySideBanners = banners?.ContentCommunitySide ?? new();
+
             }
             catch (Exception ex)
             {
