@@ -10,7 +10,7 @@
     <div class="daily-category-group">
         @foreach (var item in DailyCategories)
         {
-            <button class="daily-category-btn" @onclick="() => OnClickCommunityCateg(item.QLCategLink)">
+            <button class="daily-category-btn" @onclick="() => OnClickCommunityCateg(item)">
                 <img src="@item.Icon" alt="@item.Label" class="btn-icon" />
                 @item.Label
             </button>

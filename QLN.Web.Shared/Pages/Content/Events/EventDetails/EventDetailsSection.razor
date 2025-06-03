@@ -246,7 +246,7 @@ OpenInNewTab = true
         </button> *@
         <button class="calendar-button" @onclick="() => IsModalOpen = true">
             Add to Calendar
-            <MudIcon Icon="@Icons.Material.Filled.Event" Style="margin-right: 6px;" />
+            <img src="/qln-images/add_to_calendar_Icons.svg" alt="Date Icon" class="add-to-info-icon" />
         </button>
 
         <AddToCalendarDialog @bind-IsVisible="IsModalOpen" Message="You will be notified 1 day ahead of this event"
@@ -320,6 +320,13 @@ OpenInNewTab = true
         width: 20px;
         height: 20px;
         margin-right: 8px;
+        vertical-align: middle;
+    }
+
+    .add-to-info-icon {
+        width: 20px;
+        height: 20px;
+        margin-right: 6px;
         vertical-align: middle;
     }
 
@@ -491,6 +498,8 @@ OpenInNewTab = true
 
     .calendar-button {
         background-color: transparent;
+        font-weight: 600;
+        font-size: 14px;
         color: var(--color-accent);
         border: 1px solid var(--color-accent);
     }
