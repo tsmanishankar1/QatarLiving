@@ -21,7 +21,7 @@ public class PopularArticlesBase : ComponentBase
     }
      protected override void OnParametersSet()
         {
-            imageLoaded = false; 
+            // imageLoaded = false; 
         }
  
         protected void OnImageLoaded()
