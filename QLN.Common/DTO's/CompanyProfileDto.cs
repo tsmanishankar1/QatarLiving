@@ -63,36 +63,9 @@ namespace QLN.Common.Infrastructure.DTO_s
         public bool? IsVerified { get; set; } = false;
         public CompanyStatus? Status { get; set; }
     }
-    public class CompanyProfileEntity
+    public class CompanyProfileEntity : CompanyProfileDto
     {
         public Guid Id { get; set; }
-        public VerticalType VerticalId { get; set; }
-        public CompanyCategory? CategoryId { get; set; } 
-        public Guid UserId { get; set; }
-        public string CompanyLogo { get; set; } = string.Empty;
-        public string BusinessName { get; set; } = string.Empty;
-        public string Country { get; set; } = string.Empty;
-        public string City { get; set; } = string.Empty;
-        public List<string>? BranchLocations { get; set; }
-        public string PhoneNumber { get; set; } = string.Empty;
-        public string? WhatsAppNumber { get; set; }
-        public string Email { get; set; } = string.Empty;
-        public string? WebsiteUrl { get; set; }
-        public string? FacebookUrl { get; set; } 
-        public string? InstagramUrl { get; set; } 
-        public string StartDay { get; set; } = string.Empty;
-        public string EndDay { get; set; } = string.Empty;
-        public TimeSpan StartHour { get; set; }
-        public TimeSpan EndHour { get; set; }
-        public string NatureOfBusiness { get; set; } = string.Empty;
-        public CompanySize CompanySize { get; set; }
-        public CompanyType CompanyType { get; set; } 
-        public string UserDesignation { get; set; } = string.Empty;
-        public string BusinessDescription { get; set; } = string.Empty;
-        public int CRNumber { get; set; }
-        public string CRDocument { get; set; } = string.Empty;
-        public bool? IsVerified { get; set; } = false;
-        public CompanyStatus? Status { get; set; }
         public bool IsActive { get; set; }
         public Guid CreatedBy { get; set; }
         public DateTime CreatedUtc { get; set; }

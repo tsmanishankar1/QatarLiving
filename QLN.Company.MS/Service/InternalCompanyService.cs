@@ -6,6 +6,8 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp;
+using QLN.Common.Infrastructure.IService.IEmailService;
+using QLN.Common.Infrastructure.Model;
 
 namespace QLN.Company.MS.Service
 {
@@ -15,13 +17,21 @@ namespace QLN.Company.MS.Service
         private readonly IWebHostEnvironment _env;
         private readonly ILogger<InternalCompanyService> _logger;
         private readonly IFileStorageService _fileStorage;
-        public InternalCompanyService(DaprClient dapr, IWebHostEnvironment env, ILogger<InternalCompanyService> logger, IFileStorageService fileStorage)
+        private readonly IExtendedEmailSender<ApplicationUser> _emailSender;
+        public InternalCompanyService(
+            DaprClient dapr,
+            IWebHostEnvironment env,
+            ILogger<InternalCompanyService> logger,
+            IFileStorageService fileStorage,
+            IExtendedEmailSender<ApplicationUser> emailSender)
         {
             _dapr = dapr;
             _env = env;
             _logger = logger;
             _fileStorage = fileStorage;
+            _emailSender = emailSender;
         }
+
         public async Task<string> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
             try
@@ -361,6 +371,8 @@ namespace QLN.Company.MS.Service
                 if (company == null)
                     throw new KeyNotFoundException($"Company with ID {dto.CompanyId} not found.");
 
+                var wasPreviouslyVerified = company.IsVerified;
+
                 company.IsVerified = dto.IsVerified ?? false;
                 company.Status = dto.Status;
                 company.UpdatedUtc = DateTime.UtcNow;
@@ -372,6 +384,19 @@ namespace QLN.Company.MS.Service
                    company,
                    cancellationToken: cancellationToken
                 );
+
+                if (wasPreviouslyVerified == false && company.IsVerified == true && !string.IsNullOrWhiteSpace(company.Email))
+                {
+                    var subject = "Company Profile Approved - Qatar Living";
+                    var htmlBody = $@"Hi {company.BusinessName},<br/><br/>
+                          Your company profile has been <b>approved</b> by the Qatar Living team.<br/>
+                          You can now access features exclusive to verified companies.<br/><br/>
+                          Regards,<br/>Qatar Living Team";
+                    _logger.LogInformation("wasPreviouslyVerified: {WasVerified}, IsVerified Now: {IsNowVerified}, Email: {Email}",
+                    wasPreviouslyVerified, company.IsVerified, company.Email);
+
+                    await _emailSender.SendEmailAsync(company.Email, subject, htmlBody);
+                }
 
                 return "Company Profile Approved Successfully";
             }
