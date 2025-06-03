@@ -16,6 +16,7 @@ using QLN.Common.Infrastructure.CustomException;
 using System.ComponentModel.DataAnnotations;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Constants;
+using Microsoft.AspNetCore.Authorization;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 {
@@ -2862,8 +2863,89 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("itemsAd-dashboard/{userId}", async Task<IResult> (
-                Guid userId,
+            group.MapGet("itemsAd-dashboard", async Task<IResult> (
+                HttpContext context,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                var userId = context.User.GetId(); 
+
+                if (userId == null || userId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Valid User ID must be provided in the JWT token.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                try
+                {
+                    var result = await service.GetUserItemsAdsWithDashboard(userId, token);
+
+                    if ((result?.ItemsAds.PublishedAds?.Any() != true) &&
+                        (result?.ItemsAds.UnpublishedAds?.Any() != true))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "No Ads Found",
+                            Detail = $"No ads were found for user ID '{userId}'.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Operation",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "Requested user or ads data not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+                .WithName("GetUserItemsAdsWithDashboard")
+                .WithTags("Items")
+                .WithSummary("Get all user ads and dashboard")
+                .WithDescription("Returns both published/unpublished ads and dashboard metrics for a given user ID (from token).")
+                .RequireAuthorization() 
+                .Produces<ItemAdsAndDashboardResponse>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+                .RequireAuthorization(new AuthorizeAttribute { Roles = "Subscriber" })
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("itemsAd-dashboard-byId", async Task<IResult> (
+                [FromQuery] Guid userId,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -2896,6 +2978,24 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (InvalidOperationException ex)
                 {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "Requested user or ads data not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Invalid Operation",
@@ -2912,17 +3012,99 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     );
                 }
             })
-                .WithName("GetUserItemsAdsWithDashboard")
+                .WithName("GetUserItemsAdsWithDashboardById") 
                 .WithTags("Items")
-                .WithSummary("Get all user ads and dashboard")
-                .WithDescription("Returns both published/unpublished ads and dashboard metrics for a given user ID.")
+                .WithSummary("Get all user ads and dashboard (By Id)")
+                .WithDescription("Returns both published/unpublished ads and dashboard metrics for a given user ID (from query).")
                 .Produces<ItemAdsAndDashboardResponse>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .ExcludeFromDescription();
 
 
-            group.MapGet("prelovedAd-dashboard/{userId}", async Task<IResult> (
+
+            group.MapGet("prelovedAd-dashboard", async Task<IResult> (
+                HttpContext httpContext,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                try
+                {
+                    var userId = httpContext.User.GetId(); 
+                    if (userId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Authenticated user ID is missing or invalid.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.GetUserPrelovedAdsAndDashboard(userId, token);
+
+                    if ((result?.PrelovedAds.PublishedAds?.Any() != true) &&
+                        (result?.PrelovedAds.UnpublishedAds?.Any() != true))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "No Ads Found",
+                            Detail = $"No Preloved ads were found for authenticated user.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Operation",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "Requested Preloved ads or user data not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetUserPrelovedAdsWithDashboard") 
+            .WithTags("Preloved")
+            .WithSummary("Get all authenticated user's Preloved ads and dashboard")
+            .WithDescription("Returns Preloved ads and dashboard for the currently authenticated user.")
+            .Produces<PrelovedAdsAndDashboardResponse>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(new AuthorizeAttribute { Roles = "Subscriber" })
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+            group.MapGet("prelovedAd-dashboard-byId", async Task<IResult> (
                 Guid userId,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -2965,6 +3147,24 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (Exception ex)
                 {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "Requested Preloved ads or user data not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
                     return TypedResults.Problem(
                         title: "Internal Server Error",
                         detail: ex.Message,
@@ -2972,14 +3172,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     );
                 }
             })
-                .WithName("GetUserPrelovedAdsWithDashboard")
-                .WithTags("Preloved")
-                .WithSummary("Get all user Preloved ads and dashboard")
-                .WithDescription("Returns both published/unpublished Preloved ads and dashboard metrics for a given user ID.")
-                .Produces<PrelovedAdsAndDashboardResponse>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            .WithName("GetUserPrelovedAdsWithDashboardById") 
+            .WithTags("Preloved")
+            .WithSummary("Get all user Preloved ads and dashboard (by userId)")
+            .WithDescription("Returns Preloved ads and dashboard for a user specified via route parameter.")
+            .Produces<PrelovedAdsAndDashboardResponse>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .ExcludeFromDescription();
 
 
             return group;

@@ -718,7 +718,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var result = await _dapr.InvokeMethodAsync<ItemAdsAndDashboardResponse>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"api/classifieds/itemsAd-dashboard/{userId}",
+                    $"api/{Vertical}/itemsAd-dashboard-byId?userId={userId}",
                     cancellationToken
                 );
 
@@ -738,7 +738,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var result = await _dapr.InvokeMethodAsync<PrelovedAdsAndDashboardResponse>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"api/classifieds/prelovedAd-dashboard/{userId}",
+                    $"api/{Vertical}/prelovedAd-dashboard-byId?userId={userId}",
                     cancellationToken
                 );
 
@@ -750,6 +750,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw;
             }
         }
+
         public async Task<bool> SaveSearch(SaveSearchRequestDto dto ,Guid userId, CancellationToken cancellationToken = default)
         {
             try

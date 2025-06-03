@@ -1432,19 +1432,19 @@ namespace QLN.Classified.MS.Service
                 var groupedAds = new AdsGroupedResult
                 {
                     PublishedAds = userAds
-                        .Where(ad => ad.IsPublished == true)
+                        .Where(ad => ad.Status == AdStatus.Published)
                         .OrderByDescending(ad => ad.CreatedDate)
                         .ToList(),
 
                     UnpublishedAds = userAds
-                        .Where(ad => ad.IsPublished != true)
+                        .Where(ad => ad.Status != AdStatus.Published)
                         .OrderByDescending(ad => ad.CreatedDate)
                         .ToList()
                 };
                 
-                var publishedCount = userAds.Count(ad => ad.IsPublished == true);
+                var publishedCount = userAds.Count(ad => ad.Status == AdStatus.Published);
                 var promotedCount = userAds.Count(ad => ad.IsPromoted == true);
-                var featuredCount = userAds.Count(ad => ad.IsFeaturedItem == true || ad.IsFeaturedStore == true || ad.IsFeaturedCategory == true);
+                var featuredCount = userAds.Count(ad => ad.IsFeatured == true);
                 var refreshCount = userAds.Count(ad => ad.RefreshExpiry != null);
                 var totalImpressions = userAds.Sum(ad => ad.Impressions ?? 0);
                 var totalViews = userAds.Sum(ad => ad.Views ?? 0);
@@ -1508,20 +1508,20 @@ namespace QLN.Classified.MS.Service
                 var groupedAds = new AdsGroupedPrelovedResult
                 {
                     PublishedAds = userAds
-                        .Where(ad => ad.IsPublished == true)
+                        .Where(ad => ad.Status == AdStatus.Published)
                         .OrderByDescending(ad => ad.CreatedDate)
                         .ToList(),
                     UnpublishedAds = userAds
-                        .Where(ad => ad.IsPublished != true)
+                        .Where(ad => ad.Status != AdStatus.Published)
                         .OrderByDescending(ad => ad.CreatedDate)
                         .ToList()
                 };
 
                 var dashboard = new PrelovedDashboardDto
                 {
-                    PublishedAds = userAds.Count(ad => ad.IsPublished == true),
+                    PublishedAds = userAds.Count(ad => ad.Status == AdStatus.Published),
                     PromotedAds = userAds.Count(ad => ad.IsPromoted == true),
-                    FeaturedAds = userAds.Count(ad => ad.IsFeaturedItem == true || ad.IsFeaturedStore == true || ad.IsFeaturedCategory == true),
+                    FeaturedAds = userAds.Count(ad => ad.IsFeatured == true),
                     Impressions = userAds.Sum(ad => ad.Impressions ?? 0),
                     Views = userAds.Sum(ad => ad.Views ?? 0),
                     WhatsAppClicks = userAds.Sum(ad => ad.WhatsAppClicks ?? 0),
@@ -1540,5 +1540,6 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("Unexpected error occurred while generating Preloved ads and dashboard summary.", ex);
             }
         }
+
     }
 }

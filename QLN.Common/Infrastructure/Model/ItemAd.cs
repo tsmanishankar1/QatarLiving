@@ -8,11 +8,7 @@ namespace QLN.Common.Infrastructure.Model
 {
     public class ItemAd : AdBase
     {
-        public string? DocType { get; set; }
-        public string? SubVertical { get; set; }
-        public bool? IsFeaturedItem { get; set; }
-        public bool? IsFeaturedCategory { get; set; }
-        public bool? IsFeaturedStore { get; set; }
+        public string? DocType { get; set; }                
         public string? CategoryImageUrl { get; set; }
         public string? Make { get; set; }
         public string? Model { get; set; }
@@ -33,7 +29,6 @@ namespace QLN.Common.Infrastructure.Model
         public string? Ram { get; set; }
         public string? Resolution { get; set; }
         public string? StoreName { get; set; }
-        public string? StoreLogoUrl { get; set; }
-        public string[]? ImageUrls { get; set; }
+        public string? StoreLogoUrl { get; set; }        
     }
 }
