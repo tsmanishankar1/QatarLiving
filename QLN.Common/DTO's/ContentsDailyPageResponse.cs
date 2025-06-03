@@ -53,4 +53,10 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonPropertyName(DrupalContentConstants.QlnContentsDaily)]
         public ContentsDaily ContentsDaily { get; set; }
     }
+    public class QlnEventsResponse
+    {
+        [JsonPropertyName("qln_events")]
+        public QlnEvents QlnEvents { get; set; }
+    }
+
 }
