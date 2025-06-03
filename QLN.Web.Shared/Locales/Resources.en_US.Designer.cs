@@ -61,29 +61,767 @@ namespace QLN.Web.Shared.Locales {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Home.
+        ///   Looks up a localized string similar to account.
         /// </summary>
-        public static string Home {
+        public static string account {
             get {
-                return ResourceManager.GetString("Home", resourceCulture);
+                return ResourceManager.GetString("account", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Text Here.
+        ///   Looks up a localized string similar to account icon.
         /// </summary>
-        public static string HomeText {
+        public static string account_icon {
             get {
-                return ResourceManager.GetString("HomeText", resourceCulture);
+                return ResourceManager.GetString("account_icon", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to HomeTitle.
+        ///   Looks up a localized string similar to add icon.
         /// </summary>
-        public static string HomeTitle {
+        public static string add_icon {
             get {
-                return ResourceManager.GetString("HomeTitle", resourceCulture);
+                return ResourceManager.GetString("add_icon", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Take a look at our .
+        /// </summary>
+        public static string advertise_page {
+            get {
+                return ResourceManager.GetString("advertise_page", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Advertise page.
+        /// </summary>
+        public static string advertise_page_link {
+            get {
+                return ResourceManager.GetString("advertise_page_link", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Advertising Terms.
+        /// </summary>
+        public static string advertising_terms {
+            get {
+                return ResourceManager.GetString("advertising_terms", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Agencies.
+        /// </summary>
+        public static string agencies {
+            get {
+                return ResourceManager.GetString("agencies", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Agents.
+        /// </summary>
+        public static string agents {
+            get {
+                return ResourceManager.GetString("agents", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Business pages.
+        /// </summary>
+        public static string business_or_place {
+            get {
+                return ResourceManager.GetString("business-or-place", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Buy Premium.
+        /// </summary>
+        public static string buy_premium {
+            get {
+                return ResourceManager.GetString("buy_premium", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cars for Sale.
+        /// </summary>
+        public static string cars_for_sale {
+            get {
+                return ResourceManager.GetString("cars_for_sale", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Classifieds.
+        /// </summary>
+        public static string classifieds {
+            get {
+                return ResourceManager.GetString("classifieds", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Copyright © 2024 Qatar Living. All rights reserved..
+        /// </summary>
+        public static string copy_right {
+            get {
+                return ResourceManager.GetString("copy_right", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to to find the content you were searching for..
+        /// </summary>
+        public static string correct_content {
+            get {
+                return ResourceManager.GetString("correct_content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dashboard.
+        /// </summary>
+        public static string dashboard {
+            get {
+                return ResourceManager.GetString("dashboard", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to dashboard icon.
+        /// </summary>
+        public static string dashboard_icon {
+            get {
+                return ResourceManager.GetString("dashboard_icon", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The description should be a maximum of {{charLimit}} characters..
+        /// </summary>
+        public static string description_max_length_error {
+            get {
+                return ResourceManager.GetString("description_max_length_error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Please enter the offer description..
+        /// </summary>
+        public static string description_required_error {
+            get {
+                return ResourceManager.GetString("description_required_error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to edit icon.
+        /// </summary>
+        public static string edit_icon {
+            get {
+                return ResourceManager.GetString("edit_icon", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to error 404.
+        /// </summary>
+        public static string error_404 {
+            get {
+                return ResourceManager.GetString("error_404", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to error 500.
+        /// </summary>
+        public static string error_500 {
+            get {
+                return ResourceManager.GetString("error_500", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to eShops.
+        /// </summary>
+        public static string eshops {
+            get {
+                return ResourceManager.GetString("eshops", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Events.
+        /// </summary>
+        public static string events {
+            get {
+                return ResourceManager.GetString("events", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Explore.
+        /// </summary>
+        public static string explore {
+            get {
+                return ResourceManager.GetString("explore", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to facebook.
+        /// </summary>
+        public static string facebook {
+            get {
+                return ResourceManager.GetString("facebook", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No internet available. Check your network connection.
+        /// </summary>
+        public static string failed_network_message {
+            get {
+                return ResourceManager.GetString("failed_network_message", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to favorite icon.
+        /// </summary>
+        public static string favorite_icon {
+            get {
+                return ResourceManager.GetString("favorite_icon", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Forums.
+        /// </summary>
+        public static string forum {
+            get {
+                return ResourceManager.GetString("forum", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to hamburger icon.
+        /// </summary>
+        public static string hamburger_icon {
+            get {
+                return ResourceManager.GetString("hamburger_icon", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Help.
+        /// </summary>
+        public static string help {
+            get {
+                return ResourceManager.GetString("help", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hi.
+        /// </summary>
+        public static string hi {
+            get {
+                return ResourceManager.GetString("hi", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to homepage.
+        /// </summary>
+        public static string homepage {
+            get {
+                return ResourceManager.GetString("homepage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to We may have moved the page you&apos;re looking for or you may have typed the address incorrectly. .
+        /// </summary>
+        public static string incorrect_address {
+            get {
+                return ResourceManager.GetString("incorrect_address", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to instagram.
+        /// </summary>
+        public static string instagram {
+            get {
+                return ResourceManager.GetString("instagram", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Jobs.
+        /// </summary>
+        public static string jobs {
+            get {
+                return ResourceManager.GetString("jobs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to linkedIn.
+        /// </summary>
+        public static string linkedin {
+            get {
+                return ResourceManager.GetString("linkedin", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to login.
+        /// </summary>
+        public static string login {
+            get {
+                return ResourceManager.GetString("login", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Logout.
+        /// </summary>
+        public static string logout {
+            get {
+                return ResourceManager.GetString("logout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Manage my ads.
+        /// </summary>
+        public static string manage_my_ads {
+            get {
+                return ResourceManager.GetString("manage_my_ads", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Business pages.
+        /// </summary>
+        public static string more_business_or_place {
+            get {
+                return ResourceManager.GetString("more.business-or-place", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to eShops.
+        /// </summary>
+        public static string more_eshops {
+            get {
+                return ResourceManager.GetString("more.eshops", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Events.
+        /// </summary>
+        public static string more_events {
+            get {
+                return ResourceManager.GetString("more.events", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Forums.
+        /// </summary>
+        public static string more_forum {
+            get {
+                return ResourceManager.GetString("more.forum", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to News.
+        /// </summary>
+        public static string more_news {
+            get {
+                return ResourceManager.GetString("more.news", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to My account.
+        /// </summary>
+        public static string my_account {
+            get {
+                return ResourceManager.GetString("my_account", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to My saved ads.
+        /// </summary>
+        public static string my_saved_ads {
+            get {
+                return ResourceManager.GetString("my_saved_ads", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to My saved searches.
+        /// </summary>
+        public static string my_saved_searches {
+            get {
+                return ResourceManager.GetString("my_saved_searches", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Network Offline.
+        /// </summary>
+        public static string network_failed {
+            get {
+                return ResourceManager.GetString("network_failed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to News.
+        /// </summary>
+        public static string news {
+            get {
+                return ResourceManager.GetString("news", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This car is no longer available..
+        /// </summary>
+        public static string not_available {
+            get {
+                return ResourceManager.GetString("not_available", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The car is most likely sold or has been removed for some reason..
+        /// </summary>
+        public static string not_available_body {
+            get {
+                return ResourceManager.GetString("not_available_body", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Visit the Cars Section to search thousands of cars..
+        /// </summary>
+        public static string not_available_body2 {
+            get {
+                return ResourceManager.GetString("not_available_body2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Other.
+        /// </summary>
+        public static string other {
+            get {
+                return ResourceManager.GetString("other", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Our Mobile App.
+        /// </summary>
+        public static string our_mobile_app {
+            get {
+                return ResourceManager.GetString("our_mobile_app", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sorry, that page isn&apos;t here..
+        /// </summary>
+        public static string page_not_found {
+            get {
+                return ResourceManager.GetString("page_not_found", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to You may also find our most popular content helpful:.
+        /// </summary>
+        public static string popular_content {
+            get {
+                return ResourceManager.GetString("popular_content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Post Ad.
+        /// </summary>
+        public static string post_ad {
+            get {
+                return ResourceManager.GetString("post_ad", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Premium subscriptions.
+        /// </summary>
+        public static string premium_subscriptions {
+            get {
+                return ResourceManager.GetString("premium_subscriptions", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Profile Image.
+        /// </summary>
+        public static string profile_image {
+            get {
+                return ResourceManager.GetString("profile_image", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Properties.
+        /// </summary>
+        public static string properties {
+            get {
+                return ResourceManager.GetString("properties", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Commercial.
+        /// </summary>
+        public static string properties_commercial {
+            get {
+                return ResourceManager.GetString("properties.commercial", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to International.
+        /// </summary>
+        public static string properties_international {
+            get {
+                return ResourceManager.GetString("properties.international", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Residential.
+        /// </summary>
+        public static string properties_residential {
+            get {
+                return ResourceManager.GetString("properties.residential", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to qatar living.
+        /// </summary>
+        public static string qatar_living {
+            get {
+                return ResourceManager.GetString("qatar_living", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Qatar Living mobile app.
+        /// </summary>
+        public static string qatar_living_mobile_app {
+            get {
+                return ResourceManager.GetString("qatar_living_mobile_app", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Rewards.
+        /// </summary>
+        public static string rewards {
+            get {
+                return ResourceManager.GetString("rewards", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Rules for posting ads.
+        /// </summary>
+        public static string rules_for_posting_ad {
+            get {
+                return ResourceManager.GetString("rules_for_posting_ad", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Services.
+        /// </summary>
+        public static string services {
+            get {
+                return ResourceManager.GetString("services", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Shop cars for sale.
+        /// </summary>
+        public static string shop_cars_for_sale {
+            get {
+                return ResourceManager.GetString("shop_cars_for_sale", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sign up.
+        /// </summary>
+        public static string sign_up {
+            get {
+                return ResourceManager.GetString("sign_up", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to snapchat.
+        /// </summary>
+        public static string snapchat {
+            get {
+                return ResourceManager.GetString("snapchat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Something Went Wrong. Try again Later!!.
+        /// </summary>
+        public static string something_went_wrong {
+            get {
+                return ResourceManager.GetString("something_went_wrong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Let&apos;s stay connected.
+        /// </summary>
+        public static string stay_connected {
+            get {
+                return ResourceManager.GetString("stay_connected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Subscribe.
+        /// </summary>
+        public static string subscribe {
+            get {
+                return ResourceManager.GetString("subscribe", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Subscribe to our newsletter to get the latest updates.
+        /// </summary>
+        public static string subscribe_newsletter {
+            get {
+                return ResourceManager.GetString("subscribe_newsletter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to tikTok.
+        /// </summary>
+        public static string tiktok {
+            get {
+                return ResourceManager.GetString("tiktok", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to twitter.
+        /// </summary>
+        public static string twitter {
+            get {
+                return ResourceManager.GetString("twitter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to If you typed the address (URL), check the spelling..
+        /// </summary>
+        public static string typed_wrong_address {
+            get {
+                return ResourceManager.GetString("typed_wrong_address", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sorry, unexpected error.
+        /// </summary>
+        public static string unexpected_error {
+            get {
+                return ResourceManager.GetString("unexpected_error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Vehicles.
+        /// </summary>
+        public static string vehicles {
+            get {
+                return ResourceManager.GetString("vehicles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Visit our.
+        /// </summary>
+        public static string visit_our {
+            get {
+                return ResourceManager.GetString("visit_our", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Want to advertise on Qatar Living?.
+        /// </summary>
+        public static string want_to_advertise {
+            get {
+                return ResourceManager.GetString("want_to_advertise", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Website Terms.
+        /// </summary>
+        public static string website_terms {
+            get {
+                return ResourceManager.GetString("website_terms", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to What you can do:.
+        /// </summary>
+        public static string what_you_can_do {
+            get {
+                return ResourceManager.GetString("what_you_can_do", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to youtube.
+        /// </summary>
+        public static string youtube {
+            get {
+                return ResourceManager.GetString("youtube", resourceCulture);
             }
         }
     }
