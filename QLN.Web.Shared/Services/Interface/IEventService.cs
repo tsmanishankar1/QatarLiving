@@ -6,7 +6,7 @@
         /// Gets Content Events Landing Page data.
         /// </summary>
         /// <returns>HttpResponseMessage</returns>
-        Task<HttpResponseMessage?> GetAllEventsAsync();
+        Task<HttpResponseMessage?> GetAllEventsAsync(string? category_id = null, string? location_id = null, string? date = null);
 
         /// <summary>
         /// Gets Content Event by slug.

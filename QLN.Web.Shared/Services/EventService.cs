@@ -13,11 +13,29 @@ namespace QLN.Web.Shared.Services
         }
 
         /// <inheritdoc />
-        public async Task<HttpResponseMessage?> GetAllEventsAsync()
+        public async Task<HttpResponseMessage?> GetAllEventsAsync(string? category_id = null, string? location_id = null, string? date = null)
         {
+            var queryString = "";
+
+            if(string.IsNullOrEmpty(category_id))
+            {
+                queryString = $"category_id={category_id}";
+            }
+
+            if (string.IsNullOrEmpty(location_id))
+            {
+                queryString = $"location_id={location_id}";
+            }
+
+            if (string.IsNullOrEmpty(date))
+            {
+                queryString = $"date={date}";
+            }
+
             try
             {
-                var response = await _httpClient.GetAsync("api/content/events");
+                var queryUrl = string.IsNullOrEmpty(queryString) ? "api/content/events" : $"api/content/events?{queryString}";
+                var response = await _httpClient.GetAsync(queryUrl);
                 return response;
             }
             catch (Exception ex)

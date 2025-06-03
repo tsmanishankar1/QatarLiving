@@ -52,8 +52,8 @@ protected async Task ApplyDatePicker()
         _showDatePicker = false;
 
         // Navigate to your desired URL with the selected date
-        var url = $"https://www.qatarliving.com/events/day/{SelectedDateLabel}";
-        NavigationManager.NavigateTo(url, forceLoad: true);
+        //var url = $"https://www.qatarliving.com/events/day/{SelectedDateLabel}";
+        //NavigationManager.NavigateTo(url, forceLoad: true);
 
         StateHasChanged();
     }
@@ -77,12 +77,12 @@ protected void CancelDatePicker()
         {
             SelectedPropertyTypeId = id;
 
-            if (!string.IsNullOrWhiteSpace(id))
-            {
+            //if (!string.IsNullOrWhiteSpace(id))
+            //{
                 // Navigate to new URL with type query string
-                var targetUrl = $"https://www.qatarliving.com/events?type={id}";
-                NavigationManager.NavigateTo(targetUrl, forceLoad: true); // forceLoad to trigger full page load
-            }
+                //var targetUrl = $"https://www.qatarliving.com/events?type={id}";
+                //NavigationManager.NavigateTo(targetUrl, forceLoad: true); // forceLoad to trigger full page load
+            //}
         }
         protected void HandleDatePickerFocusOut(FocusEventArgs e)
         {
