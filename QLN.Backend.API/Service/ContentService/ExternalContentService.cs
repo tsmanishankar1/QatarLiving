@@ -75,7 +75,7 @@ namespace QLN.Backend.API.Service.ContentService
             string requestUri = $"{DrupalContentConstants.EventsPath}?page={page}&page_size={page_size}&order={order}";
             if (!string.IsNullOrEmpty(category_id))
             {
-                requestUri += $"&forum_id={category_id}";
+                requestUri += $"&category_id={category_id}";
             }
 
             if (!string.IsNullOrEmpty(location_id))
@@ -89,7 +89,7 @@ namespace QLN.Backend.API.Service.ContentService
             }
 
 
-            return await httpClient.GetFromJsonAsync<ContentEventsResponse>(DrupalContentConstants.EventsPath, cancellationToken);
+            return await httpClient.GetFromJsonAsync<ContentEventsResponse>(requestUri, cancellationToken);
         }
 
         public async Task<CategoriesResponse?> GetCategoriesFromDrupalAsync(CancellationToken cancellationToken)

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using QLN.Common.Infrastructure.DTO_s;
+using QLN.Web.Shared.Pages.Content.Community;
 using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
 
@@ -22,6 +23,11 @@ namespace QLN.Web.Shared.Pages.Content.Events
         protected bool isLoadingCategories = true;
         protected bool isLoadingFeatured = true;
 
+        protected string SelectedPropertyTypeId;
+
+        protected string SelectedLocationId;
+        protected string SelectedDateLabel;
+
         protected override async Task OnInitializedAsync()
         {
             try
@@ -40,9 +46,37 @@ namespace QLN.Web.Shared.Pages.Content.Events
             }
         }
 
+        protected async Task HandleCategoryChanged(string category)
+        {
+            SelectedPropertyTypeId = category;
+            //CurrentPage = 1;
+            await LoadAllEvents();
+            //PostList = posts;
+            //TotalPosts = totalCount;
+        }
+
+        protected async Task HandleDateChanged(string date)
+        {
+            SelectedDateLabel = date;
+            //CurrentPage = 1;
+            await LoadAllEvents();
+            //PostList = posts;
+            //TotalPosts = totalCount;
+        }
+
+        protected async Task HandleLocationChanged(string location)
+        {
+            SelectedLocationId = location;
+            //CurrentPage = 1;
+            await LoadAllEvents();
+            //PostList = posts;
+            //TotalPosts = totalCount;
+        }
+
         private async Task LoadAllEvents()
         {
             isLoadingEvents = true;
+
             try
             {
                 ListOfEvents = await GetAllEvents() ?? new ContentEventsResponse();
@@ -100,7 +134,7 @@ namespace QLN.Web.Shared.Pages.Content.Events
         {
             try
             {
-                var response = await _eventService.GetAllEventsAsync();
+                var response = await _eventService.GetAllEventsAsync(category_id: SelectedPropertyTypeId, location_id: SelectedLocationId, date: SelectedDateLabel);
                 if (response.IsSuccessStatusCode && response.Content != null)
                 {
                     return await response.Content.ReadFromJsonAsync<ContentEventsResponse>() ?? new ContentEventsResponse();

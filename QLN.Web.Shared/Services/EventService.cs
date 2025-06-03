@@ -1,4 +1,5 @@
-﻿using QLN.Web.Shared.Services.Interface;
+﻿using QLN.Common.Infrastructure.Constants;
+using QLN.Web.Shared.Services.Interface;
 using System.Net;
 
 namespace QLN.Web.Shared.Services
@@ -13,29 +14,28 @@ namespace QLN.Web.Shared.Services
         }
 
         /// <inheritdoc />
-        public async Task<HttpResponseMessage?> GetAllEventsAsync(string? category_id = null, string? location_id = null, string? date = null)
+        public async Task<HttpResponseMessage?> GetAllEventsAsync(string? category_id = null, string? location_id = null, string? date = null, int? page = 1, int? page_size = 20, string? order = "asc")
         {
-            var queryString = "";
 
-            if(string.IsNullOrEmpty(category_id))
+            string requestUri = $"api/content/events?page={page}&page_size={page_size}&order={order}";
+            if (!string.IsNullOrEmpty(category_id))
             {
-                queryString = $"category_id={category_id}";
+                requestUri += $"&category_id={category_id}";
             }
 
-            if (string.IsNullOrEmpty(location_id))
+            if (!string.IsNullOrEmpty(location_id))
             {
-                queryString = $"location_id={location_id}";
+                requestUri += $"&location_id={location_id}";
             }
 
-            if (string.IsNullOrEmpty(date))
+            if (!string.IsNullOrEmpty(date))
             {
-                queryString = $"date={date}";
+                requestUri += $"&date={date}";
             }
 
             try
             {
-                var queryUrl = string.IsNullOrEmpty(queryString) ? "api/content/events" : $"api/content/events?{queryString}";
-                var response = await _httpClient.GetAsync(queryUrl);
+                var response = await _httpClient.GetAsync(requestUri);
                 return response;
             }
             catch (Exception ex)
