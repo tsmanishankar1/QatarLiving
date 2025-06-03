@@ -53,7 +53,7 @@
     public List<ContentEvent> FeaturedEvent { get; set; } = new();
 
     [Parameter]
-    public bool Loading { get; set; } = false;
+    public bool Loading { get; set; } = true;
 
     [Inject]
     private IJSRuntime JSRuntime { get; set; } = default!;
@@ -85,10 +85,7 @@
         margin-bottom: 30px;
     }
 
-    /* Only apply center alignment if swiper-center class is present */
-    .swiper-categories .swiper-wrapper {
-        justify-content: center !important;
-    }
+
 
 
     .categories-header {
