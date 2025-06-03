@@ -2,6 +2,7 @@
 @inherits NewsBase
 @layout ContentLayout
 @using MudBlazor
+@using QLN.Web.Shared.Pages.Content.Daily.DailyVideoCards
 @using QLN.Web.Shared.Pages.Content.News.NewsCard
 @using QLN.Web.Shared.Pages.Content.News.NewsLetter
 @using QLN.Web.Shared.Pages.Content.News.PopularArticles
@@ -128,16 +129,15 @@
                         }
                         </div>
                     }
-                    else if (topNewsListSlot != null && topNewsListSlot.Any())
+                    else if (articleListSlot1 != null && articleListSlot1.Any())
                     {
-                       @foreach (var news in topNewsListSlot.Skip(1).Take(2))
-                        {
-                            <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)" />
-                            @if (news != topNewsListSlot.Skip(1).Take(2).Last())
-                            {
-                                <div style="width: 1px; height: auto; background-color: #F0F0F0; align-self: stretch; margin: 0 14px"></div>
-                            }
-                        }
+                        @foreach (var news in articleListSlot1.Take(3))
+                    { 
+                        <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)"/>
+                         @if(news != articleListSlot1.Last()){
+                            <div style="width: 1px; height: auto; background-color: #F0F0F0; align-self: stretch; margin: 0 14px"></div>
+                        } 
+                    } 
                     }
                     else{
                         <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
@@ -168,22 +168,14 @@
             </div>
             </div>
         </div>  
+    @if (VideoList.Count > 0)
+    {
         <div class="video-container">  
             <div class="max-container">
-                @* <div class="video-padding"> *@
-                <VideoCards Articles="@moreArticleListSlot" selectedTab="@SelectedTab" loading="@isLoading" />
-                @* </div> *@
+            <DailyVideoCards Items="@VideoList" />
             </div>
         </div> 
-    </div> 
-    
-
-
-
-
-   
-   
-
+    }
     
         <div class="news-container" style="padding-top: 30px;">   
             <div class="max-container">
@@ -201,12 +193,12 @@
                         </div>
                         
                     }
-                else if (articleListSlot1 != null && articleListSlot1.Any())
+                else if (articleListSlot2 != null && articleListSlot2.Any())
                         {
-                    @foreach (var news in articleListSlot1.Take(5))
+                    @foreach (var news in articleListSlot2.Take(5))
                         { 
                             <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)"/>
-                            @if(news != articleListSlot1.Last()){
+                            @if(news != articleListSlot2.Last()){
                                 <div class="divider-vertical"></div>
                             }
                         }
@@ -260,11 +252,11 @@
                             </MudItem>
                         }
                         }
-                    else if (articleListSlot2 != null && articleListSlot2.Any())
+                    else if (moreArticleListSlot != null && moreArticleListSlot.Any())
                         {
-                        @for (int i = 0; i < articleListSlot2.Take(9).Count(); i++)
+                        @for (int i = 0; i < moreArticleListSlot.Take(9).Count(); i++)
                         {
-                            var news = articleListSlot2[i];
+                            var news = moreArticleListSlot[i];
                             <MudItem xs="12" sm="6" md="4"> 
                             <div class="card-with-divider">
                             <NewsCard news="news" IsHorizontal="true" OnClick="() => onclick(news)" />
@@ -287,7 +279,7 @@
 
 </div>
 
-
+</div>
 <style>
     .card-with-divider {
     position: relative;

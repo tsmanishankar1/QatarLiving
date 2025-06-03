@@ -72,7 +72,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily.DailyIntheKnow
 
         protected void OnClickCommunityViewAll()
         {
-            NavigationManager.NavigateTo("/content/community");
+            NavigationManager.NavigateTo("/content/news");
         }
     }
 }
