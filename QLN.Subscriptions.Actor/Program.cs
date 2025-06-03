@@ -9,6 +9,8 @@ using QLN.Common.Infrastructure.DbContext;
 using Microsoft.EntityFrameworkCore;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.TokenProvider;
+using QLN.Common.Infrastructure.IService.IPayToPublishService;
+using QLN.Backend.API.Service.PayToPublishService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +20,8 @@ builder.Services.AddSwaggerGen();
 
 
 builder.Services.AddScoped<IExternalSubscriptionService, ExternalSubscriptionService>();
+builder.Services.AddScoped<IPayToPublishService, ExternalPayToPublishService>();
+
 
 builder.Services
   .AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
@@ -50,6 +54,7 @@ builder.Services.AddActors(options =>
 var app = builder.Build();
 
 PaymentTransactionActor.ServiceProvider = app.Services;
+PayToPublishPaymentActor.ServiceProvider = app.Services;
 
 
 if (app.Environment.IsDevelopment())

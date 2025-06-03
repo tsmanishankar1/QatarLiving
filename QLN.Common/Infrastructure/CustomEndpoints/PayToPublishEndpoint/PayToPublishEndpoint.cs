@@ -46,6 +46,7 @@ public static class PayToPublishEndpoints
                 );
             }
         })
+        .RequireAuthorization(policy => policy.RequireRole("Admin"))
         .WithName("CreatePayToPublish")
         .WithTags("PayToPublish")
         .WithSummary("Create a new PayToPublish")

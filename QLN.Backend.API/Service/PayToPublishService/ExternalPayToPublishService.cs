@@ -6,13 +6,13 @@ using System.Collections.Concurrent;
 using QLN.Common.Infrastructure.IService.IPayToPublishService;
 using QLN.Common.Infrastructure.Subscriptions;
 
-
 namespace QLN.Backend.API.Service.PayToPublishService
 {
     public class ExternalPayToPublishService : IPayToPublishService
     {
         private readonly ILogger<ExternalPayToPublishService> _logger;
         private static readonly ConcurrentDictionary<Guid, byte> _payToPublishIds = new();
+        private static readonly ConcurrentDictionary<Guid, byte> _paymentIds = new();
 
         public ExternalPayToPublishService(ILogger<ExternalPayToPublishService> logger)
         {
@@ -32,8 +32,8 @@ namespace QLN.Backend.API.Service.PayToPublishService
             {
                 Id = id,
                 PlanName = request.PlanName,
-                TotalCount=request.TotalCount,
-                Description=request.Description,
+                TotalCount = request.TotalCount,
+                Description = request.Description,
                 Duration = request.Duration,
                 Price = request.Price,
                 Currency = request.Currency,
@@ -55,6 +55,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 throw new Exception("Pay to publish plan creation failed.");
             }
         }
+
         public async Task<PayToPublishListResponseDto> GetPlansByVerticalAndCategoryAsync(
             int verticalTypeId,
             int categoryId,
@@ -124,6 +125,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
 
             return plans;
         }
+
         public async Task<bool> UpdatePlanAsync(Guid id, PayToPublishRequestDto request, CancellationToken cancellationToken = default)
         {
             var actor = GetActorProxy(id);
@@ -131,8 +133,9 @@ namespace QLN.Backend.API.Service.PayToPublishService
 
             if (existingData == null || existingData.StatusId == Status.Expired)
             {
-                return false; 
+                return false;
             }
+
             existingData.PlanName = request.PlanName;
             existingData.Description = request.Description;
             existingData.Duration = request.Duration;
@@ -147,7 +150,6 @@ namespace QLN.Backend.API.Service.PayToPublishService
             return await actor.SetDataAsync(existingData, cancellationToken);
         }
 
-
         public async Task<bool> DeletePlanAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var actor = GetActorProxy(id);
@@ -161,6 +163,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
 
             return await actor.SetDataAsync(data, cancellationToken);
         }
+
         public async Task<Guid> CreatePaymentsAsync(PaymentRequestDto request, Guid userId, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
@@ -190,7 +193,8 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 CardHolderName = request.CardDetails.CardHolderName,
                 StartDate = startDate,
                 EndDate = endDate,
-                LastUpdated = DateTime.UtcNow
+                LastUpdated = DateTime.UtcNow,
+                IsExpired = false
             };
 
             var actor = GetPaymentActorProxy(dto.Id);
@@ -198,7 +202,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
 
             if (result)
             {
-                _payToPublishIds.TryAdd(dto.Id, 0);
+                _paymentIds.TryAdd(dto.Id, 0);
                 _logger.LogInformation("Payment transaction created with ID: {TransactionId}", dto.Id);
                 return dto.Id;
             }
@@ -229,10 +233,13 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 return startDate.AddYears(value);
             }
 
+            if (duration.Contains("minute"))
+            {
+                return startDate.AddMinutes(value);
+            }
+
             throw new ArgumentException($"Unsupported duration format: {duration}");
         }
-
-
 
         private IPaymentActor GetPaymentActorProxy(Guid id)
         {
@@ -244,5 +251,83 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 "PayToPublishPaymentActor");
         }
 
+        public async Task<PaymentDto?> GetPaymentAsync(Guid paymentId, CancellationToken cancellationToken = default)
+        {
+            var actor = GetPaymentActorProxy(paymentId);
+            return await actor.GetDataAsync(cancellationToken);
+        }
+
+        public async Task<List<PaymentDto>> GetActivePaymentsForUserAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            var activePayments = new List<PaymentDto>();
+            var paymentIds = _paymentIds.Keys.ToList();
+
+            foreach (var paymentId in paymentIds)
+            {
+                var actor = GetPaymentActorProxy(paymentId);
+                var paymentData = await actor.GetDataAsync(cancellationToken);
+
+                if (paymentData != null &&
+                    paymentData.UserId == userId &&
+                    paymentData.IsExpired != true &&
+                    paymentData.EndDate > DateTime.UtcNow)
+                {
+                    activePayments.Add(paymentData);
+                }
+            }
+
+            return activePayments;
+        }
+
+        public async Task<List<PaymentDto>> GetExpiredPaymentsForUserAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            var expiredPayments = new List<PaymentDto>();
+            var paymentIds = _paymentIds.Keys.ToList();
+
+            foreach (var paymentId in paymentIds)
+            {
+                var actor = GetPaymentActorProxy(paymentId);
+                var paymentData = await actor.GetDataAsync(cancellationToken);
+
+                if (paymentData != null &&
+                    paymentData.UserId == userId &&
+                    (paymentData.IsExpired == true || paymentData.EndDate <= DateTime.UtcNow))
+                {
+                    expiredPayments.Add(paymentData);
+                }
+            }
+
+            return expiredPayments;
+        }
+        public async Task<bool> HandlePaytopyblishExpiryAsync(Guid userId, Guid paymentId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("Processing payment expiry for user {UserId}, payment {PaymentId}", userId, paymentId);
+                _logger.LogInformation("Successfully processed payment expiry for user {UserId}, payment {PaymentId}", userId, paymentId);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing payment expiry for user {UserId}, payment {PaymentId}", userId, paymentId);
+                return false;
+            }
+        }
+
+        public async Task<bool> HandlePaytopyblishExpiryAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("Processing expired payments for user {UserId}", userId);
+                _logger.LogInformation("Successfully processed expired payments for user {UserId}", userId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing expired payments for user {UserId}", userId);
+                return false;
+            }
+        }
     }
 }

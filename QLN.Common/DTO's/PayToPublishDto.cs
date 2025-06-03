@@ -77,6 +77,7 @@ namespace QLN.Common.DTO_s
         public string ExpiryYear { get; set; } = string.Empty;
         public string Cvv { get; set; } = string.Empty; 
         public string CardHolderName { get; set; } = string.Empty;
+        public bool IsExpired { get; set; } = false;
      
         public DateTime LastUpdated { get; set; }
         
