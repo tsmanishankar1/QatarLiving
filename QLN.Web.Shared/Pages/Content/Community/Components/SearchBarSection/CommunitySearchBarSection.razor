@@ -7,13 +7,13 @@
     <MudContainer MaxWidth="MaxWidth.False">
         <div class="d-flex flex-column flex-md-row align-items-center px-4 gap-3 gap-md-0">
             <!-- Search Field -->
-            @* <div class="flex-grow-1 flex-md-grow-4 w-100 w-md-auto">
+            <div class="flex-grow-1 flex-md-grow-4 w-100 w-md-auto">
                 <div class="search-field search-input">
                     <img src="/qln-images/content/Search.svg" alt="mail icon" class="left-icon"  />
                     <input type="text" id="community-search-input" placeholder="Search" class="text-input" @bind="searchText"
                            @bind:event="oninput" />
                 </div>
-            </div> *@
+            </div>
 
             <!-- Category Dropdown -->
             <div class="flex-grow-1 flex-md-grow-2_2 w-100 w-md-auto ms-md-0">
@@ -30,7 +30,7 @@
             </div>
 
             <!-- Search Button -->
-            @* <div class="flex-grow-1 flex-md-grow-1_2 w-100 w-md-auto ms-md-0">
+            <div class="flex-grow-1 flex-md-grow-1_2 w-100 w-md-auto ms-md-0">
                 <MudButton Variant="Variant.Filled" FullWidth="true" OnClick="PerformSearch"
                            Disabled="@loading"
                            Class="community-search-button"
@@ -45,7 +45,7 @@
                         <span>Show Results</span>
                     }
                 </MudButton>
-            </div> *@
+            </div>
         </div>
     </MudContainer>
 </MudPaper>
