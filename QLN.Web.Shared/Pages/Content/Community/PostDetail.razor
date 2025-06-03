@@ -6,6 +6,7 @@
 @using QLN.Web.Shared.Pages.Content.Events
 @using QLN.Web.Shared.Components.BannerSwiper
 @using QLN.Web.Shared.Components.EmptyCard
+@using QLN.Web.Shared.Components.AdBanner
 
 <div class="community-container">
     <div class="container-inner-wrapper">
@@ -84,7 +85,20 @@
                     <div>
                         <PostList />
                     </div>
-                    <MudImage Src="/qln-images/content/Ad.png" Alt="Advertisement" Style="width: 340px; height: 402px;margin-top:12px" />
+                    <div class="post-details-ad-wrapper">
+                            @if (isLoadingBanners)
+                            {
+                                <BannerSkleton />
+                            }
+                            else if (CommunitySideBanners?.Any() == true)
+                            {
+                                <AdBanner BannerItems="CommunitySideBanners" />
+                            }
+                            else
+                            {
+                                <EmptyCard Title="No  banners found." Subtitle="Please check back later for updates." />
+                            }
+                        </div>
                 </MudItem>
             </MudGrid>
         </MudContainer>
@@ -149,6 +163,14 @@
         border-radius: 8px;
         object-fit: cover;
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+
+    .post-details-ad-wrapper {
+        padding: 0;
+        margin-top: 16px;
+        width: 340px;
+        height: 402px;
+        overflow: hidden;
     }
 
     @@media (max-width: 700px) and (min-width: 375px) {

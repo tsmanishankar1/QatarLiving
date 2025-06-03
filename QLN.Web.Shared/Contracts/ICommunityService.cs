@@ -9,6 +9,7 @@ namespace QLN.Web.Shared.Contracts
         Task<PostDetailsDto> GetPostBySlugAsync(string slug);
         Task<List<MorePostItem>> GetMorePostsAsync();
         Task<List<SelectOption>> GetForumCategoriesAsync();
+        Task<bool> PostCommentAsync(CommentPostRequest request);
 
 
     }
