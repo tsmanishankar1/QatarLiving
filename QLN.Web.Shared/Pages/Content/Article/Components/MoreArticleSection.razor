@@ -1,6 +1,7 @@
 @using MudBlazor
 @inherits MoreArticleSectionBase
 @using QLN.Web.Shared.Components.EmptyCard
+ @using QLN.Web.Shared.Components.AdBanner
 
 <div class="card-container">
 
@@ -61,9 +62,11 @@
         <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
     }
 
-    <img src="/qln-images/classifieds/detail_ad.svg" alt="Ad" class="ad-banner" />
+    <div style="width: 340px; height: 402px;">
+            <AdBanner BannerItems="ArticleSideBanners" />
+    </div>
 
-</div>
+    </div>
 
 <style>
     .card-container {

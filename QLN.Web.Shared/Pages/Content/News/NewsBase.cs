@@ -92,6 +92,7 @@ namespace QLN.Web.Shared.Pages.Content.News
         protected QlnNewsSportsMotorsportsPageResponse MotorSportsNewsContent { get; set; } = new QlnNewsSportsMotorsportsPageResponse();
         protected QlnNewsSportsOlympicsPageResponse OlympicsNewsContent { get; set; } = new QlnNewsSportsOlympicsPageResponse();
         protected QlnNewsSportsAthleteFeaturesPageResponse AthleteNewsContent { get; set; } = new QlnNewsSportsAthleteFeaturesPageResponse();
+        protected List<BannerItem> NewsSideBanners { get; set; } = new();
 
         protected List<ContentVideo> VideoList { get; set; } = [];
 
@@ -99,7 +100,8 @@ namespace QLN.Web.Shared.Pages.Content.News
         {
             try
             {
-                var bannersTask = LoadBanners();
+                PreSelectCategory();
+                var bannersTask = LoadBanners(SelectedTab);
                 await Task.WhenAll(bannersTask);
                 QatarNewsContent = await GetNewsQatarAsync();
 
@@ -167,6 +169,44 @@ namespace QLN.Web.Shared.Pages.Content.News
                 Tabs = Array.Empty<string>();
             }
         }
+        protected void PreSelectCategory()
+        {
+            var uri = navManager.ToAbsoluteUri(navManager.Uri);
+            var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+            string? localCategory = null;
+            string? localSubcategory = null;
+            Console.WriteLine("the method is called");
+            if (query.TryGetValue("category", out var cat))
+                localCategory = cat;
+
+            if (query.TryGetValue("subcategory", out var sub))
+                localSubcategory = sub;
+            if (localCategory == "business")
+            {
+                SetViewMode("business");
+                StateHasChanged();
+            }
+            else if (localCategory == "sports")
+            {
+                SetViewMode("sports");
+            }
+            else if (localCategory == "lifestyle")
+            {
+                if (!string.IsNullOrEmpty(localSubcategory))
+                {
+                    SetViewMode("lifestyle");
+                }
+                if (localSubcategory == "food-dining")
+                {
+                    Console.WriteLine("the subcategory is selected" + localSubcategory);
+                    SelectTab("Food & Dining");
+                }
+                if (localSubcategory == "travel-leisure")
+                {
+                    SelectTab("Travel & Leisure");
+                }
+            }
+        }
         protected void OnImageLoaded()
         {
             imageLoaded = true;
@@ -182,41 +222,68 @@ namespace QLN.Web.Shared.Pages.Content.News
             imageLoaded = true;
             StateHasChanged();
         }
-        private async Task LoadBanners()
+        protected async Task LoadBanners(string tab)
         {
             isLoadingBanners = true;
+            StateHasChanged();
             try
             {
                 var banners = await FetchBannerData();
-                DailyHeroBanners = banners?.ContentDailyHero ?? new List<BannerItem>();
-                DailyTakeOverBanners = banners?.ContentDailyTakeoverFirst ?? new List<BannerItem>(); // this one may be wrong ?
+                NewsSideBanners = banners?.ContentNewsSide ?? new List<BannerItem>();
+                switch (tab)
+                {
+                    case "Qatar":
+                        DailyHeroBanners = banners?.NewsQatarHero ?? new List<BannerItem>();
+                        DailyTakeOverBanners = banners?.NewsQatarTakeOver ?? new List<BannerItem>();
+                        break;
+                    case "Community":
+                        DailyHeroBanners = banners?.ContentCommunityHero ?? new List<BannerItem>();
+                        DailyTakeOverBanners = banners?.ContentDailyTakeoverFirst ?? new List<BannerItem>();
+                        break;
+                    case "Law":
+                        DailyTakeOverBanners = banners?.ContentDailyTakeoverFirst ?? new List<BannerItem>();
+                        break;
+                    case "Middle East":
+                        DailyTakeOverBanners = banners?.MiddleEastTakeover ?? new List<BannerItem>();
+                        DailyHeroBanners = banners?.MiddleEastHomeBaner ?? new List<BannerItem>();
+                        break;
+                    case "World":
+                        DailyTakeOverBanners = banners?.MiddleEastTakeover ?? new List<BannerItem>();
+                        DailyHeroBanners = banners?.NewsWorldTakeOver ?? new List<BannerItem>();
+                        break;
+                    default:
+                        DailyTakeOverBanners = banners?.ContentNewsHero ?? new List<BannerItem>();
+                        DailyHeroBanners = banners?.ContentNewsTakeover ?? new List<BannerItem>();
+                        break;
+                }
             }
             finally
             {
                 isLoadingBanners = false;
             }
         }
-        private async Task<BannerResponse?> FetchBannerData()
-    {
-    try
-    {
-        var result = await _eventService.GetBannerAsync();
-        if (result.IsSuccessStatusCode && result.Content != null)
+        protected async Task<BannerResponse?> FetchBannerData()
         {
-            return await result.Content.ReadFromJsonAsync<BannerResponse>();
+            try
+            {
+                var result = await _eventService.GetBannerAsync();
+                if (result.IsSuccessStatusCode && result.Content != null)
+                {
+                    return await result.Content.ReadFromJsonAsync<BannerResponse>();
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "FetchBannerData error.");
+                return null;
+            }
         }
-        return null;
-    }
-    catch (Exception ex)
-    {
-        Logger.LogError(ex, "FetchBannerData error.");
-        return null;
-    }
-}
         protected async void SelectTab(string tab)
         {
             isLoading = true;
             SelectedTab = tab;
+            var bannersTask = LoadBanners(SelectedTab);
             // topNews = new ContentPost();
             // moreArticleList.Clear();
             switch (tab)
@@ -536,7 +603,6 @@ namespace QLN.Web.Shared.Pages.Content.News
         {
             try
             {
-                Console.WriteLine("reached news apii");
                 var apiResponse = await _newsService.GetNewsCommunityAsync() ?? new HttpResponseMessage();
 
                 if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
@@ -595,7 +661,6 @@ namespace QLN.Web.Shared.Pages.Content.News
             try
             {
                 var apiResponse = await _newsService.GetNewsMiddleEastAsync() ?? new HttpResponseMessage();
-
                 if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
                 {
                     var response = await apiResponse.Content.ReadFromJsonAsync<QlnNewsNewsMiddleEastPageResponse>();

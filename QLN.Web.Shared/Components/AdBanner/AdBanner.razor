@@ -1,0 +1,53 @@
+@using QLN.Common.Infrastructure.DTO_s
+@using Microsoft.AspNetCore.Components
+@inject IJSRuntime JS
+
+@if (BannerItems != null && BannerItems.Any())
+{
+    @foreach (var item in BannerItems)
+    {
+        <a href="@item.Link" target="_blank" rel="noopener noreferrer">
+            <img class="ad-banner-image add-image" src="@item.ImageDesktop" data-mobile="@item.ImageMobile"
+                data-desktop="@item.ImageDesktop" alt="@item.Alt" />
+        </a>
+    }
+}
+
+<style>
+    .ad-banner-image {
+        width: 100%;
+        border-radius: 3px;
+        display: block;
+        margin-bottom: 16px;
+        /* optional spacing between banners */
+    }
+
+    @@media (max-width: 768px) {
+        .ad-banner-image {
+            height: auto;
+            max-height: 340px;
+            object-fit: contain;
+        }
+    }
+
+    @@media (min-width: 769px) {
+        .ad-banner-image {
+            height: 340px;
+            object-fit: cover;
+        }
+    }
+</style>
+
+@code {
+    [Parameter] public List<BannerItem> BannerItems { get; set; } = [];
+    private bool _initialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_initialized && BannerItems?.Any() == true)
+        {
+            _initialized = true;
+            await JS.InvokeVoidAsync("adBannerForScreen");
+        }
+    }
+}

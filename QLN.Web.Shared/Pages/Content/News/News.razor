@@ -9,6 +9,7 @@
 @using QLN.Web.Shared.Pages.Content.Daily.DailyNewsCard
 @using QLN.Web.Shared.Pages.Content.News.VideoCards
 @using QLN.Web.Shared.Pages.Content.Daily.DailyNewsLetter
+@using QLN.Web.Shared.Components.AdBanner
 @using QLN.Web.Shared.Components.ViewToggleButtons
 @using QLN.Web.Shared.Components.BannerSwiper
 @using QLN.Web.Shared.Pages.Content.Events
@@ -208,7 +209,10 @@
                     </div>
                     <div class="poular-article-container" >
                 <PopularArticles Articles="@popularArticleListSlot" selectedTab="@SelectedTab" loading="@isLoading" />
-                            <img src="/qln-images/classifieds/detail_ad.svg"  alt="Product Image" />
+
+                            <div style="width: 340px; height: 402px;">
+                            <AdBanner BannerItems="NewsSideBanners" />
+                            </div>
                     </div>
                     <div class="grid-padding">
                     <MudGrid GutterSize="0" Class="pb-3 pt-8">
