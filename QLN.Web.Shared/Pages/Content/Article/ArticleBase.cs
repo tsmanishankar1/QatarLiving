@@ -16,6 +16,7 @@ public class ArticleBase : ComponentBase
      protected bool imageLoaded = false;
  
     protected List<BannerItem> DailyHeroBanners { get; set; } = new();
+    protected List<BannerItem> ArticleSideBanners { get; set; } = new();
     protected bool isLoadingBanners = true;
     public List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
     protected QlnNewsNewsQatarPageResponse QatarNewsContent { get; set; } = new QlnNewsNewsQatarPageResponse();
@@ -143,18 +144,19 @@ public class ArticleBase : ComponentBase
                 return new QlnNewsNewsQatarPageResponse();
             }
     }
-    private async Task LoadBanners()
+        private async Task LoadBanners()
         {
             isLoadingBanners = true;
-            try
-            {
-                var banners = await FetchBannerData();
-                DailyHeroBanners = banners?.ContentDailyHero ?? new List<BannerItem>();
+        try
+        {
+            var banners = await FetchBannerData();
+            DailyHeroBanners = banners?.ContentArticleHero ?? new List<BannerItem>();
+            ArticleSideBanners = banners?.ContentArticleSide ?? new List<BannerItem>();
             }
-            finally
-            {
-                isLoadingBanners = false;
-            }
+        finally
+        {
+            isLoadingBanners = false;
+        }
         }
         private async Task<BannerResponse?> FetchBannerData()
     {
