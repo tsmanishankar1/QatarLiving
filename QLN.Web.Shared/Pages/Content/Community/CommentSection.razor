@@ -1,6 +1,19 @@
 ﻿@using QLN.Web.Shared.Pages.Content.Community.Components.PaginationFooter
 @inherits CommentSectionBase
 
+@if (!IsLoggedIn)
+{
+    <div class="comment-section-empty">
+        <div class="comment-title">Comments</div>
+
+        <div class="empty-state">
+            <img src="qln-images/content/Message.svg" class="msg-icon" />
+            <h6 class="empty-title">You must be logged in to comment</h6>
+           
+        </div>
+    </div>
+}
+else{
 @if (Comment.Comments == null || !Comment.Comments.Any())
 {
     <div class="comment-section-empty">
@@ -65,8 +78,8 @@ else
         {
             <div class="comment-item @(c.IsByCurrentUser ? "my-comment" : "other-comment")">
                 <img src="@("/qln-images/default_logo.svg")" alt="User Avatar" class="post-footer-comment-avatar" />
-               
- <div class="comment-content">
+
+                <div class="comment-content">
                     <div class="comment-header">
                         <div class="comment-meta">
                             <span class="created-by">@c.CreatedBy</span>  •
@@ -74,7 +87,7 @@ else
                         </div>
 
                         <MudMenu Dense="true" AnchorOrigin="Origin.BottomLeft"
-                        @bind-IsOpen="@isMenuOpen" TransformOrigin="Origin.TopRight">
+                                 @bind-IsOpen="@isMenuOpen" TransformOrigin="Origin.TopRight">
                             <ActivatorContent>
                                 <MudIconButton DisableRipple="true" Class="menu-icon-button">
                                     <img src="qln-images/content/Menu.svg"
@@ -90,17 +103,17 @@ else
 
                     </div>
                     <div class="comment-description">@c.Description</div>
-@*  
+                    @*  
                         <div class="post-icons-comment-section">
 
     <div class="comment-wrapper" @onclick="ToggleLikeAsync">
 
                             <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="comment-interaction-icon" />
                            <span class="icon-text">@c.LikeCount</span></div>
-                           
+
  *@
 
-                       @*  <div class="comment-wrapper">
+                    @*  <div class="comment-wrapper">
 
                             <img src="qln-images/content/Dislike.svg" class="comment-interaction-icon" />
                             <span class="icon-text">@c.LikeCount</span>
@@ -126,7 +139,7 @@ else
 
 }
 
-
+}
 <style>
     .comment-section-empty, .comment-list {
         padding: 1rem;
@@ -145,7 +158,7 @@ else
         gap: 0.5rem;
         background-color: #fff;
         transition: border-color 0.2s ease;
-        margin-top:16px;
+        margin-top: 16px;
     }
 
         .comment-input-wrapper.has-text {
@@ -157,9 +170,9 @@ else
         border: none;
         outline: none;
         font-size: 1rem;
-        margin-top:10px;
+        margin-top: 10px;
         line-height: 1.5;
-        max-height: calc(1.5em * 3); 
+        max-height: calc(1.5em * 3);
         min-height: calc(1.5em * 1.5);
         overflow-y: auto;
         overflow-y: auto;
@@ -198,6 +211,7 @@ else
     .icon-text {
         color: #00426D
     }
+
     .comment-icon {
         background-color: #eef;
         margin-bottom: 0.5rem;
@@ -249,7 +263,7 @@ else
         border-radius: 200px;
         border: 1.5px solid #F0F0F0;
         object-fit: cover;
-        margin-top:12px;
+        margin-top: 12px;
     }
 
     .comment-meta {
@@ -278,7 +292,7 @@ else
         color: #1C1C1C;
     }
 
-    .comment-description{
+    .comment-description {
         font-family: 'Public Sans', sans-serif;
         font-weight: 400;
         font-size: 16px;
@@ -290,7 +304,6 @@ else
         font-family: 'Public Sans', sans-serif;
         font-weight: 500;
         font-size: 22px;
-      
         color: #242424;
         margin-top: 6px;
     }
@@ -346,10 +359,10 @@ else
 
     .pagination-container {
         display: flex;
-        justify-content: center; 
+        justify-content: center;
         padding: 1rem 0;
         background-color: #fff;
-        width:100%;
+        width: 100%;
         padding: 0px 30px;
     }
 
