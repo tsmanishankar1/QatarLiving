@@ -40,16 +40,25 @@
                     
 
                     <div class="icons">
-                     <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu">
+                     <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight">
                             <ActivatorContent>
                                 <MudIconButton Icon="@Icons.Material.Filled.Share" Class="icons-color" />
                             </ActivatorContent>
                             <ChildContent>
                                 @foreach (var item in shareMenuItems)
                                 {
-                                    <MudMenuItem Href="@item.Route" Target="@(item.OpenInNewTab ? "_blank" : "_self")">
-                                        <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
-                                    </MudMenuItem>
+                                    if (item.OnClick != null)
+                                    {
+                                        <MudMenuItem OnClick="@item.OnClick">
+                                            <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                        </MudMenuItem>
+                                    }
+                                    else
+                                    {
+                                        <MudMenuItem Href="@item.Route" Target="@(item.OpenInNewTab ? "_blank" : "_self")">
+                                            <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                        </MudMenuItem>
+                                    }
                                 }
                             </ChildContent>
                         </MudMenu>
@@ -89,6 +98,30 @@
         font-weight: 500;
         font-size: 13px;
         color: var(--color-text-heading);
+    }
+
+    .share-icon {
+        margin: 0;
+        width: 32px;
+        height: 32px;
+    }
+
+    .mud-popover .mud-list {
+        max-height: inherit;
+        overflow-y: auto;
+        display: flex !important;
+    }
+
+    .mud-menu-item{
+        padding: 0px 6px 0px 0px !important;
+    }
+
+    .mud-menu-list {
+        padding-left: 6px;
+    }
+
+    .mud-menu-item .mud-menu-item-text {
+        margin: 4px 0px 0px 0px !important;
     }
 
     .event-title {

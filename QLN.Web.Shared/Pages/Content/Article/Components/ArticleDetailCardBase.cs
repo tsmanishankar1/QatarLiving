@@ -1,11 +1,13 @@
 using System;
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop; 
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Helpers;
 using System.Collections.Generic;
 using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Models;
+using MudBlazor;
 public class ArticleDetailCardBase : ComponentBase
 {
     [Parameter]
@@ -13,6 +15,10 @@ public class ArticleDetailCardBase : ComponentBase
     protected bool imageLoaded = false;
     [Inject]
     private NavigationManager Navigation { get; set; }
+    [Inject]
+    protected IJSRuntime JSRuntime { get; set; }
+    [Inject]
+    protected ISnackbar Snackbar { get; set; }
     [Parameter]
     public bool loading { get; set; }
     private string CurrentUrl => Navigation.ToAbsoluteUri(Navigation.Uri).ToString();
@@ -22,6 +28,7 @@ public class ArticleDetailCardBase : ComponentBase
         public string ImageSrc { get; set; }
         public string Route { get; set; }
         public bool OpenInNewTab { get; set; } = false;
+        public Func<Task> OnClick { get; set; }
     }
     protected List<MenuItem> shareMenuItems => new()
     {
@@ -33,9 +40,50 @@ public class ArticleDetailCardBase : ComponentBase
         },
         new MenuItem
         {
+            ImageSrc = "/qln-images/instagram_share_icon.svg",
+            Route = SocialShareHelper.GetInstagramUrl(CurrentUrl),
+            OpenInNewTab = true
+        },
+        new MenuItem
+        {
             ImageSrc = "/qln-images/whatsApp_share_icon.svg",
             Route = SocialShareHelper.GetWhatsAppUrl(CurrentUrl),
             OpenInNewTab = true
+        },
+        new MenuItem
+        {
+            ImageSrc = "/qln-images/tiktok_share_icon.svg",
+            Route = SocialShareHelper.GetTikTokUrl(CurrentUrl),
+            OpenInNewTab = true
+        },
+        new MenuItem
+        {
+            ImageSrc = "/qln-images/x_share_icon.svg",
+            Route = SocialShareHelper.GetXUrl(CurrentUrl, Post?.Title ?? ""),
+            OpenInNewTab = true
+        },
+        new MenuItem
+        {
+            ImageSrc = "/qln-images/linkedin_share_icon.svg",
+            Route = SocialShareHelper.GetLinkedInUrl(CurrentUrl, Post?.Title ?? "", Post?.Description ?? ""),
+            OpenInNewTab = true
+        },
+        new MenuItem
+        {
+            ImageSrc = "/qln-images/copy_link_icon.svg",
+            OnClick = async () =>
+            {
+                bool copied = false;
+                copied = await SocialShareHelper.CopyLinkToClipboardAsync(JSRuntime, CurrentUrl);
+                if (copied)
+                {
+                    Snackbar.Add("Item link has been copied to the clipboard", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
+                }
+            }
         }
     }; protected int commentsCount = 0;
     public string DescriptionHtml { get; set; }
