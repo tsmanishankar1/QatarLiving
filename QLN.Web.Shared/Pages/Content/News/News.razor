@@ -129,10 +129,10 @@
                         }
                         </div>
                     }
-                    else if (articleListSlot1 != null && articleListSlot1.Any())
+                    else if (topNewsListSlot != null && topNewsListSlot.Any())
                     {
-                        var thirdItem = articleListSlot1.ElementAtOrDefault(2);
-                        @foreach (var news in articleListSlot1.Take(3))
+                        var thirdItem = topNewsListSlot.ElementAtOrDefault(2);
+                        @foreach (var news in topNewsListSlot.Take(3).Skip(1))
                         { 
                         <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)"/>
                          @if(news != thirdItem){
@@ -194,12 +194,12 @@
                         </div>
                         
                     }
-                else if (articleListSlot2 != null && articleListSlot2.Any())
+                else if (articleListSlot1 != null && articleListSlot1.Any())
                         {
-                    @foreach (var news in articleListSlot2.Take(5))
+                    @foreach (var news in articleListSlot1.Take(5))
                         { 
                             <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)"/>
-                            @if(news != articleListSlot2.Last()){
+                            @if(news != articleListSlot1.Last()){
                                 <div class="divider-vertical"></div>
                             }
                         }
@@ -211,7 +211,7 @@
                     <div class="poular-article-container" >
                 <PopularArticles Articles="@popularArticleListSlot" selectedTab="@SelectedTab" loading="@isLoading" />
 
-                            <div style="width: 340px; height: 402px;">
+                            <div class="ad-container-style">
                             <AdBanner BannerItems="NewsSideBanners" />
                             </div>
                     </div>
@@ -253,11 +253,11 @@
                             </MudItem>
                         }
                         }
-                    else if (moreArticleListSlot != null && moreArticleListSlot.Any())
+                    else if (articleListSlot2 != null && articleListSlot2.Any())
                         {
-                        @for (int i = 0; i < moreArticleListSlot.Take(9).Count(); i++)
+                        @for (int i = 0; i < articleListSlot2.Take(9).Count(); i++)
                         {
-                            var news = moreArticleListSlot[i];
+                            var news = articleListSlot2[i];
                             <MudItem xs="12" sm="6" md="4"> 
                             <div class="card-with-divider">
                             <NewsCard news="news" IsHorizontal="true" OnClick="() => onclick(news)" />
@@ -314,6 +314,7 @@
         max-width: 1170px;
         margin: 0 auto;
         width: 100%;
+        padding: 0px 16px !important;
 }
 .responsive-news-container-daily {
         width: 100%;
@@ -370,6 +371,10 @@
     flex-direction: row;
     align-items: stretch;
     gap: 0; /* spacing will come from the divider itself */
+}
+.ad-container-style{
+     width: 340px;
+    height: 402px;
 }
 .news-tabs {
     width: 100%;
@@ -526,7 +531,7 @@
 .flex-container {
     width: 100%;
     @* justify-content: flex-start; *@
-    align-items: flex-end;
+    @* align-items: flex-end; *@
     display: flex;
     flex-wrap: wrap;
     gap: 0px; 
@@ -580,6 +585,17 @@
     @* display: flex; *@
     @* justify-content: center; *@
     @* width: 340px; *@
+}
+@@media (max-width: 430px) {
+.divider-vertical {
+   display: none;
+}
+}
+@@media (max-width: 768px) {
+    .ad-container-style {
+        height: 220px !important; 
+        width: 100% !important;   
+    }
 }
 
 
@@ -676,6 +692,9 @@
     gap: 0px; 
 }
 }
+.news-tabs{
+    padding-left: 0px !important;
+}
 @@media (max-width: 375px) {
     .custom-text {
         font-weight: 600; 
@@ -683,6 +702,16 @@
         padding-left: 5px;
         padding-right: 5px;    
         font-family: 'Public Sans', sans-serif;
+    }
+    .max-container {
+        max-width: 1170px;
+        margin: 0 auto;
+        width: 100%;
+        padding: 0px 25px;
+    }
+    .ad-container-style {
+        height: 150px !important; 
+        width: 100% !important;   
     }
      .grid-padding {
         padding-right: 16px;
@@ -720,6 +749,10 @@
         padding-left: 2px;
         padding-right: 2px;    
         font-family: 'Public Sans', sans-serif;
+    }
+    .ad-container-style {
+        height: 150px !important; 
+        width: 100% !important;   
     }
      .flex-container {
         width: 100%;
@@ -837,6 +870,10 @@
     }
      .divider-vertical {
         display: none;
+    }
+     .ad-container-style {
+        height: 150px !important; 
+        width: 100% !important;   
     }
     .flex-container {
         width: 100%;
