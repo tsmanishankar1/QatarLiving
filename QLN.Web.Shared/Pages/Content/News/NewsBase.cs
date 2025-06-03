@@ -96,7 +96,7 @@ namespace QLN.Web.Shared.Pages.Content.News
         {
             try
             {
-                var bannersTask = LoadBanners();
+                var bannersTask = LoadBanners(SelectedTab);
                 await Task.WhenAll(bannersTask);
                 QatarNewsContent = await GetNewsQatarAsync();
 
@@ -178,41 +178,81 @@ namespace QLN.Web.Shared.Pages.Content.News
             imageLoaded = true;
             StateHasChanged();
         }
-        private async Task LoadBanners()
+        // private async Task LoadBanners()
+        // {
+        //     isLoadingBanners = true;
+        //     try
+        //     {
+        //         var banners = await FetchBannerData();
+        //         DailyHeroBanners = banners?.ContentDailyHero ?? new List<BannerItem>();
+        //         DailyTakeOverBanners = banners?.ContentDailyTakeoverFirst ?? new List<BannerItem>(); 
+        //     }
+        //     finally
+        //     {
+        //         isLoadingBanners = false;
+        //     }
+        // }
+        protected async Task LoadBanners(string tab)
         {
             isLoadingBanners = true;
+            StateHasChanged();
             try
             {
                 var banners = await FetchBannerData();
-                DailyHeroBanners = banners?.ContentDailyHero ?? new List<BannerItem>();
-                DailyTakeOverBanners = banners?.ContentDailyTakeoverFirst ?? new List<BannerItem>(); // this one may be wrong ?
+                switch (tab)
+                {
+                    case "Qatar":
+                        DailyHeroBanners = banners?.NewsQatarHero ?? new List<BannerItem>();
+                        DailyTakeOverBanners = banners?.NewsQatarTakeOver ?? new List<BannerItem>();
+                        break;
+                    case "Community":
+                        DailyHeroBanners = banners?.ContentCommunityHero ?? new List<BannerItem>();
+                        DailyTakeOverBanners = banners?.ContentDailyTakeoverFirst ?? new List<BannerItem>();
+                        break;
+                    case "Law":
+                        DailyTakeOverBanners = banners?.ContentDailyTakeoverFirst ?? new List<BannerItem>();
+                        break;
+                    case "Middle East":
+                        DailyTakeOverBanners = banners?.MiddleEastTakeover ?? new List<BannerItem>();
+                        DailyHeroBanners = banners?.MiddleEastHomeBaner ?? new List<BannerItem>();
+                        break;
+                    case "World":
+                        DailyTakeOverBanners = banners?.MiddleEastTakeover ?? new List<BannerItem>();
+                        DailyHeroBanners = banners?.NewsWorldTakeOver ?? new List<BannerItem>();
+                        break;
+                    default:
+                        DailyTakeOverBanners = banners?.ContentNewsHero ?? new List<BannerItem>();
+                        DailyHeroBanners = banners?.ContentNewsTakeover ?? new List<BannerItem>();
+                        break;
+                }
             }
             finally
             {
                 isLoadingBanners = false;
             }
         }
-        private async Task<BannerResponse?> FetchBannerData()
-    {
-    try
-    {
-        var result = await _eventService.GetBannerAsync();
-        if (result.IsSuccessStatusCode && result.Content != null)
+        protected async Task<BannerResponse?> FetchBannerData()
         {
-            return await result.Content.ReadFromJsonAsync<BannerResponse>();
+            try
+            {
+                var result = await _eventService.GetBannerAsync();
+                if (result.IsSuccessStatusCode && result.Content != null)
+                {
+                    return await result.Content.ReadFromJsonAsync<BannerResponse>();
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "FetchBannerData error.");
+                return null;
+            }
         }
-        return null;
-    }
-    catch (Exception ex)
-    {
-        Logger.LogError(ex, "FetchBannerData error.");
-        return null;
-    }
-}
         protected async void SelectTab(string tab)
         {
             isLoading = true;
             SelectedTab = tab;
+            var bannersTask = LoadBanners(SelectedTab);
             // topNews = new ContentPost();
             // moreArticleList.Clear();
             switch (tab)
