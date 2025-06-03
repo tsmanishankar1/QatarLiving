@@ -48,21 +48,21 @@
   </ItemGroup>
 
 	<ItemGroup>
-	  <Compile Update="Locales\Resources.en_US.Designer.cs">
+	  <Compile Update="Locales\Resources.en-US.Designer.cs">
 	    <DesignTime>True</DesignTime>
 	    <AutoGen>True</AutoGen>
-	    <DependentUpon>Resources.en_US.resx</DependentUpon>
+	    <DependentUpon>Resources.en-US.resx</DependentUpon>
 	  </Compile>
 	</ItemGroup>
 
 	<ItemGroup>
-	  <EmbeddedResource Update="Locales\Resources.en_US.resx">
+	  <EmbeddedResource Update="Locales\Resources.en-US.resx">
 	    <SubType>Designer</SubType>
 	    <Generator></Generator>
 	  </EmbeddedResource>
-	  <EmbeddedResource Update="Locales\Resources.en_US.resx">
+	  <EmbeddedResource Update="Locales\Resources.en-US.resx">
 	    <Generator>PublicResXFileCodeGenerator</Generator>
-	    <LastGenOutput>Resources.en_US.Designer.cs</LastGenOutput>
+	    <LastGenOutput>Resources.en-US.Designer.cs</LastGenOutput>
 	  </EmbeddedResource>
 	</ItemGroup>
 
