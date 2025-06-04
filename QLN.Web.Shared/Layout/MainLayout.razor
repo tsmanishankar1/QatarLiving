@@ -68,7 +68,9 @@
                 <ActivatorContent>
                     <MudButton id="headerPostButton" Variant="Variant.Filled"
                         Style="background-color: #FF7F38; color: white;" Size="Size.Medium"
-                        StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn desktop-post-btn">
+                        StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn desktop-post-btn"
+                        @onclick="OnPostAdClicked"
+                    >
                         <span class="post-ad-text">Post Ad</span>
                     </MudButton>
                 </ActivatorContent>
@@ -85,8 +87,9 @@
                 </ChildContent> *@
             </MudMenu>
 
-            <img src="/qln-images/header/add_post_svg.svg" alt="Post" class="mobile-post-icon"
-                @onclick="@(() => NavManager.NavigateTo(navigationPath.PostingRules))" />
+            <img src="/qln-images/header/add_post_svg.svg" alt="Post" class="mobile-post-icon" 
+     @onclick="OnPostAdClicked" />
+
         </div>
     </div>
 
@@ -176,9 +179,10 @@
             if (user.Identity != null && user.Identity.IsAuthenticated)
             {
                 Name = user.FindFirst(ClaimTypes.Name)?.Value;
-                IsLoggedIn = true;
+                IsLoggedIn = true;         
             }
         }
+        StateHasChanged();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -202,6 +206,7 @@
         {
             IsLoggedIn = false;
         }
+        StateHasChanged();
     }
 
     private void ToggleMobileMenu()
@@ -253,6 +258,22 @@
 
         return destination;
     }
+
+    private void OnPostAdClicked()
+    {
+            if (IsLoggedIn)
+        {
+        
+            NavManager.NavigateTo(navigationPath.PostAd, forceLoad: true);
+        }
+        else
+        {
+       
+            NavManager.NavigateTo($"{navigationPath.Login}", forceLoad: true);
+        }
+    
+    }
+
 
     // private void OnPostClicked()
     // {
@@ -322,6 +343,7 @@ Route = "/more-features-coming-soon"
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: relative
     }
 
     .mobile-post-icon {
@@ -435,8 +457,10 @@ Route = "/more-features-coming-soon"
         @@media (max-width: 992px) {
         .mobile-post-icon {
         display: inline-block !important;
-        position: fixed;
+      position: absolute;
+      top: 50%;
         right: 16px; 
+        transform: translateY(-50%);
         z-index: 1100; 
     }
 
