@@ -39,6 +39,7 @@ namespace QLN.Web.Shared.Model
 
     public class CommentModel
     {
+        public string Id { get; set; }
         public string Avatar { get; set; } = string.Empty;
         public string CreatedBy { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
@@ -83,7 +84,7 @@ namespace QLN.Web.Shared.Model
     }
     public class CommentDto
     {
-        public string comment_id { get; set; } = string.Empty;
+        public string nid { get; set; } 
         public string user_name { get; set; } = string.Empty;
         public DateTime created_date { get; set; }
         public string subject { get; set; } = string.Empty;

@@ -1,6 +1,10 @@
 ﻿@using QLN.Web.Shared.Pages.Content.Community.Components.PaginationFooter
 @inherits CommentSectionBase
+<div class="user-info">
+    <p><strong>User:</strong> @Name (Name: @Name)</p>
+    <p><strong>User:</strong> @CurrentUserId (ID: @CurrentUserId)</p>
 
+</div>
 @if (!IsLoggedIn)
 {
     <div class="comment-section-empty">

@@ -358,27 +358,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 isLoadingBanners = false;
             }
         }
-        protected async void PostComment()
-        {
-            var request = new CommentPostRequest
-            {
-                Nid = 123,  
-                Uid = 456,  
-                Comment = newComment
-            };
-
-            var success = await CommunityService.PostCommentAsync(request);
-
-            if (success)
-            {
-                Console.WriteLine($"Comment posted: {newComment}");
-                newComment = string.Empty;
-            }
-            else
-            {
-                Console.WriteLine("Failed to post comment.");
-            }
-        }
+        
 
     }
 }

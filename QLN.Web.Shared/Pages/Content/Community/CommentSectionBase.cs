@@ -70,12 +70,32 @@ namespace QLN.Web.Shared.Pages.Content.Community
         {
             newComment = e.Value?.ToString() ?? string.Empty;
         }
-      
 
-        protected void PostComment()
+        protected async void PostComment()
         {
-            Console.WriteLine($"Posted comment: {newComment}");
-            newComment = string.Empty;
+            if (string.IsNullOrWhiteSpace(newComment) || CurrentUserId == 0 || Comment == null)
+            {
+                Snackbar.Add("Unable to post comment. Missing data.Please check back later!", Severity.Error);
+                return;
+            }
+
+            var request = new CommentPostRequest
+            {
+                nid = int.TryParse(Comment.Id?.ToString(), out var nid) ? nid : 0,
+                uid = CurrentUserId,
+                comment = newComment
+            };
+           
+            var success = await CommunityService.PostCommentAsync(request);
+            if (success)
+            {
+                newComment = string.Empty;
+             
+            }
+            else
+            {
+                Snackbar.Add("Failed to post comment.", Severity.Error);
+            }
         }
 
         protected void OnReport()
