@@ -95,6 +95,20 @@ namespace QLN.Web.Shared.Services
                 return false;
             }
         }
+        public async Task<PaginatedCommentResponse> GetCommentsByPostIdAsync(int nid, int page, int pageSize)
+        {
+            try
+            {
+                var url = $"api/content/comments/{nid}?page={page}&page_size={pageSize}";
+                var response = await _httpClient.GetFromJsonAsync<PaginatedCommentResponse>(url);
+                return response ?? new PaginatedCommentResponse();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"API Error: {ex.Message}");
+                return new PaginatedCommentResponse();
+            }
+        }
 
         public class CategoryResponse
         {

@@ -39,6 +39,7 @@ namespace QLN.Web.Shared.Model
 
     public class CommentModel
     {
+        public string Id { get; set; }
         public string Avatar { get; set; } = string.Empty;
         public string CreatedBy { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
@@ -83,7 +84,7 @@ namespace QLN.Web.Shared.Model
     }
     public class CommentDto
     {
-        public string comment_id { get; set; } = string.Empty;
+        public string nid { get; set; } 
         public string user_name { get; set; } = string.Empty;
         public DateTime created_date { get; set; }
         public string subject { get; set; } = string.Empty;
@@ -91,6 +92,25 @@ namespace QLN.Web.Shared.Model
         public int UnlikeCount { get; set; }
         public string profile_picture { get; set; }
 
+    }
+    public class PaginatedCommentResponse
+    {
+        public int total { get; set; }
+        public int page { get; set; }
+        public int page_size { get; set; }
+        public List<CommentItem> comments { get; set; }
+
+    }
+    public class CommentItem
+    {
+        public string comment_id { get; set; }
+        public string user_id { get; set; }
+        public string user_name { get; set; }
+        public string subject { get; set; }
+        public string date_created { get; set; }
+        public string profile_picture { get; set; }
+        public int LikeCount { get; set; }
+        public int UnlikeCount { get; set; }
     }
     public class PostListResponse
     {
