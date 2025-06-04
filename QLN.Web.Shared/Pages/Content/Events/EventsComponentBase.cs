@@ -139,12 +139,6 @@ namespace QLN.Web.Shared.Pages.Content.Events
                 isLoadingCategories = false;
             }
         }
-        protected async Task HandleCategoryChanged(string forumId)
-        {
-            //SelectedForumId = forumId;
-            //var FeaturedEventData = await LoadAllEvents();
-          
-        }
         private async Task LoadFeaturedEvents()
         {
             isLoadingFeatured = true;

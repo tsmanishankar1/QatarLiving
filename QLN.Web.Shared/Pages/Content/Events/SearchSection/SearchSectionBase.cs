@@ -41,9 +41,6 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
 
         protected DotNetObjectReference<SearchSectionBase>? _dotNetRef;
 
-
-        [Parameter] public EventCallback<string> OnCategoryChanged { get; set; }
-
         private const int MobileBreakpoint = 770;
 
         protected MudDateRangePicker _pickerRef;
