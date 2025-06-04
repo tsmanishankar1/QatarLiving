@@ -10,7 +10,7 @@
 @using QLN.Web.Shared.Services
 @inject IOptions<NavigationPath> options;
 
-<MudThemeProvider />
+<MudThemeProvider @ref="@_mudThemeProvider"/>
 <MudDialogProvider />
 <MudPopoverProvider />
 <MudSnackbarProvider Position="SnackbarPosition.BottomLeft" />
@@ -23,8 +23,14 @@
 
     <div class="header-left">
         <NavLink href="/">
-
-            <MudImage id="logoImage" Src="/qln-images/Headerlogo.svg" Alt="Qatar Living" Class="logo-img" />
+                @if (_isDarkMode)
+                {
+                    <MudImage id="logoImage" Src="/qln-images/nav-logo.svg" Alt="Qatar Living" Class="logo-img" />
+                }
+                else
+                {
+                    <MudImage id="logoImage" Src="/qln-images/logo.png" Alt="Qatar Living" Class="logo-img" />
+                }
         </NavLink>
     </div>
     <div style="display: flex; align-items: center; gap: 36px;">
@@ -156,7 +162,7 @@
 
 <main class="main-content">
     @Body
-    <Footer />
+    <Footer DarkMode="@_isDarkMode"/>
 </main>
 
 
@@ -166,7 +172,8 @@
     public bool IsLoggedIn { get; set; } = false;
 
     private NavigationPath navigationPath;
-
+    private bool _isDarkMode;
+    private MudThemeProvider _mudThemeProvider;
     protected override async Task OnInitializedAsync()
     {
         navigationPath = options.Value;
@@ -187,7 +194,13 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender) return;
+        if (firstRender)
+        {
+            _isDarkMode = await _mudThemeProvider.GetSystemPreference();
+            StateHasChanged();
+            return;
+        }
+            
         var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
         if (authState != null)
         {
