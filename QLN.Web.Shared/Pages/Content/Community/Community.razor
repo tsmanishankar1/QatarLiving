@@ -67,10 +67,10 @@
                         </div>
                         @if (IsLoading)
                         {
-                            @for (int i = 0; i < 3; i++)
+                            @for (int i = 0; i < PageSize; i++)
                             {
                                 <div class="postcard-margin-top">
-                                    <MudSkeleton Width="100%" Height="200px" Animation="Animation.Pulse" />
+                                    <MudSkeleton Width="100%" Height="440px" Animation="Animation.Pulse" />
                                     <MudSkeleton Height="32px" Width="70%" Animation="Animation.Wave" Class="my-2" />
                                     <MudSkeleton Height="20px" Width="90%" Animation="Animation.Wave" />
 

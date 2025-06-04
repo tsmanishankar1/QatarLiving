@@ -51,16 +51,11 @@ public class CommunitySearchBarSectionBase : ComponentBase
     {
         
 
-        if (!string.IsNullOrEmpty(searchText))
-        {
+       
             //var success = await CommunitySearchService.PerformSearchAsync(searchText);
             Snackbar.Add("More features are coming soon!", Severity.Success);
 
-        }
-        else
-        {
-            Snackbar.Add("Please enter text to search", Severity.Warning);
-        }
+        
     }
   
 }
