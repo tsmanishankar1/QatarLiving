@@ -166,7 +166,13 @@ builder.Services.AddActors(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
-builder.Services.AddResponseCaching();   
+builder.Services.AddResponseCaching();
+
+builder.Services.AddResponseCompression(options =>
+    {
+        options.EnableForHttps = true;
+        options.MimeTypes = new[] { "text/css", "application/javascript", "text/html", "application/json" };
+    });
 
 builder.Services.AddDaprClient();
 
@@ -182,7 +188,12 @@ builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
 var app = builder.Build();
 
-app.UseResponseCaching();                
+app.UseResponseCaching();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseResponseCompression();
+}
 
 if (builder.Configuration.GetValue<bool>("EnableSwagger"))
 {

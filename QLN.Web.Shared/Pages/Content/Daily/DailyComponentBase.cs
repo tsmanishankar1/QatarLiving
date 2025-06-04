@@ -47,7 +47,10 @@ namespace QLN.Web.Shared.Pages.Content.Daily
 
         protected async override Task OnAfterRenderAsync(bool firstRender)
         {
+            if (!firstRender) return;
+
             isLoading = true;
+
             try
             {
                 await Task.WhenAll(

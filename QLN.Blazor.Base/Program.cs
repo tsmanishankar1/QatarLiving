@@ -64,7 +64,14 @@ builder.Services.AddCors(options =>
 
 
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents()
+    // Adjusting SignalR Timeouts
+    .AddHubOptions(options =>
+    {
+        options.ClientTimeoutInterval = TimeSpan.FromSeconds(60);
+        options.HandshakeTimeout = TimeSpan.FromSeconds(30);
+    });
+
 builder.Services.AddMudServices();
 
 builder.Services.AddLocalization();
@@ -79,15 +86,11 @@ if (string.IsNullOrWhiteSpace(newsLetterSubscriptionAPIUrl))
 
 // });
 
-// enable compression in development mode
-if (builder.Environment.IsDevelopment())
-{
-    builder.Services.AddResponseCompression(options =>
+builder.Services.AddResponseCompression(options =>
     {
         options.EnableForHttps = true;
         options.MimeTypes = new[] { "text/css", "application/javascript", "text/html", "application/json" };
     });
-}
 
     builder.Services.AddAuthentication();
 
@@ -235,7 +238,7 @@ var localizationOptions = new RequestLocalizationOptions()
 app.UseRequestLocalization(localizationOptions);
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment())
 {
     app.UseResponseCompression();
     // app.UseMigrationsEndPoint();
