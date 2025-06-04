@@ -56,11 +56,11 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<CompanyProfileEntity?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
+        public async Task<CompanyProfileDto?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.GetStateAsync<CompanyProfileEntity>(ConstantValues.CompanyStoreName, id.ToString(), cancellationToken: cancellationToken);
+                var result = await _dapr.GetStateAsync<CompanyProfileDto>(ConstantValues.CompanyStoreName, id.ToString(), cancellationToken: cancellationToken);
                 if(result == null)
                     throw new KeyNotFoundException($"Company with id '{id}' was not found.");
                 return result;
@@ -71,18 +71,18 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<List<CompanyProfileEntity>> GetAllCompanies(CancellationToken cancellationToken = default)
+        public async Task<List<CompanyProfileDto>> GetAllCompanies(CancellationToken cancellationToken = default)
         {
             try
             {
                 var keys = await GetIndex();
-                if (!keys.Any()) return new List<CompanyProfileEntity>();
+                if (!keys.Any()) return new List<CompanyProfileDto>();
 
                 var items = await _dapr.GetBulkStateAsync(ConstantValues.CompanyStoreName, keys, parallelism: 10);
 
                 return items
                     .Where(i => !string.IsNullOrWhiteSpace(i.Value))
-                    .Select(i => JsonSerializer.Deserialize<CompanyProfileEntity>(i.Value!, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!)
+                    .Select(i => JsonSerializer.Deserialize<CompanyProfileDto>(i.Value!, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!)
                     .Where(e => e.Id != Guid.Empty)
                     .ToList();
             }
@@ -121,7 +121,7 @@ namespace QLN.Company.MS.Service
         {
             try
             {
-                var entity = await _dapr.GetStateAsync<CompanyProfileEntity>(ConstantValues.CompanyStoreName, id.ToString(), cancellationToken: cancellationToken);
+                var entity = await _dapr.GetStateAsync<CompanyProfileDto>(ConstantValues.CompanyStoreName, id.ToString(), cancellationToken: cancellationToken);
 
                 if (entity == null)
                 {
@@ -152,7 +152,7 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-       private async Task<CompanyProfileEntity> ConvertDtoToEntity(
+       private async Task<CompanyProfileDto> ConvertDtoToEntity(
           CompanyProfileDto dto,
           Guid id,
           CancellationToken cancellationToken = default)
@@ -174,7 +174,7 @@ namespace QLN.Company.MS.Service
                 if (!Enum.IsDefined(typeof(VerticalType), dto.VerticalId))
                     throw new InvalidOperationException($"Invalid VerticalId: {dto.VerticalId}");
 
-                return new CompanyProfileEntity
+                return new CompanyProfileDto
                 {
                     Id = id,
                     VerticalId = dto.VerticalId,
@@ -275,8 +275,7 @@ namespace QLN.Company.MS.Service
             {
                 var allCompanies = await GetAllCompanies(cancellationToken);
                 var companies = allCompanies
-                    .Where(c => c.UserId == userId &&
-                                Enum.IsDefined(typeof(VerticalType), c.VerticalId) &&
+                    .Where(c => Enum.IsDefined(typeof(VerticalType), c.VerticalId) &&
                                 (VerticalType)c.VerticalId == vertical)
                     .ToList();
 
@@ -284,27 +283,27 @@ namespace QLN.Company.MS.Service
 
                 foreach (var company in companies)
                 {
-                    var requiredFields = new Dictionary<string, Func<CompanyProfileEntity, bool>>
-            {
-                { "CompanyLogo", c => !string.IsNullOrWhiteSpace(c.CompanyLogo) },
-                { "BusinessName", c => !string.IsNullOrWhiteSpace(c.BusinessName) },
-                { "Country", c => !string.IsNullOrWhiteSpace(c.Country) },
-                { "City", c => !string.IsNullOrWhiteSpace(c.City) },
-                { "PhoneNumber", c => !string.IsNullOrWhiteSpace(c.PhoneNumber) },
-                { "Email", c => !string.IsNullOrWhiteSpace(c.Email) },
-                { "StartDay", c => !string.IsNullOrWhiteSpace(c.StartDay) },
-                { "EndDay", c => !string.IsNullOrWhiteSpace(c.EndDay) },
-                { "StartHour", c => c.StartHour != TimeSpan.Zero },
-                { "EndHour", c => c.EndHour != TimeSpan.Zero },
-                { "NatureOfBusiness", c => !string.IsNullOrWhiteSpace(c.NatureOfBusiness) },
-                { "CompanySize", c => c.CompanySize != default },
-                { "CompanyType", c => c.CompanyType != default },
-                { "UserDesignation", c => !string.IsNullOrWhiteSpace(c.UserDesignation) },
-                { "BusinessDescription", c => !string.IsNullOrWhiteSpace(c.BusinessDescription) },
-                { "CRNumber", c => c.CRNumber > 0 },
-                { "VerticalId", c => c.VerticalId > 0 },
-                { "CRDocument", c => !string.IsNullOrWhiteSpace(c.CRDocument) },
-            };
+                    var requiredFields = new Dictionary<string, Func<CompanyProfileDto, bool>>
+                    {
+                        { "CompanyLogo", c => !string.IsNullOrWhiteSpace(c.CompanyLogo) },
+                        { "BusinessName", c => !string.IsNullOrWhiteSpace(c.BusinessName) },
+                        { "Country", c => !string.IsNullOrWhiteSpace(c.Country) },
+                        { "City", c => !string.IsNullOrWhiteSpace(c.City) },
+                        { "PhoneNumber", c => !string.IsNullOrWhiteSpace(c.PhoneNumber) },
+                        { "Email", c => !string.IsNullOrWhiteSpace(c.Email) },
+                        { "StartDay", c => !string.IsNullOrWhiteSpace(c.StartDay) },
+                        { "EndDay", c => !string.IsNullOrWhiteSpace(c.EndDay) },
+                        { "StartHour", c => c.StartHour != TimeSpan.Zero },
+                        { "EndHour", c => c.EndHour != TimeSpan.Zero },
+                        { "NatureOfBusiness", c => !string.IsNullOrWhiteSpace(c.NatureOfBusiness) },
+                        { "CompanySize", c => c.CompanySize != default },
+                        { "CompanyType", c => c.CompanyType != default },
+                        { "UserDesignation", c => !string.IsNullOrWhiteSpace(c.UserDesignation) },
+                        { "BusinessDescription", c => !string.IsNullOrWhiteSpace(c.BusinessDescription) },
+                        { "CRNumber", c => c.CRNumber > 0 },
+                        { "VerticalId", c => c.VerticalId > 0 },
+                        { "CRDocument", c => !string.IsNullOrWhiteSpace(c.CRDocument) },
+                    };
 
                     var pendingFields = requiredFields
                         .Where(kvp => !kvp.Value(company))
@@ -327,36 +326,6 @@ namespace QLN.Company.MS.Service
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error calculating profile completion status");
-                throw;
-            }
-        }
-
-        public async Task<List<CompanyProfileVerificationStatusDto>> GetVerificationStatus(
-        Guid userId,
-        VerticalType verticalType,
-        CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var allCompanies = await GetAllCompanies(cancellationToken);
-                var companies = allCompanies
-                    .Where(c => c.UserId == userId &&
-                                Enum.IsDefined(typeof(VerticalType), c.VerticalId) &&
-                                (VerticalType)c.VerticalId == verticalType)
-                    .ToList();
-
-                return companies.Select(c => new CompanyProfileVerificationStatusDto
-                {
-                    CompanyId = c.Id,
-                    BusinessName = c.BusinessName,
-                    VerticalId = c.VerticalId,
-                    IsVerified = c.IsVerified,
-                    Status = c.Status?.ToString() ?? "Pending"
-                }).ToList();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting verification status list");
                 throw;
             }
         }
@@ -432,21 +401,21 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<List<CompanyProfileVerificationStatusDto>> VerificationStatus(Guid userId, bool isVerified, CancellationToken cancellationToken = default)
+        public async Task<List<CompanyProfileVerificationStatusDto>> VerificationStatus(Guid userId, VerticalType vertical, bool isVerified, CancellationToken cancellationToken = default)
         {
             try
             {
                 var allCompanies = await GetAllCompanies(cancellationToken);
 
                 var filtered = allCompanies
-                    .Where(c => c.UserId == userId && c.IsVerified == isVerified)
+                    .Where(c => c.IsVerified == isVerified && c.VerticalId == vertical)
                     .Select(c => new CompanyProfileVerificationStatusDto
                     {
                         CompanyId = c.Id,
                         BusinessName = c.BusinessName,
                         VerticalId = c.VerticalId,
                         IsVerified = c.IsVerified,
-                        Status = c.Status?.ToString() ?? "Pending"
+                        Status = c.Status
                     })
                     .ToList();
 

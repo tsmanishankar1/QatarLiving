@@ -45,12 +45,12 @@ namespace QLN.Backend.API.Service.CompanyService
             }
         }
 
-        public async Task<CompanyProfileEntity?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
+        public async Task<CompanyProfileDto?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
                 var url = $"/api/companyprofile/getById?id={id}";
-                return await _dapr.InvokeMethodAsync<CompanyProfileEntity>(
+                return await _dapr.InvokeMethodAsync<CompanyProfileDto>(
                     HttpMethod.Get,
                     ConstantValues.CompanyServiceAppId,
                     url,
@@ -68,16 +68,16 @@ namespace QLN.Backend.API.Service.CompanyService
             }
         }
 
-        public async Task<List<CompanyProfileEntity>> GetAllCompanies(CancellationToken cancellationToken = default)
+        public async Task<List<CompanyProfileDto>> GetAllCompanies(CancellationToken cancellationToken = default)
         {
             try
             {
-                var response = await _dapr.InvokeMethodAsync<List<CompanyProfileEntity>>(
+                var response = await _dapr.InvokeMethodAsync<List<CompanyProfileDto>>(
                     HttpMethod.Get,
                     ConstantValues.CompanyServiceAppId,
                     "api/companyprofile/getAll",
                     cancellationToken);
-                return response ?? new List<CompanyProfileEntity>();
+                return response ?? new List<CompanyProfileDto>();
             }
             catch (Exception ex)
             {
@@ -154,29 +154,6 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<List<CompanyProfileVerificationStatusDto>> GetVerificationStatus(Guid userId, VerticalType verticalType, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var url = $"/api/companyprofile/verificationstatusbyuserId?userId={userId}&vertical={verticalType}";
-                var response = await _dapr.InvokeMethodAsync<List<CompanyProfileVerificationStatusDto>>(
-                    HttpMethod.Get,
-                    ConstantValues.CompanyServiceAppId,
-                    url,
-                    cancellationToken);
-                return response ?? new List<CompanyProfileVerificationStatusDto>();
-            }
-            catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
-            {
-                _logger.LogWarning(ex, "Company with ID not found.");
-                return new List<CompanyProfileVerificationStatusDto>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving verification status for user {UserId} and vertical {VerticalType}", userId, verticalType);
-                throw;
-            }
-        }
         public async Task<string> ApproveCompany(Guid userId, CompanyApproveDto dto, CancellationToken cancellationToken = default)
         {
             try
@@ -226,12 +203,14 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<List<CompanyProfileVerificationStatusDto>> VerificationStatus(Guid userId, bool isVerified, CancellationToken cancellationToken = default)
+        public async Task<List<CompanyProfileVerificationStatusDto>> VerificationStatus(Guid userId, VerticalType vertical, bool isVerified, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = $"/api/companyprofile/verifiedstatusbyuserId?isverified={isVerified.ToString().ToLower()}&userId={userId}";
-
+                var url = $"/api/companyprofile/verifiedstatusbyuserId" +
+                                  $"?isverified={isVerified.ToString().ToLower()}" +
+                                  $"&userId={userId}" +
+                                  $"&vertical={vertical}";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.CompanyServiceAppId, url);
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);

@@ -12,14 +12,13 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.DTO_s
 {
-    public class CompanyProfileDto
+    public class CompanyProfileDto : BaseCompanyDto
     {
+        public Guid Id { get; set; }
         [Required]
         public VerticalType VerticalId { get; set; }
         public CompanyCategory? CategoryId { get; set; }
         public Guid UserId { get; set; }
-        [Required]
-        public string CompanyLogo { get; set; } = string.Empty;
         [Required]
         public string? BusinessName { get; set; } = string.Empty;
         [Required]
@@ -27,8 +26,6 @@ namespace QLN.Common.Infrastructure.DTO_s
         [Required]
         public string City { get; set; } = string.Empty;
         public List<string>? BranchLocations { get; set; }
-        [Required, Phone]
-        public string PhoneNumber { get; set; } = string.Empty;
         public string? WhatsAppNumber { get; set; }
         [Required, EmailAddress]
         public string? Email { get; set; }
@@ -47,30 +44,9 @@ namespace QLN.Common.Infrastructure.DTO_s
         [Required, JsonConverter(typeof(CustomTimeSpanConverter))]
         public TimeSpan EndHour { get; set; } 
         [Required]
-        public string NatureOfBusiness { get; set; } = string.Empty;
-        [Required]
-        public CompanySize CompanySize { get; set; }
-        [Required]
-        public CompanyType CompanyType { get; set; } 
-        [Required]
         public string UserDesignation { get; set; } = string.Empty;
-        [Required, MaxLength(300)]
-        public string BusinessDescription { get; set; } = string.Empty;
-        [Required]
-        public int CRNumber { get; set; }
         [Required]
         public string CRDocument { get; set; } = string.Empty;
-        public bool? IsVerified { get; set; } = false;
-        public CompanyStatus? Status { get; set; }
-    }
-    public class CompanyProfileEntity : CompanyProfileDto
-    {
-        public Guid Id { get; set; }
-        public bool IsActive { get; set; }
-        public Guid CreatedBy { get; set; }
-        public DateTime CreatedUtc { get; set; }
-        public Guid? UpdatedBy { get; set; }
-        public DateTime? UpdatedUtc { get; set; }
     }
     public class CompanyProfileCompletionStatusDto
     {
@@ -85,7 +61,7 @@ namespace QLN.Common.Infrastructure.DTO_s
         public string BusinessName { get; set; } = null!;
         public VerticalType VerticalId { get; set; }
         public bool? IsVerified { get; set; }
-        public string Status { get; set; } = "Pending"; 
+        public CompanyStatus? Status { get; set; } 
     }
     public class CompanyApproveDto
     {
