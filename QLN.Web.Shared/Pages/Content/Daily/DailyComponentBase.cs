@@ -73,7 +73,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
                 TopicQueue5Label = LandingContent?.ContentsDaily?.DailyTopics5?.QueueLabel ?? "";
 
                 MoreArticles = [.. vMoreArticles.Take(4)];
-                VideoList = [.. vVideoList.Take(4)];
+                VideoList = [.. vVideoList.Take(3)];
                 await LoadBanners();
             }
             catch (Exception ex)
