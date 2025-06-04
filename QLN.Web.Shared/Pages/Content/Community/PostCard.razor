@@ -64,10 +64,31 @@
 
                     <img src="@($"qln-images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
                 </div> *@
-                <div class="share-wrapper" @onclick="SharePost">
+                <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight" @onclick:stopPropagation>
+                    <ActivatorContent>
+                        <img src="qln-images/content/Share.svg" class="icon" />
+                    </ActivatorContent>
+                    <ChildContent>
+                        @foreach (var item in shareMenuItems)
+                        {
+                            if (item.OnClick != null)
+                            {
+                                <MudMenuItem OnClick="@item.OnClick">
+                                    <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                </MudMenuItem>
+                            }
+                            else
+                            {
+                                <MudMenuItem Href="@item.Route"  Target="@(item.OpenInNewTab ? "_blank" : "_self")">
+                                    <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                </MudMenuItem>
+                            }
+                        }
+                    </ChildContent>
+                </MudMenu>
 
-                    <img src="qln-images/content/Share.svg" class="icon" />
-                </div>
+
+                
              @*    <div class="post-card-comment-wrapper">
 
                     <img src="qln-images/content/Comment.svg" class="icon" />
@@ -124,10 +145,28 @@
 
                     <img src="@($"qln-images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
                 </div> *@
-                <div class="share-wrapper" @onclick="SharePost">
-
-                    <img src="qln-images/content/Share.svg" class="icon" />
-                </div>
+               <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight" @onclick:stopPropagation>
+                    <ActivatorContent>
+                        <img src="qln-images/content/Share.svg" class="icon" />
+                    </ActivatorContent>
+                    <ChildContent>
+                        @foreach (var item in shareMenuItems)
+                        {
+                            if (item.OnClick != null)
+                            {
+                                <MudMenuItem OnClick="@item.OnClick">
+                                    <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                </MudMenuItem>
+                            }
+                            else
+                            {
+                                <MudMenuItem Href="@item.Route"  Target="@(item.OpenInNewTab ? "_blank" : "_self")">
+                                    <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                </MudMenuItem>
+                            }
+                        }
+                    </ChildContent>
+                </MudMenu>
                 @*    <div class="post-card-comment-wrapper">
 
                     <img src="qln-images/content/Comment.svg" class="icon" />
@@ -143,6 +182,30 @@
 
 
 <style>
+     .share-icon {
+        margin: 0;
+        width: 32px;
+        height: 32px;
+    }
+
+    .mud-popover .mud-list {
+        max-height: inherit;
+        overflow-y: auto;
+        display: flex !important;
+    }
+
+    .mud-menu-item{
+        padding: 0px 6px 0px 0px !important;
+    }
+
+    .mud-menu-list {
+        padding-left: 6px;
+    }
+
+    .mud-menu-item .mud-menu-item-text {
+        margin: 4px 0px 0px 0px !important;
+    }
+
     .post-card {
         border: 1px solid #E0E0E0;
         border-radius: 12px;
