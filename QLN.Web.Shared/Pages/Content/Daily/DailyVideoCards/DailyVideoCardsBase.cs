@@ -16,6 +16,8 @@ public class DailyVideoCardsBase : ComponentBase
 
     protected bool IsVisiblePlayButton { get; set; } = true;
 
+    [Parameter] public string QueueLabel { get; set; }
+
     protected override void OnInitialized()
     {
         SelectedVideo = Items?.Where(x => !string.IsNullOrEmpty(x.VideoUrl)).FirstOrDefault() ?? new();

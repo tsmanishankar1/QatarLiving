@@ -17,11 +17,11 @@ public class PopularArticlesBase : ComponentBase
 
     protected void onclick(ContentPost news)
     {
-        navManager.NavigateTo($"/content/article/details/{news.Slug}");
+        navManager.NavigateTo($"/content/article/details/{selectedTab}/{news.Slug}");
     }
      protected override void OnParametersSet()
         {
-            imageLoaded = false; 
+            // imageLoaded = false; 
         }
  
         protected void OnImageLoaded()

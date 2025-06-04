@@ -1,4 +1,6 @@
 @using QLN.Web.Shared.Components.NewCustomSelect
+@using QLN.Web.Shared.Components.LocationSelect
+@using QLN.Common.Infrastructure.DTO_s
 @using MudBlazor
 @inherits SearchSectionBase
 
@@ -6,16 +8,18 @@
     <div class="search-container">
         <div class="search-row">
 
-            <!-- Search Field: Icon Left, Input Right -->
+            @* <!-- Search Field: Icon Left, Input Right -->
             <div class="search-field search-input">
                 <MudIcon Icon="@Icons.Material.Filled.Search" class="left-icon" />
                 <input type="text" id="event-search-input" placeholder="Search" class="text-input" />
-            </div>
-
-            <!-- Location Field: Input Left, Icon Right -->
-            <div class="search-field location-input">
-                <input type="text" placeholder="Location" class="text-input" />
-                <MudIcon Icon="@Icons.Material.Filled.LocationOn" class="right-icon" />
+            </div> *@
+            <div class="select-field">
+                <LocationSelect TItem="Area" Items="FilteredAreas" SelectedItemsChanged="HandleLocationSelectionChanged"
+                    OnLocationUpdated="CallApiForLocationChange" GetLabel="item => item.Name" GetId="item => item.Id"
+                    MaxSelectableItems="1" Padding="10px"
+                    CustomStyle="@(IsMobile ? "border-radius:8px;" 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        : "border-top-left-radius:6px; border-bottom-left-radius:6px; border-top-right-radius:0; border-bottom-right-radius:0;")"
+                    OnSearch="PerformSearch" />
             </div>
 
             <!-- Property Type Select -->
@@ -68,18 +72,22 @@
 
 
         <!-- Toggle Row -->
-        @* <div class="toggle-row">
-            <div class="left-toggle">
+        <div class="toggle-row">
+            @* <div class="left-toggle">
                 <label class="toggle-wrapper">
                     <input type="checkbox" checked />
                     <span class="switch"></span>
                     <span class="toggle-label">Show Free Events Only</span>
                 </label>
-            </div>
-            <div class="right-clear">
-                <span class="clear-text">Clear All</span>
-            </div>
-        </div> *@
+            </div> *@
+            @if (ShouldShowClearAll)
+            {
+
+                <div class="right-clear">
+                    <span class="clear-text" @onclick="ClearAllFilters">Clear All</span>
+                </div>
+            }
+        </div>
 
     </div>
 </div>
@@ -90,7 +98,7 @@
     .search-bar {
         background-color: #e6e6e6;
         border-radius: 10px;
-        padding: 40px 10px 40px 10px;
+        padding: 60px 10px 40px 10px;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -102,7 +110,7 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        width: 94%;
+        width: 80%;
         font-family: 'Public Sans';
     }
 
@@ -120,14 +128,16 @@
         align-items: center;
         justify-content: space-between;
         gap: 10px;
-        width: 255px;
+        width: 285px;
         height: 56px;
         background-color: white;
         padding: 0 12px;
+        border-top-left-radius: 6px;
+        border-bottom-left-radius: 6px;
     }
 
     .select-field {
-        width: 255px;
+        width: 285px;
         height: 56px;
     }
 
@@ -159,11 +169,6 @@
         color: #888;
     }
 
-    /* Location Field: Icon on right */
-    .location-input .right-icon {
-        font-size: 20px;
-        color: var(--color-accent);
-    }
 
     .date-picker-field {
         background-color: var(--color-accent);
@@ -286,8 +291,7 @@
 
 
         .mud-button-outlined.mud-button-outlined-primary {
-            background-color: var(--color-accent) !important;
-            color: white !important;
+            color: var(--color-accent) !important;
             border-color: var(--color-accent) !important;
 
         }
@@ -318,7 +322,7 @@
         width: 100%;
         margin-top: 12px;
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-end;
         align-items: center;
     }
 
@@ -403,8 +407,7 @@
 
         .search-input,
         .select-field,
-        .date-picker-field,
-        .location-input {
+        .date-picker-field {
             border-radius: 8px !important;
             width: 100% !important;
         }

@@ -1,7 +1,12 @@
+@using Microsoft.Extensions.Options
 @using MudBlazor
+@using QLN.Web.Shared.Services
 @inject NavigationManager NavManager
 @inject ISnackbar Snackbar
-
+@inject IOptions<NavigationPath> options
+@{
+    var navigationPath = options.Value;
+}
 <header class="site-header mud-elevation-1">
     <div class="header-left">
         <NavLink href="/">
@@ -10,13 +15,13 @@
     </div>
 
     <nav class="nav-links">
-        <NavLink href="/more-features-coming-soon" class="nav-link">Daily</NavLink>
-        <NavLink href="/more-features-coming-soon" class="nav-link">Properties</NavLink>
-        <NavLink href="/more-features-coming-soon" class="nav-link">Vehicles</NavLink>
-        <NavLink href="/classifieds" class="nav-link active">Classifieds</NavLink>
-        <NavLink href="/more-features-coming-soon" class="nav-link">Services</NavLink>
-        <NavLink href="/more-features-coming-soon" class="nav-link">Jobs</NavLink>
-        <NavLink href="/more-features-coming-soon" class="nav-link">Rewards</NavLink>
+        <NavLink href="/content/Daily" class="nav-link">Daily</NavLink>
+        <NavLink href="@navigationPath.Properties" class="nav-link">Properties</NavLink>
+        <NavLink href="@navigationPath.Vehicles" class="nav-link">Vehicles</NavLink>
+        <NavLink href="@navigationPath.Classifieds" class="nav-link active">Classifieds</NavLink>
+        <NavLink href="@navigationPath.Services" class="nav-link">Services</NavLink>
+        <NavLink href="@navigationPath.Jobs" class="nav-link">Jobs</NavLink>
+        <NavLink href="@navigationPath.Rewards" class="nav-link">Rewards</NavLink>
 
         <MudButton Variant="Variant.Filled" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add"
             Class="post-ad-btn no-uppercase">

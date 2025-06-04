@@ -10,20 +10,27 @@
 @using QLN.Web.Shared.Services
 @inject IOptions<NavigationPath> options;
 
-<MudThemeProvider />
+<MudThemeProvider @ref="@_mudThemeProvider"/>
 <MudDialogProvider />
 <MudPopoverProvider />
 <MudSnackbarProvider Position="SnackbarPosition.BottomLeft" />
 
 
 <header class="site-header mud-elevation-1">
+    <div class = "header-container">
 
     <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleMobileMenu" Class="mobile-menu-button" />
 
     <div class="header-left">
         <NavLink href="/">
-
-            <MudImage id="logoImage" Src="/qln-images/Headerlogo.svg" Alt="Qatar Living" Class="logo-img" />
+                @if (_isDarkMode)
+                {
+                    <MudImage id="logoImage" Src="/qln-images/nav-logo.svg" Alt="Qatar Living" Class="logo-img" />
+                }
+                else
+                {
+                    <MudImage id="logoImage" Src="/qln-images/logo.png" Alt="Qatar Living" Class="logo-img" />
+                }
         </NavLink>
     </div>
     <div style="display: flex; align-items: center; gap: 36px;">
@@ -67,7 +74,9 @@
                 <ActivatorContent>
                     <MudButton id="headerPostButton" Variant="Variant.Filled"
                         Style="background-color: #FF7F38; color: white;" Size="Size.Medium"
-                        StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn desktop-post-btn">
+                        StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn desktop-post-btn"
+                        @onclick="OnPostAdClicked"
+                    >
                         <span class="post-ad-text">Post Ad</span>
                     </MudButton>
                 </ActivatorContent>
@@ -84,8 +93,9 @@
                 </ChildContent> *@
             </MudMenu>
 
-            <img src="/qln-images/header/add_post_svg.svg" alt="Post" class="mobile-post-icon"
-                @onclick="@(() => NavManager.NavigateTo(navigationPath.PostingRules))" />
+            <img src="/qln-images/header/add_post_svg.svg" alt="Post" class="mobile-post-icon" 
+     @onclick="OnPostAdClicked" />
+
         </div>
     </div>
 
@@ -147,11 +157,12 @@
             </ChildContent>
         </MudMenu>
     </div>
+    </div>
 </header>
 
 <main class="main-content">
     @Body
-    <Footer />
+    <Footer DarkMode="@_isDarkMode"/>
 </main>
 
 
@@ -161,7 +172,8 @@
     public bool IsLoggedIn { get; set; } = false;
 
     private NavigationPath navigationPath;
-
+    private bool _isDarkMode;
+    private MudThemeProvider _mudThemeProvider;
     protected override async Task OnInitializedAsync()
     {
         navigationPath = options.Value;
@@ -174,14 +186,21 @@
             if (user.Identity != null && user.Identity.IsAuthenticated)
             {
                 Name = user.FindFirst(ClaimTypes.Name)?.Value;
-                IsLoggedIn = true;
+                IsLoggedIn = true;         
             }
         }
+        StateHasChanged();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender) return;
+        if (firstRender)
+        {
+            _isDarkMode = await _mudThemeProvider.GetSystemPreference();
+            StateHasChanged();
+            return;
+        }
+            
         var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
         if (authState != null)
         {
@@ -200,6 +219,7 @@
         {
             IsLoggedIn = false;
         }
+        StateHasChanged();
     }
 
     private void ToggleMobileMenu()
@@ -251,6 +271,22 @@
 
         return destination;
     }
+
+    private void OnPostAdClicked()
+    {
+            if (IsLoggedIn)
+        {
+        
+            NavManager.NavigateTo(navigationPath.PostAd, forceLoad: true);
+        }
+        else
+        {
+       
+            NavManager.NavigateTo($"{navigationPath.Login}", forceLoad: true);
+        }
+    
+    }
+
 
     // private void OnPostClicked()
     // {
@@ -311,6 +347,16 @@ Route = "/more-features-coming-soon"
 
     .post-button-wrapper {
         margin: 0
+    }
+
+    .header-container{
+          max-width: 1170px;
+    margin: 0 auto;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative
     }
 
     .mobile-post-icon {
@@ -420,6 +466,24 @@ Route = "/more-features-coming-soon"
             display: block;
             z-index: 1001;
         }
+
+        @@media (max-width: 992px) {
+        .mobile-post-icon {
+        display: inline-block !important;
+      position: absolute;
+      top: 50%;
+        right: 16px; 
+        transform: translateY(-50%);
+        z-index: 1100; 
+    }
+
+        @@media (max-width: 992px) {
+        #userIcon{
+            display: none !important;
+           
+        }
+        
+
 
         .nav-container {
             position: fixed;

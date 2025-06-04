@@ -52,9 +52,45 @@ namespace QLN.Web.Shared.Pages.Content.News
         new() { Label = "Sports", Value = "sports" },
         new() { Label = "Lifestyle", Value = "lifestyle" }
     };
+    protected List<ViewToggleButtons.ViewToggleOption> routerList = new()
+    {   
+    new() { Label = "News", Value = "news" },
+    new() { Label = "Qatar", Value = "qatar" },
+    new() { Label = "Middle East", Value = "middleeast" },
+    new() { Label = "World", Value = "world" },
+    new() { Label = "Health & Education", Value = "health-and-education" },
+    new() { Label = "Community", Value = "community" },
+    new() { Label = "Law", Value = "law" },
+
+    new() { Label = "Business", Value = "business" },
+    new() { Label = "Qatar Economy", Value = "qatar-economy" },
+    new() { Label = "Market Updates", Value = "market-update" },
+    new() { Label = "Real Estate", Value = "real-estate" },
+    new() { Label = "Entrepreneurship", Value = "entrepreneurship" },
+    new() { Label = "Finance", Value = "finance" },
+    new() { Label = "Jobs & Careers", Value = "jobs-and-careers" },
+
+    new() { Label = "Sports", Value = "sports" },
+    new() { Label = "Qatar Sports", Value = "qatar-sports" },
+    new() { Label = "Football", Value = "football" },
+    new() { Label = "International", Value = "international" },
+    new() { Label = "Motorsports", Value = "motorsports" },
+    new() { Label = "Olympics", Value = "olympics" },
+    new() { Label = "Athlete Features", Value = "athlete-features" },
+
+    new() { Label = "Lifestyle", Value = "lifestyle" },
+    new() { Label = "Food & Dining", Value = "food-dining" },
+    new() { Label = "Travel & Leisure", Value = "travel-leisure" },
+    new() { Label = "Arts & Culture", Value = "arts-and-culture" },
+    new() { Label = "Events", Value = "events" },
+    new() { Label = "Fashion & Style", Value = "fashion-and-style" },
+    new() { Label = "Home & Living", Value = "home-and-living" }
+};
         protected string _selectedView = "news";
+        protected string selectedTabView = "News";
         protected string[] Tabs = new[] { "Qatar", "Middle East", "World", "Health & Education", "Community", "Law" };
         protected string SelectedTab = "Qatar";
+        protected string selectedRouterTab = null;
         protected List<BannerItem> DailyHeroBanners { get; set; } = new();
         [Inject]
         protected NavigationManager navManager { get; set; }
@@ -100,47 +136,72 @@ namespace QLN.Web.Shared.Pages.Content.News
         {
             try
             {
-                PreSelectCategory();
+                var uri = navManager.ToAbsoluteUri(navManager.Uri);
+                var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+                string? localCategory = null;
+                string? localSubcategory = null;
+                if (query.TryGetValue("category", out var cat))
+                    localCategory = cat;
+
+                if (query.TryGetValue("subcategory", out var sub))
+                    localSubcategory = sub;
+                     if (string.IsNullOrEmpty(localCategory) && !string.IsNullOrEmpty(localSubcategory))
+                {
+                    localCategory = Categories.FirstOrDefault(cat =>
+                        cat.SubCategories.Any(sub => sub.Equals(localSubcategory, StringComparison.OrdinalIgnoreCase)))
+                        ?.Name;
+                }
+                if (!string.IsNullOrEmpty(localCategory))
+                {
+                    var routeName = routerList.FirstOrDefault(item => item.Value == localSubcategory)?.Label;
+                    if (!string.IsNullOrEmpty(localSubcategory))
+                    {
+                        selectedRouterTab = routeName;
+                    }
+                    SetViewMode(localCategory);
+                }
+                else
+                {
+                    QatarNewsContent = await GetNewsQatarAsync();
+
+                    // Top News Slot
+                    var topStoryItems = QatarNewsContent?.QlnNewsNewsQatar?.TopStory?.Items;
+                    if (topStoryItems != null && topStoryItems.Any())
+                        topNewsSlot = topStoryItems.First();
+
+                    // Top News Stories Slot
+                    // this doesnt appear in the dataset as yet
+
+                    if (QatarNewsContent?.QlnNewsNewsQatar?.TopStory?.Items != null) // replace
+                        topNewsListSlot = QatarNewsContent.QlnNewsNewsQatar.TopStory.Items; // replace
+
+                    // More Articles Slot
+
+                    if (QatarNewsContent?.QlnNewsNewsQatar?.MoreArticles?.Items != null)
+                        moreArticleListSlot = QatarNewsContent.QlnNewsNewsQatar.MoreArticles.Items;
+
+                    // Most Watched Slot
+
+                    if (QatarNewsContent?.QlnNewsNewsQatar?.MostPopularArticles?.Items != null) // replace
+                        mostWatchedArticleListSlot = new List<ContentVideo>(); // QatarNewsContent.QlnNewsNewsQatar.MostPopularArticles.Items; //replace
+
+                    // Articles 1 Slot
+
+                    if (QatarNewsContent?.QlnNewsNewsQatar?.Articles1?.Items != null)
+                        articleListSlot1 = QatarNewsContent.QlnNewsNewsQatar.Articles1.Items;
+
+                    // Most Popular Articles Slot
+
+                    if (QatarNewsContent?.QlnNewsNewsQatar?.MostPopularArticles?.Items != null)
+                        popularArticleListSlot = QatarNewsContent.QlnNewsNewsQatar.MostPopularArticles.Items;
+
+                    // Articles 2 Slot
+
+                    if (QatarNewsContent?.QlnNewsNewsQatar?.Articles2?.Items != null)
+                        articleListSlot2 = QatarNewsContent.QlnNewsNewsQatar.Articles2.Items;
+                }
                 var bannersTask = LoadBanners(SelectedTab);
                 await Task.WhenAll(bannersTask);
-                QatarNewsContent = await GetNewsQatarAsync();
-
-                // Top News Slot
-                var topStoryItems = QatarNewsContent?.QlnNewsNewsQatar?.TopStory?.Items;
-                if (topStoryItems != null && topStoryItems.Any())
-                    topNewsSlot = topStoryItems.First();
-
-                // Top News Stories Slot
-                // this doesnt appear in the dataset as yet
-
-                if (QatarNewsContent?.QlnNewsNewsQatar?.TopStory?.Items != null) // replace
-                    topNewsListSlot = QatarNewsContent.QlnNewsNewsQatar.TopStory.Items; // replace
-
-                // More Articles Slot
-
-                if (QatarNewsContent?.QlnNewsNewsQatar?.MoreArticles?.Items != null)
-                    moreArticleListSlot = QatarNewsContent.QlnNewsNewsQatar.MoreArticles.Items;
-
-                // Most Watched Slot
-
-                if (QatarNewsContent?.QlnNewsNewsQatar?.MostPopularArticles?.Items != null) // replace
-                    mostWatchedArticleListSlot = new List<ContentVideo>(); // QatarNewsContent.QlnNewsNewsQatar.MostPopularArticles.Items; //replace
-
-                // Articles 1 Slot
-
-                if (QatarNewsContent?.QlnNewsNewsQatar?.Articles1?.Items != null)
-                    articleListSlot1 = QatarNewsContent.QlnNewsNewsQatar.Articles1.Items;
-
-                // Most Popular Articles Slot
-
-                if (QatarNewsContent?.QlnNewsNewsQatar?.MostPopularArticles?.Items != null)
-                    popularArticleListSlot = QatarNewsContent.QlnNewsNewsQatar.MostPopularArticles.Items;
-
-                // Articles 2 Slot
-
-                if (QatarNewsContent?.QlnNewsNewsQatar?.Articles2?.Items != null)
-                    articleListSlot2 = QatarNewsContent.QlnNewsNewsQatar.Articles2.Items;
-
                 var videoContent = await GetContentVideoLandingAsync();
                 VideoList = videoContent?.QlnVideos?.QlnVideosTopVideos?.Items ?? [];
 
@@ -158,54 +219,50 @@ namespace QLN.Web.Shared.Pages.Content.News
         protected async void SetViewMode(string view)
         {
             _selectedView = view;
-            var selectedCategory = Categories.FirstOrDefault(c => c.Name.Equals(view, StringComparison.OrdinalIgnoreCase));
-            if (selectedCategory != null)
+            Category selectedCategory;
+            if (string.IsNullOrEmpty(selectedRouterTab))
             {
-                Tabs = selectedCategory.SubCategories.ToArray();
-                SelectTab(Tabs.First());
+                selectedCategory = Categories.FirstOrDefault(c => c.Name.Equals(view, StringComparison.OrdinalIgnoreCase));
+                selectedTabView = _viewOptions.FirstOrDefault(x => x.Value == _selectedView)?.Label;
             }
             else
             {
-                Tabs = Array.Empty<string>();
+                Console.WriteLine("the selected tab is the eerf" + selectedRouterTab);
+                selectedCategory = Categories.FirstOrDefault(c => c.Name.Equals(view, StringComparison.OrdinalIgnoreCase));
+                selectedTabView = _viewOptions.FirstOrDefault(x => x.Value == _selectedView)?.Label;
             }
+            
+                if (selectedCategory != null)
+                {
+                    Tabs = selectedCategory.SubCategories.ToArray();
+                if (string.IsNullOrEmpty(selectedRouterTab))
+                {
+                    SelectTab(Tabs.First());
+                }
+                else
+                {
+                    SelectTab(selectedRouterTab);
+                }
+                }
+                else
+                {
+                    Tabs = Array.Empty<string>();
+                }
+            
         }
         protected void PreSelectCategory()
         {
-            var uri = navManager.ToAbsoluteUri(navManager.Uri);
-            var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
-            string? localCategory = null;
-            string? localSubcategory = null;
-            Console.WriteLine("the method is called");
-            if (query.TryGetValue("category", out var cat))
-                localCategory = cat;
+            // var uri = navManager.ToAbsoluteUri(navManager.Uri);
+            // var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+            // string? localCategory = null;
+            // string? localSubcategory = null;
+            // if (query.TryGetValue("category", out var cat))
+            //     localCategory = cat;
 
-            if (query.TryGetValue("subcategory", out var sub))
-                localSubcategory = sub;
-            if (localCategory == "business")
-            {
-                SetViewMode("business");
-                StateHasChanged();
-            }
-            else if (localCategory == "sports")
-            {
-                SetViewMode("sports");
-            }
-            else if (localCategory == "lifestyle")
-            {
-                if (!string.IsNullOrEmpty(localSubcategory))
-                {
-                    SetViewMode("lifestyle");
-                }
-                if (localSubcategory == "food-dining")
-                {
-                    Console.WriteLine("the subcategory is selected" + localSubcategory);
-                    SelectTab("Food & Dining");
-                }
-                if (localSubcategory == "travel-leisure")
-                {
-                    SelectTab("Travel & Leisure");
-                }
-            }
+            // if (query.TryGetValue("subcategory", out var sub))
+            //     localSubcategory = sub;
+            // SetViewMode(localCategory);
+            // SelectTab(localSubcategory);
         }
         protected void OnImageLoaded()
         {
@@ -230,32 +287,8 @@ namespace QLN.Web.Shared.Pages.Content.News
             {
                 var banners = await FetchBannerData();
                 NewsSideBanners = banners?.ContentNewsSide ?? new List<BannerItem>();
-                switch (tab)
-                {
-                    case "Qatar":
-                        DailyHeroBanners = banners?.NewsQatarHero ?? new List<BannerItem>();
-                        DailyTakeOverBanners = banners?.NewsQatarTakeOver ?? new List<BannerItem>();
-                        break;
-                    case "Community":
-                        DailyHeroBanners = banners?.ContentCommunityHero ?? new List<BannerItem>();
-                        DailyTakeOverBanners = banners?.ContentDailyTakeoverFirst ?? new List<BannerItem>();
-                        break;
-                    case "Law":
-                        DailyTakeOverBanners = banners?.ContentDailyTakeoverFirst ?? new List<BannerItem>();
-                        break;
-                    case "Middle East":
-                        DailyTakeOverBanners = banners?.MiddleEastTakeover ?? new List<BannerItem>();
-                        DailyHeroBanners = banners?.MiddleEastHomeBaner ?? new List<BannerItem>();
-                        break;
-                    case "World":
-                        DailyTakeOverBanners = banners?.MiddleEastTakeover ?? new List<BannerItem>();
-                        DailyHeroBanners = banners?.NewsWorldTakeOver ?? new List<BannerItem>();
-                        break;
-                    default:
-                        DailyTakeOverBanners = banners?.ContentNewsHero ?? new List<BannerItem>();
-                        DailyHeroBanners = banners?.ContentNewsTakeover ?? new List<BannerItem>();
-                        break;
-                }
+                DailyHeroBanners = banners?.ContentNewsHero ?? new List<BannerItem>();
+                DailyTakeOverBanners = banners?.ContentNewsTakeover ?? new List<BannerItem>();
             }
             finally
             {
@@ -283,7 +316,7 @@ namespace QLN.Web.Shared.Pages.Content.News
         {
             isLoading = true;
             SelectedTab = tab;
-            var bannersTask = LoadBanners(SelectedTab);
+            // var bannersTask = LoadBanners(SelectedTab);
             // topNews = new ContentPost();
             // moreArticleList.Clear();
             switch (tab)
@@ -559,6 +592,8 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot2 = athelete?.Articles2?.Items ?? new List<ContentPost>();
                     break;
             }
+            navManager.NavigateTo($"/content/news?category={selectedTabView}&subcategory={SelectedTab}");
+            selectedRouterTab = string.Empty;
             isLoading = false;
             StateHasChanged();
         }
@@ -696,7 +731,18 @@ namespace QLN.Web.Shared.Pages.Content.News
 
         protected void onclick(ContentPost news)
         {
-            navManager.NavigateTo($"/content/article/details/{news.Slug}");
+            if (!string.IsNullOrEmpty(selectedTabView) && !string.IsNullOrEmpty(SelectedTab))
+            {
+                navManager.NavigateTo($"/content/article/details/{selectedTabView}/{SelectedTab}/{news.Slug}");
+            }
+            else if (!string.IsNullOrEmpty(selectedTabView))
+            {
+                navManager.NavigateTo($"/content/article/details/{selectedTabView}/{news.Slug}");
+            }
+            else
+            {
+                navManager.NavigateTo($"/content/article/details/{news.Slug}");
+            }
         }
 
 
