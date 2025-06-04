@@ -19,7 +19,7 @@
         public string Vehicles { get; set; } = "https://www.qatarliving.com/vehicles";
         public string Services { get; set; } = "https://www.qatarliving.com/services";
         public string Jobs { get; set; } = "https://www.qatarliving.com/jobs";
-        public string Rewards { get; set; } = "https://www.qatarliving.com/rewards";
+        public string Rewards { get; set; } = "https://qlr.qatarliving.com/en/rewards";
         public string Forums { get; set; } = "https://www.qatarliving.com/forums";
         public string eShops { get; set; } = "https://www.qatarliving.com/eshops";
         public string GoogleStore { get; set; } = "https://play.google.com/store/apps/details?id=com.qatarliving.classifieds&hl=en";
