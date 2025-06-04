@@ -15,7 +15,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
         protected ContentEvent HighlightedEvent { get; set; } = new ContentEvent();
         protected List<ContentEvent> FeaturedEvents { get; set; } = [];
         protected List<ContentEvent> MoreArticles { get; set; } = [];
-        protected List<ContentVideo> Videos { get; set; } = [];
+        protected List<ContentVideo> VideoList { get; set; } = [];
         protected List<BannerItem> DailyHeroBanners { get; set; } = new();
         protected List<BannerItem> DailyTakeOver1Banners { get; set; } = new();
         protected List<BannerItem> DailyTakeOver2Banners { get; set; } = new();
@@ -42,7 +42,6 @@ namespace QLN.Web.Shared.Pages.Content.Daily
         protected string TopicQueue4Label { get; set; } = string.Empty;
         protected string TopicQueue5Label { get; set; } = string.Empty;
         protected List<ContentPost> TopStories { get; set; } = [];
-        protected List<ContentVideo> VideoList { get; set; } = [];
 
         protected async override Task OnInitializedAsync()
         {
@@ -54,7 +53,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
                 HighlightedEvent = LandingContent?.ContentsDaily?.DailyEvent?.Items.First() ?? new();
                 FeaturedEvents = LandingContent?.ContentsDaily?.DailyFeaturedEvents?.Items ?? [];
                 MoreArticles = LandingContent?.ContentsDaily?.DailyMoreArticles?.Items ?? [];
-                Videos = LandingContent?.ContentsDaily?.DailyWatchOnQatarLiving?.Items ?? [];
+                VideoList = LandingContent?.ContentsDaily?.DailyWatchOnQatarLiving?.Items ?? [];
                 TopicQueue1Label = LandingContent?.ContentsDaily?.DailyTopics1?.QueueLabel ?? "";
                 TopicQueue2Label = LandingContent?.ContentsDaily?.DailyTopics2?.QueueLabel ?? "";
                 TopicQueue3Label = LandingContent?.ContentsDaily?.DailyTopics3?.QueueLabel ?? "";
@@ -69,11 +68,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
 
                 TopicQueue5 = LandingContent?.ContentsDaily?.DailyTopics5?.Items ?? [];
                 TopicQueue5Label = LandingContent?.ContentsDaily?.DailyTopics5?.QueueLabel ?? "";
-
-
-                var videoContent = await GetContentVideoLandingAsync();
-                VideoList = videoContent?.QlnVideos?.QlnVideosTopVideos?.Items ?? [];
-
+               
                 await LoadBanners();
             }
             catch (Exception ex)
@@ -145,31 +140,6 @@ namespace QLN.Web.Shared.Pages.Content.Daily
             finally
             {
                 isLoadingBanners = false;
-            }
-        }
-
-        /// <summary>
-        /// Gets Content Videos Page data
-        /// </summary>
-        /// <returns>ContentsVideosResponse</returns>
-        protected async Task<ContentsVideosResponse> GetContentVideoLandingAsync()
-        {
-            try
-            {
-                var apiResponse = await _contentService.GetVideosLPAsync() ?? new HttpResponseMessage();
-
-                if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
-                {
-                    var response = await apiResponse.Content.ReadFromJsonAsync<ContentsVideosResponse>();
-                    return response ?? new ContentsVideosResponse();
-                }
-
-                return new ContentsVideosResponse();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message, "GetContentVideoLandingAsync");
-                return new ContentsVideosResponse();
             }
         }
     }
