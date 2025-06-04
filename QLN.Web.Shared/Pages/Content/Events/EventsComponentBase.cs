@@ -15,6 +15,7 @@ namespace QLN.Web.Shared.Pages.Content.Events
 
         protected ContentEventsResponse ListOfEvents { get; set; } = new ContentEventsResponse();
         protected List<EventCategory> EventCategories { get; set; } = [];
+        protected List<Area> Areas { get; set; } = [];
         protected List<ContentEvent> FeaturedEventData { get; set; } = [];
 
         protected List<BannerItem> DailyHeroBanners { get; set; } = new();
@@ -24,6 +25,15 @@ namespace QLN.Web.Shared.Pages.Content.Events
         protected bool isLoadingCategories = true;
         protected bool isLoadingFeatured = true;
 
+        protected string SelectedPropertyTypeId;
+
+        protected string SelectedLocationId;
+        protected string SelectedDateLabel;
+
+        protected int CurrentPage { get; set; } = 1;
+        protected int PageSize { get; set; } = 12;
+
+
         protected override async Task OnInitializedAsync()
         {
             try
@@ -32,7 +42,7 @@ namespace QLN.Web.Shared.Pages.Content.Events
                 var allEventsTask = LoadAllEvents();
                 var categoriesTask = LoadCategories();
                 var featuredTask = LoadFeaturedEvents();
-                    var bannersTask = LoadBanners();
+                var bannersTask = LoadBanners();
 
                 await Task.WhenAll(allEventsTask, categoriesTask, featuredTask, bannersTask);
             }
@@ -42,12 +52,53 @@ namespace QLN.Web.Shared.Pages.Content.Events
             }
         }
 
+        protected async Task HandleCategoryChanged(string category)
+        {
+            SelectedPropertyTypeId = category;
+            //CurrentPage = 1;
+            await LoadAllEvents();
+            //PostList = posts;
+            //TotalPosts = totalCount;
+        }
+
+        protected async Task HandleDateChanged(string date)
+        {
+            SelectedDateLabel = date;
+            //CurrentPage = 1;
+            await LoadAllEvents();
+            //PostList = posts;
+            //TotalPosts = totalCount;
+        }
+
+        protected async Task HandleLocationChanged(string location)
+        {
+            SelectedLocationId = location;
+            //CurrentPage = 1;
+            await LoadAllEvents();
+            //PostList = posts;
+            //TotalPosts = totalCount;
+        }
+        protected async Task HandlePageChange(int newPage)
+        {
+            CurrentPage = newPage;
+            await LoadAllEvents();
+        }
+
+        protected async Task HandlePageSizeChange(int newSize)
+        {
+            PageSize = newSize;
+            CurrentPage = 1;
+            await LoadAllEvents();
+        }
+
+
         private async Task LoadAllEvents()
         {
             isLoadingEvents = true;
+
             try
             {
-                ListOfEvents = await GetAllEvents() ?? new ContentEventsResponse();
+                ListOfEvents = await GetAllEvents(CurrentPage, PageSize) ?? new ContentEventsResponse();
             }
             finally
             {
@@ -58,20 +109,35 @@ namespace QLN.Web.Shared.Pages.Content.Events
         private async Task LoadCategories()
         {
             isLoadingCategories = true;
+
             try
             {
-                EventCategories = await GetEventCategories() ?? [];
+                var response = await _eventService.GetEventCategAndLoc();
+
+                if (response.IsSuccessStatusCode && response.Content != null)
+                {
+                    var data = await response.Content.ReadFromJsonAsync<CategoriesResponse>();
+
+                    EventCategories = data?.EventCategories ?? new List<EventCategory>();
+
+                    // Extract all unique areas from locations
+                    Areas = data?.Locations?
+                        .SelectMany(loc => loc.Areas)
+                        .GroupBy(a => a.Id)
+                        .Select(g => g.First())
+                        .ToList() ?? new List<Area>();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "LoadCategories error.");
+                EventCategories = new();
+                Areas = new();
             }
             finally
             {
                 isLoadingCategories = false;
             }
-        }
-        protected async Task HandleCategoryChanged(string forumId)
-        {
-            //SelectedForumId = forumId;
-            //var FeaturedEventData = await LoadAllEvents();
-          
         }
         private async Task LoadFeaturedEvents()
         {
@@ -103,11 +169,18 @@ namespace QLN.Web.Shared.Pages.Content.Events
             }
         }
 
-        protected async Task<ContentEventsResponse> GetAllEvents()
+        protected async Task<ContentEventsResponse> GetAllEvents(int currentPage, int pageSize)
         {
             try
             {
-                var response = await _eventService.GetAllEventsAsync();
+                var response = await _eventService.GetAllEventsAsync(
+                    category_id: SelectedPropertyTypeId,
+                    location_id: SelectedLocationId,
+                    date: SelectedDateLabel,
+                    page: currentPage,
+                    page_size: pageSize
+                );
+
                 if (response.IsSuccessStatusCode && response.Content != null)
                 {
                     return await response.Content.ReadFromJsonAsync<ContentEventsResponse>() ?? new ContentEventsResponse();
@@ -121,24 +194,6 @@ namespace QLN.Web.Shared.Pages.Content.Events
             }
         }
 
-        protected async Task<List<EventCategory>> GetEventCategories()
-        {
-            try
-            {
-                var response = await _eventService.GetEventCategAndLoc();
-                if (response.IsSuccessStatusCode && response.Content != null)
-                {
-                    var data = await response.Content.ReadFromJsonAsync<CategoriesResponse>();
-                    return data?.EventCategories ?? [];
-                }
-                return [];
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "GetEventCategories error.");
-                return [];
-            }
-        }
 
         private async Task<QlnEventsResponse?> FetchFeaturedEventsData()
         {
@@ -158,22 +213,22 @@ namespace QLN.Web.Shared.Pages.Content.Events
             }
         }
 
-private async Task<BannerResponse?> FetchBannerData()
-{
-    try
-    {
-        var response = await _eventService.GetBannerAsync();
-        if (response.IsSuccessStatusCode && response.Content != null)
+        private async Task<BannerResponse?> FetchBannerData()
         {
-            return await response.Content.ReadFromJsonAsync<BannerResponse>();
+            try
+            {
+                var response = await _eventService.GetBannerAsync();
+                if (response.IsSuccessStatusCode && response.Content != null)
+                {
+                    return await response.Content.ReadFromJsonAsync<BannerResponse>();
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "FetchBannerData error.");
+                return null;
+            }
         }
-        return null;
-    }
-    catch (Exception ex)
-    {
-        Logger.LogError(ex, "FetchBannerData error.");
-        return null;
-    }
-}
     }
 }

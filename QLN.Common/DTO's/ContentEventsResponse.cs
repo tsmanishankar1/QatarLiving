@@ -12,7 +12,8 @@ namespace QLN.Common.Infrastructure.DTO_s
     public class ContentEventsResponse
     {
         [JsonPropertyName("total")]
-        public string Total { get; set; }
+        public int Total { get; set; }  // ✅ correct type
+
 
         [JsonPropertyName("items")]
         public List<ContentEvent> Items { get; set; } = new();
