@@ -38,5 +38,7 @@
         public string Base { get; set; } = "https://www.qatarliving.com/";
         public string AllVideos { get; set; } = "https://www.youtube.com/@QatarLivingOfficial/videos";
 
+        public string PostAd { get; set; } = "https://www.qatarliving.com/node/add/classified";
+
     }
 }

@@ -18,22 +18,22 @@
         <div class="carousel-responsive-container">
 
             <!-- Carousel Banner Swiper -->
-          @if (isLoadingBanners)
-                {
-                    <BannerSkleton />
-                }
-                else if (DailyHeroBanners?.Any() == true)
-                {
-                    <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
-                }
-                else
-                {
-                    <EmptyCard Title="No event banners found."
-                            Subtitle="Please check back later for updates." />
-                }
+            @if (isLoadingBanners)
+            {
+                <BannerSkleton />
+            }
+            else if (DailyHeroBanners?.Any() == true)
+            {
+                <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+            }
+            else
+            {
+                <EmptyCard Title="No event banners found." Subtitle="Please check back later for updates." />
+            }
 
 
         </div>
+
 
         <FeaturedEvents FeaturedEvent="FeaturedEventData" Loading="isLoadingFeatured" />
 
@@ -45,11 +45,15 @@
             }
             else if (EventCategories?.Any() == true)
             {
-                <SearchSection Categories="EventCategories" OnCategoryChanged="HandleCategoryChanged" />
+                <SearchSection Categories="EventCategories" Areas="Areas" OnCategoryChanged="HandleCategoryChanged"
+                    OnLocationChanged="HandleLocationChanged" OnDateChanged="HandleDateChanged" />
             }
 
 
-            <EventsList Items="ListOfEvents.Items" Loading="isLoadingEvents" />
+            <EventsList Items="ListOfEvents.Items" Loading="isLoadingEvents" OnPageChange="HandlePageChange"
+                OnPageSizeChange="HandlePageSizeChange" CurrentPage="@CurrentPage" PageSize="@PageSize"
+                TotalItems="@ListOfEvents.Total" />
+
         </div>
     </div>
 </div>

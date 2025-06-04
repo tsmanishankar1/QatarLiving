@@ -1,7 +1,8 @@
 @typeparam TItem
 
 <div class="location-select-wrapper" @onfocusout="HideDropdown">
-    <div class="location-input-area" @onclick="FocusInput">
+    <div class="location-input-area" @onclick="FocusInput"
+        style="@($"border-color:{(ShowSuggestions ? "#FF7F38" : "#D0D5DD")}; padding:{Padding}; {CustomStyle}")">
         <div class="chip-wrapper">
             @if (SelectedItems.Count > 0)
             {
@@ -20,19 +21,22 @@
 
             <input @ref="SearchInputRef" type="text" class="search-box" value="@SearchTerm" @oninput="OnInputChanged"
                 @onfocus="ShowDropdown" @onkeydown="HandleKeyDown"
-                placeholder="@(SelectedItems.Count == 0 ? "Search location" : (SelectedItems.Count == 1 ? "+ Add" : ""))" />
+                placeholder="@(SelectedItems.Count == 0 ? "Location" : (SelectedItems.Count == 1 ? "+ Add" : ""))"
+                disabled="@(SelectedItems.Count >= MaxSelectableItems)" />
+
         </div>
 
         <div class="location-icon">
-            <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Medium" />
+            <MudIcon Icon="@Icons.Material.Rounded.LocationOn" Class="location-right-icon" />
         </div>
     </div>
 
     @if (ShowSuggestions && (FilteredItems.Any() || SelectedItems.Any()))
     {
-        <div class="dropdown-list" @onmousedown="() => IsClickingDropdown = true"
-            @onmouseup="() => IsClickingDropdown = false">
-            <div class="dropdown-top-fixed">
+        <div class="dropdown-list animate-dropdown" @onmousedown="() => IsClickingDropdown = true"
+            @onmouseup="() => IsClickingDropdown = false" @onmouseleave="() => IsClickingDropdown = false">
+
+            @* <div class="dropdown-top-fixed">
                 @if (SelectedItems.Any())
                 {
                     @foreach (var item in SelectedItems)
@@ -44,14 +48,18 @@
                     }
                     <div class="dropdown-header">Recent searches</div>
                 }
-            </div>
+            </div> *@
 
             @foreach (var item in FilteredItems)
             {
-                <div class="dropdown-item" @onclick="() => SelectLocation(item)">
+                var isDisabled = SelectedItems.Count >= MaxSelectableItems;
+
+                <div class="dropdown-item @(isDisabled ? "disabled" : "")"
+                    @onclick="@(isDisabled ? null : (() => SelectLocation(item)))">
                     @GetLabel(item)
                 </div>
             }
+
         </div>
     }
 </div>
@@ -61,6 +69,11 @@
     [Parameter] public Func<TItem, string> GetLabel { get; set; }
     [Parameter] public Func<TItem, string> GetId { get; set; }
     [Parameter] public EventCallback<string> OnSearch { get; set; }
+    [Parameter] public int MaxSelectableItems { get; set; } = 1;
+    [Parameter] public string Padding { get; set; } = "10px";
+    [Parameter] public EventCallback<List<TItem>> OnLocationUpdated { get; set; }
+
+    [Parameter] public string CustomStyle { get; set; } = string.Empty;
 
     private List<TItem> SelectedItems = new();
     private List<TItem> FilteredItems = new();
@@ -95,26 +108,38 @@
         ShowSuggestions = true;
     }
 
-    private void SelectLocation(TItem item)
+    private async void SelectLocation(TItem item)
     {
+        if (SelectedItems.Count >= MaxSelectableItems)
+            return;
+
         if (!SelectedItems.Any(x => GetId(x) == GetId(item)))
         {
             SelectedItems.Add(item);
-            SelectedItemsChanged.InvokeAsync(SelectedItems);
+            await SelectedItemsChanged.InvokeAsync(SelectedItems);
         }
 
         SearchTerm = string.Empty;
         FilteredItems.Clear();
-        ShowSuggestions = true;
+
+        // Delay needed to allow focus event to settle
+
+        await Task.Delay(100);
+        ShowSuggestions = false;
+        StateHasChanged();
     }
 
-    private void RemoveLocation(TItem item)
+
+    private async void RemoveLocation(TItem item)
     {
         SelectedItems.RemoveAll(x => GetId(x) == GetId(item));
-        SelectedItemsChanged.InvokeAsync(SelectedItems);
+        await SelectedItemsChanged.InvokeAsync(SelectedItems); // ← already done
+
+        // API Call or Callback after change
+        await OnLocationUpdated.InvokeAsync(SelectedItems);
+
         ShowSuggestions = true;
     }
-
     private void ShowDropdown()
     {
         ShowSuggestions = true;
@@ -125,13 +150,17 @@
 
     private async void HideDropdown(FocusEventArgs _)
     {
-        await Task.Delay(150);
+        await Task.Delay(150); // allow any in-progress clicks to complete
+
         if (!IsClickingDropdown)
         {
             ShowSuggestions = false;
             StateHasChanged();
         }
+
+        IsClickingDropdown = false;
     }
+
 
     private async void FocusInput()
     {
@@ -160,19 +189,30 @@
     .location-select-wrapper {
         position: relative;
         width: 100%;
+        font-family: 'Public Sans';
     }
 
     .location-input-area {
         display: flex;
         align-items: center;
-        padding: 6px 10px;
-        border: 1px solid #ccc;
-        border-radius: 10px;
         background: #fff;
         cursor: text;
         position: relative;
         gap: 6px;
+        border: 1px solid #ccc;
+        padding: 10px;
+        font-size: 14px;
+        height: 56px;
         justify-content: space-between;
+    }
+
+    .location-input-area.focused {
+        border-color: #FF7F38;
+    }
+
+    .dropdown-item.disabled {
+        cursor: not-allowed;
+        pointer-events: none;
     }
 
     .chip-wrapper {
@@ -182,6 +222,7 @@
         flex: 1;
         overflow: hidden;
         gap: 6px;
+        padding: 0;
         min-width: 0;
     }
 
@@ -194,6 +235,9 @@
         background: transparent;
         width: auto;
         max-width: 100%;
+        color: var(--color-text-descripton);
+        font-weight: 400;
+        font-size: 14px;
     }
 
     .location-icon {
@@ -205,13 +249,23 @@
         flex-shrink: 0;
     }
 
+    .search-box::placeholder {
+        color: var(--color-background-grey);
+        /* or any color you want */
+        font-weight: 400;
+        font-size: 14px;
+    }
+
+
     .chip {
         background-color: #f0f0f0;
-        border-radius: 16px;
+        border-radius: 6px;
         padding: 4px 8px;
         display: flex;
         align-items: center;
-        font-size: 13px;
+        color: var(--color-text-descripton);
+        font-weight: 400;
+        font-size: 14px;
         white-space: nowrap;
     }
 
@@ -245,7 +299,29 @@
         max-height: 300px;
         overflow-y: auto;
         z-index: 1000;
+        padding: 5px;
         margin-top: 4px;
+    }
+
+    .animate-dropdown {
+        animation: slideDown 0.25s ease-out;
+    }
+
+    .location-right-icon {
+        font-size: 20px;
+        color: var(--color-accent);
+    }
+
+    @@keyframes slideDown {
+        from {
+            transform: translateY(-8px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
     }
 
     .dropdown-top-fixed {
@@ -259,10 +335,18 @@
 
     .dropdown-item {
         padding: 10px 12px;
-        cursor: pointer;
+        font-weight: 400;
+        font-size: 15px;
+        color: var(--color-text-heading) cursor: pointer;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
     }
 
     .dropdown-item:hover {
@@ -271,7 +355,7 @@
 
     .dropdown-item.selected {
         font-weight: bold;
-        background-color: #f4f4f4;
+        background-color: #e6e6e6;
     }
 
     .dropdown-header {

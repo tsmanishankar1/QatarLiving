@@ -1,4 +1,5 @@
-﻿using QLN.Web.Shared.Services.Interface;
+﻿using QLN.Common.Infrastructure.Constants;
+using QLN.Web.Shared.Services.Interface;
 using System.Net;
 
 namespace QLN.Web.Shared.Services
@@ -13,11 +14,28 @@ namespace QLN.Web.Shared.Services
         }
 
         /// <inheritdoc />
-        public async Task<HttpResponseMessage?> GetAllEventsAsync()
+        public async Task<HttpResponseMessage?> GetAllEventsAsync(string? category_id = null, string? location_id = null, string? date = null, int? page = 1, int? page_size = 20, string? order = "asc")
         {
+
+            string requestUri = $"api/content/events?page={page}&page_size={page_size}&order={order}";
+            if (!string.IsNullOrEmpty(category_id))
+            {
+                requestUri += $"&category_id={category_id}";
+            }
+
+            if (!string.IsNullOrEmpty(location_id))
+            {
+                requestUri += $"&location_id={location_id}";
+            }
+
+            if (!string.IsNullOrEmpty(date))
+            {
+                requestUri += $"&date={date}";
+            }
+
             try
             {
-                var response = await _httpClient.GetAsync("api/content/events");
+                var response = await _httpClient.GetAsync(requestUri);
                 return response;
             }
             catch (Exception ex)
