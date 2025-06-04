@@ -1,14 +1,8 @@
-using Dapr.Client;
-using Google.Api;
-using QLN.Common.Infrastructure.Service;
-using QLN.Common.Infrastructure.IService.ISubscriptionService;
 using QLN.Subscriptions.Actor.ActorClass;
-using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Identity;
 using QLN.Common.Infrastructure.DbContext;
 using Microsoft.EntityFrameworkCore;
 using QLN.Common.Infrastructure.Model;
-using QLN.Common.Infrastructure.TokenProvider;
 using QLN.Common.Infrastructure.IService.IPayToPublishService;
 using QLN.Backend.API.Service.PayToPublishService;
 
@@ -17,8 +11,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-
 builder.Services.AddScoped<IExternalSubscriptionService, ExternalSubscriptionService>();
 builder.Services.AddScoped<IPayToPublishService, ExternalPayToPublishService>();
 

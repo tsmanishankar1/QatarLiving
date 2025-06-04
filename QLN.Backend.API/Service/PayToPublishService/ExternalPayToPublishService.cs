@@ -34,7 +34,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 PlanName = request.PlanName,
                 TotalCount = request.TotalCount,
                 Description = request.Description,
-                Duration = request.Duration,
+                Duration = request.DurationId,
                 Price = request.Price,
                 Currency = request.Currency,
                 VerticalTypeId = request.VerticalTypeId,
@@ -57,9 +57,9 @@ namespace QLN.Backend.API.Service.PayToPublishService
         }
 
         public async Task<PayToPublishListResponseDto> GetPlansByVerticalAndCategoryAsync(
-            int verticalTypeId,
-            int categoryId,
-            CancellationToken cancellationToken = default)
+      int verticalTypeId,
+      int categoryId,
+      CancellationToken cancellationToken = default)
         {
             var resultList = new List<PayToPublishResponseDto>();
             var ids = _payToPublishIds.Keys.ToList();
@@ -84,7 +84,8 @@ namespace QLN.Backend.API.Service.PayToPublishService
                         Price = data.Price,
                         Currency = data.Currency,
                         Description = data.Description,
-                        Duration = data.Duration
+                        DurationId = (int)data.Duration,
+                        DurationName = data.Duration.ToString()
                     });
                 }
             }
@@ -99,6 +100,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
             };
         }
 
+
         public async Task<List<PayToPublishResponseDto>> GetAllPlansAsync(CancellationToken cancellationToken = default)
         {
             var ids = _payToPublishIds.Keys.ToList();
@@ -111,6 +113,8 @@ namespace QLN.Backend.API.Service.PayToPublishService
 
                 if (data != null && data.StatusId != Status.Expired)
                 {
+                    var durationEnum = (DurationType)data.Duration;
+
                     plans.Add(new PayToPublishResponseDto
                     {
                         Id = data.Id,
@@ -118,13 +122,15 @@ namespace QLN.Backend.API.Service.PayToPublishService
                         Price = data.Price,
                         Currency = data.Currency,
                         Description = data.Description,
-                        Duration = data.Duration
+                        DurationId = (int)durationEnum,
+                        DurationName = durationEnum.ToString()
                     });
                 }
             }
 
             return plans;
         }
+
 
         public async Task<bool> UpdatePlanAsync(Guid id, PayToPublishRequestDto request, CancellationToken cancellationToken = default)
         {
@@ -138,7 +144,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
 
             existingData.PlanName = request.PlanName;
             existingData.Description = request.Description;
-            existingData.Duration = request.Duration;
+            existingData.Duration = request.DurationId;
             existingData.Price = request.Price;
             existingData.TotalCount = request.TotalCount;
             existingData.Currency = request.Currency;
@@ -177,8 +183,8 @@ namespace QLN.Backend.API.Service.PayToPublishService
             if (payToPublishData == null)
                 throw new Exception($"PayToPublish data not found for ID: {request.PayToPublishId}");
 
-            var durationText = payToPublishData.Duration;
-            var endDate = ParseDurationAndGetEndDate(startDate, durationText);
+            var endDate = GetEndDateByDurationEnum(startDate, payToPublishData.Duration);
+
 
             var dto = new PaymentDto
             {
@@ -210,36 +216,20 @@ namespace QLN.Backend.API.Service.PayToPublishService
             throw new Exception("Payment transaction creation failed.");
         }
 
-        private DateTime ParseDurationAndGetEndDate(DateTime startDate, string duration)
+
+        private DateTime GetEndDateByDurationEnum(DateTime startDate, DurationType duration)
         {
-            if (string.IsNullOrWhiteSpace(duration))
-                throw new ArgumentException("Duration is empty or null", nameof(duration));
-
-            duration = duration.ToLowerInvariant();
-            var digits = new string(duration.Where(char.IsDigit).ToArray());
-
-            if (string.IsNullOrWhiteSpace(digits))
-                throw new ArgumentException($"No digits found in duration: {duration}");
-
-            int value = int.Parse(digits);
-
-            if (duration.Contains("month"))
+            return duration switch
             {
-                return startDate.AddMonths(value);
-            }
-
-            if (duration.Contains("year"))
-            {
-                return startDate.AddYears(value);
-            }
-
-            if (duration.Contains("minute"))
-            {
-                return startDate.AddMinutes(value);
-            }
-
-            throw new ArgumentException($"Unsupported duration format: {duration}");
+                DurationType.ThreeMonths => startDate.AddMonths(3),
+                DurationType.SixMonths => startDate.AddMonths(6),
+                DurationType.OneYear => startDate.AddYears(1),
+                DurationType.TwoMinutes=>startDate.AddMinutes(2),
+                _ => throw new ArgumentException($"Unsupported DurationType: {duration}")
+            };
         }
+
+
 
         private IPaymentActor GetPaymentActorProxy(Guid id)
         {

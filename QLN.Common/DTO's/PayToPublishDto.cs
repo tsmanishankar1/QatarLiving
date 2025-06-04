@@ -8,21 +8,30 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.DTO_s
 {
+    public enum DurationType
+    {
+        ThreeMonths = 1,
+        SixMonths = 2,
+        OneYear = 3,
+        TwoMinutes=4
+    }
+
     public class PayToPublishDto
     {
         public Guid Id { get; set; }
         public string PlanName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public string Duration { get; set; } = string.Empty;
+        public DurationType Duration { get; set; } // Updated
         public decimal Price { get; set; }
         public int TotalCount { get; set; }
         public string Currency { get; set; } = string.Empty;
         public Vertical VerticalTypeId { get; set; }
         public SubscriptionCategory CategoryId { get; set; }
         public Status StatusId { get; set; }
-
         public DateTime LastUpdated { get; set; }
     }
+
+
     public class PayToPublishRequestDto
     {
         [Required]
@@ -32,7 +41,7 @@ namespace QLN.Common.DTO_s
         [Required]
         public string Description { get; set; } = string.Empty;
         [Required]
-        public string Duration { get; set; } = string.Empty;
+        public DurationType DurationId { get; set; } 
         [Required]
         public decimal Price { get; set; }
         [Required]
@@ -51,8 +60,12 @@ namespace QLN.Common.DTO_s
         public decimal Price { get; set; }
         public string Currency { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public string Duration { get; set; } = string.Empty;
+        public int DurationId { get; set; }
+        public string DurationName { get; set; } = string.Empty;
     }
+
+
+
 
     public class PayToPublishListResponseDto
     {
