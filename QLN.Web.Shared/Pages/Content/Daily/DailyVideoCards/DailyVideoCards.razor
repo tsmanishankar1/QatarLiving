@@ -24,7 +24,7 @@
     <div class="video-list-container">
         <div class="section-title">
             <h3 class="section-heading">
-                <span class="accent-bar"></span>Watch on Qatar Living
+                <span class="accent-bar"></span>@(string.IsNullOrEmpty(QueueLabel) is true ? "Watch on Qatar Living" : QueueLabel)
             </h3>
         </div>
         <div class="video-list">
@@ -44,7 +44,7 @@
                         }
                         else
                         {
-                            <a class="list-title vedio-title-text" href="#">@item.Title</a>
+                            <span class="list-title vedio-title-text">@item.Title</span>
                         }
                     </div>
                 </div>
@@ -194,6 +194,7 @@
         display: flex;
         align-items: center;
         font-size: 14px;
+        cursor: pointer;
     }
 
     .vedio-title-text {
