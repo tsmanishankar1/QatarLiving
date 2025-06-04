@@ -1,30 +1,38 @@
 @typeparam TItem
 
-<div class="location-select-wrapper" @onfocusout="HideDropdown">
+<div class="location-select-wrapper" tabindex="0" @onfocusout="TryHideDropdown">
     <div class="location-input-area" @onclick="FocusInput"
         style="@($"border-color:{(ShowSuggestions ? "#FF7F38" : "#D0D5DD")}; padding:{Padding}; {CustomStyle}")">
         <div class="chip-wrapper">
-            @if (SelectedItems.Count > 0)
+            @if (MaxSelectableItems == 1 && SelectedItems.Count == 1)
             {
-                <div class="chip">
-                    <span>@ShortLabel(SelectedItems[0])</span>
-                    <button type="button" @onclick="(e) => RemoveLocation(SelectedItems[0])">×</button>
+                <div class="chip single-chip">
+                    <span>@GetLabel(SelectedItems[0])</span>
+                    <button type="chip-close-icon" @onclick="(e) => RemoveLocation(SelectedItems[0])">
+                        <MudIcon Icon="@Icons.Material.Rounded.Close" Class="close-icon" />
+                    </button>
                 </div>
-
-                @if (SelectedItems.Count > 1)
+            }
+            else
+            {
+                @foreach (var item in SelectedItems)
                 {
-                    <div class="chip muted">
-                        <span>+ @(SelectedItems.Count - 1) more</span>
+                    <div class="chip">
+                        <span>@ShortLabel(item)</span>
+                        <button type="button" @onclick="(e) => RemoveLocation(item)">×</button>
                     </div>
                 }
+
+                @if (SelectedItems.Count < MaxSelectableItems)
+                {
+                    <input @ref="SearchInputRef" type="text" class="search-box" value="@SearchTerm" @oninput="OnInputChanged"
+                        @onfocus="ShowDropdown" @onkeydown="HandleKeyDown"
+                        placeholder="@(SelectedItems.Count == 0 ? "Location" : (SelectedItems.Count == 1 ? "+ Add" : ""))"
+                        disabled="@(SelectedItems.Count >= MaxSelectableItems)" />
+                }
             }
-
-            <input @ref="SearchInputRef" type="text" class="search-box" value="@SearchTerm" @oninput="OnInputChanged"
-                @onfocus="ShowDropdown" @onkeydown="HandleKeyDown"
-                placeholder="@(SelectedItems.Count == 0 ? "Location" : (SelectedItems.Count == 1 ? "+ Add" : ""))"
-                disabled="@(SelectedItems.Count >= MaxSelectableItems)" />
-
         </div>
+
 
         <div class="location-icon">
             <MudIcon Icon="@Icons.Material.Rounded.LocationOn" Class="location-right-icon" />
@@ -33,8 +41,8 @@
 
     @if (ShowSuggestions && (FilteredItems.Any() || SelectedItems.Any()))
     {
-        <div class="dropdown-list animate-dropdown" @onmousedown="() => IsClickingDropdown = true"
-            @onmouseup="() => IsClickingDropdown = false" @onmouseleave="() => IsClickingDropdown = false">
+        <div class="dropdown-list animate-dropdown" @onmousedown="StartDropdownInteraction"
+            @onmouseup="StopDropdownInteraction" @onmouseleave="StopDropdownInteraction">
 
             @* <div class="dropdown-top-fixed">
                 @if (SelectedItems.Any())
@@ -81,7 +89,10 @@
     private bool ShowSuggestions = false;
     private bool IsClickingDropdown = false;
     private ElementReference SearchInputRef;
+    private bool IsInteractingWithDropdown = false;
 
+    private void StartDropdownInteraction() => IsInteractingWithDropdown = true;
+    private void StopDropdownInteraction() => IsInteractingWithDropdown = false;
     private async Task OnInputChanged(ChangeEventArgs e)
     {
         var newValue = e?.Value?.ToString() ?? "";
@@ -148,26 +159,33 @@
         .ToList();
     }
 
-    private async void HideDropdown(FocusEventArgs _)
+    private async void TryHideDropdown(FocusEventArgs _)
     {
-        await Task.Delay(150); // allow any in-progress clicks to complete
-
-        if (!IsClickingDropdown)
+        await Task.Delay(150); // give time for click events to complete
+        if (!IsInteractingWithDropdown)
         {
             ShowSuggestions = false;
             StateHasChanged();
         }
-
-        IsClickingDropdown = false;
     }
-
-
     private async void FocusInput()
     {
         ShowDropdown();
-        await Task.Yield(); // wait for DOM render
-        await SearchInputRef.FocusAsync();
+        await Task.Yield(); // Wait for rendering
+
+        if (SelectedItems.Count < MaxSelectableItems)
+        {
+            try
+            {
+                await SearchInputRef.FocusAsync();
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine($"Focus failed: {ex.Message}");
+            }
+        }
     }
+
 
     private void HandleKeyDown(KeyboardEventArgs e)
     {
@@ -190,6 +208,23 @@
         position: relative;
         width: 100%;
         font-family: 'Public Sans';
+    }
+
+    .chip-close-icon {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 4px;
+    }
+
+    .chip-close-icon:hover {
+        color: #FF7F38;
+    }
+
+    .close-icon {
+        font-size: 14px;
+        color: #475467;
     }
 
     .location-input-area {
@@ -225,6 +260,17 @@
         padding: 0;
         min-width: 0;
     }
+
+    .single-chip {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: #f1f1f1;
+        padding: 6px 10px;
+        border-radius: 16px;
+        margin-right: 8px;
+    }
+
 
     .search-box {
         border: none;

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using QLN.Web.Shared.Model;
+using QLN.Web.Shared.Components.ViewToggleButtons;
 using System.Globalization;
 using QLN.Web.Shared.Models;
 using QLN.Common.Infrastructure.DTO_s;
@@ -12,9 +13,10 @@ public class ArticleBase : ComponentBase
 {
     [Parameter]
     public string slug { get; set; }
+    [Parameter] public string category { get; set; }
+    [Parameter] public string subcategory { get; set; }
     public bool isLoading { get; set; } = true;
-     protected bool imageLoaded = false;
- 
+    protected bool imageLoaded = false;
     protected List<BannerItem> DailyHeroBanners { get; set; } = new();
     protected List<BannerItem> ArticleSideBanners { get; set; } = new();
     protected bool isLoadingBanners = true;
@@ -48,6 +50,40 @@ public class ArticleBase : ComponentBase
         "/images/banner_image.svg",
         "/images/banner_image.svg"
     };
+    protected List<ViewToggleButtons.ViewToggleOption> routerList = new()
+    {   
+    new() { Label = "News", Value = "news" },
+    new() { Label = "Qatar", Value = "qatar" },
+    new() { Label = "Middle East", Value = "middleeast" },
+    new() { Label = "World", Value = "world" },
+    new() { Label = "Health & Education", Value = "health-and-education" },
+    new() { Label = "Community", Value = "community" },
+    new() { Label = "Law", Value = "law" },
+
+    new() { Label = "Business", Value = "business" },
+    new() { Label = "Qatar Economy", Value = "qatar-economy" },
+    new() { Label = "Market Updates", Value = "market-update" },
+    new() { Label = "Real Estate", Value = "real-estate" },
+    new() { Label = "Entrepreneurship", Value = "entrepreneurship" },
+    new() { Label = "Finance", Value = "finance" },
+    new() { Label = "Jobs & Careers", Value = "jobs-and-careers" },
+
+    new() { Label = "Sports", Value = "sports" },
+    new() { Label = "Qatar Sports", Value = "qatar-sports" },
+    new() { Label = "Football", Value = "football" },
+    new() { Label = "International", Value = "international" },
+    new() { Label = "Motorsports", Value = "motorsports" },
+    new() { Label = "Olympics", Value = "olympics" },
+    new() { Label = "Athlete Features", Value = "athlete-features" },
+
+    new() { Label = "Lifestyle", Value = "lifestyle" },
+    new() { Label = "Food & Dining", Value = "food-dining" },
+    new() { Label = "Travel & Leisure", Value = "travel-leisure" },
+    new() { Label = "Arts & Culture", Value = "arts-and-culture" },
+    new() { Label = "Events", Value = "events" },
+    new() { Label = "Fashion & Style", Value = "fashion-and-style" },
+    new() { Label = "Home & Living", Value = "home-and-living" }
+};
     
     [Parameter]
     public NewsItem Item { get; set; }
@@ -89,11 +125,16 @@ public class ArticleBase : ComponentBase
                     Avatar = "/images/content/Sample.svg"
                 }).ToList() ?? new List<CommentModel>()
             };
+            var categoryValue = routerList.FirstOrDefault(item => item.Label == category)?.Value;
+            var subcategoryValue = routerList.FirstOrDefault(item => item.Label == subcategory)?.Value;
+            Console.WriteLine("the articled category is the" + categoryValue);
+            Console.WriteLine("the articled subcategory is the" + subcategoryValue);
+
             breadcrumbItems = new()
             {
-                new() {   Label = "News",Url ="/content/news" },
-                new() { Label = "Sports", Url = "/content/news"},
-                new() { Label = newsArticle.Title, Url = "/content/article/details/{slug}", IsLast = true },
+                new() {   Label = category,Url =$"/content/news?category={categoryValue}" },
+                new() { Label = subcategory, Url = $"/content/news?category={categoryValue}&subcategory={subcategoryValue}"},
+                new() { Label = newsArticle.Title, Url = $"/content/article/details/{categoryValue}/{subcategoryValue}/{slug}", IsLast = true },
             };
             QatarNewsContent = await GetNewsQatarAsync();
             moreArticleList = QatarNewsContent?.QlnNewsNewsQatar?.MoreArticles?.Items ?? new List<ContentPost>();
@@ -152,7 +193,7 @@ public class ArticleBase : ComponentBase
             var banners = await FetchBannerData();
             DailyHeroBanners = banners?.ContentArticleHero ?? new List<BannerItem>();
             ArticleSideBanners = banners?.ContentArticleSide ?? new List<BannerItem>();
-            }
+        }
         finally
         {
             isLoadingBanners = false;

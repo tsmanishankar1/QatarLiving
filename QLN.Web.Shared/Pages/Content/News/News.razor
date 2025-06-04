@@ -71,13 +71,14 @@
                                              <EmptyCard Title="No Image Available" Subtitle="" />
                                         }
                                         else{
-                                        @if (!imageLoaded)
+                                        @* @if (!imageLoaded)
                                         {
                                             <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="200px" Class="main-image" />
-                                        }
-                                            <img src="@topNewsSlot.ImageUrl" alt="News Image" class="main-image"
+                                        } *@
+                                            @* <img src="@topNewsSlot.ImageUrl" alt="News Image" class="main-image"
                                             style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
-                                            @onerror="OnImageError" />
+                                            @onerror="OnImageError" /> *@
+                                            <img src="@topNewsSlot.ImageUrl" alt="News Image" class="main-image">
                                         }
                                     }
                                     @if (isLoading){
@@ -97,15 +98,10 @@
                                         <div class="main-author">
                                         @if (!string.IsNullOrWhiteSpace(@topNewsSlot?.UserName))
                                         {
-                                            @topNewsSlot.UserName <span>•</span>
+                                            @topNewsSlot.UserName 
                                         }
-                                        <a href="#" class="main-source">Qatar Living</a>  
-                                        <img src="/qln-images/tick.svg" alt="Qatarliving" />
                                         </div>
-                                        <div class="comment-badge">
-                                        <img src="/qln-images/comment_icon.svg" alt="Comments" class="comment-icon" />
-                                        <span class="count">12</span>
-                                        </div> 
+                                       
                                         </div>
                                     }
                                 </div>
@@ -113,7 +109,7 @@
                         </div>
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <MoreArticle Articles="@moreArticleListSlot" loading="@isLoading" selectedTab="@SelectedTab"/>
+                        <MoreArticle Articles="@moreArticleListSlot" loading="@isLoading" selectedTab="@selectedTabView"/>
                     </MudItem>
                 </MudGrid>
                <div class="flex-container" style="padding-bottom: 40px;">
@@ -209,7 +205,7 @@
                         }
                     </div>
                     <div class="poular-article-container" >
-                <PopularArticles Articles="@popularArticleListSlot" selectedTab="@SelectedTab" loading="@isLoading" />
+                <PopularArticles Articles="@popularArticleListSlot" selectedTab="@selectedTabView" loading="@isLoading" />
 
                             <div class="ad-container-style">
                             <AdBanner BannerItems="NewsSideBanners" />

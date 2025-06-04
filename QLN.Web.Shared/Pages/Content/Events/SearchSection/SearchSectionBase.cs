@@ -26,6 +26,10 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
         protected List<Area> SelectedAreas = new(); // selected areas
         protected List<SelectOption> PropertyTypes = new();
         protected string SelectedPropertyTypeId;
+        protected bool ShouldShowClearAll =>
+            !string.IsNullOrEmpty(SelectedPropertyTypeId)
+            || SelectedAreas.Any()
+            || !string.IsNullOrEmpty(SelectedDateLabel);
 
         protected string SelectedLocationId;
 
@@ -55,10 +59,9 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
             if (_selectedDate != null)
             {
                 SelectedDateLabel = _selectedDate.Value.ToString("yyyy-MM-dd"); // format for URL
-
-                await OnDateChanged.InvokeAsync(SelectedDateLabel);
-
                 _showDatePicker = false;
+                await OnDateChanged.InvokeAsync(SelectedDateLabel);
+                 StateHasChanged(); 
             }
         }
         protected async Task PerformSearch(string keyword)
@@ -100,11 +103,16 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
                 await OnLocationChanged.InvokeAsync(selectedId);
             }
         }
-        protected void CancelDatePicker()
+       protected async void CancelDatePicker()
         {
             _showDatePicker = false;
             _selectedDate = null;
             SelectedDateLabel = string.Empty;
+
+            // ✅ Trigger API call
+            await OnDateChanged.InvokeAsync(null);
+
+            StateHasChanged(); // Optional, to update UI
         }
 
 
