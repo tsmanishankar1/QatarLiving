@@ -145,6 +145,12 @@ namespace QLN.Web.Shared.Pages.Content.News
 
                 if (query.TryGetValue("subcategory", out var sub))
                     localSubcategory = sub;
+                     if (string.IsNullOrEmpty(localCategory) && !string.IsNullOrEmpty(localSubcategory))
+                {
+                    localCategory = Categories.FirstOrDefault(cat =>
+                        cat.SubCategories.Any(sub => sub.Equals(localSubcategory, StringComparison.OrdinalIgnoreCase)))
+                        ?.Name;
+                }
                 if (!string.IsNullOrEmpty(localCategory))
                 {
                     var routeName = routerList.FirstOrDefault(item => item.Value == localSubcategory)?.Label;
@@ -310,7 +316,7 @@ namespace QLN.Web.Shared.Pages.Content.News
         {
             isLoading = true;
             SelectedTab = tab;
-            var bannersTask = LoadBanners(SelectedTab);
+            // var bannersTask = LoadBanners(SelectedTab);
             // topNews = new ContentPost();
             // moreArticleList.Clear();
             switch (tab)

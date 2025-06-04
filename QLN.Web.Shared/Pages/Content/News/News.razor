@@ -71,13 +71,14 @@
                                              <EmptyCard Title="No Image Available" Subtitle="" />
                                         }
                                         else{
-                                        @if (!imageLoaded)
+                                        @* @if (!imageLoaded)
                                         {
                                             <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="200px" Class="main-image" />
-                                        }
-                                            <img src="@topNewsSlot.ImageUrl" alt="News Image" class="main-image"
+                                        } *@
+                                            @* <img src="@topNewsSlot.ImageUrl" alt="News Image" class="main-image"
                                             style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
-                                            @onerror="OnImageError" />
+                                            @onerror="OnImageError" /> *@
+                                            <img src="@topNewsSlot.ImageUrl" alt="News Image" class="main-image">
                                         }
                                     }
                                     @if (isLoading){
@@ -97,13 +98,10 @@
                                         <div class="main-author">
                                         @if (!string.IsNullOrWhiteSpace(@topNewsSlot?.UserName))
                                         {
-                                            @topNewsSlot.UserName <span>•</span>
+                                            @topNewsSlot.UserName 
                                         }
                                         </div>
-                                        <div class="comment-badge">
-                                        <img src="/qln-images/comment_icon.svg" alt="Comments" class="comment-icon" />
-                                        <span class="count">12</span>
-                                        </div> 
+                                       
                                         </div>
                                     }
                                 </div>
