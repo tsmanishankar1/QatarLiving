@@ -197,8 +197,8 @@
         if (firstRender)
         {
             _isDarkMode = await _mudThemeProvider.GetSystemPreference();
-            StateHasChanged();
-            return;
+            // StateHasChanged(); 
+            // return; // may be the login bug as this would exist out of running anything else in the method.
         }
             
         var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();

@@ -43,47 +43,57 @@ namespace QLN.Web.Shared.Pages.Content.Daily
         protected string TopicQueue5Label { get; set; } = string.Empty;
         protected List<ContentPost> TopStories { get; set; } = [];
         protected List<ContentEvent> vMoreArticles { get; set; } = [];
-
         protected List<ContentVideo> vVideoList { get; set; } = [];
 
-        protected async override Task OnInitializedAsync()
+        protected async override Task OnAfterRenderAsync(bool firstRender)
         {
+            if (!firstRender) return;
+
             isLoading = true;
+
             try
             {
-                LandingContent = await GetContentLandingAsync() ?? new();
-                TopStoryItem = LandingContent?.ContentsDaily?.DailyTopStory?.Items.First() ?? new();
-                HighlightedEvent = LandingContent?.ContentsDaily?.DailyEvent?.Items.First() ?? new();
-                FeaturedEvents = LandingContent?.ContentsDaily?.DailyFeaturedEvents?.Items ?? [];
-                vMoreArticles = LandingContent?.ContentsDaily?.DailyMoreArticles?.Items ?? [];
-                vVideoList = LandingContent?.ContentsDaily?.DailyWatchOnQatarLiving?.Items ?? [];
-                TopicQueue1Label = LandingContent?.ContentsDaily?.DailyTopics1?.QueueLabel ?? "";
-                TopicQueue2Label = LandingContent?.ContentsDaily?.DailyTopics2?.QueueLabel ?? "";
-                TopicQueue3Label = LandingContent?.ContentsDaily?.DailyTopics3?.QueueLabel ?? "";
-                TopicQueue4Label = LandingContent?.ContentsDaily?.DailyTopics4?.QueueLabel ?? "";
-                TopicQueue1 = LandingContent?.ContentsDaily?.DailyTopics1?.Items ?? [];
-                TopicQueue2 = LandingContent?.ContentsDaily?.DailyTopics2?.Items ?? [];
-                TopicQueue3 = LandingContent?.ContentsDaily?.DailyTopics3?.Items ?? [];
-                TopicQueue4 = LandingContent?.ContentsDaily?.DailyTopics4?.Items ?? [];
-                var ListOfTopStories = LandingContent?.ContentsDaily?.DailyTopStories?.Items ?? [];
-
-                TopStories = [.. ListOfTopStories.Take(3)]; // Just 3 should display
-
-                TopicQueue5 = LandingContent?.ContentsDaily?.DailyTopics5?.Items ?? [];
-                TopicQueue5Label = LandingContent?.ContentsDaily?.DailyTopics5?.QueueLabel ?? "";
-
-                MoreArticles = [.. vMoreArticles.Take(4)];
-                VideoList = [.. vVideoList.Take(3)];
-                await LoadBanners();
+                await Task.WhenAll(
+                    LoadContent(),
+                    LoadBanners()
+                );
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message, "OnInitializedAsync");
+                Console.WriteLine(ex.Message, "OnAfterRenderAsync");
             }
             finally
             {
                 isLoading = false;
+                StateHasChanged();
             }
+        }
+
+        private async Task LoadContent()
+        {
+            LandingContent = await GetContentLandingAsync() ?? new();
+            TopStoryItem = LandingContent?.ContentsDaily?.DailyTopStory?.Items.First() ?? new();
+            HighlightedEvent = LandingContent?.ContentsDaily?.DailyEvent?.Items.First() ?? new();
+            FeaturedEvents = LandingContent?.ContentsDaily?.DailyFeaturedEvents?.Items ?? [];
+            vMoreArticles = LandingContent?.ContentsDaily?.DailyMoreArticles?.Items ?? [];
+            vVideoList = LandingContent?.ContentsDaily?.DailyWatchOnQatarLiving?.Items ?? [];
+            TopicQueue1Label = LandingContent?.ContentsDaily?.DailyTopics1?.QueueLabel ?? "";
+            TopicQueue2Label = LandingContent?.ContentsDaily?.DailyTopics2?.QueueLabel ?? "";
+            TopicQueue3Label = LandingContent?.ContentsDaily?.DailyTopics3?.QueueLabel ?? "";
+            TopicQueue4Label = LandingContent?.ContentsDaily?.DailyTopics4?.QueueLabel ?? "";
+            TopicQueue1 = LandingContent?.ContentsDaily?.DailyTopics1?.Items ?? [];
+            TopicQueue2 = LandingContent?.ContentsDaily?.DailyTopics2?.Items ?? [];
+            TopicQueue3 = LandingContent?.ContentsDaily?.DailyTopics3?.Items ?? [];
+            TopicQueue4 = LandingContent?.ContentsDaily?.DailyTopics4?.Items ?? [];
+            var ListOfTopStories = LandingContent?.ContentsDaily?.DailyTopStories?.Items ?? [];
+
+            TopStories = [.. ListOfTopStories.Take(3)]; // Just 3 should display
+
+            TopicQueue5 = LandingContent?.ContentsDaily?.DailyTopics5?.Items ?? [];
+            TopicQueue5Label = LandingContent?.ContentsDaily?.DailyTopics5?.QueueLabel ?? "";
+
+            MoreArticles = [.. vMoreArticles.Take(4)];
+            VideoList = [.. vVideoList.Take(3)];
         }
 
         /// <summary>
