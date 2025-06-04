@@ -14,6 +14,96 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
 {
     public static class ContentEndpoints
     {
+        private const int CATEGORY_CACHE_EXPIRY_IN_MINS = 60;
+        private const int NEWS_CACHE_EXPIRY_IN_MINS = 5;
+        private const int COMMUNITY_CACHE_EXPIRY_IN_MINS = 1;
+        private const int EVENTS_CACHE_EXPIRY_IN_MINS = 10;
+
+        #region All News
+        public static RouteGroupBuilder MapGetNewsBySlugEndpoint(this RouteGroupBuilder group)
+        {
+
+
+            // GET /api/content/news/{slug}
+            group.MapGet("/news/{*slug}", async (
+                    HttpContext context,
+                    [FromRoute] string slug,
+                    [FromServices] IContentService svc,
+                    CancellationToken cancellationToken
+                    )
+                =>
+            {
+                try
+                {
+                    var ad = await svc.GetNewsBySlugAsync(slug, cancellationToken);
+                    if (ad is null)
+                    {
+                        return Results.NotFound();
+                    }
+                    else
+                    {
+                        // Only Cache successful results
+                        AddCachingToHeader(context, NEWS_CACHE_EXPIRY_IN_MINS);
+                        return Results.Ok(ad);
+                    }
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { Message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Lookup Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("GetNewsBySlug")
+            .WithTags("Content");
+
+            return group;
+        }
+
+        public static RouteGroupBuilder MapContentCategoriesEndpoint(this RouteGroupBuilder group)
+        {
+            // GET /api/content/categories
+            group.MapGet("/categories", async (
+                    HttpContext context,
+                    [FromServices] IContentService svc,
+                    CancellationToken cancellationToken
+                    )
+                =>
+            {
+                try
+                {
+
+                    var model = await svc.GetCategoriesFromDrupalAsync(cancellationToken);
+
+                    AddCachingToHeader(context, CATEGORY_CACHE_EXPIRY_IN_MINS);
+
+                    return Results.Ok(model);
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { Message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Content Categories Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("GetContentCategories")
+            .WithTags("Content");
+
+            return group;
+        }
+
+
+        #endregion
         #region Content Daily
         public static RouteGroupBuilder MapContentsDailyEndpoint(this RouteGroupBuilder group)
         {
@@ -98,6 +188,42 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         }
         #endregion
         #region Community
+
+        public static RouteGroupBuilder MapPostDiscussionPostEndpoint(this RouteGroupBuilder group)
+        {
+
+
+            // GET /api/content/post/save
+            group.MapPost("/post/save", async (
+                    [FromBody] CreateDiscussionPostRequest request,
+                    [FromServices] IContentService svc,
+                    CancellationToken cancellationToken
+                    )
+                =>
+            {
+                try
+                {
+                    var comment = await svc.CreateDiscussionPostOnDrupalAsync(request, cancellationToken);
+                    return comment is null ? Results.NotFound() : Results.Ok(comment);
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { Message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Create Post Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("PostForumPost")
+            .WithTags("Content");
+
+            return group;
+        }
+
         public static RouteGroupBuilder MapCommunityMorePostsEndpoint(this RouteGroupBuilder group)
         {
 
@@ -144,6 +270,50 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                 }
             })
             .WithName("GetContentCommunities")
+            .WithTags("Content");
+
+            return group;
+        }
+
+        public static RouteGroupBuilder MapGetPostBySlugEndpoint(this RouteGroupBuilder group)
+        {
+
+            // GET /api/content/event/{slug}
+            group.MapGet("/post/{*slug}", async (
+                    HttpContext context,
+                    [FromRoute] string slug,
+                    [FromServices] IContentService svc,
+                    CancellationToken cancellationToken
+                    )
+                =>
+            {
+                try
+                {
+                    var ad = await svc.GetPostBySlugAsync(slug, cancellationToken);
+                    if (ad is null)
+                    {
+                        return Results.NotFound();
+                    }
+                    else
+                    {
+                        // Only Cache successful results
+                        AddCachingToHeader(context, COMMUNITY_CACHE_EXPIRY_IN_MINS);
+                        return Results.Ok(ad);
+                    }
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { Message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Lookup Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("GetPostBySlug")
             .WithTags("Content");
 
             return group;
@@ -368,9 +538,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
 
         }
         #endregion
-        #region Support
+        #region Support endpoints
         public static RouteGroupBuilder MapContentQueueEndpoint(this RouteGroupBuilder group)
         {
+            // dont add caching to this as it is used for testing
 
             // GET /api/content/landing
             group.MapGet("{queue}/landing", async (
@@ -421,11 +592,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             return group;
         }
         #endregion
+        #region Events
         public static RouteGroupBuilder MapContentEventsEndpoint(this RouteGroupBuilder group)
         {
 
             // GET /api/content/events
             group.MapGet("/events", async (
+                    HttpContext context,
                     [FromQuery] string? category_id,
                     [FromQuery] string? location_id,
                     [FromQuery] string? date,
@@ -447,7 +620,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                         order,
                         page,
                         page_size);
-            return Results.Ok(model);
+
+                    AddCachingToHeader(context, EVENTS_CACHE_EXPIRY_IN_MINS);
+
+                    return Results.Ok(model);
                 }
                 catch (ArgumentException ex)
                 {
@@ -467,57 +643,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             return group;
         }
 
-        public static RouteGroupBuilder MapContentCategoriesEndpoint(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapGetEventBySlugEndpoint(this RouteGroupBuilder group)
         {
-            const int CATEGORY_CACHE_EXPIRY_IN_MINS = 60;
 
-            // GET /api/content/categories
-            group.MapGet("/categories", async (
+            // GET /api/content/event/{slug}
+            group.MapGet("/event/{*slug}", async (
                     HttpContext context,
-                    [FromServices] IContentService svc,
-                    CancellationToken cancellationToken
-                    )
-                =>
-            {
-                try
-                {
-                    context.Response.GetTypedHeaders().CacheControl = new CacheControlHeaderValue
-                    {
-                        Public = true,
-                        MaxAge = TimeSpan.FromMinutes(CATEGORY_CACHE_EXPIRY_IN_MINS)
-                    };
-
-                    // Add Vary header for the User-Agent
-                    context.Response.Headers[HeaderNames.Vary] = "User-Agent";
-
-                    var model = await svc.GetCategoriesFromDrupalAsync(cancellationToken);
-
-                    return Results.Ok(model);
-                }
-                catch (ArgumentException ex)
-                {
-                    return Results.BadRequest(new { Message = ex.Message });
-                }
-                catch (Exception ex)
-                {
-                    return Results.Problem(
-                        title: "Content Categories Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-            .WithName("GetContentCategories")
-            .WithTags("Content");
-
-            return group;
-        }
-
-        public static RouteGroupBuilder MapGetNewsBySlugEndpoint(this RouteGroupBuilder group)
-        {
-
-
-            // GET /api/content/news/{slug}
-            group.MapGet("/news/{*slug}", async (
                     [FromRoute] string slug,
                     [FromServices] IContentService svc,
                     CancellationToken cancellationToken
@@ -526,8 +657,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             {
                 try
                 {
-                    var ad = await svc.GetNewsBySlugAsync(slug, cancellationToken);
-                    return ad is null ? Results.NotFound() : Results.Ok(ad);
+                    var ad = await svc.GetEventBySlugAsync(slug, cancellationToken);
+                    if (ad is null)
+                    {
+                        return Results.NotFound();
+                    }
+                    else
+                    {
+                        // Only Cache successful results
+                        AddCachingToHeader(context, EVENTS_CACHE_EXPIRY_IN_MINS);
+
+                        return Results.Ok(ad);
+                    }
                 }
                 catch (ArgumentException ex)
                 {
@@ -541,11 +682,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                         statusCode: StatusCodes.Status500InternalServerError);
                 }
             })
-            .WithName("GetNewsBySlug")
+            .WithName("GetEventBySlug")
             .WithTags("Content");
 
             return group;
         }
+
+        #endregion
+        #region Categories
+        #endregion
 
         public static RouteGroupBuilder MapPostCommentEndpoint(this RouteGroupBuilder group)
         {
@@ -577,41 +722,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                 }
             })
             .WithName("PostComment")
-            .WithTags("Content");
-
-            return group;
-        }
-
-        public static RouteGroupBuilder MapPostDiscussionPostEndpoint(this RouteGroupBuilder group)
-        {
-
-
-            // GET /api/content/post/save
-            group.MapPost("/post/save", async (
-                    [FromBody] CreateDiscussionPostRequest request,
-                    [FromServices] IContentService svc,
-                    CancellationToken cancellationToken
-                    )
-                =>
-            {
-                try
-                {
-                    var comment = await svc.CreateDiscussionPostOnDrupalAsync(request, cancellationToken);
-                    return comment is null ? Results.NotFound() : Results.Ok(comment);
-                }
-                catch (ArgumentException ex)
-                {
-                    return Results.BadRequest(new { Message = ex.Message });
-                }
-                catch (Exception ex)
-                {
-                    return Results.Problem(
-                        title: "Create Post Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-            .WithName("PostForumPost")
             .WithTags("Content");
 
             return group;
@@ -708,87 +818,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
 
             return group;
         }
-        public static RouteGroupBuilder MapGetEventBySlugEndpoint(this RouteGroupBuilder group)
-        {
-
-            // GET /api/content/event/{slug}
-            group.MapGet("/event/{*slug}", async (
-                    [FromRoute] string slug,
-                    [FromServices] IContentService svc,
-                    CancellationToken cancellationToken
-                    )
-                =>
-            {
-                try
-                {
-                    var ad = await svc.GetEventBySlugAsync(slug, cancellationToken);
-                    return ad is null ? Results.NotFound() : Results.Ok(ad);
-                }
-                catch (ArgumentException ex)
-                {
-                    return Results.BadRequest(new { Message = ex.Message });
-                }
-                catch (Exception ex)
-                {
-                    return Results.Problem(
-                        title: "Lookup Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-            .WithName("GetEventBySlug")
-            .WithTags("Content");
-
-            return group;
-        }
-
-        public static RouteGroupBuilder MapGetPostBySlugEndpoint(this RouteGroupBuilder group)
-        {
-
-            // GET /api/content/event/{slug}
-            group.MapGet("/post/{*slug}", async (
-                    [FromRoute] string slug,
-                    [FromServices] IContentService svc,
-                    CancellationToken cancellationToken
-                    )
-                =>
-            {
-                try
-                {
-                    var ad = await svc.GetPostBySlugAsync(slug, cancellationToken);
-                    return ad is null ? Results.NotFound() : Results.Ok(ad);
-                }
-                catch (ArgumentException ex)
-                {
-                    return Results.BadRequest(new { Message = ex.Message });
-                }
-                catch (Exception ex)
-                {
-                    return Results.Problem(
-                        title: "Lookup Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-            .WithName("GetPostBySlug")
-            .WithTags("Content");
-
-            return group;
-        }
-
+        
         #region Private endpoints
-        private static RouteGroupBuilder GenerateLandingEndpoint(this RouteGroupBuilder group, string QueueName, string Name)
-        {
-            
-
-            return group;
-        }
 
         private static RouteGroupBuilder GenerateLandingEndpoint<T>(this RouteGroupBuilder group, string QueueName, string Name)
         {
 
             // GET /api/content/landing
             group.MapGet($"{QueueName}/landing", async (
+                    HttpContext context,
                     [FromServices] IContentService svc,
                     CancellationToken cancellationToken
                     )
@@ -797,6 +835,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                 try
                 {
                     var model = await svc.GetPostsFromDrupalAsync<T>(QueueName, cancellationToken);
+
+                    AddCachingToHeader(context, NEWS_CACHE_EXPIRY_IN_MINS);
 
                     return Results.Ok(model);
                 }
@@ -816,6 +856,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             .WithTags("Content");
 
             return group;
+        }
+
+        private static void AddCachingToHeader(HttpContext context, int cache_expiry_in_minutes)
+        {
+            context.Response.GetTypedHeaders().CacheControl = new CacheControlHeaderValue
+            {
+                Public = true,
+                MaxAge = TimeSpan.FromMinutes(cache_expiry_in_minutes)
+            };
+
+            // Add Vary header for the User-Agent
+            context.Response.Headers[HeaderNames.Vary] = "User-Agent";
         }
         #endregion
     }
