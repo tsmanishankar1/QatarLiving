@@ -21,6 +21,9 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
 
         [Parameter] public List<EventCategory> Categories { get; set; } = [];
 
+        [Parameter] public List<Area> Areas { get; set; } = [];
+        protected List<Area> FilteredAreas = new(); // filtered list for search
+        protected List<Area> SelectedAreas = new(); // selected areas
         protected List<SelectOption> PropertyTypes = new();
         protected string SelectedPropertyTypeId;
 
@@ -46,7 +49,6 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
         protected DateRange _dateRange = new();
 
 
-
         protected void ToggleDatePicker() => _showDatePicker = !_showDatePicker;
         protected MudDatePicker _datePickerRef;
 
@@ -61,7 +63,45 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
                 _showDatePicker = false;
             }
         }
+        protected async Task PerformSearch(string keyword)
+        {
+            // Filter areas based on name
+            FilteredAreas = Areas
+                .Where(a => a.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+                .ToList();
 
+            // Assign filtered list back to trigger update
+            StateHasChanged();
+        }
+
+        protected async Task ClearAllFilters()
+        {
+            SelectedPropertyTypeId = null;
+            SelectedLocationId = null;
+            SelectedAreas.Clear();
+            FilteredAreas = Areas; // Reset area filter
+            _selectedDate = null;
+            SelectedDateLabel = string.Empty;
+
+            await OnCategoryChanged.InvokeAsync(null);
+            await OnLocationChanged.InvokeAsync(null);
+            await OnDateChanged.InvokeAsync(null);
+
+            StateHasChanged(); // Reflect UI changes
+        }
+
+        protected async Task HandleLocationSelectionChanged(List<Area> selected)
+        {
+            SelectedAreas = selected;
+
+            // Assuming only one is selected at a time for search
+            var selectedId = SelectedAreas.FirstOrDefault()?.Id;
+
+            if (!string.IsNullOrWhiteSpace(selectedId))
+            {
+                await OnLocationChanged.InvokeAsync(selectedId);
+            }
+        }
         protected void CancelDatePicker()
         {
             _showDatePicker = false;
@@ -91,6 +131,21 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
 
             StateHasChanged();
 
+        }
+
+        protected async Task CallApiForLocationChange(List<Area> selected)
+        {
+            var selectedId = selected.FirstOrDefault()?.Id;
+            if (!string.IsNullOrWhiteSpace(selectedId))
+            {
+                await OnLocationChanged.InvokeAsync(selectedId);
+            }
+            else
+            {
+                // Handle location removed case (e.g., call API with null or empty)
+                await OnLocationChanged.InvokeAsync(null);
+                // await MyApiService.ClearLocationAsync();
+            }
         }
         protected void HandleDatePickerFocusOut(FocusEventArgs e)
         {
@@ -150,7 +205,7 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
                 Id = cat.Id,
                 Label = cat.Name
             }).ToList();
-
+            FilteredAreas = Areas;
             return Task.CompletedTask;
         }
 
