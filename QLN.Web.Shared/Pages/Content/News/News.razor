@@ -99,8 +99,6 @@
                                         {
                                             @topNewsSlot.UserName <span>•</span>
                                         }
-                                        <a href="#" class="main-source">Qatar Living</a>  
-                                        <img src="/qln-images/tick.svg" alt="Qatarliving" />
                                         </div>
                                         <div class="comment-badge">
                                         <img src="/qln-images/comment_icon.svg" alt="Comments" class="comment-icon" />
@@ -113,7 +111,7 @@
                         </div>
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <MoreArticle Articles="@moreArticleListSlot" loading="@isLoading" selectedTab="@SelectedTab"/>
+                        <MoreArticle Articles="@moreArticleListSlot" loading="@isLoading" selectedTab="@selectedTabView"/>
                     </MudItem>
                 </MudGrid>
                <div class="flex-container" style="padding-bottom: 40px;">
@@ -209,7 +207,7 @@
                         }
                     </div>
                     <div class="poular-article-container" >
-                <PopularArticles Articles="@popularArticleListSlot" selectedTab="@SelectedTab" loading="@isLoading" />
+                <PopularArticles Articles="@popularArticleListSlot" selectedTab="@selectedTabView" loading="@isLoading" />
 
                             <div class="ad-container-style">
                             <AdBanner BannerItems="NewsSideBanners" />
