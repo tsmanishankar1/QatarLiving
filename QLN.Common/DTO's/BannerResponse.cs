@@ -82,17 +82,5 @@ namespace QLN.Common.Infrastructure.DTO_s
 
         [JsonPropertyName("content_topics_takeover")]
         public List<BannerItem> ContentTopicsTakeover { get; set; } = new();
-        [JsonPropertyName("qln_banners_news_middle_east_take_over_1")]
-        public List<BannerItem> MiddleEastTakeover { get; set; } = new();
-        [JsonPropertyName("qln_banners_news_qatar_take_over_1")]
-        public List<BannerItem> NewsQatarTakeOver { get; set; } = new();
-        [JsonPropertyName("qln_banners_news_world_take_over_1")]
-        public List<BannerItem> NewsWorldTakeOver { get; set; } = new();
-         [JsonPropertyName("qln_banners_news_world_hero")]
-        public List<BannerItem> NewsWorldHero { get; set; } = new();
-        [JsonPropertyName("qln_banners_news_middle_east_hero")]
-        public List<BannerItem> MiddleEastHomeBaner { get; set; } = new();
-        [JsonPropertyName("qln_banners_news_qatar_hero")]
-        public List<BannerItem> NewsQatarHero { get; set; } = new();
     }
 }

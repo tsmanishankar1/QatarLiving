@@ -12,9 +12,9 @@ public class ArticleBase : ComponentBase
 {
     [Parameter]
     public string slug { get; set; }
+    [Parameter] public string category { get; set; }
     public bool isLoading { get; set; } = true;
-     protected bool imageLoaded = false;
- 
+    protected bool imageLoaded = false;
     protected List<BannerItem> DailyHeroBanners { get; set; } = new();
     protected List<BannerItem> ArticleSideBanners { get; set; } = new();
     protected bool isLoadingBanners = true;
@@ -92,8 +92,8 @@ public class ArticleBase : ComponentBase
             breadcrumbItems = new()
             {
                 new() {   Label = "News",Url ="/content/news" },
-                new() { Label = "Sports", Url = "/content/news"},
-                new() { Label = newsArticle.Title, Url = "/content/article/details/{slug}", IsLast = true },
+                new() { Label = category, Url = "/content/news"},
+                new() { Label = newsArticle.Title, Url = "/content/article/details/{category}/{slug}", IsLast = true },
             };
             QatarNewsContent = await GetNewsQatarAsync();
             moreArticleList = QatarNewsContent?.QlnNewsNewsQatar?.MoreArticles?.Items ?? new List<ContentPost>();
@@ -152,7 +152,7 @@ public class ArticleBase : ComponentBase
             var banners = await FetchBannerData();
             DailyHeroBanners = banners?.ContentArticleHero ?? new List<BannerItem>();
             ArticleSideBanners = banners?.ContentArticleSide ?? new List<BannerItem>();
-            }
+        }
         finally
         {
             isLoadingBanners = false;

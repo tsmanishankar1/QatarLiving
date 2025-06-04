@@ -1,4 +1,4 @@
-@page "/content/article/details/{*slug}"
+@page "/content/article/details/{category}/{*slug}"
 @inherits ArticleBase
 @layout ContentLayout
 @using QLN.Web.Shared.Components.Carousel
@@ -40,7 +40,7 @@
                          <CommentSection Comment="SelectedPost"/>    
             </MudItem>
             <MudItem xs="12" md="4">
-                <MoreArticleSection Articles="@moreArticleList" loading="@isLoading" ArticleSideBanners="ArticleSideBanners"/>
+                <MoreArticleSection Articles="@moreArticleList" loading="@isLoading" ArticleSideBanners="ArticleSideBanners" category="category"/>
             </MudItem>
         </MudGrid>
     </div>

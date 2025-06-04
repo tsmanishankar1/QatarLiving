@@ -53,6 +53,7 @@ namespace QLN.Web.Shared.Pages.Content.News
         new() { Label = "Lifestyle", Value = "lifestyle" }
     };
         protected string _selectedView = "news";
+        protected string selectedTabView = "News";
         protected string[] Tabs = new[] { "Qatar", "Middle East", "World", "Health & Education", "Community", "Law" };
         protected string SelectedTab = "Qatar";
         protected List<BannerItem> DailyHeroBanners { get; set; } = new();
@@ -159,6 +160,7 @@ namespace QLN.Web.Shared.Pages.Content.News
         {
             _selectedView = view;
             var selectedCategory = Categories.FirstOrDefault(c => c.Name.Equals(view, StringComparison.OrdinalIgnoreCase));
+            selectedTabView = _viewOptions.FirstOrDefault(x => x.Value == _selectedView)?.Label;
             if (selectedCategory != null)
             {
                 Tabs = selectedCategory.SubCategories.ToArray();
@@ -227,32 +229,8 @@ namespace QLN.Web.Shared.Pages.Content.News
             {
                 var banners = await FetchBannerData();
                 NewsSideBanners = banners?.ContentNewsSide ?? new List<BannerItem>();
-                switch (tab)
-                {
-                    case "Qatar":
-                        DailyHeroBanners = banners?.NewsQatarHero ?? new List<BannerItem>();
-                        DailyTakeOverBanners = banners?.NewsQatarTakeOver ?? new List<BannerItem>();
-                        break;
-                    case "Community":
-                        DailyHeroBanners = banners?.ContentCommunityHero ?? new List<BannerItem>();
-                        DailyTakeOverBanners = banners?.ContentDailyTakeoverFirst ?? new List<BannerItem>();
-                        break;
-                    case "Law":
-                        DailyTakeOverBanners = banners?.ContentDailyTakeoverFirst ?? new List<BannerItem>();
-                        break;
-                    case "Middle East":
-                        DailyTakeOverBanners = banners?.MiddleEastTakeover ?? new List<BannerItem>();
-                        DailyHeroBanners = banners?.MiddleEastHomeBaner ?? new List<BannerItem>();
-                        break;
-                    case "World":
-                        DailyTakeOverBanners = banners?.MiddleEastTakeover ?? new List<BannerItem>();
-                        DailyHeroBanners = banners?.NewsWorldHero ?? new List<BannerItem>();
-                        break;
-                    default:
-                        DailyTakeOverBanners = banners?.ContentNewsHero ?? new List<BannerItem>();
-                        DailyHeroBanners = banners?.ContentNewsTakeover ?? new List<BannerItem>();
-                        break;
-                }
+                DailyHeroBanners = banners?.ContentNewsHero ?? new List<BannerItem>();
+                DailyTakeOverBanners = banners?.ContentNewsTakeover ?? new List<BannerItem>();
             }
             finally
             {
@@ -693,7 +671,8 @@ namespace QLN.Web.Shared.Pages.Content.News
 
         protected void onclick(ContentPost news)
         {
-            navManager.NavigateTo($"/content/article/details/{news.Slug}");
+            selectedTabView = _viewOptions.FirstOrDefault(x => x.Value == _selectedView)?.Label;
+            navManager.NavigateTo($"/content/article/details/{selectedTabView}/{news.Slug}");
         }
 
 

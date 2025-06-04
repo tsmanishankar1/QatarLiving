@@ -41,13 +41,13 @@
                     <div class="article-content">
                         @if (selectedPost == article)
                         {
-                            <a class="selected-title" href="@($"/content/article/details/{article.Slug}")">
+                            <a class="selected-title" href="@($"/content/article/details/{category}/{article.Slug}")">
                                 @article.Title
                             </a>
                         }
                         else
                         {
-                            <a class="article-title" href="@($"/content/article/details/{article.Slug}")">
+                            <a class="article-title" href="@($"/content/article/details/{category}/{article.Slug}")">
                                 @article.Title
                             </a>
                         }
