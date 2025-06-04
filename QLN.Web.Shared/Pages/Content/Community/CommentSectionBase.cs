@@ -8,25 +8,13 @@ using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services;
 using System.Net.NetworkInformation;
 using System.Security.Claims;
+using System.Xml.Linq;
 
 
 namespace QLN.Web.Shared.Pages.Content.Community
 {
     public class CommentSectionBase : ComponentBase
     {
-
-        [Parameter]
-        public PostModel Comment { get; set; }
-        protected string newComment = string.Empty;
-
-        protected int CurrentPage { get; set; } = 1;
-        protected int PageSize { get; set; } = 10;
-
-        protected IEnumerable<CommentModel> PagedComments =>
-            Comment.Comments?.Skip((CurrentPage - 1) * PageSize).Take(PageSize) ?? Enumerable.Empty<CommentModel>();
-
-        protected bool isMenuOpen = false;
-        protected bool IsLiked { get; set; } = false;
 
         [Inject] protected IJSRuntime JS { get; set; }
         [Inject] protected CookieAuthStateProvider CookieAuthenticationStateProvider { get; set; }
@@ -35,15 +23,26 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected MudTextField<string> multilineReference;
 
+        //[Parameter]
+        //public PostModel Comment { get; set; }
+        public PostModel Comment { get; set; }
+        protected string newComment = string.Empty;
+
+        protected IEnumerable<CommentModel> PagedComments =>
+          Comment.Comments?.Skip((CurrentPage - 1) * PageSize).Take(PageSize) ?? Enumerable.Empty<CommentModel>();
+
+        protected int CurrentPage { get; set; } = 1;
+        protected int PageSize { get; set; } = 10;
+
+   
+        protected bool isMenuOpen = false;
+        protected bool IsLiked { get; set; } = false;
 
 
-        private MudTextField<string> textFieldRef;
-      
-
-        private NavigationPath navigationPath;
         public string Name { get; set; } = string.Empty;
         public int CurrentUserId { get; set; }
         public bool IsLoggedIn { get; set; } = false;
+        protected bool IsLoading { get; set; } = false;
 
         protected override async Task OnInitializedAsync()
         {
@@ -57,6 +56,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 Console.WriteLine($"Current User: {CurrentUserId}");
                 IsLoggedIn = true;
             }
+            await GetCommentAsync();
         }
 
 
@@ -90,11 +90,54 @@ namespace QLN.Web.Shared.Pages.Content.Community
             if (success)
             {
                 newComment = string.Empty;
-             
+                await GetCommentAsync();
+
             }
             else
             {
                 Snackbar.Add("Failed to post comment.", Severity.Error);
+            }
+        }
+
+        protected async Task GetCommentAsync()
+        {
+            IsLoading = true;
+            StateHasChanged();
+
+            try
+            {
+                int nid = int.TryParse(Comment?.Id?.ToString(), out var parsedNid) ? parsedNid : 0;
+                var response = await CommunityService.GetCommentsByPostIdAsync(nid, page: CurrentPage, pageSize: PageSize);
+
+                if (response?.comments != null && response.comments.Any())
+                {
+                    Comment.Comments = response.comments.Select(c => new CommentModel
+                    {
+                        Id = c.comment_id,
+                        CreatedBy = !string.IsNullOrWhiteSpace(c.user_name) ? c.user_name : "User " + c.user_id,
+                        CreatedAt = DateTime.TryParse(c.date_created, out var date) ? date : DateTime.Now,
+                        Description = c.subject ?? "No content to display",
+                        LikeCount = c.LikeCount,
+                        UnlikeCount = c.UnlikeCount,
+                        Avatar = !string.IsNullOrWhiteSpace(c.profile_picture)
+                            ? c.profile_picture
+                            : "/qln-images/content/Sample.svg"
+                    }).ToList();
+                }
+                else
+                {
+                    Comment.Comments = new List<CommentModel>();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading comments: {ex.Message}");
+                Comment.Comments = new List<CommentModel>();
+            }
+            finally
+            {
+                IsLoading = false;
+                StateHasChanged();
             }
         }
 

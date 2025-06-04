@@ -93,6 +93,25 @@ namespace QLN.Web.Shared.Model
         public string profile_picture { get; set; }
 
     }
+    public class PaginatedCommentResponse
+    {
+        public int total { get; set; }
+        public int page { get; set; }
+        public int page_size { get; set; }
+        public List<CommentItem> comments { get; set; }
+
+    }
+    public class CommentItem
+    {
+        public string comment_id { get; set; }
+        public string user_id { get; set; }
+        public string user_name { get; set; }
+        public string subject { get; set; }
+        public string date_created { get; set; }
+        public string profile_picture { get; set; }
+        public int LikeCount { get; set; }
+        public int UnlikeCount { get; set; }
+    }
     public class PostListResponse
     {
         [JsonPropertyName("items")]

@@ -5,6 +5,39 @@
     <p><strong>User:</strong> @CurrentUserId (ID: @CurrentUserId)</p>
 
 </div>
+
+@if (IsLoading)
+{
+    <div class="comment-list">
+        <MudSkeleton Height="30px" Width="120px" Animation="Animation.Pulse" Class="mb-4" />
+
+        <!-- Comment input skeleton -->
+        <div class="comment-input-wrapper">
+            <MudSkeleton Height="40px" Width="100%" Animation="Animation.Pulse" Variant="Variant.Text" />
+        </div>
+
+        <!-- Comment list skeletons -->
+        @for (var i = 0; i < 3; i++)
+        {
+            <div class="comment-item" style="margin-top: 16px;">
+                <div style="display: flex; gap: 0.75rem;">
+                    <MudSkeleton Height="24px" Width="24px" Variant="Variant.Circle" Animation="Animation.Pulse" />
+                    <div style="flex-grow: 1;">
+                        <MudSkeleton Height="16px" Width="40%" Animation="Animation.Pulse" Class="mb-1" />
+                        <MudSkeleton Height="14px" Width="60%" Animation="Animation.Pulse" Class="mb-2" />
+                        <MudSkeleton Height="14px" Width="80%" Animation="Animation.Pulse" Class="mb-2" />
+                        <MudSkeleton Height="14px" Width="100%" Animation="Animation.Pulse" />
+                    </div>
+                </div>
+                <div class="comment-divider"></div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    
+
 @if (!IsLoggedIn)
 {
     <div class="comment-section-empty">
@@ -142,7 +175,7 @@ else
     </div>
 
 }
-
+}
 }
 <style>
     .comment-section-empty, .comment-list {
