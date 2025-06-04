@@ -18,7 +18,7 @@
                     OnLocationUpdated="CallApiForLocationChange" GetLabel="item => item.Name" GetId="item => item.Id"
                     MaxSelectableItems="1" Padding="10px"
                     CustomStyle="@(IsMobile ? "border-radius:8px;" 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        : "border-top-left-radius:6px; border-bottom-left-radius:6px; border-top-right-radius:0; border-bottom-right-radius:0;")"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        : "border-top-left-radius:6px; border-bottom-left-radius:6px; border-top-right-radius:0; border-bottom-right-radius:0;")"
                     OnSearch="PerformSearch" />
             </div>
 
@@ -80,9 +80,13 @@
                     <span class="toggle-label">Show Free Events Only</span>
                 </label>
             </div> *@
-            <div class="right-clear">
-                <span class="clear-text" @onclick="ClearAllFilters">Clear All</span>
-            </div>
+            @if (ShouldShowClearAll)
+            {
+
+                <div class="right-clear">
+                    <span class="clear-text" @onclick="ClearAllFilters">Clear All</span>
+                </div>
+            }
         </div>
 
     </div>
@@ -106,7 +110,7 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        width: 84%;
+        width: 80%;
         font-family: 'Public Sans';
     }
 
@@ -287,8 +291,7 @@
 
 
         .mud-button-outlined.mud-button-outlined-primary {
-            background-color: var(--color-accent) !important;
-            color: white !important;
+            color: var(--color-accent) !important;
             border-color: var(--color-accent) !important;
 
         }

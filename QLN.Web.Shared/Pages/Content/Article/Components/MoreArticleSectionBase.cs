@@ -6,6 +6,8 @@ public class MoreArticleSectionBase : ComponentBase
     public List<ContentPost> Articles { get; set; } = new List<ContentPost>();
     [Parameter]
     public bool loading { get; set; }
+    [Parameter]
+    public string category { get; set; }
     protected bool imageLoaded = false;
     public ContentPost selectedPost { get; set; }
     [Parameter]

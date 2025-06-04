@@ -7,18 +7,6 @@
         <iframe width="100%" height="100%" muted loop style="object-fit: cover; border-radius: 6px;"
                 src="@SelectedVideo.VideoUrl">
         </iframe>
-
-        <div class="video-overlay-top">
-            <span class="video-label">Video</span>
-            <h2 class="main-title">@SelectedVideo.Title</h2>
-        </div>
-
-        @if (IsVisiblePlayButton)
-        {
-            <div class="video-overlay-center" @onclick="() => PlayVideo(SelectedVideo)">
-                <MudIcon Icon="@Icons.Material.Filled.PlayArrow" />
-            </div>
-        }
     </div>
 
     <!-- Video List -->
@@ -196,6 +184,13 @@
         font-size: 14px;
         cursor: pointer;
     }
+
+    .video-title:hover {
+    text-decoration: underline;
+    color: var(--color-primary);
+    cursor: pointer;
+}
+
 
     .vedio-title-text {
         display: -webkit-box;

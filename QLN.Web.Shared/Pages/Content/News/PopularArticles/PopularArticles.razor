@@ -41,10 +41,10 @@
                 </div>
              }
              else{
-                @if (!imageLoaded)
+                @* @if (!imageLoaded)
                 {
                 <MudSkeleton SkeletonType="SkeletonType.Rectangle"  />
-                }
+                } *@
  
             @* <img src="@article.ImageUrl" alt="News Image" class="article-image"
                 style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
@@ -122,6 +122,12 @@
         font-weight: 600;
         color: var(--color-text-heading);
     }
+    .article-text:hover {
+    text-decoration: underline;
+    color: var(--color-primary);
+    cursor: pointer;
+}
+
      .article-title {
     display: -webkit-box;
     -webkit-line-clamp: 3;              

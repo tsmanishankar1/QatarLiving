@@ -7,11 +7,9 @@
         right now.</h3>
     <MudForm @ref="_form">
         <input type="email" placeholder="Enter your email" class="email-input" @bind="SubscriptionModel.Email"
-               @bind:event="oninput" required />
-        <MudButton Variant="Variant.Filled"
-                   Class="reset-button"
-                   Disabled="@IsSubscribingToNewsletter"
-                   OnClick="SubscribeAsync" Style="background-color: #FF7F38;color: white;">
+            @bind:event="oninput" required />
+        <MudButton Variant="Variant.Filled" Class="reset-button" Disabled="@IsSubscribingToNewsletter"
+            OnClick="SubscribeAsync" Style="background-color: #FF7F38;color: white;text-transform: capitalize;">
             @if (IsSubscribingToNewsletter)
             {
                 <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" />
@@ -44,7 +42,7 @@
     }
 
     .newsletter-text {
-        font-family: 'Public Sans',sans-serif;
+        font-family: 'Public Sans', sans-serif;
         font-weight: 500;
         font-size: 14px;
         line-height: 24px;
@@ -60,9 +58,9 @@
         border-radius: 6px;
     }
 
-        .newsletter-input::placeholder {
-            padding-left: 14px;
-        }
+    .newsletter-input::placeholder {
+        padding-left: 14px;
+    }
 
     .newsletter-html-input:focus {
         border-color: #FF7F38;
@@ -131,11 +129,8 @@
         box-sizing: border-box;
     }
 
-        .email-input:focus {
-            border-color: #ff7f38;
-            outline: none;
-        }
-
-
-
+    .email-input:focus {
+        border-color: #ff7f38;
+        outline: none;
+    }
 </style>

@@ -42,6 +42,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
         protected string TopicQueue4Label { get; set; } = string.Empty;
         protected string TopicQueue5Label { get; set; } = string.Empty;
         protected List<ContentPost> TopStories { get; set; } = [];
+        protected List<ContentEvent> vMoreArticles { get; set; } = [];
 
         protected async override Task OnAfterRenderAsync(bool firstRender)
         {

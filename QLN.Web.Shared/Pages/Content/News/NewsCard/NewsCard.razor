@@ -121,10 +121,16 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+
+ .daily-news-title:hover {
+    text-decoration: underline;
+    color: var(--color-primary);
+    cursor: pointer;
+}
+
     .daily-news-title.isTexthorizontal {
         font-size: 16px;
         font-weight: 600;
-        color: var(--color-text-heading);
         margin: 0;
          line-height: 26px;
         letter-spacing: 0;
@@ -134,10 +140,17 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: normal;
+        
         scrollbar-width: none;           /* Hide scrollbar in Firefox */
     }
     .daily-news-title::-webkit-scrollbar {
         display: none;                   /* Hide scrollbar in Webkit browsers */
+    }
+    .daily-news-title:visited,
+    .daily-news-title:hover,
+    .daily-news-title:active {
+    color: var(--color-text-heading); 
+    text-decoration: none;
     }
 
     /* Media Queries */

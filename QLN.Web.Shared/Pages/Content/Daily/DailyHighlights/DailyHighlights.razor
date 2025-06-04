@@ -31,7 +31,7 @@
 <style>
     .category-section {
         padding: 1rem;
-        margin-bottom: 2rem;
+        margin-bottom: 1rem;
         font-family: 'Public Sans';
     }
 
@@ -145,11 +145,17 @@
         line-height: 26px;
         letter-spacing: 0;
         display: -webkit-box;
-        -webkit-line-clamp: 2;
+        -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
     }
+    .headline:hover {
+    text-decoration: underline;
+    color: var(--color-primary);
+    cursor: pointer;
+}
+
 
     .date {
         margin: 0;

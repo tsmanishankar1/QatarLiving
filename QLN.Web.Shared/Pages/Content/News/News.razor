@@ -19,6 +19,9 @@
 @using QLN.Web.Shared.Pages.Content.News.Skeletons
 @inject IJSRuntime JSRuntime
 @using QLN.Web.Shared.Components.Carousel
+
+<PageTitle>Qatar Living | The go-to place for lifestyle, news, and events</PageTitle>
+
 <div style="width: 100%;background-color: var(--color-secondary-background); align-items:center">
     <div class="carousel-responsive-container">
         <div class="max-container">
@@ -71,13 +74,14 @@
                                              <EmptyCard Title="No Image Available" Subtitle="" />
                                         }
                                         else{
-                                        @if (!imageLoaded)
+                                        @* @if (!imageLoaded)
                                         {
                                             <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="200px" Class="main-image" />
-                                        }
-                                            <img src="@topNewsSlot.ImageUrl" alt="News Image" class="main-image"
+                                        } *@
+                                            @* <img src="@topNewsSlot.ImageUrl" alt="News Image" class="main-image"
                                             style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
-                                            @onerror="OnImageError" />
+                                            @onerror="OnImageError" /> *@
+                                            <img src="@topNewsSlot.ImageUrl" alt="News Image" class="main-image">
                                         }
                                     }
                                     @if (isLoading){
@@ -97,15 +101,10 @@
                                         <div class="main-author">
                                         @if (!string.IsNullOrWhiteSpace(@topNewsSlot?.UserName))
                                         {
-                                            @topNewsSlot.UserName <span>•</span>
+                                            @topNewsSlot.UserName 
                                         }
-                                        <a href="#" class="main-source">Qatar Living</a>  
-                                        <img src="/qln-images/tick.svg" alt="Qatarliving" />
                                         </div>
-                                        <div class="comment-badge">
-                                        <img src="/qln-images/comment_icon.svg" alt="Comments" class="comment-icon" />
-                                        <span class="count">12</span>
-                                        </div> 
+                                       
                                         </div>
                                     }
                                 </div>
@@ -113,7 +112,7 @@
                         </div>
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <MoreArticle Articles="@moreArticleListSlot" loading="@isLoading" selectedTab="@SelectedTab"/>
+                        <MoreArticle Articles="@moreArticleListSlot" loading="@isLoading" selectedTab="@selectedTabView"/>
                     </MudItem>
                 </MudGrid>
                <div class="flex-container" style="padding-bottom: 40px;">
@@ -129,19 +128,19 @@
                         }
                         </div>
                     }
+                    else if(topNewsListSlot.Count == 1){
+                        <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
+                    }
                     else if (topNewsListSlot != null && topNewsListSlot.Any())
                     {
-                        var thirdItem = topNewsListSlot.ElementAtOrDefault(2);
+                        var thirdItem = topNewsListSlot.LastOrDefault();
                         @foreach (var news in topNewsListSlot.Take(3).Skip(1))
                         { 
                         <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)"/>
-                         @if(news != thirdItem){
+                        @if(news != thirdItem){
                             <div style="width: 1px; height: auto; background-color: #F0F0F0; align-self: stretch; margin: 0 14px"></div>
                         } 
                     } 
-                    }
-                    else{
-                        <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
                     }
                     <div class="newsletter-wrapper" style="padding-left: 10px;"> 
                     <NewsLetter />
@@ -209,7 +208,7 @@
                         }
                     </div>
                     <div class="poular-article-container" >
-                <PopularArticles Articles="@popularArticleListSlot" selectedTab="@SelectedTab" loading="@isLoading" />
+                <PopularArticles Articles="@popularArticleListSlot" selectedTab="@selectedTabView" loading="@isLoading" />
 
                             <div class="ad-container-style">
                             <AdBanner BannerItems="NewsSideBanners" />
@@ -530,7 +529,7 @@
 
 .flex-container {
     width: 100%;
-    @* justify-content: flex-start; *@
+    justify-content: space-between;
     @* align-items: flex-end; *@
     display: flex;
     flex-wrap: wrap;

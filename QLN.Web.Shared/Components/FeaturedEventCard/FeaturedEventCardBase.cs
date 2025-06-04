@@ -7,27 +7,40 @@ namespace QLN.Web.Shared.Components.FeaturedEventCard
     {
         protected bool imageLoaded = false;
 
-        [Parameter]
-        public ContentPost Item { get; set; }
+    protected bool imageFailed = false;
+    protected string? currentImageUrl;
 
-        [Parameter]
-        public EventCallback<ContentPost> OnClick { get; set; }
+    [Parameter] public ContentPost Item { get; set; }
+    [Parameter] public EventCallback<ContentPost> OnClick { get; set; }
 
-        protected override void OnParametersSet()
+    protected override void OnParametersSet()
+    {
+        // Detect change of image and reset loading states
+        if (currentImageUrl != Item.ImageUrl)
         {
-            imageLoaded = false; // reset loading state
+            currentImageUrl = Item.ImageUrl;
+            imageLoaded = false;
+            imageFailed = false;
         }
+    }
 
-        protected void OnImageLoaded()
-        {
-            imageLoaded = true;
-            StateHasChanged();
-        }
+    protected void OnImageLoaded()
+    {
+        imageLoaded = true;
+        imageFailed = false;
+        StateHasChanged();
+    }
 
-        protected void OnImageError()
-        {
-            imageLoaded = true; // stop skeleton on error
-            StateHasChanged();
-        }
+    protected void OnImageError()
+    {
+        imageLoaded = true; // stop skeleton
+        imageFailed = true; // show fallback UI
+        StateHasChanged();
+    }
+
+    protected bool ShowEmptyCard =>
+        string.IsNullOrWhiteSpace(Item?.ImageUrl) || imageFailed;
+
+
     }
 }
