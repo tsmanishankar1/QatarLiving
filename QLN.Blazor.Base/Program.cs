@@ -79,7 +79,17 @@ if (string.IsNullOrWhiteSpace(newsLetterSubscriptionAPIUrl))
 
 // });
 
-builder.Services.AddAuthentication();
+// enable compression in development mode
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddResponseCompression(options =>
+    {
+        options.EnableForHttps = true;
+        options.MimeTypes = new[] { "text/css", "application/javascript", "text/html", "application/json" };
+    });
+}
+
+    builder.Services.AddAuthentication();
 
 #region Authentication - Cookie configuration - not actually required
 //builder.Services.AddAuthentication(options =>
@@ -227,6 +237,7 @@ app.UseRequestLocalization(localizationOptions);
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    app.UseResponseCompression();
     // app.UseMigrationsEndPoint();
 }
 else

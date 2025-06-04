@@ -2,6 +2,7 @@
 @using QLN.Web.Shared.Components.DailyFeaturedEventCard
 @using QLN.Web.Shared.Components.EmptyCard
 @using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.Skeletons.FeaturedCategorySkeleton
+@using QLN.Common.Infrastructure.DTO_s;
 
 <div class="daily-categories-wrapper">
     <div class="daily-categories-header">
@@ -32,12 +33,11 @@
                 </div>
 
                 <div class="swiper-wrapper">
-                    @foreach (var item in Items)
-                    {
+                    <MudVirtualize Context="item" Items="Items" T="ContentEvent">
                         <div class="swiper-slide swiper-slide-Card">
                             <DailyFeaturedEventCard Item="item" OnClickCallback="OnClickEvent" />
                         </div>
-                    }
+                    </MudVirtualize>
                 </div>
             </div>
             <!-- Pagination dots -->
