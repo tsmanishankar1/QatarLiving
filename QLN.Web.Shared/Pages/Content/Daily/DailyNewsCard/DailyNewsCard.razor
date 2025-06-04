@@ -48,7 +48,7 @@
     }
 
     .daily-news-content {
-        padding: 12px;
+       padding-top: 6px;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -73,6 +73,12 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+
+    .daily-news-title:hover {
+    text-decoration: underline;
+    color: var(--color-primary);
+    cursor: pointer;
+}
 
     @@media (max-width: 768px) {
         .daily-news-card {
