@@ -17,6 +17,7 @@
 
 
 <header class="site-header mud-elevation-1">
+    <div class = "header-container">
 
     <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleMobileMenu" Class="mobile-menu-button" />
 
@@ -146,6 +147,7 @@
 
             </ChildContent>
         </MudMenu>
+    </div>
     </div>
 </header>
 
@@ -313,6 +315,15 @@ Route = "/more-features-coming-soon"
         margin: 0
     }
 
+    .header-container{
+          max-width: 1170px;
+    margin: 0 auto;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    }
+
     .mobile-post-icon {
         display: none;
         width: 32px;
@@ -420,6 +431,22 @@ Route = "/more-features-coming-soon"
             display: block;
             z-index: 1001;
         }
+
+        @@media (max-width: 992px) {
+        .mobile-post-icon {
+        display: inline-block !important;
+        position: fixed;
+        right: 16px; 
+        z-index: 1100; 
+    }
+
+        @@media (max-width: 992px) {
+        #userIcon{
+            display: none !important;
+           
+        }
+        
+
 
         .nav-container {
             position: fixed;

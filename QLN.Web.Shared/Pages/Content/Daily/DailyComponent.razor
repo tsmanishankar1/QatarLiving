@@ -142,13 +142,7 @@
             {
                 <DailyHighlights QueueLabel="@TopicQueue1Label" ListOfItems="TopicQueue1" />
             }
-
-            @if (TopicQueue2.Count() > 0)
-            {
-                <DailyHighlights QueueLabel="@TopicQueue2Label" ListOfItems="TopicQueue2" />
-            }
-
-            @if (isLoadingBanners)
+             @if (isLoadingBanners)
             {
                 <BannerSkleton />
             }
@@ -160,6 +154,13 @@
             {
                 <EmptyCard Title="No daily banners found." Subtitle="Please check back later for updates." />
             }
+
+            @if (TopicQueue2.Count() > 0)
+            {
+                <DailyHighlights QueueLabel="@TopicQueue2Label" ListOfItems="TopicQueue2" />
+            }
+
+           
 
             @if (TopicQueue3.Count() > 0)
             {
@@ -254,6 +255,15 @@
         .carousel-responsive-container {
             margin-bottom: 5px;
             padding: 0 5px;
+        }
+
+        .mud-grid-item {
+            display: flex;
+            justify-content: center;
+        }
+
+        .mud-form{
+            width: 100%;
         }
     }
 </style>

@@ -192,10 +192,7 @@ namespace QLN.Web.Shared.Pages.Content.News
             }
             else if (localCategory == "lifestyle")
             {
-                if (!string.IsNullOrEmpty(localSubcategory))
-                {
-                    SetViewMode("lifestyle");
-                }
+                SetViewMode("lifestyle");
                 if (localSubcategory == "food-dining")
                 {
                     Console.WriteLine("the subcategory is selected" + localSubcategory);
@@ -249,7 +246,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                         break;
                     case "World":
                         DailyTakeOverBanners = banners?.MiddleEastTakeover ?? new List<BannerItem>();
-                        DailyHeroBanners = banners?.NewsWorldTakeOver ?? new List<BannerItem>();
+                        DailyHeroBanners = banners?.NewsWorldHero ?? new List<BannerItem>();
                         break;
                     default:
                         DailyTakeOverBanners = banners?.ContentNewsHero ?? new List<BannerItem>();
