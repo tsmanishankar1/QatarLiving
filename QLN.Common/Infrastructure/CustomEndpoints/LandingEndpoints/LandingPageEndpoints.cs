@@ -45,24 +45,29 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                     return FetchDocsFromIndexAsync(searchSvc, ConstantValues.backofficemaster, sr,
                         vertical, entityType);
                 }
-
+                var bannerTask = FetchSegmentAsync(ConstantValues.EntityTypes.HeroBanner);
                 var featuredServicesTask = FetchSegmentAsync(ConstantValues.EntityTypes.FeaturedServices);
                 var featuredTask = FetchSegmentAsync( ConstantValues.EntityTypes.FeaturedCategory);
                 var categoriesTask = FetchSegmentAsync( ConstantValues.EntityTypes.Category);
                 var seasonalTask = FetchSegmentAsync( ConstantValues.EntityTypes.SeasonalPick);
-                var socialTask = FetchSegmentAsync( ConstantValues.EntityTypes.SocialMediaLink);
+                var socialPostTask = FetchSegmentAsync(ConstantValues.EntityTypes.SocialPostSection);
+                var socialMediaLinkTask = FetchSegmentAsync( ConstantValues.EntityTypes.SocialMediaLink);
+                var socialMediaVideosTask = FetchSegmentAsync(ConstantValues.EntityTypes.SocialMediaVideos);
                 var faqTask = FetchSegmentAsync( ConstantValues.EntityTypes.FaqItem);
                 var ctaTask = FetchSegmentAsync( ConstantValues.EntityTypes.CallToAction);
 
-                await Task.WhenAll(featuredServicesTask, featuredTask, categoriesTask, seasonalTask, socialTask, faqTask, ctaTask);
+                await Task.WhenAll(bannerTask, featuredServicesTask, featuredTask, categoriesTask, seasonalTask, socialPostTask, socialMediaLinkTask, socialMediaVideosTask, faqTask, ctaTask);
 
                 var dto = new LandingPageDto
                 {
+                    HeroBanner = await bannerTask,
                     FeaturedServices = await featuredServicesTask,
                     FeaturedCategories = await featuredTask,
                     Categories = await categoriesTask,
                     SeasonalPicks = await seasonalTask,
-                    SocialLinks = await socialTask,
+                    SocialPostDetail = await socialPostTask,
+                    SocialLinks = await socialMediaLinkTask,
+                    SocialMediaVideos = await socialMediaVideosTask,
                     FaqItems = await faqTask,
                     ReadyToGrow = await ctaTask
                 };
@@ -98,23 +103,31 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                     return FetchDocsFromIndexAsync(searchSvc, ConstantValues.backofficemaster, sr,
                         vertical, entityType);
                 }
+                var bannerTask = FetchSegmentAsync(ConstantValues.EntityTypes.HeroBanner);
                 var featuredItemsTask = FetchSegmentAsync(ConstantValues.EntityTypes.FeaturedItems);
-                var featuredTask = FetchSegmentAsync( ConstantValues.EntityTypes.FeaturedCategory);
+                var featuredCategoryTask = FetchSegmentAsync( ConstantValues.EntityTypes.FeaturedCategory);
+                var featuredStoresTask = FetchSegmentAsync(ConstantValues.EntityTypes.FeaturedStores);
                 var categoriesTask = FetchSegmentAsync( ConstantValues.EntityTypes.Category);
                 var seasonalTask = FetchSegmentAsync( ConstantValues.EntityTypes.SeasonalPick);
-                var socialTask = FetchSegmentAsync( ConstantValues.EntityTypes.SocialMediaLink);
+                var socialPostTask = FetchSegmentAsync(ConstantValues.EntityTypes.SocialPostSection);
+                var socialMediaLinkTask = FetchSegmentAsync( ConstantValues.EntityTypes.SocialMediaLink);
+                var socialMediaVideosTask = FetchSegmentAsync(ConstantValues.EntityTypes.SocialMediaVideos);
                 var faqTask = FetchSegmentAsync( ConstantValues.EntityTypes.FaqItem);
                 var ctaTask = FetchSegmentAsync( ConstantValues.EntityTypes.CallToAction);
 
-                await Task.WhenAll(featuredItemsTask, featuredTask, categoriesTask, seasonalTask, socialTask, faqTask, ctaTask);
+                await Task.WhenAll(bannerTask, featuredItemsTask, featuredCategoryTask, featuredStoresTask, categoriesTask, seasonalTask, socialPostTask, socialMediaLinkTask, socialMediaVideosTask, faqTask, ctaTask);
 
                 var dto = new LandingPageDto
                 {
+                    HeroBanner = await bannerTask,
                     FeaturedItems = await featuredItemsTask,
-                    FeaturedCategories = await featuredTask,
+                    FeaturedCategories = await featuredCategoryTask,
+                    FeaturedStores = await featuredStoresTask,
                     Categories = await categoriesTask,
                     SeasonalPicks = await seasonalTask,
-                    SocialLinks = await socialTask,
+                    SocialPostDetail = await socialPostTask,
+                    SocialLinks = await socialMediaLinkTask,
+                    SocialMediaVideos = await socialMediaVideosTask,
                     FaqItems = await faqTask,
                     ReadyToGrow = await ctaTask
                 };

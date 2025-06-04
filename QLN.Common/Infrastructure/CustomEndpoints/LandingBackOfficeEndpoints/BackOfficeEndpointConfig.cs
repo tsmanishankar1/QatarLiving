@@ -47,8 +47,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
 
             servicesGroup.MapBackOfficeMasterEndpoints(
                 vertical: ConstantValues.Verticals.Services,
+                routeSegment: "social-post",
+                entityType: ConstantValues.EntityTypes.SocialPostSection
+            );
+
+            servicesGroup.MapBackOfficeMasterEndpoints(
+                vertical: ConstantValues.Verticals.Services,
                 routeSegment: "social-links",
                 entityType: ConstantValues.EntityTypes.SocialMediaLink
+            );
+
+            servicesGroup.MapBackOfficeMasterEndpoints(
+                vertical: ConstantValues.Verticals.Services,
+                routeSegment: "social-videos",
+                entityType: ConstantValues.EntityTypes.SocialMediaVideos
             );
 
             servicesGroup.MapBackOfficeMasterEndpoints(
@@ -79,6 +91,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
             );
 
             classifiedsGroup.MapBackOfficeMasterEndpoints(
+               vertical: ConstantValues.Verticals.Classifieds,
+               routeSegment: "featured-stores",
+               entityType: ConstantValues.EntityTypes.FeaturedStores
+            );
+
+            classifiedsGroup.MapBackOfficeMasterEndpoints(
                 vertical: ConstantValues.Verticals.Classifieds,
                 routeSegment: "featured-categories",
                 entityType: ConstantValues.EntityTypes.FeaturedCategory
@@ -97,8 +115,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
 
             classifiedsGroup.MapBackOfficeMasterEndpoints(
                 vertical: ConstantValues.Verticals.Classifieds,
+                routeSegment: "social-post",
+                entityType: ConstantValues.EntityTypes.SocialPostSection
+            );
+
+            classifiedsGroup.MapBackOfficeMasterEndpoints(
+                vertical: ConstantValues.Verticals.Classifieds,
                 routeSegment: "social-links",
                 entityType: ConstantValues.EntityTypes.SocialMediaLink
+            );
+
+            classifiedsGroup.MapBackOfficeMasterEndpoints(
+                vertical: ConstantValues.Verticals.Classifieds,
+                routeSegment: "social-videos",
+                entityType: ConstantValues.EntityTypes.SocialMediaVideos
             );
 
             classifiedsGroup.MapBackOfficeMasterEndpoints(
