@@ -1,10 +1,5 @@
 ﻿@using QLN.Web.Shared.Pages.Content.Community.Components.PaginationFooter
 @inherits CommentSectionBase
-<div class="user-info">
-    <p><strong>User:</strong> @Name (Name: @Name)</p>
-    <p><strong>User:</strong> @CurrentUserId (ID: @CurrentUserId)</p>
-
-</div>
 
 @if (IsLoading)
 {
@@ -23,159 +18,142 @@
                 <div style="display: flex; gap: 0.75rem;">
                     <MudSkeleton Height="24px" Width="24px" Variant="Variant.Circle" Animation="Animation.Pulse" />
                     <div style="flex-grow: 1;">
-                        <MudSkeleton Height="16px" Width="40%" Animation="Animation.Pulse" Class="mb-1" />
-                        <MudSkeleton Height="14px" Width="60%" Animation="Animation.Pulse" Class="mb-2" />
-                        <MudSkeleton Height="14px" Width="80%" Animation="Animation.Pulse" Class="mb-2" />
-                        <MudSkeleton Height="14px" Width="100%" Animation="Animation.Pulse" />
+                        <MudSkeleton Height="16px" Width="150px" Animation="Animation.Pulse" Class="mb-1" />
+                        <MudSkeleton Height="14px" Width="250px" Animation="Animation.Pulse" Class="mb-2" />
                     </div>
                 </div>
-                <div class="comment-divider"></div>
             </div>
         }
     </div>
 }
 else
 {
-    
 
-@if (!IsLoggedIn)
-{
-    <div class="comment-section-empty">
-        <div class="comment-title">Comments</div>
 
-        <div class="empty-state">
-            <img src="qln-images/content/Message.svg" class="msg-icon" />
-            <h6 class="empty-title">You must be logged in to comment</h6>
-           
+    @if (!IsLoggedIn)
+    {
+        <div class="comment-section-empty">
+            <div class="comment-title">Comments</div>
+
+            <div class="empty-state">
+                <img src="qln-images/content/Message.svg" class="msg-icon" />
+                <h6 class="empty-title">You must be logged in to comment</h6>
+
+            </div>
         </div>
-    </div>
-}
-else{
-@if (Comment.Comments == null || !Comment.Comments.Any())
-{
-    <div class="comment-section-empty">
-        <div class="comment-title">Comments</div>
-
-        <div class="comment-input-wrapper @(string.IsNullOrWhiteSpace(newComment) ? "" : "has-text")">
-
-            <MudTextField T="string"
-                          Value="@newComment"
-                          ValueChanged="@(val => { newComment = val; StateHasChanged(); })"
-                          Immediate="true"
-                          Placeholder="Add a comment"
-                          Variant="Variant.Text"
-                          Underline="false"
-                          AutoGrow
-                          Class="comment-input no-underline"
-                          @ref="multilineReference"
-                          OnAdornmentClick="@(() => multilineReference.SelectAsync())" />
-
-            @if (!string.IsNullOrWhiteSpace(newComment))
-            {
-                <MudButton Class="comment-post-btn" OnClick="PostComment">Post</MudButton>
-            }
-        </div>
-
-        <div class="empty-state">
-            <img src="qln-images/content/Message.svg" class="msg-icon" />
-
-            <h6 class="empty-title">Be the first to comment</h6>
-            <p class="empty-description">
-                Nobody’s responded to this post yet. Add your thoughts and get the conversation going.
-            </p>
-        </div>
-    </div>
-}
-else
-{
-    <div class="comment-list">
-        <div class="comment-title">Comments</div>
-
-        <div class="comment-input-wrapper @(string.IsNullOrWhiteSpace(newComment) ? "" : "has-text")">
-            <MudTextField T="string"
-                          Value="@newComment"
-                          ValueChanged="@(val => { newComment = val; StateHasChanged(); })"
-                          Immediate="true"
-                          Placeholder="Add a comment"
-                          Variant="Variant.Text"
-                          Underline="false"
-                          AutoGrow
-                          Class="comment-input no-underline"
-                          @ref="multilineReference"
-                          OnAdornmentClick="@(() => multilineReference.SelectAsync())" />
-            @if (!string.IsNullOrWhiteSpace(newComment))
-            {
-                <MudButton Class="comment-post-btn" OnClick="PostComment">Post</MudButton>
-            }
-        </div>
-
-
-
-        @foreach (var c in PagedComments)
+    }
+    else
+    {
+        @if (Comment.Comments == null || !Comment.Comments.Any())
         {
-            <div class="comment-item @(c.IsByCurrentUser ? "my-comment" : "other-comment")">
-                <img src="@("/qln-images/default_logo.svg")" alt="User Avatar" class="post-footer-comment-avatar" />
+            <div class="comment-section-empty">
+                <div class="comment-title">Comments</div>
 
-                <div class="comment-content">
-                    <div class="comment-header">
-                        <div class="comment-meta">
-                            <span class="created-by">@c.CreatedBy</span>  •
-                            <span class="created-at">@c.CreatedAt.ToString("g")</span>
-                        </div>
+                <div class="comment-input-wrapper @(string.IsNullOrWhiteSpace(newComment) ? "" : "has-text")">
 
-                        <MudMenu Dense="true" AnchorOrigin="Origin.BottomLeft"
-                                 @bind-IsOpen="@isMenuOpen" TransformOrigin="Origin.TopRight">
-                            <ActivatorContent>
-                                <MudIconButton DisableRipple="true" Class="menu-icon-button">
-                                    <img src="qln-images/content/Menu.svg"
-                                         alt="Menu"
-                                         class="@($"menu-icon {(isMenuOpen ? "menu-open" : "")}")" />
-                                </MudIconButton>
-                            </ActivatorContent>
+                    <MudTextField T="string"
+                                  Value="@newComment"
+                                  ValueChanged="@(val => { newComment = val; StateHasChanged(); })"
+                                  Immediate="true"
+                                  Placeholder="Add a comment"
+                                  Variant="Variant.Text"
+                                  Underline="false"
+                                  AutoGrow
+                                  Class="comment-input no-underline"
+                                  @ref="multilineReference"
+                                  OnAdornmentClick="@(() => multilineReference.SelectAsync())" />
 
-                            <ChildContent>
-                                <MudMenuItem Class="report-menu-item" OnClick="@OnReport">Report</MudMenuItem>
-                            </ChildContent>
-                        </MudMenu>
-
-                    </div>
-                    <div class="comment-description">@c.Description</div>
-                    @*  
-                        <div class="post-icons-comment-section">
-
-    <div class="comment-wrapper" @onclick="ToggleLikeAsync">
-
-                            <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="comment-interaction-icon" />
-                           <span class="icon-text">@c.LikeCount</span></div>
-
- *@
-
-                    @*  <div class="comment-wrapper">
-
-                            <img src="qln-images/content/Dislike.svg" class="comment-interaction-icon" />
-                            <span class="icon-text">@c.LikeCount</span>
-                        </div>
-                                            </div>
-*@
+                    @if (!string.IsNullOrWhiteSpace(newComment))
+                    {
+                        <MudButton Class="comment-post-btn" OnClick="PostComment">Post</MudButton>
+                    }
                 </div>
 
+                <div class="empty-state">
+                    <img src="qln-images/content/Message.svg" class="msg-icon" />
+
+                    <h6 class="empty-title">Be the first to comment</h6>
+                    <p class="empty-description">
+                        Nobody’s responded to this post yet. Add your thoughts and get the conversation going.
+                    </p>
+                </div>
             </div>
-            <div class="comment-divider"></div>
+        }
+        else
+        {
+            <div class="comment-list">
+                <div class="comment-title">Comments</div>
+
+                <div class="comment-input-wrapper @(string.IsNullOrWhiteSpace(newComment) ? "" : "has-text")">
+                    <MudTextField T="string"
+                                  Value="@newComment"
+                                  ValueChanged="@(val => { newComment = val; StateHasChanged(); })"
+                                  Immediate="true"
+                                  Placeholder="Add a comment"
+                                  Variant="Variant.Text"
+                                  Underline="false"
+                                  AutoGrow
+                                  Class="comment-input no-underline"
+                                  @ref="multilineReference"
+                                  OnAdornmentClick="@(() => multilineReference.SelectAsync())" />
+                    @if (!string.IsNullOrWhiteSpace(newComment))
+                    {
+                        <MudButton Class="comment-post-btn" OnClick="PostComment">Post</MudButton>
+                    }
+                </div>
+
+
+
+                @foreach (var c in PagedComments)
+                {
+                    <div class="comment-item @(c.IsByCurrentUser ? "my-comment" : "other-comment")">
+                        <img src="@("/qln-images/default_logo.svg")" alt="User Avatar" class="post-footer-comment-avatar" />
+
+                        <div class="comment-content">
+                            <div class="comment-header">
+                                <div class="comment-meta">
+                                    <span class="created-by">@c.CreatedBy</span>  •
+                                    <span class="created-at">@c.CreatedAt.ToString("g")</span>
+                                </div>
+
+                                <MudMenu Dense="true" AnchorOrigin="Origin.BottomLeft"
+                                         @bind-IsOpen="@isMenuOpen" TransformOrigin="Origin.TopRight">
+                                    <ActivatorContent>
+                                        <MudIconButton DisableRipple="true" Class="menu-icon-button">
+                                            <img src="qln-images/content/Menu.svg"
+                                                 alt="Menu"
+                                                 class="@($"menu-icon {(isMenuOpen ? "menu-open" : "")}")" />
+                                        </MudIconButton>
+                                    </ActivatorContent>
+
+                                    <ChildContent>
+                                        <MudMenuItem Class="report-menu-item" OnClick="@OnReport">Report</MudMenuItem>
+                                    </ChildContent>
+                                </MudMenu>
+
+                            </div>
+                            <div class="comment-description">@c.Description</div>
+
+
+                        </div>
+
+                    </div>
+                    <div class="comment-divider"></div>
+
+                }
+                <div class="pagination-container">
+                    <PaginationFooter TotalItems="10"
+                                      CurrentPage="@CurrentPage"
+                                      PageSize="@PageSize"
+                                      OnPageChange="HandlePageChange"
+                                      OnPageSizeChange="HandlePageSizeChange" />
+                </div>
+
+
+            </div>
 
         }
-        <div class="pagination-container">
-            <PaginationFooter TotalItems="10"
-                              CurrentPage="@CurrentPage"
-                              PageSize="@PageSize"
-                              OnPageChange="HandlePageChange"
-                              OnPageSizeChange="HandlePageSizeChange" />
-        </div>
-
-
-    </div>
-
-}
-}
+    }
 }
 <style>
     .comment-section-empty, .comment-list {

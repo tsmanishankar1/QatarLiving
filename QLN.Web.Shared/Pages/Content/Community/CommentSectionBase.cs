@@ -23,13 +23,14 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected MudTextField<string> multilineReference;
 
-        //[Parameter]
-        //public PostModel Comment { get; set; }
+        [Parameter]
         public PostModel Comment { get; set; }
+
+        public PostModel CommentList { get; set; } 
         protected string newComment = string.Empty;
 
         protected IEnumerable<CommentModel> PagedComments =>
-          Comment.Comments?.Skip((CurrentPage - 1) * PageSize).Take(PageSize) ?? Enumerable.Empty<CommentModel>();
+          CommentList.Comments?.Skip((CurrentPage - 1) * PageSize).Take(PageSize) ?? Enumerable.Empty<CommentModel>();
 
         protected int CurrentPage { get; set; } = 1;
         protected int PageSize { get; set; } = 10;
@@ -46,6 +47,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected override async Task OnInitializedAsync()
         {
+            CommentList = new PostModel();
             var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
             var user = authState.User;
 
@@ -111,7 +113,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
                 if (response?.comments != null && response.comments.Any())
                 {
-                    Comment.Comments = response.comments.Select(c => new CommentModel
+                    CommentList.Comments = response.comments.Select(c => new CommentModel
                     {
                         Id = c.comment_id,
                         CreatedBy = !string.IsNullOrWhiteSpace(c.user_name) ? c.user_name : "User " + c.user_id,
@@ -126,13 +128,14 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 }
                 else
                 {
-                    Comment.Comments = new List<CommentModel>();
+                    Comment.Comments.Clear(); 
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error loading comments: {ex.Message}");
-                Comment.Comments = new List<CommentModel>();
+                Comment.Comments ??= new List<CommentModel>();
+                Comment.Comments.Clear();
             }
             finally
             {
