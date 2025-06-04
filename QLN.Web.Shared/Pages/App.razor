@@ -212,8 +212,8 @@
 
         let takeoverbannerSwiperInstance;
 
-        function initTakeOverBannerSwiper() {
-            const swiperEl = document.querySelector('.takeouverbanner-swiper');
+        function initTakeOverBannerSwiper(swiperId) {
+            const swiperEl = document.getElementById(swiperId);
             if (!swiperEl) {
                 console.warn("Banner swiper element not found");
                 return;
@@ -222,11 +222,12 @@
             const bannerCount = swiperEl.querySelectorAll('.swiper-slide').length;
             const autoplayEnabled = bannerCount > 1;
 
-            if (takeoverbannerSwiperInstance) {
-                takeoverbannerSwiperInstance.destroy(true, true);
+            // Store separate instances if needed by ID (optional enhancement)
+            if (swiperEl.swiper) {
+                swiperEl.swiper.destroy(true, true);
             }
 
-            takeoverbannerSwiperInstance = new Swiper(swiperEl, {
+            const swiperInstance = new Swiper(swiperEl, {
                 slidesPerView: 1,
                 loop: autoplayEnabled,
                 autoplay: autoplayEnabled
@@ -237,7 +238,7 @@
                     }
                     : false,
                 pagination: {
-                    el: '.swiper-pagination',
+                    el: swiperEl.querySelector('.swiper-pagination'),
                     clickable: true
                 }
             });
@@ -247,8 +248,9 @@
                 paginationEl.style.display = "none";
             }
 
-            console.log("Banner Swiper initialized with autoplay:", autoplayEnabled);
+            console.log("Swiper initialized:", swiperId);
         }
+
 
         let featuredSwiperInstance;
 
