@@ -3,25 +3,50 @@
 
 
 <div class="newsletter-container">
-    <h3 class="newsletter-container-name">Get The QL newsletter. Sign up to receive the top stories you need to know
-        right now.</h3>
+    <h3 class="newsletter-container-name">
+        Get The QL newsletter. Sign up to receive the top stories you need to know
+        right now.
+    </h3>
     <MudForm @ref="_form">
-        <input type="email" placeholder="Enter your email" class="email-input" @bind="SubscriptionModel.Email"
-               @bind:event="oninput" required />
-        <MudButton Variant="Variant.Filled"
-                   Class="reset-button"
-                   Disabled="@IsSubscribingToNewsletter"
-                   OnClick="SubscribeAsync" Style="background-color: #FF7F38;color: white;">
-            @if (IsSubscribingToNewsletter)
-            {
-                <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" />
-                @("Subscribing...")
-            }
-            else
-            {
-                @("Subscribe")
-            }
-        </MudButton>
+
+        <div id="mc_embed_signup" class="css-w280i0">
+            <form action="//My.us9.list-manage.com/subscribe/post?u=3ab0436d22cqeqqeqeqeqeq3f64&amp;id=94198fac96"
+                  method="post"
+                  id="mc-embedded-subscribe-form"
+                  name="mc-embedded-subscribe-form"
+                  class="validate"
+                  target="_blank"
+                  novalidate>
+                <input type="email"
+                       name="EMAIL"
+                       class="b-footer-subscribe--el-input required email"
+                       id="mce-EMAIL"
+                       placeholder="Email" />
+                <input type="submit"
+                       class="b-footer-subscribe--el-submit"
+                       value="Subscribe"
+                       name="subscribe"
+                       id="mc-embedded-subscribe" />
+                <input type="email" placeholder="Enter your email" class="email-input" @bind="SubscriptionModel.Email"
+                       @bind:event="oninput" required />
+                <MudButton Variant="Variant.Filled"
+                           Class="reset-button"
+                           Disabled="@IsSubscribingToNewsletter"
+                           OnClick="SubscribeAsync" Style="background-color: #FF7F38;color: white;">
+                    @("Subscribe")
+                </MudButton>
+
+                <div id="mce-responses" class="clear">
+                    <div class="response" id="mce-error-response" style="display:none"></div>
+                    <div class="response" id="mce-success-response" style="display:none"></div>
+                </div>
+                <input type="text"
+                       name="b_3ab0436d22c64716e67a03f64_94198fac96"
+                       tabindex="-1"
+                       value=""
+                       aria-label="subscribe" />
+            </form>
+        </div>
     </MudForm>
 </div>
 
@@ -135,7 +160,5 @@
             border-color: #ff7f38;
             outline: none;
         }
-
-
 
 </style>
