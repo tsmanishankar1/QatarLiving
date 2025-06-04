@@ -6,25 +6,13 @@
         <iframe width="100%" height="100%" muted loop style="object-fit: cover; border-radius: 6px;"
                 src="@SelectedVideo.VideoUrl">
         </iframe>
-
-        <div class="video-overlay-top">
-            <span class="video-label">Video</span>
-            <h2 class="main-title">@SelectedVideo.Title</h2>
-        </div>
-
-        @if (IsVisiblePlayButton)
-        {
-            <div class="video-overlay-center" @onclick="() => PlayVideo(SelectedVideo)">
-                <MudIcon Icon="@Icons.Material.Filled.PlayArrow" />
-            </div>
-        }
     </div>
 
     <!-- Video List -->
     <div class="video-list-container">
         <div class="section-title">
             <h3 class="section-heading">
-                <span class="accent-bar"></span>Watch on Qatar Living
+                <span class="accent-bar"></span>@(string.IsNullOrEmpty(QueueLabel) is true ? "Watch on Qatar Living" : QueueLabel)
             </h3>
         </div>
         <div class="video-list">
@@ -44,7 +32,7 @@
                         }
                         else
                         {
-                            <a class="list-title vedio-title-text" href="#">@item.Title</a>
+                            <span class="list-title vedio-title-text">@item.Title</span>
                         }
                     </div>
                 </div>
@@ -194,6 +182,7 @@
         display: flex;
         align-items: center;
         font-size: 14px;
+        cursor: pointer;
     }
 
     .vedio-title-text {
