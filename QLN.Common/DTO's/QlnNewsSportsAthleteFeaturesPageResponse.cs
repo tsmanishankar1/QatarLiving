@@ -28,6 +28,9 @@ namespace QLN.Common.Infrastructure.DTO_s
 
         [JsonPropertyName($"{QueuePrefix}_most_popular_articles")]
         public BaseQueueResponse<ContentPost> MostPopularArticles { get; set; }
+
+        [JsonPropertyName($"{QueuePrefix}_watch_on_qatar_living")]
+        public BaseQueueResponse<ContentVideo> WatchOnQatarLiving { get; set; }
     }
 
     public class QlnNewsSportsAthleteFeaturesPageResponse
