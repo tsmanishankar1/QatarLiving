@@ -2,8 +2,9 @@
 
 namespace QLN.Web.Shared.Services.Interface
 {
-    public interface IBannerService
+    public interface ISimpleMemoryCache
     {
         Task<BannerResponse?> GetBannerAsync();
+        Task<ContentsDailyPageResponse?> GetContentLandingAsync();
     }
 }

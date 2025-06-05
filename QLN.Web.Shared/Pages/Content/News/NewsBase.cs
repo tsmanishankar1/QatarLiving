@@ -97,7 +97,7 @@ namespace QLN.Web.Shared.Pages.Content.News
         [Inject] private ILogger<NewsCardBase> Logger { get; set; }
         [Inject] private INewsService _newsService { get; set; }
         [Inject] private IEventService _eventService { get; set; }
-        [Inject] private IBannerService _bannerService { get; set; }
+        [Inject] private ISimpleMemoryCache _simpleCacheService { get; set; }
         protected ContentPost topNewsSlot { get; set; } = new ContentPost();
         protected List<ContentPost> topNewsListSlot { get; set; } = new List<ContentPost>();
         protected List<ContentPost> moreArticleListSlot { get; set; } = new List<ContentPost>();
@@ -288,7 +288,7 @@ namespace QLN.Web.Shared.Pages.Content.News
             StateHasChanged();
             try
             {
-                var banners = await _bannerService.GetBannerAsync();
+                var banners = await _simpleCacheService.GetBannerAsync();
                 NewsSideBanners = banners?.ContentNewsSide ?? new List<BannerItem>();
                 DailyHeroBanners = banners?.ContentNewsHero ?? new List<BannerItem>();
                 DailyTakeOverBanners = banners?.ContentNewsTakeover ?? new List<BannerItem>();
