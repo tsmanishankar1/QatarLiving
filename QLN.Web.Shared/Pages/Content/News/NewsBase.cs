@@ -634,7 +634,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     break;
             }
             navManager.NavigateTo($"/content/news?category={selectedTabView}&subcategory={SelectedTab}", forceLoad: false);
-            // navManager.NavigateTo($"/content/news?category={selectedTabView}&subcategory={SelectedTab}");
+
             selectedRouterTab = string.Empty;
             isLoading = false;
             StateHasChanged();
