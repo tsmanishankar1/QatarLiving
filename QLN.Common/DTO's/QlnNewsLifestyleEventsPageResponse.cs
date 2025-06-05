@@ -38,16 +38,16 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonPropertyName(DrupalContentConstants.QlnNewsLifestyleEvents)]
         public QlnNewsLifestyleEvents News { get; set; }
 
-        public static explicit operator GeneralNewsResponse(QlnNewsLifestyleEventsPageResponse source)
+        public static explicit operator GenericNewsPageResponse(QlnNewsLifestyleEventsPageResponse source)
         {
-            if (source.News == null) return new GeneralNewsResponse
+            if (source.News == null) return new GenericNewsPageResponse
             {
-                News = new GenericNewsPageResponse()
+                News = new GenericNewsPage()
             };
 
-            return new GeneralNewsResponse
+            return new GenericNewsPageResponse
             {
-                News = new GenericNewsPageResponse
+                News = new GenericNewsPage
                 {
                     TopStory = source.News.TopStory,
                     Articles1 = source.News.Articles1,

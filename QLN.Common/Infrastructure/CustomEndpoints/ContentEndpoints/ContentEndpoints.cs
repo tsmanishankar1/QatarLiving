@@ -554,9 +554,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             {
                 try
                 {
-                    var response = new GeneralNewsResponse
+                    var response = new GenericNewsPageResponse
                     {
-                        News = new GenericNewsPageResponse()
+                        News = new GenericNewsPage()
                     };
 
                     switch (queue)
@@ -564,102 +564,102 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                         // Finance
                         case DrupalContentConstants.QlnNewsFinanceEntrepreneurship:
                             var newsFinanceEntrepreneurship = await svc.GetPostsFromDrupalAsync<QlnNewsFinanceEntrepreneurshipPageResponse>(queue, cancellationToken);
-                            if (newsFinanceEntrepreneurship != null) response = (GeneralNewsResponse)newsFinanceEntrepreneurship;
+                            if (newsFinanceEntrepreneurship != null) response = (GenericNewsPageResponse)newsFinanceEntrepreneurship;
                             break;
                         case DrupalContentConstants.QlnNewsFinanceFinance:
                             var newsFinanceFinance = await svc.GetPostsFromDrupalAsync<QlnNewsFinanceFinancePageResponse>(queue, cancellationToken);
-                            if (newsFinanceFinance != null) response = (GeneralNewsResponse)newsFinanceFinance;
+                            if (newsFinanceFinance != null) response = (GenericNewsPageResponse)newsFinanceFinance;
                             break;
                         case DrupalContentConstants.QlnNewsFinanceJobsCareers:
                             var newsFinanceJobsCareers = await svc.GetPostsFromDrupalAsync<QlnNewsFinanceJobsCareersPageResponse>(queue, cancellationToken);
-                            if (newsFinanceJobsCareers != null) response = (GeneralNewsResponse)newsFinanceJobsCareers;
+                            if (newsFinanceJobsCareers != null) response = (GenericNewsPageResponse)newsFinanceJobsCareers;
                             break;
                         case DrupalContentConstants.QlnNewsFinanceMarketUpdate:
                             var newsFinanceMarketUpdate = await svc.GetPostsFromDrupalAsync<QlnNewsFinanceMarketUpdatePageResponse>(queue, cancellationToken);
-                            if (newsFinanceMarketUpdate != null) response = (GeneralNewsResponse)newsFinanceMarketUpdate;
+                            if (newsFinanceMarketUpdate != null) response = (GenericNewsPageResponse)newsFinanceMarketUpdate;
                             break;
                         case DrupalContentConstants.QlnNewsFinanceQatar:
                             var newsFinanceQatar = await svc.GetPostsFromDrupalAsync<QlnNewsFinanceQatarPageResponse>(queue, cancellationToken);
-                            if (newsFinanceQatar != null) response = (GeneralNewsResponse)newsFinanceQatar;
+                            if (newsFinanceQatar != null) response = (GenericNewsPageResponse)newsFinanceQatar;
                             break;
                         case DrupalContentConstants.QlnNewsFinanceRealEstate:
                             var newsFinanceRealEstate = await svc.GetPostsFromDrupalAsync<QlnNewsFinanceRealEstatePageResponse>(queue, cancellationToken);
-                            if (newsFinanceRealEstate != null) response = (GeneralNewsResponse)newsFinanceRealEstate;
+                            if (newsFinanceRealEstate != null) response = (GenericNewsPageResponse)newsFinanceRealEstate;
                             break;
                         // News
                         case DrupalContentConstants.QlnNewsNewsCommunity:
                             var newsNewsCommunity = await svc.GetPostsFromDrupalAsync<QlnNewsNewsCommunityPageResponse>(queue, cancellationToken);
-                            if (newsNewsCommunity != null) response = (GeneralNewsResponse)newsNewsCommunity;
+                            if (newsNewsCommunity != null) response = (GenericNewsPageResponse)newsNewsCommunity;
                             break;
                         case DrupalContentConstants.QlnNewsNewsMiddleEast:
                             var newsNewsMiddleEast = await svc.GetPostsFromDrupalAsync<QlnNewsNewsMiddleEastPageResponse>(queue, cancellationToken);
-                            if (newsNewsMiddleEast != null) response = (GeneralNewsResponse)newsNewsMiddleEast;
+                            if (newsNewsMiddleEast != null) response = (GenericNewsPageResponse)newsNewsMiddleEast;
                             break;
                         case DrupalContentConstants.QlnNewsNewsWorld:
                             var newsNewsWorld = await svc.GetPostsFromDrupalAsync<QlnNewsNewsWorldPageResponse>(queue, cancellationToken);
-                            if (newsNewsWorld != null) response = (GeneralNewsResponse)newsNewsWorld;
+                            if (newsNewsWorld != null) response = (GenericNewsPageResponse)newsNewsWorld;
                             break;
                         case DrupalContentConstants.QlnNewsNewsHealthEducation:
                             var newsNewsHealthEducation = await svc.GetPostsFromDrupalAsync<QlnNewsNewsHealthEducationPageResponse>(queue, cancellationToken);
-                            if (newsNewsHealthEducation != null) response = (GeneralNewsResponse)newsNewsHealthEducation;
+                            if (newsNewsHealthEducation != null) response = (GenericNewsPageResponse)newsNewsHealthEducation;
                             break;
                         case DrupalContentConstants.QlnNewsNewsLaw:
                             var newsNewsLaw = await svc.GetPostsFromDrupalAsync<QlnNewsNewsLawPageResponse>(queue, cancellationToken);
-                            if (newsNewsLaw != null) response = (GeneralNewsResponse)newsNewsLaw;
+                            if (newsNewsLaw != null) response = (GenericNewsPageResponse)newsNewsLaw;
                             break;
                         case DrupalContentConstants.QlnNewsNewsQatar:
                             var newsNewsQatar = await svc.GetPostsFromDrupalAsync<QlnNewsNewsQatarPageResponse>(queue, cancellationToken);
-                            if (newsNewsQatar != null) response = (GeneralNewsResponse)newsNewsQatar;
+                            if (newsNewsQatar != null) response = (GenericNewsPageResponse)newsNewsQatar;
                             break;
                         // Lifestyle
                         case DrupalContentConstants.QlnNewsLifestyleArtsCulture:
                             var newsLifestyleArtsCulture = await svc.GetPostsFromDrupalAsync<QlnNewsLifestyleArtsCulturePageResponse>(queue, cancellationToken);
-                            if (newsLifestyleArtsCulture != null) response = (GeneralNewsResponse)newsLifestyleArtsCulture;
+                            if (newsLifestyleArtsCulture != null) response = (GenericNewsPageResponse)newsLifestyleArtsCulture;
                             break;
                         case DrupalContentConstants.QlnNewsLifestyleEvents:
                             var newsLifestyleEvents = await svc.GetPostsFromDrupalAsync<QlnNewsLifestyleEventsPageResponse>(queue, cancellationToken);
-                            if (newsLifestyleEvents != null) response = (GeneralNewsResponse)newsLifestyleEvents;
+                            if (newsLifestyleEvents != null) response = (GenericNewsPageResponse)newsLifestyleEvents;
                             break;
                         case DrupalContentConstants.QlnNewsLifestyleFoodDining:
                             var newsLifestyleFoodDining = await svc.GetPostsFromDrupalAsync<QlnNewsLifestyleFoodDiningPageResponse>(queue, cancellationToken);
-                            if (newsLifestyleFoodDining != null) response = (GeneralNewsResponse)newsLifestyleFoodDining;
+                            if (newsLifestyleFoodDining != null) response = (GenericNewsPageResponse)newsLifestyleFoodDining;
                             break;
                         case DrupalContentConstants.QlnNewsLifestyleTravelLeisure:
                             var newsLifestyleTravelLeisure = await svc.GetPostsFromDrupalAsync<QlnNewsLifestyleTravelLeisurePageResponse>(queue, cancellationToken);
-                            if (newsLifestyleTravelLeisure != null) response = (GeneralNewsResponse)newsLifestyleTravelLeisure;
+                            if (newsLifestyleTravelLeisure != null) response = (GenericNewsPageResponse)newsLifestyleTravelLeisure;
                             break;
                         case DrupalContentConstants.QlnNewsLifestyleHomeLiving:
                             var newsLifestyleHomeLiving = await svc.GetPostsFromDrupalAsync<QlnNewsLifestyleHomeLivingPageResponse>(queue, cancellationToken);
-                            if (newsLifestyleHomeLiving != null) response = (GeneralNewsResponse)newsLifestyleHomeLiving;
+                            if (newsLifestyleHomeLiving != null) response = (GenericNewsPageResponse)newsLifestyleHomeLiving;
                             break;
                         case DrupalContentConstants.QlnNewsLifestyleFashionStyle:
                             var newsLifestyleFashionStyle = await svc.GetPostsFromDrupalAsync<QlnNewsLifestyleFashionStylePageResponse>(queue, cancellationToken);
-                            if (newsLifestyleFashionStyle != null) response = (GeneralNewsResponse)newsLifestyleFashionStyle;
+                            if (newsLifestyleFashionStyle != null) response = (GenericNewsPageResponse)newsLifestyleFashionStyle;
                             break;
                         // Sports
                         case DrupalContentConstants.QlnNewsSportsAthleteFeatures:
                             var newsSportsAthleteFeatures = await svc.GetPostsFromDrupalAsync<QlnNewsSportsAthleteFeaturesPageResponse>(queue, cancellationToken);
-                            if (newsSportsAthleteFeatures != null) response = (GeneralNewsResponse)newsSportsAthleteFeatures;
+                            if (newsSportsAthleteFeatures != null) response = (GenericNewsPageResponse)newsSportsAthleteFeatures;
                             break;
                         case DrupalContentConstants.QlnNewsSportsFootball:
                             var newsSportsFootball = await svc.GetPostsFromDrupalAsync<QlnNewsSportsFootballPageResponse>(queue, cancellationToken);
-                            if (newsSportsFootball != null) response = (GeneralNewsResponse)newsSportsFootball;
+                            if (newsSportsFootball != null) response = (GenericNewsPageResponse)newsSportsFootball;
                             break;
                         case DrupalContentConstants.QlnNewsSportsInternational:
                             var newsSportsInternational = await svc.GetPostsFromDrupalAsync<QlnNewsSportsInternationalPageResponse>(queue, cancellationToken);
-                            if (newsSportsInternational != null) response = (GeneralNewsResponse)newsSportsInternational;
+                            if (newsSportsInternational != null) response = (GenericNewsPageResponse)newsSportsInternational;
                             break;
                         case DrupalContentConstants.QlnNewsSportsMotorsports:
                             var newsSportsMotorsports = await svc.GetPostsFromDrupalAsync<QlnNewsSportsMotorsportsPageResponse>(queue, cancellationToken);
-                            if (newsSportsMotorsports != null) response = (GeneralNewsResponse)newsSportsMotorsports;
+                            if (newsSportsMotorsports != null) response = (GenericNewsPageResponse)newsSportsMotorsports;
                             break;
                         case DrupalContentConstants.QlnNewsSportsOlympics:
                             var newsSportsOlympics = await svc.GetPostsFromDrupalAsync<QlnNewsSportsOlympicsPageResponse>(queue, cancellationToken);
-                            if (newsSportsOlympics != null) response = (GeneralNewsResponse)newsSportsOlympics;
+                            if (newsSportsOlympics != null) response = (GenericNewsPageResponse)newsSportsOlympics;
                             break;
                         case DrupalContentConstants.QlnNewsSportsQatarSports:
                             var newsSportsQatarSports = await svc.GetPostsFromDrupalAsync<QlnNewsSportsQatarSportsPageResponse>(queue, cancellationToken);
-                            if (newsSportsQatarSports != null) response = (GeneralNewsResponse)newsSportsQatarSports;
+                            if (newsSportsQatarSports != null) response = (GenericNewsPageResponse)newsSportsQatarSports;
                             break;
                         // Things below do not map to a news response
                         // Videos

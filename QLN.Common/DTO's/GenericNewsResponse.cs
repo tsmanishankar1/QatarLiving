@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.DTO_s
 {
-    public class GenericNewsPageResponse
+    public class GenericNewsPage
     {
 
         [JsonPropertyName("top_story")]
@@ -32,10 +32,10 @@ namespace QLN.Common.Infrastructure.DTO_s
         public BaseQueueResponse<ContentVideo>? WatchOnQatarLiving { get; set; }
     }
 
-    public class GeneralNewsResponse
+    public class GenericNewsPageResponse
     {
         [JsonPropertyName("news")]
-        public GenericNewsPageResponse? News { get; set; }
+        public GenericNewsPage? News { get; set; }
     }
 }
 

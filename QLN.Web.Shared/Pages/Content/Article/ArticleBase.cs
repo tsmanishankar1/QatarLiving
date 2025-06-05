@@ -155,7 +155,7 @@ public class ArticleBase : ComponentBase
             }
             
             QatarNewsContent = await GetNewsQatarAsync();
-            moreArticleList = QatarNewsContent?.QlnNewsNewsQatar?.MoreArticles?.Items ?? new List<ContentPost>();
+            moreArticleList = QatarNewsContent?.News?.MoreArticles?.Items ?? new List<ContentPost>();
         }
         catch (Exception ex)
         {

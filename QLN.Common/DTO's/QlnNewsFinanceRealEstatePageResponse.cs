@@ -39,17 +39,17 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonPropertyName(DrupalContentConstants.QlnNewsFinanceRealEstate)]
         public QlnNewsFinanceRealEstate News { get; set; }
 
-        public static explicit operator GeneralNewsResponse(QlnNewsFinanceRealEstatePageResponse source)
+        public static explicit operator GenericNewsPageResponse(QlnNewsFinanceRealEstatePageResponse source)
         {
             // bring back an empty object if this exists
-            if (source.News == null) return new GeneralNewsResponse
+            if (source.News == null) return new GenericNewsPageResponse
             {
-                News = new GenericNewsPageResponse()
+                News = new GenericNewsPage()
             };
 
-            return new GeneralNewsResponse
+            return new GenericNewsPageResponse
             {
-                News = new GenericNewsPageResponse()
+                News = new GenericNewsPage()
                 {
                     TopStory = source.News.TopStory,
                     Articles1 = source.News.Articles1,
