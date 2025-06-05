@@ -1,6 +1,7 @@
 ﻿using Dapr.Actors;
 using Dapr.Actors.Client;
 using Microsoft.AspNetCore.Identity;
+using QLN.Common.DTO_s;
 using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.IService.ISubscriptionService;
 using QLN.Common.Infrastructure.Model;
@@ -35,9 +36,9 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             "SubscriptionActor");
     }
     public async Task<SubscriptionGroupResponseDto> GetSubscriptionsByVerticalAndCategoryAsync(
-           int verticalTypeId,
-           int categoryId,
-           CancellationToken cancellationToken = default)
+     int verticalTypeId,
+     int categoryId,
+     CancellationToken cancellationToken = default)
     {
         var resultList = new List<SubscriptionResponseDto>();
         var ids = _subscriptionIds.Keys.ToList();
@@ -55,6 +56,8 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 data.CategoryId == categoryEnum &&
                 data.StatusId != Status.Expired)
             {
+                var durationEnum = (DurationType)data.Duration;
+
                 resultList.Add(new SubscriptionResponseDto
                 {
                     Id = data.Id,
@@ -62,7 +65,8 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                     Price = data.price,
                     Currency = data.currency,
                     Description = data.description,
-                    Duration = data.duration
+                    DurationId = (int)durationEnum,
+                    DurationName = durationEnum.ToString()
                 });
             }
         }
@@ -87,7 +91,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         {
             Id = id,
             subscriptionName = request.SubscriptionName,
-            duration = request.Duration,
+            Duration = request.DurationId,
             price = request.Price,
             description = request.Description,
             currency = request.Currency,
@@ -149,11 +153,15 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 continue;
             }
 
+
+            var durationEnum = (DurationType)result.Duration;
+
             subscriptions.Add(new SubscriptionResponseDto
             {
                 Id = result.Id,
                 SubscriptionName = result.subscriptionName,
-                Duration = result.duration,
+                DurationId = (int)durationEnum,
+                DurationName = durationEnum.ToString(),
                 Price = result.price,
                 Description = result.description,
                 Currency = result.currency
@@ -162,6 +170,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
         return subscriptions;
     }
+
 
     public async Task<bool> UpdateSubscriptionAsync(Guid subscriptionId, SubscriptionRequestDto request, CancellationToken cancellationToken)
     {
@@ -172,7 +181,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         {
             Id = subscriptionId,
             subscriptionName = request.SubscriptionName,
-            duration = request.Duration,
+            Duration = request.DurationId,
             price = request.Price,
             description = request.Description,
             currency = request.Currency,
@@ -210,7 +219,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 return false;
             }
 
-            // Mark as expired
+  
             existingSubscription.StatusId = Status.Expired;
             existingSubscription.lastUpdated = DateTime.UtcNow;
             existingSubscription.subscriptionName = $"Expired-{existingSubscription.subscriptionName ?? id.ToString()}";
@@ -260,7 +269,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
     {
         if (request == null) throw new ArgumentNullException(nameof(request));
 
-        // 🔍 Check for existing active subscription
+       
         foreach (var existingId in _paymentTransactionIds.Keys)
         {
             var existingActor = GetPaymentTransactionActorProxy(existingId);
@@ -284,7 +293,11 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         if (subscriptionData == null)
             throw new Exception($"PayToPublish data not found for ID: {request.SubscriptionId}");
 
-        var endDate = ParseDurationAndGetEndDate(startDate, subscriptionData.duration);
+        if (!Enum.TryParse<DurationType>(subscriptionData.Duration.ToString(), out var durationEnum))
+            throw new Exception($"Invalid subscription duration: {subscriptionData.Duration}");
+
+        var endDate = GetEndDateByDurationEnum(startDate, durationEnum);
+
 
         var dto = new PaymentTransactionDto
         {
@@ -341,38 +354,16 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
         return dto.Id;
     }
-
-
-
-
-    private DateTime ParseDurationAndGetEndDate(DateTime startDate, string duration)
+    private DateTime GetEndDateByDurationEnum(DateTime startDate, DurationType duration)
     {
-        if (string.IsNullOrWhiteSpace(duration))
-            throw new ArgumentException("Duration is empty or null", nameof(duration));
-
-        duration = duration.ToLowerInvariant();
-        var digits = new string(duration.Where(char.IsDigit).ToArray());
-
-        if (string.IsNullOrWhiteSpace(digits))
-            throw new ArgumentException($"No digits found in duration: {duration}");
-
-        int value = int.Parse(digits);
-
-        if (duration.Contains("month"))
+        return duration switch
         {
-            return startDate.AddMonths(value);
-        }
-
-        if (duration.Contains("year"))
-        {
-            return startDate.AddYears(value);
-        }
-        if (duration.Contains("minute"))
-        {
-            return startDate.AddMinutes(value);
-        }
-
-        throw new ArgumentException($"Unsupported duration format: {duration}");
+            DurationType.ThreeMonths => startDate.AddMonths(3),
+            DurationType.SixMonths => startDate.AddMonths(6),
+            DurationType.OneYear => startDate.AddYears(1),
+            DurationType.TwoMinutes => startDate.AddMinutes(2),
+            _ => throw new ArgumentException($"Unsupported DurationType: {duration}")
+        };
     }
     private IPaymentTransactionActor GetPaymentTransactionActorProxy(Guid id)
     {

@@ -1,4 +1,5 @@
 ﻿
+using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Subscriptions;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
@@ -9,7 +10,8 @@ namespace QLN.Common.DTOs
     {
         public Guid Id { get; set; }
         public string subscriptionName { get; set; }
-        public string duration { get; set; }
+        public DurationType Duration { get; set; }
+
         public decimal? price { get; set; }
         public string? description { get; set; }
         public string? currency { get; set; }
@@ -18,16 +20,16 @@ namespace QLN.Common.DTOs
         public int promotebudget { get; set; }
         public int refreshbudget { get; set; }
         public Vertical VerticalTypeId { get; set; }
-
         public Status StatusId { get; set; }
         public DateTime lastUpdated { get; set; }
     }
+
     public class SubscriptionRequestDto
     {
         [Required]
         public string SubscriptionName { get; set; }
         [Required]
-        public string Duration { get; set; }
+        public DurationType DurationId { get; set; }
         [Required]
         public decimal? Price { get; set; }
         [Required]
@@ -67,7 +69,8 @@ namespace QLN.Common.DTOs
 
         public string? SubscriptionName { get; set; }
 
-        public string? Duration { get; set; }
+        public int DurationId { get; set; }
+        public string DurationName { get; set; } = string.Empty;
 
         public decimal? Price { get; set; }
 

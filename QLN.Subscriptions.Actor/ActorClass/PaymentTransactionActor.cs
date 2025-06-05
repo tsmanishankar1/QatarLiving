@@ -72,7 +72,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 var nowIst = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, istTimeZone);
 
                
-                var today115Pm = new DateTime(nowIst.Year, nowIst.Month, nowIst.Day, 15,15, 0);
+                var today115Pm = new DateTime(nowIst.Year, nowIst.Month, nowIst.Day, 18,15, 0);
 
                
                 var next115Pm = nowIst <= today115Pm ? today115Pm : today115Pm.AddDays(1);

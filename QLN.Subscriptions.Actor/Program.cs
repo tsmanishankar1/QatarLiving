@@ -13,7 +13,14 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IExternalSubscriptionService, ExternalSubscriptionService>();
 builder.Services.AddScoped<IPayToPublishService, ExternalPayToPublishService>();
+ThreadPool.SetMinThreads(Environment.ProcessorCount * 4, Environment.ProcessorCount * 4);
 
+// Or configure Kestrel limits:
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxConcurrentConnections = 100;
+    options.Limits.MaxConcurrentUpgradedConnections = 100;
+});
 
 builder.Services
   .AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>

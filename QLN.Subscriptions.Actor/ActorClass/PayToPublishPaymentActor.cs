@@ -9,12 +9,13 @@ namespace QLN.Subscriptions.Actor.ActorClass
     public class PayToPublishPaymentActor : Dapr.Actors.Runtime.Actor, IPaymentActor
     {
         private const string StateKey = "paytopublish-payment-data";
-        private const string TimerName = "paytopublish-expiry-timer";
+        private const string DailyTimerName = "paytopublish-daily-timer";
+        private const string SpecificTimerName = "paytopublish-specific-timer";
         private readonly ILogger<PayToPublishPaymentActor> _logger;
         public static IServiceProvider ServiceProvider { get; set; }
 
-        // Configuration for check time (make this configurable)
-        private static readonly TimeSpan CheckTime = new TimeSpan(11, 04, 0); // 4:39 PM
+        // Configuration for daily check time (make this configurable via appsettings)
+        private static readonly TimeSpan DailyCheckTime = new TimeSpan(17, 36, 0); 
         private static readonly string TimeZoneId = "India Standard Time";
 
         public PayToPublishPaymentActor(ActorHost host, ILogger<PayToPublishPaymentActor> logger) : base(host)
@@ -26,18 +27,27 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
 
-            _logger.LogInformation("[PaymentActor {ActorId}] SetDataAsync called", Id);
+            _logger.LogInformation("[PaymentActor {ActorId}] SetDataAsync called for user {UserId}", Id, data.UserId);
+
+            // Initialize IsExpired if null
             if (data.IsExpired == null)
             {
                 data.IsExpired = false;
             }
+            data.LastUpdated = DateTime.UtcNow;
+
             await StateManager.SetStateAsync(StateKey, data, cancellationToken);
             await StateManager.SaveStateAsync(cancellationToken);
 
-            // Schedule expiry check only if not expired
-            if (!data.IsExpired)
+            // Schedule expiry checks only if not expired and has valid end date
+            if (!data.IsExpired && data.EndDate > DateTime.UtcNow)
             {
-                await ScheduleExpiryCheckAsync();
+                await ScheduleExpiryChecksAsync(data);
+            }
+            else if (data.IsExpired)
+            {
+                // Clean up any existing timers for expired payments
+                await CleanupTimersAsync();
             }
 
             return true;
@@ -50,49 +60,65 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
         public async Task<PaymentDto?> GetDataAsync(CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("[PaymentActor {ActorId}] GetDataAsync called", Id);
+            _logger.LogDebug("[PaymentActor {ActorId}] GetDataAsync called", Id);
 
             var conditionalValue = await StateManager.TryGetStateAsync<PaymentDto>(StateKey, cancellationToken);
             return conditionalValue.HasValue ? conditionalValue.Value : null;
         }
 
-        private async Task ScheduleExpiryCheckAsync()
+        private async Task ScheduleExpiryChecksAsync(PaymentDto paymentData)
         {
             try
             {
-                // Unregister existing timer first to avoid duplicates
-                await UnregisterTimerSafelyAsync(TimerName);
+                // Clean up existing timers first
+                await CleanupTimersAsync();
 
-                var (nextCheckTime, dueTime) = CalculateNextCheckTime();
+                // Schedule daily check
+                await ScheduleDailyExpiryCheckAsync();
 
-                _logger.LogInformation("[PaymentActor {ActorId}] Scheduling expiry check for {NextCheck} IST (in {DueTime})",
-                    Id, nextCheckTime, dueTime);
+                // Schedule specific expiry check if needed
+                await ScheduleSpecificExpiryCheckIfNeeded(paymentData);
 
-                await RegisterTimerAsync(
-                    TimerName,
-                    nameof(CheckPaytopublishExpiryAsync),
-                    null,
-                    dueTime,
-                    TimeSpan.FromDays(1)); // Check daily
+                _logger.LogInformation("[PaymentActor {ActorId}] Scheduled expiry checks for user {UserId}, EndDate: {EndDate}",
+                    Id, paymentData.UserId, paymentData.EndDate);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[PaymentActor {ActorId}] Error scheduling expiry check", Id);
+                _logger.LogError(ex, "[PaymentActor {ActorId}] Error scheduling expiry checks", Id);
             }
         }
 
-        private (DateTime nextCheckTime, TimeSpan dueTime) CalculateNextCheckTime()
+        private async Task ScheduleDailyExpiryCheckAsync()
+        {
+            var (nextCheckTime, dueTime) = CalculateNextDailyCheckTime();
+
+            _logger.LogInformation("[PaymentActor {ActorId}] Scheduling daily expiry check for {NextCheck} IST (in {DueTime})",
+                Id, nextCheckTime, dueTime);
+
+            await RegisterTimerAsync(
+                DailyTimerName,
+                nameof(CheckPaytopublishExpiryAsync),
+                null,
+                dueTime,
+                TimeSpan.FromDays(1)); // Repeat daily
+        }
+
+        private (DateTime nextCheckTime, TimeSpan dueTime) CalculateNextDailyCheckTime()
         {
             var istTimeZone = TimeZoneInfo.FindSystemTimeZoneById(TimeZoneId);
             var nowIst = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, istTimeZone);
 
-            var todayCheckTime = nowIst.Date.Add(CheckTime);
+            var todayCheckTime = nowIst.Date.Add(DailyCheckTime);
             var nextCheckTime = nowIst <= todayCheckTime ? todayCheckTime : todayCheckTime.AddDays(1);
             var nextCheckTimeUtc = TimeZoneInfo.ConvertTimeToUtc(nextCheckTime, istTimeZone);
             var dueTime = nextCheckTimeUtc - DateTime.UtcNow;
+
+            // Ensure we don't have negative due time
             if (dueTime <= TimeSpan.Zero)
             {
-                dueTime = TimeSpan.FromDays(1) + dueTime;
+                nextCheckTime = nextCheckTime.AddDays(1);
+                nextCheckTimeUtc = TimeZoneInfo.ConvertTimeToUtc(nextCheckTime, istTimeZone);
+                dueTime = nextCheckTimeUtc - DateTime.UtcNow;
             }
 
             return (nextCheckTime, dueTime);
@@ -102,32 +128,37 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             try
             {
-                _logger.LogInformation("[PaymentActor {ActorId}] Checking pay-to-publish expiry at {Time}", Id, DateTime.UtcNow);
+                _logger.LogInformation("[PaymentActor {ActorId}] Checking pay-to-publish expiry at {Time} UTC", Id, DateTime.UtcNow);
 
                 var paymentData = await GetDataAsync();
                 if (paymentData == null)
                 {
                     _logger.LogWarning("[PaymentActor {ActorId}] No payment data found during expiry check", Id);
-                    await UnregisterTimerSafelyAsync(TimerName);
+                    await CleanupTimersAsync();
                     return;
                 }
 
+                // Skip if already marked as expired
                 if (paymentData.IsExpired == true)
                 {
                     _logger.LogInformation("[PaymentActor {ActorId}] Payment already marked as expired for user {UserId}",
                         Id, paymentData.UserId);
-                    await UnregisterTimerSafelyAsync(TimerName);
+                    await CleanupTimersAsync();
                     return;
                 }
+
+                // Check if subscription has expired
                 if (paymentData.EndDate <= DateTime.UtcNow)
                 {
                     await HandleSubscriptionExpiryAsync(paymentData);
                 }
                 else
                 {
+                    var daysRemaining = (int)(paymentData.EndDate - DateTime.UtcNow).TotalDays;
                     _logger.LogInformation("[PaymentActor {ActorId}] Pay-to-publish still active for user {UserId}. EndDate: {EndDate}, Days remaining: {DaysRemaining}",
-                        Id, paymentData.UserId, paymentData.EndDate, (paymentData.EndDate - DateTime.UtcNow).Days);
+                        Id, paymentData.UserId, paymentData.EndDate, daysRemaining);
 
+                    // Reschedule specific expiry check if needed
                     await ScheduleSpecificExpiryCheckIfNeeded(paymentData);
                 }
             }
@@ -142,6 +173,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             _logger.LogInformation("[PaymentActor {ActorId}] Pay-to-publish expired for user {UserId}. EndDate: {EndDate}",
                 Id, paymentData.UserId, paymentData.EndDate);
 
+            // Mark as expired
             paymentData.IsExpired = true;
             paymentData.LastUpdated = DateTime.UtcNow;
 
@@ -150,29 +182,39 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             _logger.LogInformation("[PaymentActor {ActorId}] Marked payment as expired for user {UserId}", Id, paymentData.UserId);
 
+            // Handle the expiry through service
             await HandleExpiredPayToPublishAsync(paymentData.UserId, paymentData.Id);
-            await UnregisterTimerSafelyAsync(TimerName);
-            _logger.LogInformation("[PaymentActor {ActorId}] Unregistered expiry timer for expired pay-to-publish", Id);
+
+            // Clean up all timers since subscription is expired
+            await CleanupTimersAsync();
+
+            _logger.LogInformation("[PaymentActor {ActorId}] Cleaned up timers for expired pay-to-publish", Id);
         }
 
         private async Task ScheduleSpecificExpiryCheckIfNeeded(PaymentDto paymentData)
         {
             var timeUntilExpiry = paymentData.EndDate - DateTime.UtcNow;
-            var (_, timeUntilNextDailyCheck) = CalculateNextCheckTime();
+            var (_, timeUntilNextDailyCheck) = CalculateNextDailyCheckTime();
 
+            // Schedule specific timer if expiry occurs before next daily check
             if (timeUntilExpiry < timeUntilNextDailyCheck && timeUntilExpiry > TimeSpan.Zero)
             {
-                var specificTimerName = $"{TimerName}-specific";
+                // Add small buffer to ensure we check after expiry
+                var bufferTime = TimeSpan.FromMinutes(2);
+                var specificDueTime = timeUntilExpiry.Add(bufferTime);
 
                 _logger.LogInformation("[PaymentActor {ActorId}] Scheduling specific expiry check in {TimeUntilExpiry} for user {UserId}",
-                    Id, timeUntilExpiry, paymentData.UserId);
+                    Id, specificDueTime, paymentData.UserId);
+
+                // Unregister existing specific timer first
+                await UnregisterTimerSafelyAsync(SpecificTimerName);
 
                 await RegisterTimerAsync(
-                    specificTimerName,
+                    SpecificTimerName,
                     nameof(CheckPaytopublishExpiryAsync),
                     null,
-                    timeUntilExpiry.Add(TimeSpan.FromMinutes(1)), 
-                    TimeSpan.FromMilliseconds(-1)); 
+                    specificDueTime,
+                    TimeSpan.FromMilliseconds(-1)); // One-time execution
             }
         }
 
@@ -206,8 +248,15 @@ namespace QLN.Subscriptions.Actor.ActorClass
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[PaymentActor {ActorId}] Error handling expired pay-to-publish for user {UserId}, payment {PaymentId}", Id, userId, paymentId);
-                throw; 
+                // Consider whether to throw or handle gracefully based on your requirements
+                throw;
             }
+        }
+
+        private async Task CleanupTimersAsync()
+        {
+            await UnregisterTimerSafelyAsync(DailyTimerName);
+            await UnregisterTimerSafelyAsync(SpecificTimerName);
         }
 
         private async Task UnregisterTimerSafelyAsync(string timerName)
@@ -215,6 +264,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             try
             {
                 await UnregisterTimerAsync(timerName);
+                _logger.LogDebug("[PaymentActor {ActorId}] Successfully unregistered timer {TimerName}", Id, timerName);
             }
             catch (Exception ex)
             {
@@ -229,16 +279,29 @@ namespace QLN.Subscriptions.Actor.ActorClass
             try
             {
                 var paymentData = await GetDataAsync();
-                if (paymentData != null && paymentData.EndDate > DateTime.UtcNow && paymentData.IsExpired != true)
+                if (paymentData != null)
                 {
-                    _logger.LogInformation("[PaymentActor {ActorId}] Reactivating expiry check for active subscription. EndDate: {EndDate}",
-                        Id, paymentData.EndDate);
-                    await ScheduleExpiryCheckAsync();
+                    if (paymentData.EndDate > DateTime.UtcNow && paymentData.IsExpired != true)
+                    {
+                        _logger.LogInformation("[PaymentActor {ActorId}] Reactivating expiry checks for active subscription. EndDate: {EndDate}",
+                            Id, paymentData.EndDate);
+                        await ScheduleExpiryChecksAsync(paymentData);
+                    }
+                    else
+                    {
+                        _logger.LogInformation("[PaymentActor {ActorId}] Subscription already expired or invalid. EndDate: {EndDate}, IsExpired: {IsExpired}",
+                            Id, paymentData.EndDate, paymentData.IsExpired);
+
+                        // If subscription is expired but not marked, handle it
+                        if (paymentData.EndDate <= DateTime.UtcNow && paymentData.IsExpired != true)
+                        {
+                            await HandleSubscriptionExpiryAsync(paymentData);
+                        }
+                    }
                 }
-                else if (paymentData != null)
+                else
                 {
-                    _logger.LogInformation("[PaymentActor {ActorId}] Subscription already expired or null. EndDate: {EndDate}, IsExpired: {IsExpired}",
-                        Id, paymentData.EndDate, paymentData.IsExpired);
+                    _logger.LogInformation("[PaymentActor {ActorId}] No payment data found during activation", Id);
                 }
             }
             catch (Exception ex)
@@ -253,12 +316,10 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             _logger.LogInformation("[PaymentActor {ActorId}] Actor deactivated", Id);
 
-            await UnregisterTimerSafelyAsync(TimerName);
-            await UnregisterTimerSafelyAsync($"{TimerName}-specific");
+            await CleanupTimersAsync();
 
             await base.OnDeactivateAsync();
         }
-
 
         public async Task<bool> TriggerExpiryCheckAsync()
         {
@@ -267,7 +328,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
             return true;
         }
 
-  
         public async Task<(bool IsActive, DateTime? EndDate, int? DaysRemaining)> GetSubscriptionStatusAsync()
         {
             var paymentData = await GetDataAsync();
@@ -278,6 +338,27 @@ namespace QLN.Subscriptions.Actor.ActorClass
             var daysRemaining = isActive ? (int)(paymentData.EndDate - DateTime.UtcNow).TotalDays : 0;
 
             return (isActive, paymentData.EndDate, daysRemaining);
+        }
+
+        // Additional helper method to reschedule checks (useful for configuration changes)
+        public async Task<bool> RescheduleExpiryChecksAsync()
+        {
+            try
+            {
+                var paymentData = await GetDataAsync();
+                if (paymentData != null && paymentData.EndDate > DateTime.UtcNow && paymentData.IsExpired != true)
+                {
+                    await ScheduleExpiryChecksAsync(paymentData);
+                    _logger.LogInformation("[PaymentActor {ActorId}] Rescheduled expiry checks", Id);
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[PaymentActor {ActorId}] Error rescheduling expiry checks", Id);
+                return false;
+            }
         }
     }
 }
