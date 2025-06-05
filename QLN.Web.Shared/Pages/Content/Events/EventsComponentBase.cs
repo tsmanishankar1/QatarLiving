@@ -11,7 +11,7 @@ namespace QLN.Web.Shared.Pages.Content.Events
     public class EventsComponentBase : LayoutComponentBase
     {
         [Inject] private IEventService _eventService { get; set; }
-        [Inject] private IBannerService _bannerService { get; set; }
+        [Inject] private ISimpleMemoryCache _simpleCacheService { get; set; }
 
         [Inject] private ILogger<EventsComponentBase> Logger { get; set; }
 
@@ -169,7 +169,7 @@ namespace QLN.Web.Shared.Pages.Content.Events
 
             try
             {
-                var banners = await _bannerService.GetBannerAsync();
+                var banners = await _simpleCacheService.GetBannerAsync();
                 DailyHeroBanners = banners?.ContentEventsHero ?? new List<BannerItem>();
             }
             finally

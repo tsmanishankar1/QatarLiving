@@ -9,7 +9,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
     public class DailyComponentBase : ComponentBase
     {
         [Inject] private IContentService _contentService { get; set; }
-        [Inject] private IBannerService _bannerService { get; set; }
+        [Inject] private ISimpleMemoryCache _simpleCacheService { get; set; }
 
         protected ContentsDailyPageResponse LandingContent { get; set; } = new ContentsDailyPageResponse();
         protected ContentPost TopStoryItem { get; set; } = new ContentPost();
@@ -73,7 +73,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
 
         private async Task LoadContent()
         {
-            LandingContent = await GetContentLandingAsync() ?? new();
+            LandingContent = await _simpleCacheService.GetContentLandingAsync() ?? new();
             TopStoryItem = LandingContent?.ContentsDaily?.DailyTopStory?.Items.First() ?? new();
             HighlightedEvent = LandingContent?.ContentsDaily?.DailyEvent?.Items.First() ?? new();
             FeaturedEvents = LandingContent?.ContentsDaily?.DailyFeaturedEvents?.Items ?? [];
@@ -103,50 +103,31 @@ namespace QLN.Web.Shared.Pages.Content.Daily
         /// Gets Content Landing Page data
         /// </summary>
         /// <returns>QlnContentsDailyPageResponse</returns>
-        protected async Task<ContentsDailyPageResponse> GetContentLandingAsync()
-        {
-            try
-            {
-                var apiResponse = await _contentService.GetDailyLPAsync() ?? new HttpResponseMessage();
-
-                if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
-                {
-                    var response = await apiResponse.Content.ReadFromJsonAsync<ContentsDailyPageResponse>();
-                    return response ?? new ContentsDailyPageResponse();
-                }
-
-                return new ContentsDailyPageResponse();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message, "GetContentLandingAsync");
-                return new ContentsDailyPageResponse();
-            }
-        }
-        private async Task<BannerResponse?> FetchBannerData()
-        {
-            try
-            {
-                var response = await _contentService.GetBannerAsync();
-                if (response.IsSuccessStatusCode && response.Content != null)
-                {
-                    return await response.Content.ReadFromJsonAsync<BannerResponse>();
-                }
-                return null;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"FetchBannerData error: {ex.Message}");
-                return null;
-            }
-        }
+        
+        //private async Task<BannerResponse?> FetchBannerData()
+        //{
+        //    try
+        //    {
+        //        var response = await _contentService.GetBannerAsync();
+        //        if (response.IsSuccessStatusCode && response.Content != null)
+        //        {
+        //            return await response.Content.ReadFromJsonAsync<BannerResponse>();
+        //        }
+        //        return null;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine($"FetchBannerData error: {ex.Message}");
+        //        return null;
+        //    }
+        //}
 
         protected async Task LoadBanners()
         {
             isLoadingBanners = true;
             try
             {
-                var banners = await _bannerService.GetBannerAsync();
+                var banners = await _simpleCacheService.GetBannerAsync();
                 DailyHeroBanners = banners?.ContentDailyHero ?? new();
                 DailyTakeOver1Banners = banners?.ContentDailyTakeoverFirst ?? new();
                 DailyTakeOver2Banners = banners?.ContentDailyTakeoverSecond ?? new();
