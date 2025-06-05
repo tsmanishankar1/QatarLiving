@@ -58,28 +58,34 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
 
         protected async Task ApplyDatePicker()
         {
-            if (_dateRange?.Start != null && _dateRange?.End != null)
+            if (_dateRange?.Start != null)
             {
-                var startDate = _dateRange.Start.Value.ToString("yyyy-MM-dd");
-                var endDate = _dateRange.End.Value.ToString("yyyy-MM-dd");
+                var startDate = _dateRange.Start.Value;
+                var endDate = _dateRange.End ?? _dateRange.Start.Value;
 
-                SelectedDateLabel = _dateRange.End != null
-                    ? $"{_dateRange.Start.Value:dd-MM-yyyy} to {_dateRange.End.Value:dd-MM-yyyy}"
-                    : $"{_dateRange.Start.Value:dd-MM-yyyy}";
+                if (startDate.Date == endDate.Date)
+                {
+                    SelectedDateLabel = $"{startDate:dd-MM-yyyy}";
+                    await OnDateChanged.InvokeAsync((startDate.ToString("yyyy-MM-dd"), null));
+                }
+                else
+                {
+                    SelectedDateLabel = $"{startDate:dd-MM-yyyy} to {endDate:dd-MM-yyyy}";
+                    await OnDateChanged.InvokeAsync((startDate.ToString("yyyy-MM-dd"), endDate.ToString("yyyy-MM-dd")));
+                }
+
                 _showDatePicker = false;
-                await OnDateChanged.InvokeAsync((startDate, endDate)); // still passes a single string to parent
                 StateHasChanged();
             }
         }
 
+
         protected async Task PerformSearch(string keyword)
         {
-            // Filter areas based on name
             FilteredAreas = Areas
                 .Where(a => a.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
-            // Assign filtered list back to trigger update
             StateHasChanged();
         }
 
@@ -88,7 +94,7 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
             SelectedPropertyTypeId = null;
             SelectedLocationId = null;
             SelectedAreas.Clear();
-            FilteredAreas = Areas; // Reset area filter
+            FilteredAreas = Areas; 
             _selectedDate = null;
             SelectedDateLabel = string.Empty;
 
@@ -96,14 +102,13 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
             await OnLocationChanged.InvokeAsync(null);
             await OnDateChanged.InvokeAsync((null, null));
 
-            StateHasChanged(); // Reflect UI changes
+            StateHasChanged();
         }
 
         protected async Task HandleLocationSelectionChanged(List<Area> selected)
         {
             SelectedAreas = selected;
 
-            // Assuming only one is selected at a time for search
             var selectedId = SelectedAreas.FirstOrDefault()?.Id;
 
             if (!string.IsNullOrWhiteSpace(selectedId))
@@ -117,22 +122,13 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
             _selectedDate = null;
             SelectedDateLabel = string.Empty;
 
-            // ✅ Trigger API call
-            await OnDateChanged.InvokeAsync((null, null));
+            if (_dateRange?.Start != null || _dateRange?.End != null)
+            {
+                await OnDateChanged.InvokeAsync((null, null));
+            }
 
-            StateHasChanged(); // Optional, to update UI
+            StateHasChanged();
         }
-
-
-        protected async Task HandleDateChanged((string from, string to) dateRange)
-        {
-            _fromDate = dateRange.from;
-            _toDate = dateRange.to;
-
-            await OnDateChanged.InvokeAsync((_fromDate, _toDate));
-
-        }
-
 
         protected async Task HandleCategoryChanged(string id)
         {
@@ -161,9 +157,7 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
             }
             else
             {
-                // Handle location removed case (e.g., call API with null or empty)
                 await OnLocationChanged.InvokeAsync(null);
-                // await MyApiService.ClearLocationAsync();
             }
         }
         protected void HandleDatePickerFocusOut(FocusEventArgs e)
@@ -196,7 +190,7 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
 
             if (_showDatePicker)
             {
-                _dotNetRef ??= DotNetObjectReference.Create(this); // ✅ Fix type here too
+                _dotNetRef ??= DotNetObjectReference.Create(this); 
                 await JSRuntime.InvokeVoidAsync("registerPopoverClickAway", _popoverDiv, _dotNetRef);
             }
         }
