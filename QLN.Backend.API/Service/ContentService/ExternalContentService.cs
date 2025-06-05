@@ -66,7 +66,8 @@ namespace QLN.Backend.API.Service.ContentService
             CancellationToken cancellationToken, 
             string? category_id = null,
             string? location_id = null,
-            string? date = null,
+            string? from = null,
+            string? to = null,
             string? order = null,
             int? page = null, 
             int? page_size = null
@@ -88,9 +89,14 @@ namespace QLN.Backend.API.Service.ContentService
                 requestUri += $"&location_id={location_id}";
             }
 
-            if (!string.IsNullOrEmpty(date))
+            if (!string.IsNullOrEmpty(from))
             {
-                requestUri += $"&date={date}";
+                requestUri += $"&from={from}";
+            }
+
+            if (!string.IsNullOrEmpty(to))
+            {
+                requestUri += $"&to={to}";
             }
 
 
