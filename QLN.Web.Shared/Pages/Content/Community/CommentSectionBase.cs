@@ -1,14 +1,10 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
 using MudBlazor;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Models;
-using QLN.Web.Shared.Services;
-using System.Net.NetworkInformation;
 using System.Security.Claims;
-using System.Xml.Linq;
 
 
 namespace QLN.Web.Shared.Pages.Content.Community
@@ -29,13 +25,11 @@ namespace QLN.Web.Shared.Pages.Content.Community
         public PostModel CommentList { get; set; } 
         protected string newComment = string.Empty;
 
-        protected IEnumerable<CommentModel> PagedComments =>
-          CommentList.Comments?.Skip((CurrentPage - 1) * PageSize).Take(PageSize) ?? Enumerable.Empty<CommentModel>();
-
         protected int CurrentPage { get; set; } = 1;
-        protected int PageSize { get; set; } = 10;
+        protected int PageSize { get; set; } = 5;
+        protected int TotalCount { get; set; } = 10;
 
-   
+
         protected bool isMenuOpen = false;
         protected bool IsLiked { get; set; } = false;
 
@@ -44,6 +38,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
         public int CurrentUserId { get; set; }
         public bool IsLoggedIn { get; set; } = false;
         protected bool IsLoading { get; set; } = false;
+        protected bool IsPosting { get; set; } = false;
+        protected HashSet<string> expandedComments = new();
 
         protected override async Task OnInitializedAsync()
         {
@@ -61,6 +57,12 @@ namespace QLN.Web.Shared.Pages.Content.Community
             await GetCommentAsync();
         }
 
+        protected void ToggleComment(string id)
+        {
+            if (!expandedComments.Add(id))
+                expandedComments.Remove(id);
+        }
+
 
 
         protected void OnMenuToggle(bool open)
@@ -75,29 +77,42 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected async void PostComment()
         {
-            if (string.IsNullOrWhiteSpace(newComment) || CurrentUserId == 0 || Comment == null)
-            {
-                Snackbar.Add("Unable to post comment. Missing data.Please check back later!", Severity.Error);
-                return;
-            }
+            IsPosting = true;
 
-            var request = new CommentPostRequest
+            try
             {
-                nid = int.TryParse(Comment.Id?.ToString(), out var nid) ? nid : 0,
-                uid = CurrentUserId,
-                comment = newComment
-            };
-           
-            var success = await CommunityService.PostCommentAsync(request);
-            if (success)
-            {
-                newComment = string.Empty;
-                await GetCommentAsync();
+                if (string.IsNullOrWhiteSpace(newComment) || CurrentUserId == 0 || Comment == null)
+                {
+                    Snackbar.Add("Unable to post comment. Missing data.Please check back later!", Severity.Error);
+                    return;
+                }
+                var request = new CommentPostRequest
+                {
+                    nid = int.TryParse(Comment.Id?.ToString(), out var nid) ? nid : 0,
+                    uid = CurrentUserId,
+                    comment = newComment
+                };
 
+                var success = await CommunityService.PostCommentAsync(request);
+                if (success)
+                {
+                    newComment = string.Empty;
+                    await GetCommentAsync();
+
+                }
+                else
+                {
+                    Snackbar.Add("Failed to post comment.", Severity.Error);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Snackbar.Add("Failed to post comment.", Severity.Error);
+                Snackbar.Add($"Error posting comment: {ex.Message}", Severity.Error);
+                Console.WriteLine($"Error posting comment: {ex}");
+            }
+            finally
+            {
+                IsPosting = false;
             }
         }
 
@@ -110,7 +125,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             {
                 int nid = int.TryParse(Comment?.Id?.ToString(), out var parsedNid) ? parsedNid : 0;
                 var response = await CommunityService.GetCommentsByPostIdAsync(nid, page: CurrentPage, pageSize: PageSize);
-
+                 TotalCount = response.total_comments;
                 if (response?.comments != null && response.comments.Any())
                 {
                     CommentList.Comments = response.comments.Select(c => new CommentModel
@@ -128,14 +143,14 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 }
                 else
                 {
-                    Comment.Comments.Clear(); 
+                    CommentList.Comments.Clear(); 
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error loading comments: {ex.Message}");
-                Comment.Comments ??= new List<CommentModel>();
-                Comment.Comments.Clear();
+                CommentList.Comments ??= new List<CommentModel>();
+                CommentList.Comments.Clear();
             }
             finally
             {
@@ -144,24 +159,30 @@ namespace QLN.Web.Shared.Pages.Content.Community
             }
         }
 
-        protected void OnReport()
+        protected async Task HandlePageSizeChange(int newPageSize)
         {
-            Console.WriteLine($"Reporting Comment");
-        }
-        protected void HandlePageChange(int page)
-        {
-            CurrentPage = page;
+            PageSize = newPageSize;
+            CurrentPage = 1;
+            await GetCommentAsync();
         }
 
-        protected void HandlePageSizeChange(int size)
+        protected async Task HandlePageChange(int newPage)
         {
-            PageSize = size;
-            CurrentPage = 1; 
+            CurrentPage = newPage;
+            Console.WriteLine("current page", CurrentPage);
+
+             await GetCommentAsync();
+        
+            StateHasChanged();
         }
         protected async Task ToggleLikeAsync()
         {
             IsLiked = !IsLiked;
         }
 
+        protected void OnReport()
+        {
+            Console.WriteLine($"Reporting Comment");
+        }
     }
 }
