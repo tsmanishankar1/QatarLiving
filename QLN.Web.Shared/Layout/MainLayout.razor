@@ -28,7 +28,7 @@
             <NavLink href="/content/daily">
                 @if (_isDarkMode)
                 {
-                    <MudImage id="logoImage" Src="/qln-images/nav-logo.svg" Alt="Qatar Living" Class="logo-img" />
+                    <MudImage id="logoImage" Src="/qln-images/dark_mode_logo.svg" Alt="Qatar Living" Class="logo-img" />
                 }
                 else
                 {
@@ -202,7 +202,7 @@
         if (firstRender)
         {
             _isDarkMode = await _mudThemeProvider.GetSystemPreference();
-            // StateHasChanged();
+            StateHasChanged();
             // return; // may be the login bug as this would exist out of running anything else in the method.
         }
 
