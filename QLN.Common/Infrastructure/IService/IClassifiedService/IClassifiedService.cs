@@ -43,7 +43,7 @@ namespace QLN.Common.Infrastructure.IService
         Task<List<CategoriesDto>> GetAllSizeTypes(CancellationToken cancellationToken = default);
         Task<Category> AddZone(string name, CancellationToken cancellationToken = default);
         Task<List<CategoriesDto>> GetAllZones(CancellationToken cancellationToken = default);
-        Task<CategoryHierarchyDto> GetCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default);
+        Task<NestedCategoryDto> GetCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default);
         Task<bool> SaveSearch(SaveSearchRequestDto dto, Guid userId, CancellationToken cancellationToken = default);
         Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default);
         Task<List<SavedSearchResponseDto>> GetSearches(string userId, CancellationToken cancellationToken = default);

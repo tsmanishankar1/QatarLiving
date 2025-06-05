@@ -2602,7 +2602,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .WithTags("ClassifiedsDropdown")
                 .WithSummary("Get a category with all its sub-related data")
                 .WithDescription("Fetches a category along with all .")
-                .Produces<CategoryHierarchyDto>(StatusCodes.Status200OK)
+                .Produces<NestedCategoryDto>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);

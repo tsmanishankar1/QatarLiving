@@ -67,7 +67,6 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-
         private async Task<List<Category>> GetItemsByType(string typePrefix)
         {
             if (string.IsNullOrWhiteSpace(typePrefix))
@@ -147,7 +146,7 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("Unexpected error while adding a new category.", ex);
             }
         }
-
+        
         public async Task<List<CategoriesDto>> GetAllCategories(CancellationToken cancellationToken = default)
         {
             try
@@ -1240,7 +1239,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<CategoryHierarchyDto> GetCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
+        public async Task<NestedCategoryDto> GetCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
         {
             if (categoryId == Guid.Empty)
                 throw new ArgumentException("Invalid category ID.", nameof(categoryId));
@@ -1278,37 +1277,63 @@ namespace QLN.Classified.MS.Service
                     .Where(c => c.TypePrefix == subCatPrefix && c.ParentId == categoryId)
                     .ToList();
 
-                var brands = allCategories
-                    .Where(c => c.TypePrefix == brandPrefix && subCategories.Any(sc => sc.Id == c.ParentId))
-                    .ToList();
-
-                var models = allCategories
-                    .Where(c => c.TypePrefix == modelPrefix && brands.Any(b => b.Id == c.ParentId))
-                    .ToList();
-
-                var rams = allCategories
-                    .Where(c => c.TypePrefix == ramPrefix && models.Any(m => m.Id == c.ParentId))
-                    .ToList();
-
-                var processors = allCategories
-                    .Where(c => c.TypePrefix == procPrefix && models.Any(m => m.Id == c.ParentId))
-                    .ToList();
-
-                var resolutions = allCategories
-                    .Where(c => c.TypePrefix == resoPrefix && models.Any(m => m.Id == c.ParentId))
-                    .ToList();
-
-                
-                return new CategoryHierarchyDto
+                var result = new NestedCategoryDto
                 {
-                    Category = new CategoriesDto { Id = rootCategory.Id, Name = rootCategory.Name },
-                    SubCategories = subCategories.Select(s => new CategoriesDto { Id = s.Id, Name = s.Name }).ToList(),
-                    Brands = brands.Select(b => new CategoriesDto { Id = b.Id, Name = b.Name }).ToList(),
-                    Models = models.Select(m => new CategoriesDto { Id = m.Id, Name = m.Name }).ToList(),
-                    Rams = rams.Select(r => new CategoriesDto { Id = r.Id, Name = r.Name }).ToList(),
-                    Processors = processors.Select(p => new CategoriesDto { Id = p.Id, Name = p.Name }).ToList(),
-                    Resolutions = resolutions.Select(r => new CategoriesDto { Id = r.Id, Name = r.Name }).ToList()
+                    Id = rootCategory.Id,
+                    Name = rootCategory.Name,
+                    SubCategories = subCategories.Select(sc =>
+                    {
+                        var brands = allCategories
+                            .Where(b => b.TypePrefix == brandPrefix && b.ParentId == sc.Id)
+                            .ToList();
+
+                        return new NestedSubCategoryDto
+                        {
+                            Id = sc.Id,
+                            Name = sc.Name,
+                            Brands = brands.Select(b =>
+                            {
+                                var models = allCategories
+                                    .Where(m => m.TypePrefix == modelPrefix && m.ParentId == b.Id)
+                                    .ToList();
+
+                                return new NestedBrandDto
+                                {
+                                    Id = b.Id,
+                                    Name = b.Name,
+                                    Models = models.Select(m =>
+                                    {
+                                        var rams = allCategories
+                                            .Where(r => r.TypePrefix == ramPrefix && r.ParentId == m.Id)
+                                            .Select(r => new CategoriesDto { Id = r.Id, Name = r.Name })
+                                            .ToList();
+
+                                        var processors = allCategories
+                                            .Where(p => p.TypePrefix == procPrefix && p.ParentId == m.Id)
+                                            .Select(p => new CategoriesDto { Id = p.Id, Name = p.Name })
+                                            .ToList();
+
+                                        var resolutions = allCategories
+                                            .Where(res => res.TypePrefix == resoPrefix && res.ParentId == m.Id)
+                                            .Select(res => new CategoriesDto { Id = res.Id, Name = res.Name })
+                                            .ToList();
+
+                                        return new NestedModelDto
+                                        {
+                                            Id = m.Id,
+                                            Name = m.Name,
+                                            Rams = rams,
+                                            Processors = processors,
+                                            Resolutions = resolutions
+                                        };
+                                    }).ToList()
+                                };
+                            }).ToList()
+                        };
+                    }).ToList()
                 };
+
+                return result;
             }
             catch (ArgumentException)
             {

@@ -688,14 +688,14 @@ namespace QLN.Backend.API.Service.ClassifiedService
         }   
 
 
-        public async Task<CategoryHierarchyDto> GetCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
+        public async Task<NestedCategoryDto> GetCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
         {
             try
             {
                 if (categoryId == Guid.Empty)
                     throw new ArgumentException("Invalid category ID", nameof(categoryId));
 
-                var result = await _dapr.InvokeMethodAsync<CategoryHierarchyDto>(
+                var result = await _dapr.InvokeMethodAsync<NestedCategoryDto>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/category-hierarchy/{categoryId}",
