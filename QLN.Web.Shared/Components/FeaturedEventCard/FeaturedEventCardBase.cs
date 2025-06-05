@@ -10,8 +10,8 @@ namespace QLN.Web.Shared.Components.FeaturedEventCard
     protected bool imageFailed = false;
     protected string? currentImageUrl;
 
-    [Parameter] public ContentPost Item { get; set; }
-    [Parameter] public EventCallback<ContentPost> OnClick { get; set; }
+    [Parameter] public ContentEvent Item { get; set; }
+    [Parameter] public EventCallback<ContentEvent> OnClick { get; set; }
 
     protected override void OnParametersSet()
     {
