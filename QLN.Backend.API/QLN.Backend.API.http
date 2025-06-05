@@ -22,8 +22,16 @@ Accept: application/json
 
 ###
 
-GET {{QLN.Backend.API_HostAddress}}/api/content/events?category_id=126206
+GET {{QLN.Backend.API_HostAddress}}/api/content/events?category_id=126206&date=2026-01-02
 Accept: application/json
+Cache-Control: no-cache
+
+###
+
+GET {{QLN.Backend.API_HostAddress}}/api/content/events?location_id=114886
+Accept: application/json
+Cache-Control: no-cache
+
 
 ###
 
@@ -82,8 +90,11 @@ GET {{QLN.Drupal.API_HostAddress}}/qlnapi/categories
 Accept: application/json
 
 ###
-
 GET {{QLN.Drupal.API_HostAddress}}/qlnapi/events?page=1&page_size=10&order=asc&category_id=126206
+Accept: application/json
+
+###
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/events?location_id=114889
 Accept: application/json
 
 ###
