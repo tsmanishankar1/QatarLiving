@@ -217,6 +217,9 @@ builder.Services.AddHttpClient<ISearchService, CommunitySearchService>(client =>
     client.BaseAddress = new Uri(qatarLivingAPI);
 });
 
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<IBannerService, BannerService>(); // add shared Banner Service
+
 
 builder.Services.AddHttpContextAccessor();
 

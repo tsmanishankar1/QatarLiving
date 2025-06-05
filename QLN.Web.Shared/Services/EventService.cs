@@ -1,4 +1,5 @@
-﻿using QLN.Common.Infrastructure.Constants;
+﻿using Microsoft.Extensions.Caching.Memory;
+using QLN.Common.Infrastructure.Constants;
 using QLN.Web.Shared.Services.Interface;
 using System.Net;
 
@@ -7,6 +8,9 @@ namespace QLN.Web.Shared.Services
     public class EventService : ServiceBase<EventService>, IEventService
     {
         private readonly HttpClient _httpClient;
+
+        private readonly IMemoryCache _memoryCache;
+        private const string BannerCacheKey = "BannerResponseCacheKey";
 
         public EventService(HttpClient httpClient) : base(httpClient)
         {
