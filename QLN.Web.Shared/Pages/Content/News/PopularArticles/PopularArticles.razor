@@ -46,10 +46,10 @@
                 <MudSkeleton SkeletonType="SkeletonType.Rectangle"  />
                 } *@
  
-            @* <img src="@article.ImageUrl" alt="News Image" class="article-image"
+                <img src="@article.ImageUrl" alt="News Image" class="article-image"
                 style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
-                @onerror="OnImageError" /> *@
-                <img src="@article.ImageUrl" alt="News Image" class="article-image" />
+                @onerror="OnImageError" key="@article.ImageUrl"/>  
+                @* <img src="@article.ImageUrl" alt="News Image" class="article-image" /> *@
              }
             <div class="article-text">@article.Title</div>
         </div>

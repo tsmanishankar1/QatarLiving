@@ -95,7 +95,7 @@ namespace QLN.Web.Shared.Model
     }
     public class PaginatedCommentResponse
     {
-        public int total { get; set; }
+        public int total_comments { get; set; }
         public int page { get; set; }
         public int page_size { get; set; }
         public List<CommentItem> comments { get; set; }
