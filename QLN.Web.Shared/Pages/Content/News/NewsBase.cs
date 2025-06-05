@@ -592,7 +592,8 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot2 = athelete?.Articles2?.Items ?? new List<ContentPost>();
                     break;
             }
-            navManager.NavigateTo($"/content/news?category={selectedTabView}&subcategory={SelectedTab}");
+            navManager.NavigateTo($"/content/news?category={selectedTabView}&subcategory={SelectedTab}", forceLoad: false);
+
             selectedRouterTab = string.Empty;
             isLoading = false;
             StateHasChanged();

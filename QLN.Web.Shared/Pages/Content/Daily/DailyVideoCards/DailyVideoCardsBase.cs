@@ -19,6 +19,13 @@ public class DailyVideoCardsBase : ComponentBase
 
     [Parameter] public string QueueLabel { get; set; }
 
+    protected override void OnInitialized()
+    {
+        SelectedVideo = Items?.Where(x => !string.IsNullOrEmpty(x.VideoUrl)).FirstOrDefault() ?? new();
+
+        SelectedVideo.VideoUrl = ConvertToEmbedUrl(SelectedVideo.VideoUrl);
+    }
+
     protected async override Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
