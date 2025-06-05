@@ -17,15 +17,17 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
 
         [Parameter] public EventCallback<string> OnCategoryChanged { get; set; }
         [Parameter] public EventCallback<string> OnLocationChanged { get; set; }
-        [Parameter] public EventCallback<string> OnDateChanged { get; set; }
 
         [Parameter] public List<EventCategory> Categories { get; set; } = [];
-
+        [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
         [Parameter] public List<Area> Areas { get; set; } = [];
         protected List<Area> FilteredAreas = new(); // filtered list for search
         protected List<Area> SelectedAreas = new(); // selected areas
         protected List<SelectOption> PropertyTypes = new();
         protected string SelectedPropertyTypeId;
+        private string _fromDate;
+        private string _toDate;
+
         protected bool ShouldShowClearAll =>
             !string.IsNullOrEmpty(SelectedPropertyTypeId)
             || SelectedAreas.Any()
@@ -56,14 +58,20 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
 
         protected async Task ApplyDatePicker()
         {
-            if (_selectedDate != null)
+            if (_dateRange?.Start != null && _dateRange?.End != null)
             {
-                SelectedDateLabel = _selectedDate.Value.ToString("yyyy-MM-dd"); // format for URL
+                var startDate = _dateRange.Start.Value.ToString("yyyy-MM-dd");
+                var endDate = _dateRange.End.Value.ToString("yyyy-MM-dd");
+
+                SelectedDateLabel = _dateRange.End != null
+                    ? $"{_dateRange.Start.Value:dd-MM-yyyy} to {_dateRange.End.Value:dd-MM-yyyy}"
+                    : $"{_dateRange.Start.Value:dd-MM-yyyy}";
                 _showDatePicker = false;
-                await OnDateChanged.InvokeAsync(SelectedDateLabel);
-                 StateHasChanged(); 
+                await OnDateChanged.InvokeAsync((startDate, endDate)); // still passes a single string to parent
+                StateHasChanged();
             }
         }
+
         protected async Task PerformSearch(string keyword)
         {
             // Filter areas based on name
@@ -86,7 +94,7 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
 
             await OnCategoryChanged.InvokeAsync(null);
             await OnLocationChanged.InvokeAsync(null);
-            await OnDateChanged.InvokeAsync(null);
+            await OnDateChanged.InvokeAsync((null, null));
 
             StateHasChanged(); // Reflect UI changes
         }
@@ -103,23 +111,28 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
                 await OnLocationChanged.InvokeAsync(selectedId);
             }
         }
-       protected async void CancelDatePicker()
+        protected async void CancelDatePicker()
         {
             _showDatePicker = false;
             _selectedDate = null;
             SelectedDateLabel = string.Empty;
 
             // ✅ Trigger API call
-            await OnDateChanged.InvokeAsync(null);
+            await OnDateChanged.InvokeAsync((null, null));
 
             StateHasChanged(); // Optional, to update UI
         }
 
 
-        protected async Task OnRangeChanged(DateRange range)
+        protected async Task HandleDateChanged((string from, string to) dateRange)
         {
-            _dateRange = range;
+            _fromDate = dateRange.from;
+            _toDate = dateRange.to;
+
+            await OnDateChanged.InvokeAsync((_fromDate, _toDate));
+
         }
+
 
         protected async Task HandleCategoryChanged(string id)
         {
