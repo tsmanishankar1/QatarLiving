@@ -2,8 +2,8 @@
 {
     public class CommentPostRequest
     {
-        public int Nid { get; set; }
-        public int Uid { get; set; }
-        public string Comment { get; set; }
+        public int nid { get; set; }
+        public int uid { get; set; }
+        public string comment { get; set; }
     }
 }

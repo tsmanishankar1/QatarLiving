@@ -17,6 +17,9 @@ namespace QLN.Common.Infrastructure.DTO_s
 
         [JsonPropertyName($"{QueuePrefix}_featured_events")]
         public BaseQueueResponse<ContentEvent> QlnEventsFeaturedEvents { get; set; }
+
+        [JsonPropertyName($"{QueuePrefix}_watch_on_qatar_living")]
+        public BaseQueueResponse<ContentVideo> WatchOnQatarLiving { get; set; }
     }
 
     public class QlnFeaturedEventsPageResponse

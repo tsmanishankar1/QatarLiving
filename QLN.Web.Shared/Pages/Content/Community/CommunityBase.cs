@@ -46,7 +46,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected bool IsSubscribingToNewsletter { get; set; } = false;
 
 
-        protected List<PostModel> PostList { get; set; } = [];
+        protected List<PostModel>? PostList { get; set; } = [];
         //Ad
         protected AdModel Ad { get; set; } = null;
 
@@ -54,8 +54,13 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         //sort option
         protected string selectedCategory;
-        protected string SelectedCategoryId { get; set; }
-        protected List<SelectOption> CategorySelectOptions { get; set; }
+        protected string SelectedCategoryId { get; set; } = "Default";
+        protected List<SelectOption> CategorySelectOptions { get; set; } = new List<SelectOption>
+              {
+                 new () { Id = "Default", Label = "Default" },
+                 new () { Id = "desc", Label = "Date : Recent First" },
+                 new() { Id = "asc", Label = "Date : Oldest First" },
+            };
         protected string SelectedForumId;
 
         protected bool isLoadingBanners = true;
@@ -75,32 +80,29 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 StateHasChanged();
             }
         }
-
-
-        protected async override Task OnInitializedAsync()
+        protected async override Task OnAfterRenderAsync(bool firstRender)
         {
-            CategorySelectOptions = new List<SelectOption>
-              {
-                 new() { Id = "Default", Label = "Default" },
-                 new() { Id = "desc", Label = "Date : Recent First" },
-                 new() { Id = "asc", Label = "Date : Oldest First" },
-            };
-            SelectedCategoryId = "Default";
+            if (!firstRender) return;
 
             try
             {
-                var (posts, totalCount) = await GetPostListAsync();
-                PostList = posts;
-                TotalPosts = totalCount;
-                await LoadBanners();
-
-                Ad = await GetAdAsync();
-
+                await Task.WhenAll(
+                    LoadPosts(),
+                    LoadBanners(),
+                    GetAdAsync()
+                );
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "OnInitializedAsync");
+                Logger.LogError(ex, "OnAfterRenderAsync");
             }
+        }
+
+        private async Task LoadPosts()
+        {
+            var (posts, totalCount) = await GetPostListAsync();
+            PostList = posts;
+            TotalPosts = totalCount;
         }
 
         protected override async Task OnParametersSetAsync()
@@ -161,9 +163,10 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected async Task HandleSearchResults()
         {
             Console.WriteLine("Search completed.");
+            await Task.CompletedTask;
         }
 
-        protected async Task<(List<PostModel> Posts, int TotalCount)> GetPostListAsync()
+        protected async Task<(List<PostModel>? Posts, int TotalCount)> GetPostListAsync()
         {
             try
             {
@@ -228,7 +231,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             {
                 "desc" => "desc",
                 "asc" => "asc",
-                _ => null
+                _ => "asc" // default to ascending
             };
         }
 
@@ -247,7 +250,10 @@ namespace QLN.Web.Shared.Pages.Content.Community
         {
             PageSize = newPageSize;
             CurrentPage = 1;
-            await GetPostListAsync();
+            var (posts, totalCount) = await GetPostListAsync();
+            PostList = posts;
+            TotalPosts = totalCount;
+            StateHasChanged();
         }
 
         protected async Task HandlePageChange(int newPage)
@@ -301,10 +307,10 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
             }
         }
-        private async Task<AdModel> GetAdAsync()
+        private async Task GetAdAsync()
         {
             var response = await AdService.GetAdDetail();
-            return response.FirstOrDefault();
+            Ad = response.FirstOrDefault();
         }
 
         protected bool _isCreatePostDialogOpen = false;
@@ -358,27 +364,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 isLoadingBanners = false;
             }
         }
-        protected async void PostComment()
-        {
-            var request = new CommentPostRequest
-            {
-                Nid = 123,  
-                Uid = 456,  
-                Comment = newComment
-            };
-
-            var success = await CommunityService.PostCommentAsync(request);
-
-            if (success)
-            {
-                Console.WriteLine($"Comment posted: {newComment}");
-                newComment = string.Empty;
-            }
-            else
-            {
-                Console.WriteLine("Failed to post comment.");
-            }
-        }
+        
 
     }
 }
