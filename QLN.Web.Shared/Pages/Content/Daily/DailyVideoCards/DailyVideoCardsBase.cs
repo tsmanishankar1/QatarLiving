@@ -1,14 +1,15 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Services;
-using System.Text;
 
 public class DailyVideoCardsBase : ComponentBase
 {
     [Inject] NavigationManager NavigationManager { get; set; }
 
     [Inject] IOptions<NavigationPath> Options { get; set; }
+    [Inject] ILogger<DailyVideoCardsBase> Logger { get; set; }
     [Parameter] public List<ContentVideo> Items { get; set; }
 
     protected ContentVideo SelectedVideo;
@@ -18,11 +19,19 @@ public class DailyVideoCardsBase : ComponentBase
 
     [Parameter] public string QueueLabel { get; set; }
 
-    protected override void OnInitialized()
+    protected async override Task OnAfterRenderAsync(bool firstRender)
     {
-        SelectedVideo = Items?.Where(x => !string.IsNullOrEmpty(x.VideoUrl)).FirstOrDefault() ?? new();
+        if (!firstRender) return;
+        try
+        {
+            SelectedVideo = Items?.Where(x => !string.IsNullOrEmpty(x.VideoUrl)).FirstOrDefault() ?? new();
 
-        SelectedVideo.VideoUrl = ConvertToEmbedUrl(SelectedVideo.VideoUrl);
+            SelectedVideo.VideoUrl = ConvertToEmbedUrl(SelectedVideo.VideoUrl);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "OnAfterRenderAsync");
+        }
     }
 
     protected void PlayVideo(ContentVideo video)
