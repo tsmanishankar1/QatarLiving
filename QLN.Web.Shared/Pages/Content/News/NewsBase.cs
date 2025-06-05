@@ -97,6 +97,7 @@ namespace QLN.Web.Shared.Pages.Content.News
         [Inject] private ILogger<NewsCardBase> Logger { get; set; }
         [Inject] private INewsService _newsService { get; set; }
         [Inject] private IEventService _eventService { get; set; }
+        [Inject] private IBannerService _bannerService { get; set; }
         protected ContentPost topNewsSlot { get; set; } = new ContentPost();
         protected List<ContentPost> topNewsListSlot { get; set; } = new List<ContentPost>();
         protected List<ContentPost> moreArticleListSlot { get; set; } = new List<ContentPost>();
@@ -287,7 +288,7 @@ namespace QLN.Web.Shared.Pages.Content.News
             StateHasChanged();
             try
             {
-                var banners = await FetchBannerData();
+                var banners = await _bannerService.GetBannerAsync();
                 NewsSideBanners = banners?.ContentNewsSide ?? new List<BannerItem>();
                 DailyHeroBanners = banners?.ContentNewsHero ?? new List<BannerItem>();
                 DailyTakeOverBanners = banners?.ContentNewsTakeover ?? new List<BannerItem>();
@@ -297,23 +298,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                 isLoadingBanners = false;
             }
         }
-        protected async Task<BannerResponse?> FetchBannerData()
-        {
-            try
-            {
-                var result = await _eventService.GetBannerAsync();
-                if (result.IsSuccessStatusCode && result.Content != null)
-                {
-                    return await result.Content.ReadFromJsonAsync<BannerResponse>();
-                }
-                return null;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "FetchBannerData error.");
-                return null;
-            }
-        }
+        
         protected async void SelectTab(string tab)
         {
             isLoading = true;

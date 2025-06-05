@@ -11,6 +11,7 @@ namespace QLN.Web.Shared.Pages.Content.Events.EventDetails
     public class EventDetailsBase : ComponentBase
     {
         [Inject] protected IEventService EventService { get; set; }
+        [Inject] protected IBannerService _bannerService { get; set; }
         [Inject] protected ILogger<EventDetailsBase> Logger { get; set; }
 
         [Parameter] public string slug { get; set; }
@@ -83,7 +84,7 @@ namespace QLN.Web.Shared.Pages.Content.Events.EventDetails
             isLoadingEventBanners = true;
             try
             {
-                var banners = await FetchBannerData();
+                var banners = await _bannerService.GetBannerAsync();
                 DailyHeroBanners = banners?.ContentEventsDetailHero ?? new List<BannerItem>();
                 EventSideBanners = banners?.ContentEventsDetailSide ?? new List<BannerItem>();
             }

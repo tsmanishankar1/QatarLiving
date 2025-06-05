@@ -9,6 +9,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
     public class DailyComponentBase : ComponentBase
     {
         [Inject] private IContentService _contentService { get; set; }
+        [Inject] private IBannerService _bannerService { get; set; }
 
         protected ContentsDailyPageResponse LandingContent { get; set; } = new ContentsDailyPageResponse();
         protected ContentPost TopStoryItem { get; set; } = new ContentPost();
@@ -145,7 +146,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
             isLoadingBanners = true;
             try
             {
-                var banners = await FetchBannerData();
+                var banners = await _bannerService.GetBannerAsync();
                 DailyHeroBanners = banners?.ContentDailyHero ?? new();
                 DailyTakeOver1Banners = banners?.ContentDailyTakeoverFirst ?? new();
                 DailyTakeOver2Banners = banners?.ContentDailyTakeoverSecond ?? new();
