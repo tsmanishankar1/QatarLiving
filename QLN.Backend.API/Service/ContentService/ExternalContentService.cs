@@ -67,12 +67,17 @@ namespace QLN.Backend.API.Service.ContentService
             string? category_id = null,
             string? location_id = null,
             string? date = null,
-            string? order = "asc",
-            int? page = 1, 
-            int? page_size = 20
+            string? order = null,
+            int? page = null, 
+            int? page_size = null
             )
         {
+            page ??= 1;
+            page_size ??= 20;
+            if (string.IsNullOrEmpty(order)) order = "asc";
+
             string requestUri = $"{DrupalContentConstants.EventsPath}?page={page}&page_size={page_size}&order={order}";
+
             if (!string.IsNullOrEmpty(category_id))
             {
                 requestUri += $"&category_id={category_id}";
@@ -97,8 +102,18 @@ namespace QLN.Backend.API.Service.ContentService
             return await httpClient.GetFromJsonAsync<CategoriesResponse>(DrupalContentConstants.CategoriesPath, cancellationToken);
         }
 
-        public async Task<CommunitiesResponse?> GetCommunitiesFromDrupalAsync(CancellationToken cancellationToken, string? forum_id = null, string? order = "asc", int? page = 1, int? page_size = 10)
+        public async Task<CommunitiesResponse?> GetCommunitiesFromDrupalAsync(
+            CancellationToken cancellationToken, 
+            string? forum_id = null, 
+            string? order = null, 
+            int? page = null, 
+            int? page_size = null
+            )
         {
+            page ??= 1;
+            page_size ??= 10; // default of 10 for Communities
+            if (string.IsNullOrEmpty(order)) order = "asc";
+
             string requestUri = $"{DrupalContentConstants.CommunityPath}?page={page}&page_size={page_size}&order={order}";
             if (!string.IsNullOrEmpty(forum_id))
             {
@@ -108,8 +123,17 @@ namespace QLN.Backend.API.Service.ContentService
             return await httpClient.GetFromJsonAsync<CommunitiesResponse>(requestUri, cancellationToken);
         }
 
-        public async Task<GetCommentsResponse?> GetCommentsFromDrupalAsync(string forum_id, CancellationToken cancellationToken, int? page = 1, int? page_size = 10)
+        public async Task<GetCommentsResponse?> GetCommentsFromDrupalAsync(
+            string forum_id, 
+            CancellationToken cancellationToken, 
+            int? page = 1, 
+            int? page_size = 10
+            )
         {
+            page ??= 1;
+            page_size ??= 10; // default of 10 for Comments
+            //if (string.IsNullOrEmpty(order)) order = "asc";
+
             return await httpClient.GetFromJsonAsync<GetCommentsResponse>($"{DrupalContentConstants.CommentsGetPath}/{forum_id}?page={page}&page_size={page_size}", cancellationToken);
         }
 
