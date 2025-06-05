@@ -1,5 +1,6 @@
 @using Microsoft.Extensions.Options
 @using QLN.Web.Shared.Services
+@using QLN.Web.Shared.Components.NewLetterSubscription
 
 @inject IOptions<NavigationPath> options
 @{
@@ -44,18 +45,14 @@
                 <div class="footer-column footer-col-full">
                     <p>Want to advertise on Qatar Living?</p>
                     <p><strong>Take a look at our <a class="orange-link" href="#">Advertise page</a></strong></p>
-                    <p>Subscribe to our newsletter to get the latest updates</p>
-                    <div class="newsletter">
-                        <input type="email" placeholder="Email" />
-                        <button>Subscribe</button>
-                    </div>
+                    <NewLetterSubscription/>
                 </div>
             </div>
             <div class="footer-inline footer-col-135">
                 <div class="footer-column footer-apps footer-col-full">
                     @if (DarkMode)
                     {
-                        <img src="/qln-images/nav-logo.svg" alt="Qatar Living" width="132.5" height="40.33" class="logo" />
+                        <img src="/qln-images/dark_mode_logo.svg" alt="Qatar Living" width="132.5" height="40.33" class="logo" />
                     }
                     else
                     {
@@ -234,27 +231,6 @@
         gap: 10px;
         flex-direction: column
     }
-
-    .newsletter {
-        display: flex;
-        margin-top: 10px;
-    }
-
-        .newsletter input {
-            flex: 1;
-            padding: 10px;
-            border-radius: 4px 0 0 4px;
-            border: none;
-        }
-
-        .newsletter button {
-            padding: 10px 20px;
-            border: none;
-            background-color: #FF7B3D;
-            color: white;
-            border-radius: 0 4px 4px 0;
-            cursor: pointer;
-        }
 
     hr {
         border: none;

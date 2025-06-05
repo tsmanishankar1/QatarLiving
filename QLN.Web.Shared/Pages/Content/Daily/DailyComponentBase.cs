@@ -45,6 +45,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
         protected List<ContentPost> TopStories { get; set; } = [];
         protected List<ContentEvent> vMoreArticles { get; set; } = [];
         protected List<ContentVideo> vVideoList { get; set; } = [];
+        protected string VideoQueueLabel { get; set; } = string.Empty;
 
         protected async override Task OnAfterRenderAsync(bool firstRender)
         {
@@ -94,6 +95,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
             TopicQueue5Label = LandingContent?.ContentsDaily?.DailyTopics5?.QueueLabel ?? "";
 
             MoreArticles = [.. vMoreArticles.Take(4)];
+            VideoQueueLabel = LandingContent?.ContentsDaily?.DailyWatchOnQatarLiving?.QueueLabel ?? string.Empty;
             VideoList = [.. vVideoList.Take(3)];
         }
 

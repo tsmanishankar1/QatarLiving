@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap"
-        rel="stylesheet">
+          rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
     <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
     <link rel="icon" type="image/svg+xml" href="fav-icon.svg">
@@ -212,8 +212,8 @@
 
         let takeoverbannerSwiperInstance;
 
-        function initTakeOverBannerSwiper() {
-            const swiperEl = document.querySelector('.takeouverbanner-swiper');
+        function initTakeOverBannerSwiper(swiperId) {
+            const swiperEl = document.getElementById(swiperId);
             if (!swiperEl) {
                 console.warn("Banner swiper element not found");
                 return;
@@ -222,11 +222,12 @@
             const bannerCount = swiperEl.querySelectorAll('.swiper-slide').length;
             const autoplayEnabled = bannerCount > 1;
 
-            if (takeoverbannerSwiperInstance) {
-                takeoverbannerSwiperInstance.destroy(true, true);
+            // Store separate instances if needed by ID (optional enhancement)
+            if (swiperEl.swiper) {
+                swiperEl.swiper.destroy(true, true);
             }
 
-            takeoverbannerSwiperInstance = new Swiper(swiperEl, {
+            const swiperInstance = new Swiper(swiperEl, {
                 slidesPerView: 1,
                 loop: autoplayEnabled,
                 autoplay: autoplayEnabled
@@ -237,7 +238,7 @@
                     }
                     : false,
                 pagination: {
-                    el: '.swiper-pagination',
+                    el: swiperEl.querySelector('.swiper-pagination'),
                     clickable: true
                 }
             });
@@ -247,8 +248,9 @@
                 paginationEl.style.display = "none";
             }
 
-            console.log("Banner Swiper initialized with autoplay:", autoplayEnabled);
+            console.log("Swiper initialized:", swiperId);
         }
+
 
         let featuredSwiperInstance;
 
@@ -377,7 +379,9 @@
             }
         });
     </script>
-
+    <script src="https://s3.amazonaws.com/downloads.mailchimp.com/js/mc-validate.js"></script>
+    <script type="text/javascript">
+        (function($) {window.fnames = new Array(); window.ftypes = new Array();fnames[0]='EMAIL';ftypes[0]='email';fnames[1]='FNAME';ftypes[1]='text';fnames[2]='LNAME';ftypes[2]='text';}(jQuery));var $mcj = jQuery.noConflict(true);</script>
 </body>
 
 </html>

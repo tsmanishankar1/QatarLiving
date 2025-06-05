@@ -57,7 +57,7 @@
                         {
                             <MudItem xs="12">
                                 <EmptyCard Title="No event banners found."
-                                    Subtitle="Please check back later for updates." />
+                                           Subtitle="Please check back later for updates." />
                             </MudItem>
                         }
                         else
@@ -130,7 +130,7 @@
     {
         <div class="max-container">
 
-                <DailyVideoCards QueueLabel="@TopicQueue1Label" Items="@VideoList" />
+            <DailyVideoCards QueueLabel="@VideoQueueLabel" Items="@VideoList" />
         </div>
     }
     <div class="responsive-news-container">
@@ -159,7 +159,7 @@
                     <DailyHighlights QueueLabel="@TopicQueue2Label" ListOfItems="TopicQueue2" />
             }
 
-           
+
 
             @if (TopicQueue3.Count() > 0)
             {
@@ -261,7 +261,7 @@
             justify-content: center;
         }
 
-        .mud-form{
+        .mud-form {
             width: 100%;
         }
     }

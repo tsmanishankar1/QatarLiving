@@ -203,14 +203,14 @@ namespace QLN.Web.Shared.Pages.Content.Events
         }
 
 
-        private async Task<QlnEventsResponse?> FetchFeaturedEventsData()
+        private async Task<QlnFeaturedEventsPageResponse?> FetchFeaturedEventsData()
         {
             try
             {
                 var response = await _eventService.GetFeaturedEventsAsync();
                 if (response.IsSuccessStatusCode && response.Content != null)
                 {
-                    return await response.Content.ReadFromJsonAsync<QlnEventsResponse>();
+                    return await response.Content.ReadFromJsonAsync<QlnFeaturedEventsPageResponse>();
                 }
                 return null;
             }

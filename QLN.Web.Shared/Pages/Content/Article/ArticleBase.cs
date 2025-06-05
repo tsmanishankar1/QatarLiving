@@ -13,14 +13,16 @@ public class ArticleBase : ComponentBase
 {
     [Parameter]
     public string slug { get; set; }
-    [Parameter] public string category { get; set; }
-    [Parameter] public string subcategory { get; set; }
+    public string category { get; set; }
+    public string subcategory { get; set; }
     public bool isLoading { get; set; } = true;
     protected bool imageLoaded = false;
     protected List<BannerItem> DailyHeroBanners { get; set; } = new();
     protected List<BannerItem> ArticleSideBanners { get; set; } = new();
     protected bool isLoadingBanners = true;
     public List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
+    protected QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem? postBreadcrumbItem;
+    protected QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem? postBreadcrumbCategory;
     protected QlnNewsNewsQatarPageResponse QatarNewsContent { get; set; } = new QlnNewsNewsQatarPageResponse();
     protected List<ContentPost> moreArticleList { get; set; } = new List<ContentPost>();
     [Inject] private ILogger<NewsCardBase> Logger { get; set; }
@@ -51,8 +53,10 @@ public class ArticleBase : ComponentBase
         "/images/banner_image.svg",
         "/images/banner_image.svg"
     };
+     [Inject]
+    protected NavigationManager navManager { get; set; }
     protected List<ViewToggleButtons.ViewToggleOption> routerList = new()
-    {   
+    {
     new() { Label = "News", Value = "news" },
     new() { Label = "Qatar", Value = "qatar" },
     new() { Label = "Middle East", Value = "middleeast" },
@@ -92,6 +96,12 @@ public class ArticleBase : ComponentBase
     {
         try
         {
+            var uri = navManager.ToAbsoluteUri(navManager.Uri);
+            var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+            if (query.TryGetValue("category", out var cat))
+                category = cat;
+            if (query.TryGetValue("subcategory", out var sub))
+                subcategory = sub;
             isLoading = true;
             var bannersTask = LoadBanners();
             await Task.WhenAll(bannersTask);
@@ -128,15 +138,22 @@ public class ArticleBase : ComponentBase
             };
             var categoryValue = routerList.FirstOrDefault(item => item.Label == category)?.Value;
             var subcategoryValue = routerList.FirstOrDefault(item => item.Label == subcategory)?.Value;
-            Console.WriteLine("the articled category is the" + categoryValue);
-            Console.WriteLine("the articled subcategory is the" + subcategoryValue);
-
-            breadcrumbItems = new()
-            {
+            if (categoryValue != null && subcategoryValue != null){
+                breadcrumbItems = new()
+                {
                 new() {   Label = category,Url =$"/content/news?category={categoryValue}" },
                 new() { Label = subcategory, Url = $"/content/news?category={categoryValue}&subcategory={subcategoryValue}"},
                 new() { Label = newsArticle.Title, Url = $"/content/article/details/{categoryValue}/{subcategoryValue}/{slug}", IsLast = true },
-            };
+                };
+            }
+           else{
+                breadcrumbItems = new()
+                {
+                new() { Label = "Daily", Url = "/content/daily"},
+                new() { Label = newsArticle.Title, Url = $"/content/article/details/{slug}", IsLast = true },
+                };
+            }
+            
             QatarNewsContent = await GetNewsQatarAsync();
             moreArticleList = QatarNewsContent?.QlnNewsNewsQatar?.MoreArticles?.Items ?? new List<ContentPost>();
         }
@@ -149,6 +166,28 @@ public class ArticleBase : ComponentBase
             isLoading = false;
         }
     }
+        // protected override async Task OnParametersSetAsync()
+        // {
+        //     postBreadcrumbItem = new()
+        //     {
+        //         Label = slug ?? "Not Found",
+        //         Url = $"/content/community/post/detail/{slug}",
+        //         IsLast = true
+        //     };
+        //     postBreadcrumbCategory = new()
+        //     {
+        //         Label = slug ?? "Not Found",
+        //         //Url = "/content/community",
+        //         Url = $"/content/community"
+        //     };
+
+        //     breadcrumbItems = new List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem>
+        //     {
+        //         new() { Label = "Community", Url = "/content/community" },
+        //        postBreadcrumbCategory,
+        //         postBreadcrumbItem
+        //     };
+        // }
 
     protected async Task<ContentPost> GetNewsBySlugAsync()
     {
