@@ -20,7 +20,6 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICompanyService, InternalCompanyService>();
-builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IExtendedEmailSender<ApplicationUser>, EmailSenderService>();
 builder.Services.AddDbContext<QatarlivingDevContext>(options =>
