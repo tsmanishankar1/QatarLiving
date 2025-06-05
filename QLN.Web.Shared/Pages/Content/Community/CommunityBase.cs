@@ -353,6 +353,9 @@ namespace QLN.Web.Shared.Pages.Content.Community
             isLoadingBanners = true;
             try
             {
+                // Delay a tiny bit to avoid LightHouse LCP penalties
+                await Task.Delay(800);
+
                 var banners = await _simpleCacheService.GetBannerAsync();
                 DailyHeroBanners = banners?.ContentCommunityHero ?? new();
                 CommunitySideBanners = banners?.ContentCommunitySide ?? new();
