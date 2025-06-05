@@ -33,18 +33,21 @@ namespace QLN.Web.Shared.Pages.Content.Events
         protected int CurrentPage { get; set; } = 1;
         protected int PageSize { get; set; } = 12;
 
-
-        protected override async Task OnInitializedAsync()
+        protected override async Task OnAfterRenderAsync(bool firstRender)
         {
+            if(!firstRender) return;
+
             try
             {
-                // Start tasks in parallel
-                var allEventsTask = LoadAllEvents();
-                var categoriesTask = LoadCategories();
-                var featuredTask = LoadFeaturedEvents();
-                var bannersTask = LoadBanners();
+                // Start these tasks in parallel as we always want these to show ASAP
+                await Task.WhenAll(
+                    LoadCategories(),
+                    LoadFeaturedEvents(),
+                    LoadBanners()
+                );
 
-                await Task.WhenAll(allEventsTask, categoriesTask, featuredTask, bannersTask);
+                // Then load events as events could be a lot of them and it takes longer to fetch
+                await LoadAllEvents();
             }
             catch (Exception ex)
             {
@@ -57,8 +60,7 @@ namespace QLN.Web.Shared.Pages.Content.Events
             SelectedPropertyTypeId = category;
             //CurrentPage = 1;
             await LoadAllEvents();
-            //PostList = posts;
-            //TotalPosts = totalCount;
+            //TotalEvents = totalCount;
         }
 
         protected async Task HandleDateChanged(string date)
@@ -66,8 +68,7 @@ namespace QLN.Web.Shared.Pages.Content.Events
             SelectedDateLabel = date;
             //CurrentPage = 1;
             await LoadAllEvents();
-            //PostList = posts;
-            //TotalPosts = totalCount;
+            //TotalEvents = totalCount;
         }
 
         protected async Task HandleLocationChanged(string location)
@@ -75,8 +76,7 @@ namespace QLN.Web.Shared.Pages.Content.Events
             SelectedLocationId = location;
             //CurrentPage = 1;
             await LoadAllEvents();
-            //PostList = posts;
-            //TotalPosts = totalCount;
+            //TotalEvents = totalCount;
         }
         protected async Task HandlePageChange(int newPage)
         {
@@ -103,6 +103,7 @@ namespace QLN.Web.Shared.Pages.Content.Events
             finally
             {
                 isLoadingEvents = false;
+                StateHasChanged();
             }
         }
 
@@ -137,11 +138,13 @@ namespace QLN.Web.Shared.Pages.Content.Events
             finally
             {
                 isLoadingCategories = false;
+                StateHasChanged();
             }
         }
         private async Task LoadFeaturedEvents()
         {
             isLoadingFeatured = true;
+
             try
             {
                 // Fetch the full response object
@@ -153,11 +156,13 @@ namespace QLN.Web.Shared.Pages.Content.Events
             finally
             {
                 isLoadingFeatured = false;
+                StateHasChanged();
             }
         }
         private async Task LoadBanners()
         {
             isLoadingBanners = true;
+
             try
             {
                 var banners = await FetchBannerData();
@@ -166,6 +171,7 @@ namespace QLN.Web.Shared.Pages.Content.Events
             finally
             {
                 isLoadingBanners = false;
+                StateHasChanged();
             }
         }
 

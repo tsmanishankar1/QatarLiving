@@ -8,9 +8,9 @@
     <div class="daily-more-category-group">
         @foreach (var item in DailyCategories)
         {
-            <button class="daily-category-btn" @onclick="NavigatetoAllEvents">
-                @item.Label
-            </button>
+                <button class="daily-category-btn" @onclick="NavigatetoAllEvents">
+                    @item.Label
+                </button>
         }
 
         <button class="view-all-btn" @onclick="NavigatetoAllEvents">

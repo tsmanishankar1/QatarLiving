@@ -1,12 +1,14 @@
 ﻿(() => {
     const maximumRetryCount = 3;
-    const retryIntervalMilliseconds = 2000;
+    const retryIntervalMilliseconds = 5000;
     const reconnectModal = document.getElementById('reconnect-modal');
 
     const startReconnectionProcess = () => {
         reconnectModal.style.display = 'block';
 
         let isCanceled = false;
+
+        console.log("Starting Custom Connection");
 
         (async () => {
             for (let i = 0; i < maximumRetryCount; i++) {
@@ -48,11 +50,16 @@
     let currentReconnectionProcess = null;
 
     Blazor.start({
-        reconnectionHandler: {
-            onConnectionDown: () => currentReconnectionProcess ??= startReconnectionProcess(),
-            onConnectionUp: () => {
-                currentReconnectionProcess?.cancel();
-                currentReconnectionProcess = null;
+        circuit: {
+            reconnectionHandler: {
+                onConnectionDown: () => currentReconnectionProcess ??= startReconnectionProcess(),
+                onConnectionUp: () => {
+                    currentReconnectionProcess?.cancel();
+                    currentReconnectionProcess = null;
+                }
+            },
+            configureSignalR: function (builder) {
+                builder.withServerTimeout(30000).withKeepAliveInterval(15000);
             }
         }
     });
