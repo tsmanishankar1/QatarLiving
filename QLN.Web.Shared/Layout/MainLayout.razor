@@ -4,25 +4,28 @@
 @inject CookieAuthStateProvider CookieAuthenticationStateProvider;
 @inject NavigationManager NavManager
 @using System.Security.Claims;
-
+@using QLN.Web.Shared.Components.MobileMenu
 @inject ISnackbar Snackbar
 @using Microsoft.AspNetCore.Http;
 @using QLN.Web.Shared.Services
 @inject IOptions<NavigationPath> options;
 
-<MudThemeProvider @ref="@_mudThemeProvider"/>
+<MudThemeProvider @ref="@_mudThemeProvider" />
 <MudDialogProvider />
 <MudPopoverProvider />
 <MudSnackbarProvider Position="SnackbarPosition.BottomLeft" />
+<MobileMenu IsOpen="@showMobileMenu" OnClose="@ToggleMobileMenu" GoToProfile="@GoToProfile" GoToRegister="@GoToRegister"
+    GoToLogin="@GoToLogin" GoToLogout="@GoToLogout" OnPostAdClicked="@OnPostAdClicked" IsLoggedIn="@IsLoggedIn"
+    Name="@Name" />
 
 
 <header class="site-header mud-elevation-1">
-    <div class = "header-container">
+    <div class="header-container">
 
-    <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleMobileMenu" Class="mobile-menu-button" />
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleMobileMenu" Class="mobile-menu-button" />
 
-    <div class="header-left">
-        <NavLink href="/">
+        <div class="header-left">
+            <NavLink href="/">
                 @if (_isDarkMode)
                 {
                     <MudImage id="logoImage" Src="/qln-images/nav-logo.svg" Alt="Qatar Living" Class="logo-img" />
@@ -31,56 +34,56 @@
                 {
                     <MudImage id="logoImage" Src="/qln-images/logo.png" Alt="Qatar Living" Class="logo-img" />
                 }
-        </NavLink>
-    </div>
-    <div style="display: flex; align-items: center; gap: 36px;">
-        <div class="@($"nav-container {(showMobileMenu ? "mobile-menu-open" : "")}")">
-            <nav class="nav-links">
-                <NavLink id="propertiesLink" href=@{
-                navigationPath.Properties
-                                }
- class="nav-link">Properties</NavLink>
-                <NavLink id="vehiclesLink" href=@{
-                                navigationPath.Vehicles
-                                }
+            </NavLink>
+        </div>
+        <div style="display: flex; align-items: center; gap: 36px;">
+            <div class="@($"nav-container {(showMobileMenu ? "mobile-menu-open" : "")}")">
+                <nav class="nav-links">
+                    <NavLink id="propertiesLink" href=@{
+                    navigationPath.Properties
+                                        }
+ class="nav-link">Properties
+                    </NavLink>
+                    <NavLink id="vehiclesLink" href=@{
+                                        navigationPath.Vehicles
+                                        }
  class="nav-link">Vehicles</NavLink>
-                <NavLink id="classifiedsLink" href=@{
-                                navigationPath.Classifieds
-                                }
+                    <NavLink id="classifiedsLink" href=@{
+                                        navigationPath.Classifieds
+                                        }
  class="nav-link">Classifieds
-                </NavLink>
-                <NavLink id="servicesLink" href=@{
-                                navigationPath.Services
-                                }
+                    </NavLink>
+                    <NavLink id="servicesLink" href=@{
+                                        navigationPath.Services
+                                        }
  class="nav-link">Services</NavLink>
-                <NavLink id="jobsLink" href=@{
-                                navigationPath.Jobs
-                                }
+                    <NavLink id="jobsLink" href=@{
+                                        navigationPath.Jobs
+                                        }
  class="nav-link">Jobs</NavLink>
-                <NavLink id="rewardsLink" href=@{
-                                navigationPath.Rewards
-                                }
+                    <NavLink id="rewardsLink" href=@{
+                                        navigationPath.Rewards
+                                        }
  class="nav-link">Rewards</NavLink>
-                @* <NavLink id="rewardsLink" class="nav-link d-flex align-items-center">
+                    @* <NavLink id="rewardsLink" class="nav-link d-flex align-items-center">
                     More
                     <img src="/qln-images/header/arrow_down.svg" alt="Down arrow"
                         style="width: 20px; height: 20px; margin-left: 5px;" />
                 </NavLink> *@
-            </nav>
-        </div>
+                </nav>
+            </div>
 
-        <div class="post-button-wrapper">
-            <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-                <ActivatorContent>
-                    <MudButton id="headerPostButton" Variant="Variant.Filled"
-                        Style="background-color: #FF7F38; color: white;" Size="Size.Medium"
-                        StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn desktop-post-btn"
-                        @onclick="OnPostAdClicked"
-                    >
-                        <span class="post-ad-text">Post Ad</span>
-                    </MudButton>
-                </ActivatorContent>
-                @* <ChildContent>
+            <div class="post-button-wrapper">
+                <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                    <ActivatorContent>
+                        <MudButton id="headerPostButton" Variant="Variant.Filled"
+                            Style="background-color: #FF7F38; color: white;" Size="Size.Medium"
+                            StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn desktop-post-btn"
+                            @onclick="OnPostAdClicked">
+                            <span class="post-ad-text">Post Ad</span>
+                        </MudButton>
+                    </ActivatorContent>
+                    @* <ChildContent>
                 @foreach (var item in postMenuItems)
                 {
                   <MudMenuItem  OnClick="@(() => NavManager.NavigateTo(item.Route))" Class="menu-item">
@@ -91,78 +94,78 @@
             </MudMenuItem>
                     }
                 </ChildContent> *@
-            </MudMenu>
+                </MudMenu>
 
-            <img src="/qln-images/header/add_post_svg.svg" alt="Post" class="mobile-post-icon" 
-     @onclick="OnPostAdClicked" />
+                <img src="/qln-images/header/add_post_svg.svg" alt="Post" class="mobile-post-icon"
+                    @onclick="OnPostAdClicked" />
 
+            </div>
         </div>
-    </div>
 
-    <div class="header-right">
-        @* <MudAvatar Size="Size.Medium" Class="avatar-custom" @onclick="() => GoToFavourites()">
+        <div class="header-right">
+            @* <MudAvatar Size="Size.Medium" Class="avatar-custom" @onclick="() => GoToFavourites()">
             <img id="favouriteIcon" src="/qln-images/header/favourite_icon.svg" alt="Favourite" class="avatar-icon" />
         </MudAvatar>  *@
-        <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-            <ActivatorContent>
-                <div id="userIcon" style="display: flex; align-items: center; gap: 0.5rem;" class="cursor-pointer">
-                    <MudAvatar Size="Size.Medium" Class="avatar-custom">
-                        <img src="/qln-images/header/account.svg" alt="Account" class="avatar-icon" />
-                    </MudAvatar>
-                    <MudTooltip Text="@Name">
-                        <span class="user-name">
-                            @((Name?.Length > 10) ? Name.Substring(0, 10) + "..." :
-                                                        Name)
-                        </span>
-                    </MudTooltip>
-                </div>
-            </ActivatorContent>
+            <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                <ActivatorContent>
+                    <div id="userIcon" style="display: flex; align-items: center; gap: 0.5rem;" class="cursor-pointer">
+                        <MudAvatar Size="Size.Medium" Class="avatar-custom">
+                            <img src="/qln-images/header/account.svg" alt="Account" class="avatar-icon" />
+                        </MudAvatar>
+                        <MudTooltip Text="@Name">
+                            <span class="user-name">
+                                @((Name?.Length > 10) ? Name.Substring(0, 10) + "..." :
+                                                                Name)
+                            </span>
+                        </MudTooltip>
+                    </div>
+                </ActivatorContent>
 
 
-            <ChildContent>
-                @if (IsLoggedIn == true)
-                {
-                    <MudButton id="profileButton" Variant="Variant.Outlined" Color="Color.Warning"
-                        StartIcon="@Icons.Material.Filled.AccountCircle"
-                        Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
-                        OnClick="@GoToProfile" Class="no-capitalize">
+                <ChildContent>
+                    @if (IsLoggedIn == true)
+                    {
+                        <MudButton id="profileButton" Variant="Variant.Outlined" Color="Color.Warning"
+                            StartIcon="@Icons.Material.Filled.AccountCircle"
+                            Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
+                            OnClick="@GoToProfile" Class="no-capitalize">
 
-                        My Profile
-                    </MudButton>
+                            My Profile
+                        </MudButton>
 
-                    <MudButton id="logoutButton" Variant="Variant.Filled" Color="Color.Warning"
-                        StartIcon="@Icons.Material.Filled.Logout"
-                        Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
-                        OnClick="@GoToLogout" Class="no-capitalize">
-                        Logout
-                    </MudButton>
-                }
-                else
-                {
-                    <MudButton id="loginButton" Variant="Variant.Outlined" Color="Color.Warning"
-                        StartIcon="@Icons.Material.Filled.Login"
-                        Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
-                        OnClick="@GoToLogin" Class="no-capitalize">
-                        Login
-                    </MudButton>
+                        <MudButton id="logoutButton" Variant="Variant.Filled" Color="Color.Warning"
+                            StartIcon="@Icons.Material.Filled.Logout"
+                            Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
+                            OnClick="@GoToLogout" Class="no-capitalize">
+                            Logout
+                        </MudButton>
+                    }
+                    else
+                    {
+                        <MudButton id="loginButton" Variant="Variant.Outlined" Color="Color.Warning"
+                            StartIcon="@Icons.Material.Filled.Login"
+                            Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
+                            OnClick="@GoToLogin" Class="no-capitalize">
+                            Login
+                        </MudButton>
 
-                    <MudButton id="SignupButton" Variant="Variant.Filled" Color="Color.Warning"
-                        StartIcon="@Icons.Material.Filled.PersonAdd"
-                        Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
-                        OnClick="@GoToRegister" Class="no-capitalize">
-                        Sign Up
-                    </MudButton>
-                }
+                        <MudButton id="SignupButton" Variant="Variant.Filled" Color="Color.Warning"
+                            StartIcon="@Icons.Material.Filled.PersonAdd"
+                            Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
+                            OnClick="@GoToRegister" Class="no-capitalize">
+                            Sign Up
+                        </MudButton>
+                    }
 
-            </ChildContent>
-        </MudMenu>
-    </div>
+                </ChildContent>
+            </MudMenu>
+        </div>
     </div>
 </header>
 
 <main class="main-content">
     @Body
-    <Footer DarkMode="@_isDarkMode"/>
+    <Footer DarkMode="@_isDarkMode" />
 </main>
 
 
@@ -186,7 +189,7 @@
             if (user.Identity != null && user.Identity.IsAuthenticated)
             {
                 Name = user.FindFirst(ClaimTypes.Name)?.Value;
-                IsLoggedIn = true;         
+                IsLoggedIn = true;
             }
         }
         StateHasChanged();
@@ -200,7 +203,7 @@
             StateHasChanged();
             return;
         }
-            
+
         var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
         if (authState != null)
         {
@@ -229,7 +232,7 @@
 
     private void GoToFavourites()
     {
-        NavManager.NavigateTo($"{navigationPath.Base}/user/0/wishlist", forceLoad: true); // need to check if this should be the user Id.
+        NavManager.NavigateTo($"{navigationPath.Base}/user/0/wishlist", forceLoad: true); // need to check if this should be th
     }
 
     private void GoToProfile()
@@ -274,23 +277,23 @@
 
     private void OnPostAdClicked()
     {
-            if (IsLoggedIn)
+        if (IsLoggedIn)
         {
-        
+
             NavManager.NavigateTo(navigationPath.PostAd, forceLoad: true);
         }
         else
         {
-       
+
             NavManager.NavigateTo($"{navigationPath.Login}", forceLoad: true);
         }
-    
+
     }
 
 
     // private void OnPostClicked()
     // {
-    //     NavManager.NavigateTo("https:www.qatarliving.com/node/add/classified");
+    // NavManager.NavigateTo("https:www.qatarliving.com/node/add/classified");
     // }
 
     private List<MenuItem> postMenuItems = new List<MenuItem>
@@ -349,14 +352,14 @@ Route = "/more-features-coming-soon"
         margin: 0
     }
 
-    .header-container{
-          max-width: 1170px;
-    margin: 0 auto;
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: relative
+    .header-container {
+        max-width: 1170px;
+        margin: 0 auto;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative
     }
 
     .mobile-post-icon {
@@ -458,7 +461,9 @@ Route = "/more-features-coming-soon"
 
         .mobile-post-icon {
             display: inline-block !important;
-        }s
+        }
+
+        s
     }
 
     @@media (max-width: 992px) {
@@ -468,48 +473,48 @@ Route = "/more-features-coming-soon"
         }
 
         @@media (max-width: 992px) {
-        .mobile-post-icon {
-        display: inline-block !important;
-      position: absolute;
-      top: 50%;
-        right: 16px; 
-        transform: translateY(-50%);
-        z-index: 1100; 
-    }
+            .mobile-post-icon {
+                display: inline-block !important;
+                position: absolute;
+                top: 50%;
+                right: 16px;
+                transform: translateY(-50%);
+                z-index: 1100;
+            }
 
-        @@media (max-width: 992px) {
-        #userIcon{
-            display: none !important;
-           
-        }
-        
+            @@media (max-width: 992px) {
+                #userIcon {
+                    display: none !important;
 
-
-        .nav-container {
-            position: fixed;
-            top: 0;
-            left: -100%;
-            width: 80%;
-            max-width: 300px;
-            height: 100vh;
-            background-color: #003366;
-            flex-direction: column;
-            justify-content: flex-start;
-            padding: 4rem 1rem 1rem;
-            z-index: 1000;
-            transition: left 0.3s ease;
-        }
-
-        .nav-container.mobile-menu-open {
-            left: 0;
-        }
-
-        .nav-links {
-            flex-direction: column;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
+                }
 
 
-    }
+
+                .nav-container {
+                    position: fixed;
+                    top: 0;
+                    left: -100%;
+                    width: 80%;
+                    max-width: 300px;
+                    height: 100vh;
+                    background-color: #003366;
+                    flex-direction: column;
+                    justify-content: flex-start;
+                    padding: 4rem 1rem 1rem;
+                    z-index: 1000;
+                    transition: left 0.3s ease;
+                }
+
+                .nav-container.mobile-menu-open {
+                    left: 0;
+                }
+
+                .nav-links {
+                    flex-direction: column;
+                    gap: 1.5rem;
+                    margin-bottom: 2rem;
+                }
+
+
+            }
 </style>
