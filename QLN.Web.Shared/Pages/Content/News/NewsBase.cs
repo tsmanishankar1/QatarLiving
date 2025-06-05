@@ -431,7 +431,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     VideoList = realEstate?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
                 case "Entrepreneurship":
-                    FinanceEntrepreneurshipNewsContent = await GetNewsAsync<QlnNewsFinanceEntrepreneurshipPageResponse>("Entrepreneurship");
+                    FinanceEntrepreneurshipNewsContent = await GetNewsAsync<QlnNewsFinanceEntrepreneurshipResponse>("Entrepreneurship");
                     var entrepreneurship = FinanceEntrepreneurshipNewsContent?.QlnNewsFinanceEntrepreneurship;
                     topNewsSlot = entrepreneurship?.TopStory?.Items?.FirstOrDefault();
                     topNewsListSlot = entrepreneurship?.TopStory?.Items ?? new List<ContentPost>();

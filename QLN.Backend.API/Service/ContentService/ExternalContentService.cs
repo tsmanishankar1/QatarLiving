@@ -60,6 +60,7 @@ namespace QLN.Backend.API.Service.ContentService
         public async Task<T?> GetPostsFromDrupalAsync<T>(string queue_name, CancellationToken cancellationToken)
         {
             return await httpClient.GetFromJsonAsync<T>($"{DrupalContentConstants.LandingPath}/{queue_name}", cancellationToken);
+
         }
         // qlnapi/events?category_id=126205&location_id=102701&date=2025-01-01'
         public async Task<ContentEventsResponse?> GetEventsFromDrupalAsync(

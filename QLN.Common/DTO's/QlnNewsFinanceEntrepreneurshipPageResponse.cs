@@ -1,3 +1,4 @@
+using Google.Apis.Json;
 using Microsoft.AspNetCore.Http.Features;
 using QLN.Common.Infrastructure.Constants;
 using System;
@@ -36,7 +37,28 @@ namespace QLN.Common.Infrastructure.DTO_s
     public class QlnNewsFinanceEntrepreneurshipPageResponse
     {
         [JsonPropertyName(DrupalContentConstants.QlnNewsFinanceEntrepreneurship)]
-        public QlnNewsFinanceEntrepreneurship QlnNewsFinanceEntrepreneurship { get; set; }
+        public QlnNewsFinanceEntrepreneurship News { get; set; }
+
+        public static explicit operator GeneralNewsResponse(QlnNewsFinanceEntrepreneurshipPageResponse source)
+        {
+            // bring back an empty object if this exists
+            if (source.News == null) return new GeneralNewsResponse
+            {
+                News = new GenericNewsPageResponse()
+            };
+
+            return new GeneralNewsResponse
+            {
+                News = new GenericNewsPageResponse()
+                {
+                    TopStory = source.News.TopStory,
+                    Articles1 = source.News.Articles1,
+                    Articles2 = source.News.Articles2,
+                    MoreArticles = source.News.MoreArticles,
+                    MostPopularArticles = source.News.MostPopularArticles
+                }
+            };
+        }
     }
 }
 

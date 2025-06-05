@@ -36,7 +36,28 @@ namespace QLN.Common.Infrastructure.DTO_s
     public class QlnNewsLifestyleEventsPageResponse
     {
         [JsonPropertyName(DrupalContentConstants.QlnNewsLifestyleEvents)]
-        public QlnNewsLifestyleEvents QlnNewsLifestyleEvents { get; set; }
+        public QlnNewsLifestyleEvents News { get; set; }
+
+        public static explicit operator GeneralNewsResponse(QlnNewsLifestyleEventsPageResponse source)
+        {
+            if (source.News == null) return new GeneralNewsResponse
+            {
+                News = new GenericNewsPageResponse()
+            };
+
+            return new GeneralNewsResponse
+            {
+                News = new GenericNewsPageResponse
+                {
+                    TopStory = source.News.TopStory,
+                    Articles1 = source.News.Articles1,
+                    Articles2 = source.News.Articles2,
+                    MoreArticles = source.News.MoreArticles,
+                    MostPopularArticles = source.News.MostPopularArticles,
+                    WatchOnQatarLiving = source.News.WatchOnQatarLiving
+                }
+            };
+        }
     }
 }
 
