@@ -90,7 +90,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             try
             {
                 await Task.WhenAll(
-                    LoadPosts(),
+                    //LoadPosts(),
                     LoadBanners(),
                     GetAdAsync()
                 );
@@ -353,10 +353,13 @@ namespace QLN.Web.Shared.Pages.Content.Community
             isLoadingBanners = true;
             try
             {
+                await Task.Delay(800); // Slight delay to it won't affect Light House LCP
+                
                 var banners = await _bannerService.GetBannerAsync();
                 DailyHeroBanners = banners?.ContentCommunityHero ?? new();
                 CommunitySideBanners = banners?.ContentCommunitySide ?? new();
 
+                StateHasChanged();
             }
             catch (Exception ex)
             {
