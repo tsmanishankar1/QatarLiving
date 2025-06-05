@@ -38,7 +38,28 @@ namespace QLN.Common.Infrastructure.DTO_s
     public class QlnNewsFinanceFinancePageResponse
     {
         [JsonPropertyName(DrupalContentConstants.QlnNewsFinanceFinance)]
-        public QlnNewsFinanceFinance QlnNewsFinanceFinance { get; set; }
+        public QlnNewsFinanceFinance News { get; set; }
+
+        public static explicit operator GenericNewsPageResponse(QlnNewsFinanceFinancePageResponse source)
+        {
+            // bring back an empty object if this exists
+            if (source.News == null) return new GenericNewsPageResponse
+            {
+                News = new GenericNewsPage()
+            };
+
+            return new GenericNewsPageResponse
+            {
+                News = new GenericNewsPage()
+                {
+                    TopStory = source.News.TopStory,
+                    Articles1 = source.News.Articles1,
+                    Articles2 = source.News.Articles2,
+                    MoreArticles = source.News.MoreArticles,
+                    MostPopularArticles = source.News.MostPopularArticles
+                }
+            };
+        }
     }
 }
 

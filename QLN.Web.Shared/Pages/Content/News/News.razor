@@ -128,7 +128,7 @@
                         }
                         </div>
                     }
-                    else if(topNewsListSlot.Count == 1){
+                    else if(topNewsListSlot?.Count == 1){
                         <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
                     }
                     else if (topNewsListSlot != null && topNewsListSlot.Any())
@@ -168,7 +168,7 @@
             </div>
             </div>
         </div>  
-    @if (VideoList.Count > 0)
+    @if (VideoList?.Count > 0)
     {
         <div class="video-container">  
             <div class="max-container">
