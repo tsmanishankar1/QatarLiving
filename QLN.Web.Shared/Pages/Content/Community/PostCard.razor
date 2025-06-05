@@ -8,27 +8,21 @@
         <div class="post-tag">@Post.Category</div>
         @if (!IsDetailView)
         {
+
+
             <MudMenu Dense="true" AnchorOrigin="Origin.BottomLeft"
-                     TransformOrigin="Origin.TopCenter"
-                     @bind-IsOpen="@isMenuOpen">
+                     @bind-IsOpen="@isMenuOpen" TransformOrigin="Origin.TopCenter">
                 <ActivatorContent>
-                    <MudIconButton DisableRipple="true"
-                                   Class="menu-icon-button">
-
-
+                    <MudIconButton DisableRipple="true" Class="menu-icon-button">
                         <img src="qln-images/content/Menu.svg"
                              alt="Menu"
                              class="@($"menu-icon {(isMenuOpen ? "menu-open" : "")}")" />
-
                     </MudIconButton>
                 </ActivatorContent>
 
                 <ChildContent>
-
                     <MudMenuItem Class="report-menu-item" OnClick="@OnReport">Report</MudMenuItem>
-
                 </ChildContent>
-
             </MudMenu>
         }
 
@@ -335,7 +329,6 @@
         padding: 2px 4px;
     }
 
-
     .menu-icon {
         width: 20px;
         height: 20px;
@@ -375,12 +368,28 @@
         height: 48px;
         padding-top: 4px;
         padding-bottom: 4px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 1px solid #D0D5DD;
+        border-radius: 4px;
     }
 
         .report-menu-item:hover {
             background-color: transparent !important;
         }
 
+        .report-menu-item .mud-menu-item-text {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+    .mud-elevation-8 {
+        box-shadow: none !important;
+    }
     .icon {
         width: 18px;
         height: 18px;

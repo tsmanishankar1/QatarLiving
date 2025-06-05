@@ -1,11 +1,8 @@
-﻿using System.Linq;
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
 using Microsoft.AspNetCore.Components;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
 using QLN.Common.Infrastructure.DTO_s;
-using QLN.Common.Infrastructure.Model;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Models;
