@@ -35,15 +35,15 @@
                 </div>
                 @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
                 {
-                    @* @if (!imageLoaded)
+                    @if (!imageLoaded)
                     {
                         <MudSkeleton SkeletonType="SkeletonType.Rectangle" Class="article-image"  />
-                    } *@
+                    } 
                     <div @onclick="@(() => onclick(article))">
-                        @* <img src="@article.ImageUrl" alt="News-Image" class="article-image"
+                         <img src="@article.ImageUrl" alt="News-Image" class="article-image"
                         style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
-                        @onerror="OnImageError" /> *@
-                        <img src="@article.ImageUrl" alt="News-Image" class="article-image">
+                        @onerror="OnImageError" />
+                        @* <img src="@article.ImageUrl" alt="News-Image" class="article-image"> *@
                     </div>
                 }
                 else

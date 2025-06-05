@@ -199,6 +199,8 @@ namespace QLN.Web.Shared.Pages.Content.News
 
                     if (QatarNewsContent?.QlnNewsNewsQatar?.Articles2?.Items != null)
                         articleListSlot2 = QatarNewsContent.QlnNewsNewsQatar.Articles2.Items;
+                    // if (QatarNewsContent?.QlnNewsNewsQatar?.WatchOnQatarLiving.Items != null)
+                    //     VideoList = QatarNewsContent?.QlnNewsNewsQatar?.WatchOnQatarLiving.Items;
                 }
                 var bannersTask = LoadBanners(SelectedTab);
                 await Task.WhenAll(bannersTask);
@@ -331,6 +333,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = qatar?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = qatar?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = qatar?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = qatar?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
 
                 case "Community":
@@ -343,6 +346,15 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = community?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = community?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = community?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = community?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
+                    if (VideoList != null && VideoList.Any())
+{
+    foreach (var video in VideoList)
+    {
+        Console.WriteLine($"Nid: {video.Nid}, Title: {video.Title}, User: {video.UserName}, Video URL: {video.VideoUrl}");
+    }
+}
+                    
                     break;
 
                 case "Law":
@@ -355,6 +367,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = law?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = law?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = law?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = law?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
 
                 case "Health & Education":
@@ -367,6 +380,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = health?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = health?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = health?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = health?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
 
                 case "Middle East":
@@ -379,6 +393,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = middleEast?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = middleEast?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = middleEast?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = middleEast?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
 
                 case "Qatar Economy":
@@ -391,6 +406,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = economy?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = economy?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = economy?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = economy?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
 
                 case "World":
@@ -403,6 +419,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = world?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = world?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = world?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = world?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
                 case "Market Updates":
                     MarketUpdateNewsContent = await GetNewsAsync<QlnNewsFinanceMarketUpdatePageResponse>("Market Updates");
@@ -414,6 +431,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = market?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = market?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = market?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = market?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
                 case "Real Estate":
                     RealEstateNewsContent = await GetNewsAsync<QlnNewsFinanceRealEstatePageResponse>("Real Estate");
@@ -425,6 +443,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = realEstate?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = realEstate?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = realEstate?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = realEstate?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
                 case "Entrepreneurship":
                     FinanceEntrepreneurshipNewsContent = await GetNewsAsync<QlnNewsFinanceEntrepreneurshipPageResponse>("Entrepreneurship");
@@ -436,6 +455,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = entrepreneurship?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = entrepreneurship?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = entrepreneurship?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = entrepreneurship?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
                 case "Finance":
                     FinanceFinanceNewsContent = await GetNewsAsync<QlnNewsFinanceFinancePageResponse>("Finance");
@@ -447,6 +467,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = finance?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = finance?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = finance?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = finance?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
                 case "Jobs & Careers":
                     JobCareersNewsContent = await GetNewsAsync<QlnNewsFinanceJobsCareersPageResponse>("Jobs & Careers");
@@ -458,6 +479,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = jobs?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = jobs?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = jobs?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = jobs?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
                 case "Food & Dining":
                     FoodDiningNewsContent = await GetNewsAsync<QlnNewsLifestyleFoodDiningPageResponse>("Food & Dining");
@@ -469,6 +491,14 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = foods?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = foods?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = foods?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = foods?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
+                    if (VideoList != null && VideoList.Any())
+{
+    foreach (var video in VideoList)
+    {
+        Console.WriteLine($"Nid: {video.Nid}, Title: {video.Title}, User: {video.UserName}, Video URL: {video.VideoUrl}");
+    }
+}
                     break;
                 case "Travel & Leisure":
                     TravelLeisureNewsContent = await GetNewsAsync<QlnNewsLifestyleTravelLeisurePageResponse>("Travel & Leisure");
@@ -480,6 +510,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = travel?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = travel?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = travel?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = travel?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
                 case "Arts & Culture":
                     ArtsCultureNewsContent = await GetNewsAsync<QlnNewsLifestyleArtsCulturePageResponse>("Arts & Culture");
@@ -491,6 +522,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = arts?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = arts?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = arts?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = arts?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
                 case "Events":
                     EventsNewsContent = await GetNewsAsync<QlnNewsLifestyleEventsPageResponse>("Events");
@@ -502,6 +534,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = events?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = events?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = events?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = events?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
                 case "Fashion & Style":
                     FashionNewsContent = await GetNewsAsync<QlnNewsLifestyleFashionStylePageResponse>("Fashion & Style");
@@ -513,6 +546,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = fashion?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = fashion?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = fashion?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = fashion?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
                 case "Home & Living":
                     HomeLivingNewsContent = await GetNewsAsync<QlnNewsLifestyleHomeLivingPageResponse>("Home & Living");
@@ -524,6 +558,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = home?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = home?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = home?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = home?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
                 case "Qatar Sports":
                     QatarSportsNewsContent = await GetNewsAsync<QlnNewsSportsQatarSportsPageResponse>("Qatar Sports");
@@ -535,6 +570,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = sports?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = sports?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = sports?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = sports?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
                 case "Football":
                     FoodBallNewsContent = await GetNewsAsync<QlnNewsSportsFootballPageResponse>("Football");
@@ -546,6 +582,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = football?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = football?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = football?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = football?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
                 case "International":
                     InternationalNewsContent = await GetNewsAsync<QlnNewsSportsInternationalPageResponse>("International");
@@ -557,6 +594,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = international?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = international?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = international?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = international?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
                 case "Motorsports":
                     MotorSportsNewsContent = await GetNewsAsync<QlnNewsSportsMotorsportsPageResponse>("Motorsports");
@@ -568,6 +606,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = motorSports?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = motorSports?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = motorSports?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = motorSports?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
                 case "Olympics":
                     OlympicsNewsContent = await GetNewsAsync<QlnNewsSportsOlympicsPageResponse>("Olympics");
@@ -579,6 +618,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = olympics?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = olympics?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = olympics?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = olympics?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
                 case "Athlete Features":
                     AthleteNewsContent = await GetNewsAsync<QlnNewsSportsAthleteFeaturesPageResponse>("Athlete Features");
@@ -590,9 +630,11 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = athelete?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = athelete?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = athelete?.Articles2?.Items ?? new List<ContentPost>();
+                    VideoList = athelete?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
             }
-            navManager.NavigateTo($"/content/news?category={selectedTabView}&subcategory={SelectedTab}");
+            navManager.NavigateTo($"/content/news?category={selectedTabView}&subcategory={SelectedTab}", forceLoad: false);
+            // navManager.NavigateTo($"/content/news?category={selectedTabView}&subcategory={SelectedTab}");
             selectedRouterTab = string.Empty;
             isLoading = false;
             StateHasChanged();
@@ -733,14 +775,17 @@ namespace QLN.Web.Shared.Pages.Content.News
         {
             if (!string.IsNullOrEmpty(selectedTabView) && !string.IsNullOrEmpty(SelectedTab))
             {
-                navManager.NavigateTo($"/content/article/details/{selectedTabView}/{SelectedTab}/{news.Slug}");
+                // navManager.NavigateTo($"/content/article/details/{selectedTabView}/{SelectedTab}/{news.Slug}");
+                navManager.NavigateTo($"/content/article/details/{news.Slug}?category={selectedTabView}&subcategory={SelectedTab}");
             }
             else if (!string.IsNullOrEmpty(selectedTabView))
             {
-                navManager.NavigateTo($"/content/article/details/{selectedTabView}/{news.Slug}");
+                // navManager.NavigateTo($"/content/article/details/{selectedTabView}/{news.Slug}");
+                navManager.NavigateTo($"/content/article/details/{news.Slug}?category={selectedTabView}");
             }
             else
             {
+                // navManager.NavigateTo($"/content/article/details/{news.Slug}");
                 navManager.NavigateTo($"/content/article/details/{news.Slug}");
             }
         }
