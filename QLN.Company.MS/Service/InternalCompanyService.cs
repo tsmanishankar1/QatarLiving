@@ -8,6 +8,8 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp;
 using QLN.Common.Infrastructure.IService.IEmailService;
 using QLN.Common.Infrastructure.Model;
+using Microsoft.AspNetCore.Identity;
+using QLN.Common.Infrastructure.IService.IAuthService;
 
 namespace QLN.Company.MS.Service
 {
@@ -18,18 +20,24 @@ namespace QLN.Company.MS.Service
         private readonly ILogger<InternalCompanyService> _logger;
         private readonly IFileStorageService _fileStorage;
         private readonly IExtendedEmailSender<ApplicationUser> _emailSender;
+        private readonly IConfiguration _config;
+        private readonly UserManager<ApplicationUser> _userManager;
         public InternalCompanyService(
             DaprClient dapr,
             IWebHostEnvironment env,
             ILogger<InternalCompanyService> logger,
             IFileStorageService fileStorage,
-            IExtendedEmailSender<ApplicationUser> emailSender)
+            IExtendedEmailSender<ApplicationUser> emailSender,
+            UserManager<ApplicationUser> userManager,
+            IConfiguration config)
         {
             _dapr = dapr;
             _env = env;
             _logger = logger;
             _fileStorage = fileStorage;
             _emailSender = emailSender;
+            _config = config;
+            _userManager = userManager;
         }
 
         public async Task<string> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
@@ -353,7 +361,6 @@ namespace QLN.Company.MS.Service
                    company,
                    cancellationToken: cancellationToken
                 );
-
                 if (wasPreviouslyVerified == false && company.IsVerified == true && !string.IsNullOrWhiteSpace(company.Email))
                 {
                     var subject = "Company Profile Approved - Qatar Living";
@@ -365,6 +372,12 @@ namespace QLN.Company.MS.Service
                     wasPreviouslyVerified, company.IsVerified, company.Email);
 
                     await _emailSender.SendEmailAsync(company.Email, subject, htmlBody);
+                    var user = await _userManager.FindByIdAsync(company.UserId.ToString());
+                    if (user != null)
+                    {
+                        user.IsCompany = true;
+                        await _userManager.UpdateAsync(user);
+                    }
                 }
 
                 return "Company Profile Approved Successfully";
