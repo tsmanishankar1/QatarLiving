@@ -14,9 +14,10 @@
             <img src="/qln-images/header/logo_mobile.svg" alt="Logo" class="logo" />
             <MudIconButton Icon="@Icons.Material.Filled.Close" @onclick="() => OnClose.InvokeAsync()" class="close-btn" />
         </div>
-        <div class="user-profile-row">
-            @if (IsLoggedIn)
-            {
+        @if (IsLoggedIn)
+        {
+            <div class="user-profile-row">
+
                 <div class="user-left" @onclick="() => GoToProfile.InvokeAsync()">
                     <img src="/qln-images/header/user_Icons.svg" alt="User" class="user-avatar" />
                     <div class="user-info">
@@ -30,9 +31,10 @@
         <div class="arrow-icon">
             <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
         </div>
-                }
 
-        </div>
+            </div>
+        }
+
 
 
         <!-- Buttons -->
@@ -226,7 +228,6 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 1px solid #eee;
         padding-bottom: 0.5rem;
     }
 

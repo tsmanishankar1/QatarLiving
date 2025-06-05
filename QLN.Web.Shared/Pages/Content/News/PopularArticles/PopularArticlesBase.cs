@@ -12,27 +12,31 @@ public class PopularArticlesBase : ComponentBase
     public string selectedTab { get; set; }
     [Parameter]
     public bool loading { get; set; } = false;
-     protected bool imageLoaded = false;
- 
+    protected bool imageLoaded = false;
+    protected bool imageFailed = false;
+
 
     protected void onclick(ContentPost news)
     {
         navManager.NavigateTo($"/content/article/details/{selectedTab}/{news.Slug}");
     }
-     protected override void OnParametersSet()
-        {
-            // imageLoaded = false; 
-        }
- 
-        protected void OnImageLoaded()
-        {
-            imageLoaded = true;
-            StateHasChanged();
-        }
- 
-        protected void OnImageError()
-        {
-            imageLoaded = true; 
-            StateHasChanged();
-        }
+    protected override void OnParametersSet()
+    {
+        imageLoaded = false;
+        imageFailed = false;
+    }
+
+    protected void OnImageLoaded()
+    {
+        imageLoaded = true;
+        imageFailed = false;
+        StateHasChanged();
+    }
+
+    protected void OnImageError()
+    {
+        imageLoaded = true;
+        imageFailed = true;
+        StateHasChanged();
+    }
 }

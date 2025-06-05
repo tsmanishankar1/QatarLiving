@@ -224,7 +224,7 @@ builder.Services.AddHttpClient<ISearchService, CommunitySearchService>(client =>
 });
 
 builder.Services.AddMemoryCache();
-builder.Services.AddSingleton<IBannerService, BannerService>(); // add shared Banner Service
+builder.Services.AddSingleton<ISimpleMemoryCache, SimpleMemoryCache>(); // add shared Banner Service
 
 
 builder.Services.AddHttpContextAccessor();
