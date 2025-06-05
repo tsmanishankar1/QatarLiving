@@ -26,6 +26,7 @@ public class ArticleBase : ComponentBase
     protected QlnNewsNewsQatarPageResponse QatarNewsContent { get; set; } = new QlnNewsNewsQatarPageResponse();
     protected List<ContentPost> moreArticleList { get; set; } = new List<ContentPost>();
     [Inject] private ILogger<NewsCardBase> Logger { get; set; }
+    [Inject] private IBannerService _bannerService { get; set; }
     public PostModel SelectedPost { get; set; } = new PostModel
 {
     Id = string.Empty,
@@ -229,7 +230,7 @@ public class ArticleBase : ComponentBase
             isLoadingBanners = true;
         try
         {
-            var banners = await FetchBannerData();
+            var banners = await _bannerService.GetBannerAsync();
             DailyHeroBanners = banners?.ContentArticleHero ?? new List<BannerItem>();
             ArticleSideBanners = banners?.ContentArticleSide ?? new List<BannerItem>();
         }
@@ -238,22 +239,22 @@ public class ArticleBase : ComponentBase
             isLoadingBanners = false;
         }
         }
-        private async Task<BannerResponse?> FetchBannerData()
-    {
-    try
-    {
-        var result = await _eventService.GetBannerAsync();
-        if (result.IsSuccessStatusCode && result.Content != null)
-        {
-            return await result.Content.ReadFromJsonAsync<BannerResponse>();
-        }
-        return null;
-    }
-    catch (Exception ex)
-    {
-        Logger.LogError(ex, "FetchBannerData error.");
-        return null;
-    }
-}
+    //    private async Task<BannerResponse?> FetchBannerData()
+    //{
+    //try
+    //{
+    //    var result = await _eventService.GetBannerAsync();
+    //    if (result.IsSuccessStatusCode && result.Content != null)
+    //    {
+    //        return await result.Content.ReadFromJsonAsync<BannerResponse>();
+    //    }
+    //    return null;
+    //}
+    //catch (Exception ex)
+    //{
+    //    Logger.LogError(ex, "FetchBannerData error.");
+    //    return null;
+    //}
+//}
 }
 

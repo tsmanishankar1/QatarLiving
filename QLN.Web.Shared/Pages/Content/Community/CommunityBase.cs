@@ -21,6 +21,9 @@ namespace QLN.Web.Shared.Pages.Content.Community
         [Inject]
         public IDialogService DialogService { get; set; }
 
+        [Inject]
+        public IBannerService _bannerService{ get; set; }
+
         [Inject] private ILogger<CommunityBase> Logger { get; set; }
         [Inject] private ICommunityService CommunityService { get; set; }
         [Inject] private IContentService _contentService { get; set; }
@@ -350,7 +353,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             isLoadingBanners = true;
             try
             {
-                var banners = await FetchBannerData();
+                var banners = await _bannerService.GetBannerAsync();
                 DailyHeroBanners = banners?.ContentCommunityHero ?? new();
                 CommunitySideBanners = banners?.ContentCommunitySide ?? new();
 
