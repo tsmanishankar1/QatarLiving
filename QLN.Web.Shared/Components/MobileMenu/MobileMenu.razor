@@ -1,9 +1,145 @@
 @using Microsoft.Extensions.Options
 @using QLN.Web.Shared.Services
-
+@inject IJSRuntime JSRuntime
 @inject IOptions<NavigationPath> options
 @{
     var navigationPath = options.Value;
+}
+
+@if (IsOpen)
+{
+    <div class="mobile-menu-overlay">
+        <!-- Header -->
+        <div class="mobile-menu-header">
+            <img src="/qln-images/header/logo_mobile.svg" alt="Logo" class="logo" />
+            <MudIconButton Icon="@Icons.Material.Filled.Close" @onclick="() => OnClose.InvokeAsync()" class="close-btn" />
+        </div>
+        <div class="user-profile-row">
+            @if (IsLoggedIn)
+            {
+                <div class="user-left" @onclick="() => GoToProfile.InvokeAsync()">
+                    <img src="/qln-images/header/user_Icons.svg" alt="User" class="user-avatar" />
+                    <div class="user-info">
+                        <div class="user-name"> @((Name?.Length > 10) ? Name.Substring(0, 10) + "..." :
+                                                Name)</div>
+                                                 <div class="user-email"> @((Email?.Length > 10) ? Email.Substring(0, 10) + "..." :
+                                                Email)</div>
+            </div>
+        </div>
+        <!-- Right side: Arrow -->
+        <div class="arrow-icon">
+            <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+        </div>
+                }
+
+        </div>
+
+
+        <!-- Buttons -->
+        <div class="auth-buttons">
+            @if (IsLoggedIn)
+            {
+                <button class="signup-btn" @onclick="@(() => RedirectTo(navigationPath.Subscription))">Buy Premium</button>
+                <button class="post-btn" @onclick="() => GoToLogout.InvokeAsync()">Logout</button>
+            }
+            else
+            {
+                <button class="signup-btn" @onclick="() => GoToRegister.InvokeAsync()">Sign Up</button>
+                <button class="login-btn" @onclick="() => GoToLogin.InvokeAsync()">Login</button>
+            }
+        </div>
+        <!-- Main Links -->
+        <nav class="menu-links">
+            <a class="main-link" href="/" @onclick="HandleLinkClick">Home</a>
+
+            <div class="menu-section">
+                <a class="menu-section-title" href="@navigationPath.Properties" @onclick="HandleLinkClick">Properties</a>
+                <div class="section-links">
+                    <a href="#" @onclick="HandleLinkClick">Residential</a>
+                    <a href="#" @onclick="HandleLinkClick">Commercial</a>
+                    <a href="#" @onclick="HandleLinkClick">For Sale</a>
+                    <a href="#" @onclick="HandleLinkClick">International</a>
+                </div>
+            </div>
+
+            <div class="menu-section">
+                <a class="menu-section-title" href="@navigationPath.Vehicles" @onclick="HandleLinkClick">Vehicles</a>
+
+                <div class="section-links">
+                    <a href="#" @onclick="HandleLinkClick">Cars</a>
+                    <a href="#" @onclick="HandleLinkClick">Showrooms</a>
+                    <a href="#" @onclick="HandleLinkClick">Car Rentals</a>
+                    <a href="@navigationPath.Vehicles" @onclick="HandleLinkClick">More</a>
+                </div>
+            </div>
+
+            <div class="menu-section">
+
+                <a class="menu-section-title" href="@navigationPath.Classifieds" @onclick="HandleLinkClick">Classifieds</a>
+
+                <div class="section-links">
+                    <a href="#" @onclick="HandleLinkClick">Furniture & Decor</a>
+                    <a href="#" @onclick="HandleLinkClick">Electronics</a>
+                    <a href="#" @onclick="HandleLinkClick">Fashion & Beauty</a>
+                    <a href="#" @onclick="HandleLinkClick">Phone & Tablets</a>
+                    <a href="@navigationPath.Classifieds" @onclick="HandleLinkClick">More</a>
+                </div>
+            </div>
+
+            <div class="menu-section">
+                <a class="menu-section-title" href="@navigationPath.Services" @onclick="HandleLinkClick">Services</a>
+                <div class="section-links">
+                    <a href="#" @onclick="HandleLinkClick">Labour & Moving</a>
+                    <a href="#" @onclick="HandleLinkClick">Household Services</a>
+                    <a href="#" @onclick="HandleLinkClick">Cleaning Services</a>
+                    <a href="#" @onclick="HandleLinkClick">Computer Services</a>
+                    <a href="@navigationPath.Services" @onclick="HandleLinkClick">More</a>
+                </div>
+            </div>
+
+            <div class="menu-section">
+                <a class="menu-section-title" href="@navigationPath.Jobs" @onclick="HandleLinkClick">Jobs</a>
+                <div class="section-links">
+                    <a href="@navigationPath.Jobs" @onclick="HandleLinkClick">Job Postings</a>
+                    <a href="@navigationPath.Jobs" @onclick="HandleLinkClick">Jobseekers</a>
+                    <a href="@navigationPath.Jobs" @onclick="HandleLinkClick">CV Writing</a>
+                </div>
+            </div>
+
+            <div class="menu-section">
+                <a class="menu-section-title" href="@navigationPath.Rewards" @onclick="HandleLinkClick">Rewards</a>
+            </div>
+        </nav>
+
+        <!-- Footer -->
+        <footer class="mobile-menu-footer">
+            <!-- Top Border Section with Links -->
+            <div class="footer-links-grid">
+                <div><a href="/content/news" @onclick="HandleLinkClick">News</a></div>
+                @* <div><a href="#">Business pages</a></div> *@
+                <div><a href="/content/events" @onclick="HandleLinkClick">Events</a></div>
+                @* <div><a href="#">eShops</a></div> *@
+                <div><a href="/content/community" @onclick="HandleLinkClick">Community</a></div>
+            </div>
+
+            <!-- Social Icons -->
+            <div class="social-icons">
+                <a href="@navigationPath.SocialFacebook" @onclick="HandleLinkClick"><img
+                        src="/qln-images/header/facebook_icon_mobile.svg" alt="Facebook" /></a>
+                <a href="@navigationPath.SocialTwitter" @onclick="HandleLinkClick"><img
+                        src="/qln-images/header/twitter_icon_mobile.svg" alt="X" /></a>
+                <a href="@navigationPath.SocialInstagram" @onclick="HandleLinkClick"><img
+                        src="/qln-images/header/instagram_icon_mobile.svg" alt="Instagram" /></a>
+                <a href="@navigationPath.SocialLinkedIn" @onclick="HandleLinkClick"><img
+                        src="/qln-images/header/linkedin_icon_mobile.svg" alt="LinkedIn" /></a>
+                <a href="@navigationPath.SocialYouTube" @onclick="HandleLinkClick"><img
+                        src="/qln-images/header/youTube_icon_mobile.svg" alt="YouTube" /></a>
+                <a href="@navigationPath.SocialTikTok" @onclick="HandleLinkClick"><img
+                        src="/qln-images/header/tikTok_icon_mobile.svg" alt="TikTok" /></a>
+            </div>
+        </footer>
+
+    </div>
 }
 
 @code {
@@ -17,339 +153,251 @@
 
     [Parameter] public bool IsLoggedIn { get; set; }
     [Parameter] public string Name { get; set; }
+
+    [Parameter] public string Email { get; set; }
+    void RedirectTo(string url)
+    {
+        NavigationManager.NavigateTo(url, true); // `true` forces full page reload
+    }
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
     private async Task HandleLinkClick()
     {
         await OnClose.InvokeAsync();
     }
-}
-
-@if (IsOpen)
-{
-    <div class="mobile-menu-overlay">
-        <!-- Header -->
-        <div class="mobile-menu-header">
-            <img src="/qln-images/header/logo_mobile.svg" alt="Logo" class="logo" />
-            <MudIconButton Icon="@Icons.Material.Filled.Close" @onclick="() => OnClose.InvokeAsync()" class="close-btn" />
-        </div>
-        <div class="user-profile-row">
-    @if (IsLoggedIn)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-                <div class="user-left" @onclick="() => GoToProfile.InvokeAsync()">
-                    <img src="/qln-images/header/user_Icons.svg" alt="User" class="user-avatar" />
-                    <div class="user-info">
-                        <div class="user-name"> @((Name?.Length > 10) ? Name.Substring(0, 10) + "..." :
-                                                Name)</div>
-                <div class="user-email">olivia@untitledui.com</div>
-            </div>
-        </div>
+        if (firstRender && !_jsInitialized)
+        {
+            windowWidth = await JSRuntime.InvokeAsync<int>("getWindowWidth");
+            IsMobile = windowWidth <= MobileBreakpoint;
+
+            await JSRuntime.InvokeVoidAsync("registerResizeHandler",
+            DotNetObjectReference.Create(this));
+
+            _jsInitialized = true;
+            StateHasChanged();
+        }
+    }
+    private int windowWidth;
+    private const int MobileBreakpoint = 768;
+    private bool IsMobile;
+    private bool _jsInitialized = false;
 
 
-                <!-- Right side: Arrow -->
-                <div class="arrow-icon">
-                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
-                </div>
+    [JSInvokable]
+    public async Task UpdateWindowWidth(int width)
+    {
+        windowWidth = width;
+        bool newIsMobile = windowWidth <= MobileBreakpoint;
+
+        if (IsMobile != newIsMobile)
+        {
+            IsMobile = newIsMobile;
+
+            // ✅ Automatically close mobile menu if now in desktop view
+            if (!IsMobile && IsOpen)
+            {
+                IsOpen = false;
+                await OnClose.InvokeAsync(); // This triggers UI hide logic
             }
 
-        </div>
-
-
-            <!-- Buttons -->
-            <div class="auth-buttons">
-        @if (IsLoggedIn)
-                {
-                    <button class="signup-btn">Buy Premium</button>
-                    <button class="post-btn">Post Ad</button>
-                }
-                else
-                {
-                    <button class="signup-btn" @onclick="() => GoToRegister.InvokeAsync()">Sign Up</button>
-                    <button class="login-btn" @onclick="() => GoToLogin.InvokeAsync()">Login</button>
-                }
-            </div>
-            <!-- Main Links -->
-            <nav class="menu-links">
-                <a class="main-link" href="/" @onclick="HandleLinkClick">Home</a>
-
-                <div class="menu-section">
-                    <a class="menu-section-title" href="@navigationPath.Properties" @onclick="HandleLinkClick">Properties</a>
-                    <div class="section-links">
-                        <a href="#">Residential</a>
-                        <a href="#">Commercial</a>
-                        <a href="#">For Sale</a>
-                        <a href="#">International</a>
-                    </div>
-                </div>
-
-                <div class="menu-section">
-                    <a class="menu-section-title" href="@navigationPath.Vehicles" @onclick="HandleLinkClick">Vehicles</a>
-
-                    <div class="section-links">
-                        <a href="#">Cars</a>
-                        <a href="#">Showrooms</a>
-                        <a href="#">Car Rentals</a>
-                        <a href="#">More</a>
-                    </div>
-                </div>
-
-                <div class="menu-section">
-
-                    <a class="menu-section-title" href="@navigationPath.Classifieds" @onclick="HandleLinkClick">Classifieds</a>
-
-                    <div class="section-links">
-                        <a href="#">Furniture & Decor</a>
-                        <a href="#">Electronics</a>
-                        <a href="#">Fashion & Beauty</a>
-                        <a href="#">Phone & Tablets</a>
-                        <a href="#">More</a>
-                    </div>
-                </div>
-
-                <div class="menu-section">
-                    <a class="menu-section-title" href="@navigationPath.Services" @onclick="HandleLinkClick">Services</a>
-                    <div class="section-links">
-                        <a href="#">Labour & Moving</a>
-                        <a href="#">Household Services</a>
-                        <a href="#">Cleaning Services</a>
-                        <a href="#">Computer Services</a>
-                        <a href="#">More</a>
-                    </div>
-                </div>
-
-                <div class="menu-section">
-                    <a class="menu-section-title" href="@navigationPath.Jobs" @onclick="HandleLinkClick">Jobs</a>
-                    <div class="section-links">
-                        <a href="#">Job Postings</a>
-                        <a href="#">Jobseekers</a>
-                        <a href="#">CV Writing</a>
-                    </div>
-                </div>
-
-                <div class="menu-section">
-                    <a class="menu-section-title" href="@navigationPath.Rewards" @onclick="HandleLinkClick">Rewards</a>
-                </div>
-            </nav>
-
-            <!-- Footer -->
-            <footer class="mobile-menu-footer">
-                <!-- Top Border Section with Links -->
-                <div class="footer-links-grid">
-                    <div><a href="/content/news" @onclick="HandleLinkClick">News</a></div>
-                    @* <div><a href="#">Business pages</a></div> *@
-                    <div><a href="/content/events" @onclick="HandleLinkClick">Events</a></div>
-                    @* <div><a href="#">eShops</a></div> *@
-                    <div><a href="/content/community" @onclick="HandleLinkClick">Community</a></div>
-                </div>
-
-                <!-- Social Icons -->
-                <div class="social-icons">
-                    <a href="@navigationPath.SocialFacebook" @onclick="HandleLinkClick"><img
-                            src="/qln-images/header/facebook_icon_mobile.svg" alt="Facebook" /></a>
-                    <a href="@navigationPath.SocialTwitter" @onclick="HandleLinkClick"><img
-                            src="/qln-images/header/twitter_icon_mobile.svg" alt="X" /></a>
-                    <a href="@navigationPath.SocialInstagram" @onclick="HandleLinkClick"><img
-                            src="/qln-images/header/instagram_icon_mobile.svg" alt="Instagram" /></a>
-                    <a href="@navigationPath.SocialLinkedIn" @onclick="HandleLinkClick"><img
-                            src="/qln-images/header/linkedin_icon_mobile.svg" alt="LinkedIn" /></a>
-                    <a href="@navigationPath.SocialYouTube" @onclick="HandleLinkClick"><img
-                            src="/qln-images/header/youTube_icon_mobile.svg" alt="YouTube" /></a>
-                    <a href="@navigationPath.SocialTikTok" @onclick="HandleLinkClick"><img
-                            src="/qln-images/header/tikTok_icon_mobile.svg" alt="TikTok" /></a>
-                </div>
-            </footer>
-
-        </div>
+            StateHasChanged();
+        }
     }
 
-    <style>
-        .mobile-menu-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 9999;
-            background: white;
-            width: 100vw;
-            height: 100vh;
-            overflow-y: auto;
-            padding: 1rem;
-            font-family: 'Public Sans';
-        }
+}
 
-        .mobile-menu-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 0.5rem;
-        }
+<style>
+    .mobile-menu-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 9999;
+        background: white;
+        width: 100vw;
+        height: 100vh;
+        overflow-y: auto;
+        padding: 1rem;
+        font-family: 'Public Sans';
+    }
 
-        .logo {
-            height: 40px;
-        }
+    .mobile-menu-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 0.5rem;
+    }
 
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 1rem;
-            color: #454545;
-        }
+    .logo {
+        height: 40px;
+    }
 
-        .auth-buttons {
-            margin: 1rem 0;
-            display: flex;
-            justify-content: space-between;
-            gap: 0.5rem;
-        }
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 1rem;
+        color: #454545;
+    }
 
-        .signup-btn {
-            flex: 1;
-            background: #FF7F38;
-            color: white;
-            border: none;
-            padding: 0.5rem;
-            border-radius: 5px;
-            font-weight: 600;
-            font-size: 14px;
-        }
+    .auth-buttons {
+        margin: 1rem 0;
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
 
-        .login-btn {
-            flex: 1;
-            background: #white;
-            color: #333;
-            border: 1px solid #E3E3E3;
-            padding: 0.5rem;
-            border-radius: 5px;
-            font-weight: 600;
-            font-size: 14px;
-        }
+    .signup-btn {
+        flex: 1;
+        background: #FF7F38;
+        color: white;
+        border: none;
+        padding: 0.5rem;
+        border-radius: 5px;
+        font-weight: 600;
+        font-size: 14px;
+    }
 
-        .post-btn {
-            flex: 1;
-            background: #FFFFFF;
-            color: #FF7F38;
-            border: 1px solid #FF7F38;
-            padding: 0.5rem;
-            border-radius: 5px;
-            font-weight: 600;
-            font-size: 14px;
-        }
+    .login-btn {
+        flex: 1;
+        background: #white;
+        color: #333;
+        border: 1px solid #E3E3E3;
+        padding: 0.5rem;
+        border-radius: 5px;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .post-btn {
+        flex: 1;
+        background: #FFFFFF;
+        color: #FF7F38;
+        border: 1px solid #FF7F38;
+        padding: 0.5rem;
+        border-radius: 5px;
+        font-weight: 600;
+        font-size: 14px;
+    }
 
 
-        .menu-links {
-            margin-top: 1rem;
-        }
+    .menu-links {
+        margin-top: 1rem;
+    }
 
-        .main-link {
-            margin-bottom: 1rem;
-            display: block;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 16px;
-            color: #FF7F38;
-        }
+    .main-link {
+        margin-bottom: 1rem;
+        display: block;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 16px;
+        color: #FF7F38;
+    }
 
-        .menu-section {
-            margin-bottom: 1.25rem;
-        }
+    .menu-section {
+        margin-bottom: 1.25rem;
+    }
 
-        .menu-section-title {
-            font-weight: 500;
-            font-size: 16px;
-            color: #FF7F38;
-            margin-bottom: 0.25rem;
-            text-decoration: none;
-        }
+    .menu-section-title {
+        font-weight: 500;
+        font-size: 16px;
+        color: #FF7F38;
+        margin-bottom: 0.25rem;
+        text-decoration: none;
+    }
 
-        .section-links {
-            padding-left: 1rem;
-        }
+    .section-links {
+        padding-left: 1rem;
+    }
 
-        .section-links a {
-            display: block;
-            text-decoration: none;
-            color: #646464;
-            margin: 1rem 0 0.25rem 0;
-            font-weight: 500;
-            font-size: 15px;
-        }
+    .section-links a {
+        display: block;
+        text-decoration: none;
+        color: #646464;
+        margin: 1rem 0 0.25rem 0;
+        font-weight: 500;
+        font-size: 15px;
+    }
 
-        .mobile-menu-footer {
-            padding-top: 1rem;
-        }
+    .mobile-menu-footer {
+        padding-top: 1rem;
+    }
 
-        .footer-links-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.5rem 1.5rem;
-            font-size: 16px;
-            font-weight: 500;
-            color: #00426D;
-            padding: 1rem 0;
-            border-top: 1px solid #e0e0e0;
-        }
+    .footer-links-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem 1.5rem;
+        font-size: 16px;
+        font-weight: 500;
+        color: #00426D;
+        padding: 1rem 0;
+        border-top: 1px solid #e0e0e0;
+    }
 
-        .footer-links-grid a {
-            color: #00426D;
-            text-decoration: none;
-        }
+    .footer-links-grid a {
+        color: #00426D;
+        text-decoration: none;
+    }
 
-        .social-icons {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            padding: 1rem 0;
-            border-top: 1px solid #e0e0e0;
-        }
+    .social-icons {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        padding: 1rem 0;
+        border-top: 1px solid #e0e0e0;
+    }
 
-        .social-icons img {
-            height: 32px;
-            width: 32px;
-        }
+    .social-icons img {
+        height: 32px;
+        width: 32px;
+    }
 
-        .user-profile-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.75rem 0;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-        }
+    .user-profile-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
 
-        .user-profile-row:hover {
-            background-color: #f8f8f8;
-        }
+    .user-profile-row:hover {
+        background-color: #f8f8f8;
+    }
 
-        .user-left {
-            display: flex;
-            align-items: center;
-        }
+    .user-left {
+        display: flex;
+        align-items: center;
+    }
 
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 2px solid #FF7F38;
-            padding: 2px;
-            margin-right: 0.75rem;
-        }
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid #FF7F38;
+        padding: 2px;
+        margin-right: 0.75rem;
+    }
 
-        .user-info {
-            display: flex;
-            flex-direction: column;
-        }
+    .user-info {
+        display: flex;
+        flex-direction: column;
+    }
 
-        .user-name {
-            font-weight: 600;
-            color: #FF7F38;
-            font-size: 0.95rem;
-        }
+    .user-name {
+        font-weight: 600;
+        color: #FF7F38;
+        font-size: 0.95rem;
+    }
 
-        .user-email {
-            font-size: 0.85rem;
-            color: #777;
-        }
+    .user-email {
+        font-size: 0.85rem;
+        color: #777;
+    }
 
-        .arrow-icon {
-            color: #555;
-        }
-    </style>
+    .arrow-icon {
+        color: #555;
+    }
+</style>

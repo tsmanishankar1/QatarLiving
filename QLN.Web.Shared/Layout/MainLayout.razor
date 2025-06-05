@@ -16,7 +16,7 @@
 <MudSnackbarProvider Position="SnackbarPosition.BottomLeft" />
 <MobileMenu IsOpen="@showMobileMenu" OnClose="@ToggleMobileMenu" GoToProfile="@GoToProfile" GoToRegister="@GoToRegister"
     GoToLogin="@GoToLogin" GoToLogout="@GoToLogout" OnPostAdClicked="@OnPostAdClicked" IsLoggedIn="@IsLoggedIn"
-    Name="@Name" />
+    Name="@Name" Email="@Email" />
 
 
 <header class="site-header mud-elevation-1">
@@ -37,7 +37,7 @@
             </NavLink>
         </div>
         <div style="display: flex; align-items: center; gap: 36px;">
-            <div class="@($"nav-container {(showMobileMenu ? "mobile-menu-open" : "")}")">
+            <div class="nav-container">
                 <nav class="nav-links">
                     <NavLink id="propertiesLink" href=@{
                     navigationPath.Properties
@@ -172,6 +172,7 @@
 @code {
     private bool showMobileMenu = false;
     public string Name { get; set; } = String.Empty;
+    public string Email { get; set; } = String.Empty;
     public bool IsLoggedIn { get; set; } = false;
 
     private NavigationPath navigationPath;
@@ -189,6 +190,7 @@
             if (user.Identity != null && user.Identity.IsAuthenticated)
             {
                 Name = user.FindFirst(ClaimTypes.Name)?.Value;
+                Email = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value;
                 IsLoggedIn = true;
             }
         }
@@ -211,6 +213,7 @@
             if (user.Identity != null && user.Identity.IsAuthenticated)
             {
                 Name = user.FindFirst(ClaimTypes.Name)?.Value;
+                Email = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value;
                 IsLoggedIn = true;
             }
             else
@@ -258,6 +261,7 @@
     {
         // CookieAuthenticationStateProvider.LogoutUser();
         Name = string.Empty;
+        Email = string.Empty;
         IsLoggedIn = false;
 
         var destination = GetDestination();
@@ -453,8 +457,7 @@ Route = "/more-features-coming-soon"
         }
     }
 
-
-    @@media (max-width: 1024px) {
+    @@media (max-width: 998px) {
         .desktop-post-btn {
             display: none !important;
         }
@@ -463,58 +466,46 @@ Route = "/more-features-coming-soon"
             display: inline-block !important;
         }
 
-        s
     }
 
-    @@media (max-width: 992px) {
-        .mobile-menu-button {
-            display: block;
-            z-index: 1001;
+    @@media (max-width: 768px) {
+        .desktop-post-btn {
+            display: none !important;
         }
 
-        @@media (max-width: 992px) {
-            .mobile-post-icon {
-                display: inline-block !important;
-                position: absolute;
-                top: 50%;
-                right: 16px;
-                transform: translateY(-50%);
-                z-index: 1100;
-            }
+        .mobile-post-icon {
+            display: inline-block !important;
+        }
 
-            @@media (max-width: 992px) {
-                #userIcon {
-                    display: none !important;
+        #userIcon {
+            display: none !important;
 
-                }
+        }
+
+        .mobile-menu-button {
+            display: block;
+        }
 
 
+        .mobile-post-icon {
+            display: inline-block !important;
+            position: absolute;
+            top: 50%;
+            right: 16px;
+            transform: translateY(-50%);
+            z-index: 1100;
+        }
 
-                .nav-container {
-                    position: fixed;
-                    top: 0;
-                    left: -100%;
-                    width: 80%;
-                    max-width: 300px;
-                    height: 100vh;
-                    background-color: #003366;
-                    flex-direction: column;
-                    justify-content: flex-start;
-                    padding: 4rem 1rem 1rem;
-                    z-index: 1000;
-                    transition: left 0.3s ease;
-                }
+        .nav-container {
+            display: none !important;
+        }
 
-                .nav-container.mobile-menu-open {
-                    left: 0;
-                }
-
-                .nav-links {
-                    flex-direction: column;
-                    gap: 1.5rem;
-                    margin-bottom: 2rem;
-                }
+        .nav-links {
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
 
 
-            }
+    }
 </style>
