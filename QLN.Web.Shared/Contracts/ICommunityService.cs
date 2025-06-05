@@ -11,6 +11,7 @@ namespace QLN.Web.Shared.Contracts
         Task<List<SelectOption>> GetForumCategoriesAsync();
         Task<bool> PostCommentAsync(CommentPostRequest request);
 
+        Task<PaginatedCommentResponse> GetCommentsByPostIdAsync(int nid, int page , int pageSize );
 
     }
 }

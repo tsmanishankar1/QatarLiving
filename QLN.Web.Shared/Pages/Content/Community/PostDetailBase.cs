@@ -94,6 +94,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                         Slug = fetched.slug,
                         Comments = fetched.comments?.Select(c => new CommentModel
                         {
+                            Id = c.nid,
                             CreatedBy = c.user_name ?? "Unknown User",
                             CreatedAt = c.created_date,      
                             Description = c.subject ?? "No content to display",

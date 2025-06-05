@@ -21,8 +21,7 @@
         }
     else if (Articles != null && Articles.Any())
     {
-            @foreach (var article in Articles)
-            {
+            <MudVirtualize Context="article" Items="Articles">
                 <div class="article-entry">
                     @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
                     {
@@ -53,7 +52,7 @@
                         }
                     </div>
                 </div>
-            }
+            </MudVirtualize>
         
 
     }

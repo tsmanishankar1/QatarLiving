@@ -92,15 +92,12 @@
                         }
                         else
                         {
-                            @foreach (var post in PostList)
-                            {
+                            <MudVirtualize Context="post" Items="PostList">
                                 <div class="postcard-margin-top">
 
                                     <PostCard Post="post" IsDetailView="false" />
                                 </div>
-
-
-                            }
+                            </MudVirtualize>
                             <div class="pagination-container">
                                 <PaginationFooter TotalItems="@TotalPosts"
                                                   CurrentPage="@CurrentPage"

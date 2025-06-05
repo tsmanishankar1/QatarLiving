@@ -22,7 +22,7 @@
     <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleMobileMenu" Class="mobile-menu-button" />
 
     <div class="header-left">
-        <NavLink href="/">
+        <NavLink href="/content/daily">
                 @if (_isDarkMode)
                 {
                     <MudImage id="logoImage" Src="/qln-images/nav-logo.svg" Alt="Qatar Living" Class="logo-img" />
@@ -197,8 +197,8 @@
         if (firstRender)
         {
             _isDarkMode = await _mudThemeProvider.GetSystemPreference();
-            StateHasChanged();
-            return;
+            // StateHasChanged(); 
+            // return; // may be the login bug as this would exist out of running anything else in the method.
         }
             
         var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -282,7 +282,7 @@
         else
         {
        
-            NavManager.NavigateTo($"{navigationPath.Login}", forceLoad: true);
+             GoToLogin();
         }
     
     }
