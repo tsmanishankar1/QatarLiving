@@ -167,7 +167,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                 {
                     //NewsContent = await GetNewsAsync<GenericNewsPageResponse>("Qatar");
 
-                    //await LoadInitialData();
+                    await LoadInitialData();
 
                     // Top News Slot
                     //var topStoryItems = QatarNewsContent?.News?.TopStory?.Items;
@@ -220,7 +220,7 @@ namespace QLN.Web.Shared.Pages.Content.News
             }
             finally
             {
-                //isLoading = false;
+                isLoading = false;
             }
         }
 
@@ -228,18 +228,15 @@ namespace QLN.Web.Shared.Pages.Content.News
         {
             if (!firstRender) return;
 
-            isLoading = true;
-
             try
             {
-                await Task.WhenAll(
-                        LoadBanners(SelectedTab),
-                        LoadInitialData()
-                        );
+                await LoadBanners(SelectedTab);
+                //await LoadInitialData();
+                //await Task.WhenAll(bannersTask);
                 //var videoContent = await GetContentVideoLandingAsync();
                 //VideoList = videoContent?.QlnVideos?.QlnVideosTopVideos?.Items ?? [];
 
-                //isLoading = false;
+                isLoading = false;
             }
             catch (Exception ex)
             {
