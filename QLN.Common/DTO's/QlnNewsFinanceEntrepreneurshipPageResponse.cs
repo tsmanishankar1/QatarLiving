@@ -14,7 +14,6 @@ namespace QLN.Common.Infrastructure.DTO_s
     {
         const string QueuePrefix = DrupalContentConstants.QlnNewsFinanceEntrepreneurship;
 
-        //[JsonPropertyName($"{QueuePrefix}_top_story")]
         [JsonPropertyName($"qln_news_business_top_story")]
         public BaseQueueResponse<ContentPost> TopStory { get; set; }
 
@@ -28,8 +27,10 @@ namespace QLN.Common.Infrastructure.DTO_s
         public BaseQueueResponse<ContentPost> Articles2 { get; set; }
 
         [JsonPropertyName($"{QueuePrefix}_most_popular_articles")]
-
         public BaseQueueResponse<ContentPost> MostPopularArticles { get; set; }
+
+        [JsonPropertyName($"{QueuePrefix}_watch_on_qatar_living")]
+        public BaseQueueResponse<ContentVideo> WatchOnQatarLiving { get; set; }
     }
 
     public class QlnNewsFinanceEntrepreneurshipPageResponse
