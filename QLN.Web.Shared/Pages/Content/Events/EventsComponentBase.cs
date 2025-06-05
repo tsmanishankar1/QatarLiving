@@ -31,13 +31,14 @@ namespace QLN.Web.Shared.Pages.Content.Events
 
         protected string SelectedLocationId;
         protected string SelectedDateLabel;
-
+        private string _fromDate;
+        private string _toDate;
         protected int CurrentPage { get; set; } = 1;
         protected int PageSize { get; set; } = 12;
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if(!firstRender) return;
+            if (!firstRender) return;
 
             try
             {
@@ -65,12 +66,13 @@ namespace QLN.Web.Shared.Pages.Content.Events
             //TotalEvents = totalCount;
         }
 
-        protected async Task HandleDateChanged(string date)
+        protected async Task HandleDateChanged((string from, string to) dateRange)
         {
-            SelectedDateLabel = date;
-            //CurrentPage = 1;
+            _fromDate = dateRange.from;
+            _toDate = dateRange.to;
+
+            SelectedDateLabel = $"{_fromDate} to {_toDate}";
             await LoadAllEvents();
-            //TotalEvents = totalCount;
         }
 
         protected async Task HandleLocationChanged(string location)
@@ -153,7 +155,7 @@ namespace QLN.Web.Shared.Pages.Content.Events
                 var featuredContent = await FetchFeaturedEventsData();
 
                 // Extract only the Featured Events items list and assign
-                FeaturedEventData = featuredContent?.QlnEvents?.QlnEventsFeaturedEvents?.Items ;
+                FeaturedEventData = featuredContent?.QlnEvents?.QlnEventsFeaturedEvents?.Items;
             }
             finally
             {
@@ -184,7 +186,8 @@ namespace QLN.Web.Shared.Pages.Content.Events
                 var response = await _eventService.GetAllEventsAsync(
                     category_id: SelectedPropertyTypeId,
                     location_id: SelectedLocationId,
-                    date: SelectedDateLabel,
+                    from: _fromDate,
+                    to: _toDate,
                     page: currentPage,
                     page_size: pageSize
                 );

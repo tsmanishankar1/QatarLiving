@@ -74,14 +74,14 @@
                                              <EmptyCard Title="No Image Available" Subtitle="" />
                                         }
                                         else{
-                                        @* @if (!imageLoaded)
+                                        @if (!imageLoaded)
                                         {
                                             <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="200px" Class="main-image" />
-                                        } *@
-                                            @* <img src="@topNewsSlot.ImageUrl" alt="News Image" class="main-image"
+                                        } 
+                                            <img src="@topNewsSlot.ImageUrl" alt="News Image" class="main-image"
                                             style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
-                                            @onerror="OnImageError" /> *@
-                                            <img src="@topNewsSlot.ImageUrl" alt="News Image" class="main-image">
+                                            @onerror="OnImageError" key="@topNewsSlot.ImageUrl" /> 
+                                            @* <img src="@topNewsSlot.ImageUrl" alt="News Image" class="main-image"> *@
                                         }
                                     }
                                     @if (isLoading){
@@ -215,7 +215,7 @@
                             </div>
                     </div>
                     <div class="grid-padding">
-                    <MudGrid GutterSize="0" Class="pb-3 pt-8">
+                    <MudGrid GutterSize="0" Class="pb-3 pt-8 mt-2">
                          @if(isLoading){
                             @for (int i = 0; i < 9; i++)
                         {
@@ -313,7 +313,7 @@
         max-width: 1170px;
         margin: 0 auto;
         width: 100%;
-        padding: 0px 16px !important;
+        @* padding: 0px 16px !important; *@
 }
 .responsive-news-container-daily {
         width: 100%;
@@ -357,7 +357,7 @@
     height: auto;
     background-color: #F0F0F0;
     align-self: stretch;
-    margin: 0 10px;
+    margin: 0 5px;
 }
 .video-container{
     width: 100%;
@@ -378,14 +378,19 @@
 .news-tabs {
     width: 100%;
     display: flex;
-    overflow-x: hidden;
+    overflow-x: auto;
     margin: 23px 0px;
     @* padding: 8px 16px; *@
     align-items:center;
     gap: 8px;
     white-space: nowrap;
     justify-content: space-between;
+     scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;
     @* padding: 0px 100px; *@
+}
+.news-tabs::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
 }
 .ad-style{
     padding-right: 100px;
@@ -819,7 +824,7 @@
     .news-tabs {
     width: 100%;
     display: flex;
-    overflow-x: hidden;
+    overflow-x: auto;
     margin: 23px 0px;
     align-items:center;
     gap: 8px;
