@@ -378,8 +378,8 @@
     </script>
     <script>
 
-     //   if (!window.__blazorStarted) {
-    //        window.__blazorStarted = true;
+        if (!window.__blazorStarted) {
+            window.__blazorStarted = true;
             Blazor.start({
             reconnectionOptions: {
                 maxRetries: 5,
@@ -392,7 +392,7 @@
                 }, 30000); // reload after 30s if not reconnected
             }
         });
-     //   }
+        }
         
     </script>
 </body>
