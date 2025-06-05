@@ -5,11 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
-    
-    <link rel="preload" href="/qln-images/qatar-living-logo-sized.webp" as="image" type="image/webp">
-    
 
-    <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
+    <link rel="preload" href="/qln-images/qatar-living-logo-sized.webp" as="image" type="image/webp">
+
+    <link rel="stylesheet" href="_content/QLN.Web.Shared/bootstrap/bootstrap.min.css" />
     <link rel="stylesheet" href="QLN.Blazor.Base.styles.css" />
     <link rel="stylesheet" href="_content/QLN.Web.Shared/css/app.css" />
     <link rel="stylesheet" href="_content/QLN.Web.Shared/css/site.css" />
@@ -35,7 +34,10 @@
     <script src="js/boot.js" defer></script>
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js" defer></script>
     <script src="_content/GoogleAnalytics.Blazor/googleanalytics.blazor.js" defer></script>
-    <script src="_content/Extensions.MudBlazor.StaticInput/NavigationObserver.js?v=3.2.0" defer></script>
+    @* 
+        Script is MIA, not needed maybe?
+        <script src="_content/Extensions.MudBlazor.StaticInput/NavigationObserver.js?v=3.2.0" defer></script> 
+    *@
 
     <script>
         window.setVideoFirstFrame = function (videoElement) {
@@ -375,7 +377,10 @@
         };
     </script>
     <script>
-        Blazor.start({
+
+     //   if (!window.__blazorStarted) {
+    //        window.__blazorStarted = true;
+            Blazor.start({
             reconnectionOptions: {
                 maxRetries: 5,
                 retryIntervalMilliseconds: 4000
@@ -387,6 +392,8 @@
                 }, 30000); // reload after 30s if not reconnected
             }
         });
+     //   }
+        
     </script>
 </body>
 

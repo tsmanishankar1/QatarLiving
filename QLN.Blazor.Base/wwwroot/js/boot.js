@@ -49,18 +49,22 @@
 
     let currentReconnectionProcess = null;
 
-    Blazor.start({
-        circuit: {
-            reconnectionHandler: {
-                onConnectionDown: () => currentReconnectionProcess ??= startReconnectionProcess(),
-                onConnectionUp: () => {
-                    currentReconnectionProcess?.cancel();
-                    currentReconnectionProcess = null;
+    if (!window.__blazorStarted) {
+        window.__blazorStarted = true;
+        Blazor.start({
+            circuit: {
+                reconnectionHandler: {
+                    onConnectionDown: () => currentReconnectionProcess ??= startReconnectionProcess(),
+                    onConnectionUp: () => {
+                        currentReconnectionProcess?.cancel();
+                        currentReconnectionProcess = null;
+                    }
+                },
+                configureSignalR: function (builder) {
+                    builder.withServerTimeout(30000).withKeepAliveInterval(15000);
                 }
-            },
-            configureSignalR: function (builder) {
-                builder.withServerTimeout(30000).withKeepAliveInterval(15000);
             }
-        }
-    });
+        });
+    }
+
 })();
