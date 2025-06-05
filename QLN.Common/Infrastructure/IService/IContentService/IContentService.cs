@@ -17,7 +17,8 @@ namespace QLN.Common.Infrastructure.IService.IContentService
             CancellationToken cancellationToken,
             string? category_id = null,
             string? location_id = null,
-            string? date = null,
+            string? from = null,
+            string? to = null,
             string? order = null,
             int? page = null,
             int? page_size = null

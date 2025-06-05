@@ -104,7 +104,7 @@ else
 
 
 
-                @foreach (var c in PagedComments)
+                @foreach (var c in CommentList.Comments)
                 {
                     <div class="comment-item @(c.IsByCurrentUser ? "my-comment" : "other-comment")">
                         <img src="@("/qln-images/default_logo.svg")" alt="User Avatar" class="post-footer-comment-avatar" />
@@ -142,7 +142,7 @@ else
 
                 }
                 <div class="pagination-container">
-                    <PaginationFooter TotalItems="10"
+                    <PaginationFooter TotalItems="@TotalCount"
                                       CurrentPage="@CurrentPage"
                                       PageSize="@PageSize"
                                       OnPageChange="HandlePageChange"
