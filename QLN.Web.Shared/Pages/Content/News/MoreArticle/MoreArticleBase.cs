@@ -7,6 +7,8 @@ public class MoreArticleBase : ComponentBase
     [Inject]
     protected NavigationManager navManager { get; set; }
     protected bool imageLoaded = false;
+    protected bool imageFailed = false;
+    protected string? currentImageUrl;
 
     [Parameter]
     public bool loading { get; set; } = false;
@@ -20,19 +22,24 @@ public class MoreArticleBase : ComponentBase
         navManager.NavigateTo($"/content/article/details/{news.Slug}");
     }
     protected override void OnParametersSet()
-        {
-            imageLoaded = false; 
-        }
- 
-        protected void OnImageLoaded()
-        {
-            imageLoaded = true;
-            StateHasChanged();
-        }
- 
-        protected void OnImageError()
-        {
-            imageLoaded = true; 
-            StateHasChanged();
-        }
+    {
+        imageLoaded = false;
+        imageFailed = false;
+    }
+
+    protected void OnImageLoaded()
+    {
+        imageLoaded = true;
+        imageFailed = false;
+        StateHasChanged();
+    }
+
+    protected void OnImageError()
+    {
+        imageLoaded = true;
+        imageFailed = true;
+        StateHasChanged();
+    }
+    // protected bool ShowEmptyCard =>
+    //     string.IsNullOrWhiteSpace(Item?.ImageUrl) || imageFailed;
 }

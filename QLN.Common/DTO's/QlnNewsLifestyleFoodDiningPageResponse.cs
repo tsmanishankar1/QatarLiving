@@ -26,7 +26,7 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonPropertyName($"{QueuePrefix}_food_dining_articles_2")]
         public BaseQueueResponse<ContentPost> Articles2 { get; set; }
 
-        [JsonPropertyName($"{QueuePrefix}_most_popular_articles")]
+        [JsonPropertyName($"{QueuePrefix}_food_dining_most_popular_articles")]
         public BaseQueueResponse<ContentPost> MostPopularArticles { get; set; }
 
         [JsonPropertyName($"{QueuePrefix}_food_dining_watch_on_qatar_living")]

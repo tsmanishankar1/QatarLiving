@@ -14,6 +14,8 @@ namespace QLN.Web.Shared.Pages.Content.News
         [Inject] IContentService _contentService { get; set; }
         public bool isLoading = true;
         protected bool isLoadingBanners = true;
+        protected bool imageFailed = false;
+        protected string? currentImageUrl;
         protected List<BannerItem> DailyTakeOverBanners = new();
         protected bool imageLoaded = false;
         public List<Category> Categories { get; set; } = new List<Category>
@@ -137,6 +139,12 @@ namespace QLN.Web.Shared.Pages.Content.News
 
         protected async override Task OnInitializedAsync()
         {
+            if (currentImageUrl != topNewsSlot?.ImageUrl)
+        {
+            currentImageUrl = topNewsSlot?.ImageUrl;
+            imageLoaded = false;
+            imageFailed = false;
+        }
             try
             {
                 var uri = navManager.ToAbsoluteUri(navManager.Uri);
@@ -148,7 +156,7 @@ namespace QLN.Web.Shared.Pages.Content.News
 
                 if (query.TryGetValue("subcategory", out var sub))
                     localSubcategory = sub;
-                     if (string.IsNullOrEmpty(localCategory) && !string.IsNullOrEmpty(localSubcategory))
+                if (string.IsNullOrEmpty(localCategory) && !string.IsNullOrEmpty(localSubcategory))
                 {
                     localCategory = Categories.FirstOrDefault(cat =>
                         cat.SubCategories.Any(sub => sub.Equals(localSubcategory, StringComparison.OrdinalIgnoreCase)))
@@ -305,6 +313,7 @@ namespace QLN.Web.Shared.Pages.Content.News
         protected void OnImageLoaded()
         {
             imageLoaded = true;
+            imageFailed = false;
             StateHasChanged();
         }
         protected override void OnParametersSet()
@@ -314,7 +323,8 @@ namespace QLN.Web.Shared.Pages.Content.News
  
         protected void OnImageError()
         {
-            imageLoaded = true;
+            imageLoaded = true; 
+            imageFailed = true; 
             StateHasChanged();
         }
         protected async Task LoadBanners(string tab)
