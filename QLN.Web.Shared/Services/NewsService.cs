@@ -36,7 +36,7 @@ namespace QLN.Web.Shared.Services
             { "Motorsports", "qln_news_sports_motorsports" },
             { "Olympics", "qln_news_sports_olympics" },
             { "Athlete Features", "qln_news_sports_athlete_features" },
-            { "Food & Dining", "ql_news_lifestyle_food_dining" },
+            { "Food & Dining", "qln_news_lifestyle_food_dining" },
             { "Travel & Leisure", "qln_news_lifestyle_travel_leisure" },
             { "Arts & Culture", "qln_news_lifestyle_arts_culture" },
             { "Events", "qln_news_lifestyle_events" },

@@ -479,7 +479,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                     articleListSlot1 = jobs?.Articles1?.Items ?? new List<ContentPost>();
                     popularArticleListSlot = jobs?.MostPopularArticles?.Items ?? new List<ContentPost>();
                     articleListSlot2 = jobs?.Articles2?.Items ?? new List<ContentPost>();
-                    VideoList = jobs?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
+                    // VideoList = jobs?.WatchOnQatarLiving?.Items ?? new List<ContentVideo>();
                     break;
                 case "Food & Dining":
                     FoodDiningNewsContent = await GetNewsAsync<QlnNewsLifestyleFoodDiningPageResponse>("Food & Dining");
