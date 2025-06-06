@@ -134,7 +134,7 @@
                     else if (topNewsListSlot != null && topNewsListSlot.Any())
                     {
                         var thirdItem = topNewsListSlot.LastOrDefault();
-                        @foreach (var news in topNewsListSlot.Take(3).Skip(1))
+                        @foreach (var news in topNewsListSlot.Skip(1).Take(3))
                         { 
                         <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)"/>
                         @if(news != thirdItem){
