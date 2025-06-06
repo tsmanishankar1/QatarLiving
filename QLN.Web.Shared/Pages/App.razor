@@ -14,17 +14,10 @@
     <link rel="stylesheet" href="_content/QLN.Web.Shared/css/site.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    @* <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap" as="style"> *@
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap" as="style">
     <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" media="print" onload="this.media='all'">
 
-    <link rel="preload" href="fonts/PublicSans.woff2" as="font" type="font/woff2" crossorigin="anonymous">
-
-
-
-    <!-- Fallback for no-JS or preload block -->
-    <noscript>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap">
-    </noscript>
+    @* <link rel="preload" href="fonts/PublicSans.woff2" as="font" type="font/woff2" crossorigin="anonymous"> *@
 
     <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript>
@@ -35,13 +28,14 @@
     <HeadOutlet />
 </head>
 
-<HeadContent>
+@* <HeadContent>
     <style>
         @@font -face {
             font-family: 'Public Sans';
             src: url('/fonts/PublicSans.woff2') format('woff2');
             font-weight: 100;
             font-style: normal;
+            font-display: swap;
         }
         @@font -face {
             font-family: 'Public Sans';
@@ -63,7 +57,7 @@
             font-style: italic;
         }
     </style>
-</HeadContent>
+</HeadContent> *@
 
 <body>
     <Routes @rendermode="InteractiveServer" />
