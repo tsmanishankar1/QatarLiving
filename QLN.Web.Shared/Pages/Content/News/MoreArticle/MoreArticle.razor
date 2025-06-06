@@ -29,7 +29,7 @@
         {
             <div class="article-entry">
                 <div class="article-content">
-                    <a class="article-title" href="@($"/content/article/details/{article.Slug}")">
+                    <a class="article-title" href="@($"/content/article/details/{article.Slug}?category={selectedMainTab}&subcategory={selectedTab}")">
                         @article.Title
                     </a>
                 </div>

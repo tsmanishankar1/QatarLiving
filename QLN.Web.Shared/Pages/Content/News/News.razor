@@ -112,7 +112,7 @@
                         </div>
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <MoreArticle Articles="@moreArticleListSlot" loading="@isLoading" selectedTab="@selectedTabView"/>
+                        <MoreArticle Articles="@moreArticleListSlot" loading="@isLoading" selectedMainTab="@_selectedView" selectedTab="@subTabLabel"/>
                     </MudItem>
                 </MudGrid>
                <div class="flex-container" style="padding-bottom: 40px;">
@@ -208,7 +208,7 @@
                         }
                     </div>
                     <div class="poular-article-container" >
-                <PopularArticles Articles="@popularArticleListSlot" selectedTab="@selectedTabView" loading="@isLoading" />
+                <PopularArticles Articles="@popularArticleListSlot" selectedMainTab="@_selectedView" selectedTab="@subTabLabel" loading="@isLoading" />
 
                             <div class="ad-container-style">
                             <AdBanner BannerItems="NewsSideBanners" />

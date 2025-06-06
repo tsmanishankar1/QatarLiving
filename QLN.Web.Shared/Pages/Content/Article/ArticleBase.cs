@@ -14,7 +14,9 @@ public class ArticleBase : ComponentBase
     [Parameter]
     public string slug { get; set; }
     public string category { get; set; }
+    public string categoryLabel { get; set; }
     public string subcategory { get; set; }
+    public string subcategoryLabel { get; set; }
     public bool isLoading { get; set; } = true;
     protected bool imageLoaded = false;
     protected List<BannerItem> DailyHeroBanners { get; set; } = new();
@@ -102,6 +104,8 @@ public class ArticleBase : ComponentBase
                 category = cat;
             if (query.TryGetValue("subcategory", out var sub))
                 subcategory = sub;
+            categoryLabel = routerList.FirstOrDefault(item => item.Value == category)?.Label;
+            subcategoryLabel = routerList.FirstOrDefault(item => item.Value == subcategory)?.Label;
             isLoading = true;
             var bannersTask = LoadBanners();
             await Task.WhenAll(bannersTask);
@@ -136,14 +140,12 @@ public class ArticleBase : ComponentBase
                     Avatar = "/images/content/Sample.svg"
                 }).ToList() ?? new List<CommentModel>()
             };
-            var categoryValue = routerList.FirstOrDefault(item => item.Label == category)?.Value;
-            var subcategoryValue = routerList.FirstOrDefault(item => item.Label == subcategory)?.Value;
-            if (categoryValue != null && subcategoryValue != null){
+            if (category != null && subcategory != null){
                 breadcrumbItems = new()
                 {
-                new() {   Label = category,Url =$"/content/news?category={categoryValue}" },
-                new() { Label = subcategory, Url = $"/content/news?category={categoryValue}&subcategory={subcategoryValue}"},
-                new() { Label = newsArticle.Title, Url = $"/content/article/details/{categoryValue}/{subcategoryValue}/{slug}", IsLast = true },
+                new() {   Label = categoryLabel,Url =$"/content/news?category={category}" },
+                new() { Label = subcategoryLabel, Url = $"/content/news?category={category}&subcategory={subcategory}"},
+                new() { Label = newsArticle.Title, Url = $"/content/article/details/{category}/{subcategory}/{slug}", IsLast = true },
                 };
             }
            else{
