@@ -35,7 +35,8 @@
 
                     <div class="icons">
                         @* <MudIconButton Icon="@Icons.Material.Filled.FavoriteBorder" Class="icons-color" /> *@
-                        <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight">
+                        <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu"
+                            AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight">
                             <ActivatorContent>
                                 <MudIconButton Icon="@Icons.Material.Filled.Share" Class="icons-color" />
                             </ActivatorContent>
@@ -139,55 +140,55 @@
         StateHasChanged();
     }
     private List<MenuItem> shareMenuItems => new()
-    {
-        new MenuItem {
-            ImageSrc = "/qln-images/facebook_share_icon.svg",
-            Route = SocialShareHelper.GetFacebookUrl(CurrentUrl),
-            OpenInNewTab = true
-        },
-        new MenuItem {
-            ImageSrc = "/qln-images/instagram_share_icon.svg",
-            Route = SocialShareHelper.GetInstagramUrl(CurrentUrl),
-            OpenInNewTab = true
-        },
-        new MenuItem {
-            ImageSrc = "/qln-images/whatsApp_share_icon.svg",
-            Route = SocialShareHelper.GetWhatsAppUrl(CurrentUrl),
-            OpenInNewTab = true
-        },
-        new MenuItem {
-            ImageSrc = "/qln-images/tiktok_share_icon.svg",
-            Route = SocialShareHelper.GetTikTokUrl(CurrentUrl),
-            OpenInNewTab = true
-        },
-        new MenuItem {
-            ImageSrc = "/qln-images/x_share_icon.svg",
-            Route = SocialShareHelper.GetXUrl(CurrentUrl, Item?.Title ?? ""),
-            OpenInNewTab = true
-        },
-        new MenuItem {
-            ImageSrc = "/qln-images/linkedin_share_icon.svg",
-            Route = SocialShareHelper.GetLinkedInUrl(CurrentUrl, Item?.Title ?? "", Item?.Description ?? ""),
-            OpenInNewTab = true
-        },
-        new MenuItem
-        {
-            ImageSrc = "/qln-images/copy_link_icon.svg",
-            OnClick = async () =>
-            {
-                bool copied = false;
-                copied = await SocialShareHelper.CopyLinkToClipboardAsync(JSRuntime, CurrentUrl);
-                if (copied)
-                {
-                    Snackbar.Add("Item link has been copied to the clipboard", Severity.Success);
-                }
-                else
-                {
-                    Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
-                }
-            }
-        }
-    };
+{
+new MenuItem {
+ImageSrc = "/qln-images/facebook_share_icon.svg",
+Route = SocialShareHelper.GetFacebookUrl(CurrentUrl),
+OpenInNewTab = true
+},
+new MenuItem {
+ImageSrc = "/qln-images/instagram_share_icon.svg",
+Route = SocialShareHelper.GetInstagramUrl(CurrentUrl),
+OpenInNewTab = true
+},
+new MenuItem {
+ImageSrc = "/qln-images/whatsApp_share_icon.svg",
+Route = SocialShareHelper.GetWhatsAppUrl(CurrentUrl),
+OpenInNewTab = true
+},
+new MenuItem {
+ImageSrc = "/qln-images/tiktok_share_icon.svg",
+Route = SocialShareHelper.GetTikTokUrl(CurrentUrl),
+OpenInNewTab = true
+},
+new MenuItem {
+ImageSrc = "/qln-images/x_share_icon.svg",
+Route = SocialShareHelper.GetXUrl(CurrentUrl, Item?.Title ?? ""),
+OpenInNewTab = true
+},
+new MenuItem {
+ImageSrc = "/qln-images/linkedin_share_icon.svg",
+Route = SocialShareHelper.GetLinkedInUrl(CurrentUrl, Item?.Title ?? "", Item?.Description ?? ""),
+OpenInNewTab = true
+},
+new MenuItem
+{
+ImageSrc = "/qln-images/copy_link_icon.svg",
+OnClick = async () =>
+{
+bool copied = false;
+copied = await SocialShareHelper.CopyLinkToClipboardAsync(JSRuntime, CurrentUrl);
+if (copied)
+{
+Snackbar.Add("Item link has been copied to the clipboard", Severity.Success);
+}
+else
+{
+Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
+}
+}
+}
+};
     public class MenuItem
     {
         public string Text { get; set; }
@@ -310,7 +311,7 @@
         border-radius: 6px;
         padding: 24px;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-        font-family: 'Public Sans';
+        font-family: 'Public Sans', sans-serif;
     }
 
     .custom-share-menu .mud-popover {
@@ -334,7 +335,7 @@
         display: flex !important;
     }
 
-    .mud-menu-item{
+    .mud-menu-item {
         padding: 0px 6px 0px 0px !important;
     }
 
@@ -472,7 +473,7 @@
         border-radius: 6px;
         padding: 24px;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-        font-family: 'Public Sans';
+        font-family: 'Public Sans', sans-serif;
     }
 
     .card-desktop-only {
