@@ -16,3 +16,21 @@ Accept: application/json
 ###
 GET {{QLN.Drupal.API_HostAddress}}/qlnapi/landing/{{DrupalQueue}}
 Accept: application/json
+
+---------------------------------------------
+
+###
+
+GET {{QLN.Backend.API_HostAddress}}/api/content/events?category_id=126206&date=2026-01-02
+Accept: application/json
+Cache-Control: no-cache
+
+###
+
+GET {{QLN.Backend.API_HostAddress}}/api/content/events?location_id=102701
+Accept: application/json
+Cache-Control: no-cache
+
+###
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/events?location_id=102701
+Accept: application/json

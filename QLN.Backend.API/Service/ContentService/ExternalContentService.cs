@@ -76,9 +76,13 @@ namespace QLN.Backend.API.Service.ContentService
         {
             page ??= 1;
             page_size ??= 20;
-            if (string.IsNullOrEmpty(order)) order = "asc";
 
-            string requestUri = $"{DrupalContentConstants.EventsPath}?page={page}&page_size={page_size}&order={order}";
+            string requestUri = $"{DrupalContentConstants.EventsPath}?page={page}&page_size={page_size}";
+
+            if (!string.IsNullOrEmpty(order))
+            {
+                requestUri += $"&order={order}";
+            }
 
             if (!string.IsNullOrEmpty(category_id))
             {
