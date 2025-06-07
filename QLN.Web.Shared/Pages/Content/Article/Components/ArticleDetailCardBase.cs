@@ -101,8 +101,6 @@ public class ArticleDetailCardBase : ComponentBase
             }
             commentsCount = Post?.Comments?.Count ?? 0;
         }
-        Console.WriteLine("the html description is the " +  DescriptionHtml);
-
     }
     protected string FormatDateToReadable(string inputDate)
     {

@@ -22,7 +22,7 @@
     else if (Articles != null && Articles.Any())
     {
             <MudVirtualize Context="article" Items="Articles">
-                <div class="article-entry">
+                <div class="article-entry" @onclick="@(() => NavigateToArticle(article))">
                     @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
                     {
                         @if (!imageLoaded)
@@ -37,20 +37,11 @@
                     {
                         <EmptyCard Title="No Images Available" Subtitle="" />
                     }
-                    <div class="article-content">
-                        @if (selectedPost == article)
-                        {
-                            <a class="selected-title" href="@($"/content/article/details/{category}/{article.Slug}")">
-                                @article.Title
-                            </a>
-                        }
-                        else
-                        {
-                            <a class="article-title" href="@($"/content/article/details/{category}/{article.Slug}")">
-                                @article.Title
-                            </a>
-                        }
-                    </div>
+                   <div class="article-content">
+                        <div class="@(selectedPost == article ? "selected-title" : "article-title")">
+                        @article.Title
+                        </div>
+                  </div>
                 </div>
             </MudVirtualize>
         
