@@ -111,7 +111,7 @@
                     <MudItem xs="12" md="4">
                         <CommunityRules />
 
-                        <MudPaper Class="newsletter-box" Elevation="1">
+                        <MudPaper Class="community-newsletter-box" Elevation="1">
 
                             <img src="/qln-images/content/Mail.svg" alt="mail icon" class="newsletter-icon" />
                             <MudText Typo="Typo.body1" Class="newsletter-text">
@@ -120,12 +120,12 @@
                             <MudForm @ref="_form">
 
                                 <input type="email"
-                                       class="newsletter-input"
+                                       class="community-newsletter-input"
                                        placeholder="Enter your email"
                                        @bind="SubscriptionModel.Email"
                                        @bind:event="oninput" />
                                 <MudButton Variant="Variant.Filled"
-                                           Class="newsletter-button"
+                                           Class="community-newsletter-button"
                                            Disabled="@IsSubscribingToNewsletter"
                                            OnClick="SubscribeAsync">
                                     @if (IsSubscribingToNewsletter)
@@ -284,7 +284,7 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
         }
 
-    .newsletter-box {
+    .community-newsletter-box {
         text-align: center;
         display: flex;
         flex-direction: column;
@@ -310,7 +310,7 @@
         color: #242424;
     }
 
-    .newsletter-input {
+    .community-newsletter-input {
         width: 292px;
         height: 44px;
         padding: 10px 16px;
@@ -318,7 +318,7 @@
         border-radius: 6px;
     }
 
-        .newsletter-input::placeholder {
+        .community-newsletter-input::placeholder {
             padding-left: 14px;
         }
 
@@ -326,7 +326,7 @@
         border-color: #FF7F38;
     }
 
-    .newsletter-button {
+    .community-newsletter-button {
         width: 292px;
         height: 44px;
         gap: 8px;
@@ -362,12 +362,12 @@
 
     @@media (max-width: 700px) and (min-width: 240px) {
         .container-inner-wrapper {
-            padding: 0 2px 20px 2px;
+            padding: 0 2px 12px 2px;
         }
 
-        .newsletter-box,
+        .community-newsletter-box,
         .post-ad-wrapper,
-        .mud-paper.newsletter-box,
+        .mud-paper.community-newsletter-box,
         .mud-paper.post-ad-wrapper {
             width: 100% !important;
             max-width: 100% !important;
@@ -379,7 +379,7 @@
             padding: 0 24px 50px 24px;
         }
 
-        .newsletter-box {
+        .community-newsletter-box {
             max-width: 100%;
             width: 100%;
             padding: 10px !important
@@ -394,6 +394,12 @@
             margin-top: 0px;
             gap: 10px;
         }
+         .post-ad-wrapper {
+        padding: 1px;
+        margin-top: 16px;
+        width: 340px;
+        overflow: hidden;
+    }
 
         .postcard-margin-top {
             margin-top: 50px;

@@ -46,13 +46,13 @@ namespace QLN.Web.Shared.Pages.Content.Community
             // Update breadcrumb for current slug
             postBreadcrumbItem = new()
             {
-                Label = slug ?? "Not Found",
+                Label =  "Not Found",
                 Url = $"/content/community/post/detail/{slug}",
                 IsLast = true
             };
             postBreadcrumbCategory = new()
             {
-                Label = slug ?? "Not Found",
+                Label = "Not Found",
                 //Url = "/content/community",
                 Url = $"/content/community"
             };
