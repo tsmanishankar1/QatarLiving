@@ -4,6 +4,9 @@ namespace QLN.Common.Infrastructure.DTO_s
 {
     public class ContentEvent : ContentPost
     {
+        [JsonPropertyName("category_id")]
+        public string CategroryId { get; set; }
+
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("entity_organizer")]
         public string EntityOrganizer { get; set; }

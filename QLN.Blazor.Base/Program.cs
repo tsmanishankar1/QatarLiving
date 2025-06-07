@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using QLN.Web.Shared.MockServices;
 using QLN.Web.Shared.Contracts;
 using GoogleAnalytics.Blazor;
+using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -83,16 +84,21 @@ if (string.IsNullOrWhiteSpace(newsLetterSubscriptionAPIUrl))
 }
 
 
-
-// });
-
 builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[]
     {
-        options.EnableForHttps = true;
-        options.MimeTypes = new[] { "text/css", "application/javascript", "text/html", "application/json" };
+        "application/octet-stream",
+        "application/wasm",
+        "text/css",
+        "application/javascript",
+        "text/html",
+        "application/json"
     });
+});
 
-    builder.Services.AddAuthentication();
+builder.Services.AddAuthentication();
 
 #region Authentication - Cookie configuration - not actually required
 //builder.Services.AddAuthentication(options =>
@@ -218,7 +224,7 @@ builder.Services.AddHttpClient<ISearchService, CommunitySearchService>(client =>
 });
 
 builder.Services.AddMemoryCache();
-builder.Services.AddSingleton<IBannerService, BannerService>(); // add shared Banner Service
+builder.Services.AddSingleton<ISimpleMemoryCache, SimpleMemoryCache>(); // add shared Banner Service
 
 
 builder.Services.AddHttpContextAccessor();

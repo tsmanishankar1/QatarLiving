@@ -4,14 +4,19 @@
 <div class="news-card @(IsHorizontal ? "horizontal" : "")" @onclick="() => OnClick.InvokeAsync(news)">
     @if (string.IsNullOrEmpty(news.ImageUrl))
     {
-        @* <EmptyCard Title="No Image Available" Subtitle="" /> *@
         <div class="image-placeholder">
             No image available
         </div>
     }
     else
     {
-        <img src="@news.ImageUrl" alt="News Image" class="daily-news-image" />
+        @if (!imageLoaded)
+        {
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Class="daily-news-image" />
+                }
+        <img src="@news.ImageUrl" alt="@news.Title" class="daily-news-image"
+                    style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                    @onerror="OnImageError" key="@news.ImageUrl" />
     }
     <div class="daily-news-content @(IsHorizontal ? "ishorizontal" : "")">
         <div class="daily-news-title @(IsHorizontal ? "isTexthorizontal" : "")">@news.Title</div>
@@ -233,5 +238,15 @@
         box-sizing: border-box; 
         max-width: 100% !important;
         }
+    }
+    @@media (max-width: 518px) {
+         .news-card {
+          display: flex; 
+        flex-direction: row;
+        width: 100%; 
+        margin-bottom: 5px;
+        box-sizing: border-box; 
+        max-width: 100% !important;
         }
+    }
 </style>

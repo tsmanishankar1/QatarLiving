@@ -32,7 +32,7 @@
                 }
                 else
                 {
-                    <MudImage id="logoImage" Src="/qln-images/logo.png" Alt="Qatar Living" Class="logo-img" />
+                    <MudImage id="logoImage" Src="/qln-images/qatar-living-logo-sized.webp" Alt="Qatar Living" Width="85" Height="30" Class="logo-img" />
                 }
             </NavLink>
         </div>
@@ -95,17 +95,21 @@
                     }
                 </ChildContent> *@
                 </MudMenu>
-
-                <img src="/qln-images/header/add_post_svg.svg" alt="Post" class="mobile-post-icon"
-                    @onclick="OnPostAdClicked" />
-
             </div>
         </div>
 
         <div class="header-right">
-            @* <MudAvatar Size="Size.Medium" Class="avatar-custom" @onclick="() => GoToFavourites()">
+             @if (IsLoggedIn)
+        {
+            <MudAvatar Size="Size.Medium" Class="fav-avatar-custom" @onclick="() => GoToFavourites()">
             <img id="favouriteIcon" src="/qln-images/header/favourite_icon.svg" alt="Favourite" class="avatar-icon" />
-        </MudAvatar>  *@
+        </MudAvatar> 
+        <img src="/qln-images/header/fav_icon_mobile.svg" alt="Post" class="fav-avatar-icon"
+                   @onclick="() => GoToFavourites()" />
+             }
+
+                   <img src="/qln-images/header/add_post_svg.svg" alt="Post" class="mobile-post-icon"
+                    @onclick="OnPostAdClicked" />
             <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
                 <ActivatorContent>
                     <div id="userIcon" style="display: flex; align-items: center; gap: 0.5rem;" class="cursor-pointer">
@@ -368,8 +372,8 @@ Route = "/more-features-coming-soon"
 
     .mobile-post-icon {
         display: none;
-        width: 32px;
-        height: 32px;
+        width: 25px;
+        height: 25px;
         cursor: pointer;
     }
 
@@ -433,10 +437,23 @@ Route = "/more-features-coming-soon"
         padding: 2px;
         background-color: #D6E8F2;
     }
+   .fav-avatar-custom{
+     display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 2px;
+        background-color: #D6E8F2;
+   }
+
+    .fav-avatar-icon{
+         width: 24px;
+        height: 24px;
+        display: none;
+    }
 
     .avatar-icon {
-        width: 25px;
-        height: 25px;
+        width: 24px;
+        height: 24px;
     }
 
     .logo-img {
@@ -466,17 +483,27 @@ Route = "/more-features-coming-soon"
             display: inline-block !important;
         }
 
+        .fav-avatar-custom{
+            display: none !important;
+        }
+        .fav-avatar-icon{
+            display:  inline-block !important;
+        }
     }
 
     @@media (max-width: 768px) {
         .desktop-post-btn {
             display: none !important;
         }
-
+        .fav-avatar-icon{
+            display:  inline-block !important;
+        }
         .mobile-post-icon {
             display: inline-block !important;
         }
-
+        .fav-avatar-custom{
+            display: none !important;
+        }
         #userIcon {
             display: none !important;
 
@@ -486,15 +513,6 @@ Route = "/more-features-coming-soon"
             display: block;
         }
 
-
-        .mobile-post-icon {
-            display: inline-block !important;
-            position: absolute;
-            top: 50%;
-            right: 16px;
-            transform: translateY(-50%);
-            z-index: 1100;
-        }
 
         .nav-container {
             display: none !important;

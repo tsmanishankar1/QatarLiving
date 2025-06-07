@@ -113,9 +113,9 @@
 }
 
 .custom-tabs {
-  width: 100%;
-  margin: 0 auto;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    width: 100%;
+    margin: 0 auto;
+    font-family: 'Public Sans', sans-serif;
 }
 
 .tabs-toolbar {
@@ -186,9 +186,9 @@
 }
 
 .vertical-tabs {
-  width: 100%;
-  margin: 0 auto;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    width: 100%;
+    margin: 0 auto;
+    font-family: 'Public Sans', sans-serif;
 }
 
 .vertical-tabs-toolbar {

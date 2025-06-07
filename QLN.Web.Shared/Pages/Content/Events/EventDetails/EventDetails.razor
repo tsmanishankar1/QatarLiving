@@ -9,6 +9,16 @@
 @using QLN.Web.Shared.Components.BannerSwiper
 @inherits EventDetailsBase
 
+@if (!isLoading && eventDetails != null)
+{
+    <PageTitle>@eventDetails.Title | Qatar Living Events</PageTitle>
+}
+else
+{
+    <PageTitle>Event Details | Qatar Living Events</PageTitle>
+}
+
+
 <div style="width: 100%; background-color: var(--color-secondary-background);">
     <div class="responsive-container">
         @if (isLoadingEventBanners)

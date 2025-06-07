@@ -26,7 +26,7 @@ public class ArticleBase : ComponentBase
     protected QlnNewsNewsQatarPageResponse QatarNewsContent { get; set; } = new QlnNewsNewsQatarPageResponse();
     protected List<ContentPost> moreArticleList { get; set; } = new List<ContentPost>();
     [Inject] private ILogger<NewsCardBase> Logger { get; set; }
-    [Inject] private IBannerService _bannerService { get; set; }
+    [Inject] private ISimpleMemoryCache _simpleCacheService { get; set; }
     public PostModel SelectedPost { get; set; } = new PostModel
 {
     Id = string.Empty,
@@ -155,7 +155,7 @@ public class ArticleBase : ComponentBase
             }
             
             QatarNewsContent = await GetNewsQatarAsync();
-            moreArticleList = QatarNewsContent?.QlnNewsNewsQatar?.MoreArticles?.Items ?? new List<ContentPost>();
+            moreArticleList = QatarNewsContent?.News?.MoreArticles?.Items ?? new List<ContentPost>();
         }
         catch (Exception ex)
         {
@@ -230,7 +230,7 @@ public class ArticleBase : ComponentBase
             isLoadingBanners = true;
         try
         {
-            var banners = await _bannerService.GetBannerAsync();
+            var banners = await _simpleCacheService.GetBannerAsync();
             DailyHeroBanners = banners?.ContentArticleHero ?? new List<BannerItem>();
             ArticleSideBanners = banners?.ContentArticleSide ?? new List<BannerItem>();
         }

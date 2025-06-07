@@ -18,24 +18,21 @@ namespace QLN.Web.Shared.Services
         }
 
         /// <inheritdoc />
-        public async Task<HttpResponseMessage?> GetAllEventsAsync(string? category_id = null, string? location_id = null, string? date = null, int? page = 1, int? page_size = 20, string? order = "asc")
+        public async Task<HttpResponseMessage?> GetAllEventsAsync(string? category_id = null, string? location_id = null, string? from = null, string? to = null, int? page = 1, int? page_size = 20, string? order = "asc")
         {
 
             string requestUri = $"api/content/events?page={page}&page_size={page_size}&order={order}";
             if (!string.IsNullOrEmpty(category_id))
-            {
                 requestUri += $"&category_id={category_id}";
-            }
 
             if (!string.IsNullOrEmpty(location_id))
-            {
                 requestUri += $"&location_id={location_id}";
-            }
 
-            if (!string.IsNullOrEmpty(date))
-            {
-                requestUri += $"&date={date}";
-            }
+            if (!string.IsNullOrEmpty(from))
+                requestUri += $"&from={from}";
+
+            if (!string.IsNullOrEmpty(to))
+                requestUri += $"&to={to}";
 
             try
             {
@@ -92,18 +89,18 @@ namespace QLN.Web.Shared.Services
             }
         }
         public async Task<HttpResponseMessage?> GetBannerAsync()
-{
-    try
-    {
-        var response = await _httpClient.GetAsync("api/banner");
-        return response;
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine("GetBannerAsync: " + ex);
-        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
-    }
-}
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync("api/banner");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("GetBannerAsync: " + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
 
     }
 }

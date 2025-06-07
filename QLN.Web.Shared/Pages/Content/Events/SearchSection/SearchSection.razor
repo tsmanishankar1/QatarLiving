@@ -18,7 +18,7 @@
                     OnLocationUpdated="CallApiForLocationChange" GetLabel="item => item.Name" GetId="item => item.Id"
                     MaxSelectableItems="1" Padding="10px"
                     CustomStyle="@(IsMobile ? "border-radius:8px;" 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        : "border-top-left-radius:6px; border-bottom-left-radius:6px; border-top-right-radius:0; border-bottom-right-radius:0;")"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                : "border-top-left-radius:6px; border-bottom-left-radius:6px; border-top-right-radius:0; border-bottom-right-radius:0;")"
                     OnSearch="PerformSearch" />
             </div>
 
@@ -51,12 +51,14 @@
                     TransformOrigin="Origin.TopCenter" Elevation="6" Class="popover-container">
                     <div class="picker-overlay my-orange-theme" @ref="_popoverDiv">
 
-                        <MudDatePicker @bind-Date="_selectedDate" PickerVariant="PickerVariant.Static"
-                            DisableToolbar="true" ShowToolbar="false" />
+                        <MudDateRangePicker @bind-DateRange="_dateRange" PickerVariant="PickerVariant.Static"
+                            DisableToolbar="true" ShowToolbar="false" DisplayMonths="1" Class="custom-date-range" />
+
 
                         <div class="picker-actions">
                             <button class="cancel-button" @onclick="CancelDatePicker">Cancel</button>
-                            <button class="apply-button" @onclick="ApplyDatePicker" disabled="@(_selectedDate == null)">
+                            <button class="apply-button" @onclick="ApplyDatePicker"
+                                disabled="@(_dateRange?.Start == null || _dateRange?.End == null)">
                                 Apply
                             </button>
                         </div>

@@ -60,6 +60,7 @@ namespace QLN.Backend.API.Service.ContentService
         public async Task<T?> GetPostsFromDrupalAsync<T>(string queue_name, CancellationToken cancellationToken)
         {
             return await httpClient.GetFromJsonAsync<T>($"{DrupalContentConstants.LandingPath}/{queue_name}", cancellationToken);
+
         }
         // qlnapi/events?category_id=126205&location_id=102701&date=2025-01-01'
         public async Task<ContentEventsResponse?> GetEventsFromDrupalAsync(
@@ -75,9 +76,13 @@ namespace QLN.Backend.API.Service.ContentService
         {
             page ??= 1;
             page_size ??= 20;
-            if (string.IsNullOrEmpty(order)) order = "asc";
 
-            string requestUri = $"{DrupalContentConstants.EventsPath}?page={page}&page_size={page_size}&order={order}";
+            string requestUri = $"{DrupalContentConstants.EventsPath}?page={page}&page_size={page_size}";
+
+            if (!string.IsNullOrEmpty(order))
+            {
+                requestUri += $"&order={order}";
+            }
 
             if (!string.IsNullOrEmpty(category_id))
             {

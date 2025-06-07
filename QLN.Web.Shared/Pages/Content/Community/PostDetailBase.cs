@@ -17,7 +17,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         [Inject] protected ICommunityService CommunityService { get; set; } = default!;
         [Inject] protected ILogger<PostDetailBase> Logger { get; set; } = default!;
         [Inject] private IContentService _contentService { get; set; }
-        [Inject] private IBannerService _bannerService { get; set; }
+        [Inject] private ISimpleMemoryCache _simpleCacheService { get; set; }
 
         protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
         protected QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem? postBreadcrumbItem;
@@ -136,7 +136,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             isLoadingBanners = true;
             try
             {
-                var banners = await _bannerService.GetBannerAsync();
+                var banners = await _simpleCacheService.GetBannerAsync();
                 DailyHeroBanners = banners?.ContentCommunityPostHero ?? new();
                 CommunitySideBanners = banners?.ContentCommunityPostSide ?? new (); 
 
