@@ -127,10 +127,11 @@ namespace QLN.Web.Shared.Pages.Content.Events
 
                     // Extract all unique areas from locations
                     Areas = data?.Locations?
-                        .SelectMany(loc => loc.Areas)
-                        .GroupBy(a => a.Id)
-                        .Select(g => g.First())
-                        .ToList() ?? new List<Area>();
+                     .SelectMany(loc => loc.Areas.Append(new Area { Id = loc.Id, Name = loc.Name }))
+                     .GroupBy(a => a.Id)
+                     .Select(g => g.First())
+                     .ToList() ?? new List<Area>();
+
                 }
             }
             catch (Exception ex)
