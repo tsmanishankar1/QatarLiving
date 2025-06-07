@@ -182,7 +182,6 @@ namespace QLN.Web.Shared.Pages.Content.News
 
         private async Task LoadInitialData()
         {
-            //NewsContent = await GetNewsAsync<GenericNewsPageResponse>("Qatar");
             NewsContent = await _simpleCacheService.GetCurrentNews("Qatar") ?? new();
             StateHasChanged();
         }
