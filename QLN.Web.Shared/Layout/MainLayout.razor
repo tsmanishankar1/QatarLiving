@@ -127,6 +127,7 @@
 
 
                 <ChildContent>
+                    <div class="vertical-button-group">
                     @if (IsLoggedIn == true)
                     {
                         <MudButton id="profileButton" Variant="Variant.Outlined" Color="Color.Warning"
@@ -160,7 +161,7 @@
                             Sign Up
                         </MudButton>
                     }
-
+                    </div>
                 </ChildContent>
             </MudMenu>
         </div>
@@ -408,6 +409,10 @@ Route = "/more-features-coming-soon"
         font-weight: 500;
         color: var(--color-text-heading);
         flex-grow: 1;
+    }
+    .vertical-button-group {
+    display: flex;
+    flex-direction: column;
     }
 
     .post-ad-text {

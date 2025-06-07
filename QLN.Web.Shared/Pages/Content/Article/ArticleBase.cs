@@ -14,7 +14,9 @@ public class ArticleBase : ComponentBase
     [Parameter]
     public string slug { get; set; }
     public string category { get; set; }
+    public string categoryLabel { get; set; }
     public string subcategory { get; set; }
+    public string subcategoryLabel { get; set; }
     public bool isLoading { get; set; } = true;
     protected bool imageLoaded = false;
     protected List<BannerItem> DailyHeroBanners { get; set; } = new();
@@ -25,24 +27,25 @@ public class ArticleBase : ComponentBase
     protected QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem? postBreadcrumbCategory;
     protected QlnNewsNewsQatarPageResponse QatarNewsContent { get; set; } = new QlnNewsNewsQatarPageResponse();
     protected List<ContentPost> moreArticleList { get; set; } = new List<ContentPost>();
+    protected GenericNewsPageResponse? NewsContent { get; set; }
     [Inject] private ILogger<NewsCardBase> Logger { get; set; }
     [Inject] private ISimpleMemoryCache _simpleCacheService { get; set; }
     public PostModel SelectedPost { get; set; } = new PostModel
-{
-    Id = string.Empty,
-    Category = string.Empty,
-    Title = string.Empty,
-    ImageUrl = null,
-    BodyPreview = string.Empty,
-    Author = string.Empty,
-    slug = string.Empty,
-    Time = DateTime.MinValue,
-    LikeCount = 0,
-    CommentCount = 0,
-    isCommented = false,
-    Slug = string.Empty,
-    Comments = new List<CommentModel>()
-};
+    {
+        Id = string.Empty,
+        Category = string.Empty,
+        Title = string.Empty,
+        ImageUrl = null,
+        BodyPreview = string.Empty,
+        Author = string.Empty,
+        slug = string.Empty,
+        Time = DateTime.MinValue,
+        LikeCount = 0,
+        CommentCount = 0,
+        isCommented = false,
+        Slug = string.Empty,
+        Comments = new List<CommentModel>()
+    };
     [Inject] private INewsService _newsService { get; set; }
     [Inject] private IEventService _eventService { get; set; }
     protected ContentPost newsArticle { get; set; } = new ContentPost();
@@ -53,7 +56,7 @@ public class ArticleBase : ComponentBase
         "/images/banner_image.svg",
         "/images/banner_image.svg"
     };
-     [Inject]
+    [Inject]
     protected NavigationManager navManager { get; set; }
     protected List<ViewToggleButtons.ViewToggleOption> routerList = new()
     {
@@ -89,7 +92,7 @@ public class ArticleBase : ComponentBase
     new() { Label = "Fashion & Style", Value = "fashion-and-style" },
     new() { Label = "Home & Living", Value = "home-and-living" }
 };
-    
+
     [Parameter]
     public NewsItem Item { get; set; }
     protected async override Task OnInitializedAsync()
@@ -102,6 +105,8 @@ public class ArticleBase : ComponentBase
                 category = cat;
             if (query.TryGetValue("subcategory", out var sub))
                 subcategory = sub;
+            categoryLabel = routerList.FirstOrDefault(item => item.Value == category)?.Label;
+            subcategoryLabel = routerList.FirstOrDefault(item => item.Value == subcategory)?.Label;
             isLoading = true;
             var bannersTask = LoadBanners();
             await Task.WhenAll(bannersTask);
@@ -136,17 +141,17 @@ public class ArticleBase : ComponentBase
                     Avatar = "/images/content/Sample.svg"
                 }).ToList() ?? new List<CommentModel>()
             };
-            var categoryValue = routerList.FirstOrDefault(item => item.Label == category)?.Value;
-            var subcategoryValue = routerList.FirstOrDefault(item => item.Label == subcategory)?.Value;
-            if (categoryValue != null && subcategoryValue != null){
+            if (category != null && subcategory != null)
+            {
                 breadcrumbItems = new()
                 {
-                new() {  Label = category,Url =$"/content/news?category={categoryValue}" },
-                new() { Label = subcategory, Url = $"/content/news?category={categoryValue}&subcategory={subcategoryValue}"},
-                new() { Label = newsArticle.Title, Url = $"/content/article/details/{categoryValue}/{subcategoryValue}/{slug}", IsLast = true },
+                new() {   Label = categoryLabel,Url =$"/content/news?category={category}" },
+                new() { Label = subcategoryLabel, Url = $"/content/news?category={category}&subcategory={subcategory}"},
+                new() { Label = newsArticle.Title, Url = $"/content/article/details/{category}/{subcategory}/{slug}", IsLast = true },
                 };
             }
-           else{
+            else
+            {
                 breadcrumbItems = new()
                 {
                 new() { Label = "Daily", Url = "/content/daily"},
@@ -155,9 +160,10 @@ public class ArticleBase : ComponentBase
                 new() { Label = newsArticle.Title, Url = $"/content/article/details/{slug}", IsLast = true },
                 };
             }
-            
-            QatarNewsContent = await GetNewsQatarAsync();
-            moreArticleList = QatarNewsContent?.News?.MoreArticles?.Items ?? new List<ContentPost>();
+
+            // QatarNewsContent = await GetNewsQatarAsync();
+            NewsContent = await GetNewsAsync<GenericNewsPageResponse>(subcategoryLabel);
+            moreArticleList = NewsContent?.News?.MoreArticles?.Items ?? new List<ContentPost>();
         }
         catch (Exception ex)
         {
@@ -168,28 +174,28 @@ public class ArticleBase : ComponentBase
             isLoading = false;
         }
     }
-        // protected override async Task OnParametersSetAsync()
-        // {
-        //     postBreadcrumbItem = new()
-        //     {
-        //         Label = slug ?? "Not Found",
-        //         Url = $"/content/community/post/detail/{slug}",
-        //         IsLast = true
-        //     };
-        //     postBreadcrumbCategory = new()
-        //     {
-        //         Label = slug ?? "Not Found",
-        //         //Url = "/content/community",
-        //         Url = $"/content/community"
-        //     };
+    // protected override async Task OnParametersSetAsync()
+    // {
+    //     postBreadcrumbItem = new()
+    //     {
+    //         Label = slug ?? "Not Found",
+    //         Url = $"/content/community/post/detail/{slug}",
+    //         IsLast = true
+    //     };
+    //     postBreadcrumbCategory = new()
+    //     {
+    //         Label = slug ?? "Not Found",
+    //         //Url = "/content/community",
+    //         Url = $"/content/community"
+    //     };
 
-        //     breadcrumbItems = new List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem>
-        //     {
-        //         new() { Label = "Community", Url = "/content/community" },
-        //        postBreadcrumbCategory,
-        //         postBreadcrumbItem
-        //     };
-        // }
+    //     breadcrumbItems = new List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem>
+    //     {
+    //         new() { Label = "Community", Url = "/content/community" },
+    //        postBreadcrumbCategory,
+    //         postBreadcrumbItem
+    //     };
+    // }
 
     protected async Task<ContentPost> GetNewsBySlugAsync()
     {
@@ -211,25 +217,25 @@ public class ArticleBase : ComponentBase
     }
     protected async Task<QlnNewsNewsQatarPageResponse> GetNewsQatarAsync()
     {
-            try
-            {
-                var apiResponse = await _newsService.GetNewsQatarAsync() ?? new HttpResponseMessage();
-                if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
-                {
-                    var response = await apiResponse.Content.ReadFromJsonAsync<QlnNewsNewsQatarPageResponse>();
-                    return response ?? new QlnNewsNewsQatarPageResponse();
-                }
-                return new QlnNewsNewsQatarPageResponse();
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "GetNewsQatarAsync");
-                return new QlnNewsNewsQatarPageResponse();
-            }
-    }
-        private async Task LoadBanners()
+        try
         {
-            isLoadingBanners = true;
+            var apiResponse = await _newsService.GetNewsQatarAsync() ?? new HttpResponseMessage();
+            if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
+            {
+                var response = await apiResponse.Content.ReadFromJsonAsync<QlnNewsNewsQatarPageResponse>();
+                return response ?? new QlnNewsNewsQatarPageResponse();
+            }
+            return new QlnNewsNewsQatarPageResponse();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "GetNewsQatarAsync");
+            return new QlnNewsNewsQatarPageResponse();
+        }
+    }
+    private async Task LoadBanners()
+    {
+        isLoadingBanners = true;
         try
         {
             var banners = await _simpleCacheService.GetBannerAsync();
@@ -240,6 +246,24 @@ public class ArticleBase : ComponentBase
         {
             isLoadingBanners = false;
         }
+    }
+        protected async Task<T> GetNewsAsync<T>(string tab) where T : new()
+        {
+            try
+            {
+                var apiResponse = await _newsService.GetNewsAsync(tab) ?? new HttpResponseMessage();
+                if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
+                {
+                    var response = await apiResponse.Content.ReadFromJsonAsync<T>();
+                    return response ?? new T();
+                }
+                return new T();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, $"GetNewsAsync<{typeof(T).Name}> failed for tab: {tab}");
+                return new T();
+            }
         }
     //    private async Task<BannerResponse?> FetchBannerData()
     //{
@@ -257,6 +281,6 @@ public class ArticleBase : ComponentBase
     //    Logger.LogError(ex, "FetchBannerData error.");
     //    return null;
     //}
-//}
+    //}
 }
 

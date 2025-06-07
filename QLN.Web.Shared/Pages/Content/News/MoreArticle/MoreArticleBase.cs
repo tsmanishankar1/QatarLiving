@@ -15,21 +15,23 @@ public class MoreArticleBase : ComponentBase
 
     [Parameter]
     public string selectedTab { get; set; }
+    [Parameter]
+    public string selectedMainTab { get; set; }
 
     [Parameter] public EventCallback<ContentPost> OnClick { get; set; }
     protected void onclick(ContentPost news)
     {
-        navManager.NavigateTo($"/content/article/details/{news.Slug}");
+        navManager.NavigateTo($"/content/article/details/{news.Slug}?category={selectedMainTab}&subcategory={selectedTab}");
     }
     protected override void OnParametersSet()
     {
-        imageLoaded = false;
+        imageLoaded = true;
         imageFailed = false;
     }
 
     protected void OnImageLoaded()
     {
-        imageLoaded = true;
+        imageLoaded = false;
         imageFailed = false;
         StateHasChanged();
     }

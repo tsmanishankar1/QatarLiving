@@ -14,8 +14,10 @@
     <link rel="stylesheet" href="_content/QLN.Web.Shared/css/site.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet" as="style">
-    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet" as="style">
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" media="print"
+        onload="this.media='all'">
 
     @* <link rel="preload" href="fonts/PublicSans.woff2" as="font" type="font/woff2" crossorigin="anonymous"> *@
 
@@ -358,6 +360,9 @@
                 pagination: {
                     el: '.swiper-categories-pagination',
                     clickable: true,
+                    dynamicBullets: true,
+                    dynamicMainBullets: 7
+
                 },
                 breakpoints: {
                     480: { slidesPerView: 2, spaceBetween: 5 },
@@ -365,9 +370,9 @@
                     640: { slidesPerView: 3.8, spaceBetween: 6 },
                     768: { slidesPerView: 4, spaceBetween: 7 },
                     860: { slidesPerView: 4.8, spaceBetween: 7 },
-                    1024: { slidesPerView: 5.2, spaceBetween: 10 },
+                    1024: { slidesPerView: 4.9, spaceBetween: 10 },
                     1120: { slidesPerView: 5.3, spaceBetween: 10 },
-                    1200: { slidesPerView: 5.5, spaceBetween: 13 },
+                    1200: { slidesPerView: 5.8, spaceBetween: 10 },
                 },
                 on: {
                     afterInit: function (swiper) {
@@ -414,17 +419,17 @@
         if (!window.__blazorStarted) {
             window.__blazorStarted = true;
             Blazor.start({
-            reconnectionOptions: {
-                maxRetries: 5,
-                retryIntervalMilliseconds: 4000
-            },
-            onConnectionDown: (options, error) => {
-                console.warn('Connection down:', error);
-                setTimeout(() => {
-                    location.reload();
-                }, 30000); // reload after 30s if not reconnected
-            }
-        });
+                reconnectionOptions: {
+                    maxRetries: 5,
+                    retryIntervalMilliseconds: 4000
+                },
+                onConnectionDown: (options, error) => {
+                    console.warn('Connection down:', error);
+                    setTimeout(() => {
+                        location.reload();
+                    }, 30000); // reload after 30s if not reconnected
+                }
+            });
         }
 
     </script>

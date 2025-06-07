@@ -18,7 +18,7 @@
                     OnLocationUpdated="CallApiForLocationChange" GetLabel="item => item.Name" GetId="item => item.Id"
                     MaxSelectableItems="1" Padding="10px"
                     CustomStyle="@(IsMobile ? "border-radius:8px;" 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                : "border-top-left-radius:6px; border-bottom-left-radius:6px; border-top-right-radius:0; border-bottom-right-radius:0;")"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            : "border-top-left-radius:6px; border-bottom-left-radius:6px; border-top-right-radius:0; border-bottom-right-radius:0;")"
                     OnSearch="PerformSearch" />
             </div>
 
@@ -36,10 +36,9 @@
                 <div class="select-label">Dates</div>
                 <div class="date-choose-wrapper">
                     <div class="date-labels">
-                        <label
-                            class="select-choose @(string.IsNullOrEmpty(SelectedDateLabel) ? "placeholder" : "selected")">
+                        <div class="select-choose @(string.IsNullOrEmpty(SelectedDateLabel) ? "unselect" : "selected")">
                             @(string.IsNullOrEmpty(SelectedDateLabel) ? "Choose" : SelectedDateLabel)
-                        </label>
+                        </div>
                     </div>
                     <div class="date-icon">
                         <MudIcon
@@ -112,8 +111,8 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        width: 80%;
-        font-family: 'Public Sans';
+        width: 75%;
+        font-family: 'Public Sans', sans-serif;
     }
 
     .search-row {
@@ -190,10 +189,12 @@
         font-size: 12px;
         font-weight: 500;
         color: white;
+        background-color: var(--color-accent);
     }
 
-    .select-choose.placeholder {
+    .select-choose.unselect {
         color: white;
+        background-color: var(--color-accent);
         font-size: 14px;
         font-weight: 400;
     }
