@@ -40,8 +40,9 @@
                     </MudVirtualize>
                 </div>
             </div>
-            <!-- Pagination dots -->
-            <div class="swiper-categories-pagination"></div>
+            <div class="swiper-categories-pagination-wrapper">
+                <div class="swiper-categories-pagination"></div>
+            </div>
         </div>
     }
 </div>
@@ -117,10 +118,18 @@
         right: 20px;
     }
 
-    /* Swiper pagination dots styling */
+    .swiper-categories-pagination-wrapper {
+        display: flex;
+        justify-content: center;
+        /* shift to right */
+        align-items: center;
+        width: 100%;
+        margin-top: 10px;
+        padding-left: 170px;
+    }
+
     .swiper-categories-pagination {
         text-align: center;
-        margin-top: 5px;
         user-select: none;
     }
 
@@ -145,6 +154,16 @@
         .swiper-categories-container:hover .arrow-button {
             opacity: 1;
         }
+
+        .swiper-categories-pagination-wrapper {
+            display: flex;
+            justify-content: center;
+            /* shift to right */
+            align-items: center;
+            width: 100%;
+            margin-top: 10px;
+            padding-left: 170px;
+        }
     }
 
     /* Hide arrows permanently on mobile */
@@ -161,6 +180,16 @@
 
         .swiper-categories-pagination {
             margin-top: 0px;
+        }
+
+        .swiper-categories-pagination-wrapper {
+            display: flex;
+            justify-content: center;
+            /* shift to right */
+            align-items: center;
+            width: 100%;
+            margin-top: 10px;
+            padding-left: 170px;
         }
     }
 </style>
