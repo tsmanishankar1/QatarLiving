@@ -70,7 +70,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         public Func<Task> OnClick { get; set; }
     }
 
-    private string CurrentUrl => $"{Navigation.BaseUri.TrimEnd('/')}/content/community/post/detail/{Post.Id}";
+    private string CurrentUrl => $"{Navigation.BaseUri.TrimEnd('/')}/content/community/post/detail/{Post.Slug}";
     protected List<MenuItem> shareMenuItems => new()
     {
         new MenuItem
