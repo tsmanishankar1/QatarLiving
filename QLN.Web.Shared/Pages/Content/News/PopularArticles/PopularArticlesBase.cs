@@ -11,6 +11,8 @@ public class PopularArticlesBase : ComponentBase
     [Parameter]
     public string selectedTab { get; set; }
     [Parameter]
+    public string selectedMainTab { get; set; }
+    [Parameter]
     public bool loading { get; set; } = false;
     protected bool imageLoaded = false;
     protected bool imageFailed = false;
@@ -18,11 +20,11 @@ public class PopularArticlesBase : ComponentBase
 
     protected void onclick(ContentPost news)
     {
-        navManager.NavigateTo($"/content/article/details/{selectedTab}/{news.Slug}");
+        navManager.NavigateTo($"/content/article/details/{news.Slug}?category={selectedMainTab}&subcategory={selectedTab}");
     }
     protected override void OnParametersSet()
     {
-        imageLoaded = false;
+        imageLoaded = true;
         imageFailed = false;
     }
 
