@@ -1,8 +1,8 @@
 @inherits TopEventCardBase
 @using QLN.Web.Shared.Helpers
-<div class="Top-event-list-card">
+<div class="Top-event-list-card" @onclick="() => NavigateToEventDetail()">
     <div class="Top-event-image-wrapper">
-        <a @onclick="() => NavigateToEventDetail()"> <img src="@Item.ImageUrl" class="Top-event-card-img" alt="Title" /></a>
+        <a> <img src="@Item.ImageUrl" class="Top-event-card-img" alt="Title" /></a>
         @if (!string.IsNullOrEmpty(Item.EventStart) && !string.IsNullOrEmpty(Item.EventEnd))
         {
             <div class="Top-event-date">
@@ -14,7 +14,9 @@
     <div class="Top-event-card-body">
         <div class="Top-event-category">Highlighted Event</div>
 
-        <a @onclick="() => NavigateToEventDetail()"><h3 class="Top-event-title">@Item.Title</h3></a>
+        <a @onclick="() => NavigateToEventDetail()">
+            <h3 class="Top-event-title">@Item.Title</h3>
+        </a>
 
         <p class="Top-event-description" style="text-overflow:ellipsis;">
             @HtmlHelper.StripHTML(Item.Description ?? "")
@@ -39,16 +41,16 @@
         max-width: 374px;
         height: 368px;
         cursor: pointer;
-        font-family: 'Public Sans';
+        font-family: 'Public Sans', sans-serif;
         border: 1px solid #F0F0F0;
         background: #FFFFFF;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
-        .Top-event-list-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-        }
+    .Top-event-list-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
 
     .Top-event-image-wrapper {
         position: relative;
@@ -135,5 +137,3 @@
         color: #646464;
     }
 </style>
-
-

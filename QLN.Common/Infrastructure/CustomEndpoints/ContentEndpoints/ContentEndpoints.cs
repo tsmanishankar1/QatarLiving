@@ -17,7 +17,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
     {
         private const int CATEGORY_CACHE_EXPIRY_IN_MINS = 60;
         private const int NEWS_CACHE_EXPIRY_IN_MINS = 5;
-        private const int COMMUNITY_CACHE_EXPIRY_IN_MINS = 1;
+        private const int COMMUNITY_CACHE_EXPIRY_IN_MINS = 10;
         private const int EVENTS_CACHE_EXPIRY_IN_MINS = 10;
 
         #region All News
@@ -44,7 +44,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                     else
                     {
                         // Only Cache successful results
-                        AddCachingToHeader(context, NEWS_CACHE_EXPIRY_IN_MINS);
+                        AddPathCachingToHeader(context, NEWS_CACHE_EXPIRY_IN_MINS);
                         return Results.Ok(ad);
                     }
                 }
@@ -81,7 +81,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
 
                     var model = await svc.GetCategoriesFromDrupalAsync(cancellationToken);
 
-                    AddCachingToHeader(context, CATEGORY_CACHE_EXPIRY_IN_MINS);
+                    AddPathCachingToHeader(context, CATEGORY_CACHE_EXPIRY_IN_MINS);
 
                     return Results.Ok(model);
                 }
@@ -103,91 +103,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             return group;
         }
 
-
-        #endregion
-        #region Content Daily
-        //public static RouteGroupBuilder MapContentsDailyEndpoint(this RouteGroupBuilder group)
-        //{
-
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<ContentsDailyPageResponse>(DrupalContentConstants.QlnContentsDaily, "GetContentsDaily");
-
-        //    return group;
-        //}
-
-
-        #endregion
-        #region Featured Events
-        //public static RouteGroupBuilder MapFeaturedEventsEndpoint(this RouteGroupBuilder group)
-        //{
-
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnFeaturedEventsPageResponse>(DrupalContentConstants.QlnFeaturedEvents, "GetFeaturedEvents");
-
-        //    return group;
-        //}
-
-
-        #endregion
-        #region News
-        /// <summary>
-        /// Maps Content endpoints: detail and landing.
-        /// </summary>
-        //public static RouteGroupBuilder MapNewsCommunityEndpoint(this RouteGroupBuilder group)
-        //{
-
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsNewsCommunityPageResponse>(DrupalContentConstants.QlnNewsNewsCommunity, "GetNewsCommunity");
-
-        //    return group;
-        //}
-
-        //public static RouteGroupBuilder MapNewsMiddleEastEndpoint(this RouteGroupBuilder group)
-        //{
-
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsNewsMiddleEastPageResponse>(DrupalContentConstants.QlnNewsNewsMiddleEast, "GetNewsMiddleEast");
-
-        //    return group;
-        //}
-
-        //public static RouteGroupBuilder MapNewsWorldEndpoint(this RouteGroupBuilder group)
-        //{
-
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsNewsWorldPageResponse>(DrupalContentConstants.QlnNewsNewsWorld, "GetNewsWorld");
-
-        //    return group;
-        //}
-
-        //public static RouteGroupBuilder MapNewsHealthEducationEndpoint(this RouteGroupBuilder group)
-        //{
-
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsNewsHealthEducationPageResponse>(DrupalContentConstants.QlnNewsNewsHealthEducation, "GetNewsHealthEducation");
-
-        //    return group;
-        //}
-
-        //public static RouteGroupBuilder MapNewsLawEndpoint(this RouteGroupBuilder group)
-        //{
-
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsNewsLawPageResponse>(DrupalContentConstants.QlnNewsNewsLaw, "GetNewsLaw");
-
-        //    return group;
-        //}
-
-        //public static RouteGroupBuilder MapNewsQatarEndpoint(this RouteGroupBuilder group)
-        //{
-
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsNewsQatarPageResponse>(DrupalContentConstants.QlnNewsNewsQatar, "GetNewsQatar");
-
-        //    return group;
-
-        //}
-        #endregion
         #region Community
 
         public static RouteGroupBuilder MapPostDiscussionPostEndpoint(this RouteGroupBuilder group)
@@ -224,16 +139,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
 
             return group;
         }
-
-        //public static RouteGroupBuilder MapCommunityMorePostsEndpoint(this RouteGroupBuilder group)
-        //{
-
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<CommunityMorePostsResponse>(DrupalContentConstants.QlnCommunityMorePosts, "GetCommunityMorePosts");
-
-        //    return group;
-
-        //}
         public static RouteGroupBuilder MapContentCommunityEndpoint(this RouteGroupBuilder group)
         {
             // GET /api/content/categories
@@ -298,7 +203,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                     else
                     {
                         // Only Cache successful results
-                        AddCachingToHeader(context, COMMUNITY_CACHE_EXPIRY_IN_MINS);
+                        AddPathCachingToHeader(context, COMMUNITY_CACHE_EXPIRY_IN_MINS);
                         return Results.Ok(ad);
                     }
                 }
@@ -362,190 +267,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
         }
 
         #endregion
-        #region Finance
-        public static RouteGroupBuilder MapFinanceEntrepreneurshipEndpoint(this RouteGroupBuilder group)
-        {
-
-            // GET /api/content/landing
-            group.GenerateLandingEndpoint<QlnNewsFinanceEntrepreneurshipPageResponse>(DrupalContentConstants.QlnNewsFinanceEntrepreneurship, "GetFinanceEntrepreneurship");
-
-            return group;
-
-        }
-
-        //public static RouteGroupBuilder MapFinanceFinanceEndpoint(this RouteGroupBuilder group)
-        //{
-
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsFinanceFinancePageResponse>(DrupalContentConstants.QlnNewsFinanceFinance, "GetFinanceFinance");
-
-        //    return group;
-
-        //}
-
-        //public static RouteGroupBuilder MapFinanceJobsCareersEndpoint(this RouteGroupBuilder group)
-        //{
-
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsFinanceJobsCareersPageResponse>(DrupalContentConstants.QlnNewsFinanceJobsCareers, "GetFinanceJobsCareers");
-
-        //    return group;
-
-        //}
-
-        //public static RouteGroupBuilder MapFinanceMarketUpdateEndpoint(this RouteGroupBuilder group)
-        //{
-
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsFinanceMarketUpdatePageResponse>(DrupalContentConstants.QlnNewsFinanceMarketUpdate, "GetFinanceMarketUpdate");
-
-        //    return group;
-
-        //}
-
-        //public static RouteGroupBuilder MapFinanceQatarEndpoint(this RouteGroupBuilder group)
-        //{
-
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsFinanceQatarPageResponse>(DrupalContentConstants.QlnNewsFinanceQatar, "GetFinanceQatar");
-
-        //    return group;
-
-        //}
-
-        //public static RouteGroupBuilder MapFinanceRealEstateEndpoint(this RouteGroupBuilder group)
-        //{
-
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsFinanceRealEstatePageResponse>(DrupalContentConstants.QlnNewsFinanceRealEstate, "GetFinanceRealEstate");
-
-        //    return group;
-
-        //}
-        #endregion
-        #region Lifestyle
-        //public static RouteGroupBuilder MapLifestyleArtsCultureEndpoint(this RouteGroupBuilder group)
-        //{
-
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsLifestyleArtsCulturePageResponse>(DrupalContentConstants.QlnNewsLifestyleArtsCulture, "GetLifestyleArtsCulture");
-
-        //    return group;
-
-        //}
-
-        //public static RouteGroupBuilder MapLifestyleEventsEndpoint(this RouteGroupBuilder group)
-        //{
-
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsLifestyleEventsPageResponse>(DrupalContentConstants.QlnNewsLifestyleEvents, "GetLifestyleEvents");
-
-        //    return group;
-
-        //}
-
-        //public static RouteGroupBuilder MapLifestyleFoodDiningEndpoint(this RouteGroupBuilder group)
-        //{
-
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsLifestyleFoodDiningPageResponse>(DrupalContentConstants.QlnNewsLifestyleFoodDining, "GetLifestyleFoodDining");
-
-        //    return group;
-
-        //}
-
-        //public static RouteGroupBuilder MapLifestyleTravelLeisureEndpoint(this RouteGroupBuilder group)
-        //{
-
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsLifestyleTravelLeisurePageResponse>(DrupalContentConstants.QlnNewsLifestyleTravelLeisure, "GetLifestyleTravelLeisure");
-
-        //    return group;
-
-        //}
-
-        //public static RouteGroupBuilder MapLifestyleHomeLivingEndpoint(this RouteGroupBuilder group)
-        //{
-
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsLifestyleHomeLivingPageResponse>(DrupalContentConstants.QlnNewsLifestyleHomeLiving, "GetLifestyleHomeLiving");
-
-        //    return group;
-
-        //}
-
-        //public static RouteGroupBuilder MapLifestyleFashionStyleEndpoint(this RouteGroupBuilder group)
-        //{
-
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsLifestyleFashionStylePageResponse>(DrupalContentConstants.QlnNewsLifestyleFashionStyle, "GetLifestyleFashionStyle");
-
-        //    return group;
-
-        //}
-        #endregion
-        #region Sports
-        //public static RouteGroupBuilder MapSportsAthleteFeaturesEndpoint(this RouteGroupBuilder group)
-        //{
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsSportsAthleteFeaturesPageResponse>(DrupalContentConstants.QlnNewsSportsAthleteFeatures, "GetSportsAthleteFeatures");
-        //    return group;
-        //}
-
-        //public static RouteGroupBuilder MapSportsFootballEndpoint(this RouteGroupBuilder group)
-        //{
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsSportsFootballPageResponse>(DrupalContentConstants.QlnNewsSportsFootball, "GetSportsFootball");
-        //    return group;
-        //}
-
-        //public static RouteGroupBuilder MapSportsInternationalEndpoint(this RouteGroupBuilder group)
-        //{
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsSportsInternationalPageResponse>(DrupalContentConstants.QlnNewsSportsInternational, "GetSportsInternational");
-        //    return group;
-        //}
-
-        //public static RouteGroupBuilder MapSportsMotorsportsEndpoint(this RouteGroupBuilder group)
-        //{
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsSportsMotorsportsPageResponse>(DrupalContentConstants.QlnNewsSportsMotorsports, "GetSportsMotorsports");
-        //    return group;
-        //}
-
-        //public static RouteGroupBuilder MapSportsOlympicsEndpoint(this RouteGroupBuilder group)
-        //{
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsSportsOlympicsPageResponse>(DrupalContentConstants.QlnNewsSportsOlympics, "GetSportsOlympics");
-        //    return group;
-        //}
-
-        //public static RouteGroupBuilder MapSportsQatarSportsEndpoint(this RouteGroupBuilder group)
-        //{
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<QlnNewsSportsQatarSportsPageResponse>(DrupalContentConstants.QlnNewsSportsQatarSports, "GetSportsQatarSports");
-        //    return group;
-        //}
-
-        #endregion
-        #region Videos
-        //public static RouteGroupBuilder MapContentVideosEndpoint(this RouteGroupBuilder group)
-        //{
-
-        //    // GET /api/content/landing
-        //    group.GenerateLandingEndpoint<ContentsVideosResponse>(DrupalContentConstants.QlnContentVideos, "GetVideos");
-
-        //    return group;
-
-        //}
-        #endregion
-        #region Support endpoints
         public static RouteGroupBuilder MapContentQueueEndpoint(this RouteGroupBuilder group)
         {
             // dont add caching to this as it is used for testing
 
             // GET /api/content/landing
             group.MapGet("{queue}/landing", async (
+                    HttpContext context,
                     [FromRoute] string queue,
                     [FromServices] IContentService svc,
                     CancellationToken cancellationToken
@@ -554,6 +282,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             {
                 try
                 {
+                    var doCache = true;
+
                     var response = new GenericNewsPageResponse
                     {
                         News = new GenericNewsPage()
@@ -684,9 +414,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                             break;
                         default:
                             // return with an empty response
+                            doCache = false;
                             break;
                     }
-                    
+
+                    if(doCache) 
+                        AddPathCachingToHeader(context, COMMUNITY_CACHE_EXPIRY_IN_MINS);
+
                     return Results.Ok(response);
 
                 }
@@ -740,7 +474,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                         page,
                         page_size);
 
-                    AddCachingToHeader(context, EVENTS_CACHE_EXPIRY_IN_MINS);
+                    //AddFullCachingToHeader(context, EVENTS_CACHE_EXPIRY_IN_MINS);
 
                     return Results.Ok(model);
                 }
@@ -784,7 +518,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                     else
                     {
                         // Only Cache successful results
-                        AddCachingToHeader(context, EVENTS_CACHE_EXPIRY_IN_MINS);
+                        AddPathCachingToHeader(context, EVENTS_CACHE_EXPIRY_IN_MINS);
 
                         return Results.Ok(ad);
                     }
@@ -807,8 +541,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             return group;
         }
 
-        #endregion
-        #region Categories
         #endregion
 
         public static RouteGroupBuilder MapPostCommentEndpoint(this RouteGroupBuilder group)
@@ -973,7 +705,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                     //}
 
 
-                    AddCachingToHeader(context, NEWS_CACHE_EXPIRY_IN_MINS);
+                    AddPathCachingToHeader(context, NEWS_CACHE_EXPIRY_IN_MINS);
 
                     return Results.Ok(model);
                 }
@@ -995,7 +727,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             return group;
         }
 
-        private static void AddCachingToHeader(HttpContext context, int cache_expiry_in_minutes)
+        private static void AddPathCachingToHeader(HttpContext context, int cache_expiry_in_minutes)
         {
             context.Response.GetTypedHeaders().CacheControl = new CacheControlHeaderValue
             {
@@ -1004,7 +736,30 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             };
 
             // Add Vary header for the User-Agent
-            context.Response.Headers[HeaderNames.Vary] = "User-Agent";
+            context.Response.Headers[HeaderNames.Vary] = "Accept, Accept-Encoding";
+
+            // Add a custom header to help downstream caches (if any) to distinguish by URL
+            context.Response.Headers["X-Cache-Key"] = context.Request.Path + context.Request.QueryString;
+        }
+
+        private static void AddFullCachingToHeader(HttpContext context, int cache_expiry_in_minutes)
+        {
+            context.Response.GetTypedHeaders().CacheControl = new CacheControlHeaderValue
+            {
+                Public = true,
+                MaxAge = TimeSpan.FromMinutes(cache_expiry_in_minutes)
+            };
+
+            // Add Vary header for query string and path to ensure unique cache per request URL
+            // "Vary: Accept, Accept-Encoding" is common, but for query/path, use "Vary: *" or custom logic
+            // Here, we use "Vary: Accept, Accept-Encoding" and "Vary: *" to indicate all request headers/params
+            // But "Vary: *" disables caching by shared caches, so instead, use a custom header to indicate query
+            // The best practice is to use the full URL as the cache key on the server side, but for HTTP headers:
+            //context.Response.Headers[HeaderNames.Vary] = "Accept, Accept-Encoding";
+            context.Response.Headers[HeaderNames.Vary] = "*";
+
+            // Add a custom header to help downstream caches (if any) to distinguish by URL
+            context.Response.Headers["X-Cache-Key"] = context.Request.Path + context.Request.QueryString;
         }
         #endregion
     }

@@ -41,8 +41,9 @@
                     </MudVirtualize>
                 </div>
             </div>
-            <!-- Pagination dots -->
-            <div class="swiper-categories-pagination"></div>
+            <div class="swiper-categories-pagination-wrapper">
+                <div class="swiper-categories-pagination"></div>
+            </div>
         </div>
     }
 </div>
@@ -80,7 +81,7 @@
     .categories-wrapper {
         background: linear-gradient(to top, #F5F6FA 0%, #F5F6FA 20%, #FAFAFA 100%);
         width: 100%;
-        font-family: 'Public Sans';
+        font-family: 'Public Sans', sans-serif;
         margin-bottom: 30px;
     }
 
@@ -151,12 +152,21 @@
         right: 20px;
     }
 
-    /* Swiper pagination dots styling */
+    .swiper-categories-pagination-wrapper {
+        display: flex;
+        justify-content: center;
+        /* shift to right */
+        align-items: center;
+        width: 100%;
+        margin-top: 10px;
+        padding-left: 170px;
+    }
+
     .swiper-categories-pagination {
         text-align: center;
-        margin-top: 5px;
         user-select: none;
     }
+
 
     .swiper-categories-pagination .swiper-pagination-bullet {
         width: 8px;
@@ -179,6 +189,16 @@
         .swiper-categories-container:hover .arrow-button {
             opacity: 1;
         }
+
+        .swiper-categories-pagination-wrapper {
+            display: flex;
+            justify-content: center;
+            /* shift to right */
+            align-items: center;
+            width: 100%;
+            margin-top: 10px;
+            padding-left: 170px;
+        }
     }
 
     /* Hide arrows permanently on mobile */
@@ -195,6 +215,16 @@
 
         .swiper-categories-pagination {
             margin-top: 0px;
+        }
+
+        .swiper-categories-pagination-wrapper {
+            display: flex;
+            justify-content: center;
+            /* shift to right */
+            align-items: center;
+            width: 100%;
+            margin-top: 10px;
+            padding-left: 170px;
         }
     }
 </style>

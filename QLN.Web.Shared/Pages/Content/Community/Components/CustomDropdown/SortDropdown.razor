@@ -2,7 +2,7 @@
 
 <div class="custom-select-wrapper-sort" @onfocusout="HandleFocusOut" tabindex="0" @onkeydown="HandleKeyDown">
     <div class="select-display-sort @(IsOpen ? "focused" : "")" @onclick="ToggleDropdown"
-         style="@($"border-radius:{BorderRadius}; border-color:{(IsOpen ? "#FF7F38" : "#D0D5DD")}; padding:{Padding};")">
+        style="@($"border-radius:{BorderRadius}; border-color:{(IsOpen ? "#FF7F38" : "#D0D5DD")}; padding:{Padding};")">
 
         <span class="selected-text">
             @if (!string.IsNullOrEmpty(SelectedId))
@@ -16,7 +16,7 @@
         </span>
 
         <MudIcon Icon="@(IsOpen? Icons.Material.Filled.KeyboardArrowUp : Icons.Material.Filled.KeyboardArrowDown)"
-                 Class="arrow-icon-sort" />
+            Class="arrow-icon-sort" />
     </div>
 
     @if (IsOpen)
@@ -76,7 +76,7 @@
         width: 100%;
         outline: none;
         padding: 0;
-        font-family: 'Public Sans';
+        font-family: 'Public Sans', sans-serif;
     }
 
     .select-label-column {
@@ -109,14 +109,14 @@
         font-size: 14px;
         cursor: pointer;
         transition: all 0.2s ease;
-        height:36px;
-        width:190px;
+        height: 36px;
+        width: 190px;
         border-radius: 4px;
     }
 
-        .select-display-sort.focused {
-            border-color: #FF7F38;
-        }
+    .select-display-sort.focused {
+        border-color: #FF7F38;
+    }
 
     .select-value-placeholder {
         color: #787878;

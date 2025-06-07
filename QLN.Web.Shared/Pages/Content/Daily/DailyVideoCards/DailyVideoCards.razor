@@ -5,7 +5,7 @@
     <!-- Main Video -->
     <div class="main-video-wrapper video-card">
         <iframe width="100%" height="100%" muted loop style="object-fit: cover; border-radius: 6px;"
-                src="@YTVideoEmbedURL">
+            src="@YTVideoEmbedURL">
         </iframe>
     </div>
 
@@ -13,7 +13,8 @@
     <div class="video-list-container">
         <div class="section-title">
             <h3 class="section-heading">
-                <span class="accent-bar"></span>@(string.IsNullOrEmpty(QueueLabel) is true ? "Watch on Qatar Living" : QueueLabel)
+                <span class="accent-bar"></span>@(string.IsNullOrEmpty(QueueLabel) is true ? "Watch on Qatar Living" :
+                                QueueLabel)
             </h3>
         </div>
         <div class="video-list">
@@ -55,7 +56,7 @@
         margin: 20px auto;
         width: 100%;
         padding: 16px;
-        font-family: 'Public Sans';
+        font-family: 'Public Sans', sans-serif;
         flex-wrap: wrap;
     }
 
@@ -104,13 +105,13 @@
         z-index: 2;
     }
 
-        .video-overlay-center .mud-icon-root {
-            background-color: rgba(0, 0, 0, 0.6);
-            padding: 5px;
-            border-radius: 50%;
-            font-size: 80px;
-            color: #f26522;
-        }
+    .video-overlay-center .mud-icon-root {
+        background-color: rgba(0, 0, 0, 0.6);
+        padding: 5px;
+        border-radius: 50%;
+        font-size: 80px;
+        color: #f26522;
+    }
 
     .play-icon-daily {
         position: absolute;
@@ -120,13 +121,13 @@
         z-index: 2;
     }
 
-        .play-icon-daily .mud-icon-root {
-            background-color: rgba(0, 0, 0, 0.6);
-            padding: 2px;
-            border-radius: 50%;
-            font-size: 40px;
-            color: #f26522;
-        }
+    .play-icon-daily .mud-icon-root {
+        background-color: rgba(0, 0, 0, 0.6);
+        padding: 2px;
+        border-radius: 50%;
+        font-size: 40px;
+        color: #f26522;
+    }
 
     .main-video-wrapper video {
         width: 100%;
@@ -140,10 +141,10 @@
         height: 416px;
     }
 
-        .video-list h2 {
-            font-size: 20px;
-            margin-bottom: 20px;
-        }
+    .video-list h2 {
+        font-size: 20px;
+        margin-bottom: 20px;
+    }
 
     .video-card {
         display: flex;
@@ -186,23 +187,28 @@
     }
 
     .video-title:hover {
-    text-decoration: underline;
-    color: var(--color-primary);
-    cursor: pointer;
-}
+        text-decoration: underline;
+        color: var(--color-primary);
+        cursor: pointer;
+    }
 
 
     .vedio-title-text {
         display: -webkit-box;
-        -webkit-line-clamp: 3;           /* Limit to 3 lines */
+        -webkit-line-clamp: 3;
+        /* Limit to 3 lines */
         -webkit-box-orient: vertical;
-        overflow: hidden;                /* Hide overflow and scrollbars */
+        overflow: hidden;
+        /* Hide overflow and scrollbars */
         text-overflow: ellipsis;
         white-space: normal;
-        scrollbar-width: none;           /* Hide scrollbar in Firefox */
+        scrollbar-width: none;
+        /* Hide scrollbar in Firefox */
     }
+
     .vedio-title-text::-webkit-scrollbar {
-        display: none;                   /* Hide scrollbar in Webkit browsers */
+        display: none;
+        /* Hide scrollbar in Webkit browsers */
     }
 
     .section-heading {
