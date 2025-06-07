@@ -43,6 +43,9 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
         protected bool IsMobile = false;
         protected int windowWidth;
         private bool _jsInitialized = false;
+        private bool _dateRangeApplied = false;
+        private DateRange _confirmedDateRange = new();
+
         protected ElementReference _popoverDiv;
 
         protected DotNetObjectReference<SearchSectionBase>? _dotNetRef;
@@ -53,7 +56,18 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
         protected DateRange _dateRange = new();
 
 
-        protected void ToggleDatePicker() => _showDatePicker = !_showDatePicker;
+        protected void ToggleDatePicker()
+        {
+            _showDatePicker = !_showDatePicker;
+
+            if (_showDatePicker)
+            {
+                // Set the picker to last confirmed value
+                _dateRange = new DateRange(_confirmedDateRange.Start, _confirmedDateRange.End);
+            }
+        }
+
+
         protected MudDatePicker _datePickerRef;
 
         protected async Task ApplyDatePicker()
@@ -62,6 +76,8 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
             {
                 var startDate = _dateRange.Start.Value;
                 var endDate = _dateRange.End ?? _dateRange.Start.Value;
+
+                _confirmedDateRange = new DateRange(startDate, endDate); // ← save confirmed range
 
                 if (startDate.Date == endDate.Date)
                 {
@@ -94,7 +110,7 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
             SelectedPropertyTypeId = null;
             SelectedLocationId = null;
             SelectedAreas.Clear();
-            FilteredAreas = Areas; 
+            FilteredAreas = Areas;
             _selectedDate = null;
             SelectedDateLabel = string.Empty;
 
@@ -121,7 +137,7 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
             _showDatePicker = false;
             _selectedDate = null;
             SelectedDateLabel = string.Empty;
-
+            _confirmedDateRange = new();
             if (_dateRange?.Start != null || _dateRange?.End != null)
             {
                 await OnDateChanged.InvokeAsync((null, null));
@@ -190,7 +206,7 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
 
             if (_showDatePicker)
             {
-                _dotNetRef ??= DotNetObjectReference.Create(this); 
+                _dotNetRef ??= DotNetObjectReference.Create(this);
                 await JSRuntime.InvokeVoidAsync("registerPopoverClickAway", _popoverDiv, _dotNetRef);
             }
         }
