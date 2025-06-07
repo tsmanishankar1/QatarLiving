@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using QLN.Common.Infrastructure.DTO_s;
+using QLN.Web.Shared.Helpers;
 using QLN.Web.Shared.Services.Interface;
 using System;
 using System.Net.Http.Json;
@@ -12,21 +13,26 @@ namespace QLN.Web.Shared.Services
     {
         private readonly IEventService _eventService;
         private IContentService _contentService;
+        private INewsService _newsService;
         private readonly ILogger<SimpleMemoryCache> _logger;
         private readonly IMemoryCache _memoryCache;
         private const string BannerCacheKey = "BannerResponseCacheKey";
         private const string DailyCacheKey = "DailyNewsResponseCacheKey";
+        private const string NewsCachePrefix = "News";
         private static readonly TimeSpan BannerCacheDuration = TimeSpan.FromMinutes(3);
         private static readonly TimeSpan DailyCacheDuration = TimeSpan.FromMinutes(1);
+        private static readonly TimeSpan NewsCacheDuration = TimeSpan.FromMinutes(2);
 
         public SimpleMemoryCache(
             IEventService eventService,
             IContentService contentService,
+            INewsService newsService,
             ILogger<SimpleMemoryCache> logger,
             IMemoryCache memoryCache)
         {
             _eventService = eventService;
             _contentService = contentService;
+            _newsService = newsService;
             _logger = logger;
             _memoryCache = memoryCache;
         }
@@ -96,6 +102,43 @@ namespace QLN.Web.Shared.Services
             {
                 _logger.LogError(ex, "FetchBannerData error.");
                 return null;
+            }
+        }
+
+        public async Task<GenericNewsPageResponse?> GetCurrentNews(string tab)
+        {
+            var suffix = TextHelper.ToSnakeCase(tab);
+            if (_memoryCache.TryGetValue($"{NewsCachePrefix.ToLower()}_{suffix}", out GenericNewsPageResponse? newsTab))
+            {
+                return newsTab;
+            }
+
+            var newsTabPage = await FetchNewsData(tab);
+            
+            if (newsTabPage != null)
+            {
+                _memoryCache.Set($"{NewsCachePrefix.ToLower()}_{suffix}", newsTabPage, NewsCacheDuration);
+            }
+
+            return newsTabPage;
+        }
+
+        private async Task<GenericNewsPageResponse?> FetchNewsData(string tab)
+        {
+            try
+            {
+                var apiResponse = await _newsService.GetNewsAsync(tab) ?? new HttpResponseMessage();
+                if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
+                {
+                    var response = await apiResponse.Content.ReadFromJsonAsync<GenericNewsPageResponse>();
+                    return response ?? new ();
+                }
+                return new ();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"FetchNewsData failed for tab: {tab}");
+                return new ();
             }
         }
     }

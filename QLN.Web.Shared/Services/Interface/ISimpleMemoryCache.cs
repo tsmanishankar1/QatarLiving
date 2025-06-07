@@ -6,5 +6,6 @@ namespace QLN.Web.Shared.Services.Interface
     {
         Task<BannerResponse?> GetBannerAsync();
         Task<ContentsDailyPageResponse?> GetContentLandingAsync();
+        Task<GenericNewsPageResponse?> GetCurrentNews(string tab);
     }
 }

@@ -144,7 +144,6 @@ namespace QLN.Web.Shared.Pages.Content.News
                 }
                 else
                 {
-                    await LoadInitialData();
                 }
             }
             catch (Exception ex)
@@ -161,11 +160,14 @@ namespace QLN.Web.Shared.Pages.Content.News
         {
             if (!firstRender) return;
 
+            isLoading = true;
+
             try
             {
-                isLoading = true;
-                StateHasChanged();
-                await LoadBanners(SelectedTab);
+                await Task.WhenAll(
+                    LoadBanners(SelectedTab),
+                    LoadInitialData()
+                );
             }
             catch (Exception ex)
             {
@@ -174,12 +176,14 @@ namespace QLN.Web.Shared.Pages.Content.News
             finally
             {
                 isLoading = false;
+                StateHasChanged();
             }
         }
 
         private async Task LoadInitialData()
         {
-            NewsContent = await GetNewsAsync<GenericNewsPageResponse>("Qatar");
+            //NewsContent = await GetNewsAsync<GenericNewsPageResponse>("Qatar");
+            NewsContent = await _simpleCacheService.GetCurrentNews("Qatar") ?? new();
             StateHasChanged();
         }
 
@@ -244,7 +248,7 @@ namespace QLN.Web.Shared.Pages.Content.News
         {
             isLoading = true;
             SelectedTab = tab;
-            NewsContent = await GetNewsAsync<GenericNewsPageResponse>(tab);
+            NewsContent = await _simpleCacheService.GetCurrentNews(tab);
             subTabLabel = routerList.FirstOrDefault(item => item.Label == SelectedTab)?.Value;
             navManager.NavigateTo($"/content/news?category={_selectedView}&subcategory={subTabLabel}", forceLoad: false);
             selectedRouterTab = string.Empty;
@@ -252,24 +256,7 @@ namespace QLN.Web.Shared.Pages.Content.News
             StateHasChanged();
         }
        
-         protected async Task<T> GetNewsAsync<T>(string tab) where T : new()
-        {
-            try
-            {
-                var apiResponse = await _newsService.GetNewsAsync(tab) ?? new HttpResponseMessage();
-                if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
-                {
-                    var response = await apiResponse.Content.ReadFromJsonAsync<T>();
-                    return response ?? new T();
-                }
-                return new T();
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, $"GetNewsAsync<{typeof(T).Name}> failed for tab: {tab}");
-                return new T();
-            }
-        }
+         
         protected void onclick(ContentPost news)
         {
             if (!string.IsNullOrEmpty(_selectedView) && !string.IsNullOrEmpty(subTabLabel))
