@@ -115,7 +115,7 @@ public class ArticleBase : ComponentBase
             SelectedPost = new PostModel
             {
                 Id = newsArticle.Nid,
-                Category = "",
+                Category = newsArticle.Category,
                 Title = newsArticle.Title,
                 BodyPreview = newsArticle.Description,
                 Author = "",
@@ -155,6 +155,8 @@ public class ArticleBase : ComponentBase
                 breadcrumbItems = new()
                 {
                 new() { Label = "Daily", Url = "/content/daily"},
+                new() { Label = SelectedPost.Category, Url = $"/content/news"},
+
                 new() { Label = newsArticle.Title, Url = $"/content/article/details/{slug}", IsLast = true },
                 };
             }
