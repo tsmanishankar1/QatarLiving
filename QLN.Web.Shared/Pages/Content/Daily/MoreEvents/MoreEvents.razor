@@ -8,9 +8,9 @@
     <div class="daily-more-category-group">
         @foreach (var item in DailyCategories)
         {
-                <button class="daily-category-btn" @onclick="NavigatetoAllEvents">
-                    @item.Label
-                </button>
+            <button class="daily-category-btn" @onclick="NavigatetoAllEvents">
+                @item.Label
+            </button>
         }
 
         <button class="view-all-btn" @onclick="NavigatetoAllEvents">
@@ -50,7 +50,7 @@ new CategoryItem { Label = "Exhibitions" },
         justify-content: center;
         flex-direction: column;
         width: 100%;
-        font-family: 'Public Sans';
+        font-family: 'Public Sans', sans-serif;
         padding: 20px 0;
     }
 
@@ -94,11 +94,11 @@ new CategoryItem { Label = "Exhibitions" },
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
-        .daily-category-btn:hover,
-        .view-all-btn:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-        }
+    .daily-category-btn:hover,
+    .view-all-btn:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
 
     .btn-icon {
         width: 20px;

@@ -25,14 +25,14 @@
     <!-- Center Content -->
     <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1" Class="mb-4">
         <MudText Class="font-semibold text-center"
-                 Style="font-family: 'Public Sans'; font-size: 15px; line-height: 26px; color: #242424;">
+                 Style="font-family: 'Public Sans', sans-serif; font-size: 15px; line-height: 26px; color: #242424;">
             @($"{Plan.SubscriptionName}")
         </MudText>
 
         <MudText Class="font-semibold text-center"
-                 Style="font-family: 'Public Sans'; font-size: 25px; line-height: 26px; color: #00426D;">
+                 Style="font-family: 'Public Sans', sans-serif; font-size: 25px; line-height: 26px; color: #00426D;">
             @($"{Plan.Price:N0} QAR") /  <MudText Class="text-center font-medium"
-                                                  Style="font-family: 'Public Sans'; font-size: 14px; line-height: 22px; color: #646464;">
+                                                  Style="font-family: 'Public Sans', sans-serif; font-size: 14px; line-height: 22px; color: #646464;">
                 @Plan.Duration
             </MudText>
         </MudText>
