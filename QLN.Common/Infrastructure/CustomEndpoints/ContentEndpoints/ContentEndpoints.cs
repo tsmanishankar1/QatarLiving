@@ -44,7 +44,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                     else
                     {
                         // Only Cache successful results
-                        AddCachingToHeader(context, NEWS_CACHE_EXPIRY_IN_MINS);
+                        AddPathCachingToHeader(context, NEWS_CACHE_EXPIRY_IN_MINS);
                         return Results.Ok(ad);
                     }
                 }
@@ -81,7 +81,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
 
                     var model = await svc.GetCategoriesFromDrupalAsync(cancellationToken);
 
-                    AddCachingToHeader(context, CATEGORY_CACHE_EXPIRY_IN_MINS);
+                    AddPathCachingToHeader(context, CATEGORY_CACHE_EXPIRY_IN_MINS);
 
                     return Results.Ok(model);
                 }
@@ -203,7 +203,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                     else
                     {
                         // Only Cache successful results
-                        AddCachingToHeader(context, COMMUNITY_CACHE_EXPIRY_IN_MINS);
+                        AddPathCachingToHeader(context, COMMUNITY_CACHE_EXPIRY_IN_MINS);
                         return Results.Ok(ad);
                     }
                 }
@@ -273,6 +273,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
 
             // GET /api/content/landing
             group.MapGet("{queue}/landing", async (
+                    HttpContext context,
                     [FromRoute] string queue,
                     [FromServices] IContentService svc,
                     CancellationToken cancellationToken
@@ -281,6 +282,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             {
                 try
                 {
+                    var doCache = true;
+
                     var response = new GenericNewsPageResponse
                     {
                         News = new GenericNewsPage()
@@ -411,9 +414,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                             break;
                         default:
                             // return with an empty response
+                            doCache = false;
                             break;
                     }
-                    
+
+                    if(doCache) 
+                        AddPathCachingToHeader(context, COMMUNITY_CACHE_EXPIRY_IN_MINS);
+
                     return Results.Ok(response);
 
                 }
@@ -467,7 +474,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                         page,
                         page_size);
 
-                    AddCachingToHeader(context, EVENTS_CACHE_EXPIRY_IN_MINS);
+                    //AddFullCachingToHeader(context, EVENTS_CACHE_EXPIRY_IN_MINS);
 
                     return Results.Ok(model);
                 }
@@ -511,7 +518,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                     else
                     {
                         // Only Cache successful results
-                        AddCachingToHeader(context, EVENTS_CACHE_EXPIRY_IN_MINS);
+                        AddPathCachingToHeader(context, EVENTS_CACHE_EXPIRY_IN_MINS);
 
                         return Results.Ok(ad);
                     }
@@ -698,7 +705,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                     //}
 
 
-                    AddCachingToHeader(context, NEWS_CACHE_EXPIRY_IN_MINS);
+                    AddPathCachingToHeader(context, NEWS_CACHE_EXPIRY_IN_MINS);
 
                     return Results.Ok(model);
                 }
@@ -720,7 +727,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             return group;
         }
 
-        private static void AddCachingToHeader(HttpContext context, int cache_expiry_in_minutes)
+        private static void AddPathCachingToHeader(HttpContext context, int cache_expiry_in_minutes)
         {
             context.Response.GetTypedHeaders().CacheControl = new CacheControlHeaderValue
             {
@@ -729,7 +736,30 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
             };
 
             // Add Vary header for the User-Agent
-            context.Response.Headers[HeaderNames.Vary] = "User-Agent";
+            context.Response.Headers[HeaderNames.Vary] = "Accept, Accept-Encoding";
+
+            // Add a custom header to help downstream caches (if any) to distinguish by URL
+            context.Response.Headers["X-Cache-Key"] = context.Request.Path + context.Request.QueryString;
+        }
+
+        private static void AddFullCachingToHeader(HttpContext context, int cache_expiry_in_minutes)
+        {
+            context.Response.GetTypedHeaders().CacheControl = new CacheControlHeaderValue
+            {
+                Public = true,
+                MaxAge = TimeSpan.FromMinutes(cache_expiry_in_minutes)
+            };
+
+            // Add Vary header for query string and path to ensure unique cache per request URL
+            // "Vary: Accept, Accept-Encoding" is common, but for query/path, use "Vary: *" or custom logic
+            // Here, we use "Vary: Accept, Accept-Encoding" and "Vary: *" to indicate all request headers/params
+            // But "Vary: *" disables caching by shared caches, so instead, use a custom header to indicate query
+            // The best practice is to use the full URL as the cache key on the server side, but for HTTP headers:
+            //context.Response.Headers[HeaderNames.Vary] = "Accept, Accept-Encoding";
+            context.Response.Headers[HeaderNames.Vary] = "*";
+
+            // Add a custom header to help downstream caches (if any) to distinguish by URL
+            context.Response.Headers["X-Cache-Key"] = context.Request.Path + context.Request.QueryString;
         }
         #endregion
     }
