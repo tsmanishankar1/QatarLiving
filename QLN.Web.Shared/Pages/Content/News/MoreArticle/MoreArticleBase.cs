@@ -25,7 +25,7 @@ public class MoreArticleBase : ComponentBase
     }
     protected override void OnParametersSet()
     {
-        imageLoaded = false;
+        imageLoaded = true;
         imageFailed = false;
     }
 
