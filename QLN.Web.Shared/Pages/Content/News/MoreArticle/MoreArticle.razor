@@ -35,15 +35,14 @@
                 </div>
                 @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
                 {
-                    @if (!imageLoaded)
+                     @if (!imageLoaded)
                     {
                         <MudSkeleton SkeletonType="SkeletonType.Rectangle" Class="article-image"  />
-                    } 
-                    <div @onclick="@(() => onclick(article))">
+                    }  
+                    <div class="image-container" @onclick="@(() => onclick(article))">
                          <img src="@article.ImageUrl" alt="News-Image" class="article-image"
                         style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
-                        @onerror="OnImageError" key="@article.ImageUrl"/>
-                        @* <img src="@article.ImageUrl" alt="News-Image" class="article-image"> *@
+                        @onerror="OnImageError" key="@article.ImageUrl"/> 
                     </div>
                 }
                 else
@@ -85,6 +84,14 @@
         justify-content: center;
         color: #555;
         font-size: 1rem;
+    }
+    .image-container {
+        width: 124px;
+        height: 70px;
+        border-radius: 4px;
+        overflow: hidden;
+        background-color: #f3f3f3; 
+        flex-shrink: 0;
     }
 
     .accent-bar {
@@ -136,15 +143,7 @@
         margin-bottom: 4px;
     }
 
-    @* .article-title {
-        display: block;
-        font-size: 16px;
-        font-weight: 600;
-        font-family: 'Public Sans', sans-serif;
-        text-decoration: none;
-        color: var(--color-text-heading);
-        line-height: 1.4;
-    } *@
+    
     .article-title {
         display: -webkit-box;
         -webkit-line-clamp: 3;
@@ -171,7 +170,7 @@
         width: 124px;
         height: 70px;
         border-radius: 4px;
-        object-fit: cover;
+        @* object-fit: contain; *@
     }
 
     @@media (max-width: 768px) {
