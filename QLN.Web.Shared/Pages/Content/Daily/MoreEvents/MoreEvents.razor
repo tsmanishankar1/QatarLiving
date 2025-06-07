@@ -8,12 +8,12 @@
     <div class="daily-more-category-group">
         @foreach (var item in DailyCategories)
         {
-            <button class="daily-category-btn" @onclick="NavigatetoAllEvents">
+            <button class="daily-category-btn" @onclick="@(() => NavigatetoAllEvents(item))">
                 @item.Label
             </button>
         }
 
-        <button class="view-all-btn" @onclick="NavigatetoAllEvents">
+        <button class="view-all-btn" @onclick="@(() => NavigatetoAllEvents(null))">
             View all
             <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowRight" class="arrow-icon" />
         </button>
@@ -25,23 +25,34 @@
 
     private List<CategoryItem> DailyCategories = new()
 {
-new CategoryItem { Label = "Concerts" },
-new CategoryItem { Label = "Workshops" },
-new CategoryItem { Label = "Sports" },
-new CategoryItem { Label = "Festivals" },
-new CategoryItem { Label = "Exhibitions" },
+new CategoryItem { Label = "Music",Id="106691" },
+new CategoryItem { Label = "Workshops", Id = "106666" },
+new CategoryItem { Label = "Sports", Id = "106706" },
+new CategoryItem { Label = "Festivals", Id = "106676" },
+new CategoryItem { Label = "Entertainment", Id = "126205" },
+new CategoryItem { Label = "Exhibitions" ,Id = "114741"}
 };
+
 
 
     public class CategoryItem
     {
         public string Label { get; set; }
+        public string Id { get; set; } // ← Add this
     }
 
-    protected void NavigatetoAllEvents()
+    protected void NavigatetoAllEvents(CategoryItem item)
     {
-        NavigationManager.NavigateTo("content/events");
+        if (!string.IsNullOrEmpty(item.Id))
+        {
+            NavigationManager.NavigateTo($"/content/events?perselect={item.Id}");
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/content/events");
+        }
     }
+
 }
 <style>
     .daily-more-section {

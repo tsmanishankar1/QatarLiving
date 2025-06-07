@@ -33,7 +33,7 @@
                     <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
                 </div>
 
-                <div class="swiper-wrapper">
+                <div class="swiper-wrapper @(FeaturedEvent.Count <= 5 ? "les5swiper-wrapper" : "")">
                     <MudVirtualize Context="item" Items="FeaturedEvent">
                         <div class="swiper-slide swiper-slide-Card">
                             <FeaturedEventCard Item="item" OnClick="HandleCategoryClick" />
@@ -70,7 +70,7 @@
         }
     }
 
-    private void HandleCategoryClick(ContentPost clickedItem)
+    private void HandleCategoryClick(ContentEvent clickedItem)
     {
         Navigation.NavigateTo($"/content/events/details/{clickedItem.Slug}");
         // Handle click logic here or raise EventCallback if needed
@@ -79,14 +79,10 @@
 
 <style>
     .categories-wrapper {
-        background: linear-gradient(to top, #F5F6FA 0%, #F5F6FA 20%, #FAFAFA 100%);
         width: 100%;
         font-family: 'Public Sans', sans-serif;
         margin-bottom: 30px;
     }
-
-
-
 
     .categories-header {
         padding: 1rem 0;
@@ -102,8 +98,14 @@
     .swiper-categories-container {
         position: relative;
         width: 100%;
-        padding: 0rem 2.5rem;
+        padding: 0;
     }
+
+    /* Center-align slides only if 'les5swiper-wrapper' class is present */
+    .swiper-wrapper.les5swiper-wrapper {
+        justify-content: center !important;
+    }
+
 
     .swiper-categories {
         display: flex;
@@ -159,7 +161,7 @@
         align-items: center;
         width: 100%;
         margin-top: 10px;
-        padding-left: 170px;
+        padding-left: 130px;
     }
 
     .swiper-categories-pagination {
@@ -197,7 +199,7 @@
             align-items: center;
             width: 100%;
             margin-top: 10px;
-            padding-left: 170px;
+            padding-left: 130px;
         }
     }
 
@@ -206,6 +208,11 @@
         .arrow-button {
             display: none !important;
         }
+
+        .swiper-wrapper.les5swiper-wrapper {
+            justify-content: flex-start !important;
+        }
+
 
         .swiper-categories-container {
             position: relative;
@@ -224,7 +231,7 @@
             align-items: center;
             width: 100%;
             margin-top: 10px;
-            padding-left: 170px;
+            padding-left: 130px;
         }
     }
 </style>

@@ -6,9 +6,9 @@
 
 @if (IsVisible || IsClosing)
 {
-    <div class="modal-backdrop @(IsVisible ? "show" : "") @(IsClosing ? "closing" : "")" @onclick="BackdropClick"
+    <div class="add-modal-backdrop @(IsVisible ? "show" : "") @(IsClosing ? "closing" : "")" @onclick="BackdropClick"
         tabindex="0" @onkeydown="OnKeyDown">
-        <div class="modal-dialog" @onclick:stopPropagation="true" @ref="ModalDiv">
+        <div class="add-modal-dialog" @onclick:stopPropagation="true" @ref="ModalDiv">
             <div class="icon-circle">
                 <img src="/qln-images/calendar_image.svg" alt="Calendar Icon" class="calendar-icon-image" />
             </div>
@@ -64,6 +64,7 @@ new SelectOption { Id = "yahoo", Label = "Yahoo Calendar" }
 
     private async Task BackdropClick()
     {
+        SelectedCalendarId = null;
         await CloseModal();
     }
 
@@ -127,7 +128,7 @@ new SelectOption { Id = "yahoo", Label = "Yahoo Calendar" }
 
 
 <style>
-    .modal-backdrop {
+    .add-modal-backdrop {
         position: fixed;
         inset: 0;
         background-color: rgba(0, 0, 0, 0);
@@ -138,16 +139,16 @@ new SelectOption { Id = "yahoo", Label = "Yahoo Calendar" }
         transition: background-color 0.3s ease;
     }
 
-    .modal-backdrop.show {
+    .add-modal-backdrop.show {
         display: flex;
         background-color: rgba(0, 0, 0, 0.4);
     }
 
-    .modal-backdrop.closing {
+    .add-modal-backdrop.closing {
         background-color: rgba(0, 0, 0, 0);
     }
 
-    .modal-dialog {
+    .add-modal-dialog {
         display: flex;
         justify-content: center;
         align-items: center;
@@ -162,7 +163,7 @@ new SelectOption { Id = "yahoo", Label = "Yahoo Calendar" }
         font-family: 'Public Sans', sans-serif;
     }
 
-    .modal-backdrop.closing .modal-dialog {
+    .add-modal-backdrop.closing .add-modal-dialog {
         animation: fadeOutScale 0.3s ease forwards;
     }
 

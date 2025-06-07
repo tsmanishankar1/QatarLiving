@@ -1,137 +1,116 @@
-@inherits NewsLetterBase
-@using QLN.Web.Shared.Components.CustomButton
-
 <div class="newsletter-container">
-    <h3 class="newsletter-container-name">
-        Get The QL newsletter. Sign up to receive the top stories you need to know
-        right now.
+    <h3 class="daily-newsletter-container-name">
+        Get The QL newsletter. Sign up to receive the top stories you need to know right now.
     </h3>
-    <MudForm @ref="_form">
-        <input type="email" placeholder="Enter your email" class="email-input" @bind="SubscriptionModel.Email"
-               @bind:event="oninput" required />
-        <MudButton Variant="Variant.Filled" Class="reset-button" Disabled="@IsSubscribingToNewsletter"
-                   OnClick="SubscribeAsync" Style="background-color: #FF7F38;color: white;text-transform: capitalize;">
-            @if (IsSubscribingToNewsletter)
-            {
-                <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" />
-                @("Subscribing...")
-            }
-            else
-            {
-                @("Subscribe")
-            }
-        </MudButton>
-    </MudForm>
+
+    <div id="mc_embed_signup" class="newsletter-wrapper">
+        <form action="//qatarliving.us9.list-manage.com/subscribe/post?u=3ab0436d22c64716e67a03f64&amp;id=94198fac96"
+            method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form"
+            class="validate newsletter-form" target="_blank" novalidate>
+            <div id="mc_embed_signup_scroll">
+
+                <div class="mc-field-group">
+                    <input type="email" value="" name="EMAIL" class="daily-newsletter-input required email"
+                        id="mce-EMAIL" placeholder="Enter your email" />
+                </div>
+
+                <div id="mce-responses" class="newsletter-responses">
+                    <div class="response newsletter-error" id="mce-error-response" style="display:none"></div>
+                    <div class="response newsletter-success" id="mce-success-response" style="display:none"></div>
+                </div>
+
+                <div class="newsletter-submit-wrapper">
+                    <input type="submit" class="daily-newsletter-button" value="Subscribe" name="subscribe"
+                        id="mc-embedded-subscribe" />
+                </div>
+
+                <div style="position: absolute; left: -5000px;" aria-hidden="true">
+                    <input type="text" name="b_3ab0436d22c64716e67a03f64_94198fac96" tabindex="-1" value=""
+                        aria-label="subscribe" />
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
 
 <style>
-    .newsletter-box {
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 16px;
-        padding: 12px;
-        margin-top: 1rem;
-        max-width: 340px;
-    }
-
-    .newsletter-icon {
-        width: 48px;
-        height: 48px;
-        margin-top: 10px;
-    }
-
-    .newsletter-text {
-        font-family: 'Public Sans', sans-serif;
-        font-weight: 500;
-        font-size: 14px;
-        line-height: 24px;
-        text-align: center;
-        color: #242424;
-    }
-
-    .newsletter-input {
-        width: 292px;
-        height: 44px;
-        padding: 10px 16px;
-        border: 1px solid #D0D5DD;
-        border-radius: 6px;
-    }
-
-        .newsletter-input::placeholder {
-            padding-left: 14px;
-        }
-
-    .newsletter-html-input:focus {
-        border-color: #FF7F38;
-    }
-
-    .newsletter-button {
-        width: 292px;
-        height: 44px;
-        gap: 8px;
-        border-radius: 6px;
-        padding: 6px 40px;
-        background-color: #FF7F38;
-        color: white;
-        margin-top: 16px;
-        font-family: 'Public Sans', sans-serif;
-        font-weight: 600;
-        font-size: 14px;
-        line-height: 24px;
-        letter-spacing: 0;
-        text-transform: capitalize;
-    }
-
     .newsletter-container {
         width: 100%;
         margin: 0 auto;
-        padding: 24px;
-        box-sizing: border-box;
+        padding: 20px 24px;
         border: 1px solid var(--color-background-secondary-grey-medium);
         border-radius: 6px;
         background-color: #fff;
         font-family: 'Public Sans', sans-serif;
+        box-shadow: 0 0 6px rgba(0, 0, 0, 0.03);
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
     }
 
-    .newsletter-container-name {
+    .daily-newsletter-container-name {
         font-size: 14px;
         font-weight: 600;
         margin-bottom: 10px;
         color: var(--color-text-heading);
-        line-height: 26px;
-        letter-spacing: 0;
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        text-overflow: ellipsis;
         text-align: center;
+        line-height: 26px;
     }
 
-    .error-message {
-        color: red;
-        font-size: 13px;
-        margin-bottom: 10px;
-    }
-
-
-    .email-input {
+    .newsletter-wrapper {
         width: 100%;
-        padding: 8px 10px;
-        font-size: 15px;
-        border: 1px solid #D0D5DD;
-        border-radius: 6px;
-        margin-bottom: 10px;
-        box-sizing: border-box;
+        max-width: 360px;
+        padding: 0 10px;
     }
 
-        .email-input:focus {
-            border-color: #ff7f38;
-            outline: none;
-        }
+    .daily-newsletter-input {
+        width: 100%;
+        height: 44px;
+        padding: 10px 16px;
+        border: 1px solid #D0D5DD;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+    }
+
+    .daily-newsletter-input::placeholder {
+        color: #888;
+    }
+
+    .daily-newsletter-input:focus {
+        border-color: #FF7F38;
+        outline: none;
+    }
+
+    /* Apply error styling dynamically */
+    .daily-newsletter-input.input-error {
+        border-color: #FF7F38 !important;
+    }
+
+
+    .newsletter-error {
+        font-size: 13px;
+        margin-bottom: 8px;
+        color: red;
+    }
+
+    .newsletter-success {
+        color: green;
+    }
+
+    .daily-newsletter-button {
+        display: block;
+        width: 100%;
+        padding: 6px;
+        margin-top: 10px;
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 24px;
+        border-radius: 6px;
+        background-color: #FF7F38;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
 </style>

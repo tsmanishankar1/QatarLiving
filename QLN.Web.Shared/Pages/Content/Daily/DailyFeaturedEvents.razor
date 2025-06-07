@@ -32,7 +32,7 @@
                     <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
                 </div>
 
-                <div class="swiper-wrapper">
+                <div class="swiper-wrapper @(Items.Count <= 5 ? "les5swiper-wrapper" : "")">
                     <MudVirtualize Context="item" Items="Items" T="ContentEvent">
                         <div class="swiper-slide swiper-slide-Card">
                             <DailyFeaturedEventCard Item="item" OnClickCallback="OnClickEvent" />
@@ -64,11 +64,16 @@
         color: var(--color-text-heading);
     }
 
+    /* Center-align slides only if 'les5swiper-wrapper' class is present */
+    .swiper-wrapper.les5swiper-wrapper {
+        justify-content: center !important;
+    }
+
 
     .swiper-categories-container {
         position: relative;
         width: 100%;
-        padding: 0rem 2.5rem;
+        padding: 0rem;
     }
 
     .swiper-categories {
@@ -125,7 +130,7 @@
         align-items: center;
         width: 100%;
         margin-top: 10px;
-        padding-left: 170px;
+        padding-left: 130px;
     }
 
     .swiper-categories-pagination {
@@ -162,7 +167,7 @@
             align-items: center;
             width: 100%;
             margin-top: 10px;
-            padding-left: 170px;
+            padding-left: 130px;
         }
     }
 
@@ -170,6 +175,10 @@
     @@media (max-width: 770px) {
         .arrow-button {
             display: none !important;
+        }
+
+        .swiper-wrapper.les5swiper-wrapper {
+            justify-content: flex-start !important;
         }
 
         .swiper-categories-container {
@@ -189,7 +198,7 @@
             align-items: center;
             width: 100%;
             margin-top: 10px;
-            padding-left: 170px;
+            padding-left: 130px;
         }
     }
 </style>
