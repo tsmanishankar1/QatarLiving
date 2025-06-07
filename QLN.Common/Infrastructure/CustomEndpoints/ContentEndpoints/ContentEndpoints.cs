@@ -474,7 +474,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                         page,
                         page_size);
 
-                    AddFullCachingToHeader(context, EVENTS_CACHE_EXPIRY_IN_MINS);
+                    //AddFullCachingToHeader(context, EVENTS_CACHE_EXPIRY_IN_MINS);
 
                     return Results.Ok(model);
                 }
