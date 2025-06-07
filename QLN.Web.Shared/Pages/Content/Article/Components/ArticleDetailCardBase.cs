@@ -101,7 +101,6 @@ public class ArticleDetailCardBase : ComponentBase
             }
             commentsCount = Post?.Comments?.Count ?? 0;
         }
-
     }
     protected string FormatDateToReadable(string inputDate)
     {

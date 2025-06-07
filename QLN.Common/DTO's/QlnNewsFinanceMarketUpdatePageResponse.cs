@@ -40,7 +40,6 @@ namespace QLN.Common.Infrastructure.DTO_s
 
         public static explicit operator GenericNewsPageResponse(QlnNewsFinanceMarketUpdatePageResponse source)
         {
-            // bring back an empty object if this exists
             if (source.News == null) return new GenericNewsPageResponse
             {
                 News = new GenericNewsPage()
@@ -54,7 +53,9 @@ namespace QLN.Common.Infrastructure.DTO_s
                     Articles1 = source.News.Articles1,
                     Articles2 = source.News.Articles2,
                     MoreArticles = source.News.MoreArticles,
-                    MostPopularArticles = source.News.MostPopularArticles
+                    MostPopularArticles = source.News.MostPopularArticles,
+                    WatchOnQatarLiving = source.News.WatchOnQatarLiving
+
                 }
             };
         }

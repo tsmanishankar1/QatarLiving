@@ -8,6 +8,10 @@ public class MoreArticleSectionBase : ComponentBase
     public bool loading { get; set; }
     [Parameter]
     public string category { get; set; }
+    [Inject]
+    protected NavigationManager navManager { get; set; }
+    [Parameter]
+    public string subCategory { get; set; }
     protected bool imageLoaded = false;
     public ContentPost selectedPost { get; set; }
     [Parameter]
@@ -17,19 +21,26 @@ public class MoreArticleSectionBase : ComponentBase
         selectedPost = article;
     }
     protected override void OnParametersSet()
-        {
-            imageLoaded = false; 
-        }
-        protected void OnImageLoaded()
-        {
-            imageLoaded = true;
-            StateHasChanged();
-        }
+    {
+        Console.WriteLine("the sub category is " + subCategory);
+        Console.WriteLine("the category is " + category);
+        imageLoaded = false;
+    }
+    protected void OnImageLoaded()
+    {
+        imageLoaded = true;
+        StateHasChanged();
+    }
 
-        protected void OnImageError()
-        {
-            imageLoaded = true; 
-            StateHasChanged();
-        }
+    protected void OnImageError()
+    {
+        imageLoaded = true;
+        StateHasChanged();
+    }
+    protected void NavigateToArticle(ContentPost article)
+    {
+        var url = $"/content/article/details/{article.Slug}?category={category}&subcategory={subCategory}";
+        navManager.NavigateTo(url, forceLoad: true);
+    }
 
 }
