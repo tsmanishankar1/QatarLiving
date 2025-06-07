@@ -25,13 +25,13 @@ public class MoreArticleBase : ComponentBase
     }
     protected override void OnParametersSet()
     {
-        imageLoaded = false;
+        imageLoaded = true;
         imageFailed = false;
     }
 
     protected void OnImageLoaded()
     {
-        imageLoaded = true;
+        imageLoaded = false;
         imageFailed = false;
         StateHasChanged();
     }
