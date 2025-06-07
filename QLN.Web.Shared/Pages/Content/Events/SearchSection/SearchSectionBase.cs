@@ -227,16 +227,29 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
         }
 
 
-        protected override Task OnInitializedAsync()
+        protected override async Task OnInitializedAsync()
         {
             PropertyTypes = Categories.Select(cat => new SelectOption
             {
                 Id = cat.Id,
                 Label = cat.Name
             }).ToList();
+
             FilteredAreas = Areas;
-            return Task.CompletedTask;
+
+            // 👇 Extract `perselect` query param from the URI
+            var uri = new Uri(NavigationManager.Uri);
+            var queryParams = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+
+            if (queryParams.TryGetValue("perselect", out var selectedId))
+            {
+                // Call the filter logic with the ID from query string
+                await HandleCategoryChanged(selectedId);
+            }
+
+            return;
         }
+
 
         public class SelectOption
         {
