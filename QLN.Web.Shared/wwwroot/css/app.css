@@ -52,33 +52,33 @@ h1:focus {
 .login-heading {
     font-weight: 600;
     font-size: 30px;
-    font-family: 'Poppins', sans-serif;
-    margin-bottom: 1.5rem; 
-    text-align: center;     
+    font-family: 'Public Sans', sans-serif;
+    margin-bottom: 1.5rem;
+    text-align: center;
 }
 .style-heading {
     font-weight: 600;
     font-size: 30px;
-    font-family: 'Poppins', sans-serif;
-    margin-bottom: 1.5rem; 
-    text-align: center;  
-    color: var(--color-heading);   
+    font-family: 'Public Sans', sans-serif;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    color: var(--color-heading);
 }
 .style-description {
     font-weight: 400;
     font-size: 16px;
-    font-family: 'Poppins', sans-serif;
-    margin-bottom: 1.5rem; 
-    text-align: center;  
-    color: var(--color-caption);   
+    font-family: 'Public Sans', sans-serif;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    color: var(--color-caption);
 }
 .style-field-name {
     font-weight: 400;
     font-size: 14px;
-    font-family: 'Poppins', sans-serif;
-    margin-bottom: 1.5rem; 
-    text-align: start;  
-    color: var(--color-heading);   
+    font-family: 'Public Sans', sans-serif;
+    margin-bottom: 1.5rem;
+    text-align: start;
+    color: var(--color-heading);
 }
 
 
