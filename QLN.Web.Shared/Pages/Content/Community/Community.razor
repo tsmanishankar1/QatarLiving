@@ -117,13 +117,15 @@
                             <MudText Typo="Typo.body1" Class="newsletter-text">
                                 Get The QL newsletter. Sign up to receive the top stories you need to know right now.
                             </MudText>
-                            <MudForm @ref="_form">
-
+                            <EditForm Model="SubscriptionModel" OnValidSubmit="SubscribeAsync">
+                                <DataAnnotationsValidator />
+                                <ValidationSummary />
                                 <input type="email"
                                        class="community-newsletter-input"
                                        placeholder="Enter your email"
                                        @bind="SubscriptionModel.Email"
                                        @bind:event="oninput" />
+
                                 <MudButton Variant="Variant.Filled"
                                            Class="community-newsletter-button"
                                            Disabled="@IsSubscribingToNewsletter"
@@ -138,7 +140,7 @@
                                         @("Subscribe")
                                     }
                                 </MudButton>
-                            </MudForm>
+                            </EditForm>
                         </MudPaper>
 
                         @*   <MudPaper Class="post-ad-wrapper" Elevation="0" Square="true">

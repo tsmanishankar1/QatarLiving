@@ -1,6 +1,11 @@
-﻿using System.Net.Http.Json;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using System.Web;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
+using Microsoft.JSInterop;
 using MudBlazor;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Contracts;
@@ -25,7 +30,10 @@ namespace QLN.Web.Shared.Pages.Content.Community
         [Inject] private ICommunityService CommunityService { get; set; }
         [Inject] private IContentService _contentService { get; set; }
 
-        [Inject] private INewsLetterSubscription NewsLetterSubscriptionService { get; set; }
+
+        [Inject] INewsLetterSubscription newsLetterSubscriptionService { get; set; }
+        [Inject] protected IJSRuntime JS { get; set; }
+        [Inject] public HttpClient Http { get; set; }
         [Inject] private IAdService AdService { get; set; }
         protected string search = string.Empty;
         protected string sortOption = "Default";
@@ -80,6 +88,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 StateHasChanged();
             }
         }
+
         protected async override Task OnAfterRenderAsync(bool firstRender)
         {
             if (!firstRender) return;
@@ -268,45 +277,45 @@ namespace QLN.Web.Shared.Pages.Content.Community
             StateHasChanged();
         }
 
-        protected async Task SubscribeAsync()
-        {
-            IsSubscribingToNewsletter = true;
-            await _form.Validate();
+        //protected async Task SubscribeAsync()
+        //{
+        //    IsSubscribingToNewsletter = true;
+        //    await _form.Validate();
 
-            if (_form.IsValid)
-            {
-                try
-                {
-                    var success = await NewsLetterSubscriptionService.SubscribeAsync(SubscriptionModel);
-                    SubscriptionStatusMessage = success ? "Subscribed successfully!" : "Failed to subscribe.";
-                    if (success)
-                    {
-                        Snackbar.Add("Subscription successful!", Severity.Success);
-                    }
-                    else
-                    {
-                        Snackbar.Add("Failed to subscribe. Please try again later.", Severity.Error);
-                    }
+        //    if (_form.IsValid)
+        //    {
+        //        try
+        //        {
+        //            var success = await NewsLetterSubscriptionService.SubscribeAsync(SubscriptionModel);
+        //            SubscriptionStatusMessage = success ? "Subscribed successfully!" : "Failed to subscribe.";
+        //            if (success)
+        //            {
+        //                Snackbar.Add("Subscription successful!", Severity.Success);
+        //            }
+        //            else
+        //            {
+        //                Snackbar.Add("Failed to subscribe. Please try again later.", Severity.Error);
+        //            }
 
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, "Newsletter subscription failed.");
-                    SubscriptionStatusMessage = "An error occurred while subscribing.";
-                    Snackbar.Add($"Failed to subscribe: {ex.Message}", Severity.Error);
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            Logger.LogError(ex, "Newsletter subscription failed.");
+        //            SubscriptionStatusMessage = "An error occurred while subscribing.";
+        //            Snackbar.Add($"Failed to subscribe: {ex.Message}", Severity.Error);
 
-                }
-                finally
-                {
-                    IsSubscribingToNewsletter = false;
-                }
-            }
-            else
-            {
-                Snackbar.Add("Failed to subscribe. Please try again later.", Severity.Error);
+        //        }
+        //        finally
+        //        {
+        //            IsSubscribingToNewsletter = false;
+        //        }
+        //    }
+        //    else
+        //    {
+        //        Snackbar.Add("Failed to subscribe. Please try again later.", Severity.Error);
 
-            }
-        }
+        //    }
+        //}
         private async Task GetAdAsync()
         {
             var response = await AdService.GetAdDetail();
@@ -367,7 +376,100 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 isLoadingBanners = false;
             }
         }
-        
 
+        
+        protected async Task SubscribeAsync()
+        {
+            if (string.IsNullOrWhiteSpace(SubscriptionModel?.Email))
+            {
+                Snackbar.Add("Email is required.", Severity.Warning);
+                return;
+            }
+
+            var emailAttribute = new EmailAddressAttribute();
+            if (!emailAttribute.IsValid(SubscriptionModel.Email))
+            {
+                Snackbar.Add("Please enter a valid email address.", Severity.Warning);
+                return;
+            }
+            IsSubscribingToNewsletter = true;
+          
+                try
+                {
+                    string baseUrl = "https://qatarliving.us9.list-manage.com/subscribe/post-json";
+                    string u = "3ab0436d22c64716e67a03f64";
+                    string id = "94198fac96";
+                    string email = SubscriptionModel.Email;
+                    string callback = $"jQuery{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+                    string botField = "";
+                    string subscribe = "Subscribe";
+                    string cacheBuster = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
+
+                    var query = HttpUtility.ParseQueryString(string.Empty);
+                    query["u"] = u;
+                    query["id"] = id;
+                    query["c"] = callback;
+                    query["EMAIL"] = email;
+                    query["b_3ab0436d22c64716e67a03f64_94198fac96"] = botField;
+                    query["subscribe"] = subscribe;
+                    query["_"] = cacheBuster;
+
+                    string url = $"{baseUrl}?{query}";
+
+                    var request = new HttpRequestMessage(HttpMethod.Post, url);
+                    request.Headers.Add("User-Agent", "Mozilla/5.0");
+                    request.Headers.Add("Referer", "https://qatarliving.com/");
+                    request.Headers.Add("Origin", "https://qatarliving.com");
+                    var response = await Http.SendAsync(request);
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var successPatteren = "Thank you for subscribing!";
+
+                    var matches = Regex.Matches(responseContent, @"\((\{.*?\})\)");
+                    string msg = "";
+                    foreach (Match match in matches)
+                    {
+                        string json = match.Groups[1].Value;
+                        using var doc = JsonDocument.Parse(json);
+
+                        if (doc.RootElement.TryGetProperty("msg", out var msgElement))
+                        {
+                            msg = msgElement.GetString();
+                        }
+                        else if (doc.RootElement.TryGetProperty("errors", out var errorsElement) && errorsElement.ValueKind != JsonValueKind.Null)
+                        {
+                            msg = errorsElement.ToString();
+                        }
+                    }
+
+                    if (response.IsSuccessStatusCode && successPatteren.Equals(msg, StringComparison.OrdinalIgnoreCase))
+
+                    {
+                        Snackbar.Add($"Subscription submitted: {msg}", Severity.Success);
+                        SubscriptionStatusMessage = $"Subscription submitted: {msg}";
+                    }
+                    else if (response.IsSuccessStatusCode && !string.IsNullOrWhiteSpace(msg))
+                    {
+                        Snackbar.Add($"{msg}", Severity.Warning);
+                        SubscriptionStatusMessage = $"{msg}";
+                    }
+                    else
+                    {
+                        Snackbar.Add("Failed to subscribe. Please try again.", Severity.Error);
+                        SubscriptionStatusMessage = "Failed to subscribe. Please try again.";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"{ex.Message} Newsletter subscription failed.");
+                    SubscriptionStatusMessage = "An error occurred while subscribing.";
+                    Snackbar.Add($"Failed to subscribe: {ex.Message}", Severity.Error);
+                }
+                finally
+                {
+                    IsSubscribingToNewsletter = false;
+                }
+            
+           
+        }
     }
 }
