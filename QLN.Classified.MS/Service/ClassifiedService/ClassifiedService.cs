@@ -8,8 +8,11 @@ using System.Threading.Tasks;
 using Dapr;
 using Dapr.Client;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration.UserSecrets;
 using Microsoft.Extensions.Logging;
+using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
@@ -26,7 +29,8 @@ namespace QLN.Classified.MS.Service
         private const string UnifiedStore = "adstore";
         private const string UnifiedIndexKey = "ad-index";               
         private readonly ILogger<ClassifiedService> _logger;
-
+        private readonly string itemJsonPath = Path.Combine("ClassifiedMockData", "itemsAdsMock.json");
+        private readonly string prelovedJsonPath = Path.Combine("ClassifiedMockData", "prelovedAdsMock.json");
         public ClassifiedService(Dapr.Client.DaprClient dapr, ILogger<ClassifiedService> logger, IWebHostEnvironment env)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
@@ -62,7 +66,6 @@ namespace QLN.Classified.MS.Service
                 );
             }
         }
-
 
         private async Task<List<Category>> GetItemsByType(string typePrefix)
         {
@@ -143,7 +146,7 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("Unexpected error while adding a new category.", ex);
             }
         }
-
+        
         public async Task<List<CategoriesDto>> GetAllCategories(CancellationToken cancellationToken = default)
         {
             try
@@ -1213,7 +1216,6 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-
         public async Task<List<CategoriesDto>> GetAllZones(CancellationToken cancellationToken = default)
         {
             try
@@ -1235,7 +1237,117 @@ namespace QLN.Classified.MS.Service
             {
                 throw new InvalidOperationException("Unexpected error occurred while retrieving all zones.", ex);
             }
-        }   
+        }
+
+        public async Task<NestedCategoryDto> GetCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
+        {
+            if (categoryId == Guid.Empty)
+                throw new ArgumentException("Invalid category ID.", nameof(categoryId));
+
+            try
+            {
+                var allKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+
+                
+                var allCategories = new List<Category>();
+
+                foreach (var key in allKeys)
+                {
+                    var item = await _dapr.GetStateAsync<Category>(UnifiedStore, key);
+                    if (item != null)
+                        allCategories.Add(item);
+                }
+
+                
+                var catPrefix = GetTypePrefix(AdInformation.Category);
+                var subCatPrefix = GetTypePrefix(AdInformation.SubCategory);
+                var brandPrefix = GetTypePrefix(AdInformation.Brand);
+                var modelPrefix = GetTypePrefix(AdInformation.Model);
+                var ramPrefix = GetTypePrefix(AdInformation.Ram);
+                var procPrefix = GetTypePrefix(AdInformation.Processor);
+                var resoPrefix = GetTypePrefix(AdInformation.Resolution);
+
+                // Root category
+                var rootCategory = allCategories.FirstOrDefault(c => c.Id == categoryId && c.TypePrefix == catPrefix);
+                if (rootCategory == null)
+                    throw new KeyNotFoundException($"Category with ID '{categoryId}' not found.");
+
+                // Filter related levels
+                var subCategories = allCategories
+                    .Where(c => c.TypePrefix == subCatPrefix && c.ParentId == categoryId)
+                    .ToList();
+
+                var result = new NestedCategoryDto
+                {
+                    Id = rootCategory.Id,
+                    Name = rootCategory.Name,
+                    SubCategories = subCategories.Select(sc =>
+                    {
+                        var brands = allCategories
+                            .Where(b => b.TypePrefix == brandPrefix && b.ParentId == sc.Id)
+                            .ToList();
+
+                        return new NestedSubCategoryDto
+                        {
+                            Id = sc.Id,
+                            Name = sc.Name,
+                            Brands = brands.Select(b =>
+                            {
+                                var models = allCategories
+                                    .Where(m => m.TypePrefix == modelPrefix && m.ParentId == b.Id)
+                                    .ToList();
+
+                                return new NestedBrandDto
+                                {
+                                    Id = b.Id,
+                                    Name = b.Name,
+                                    Models = models.Select(m =>
+                                    {
+                                        var rams = allCategories
+                                            .Where(r => r.TypePrefix == ramPrefix && r.ParentId == m.Id)
+                                            .Select(r => new CategoriesDto { Id = r.Id, Name = r.Name })
+                                            .ToList();
+
+                                        var processors = allCategories
+                                            .Where(p => p.TypePrefix == procPrefix && p.ParentId == m.Id)
+                                            .Select(p => new CategoriesDto { Id = p.Id, Name = p.Name })
+                                            .ToList();
+
+                                        var resolutions = allCategories
+                                            .Where(res => res.TypePrefix == resoPrefix && res.ParentId == m.Id)
+                                            .Select(res => new CategoriesDto { Id = res.Id, Name = res.Name })
+                                            .ToList();
+
+                                        return new NestedModelDto
+                                        {
+                                            Id = m.Id,
+                                            Name = m.Name,
+                                            Rams = rams,
+                                            Processors = processors,
+                                            Resolutions = resolutions
+                                        };
+                                    }).ToList()
+                                };
+                            }).ToList()
+                        };
+                    }).ToList()
+                };
+
+                return result;
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (KeyNotFoundException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error occurred while retrieving the category hierarchy.", ex);
+            }
+        }
 
         public async Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default)
         {
@@ -1319,5 +1431,218 @@ namespace QLN.Classified.MS.Service
         {
             throw new NotImplementedException();
         }
+
+        private async Task<List<ItemAd>> ReadAllItemsAdsFromFile()
+        {
+            try
+            {
+                var jsonString = await File.ReadAllTextAsync(itemJsonPath);
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                return JsonSerializer.Deserialize<List<ItemAd>>(jsonString, options) ?? new();
+            }
+            catch
+            {
+                return new List<ItemAd>();
+            }
+        }
+
+        public async Task<ItemAdsAndDashboardResponse> GetUserItemsAdsWithDashboard(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var allAds = await ReadAllItemsAdsFromFile();
+                var userAds = allAds.Where(ad => ad.UserId == userId).ToList();
+                               
+
+                var groupedAds = new AdsGroupedResult
+                {
+                    PublishedAds = userAds
+                        .Where(ad => ad.Status == AdStatus.Published)
+                        .OrderByDescending(ad => ad.CreatedDate)
+                        .ToList(),
+
+                    UnpublishedAds = userAds
+                        .Where(ad => ad.Status != AdStatus.Published)
+                        .OrderByDescending(ad => ad.CreatedDate)
+                        .ToList()
+                };
+                
+                var publishedCount = userAds.Count(ad => ad.Status == AdStatus.Published);
+                var promotedCount = userAds.Count(ad => ad.IsPromoted == true);
+                var featuredCount = userAds.Count(ad => ad.IsFeatured == true);
+                var refreshCount = userAds.Count(ad => ad.RefreshExpiry != null);
+                var totalImpressions = userAds.Sum(ad => ad.Impressions ?? 0);
+                var totalViews = userAds.Sum(ad => ad.Views ?? 0);
+                var totalWhatsappClicks = userAds.Sum(ad => ad.WhatsAppClicks ?? 0);
+                var totalCalls = userAds.Sum(ad => ad.Calls ?? 0);
+
+                var adWithRefresh = userAds
+                    .Where(ad => ad.RefreshExpiry != null)
+                    .OrderByDescending(ad => ad.RefreshExpiry)
+                    .FirstOrDefault();
+
+                var dashboard = new ItemDashboardDto
+                {
+                    PublishedAds = publishedCount,
+                    PromotedAds = promotedCount,
+                    FeaturedAds = featuredCount,
+                    Refreshes = refreshCount,
+                    Impressions = totalImpressions,
+                    Views = totalViews,
+                    WhatsAppClicks = totalWhatsappClicks,
+                    Calls = totalCalls,
+                    RemainingRefreshes = adWithRefresh?.RemainingRefreshes ?? 0,
+                    TotalAllowedRefreshes = adWithRefresh?.TotalAllowedRefreshes ?? 0,
+                    RefreshExpiry = adWithRefresh?.RefreshExpiry
+                };
+
+                return new ItemAdsAndDashboardResponse
+                {                    
+                    ItemsDashboard = dashboard,
+                    ItemsAds = groupedAds
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error occurred while retrieving item ads and dashboard summary.", ex);
+            }
+        }
+
+
+        private async Task<List<PrelovedAd>> ReadAllPrelovedAdsFromFile()
+        {
+            try
+            {                
+                var jsonString = await File.ReadAllTextAsync(prelovedJsonPath);
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                return JsonSerializer.Deserialize<List<PrelovedAd>>(jsonString, options) ?? new();
+            }
+            catch
+            {
+                return new List<PrelovedAd>();
+            }
+        }
+
+        public async Task<PrelovedAdsAndDashboardResponse> GetUserPrelovedAdsAndDashboard(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var allAds = await ReadAllPrelovedAdsFromFile();
+                var userAds = allAds.Where(ad => ad.UserId == userId).ToList();
+
+                var groupedAds = new AdsGroupedPrelovedResult
+                {
+                    PublishedAds = userAds
+                        .Where(ad => ad.Status == AdStatus.Published)
+                        .OrderByDescending(ad => ad.CreatedDate)
+                        .ToList(),
+                    UnpublishedAds = userAds
+                        .Where(ad => ad.Status != AdStatus.Published)
+                        .OrderByDescending(ad => ad.CreatedDate)
+                        .ToList()
+                };
+
+                var dashboard = new PrelovedDashboardDto
+                {
+                    PublishedAds = userAds.Count(ad => ad.Status == AdStatus.Published),
+                    PromotedAds = userAds.Count(ad => ad.IsPromoted == true),
+                    FeaturedAds = userAds.Count(ad => ad.IsFeatured == true),
+                    Impressions = userAds.Sum(ad => ad.Impressions ?? 0),
+                    Views = userAds.Sum(ad => ad.Views ?? 0),
+                    WhatsAppClicks = userAds.Sum(ad => ad.WhatsAppClicks ?? 0),
+                    Calls = userAds.Sum(ad => ad.Calls ?? 0)
+                };
+
+                return new PrelovedAdsAndDashboardResponse
+                {                                        
+                    PrelovedAds = groupedAds,
+                    PrelovedDashboard = dashboard
+                };
+
+            }
+            catch(Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error occurred while generating Preloved ads and dashboard summary.", ex);
+            }
+        }
+
+        public async Task<bool> DeleteCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
+        {
+            if (categoryId == Guid.Empty)
+                throw new ArgumentException("Invalid category ID.", nameof(categoryId));
+
+            try
+            {
+                var allKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+                var allEntities = new Dictionary<string, Category>();
+
+                // Load all category-related objects
+                foreach (var key in allKeys)
+                {
+                    var entity = await _dapr.GetStateAsync<Category>(UnifiedStore, key);
+                    if (entity != null)
+                        allEntities[key] = entity;
+                }
+
+                // Define the prefix hierarchy
+                var prefixMap = new Dictionary<AdInformation, string>
+        {
+            { AdInformation.Category, GetTypePrefix(AdInformation.Category) },
+            { AdInformation.SubCategory, GetTypePrefix(AdInformation.SubCategory) },
+            { AdInformation.Brand, GetTypePrefix(AdInformation.Brand) },
+            { AdInformation.Model, GetTypePrefix(AdInformation.Model) },
+            { AdInformation.Ram, GetTypePrefix(AdInformation.Ram) },
+            { AdInformation.Processor, GetTypePrefix(AdInformation.Processor) },
+            { AdInformation.Resolution, GetTypePrefix(AdInformation.Resolution) }
+        };
+
+                // Find the root category key
+                var rootKey = allKeys.FirstOrDefault(k =>
+                    k.StartsWith(prefixMap[AdInformation.Category]) &&
+                    allEntities.TryGetValue(k, out var entity) &&
+                    entity.Id == categoryId);
+
+                if (string.IsNullOrWhiteSpace(rootKey))
+                    throw new KeyNotFoundException($"Category with ID '{categoryId}' not found.");
+
+                var keysToDelete = new List<string> { rootKey };
+
+                // Recursive delete logic
+                void TraverseAndCollect(Guid parentId, List<string> prefixesToSearch)
+                {
+                    foreach (var kvp in allEntities)
+                    {
+                        var item = kvp.Value;
+                        if (item.ParentId == parentId && prefixesToSearch.Contains(item.TypePrefix))
+                        {
+                            keysToDelete.Add(kvp.Key);
+
+                            // Drill down deeper
+                            TraverseAndCollect(item.Id, prefixesToSearch);
+                        }
+                    }
+                }
+
+                TraverseAndCollect(categoryId, prefixMap.Values.ToList());
+
+                // Delete from Dapr
+                foreach (var key in keysToDelete)
+                {
+                    await _dapr.DeleteStateAsync(UnifiedStore, key);
+                    allKeys.Remove(key); // remove from index
+                }
+
+                // Update index
+                await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, allKeys);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while deleting category and its hierarchy for ID: {CategoryId}", categoryId);
+                throw new InvalidOperationException("Failed to delete category hierarchy.", ex);
+            }
+        }
+
     }
 }
