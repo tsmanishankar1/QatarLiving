@@ -711,6 +711,28 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
+        public async Task<bool> DeleteCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (categoryId == Guid.Empty)
+                    throw new ArgumentException("Invalid category ID", nameof(categoryId));
+
+                var response = await _dapr.InvokeMethodAsync<HttpResponseMessage>(
+                    HttpMethod.Delete,
+                    SERVICE_APP_ID,
+                    $"api/{Vertical}/category-hierarchy/{categoryId}",
+                    cancellationToken);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                throw;
+            }
+        }
+
         public async Task<ItemAdsAndDashboardResponse> GetUserItemsAdsWithDashboard(Guid userId, CancellationToken cancellationToken = default)
         {
             try

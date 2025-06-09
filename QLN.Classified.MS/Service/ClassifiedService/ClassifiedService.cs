@@ -1566,5 +1566,83 @@ namespace QLN.Classified.MS.Service
             }
         }
 
+        public async Task<bool> DeleteCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
+        {
+            if (categoryId == Guid.Empty)
+                throw new ArgumentException("Invalid category ID.", nameof(categoryId));
+
+            try
+            {
+                var allKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+                var allEntities = new Dictionary<string, Category>();
+
+                // Load all category-related objects
+                foreach (var key in allKeys)
+                {
+                    var entity = await _dapr.GetStateAsync<Category>(UnifiedStore, key);
+                    if (entity != null)
+                        allEntities[key] = entity;
+                }
+
+                // Define the prefix hierarchy
+                var prefixMap = new Dictionary<AdInformation, string>
+        {
+            { AdInformation.Category, GetTypePrefix(AdInformation.Category) },
+            { AdInformation.SubCategory, GetTypePrefix(AdInformation.SubCategory) },
+            { AdInformation.Brand, GetTypePrefix(AdInformation.Brand) },
+            { AdInformation.Model, GetTypePrefix(AdInformation.Model) },
+            { AdInformation.Ram, GetTypePrefix(AdInformation.Ram) },
+            { AdInformation.Processor, GetTypePrefix(AdInformation.Processor) },
+            { AdInformation.Resolution, GetTypePrefix(AdInformation.Resolution) }
+        };
+
+                // Find the root category key
+                var rootKey = allKeys.FirstOrDefault(k =>
+                    k.StartsWith(prefixMap[AdInformation.Category]) &&
+                    allEntities.TryGetValue(k, out var entity) &&
+                    entity.Id == categoryId);
+
+                if (string.IsNullOrWhiteSpace(rootKey))
+                    throw new KeyNotFoundException($"Category with ID '{categoryId}' not found.");
+
+                var keysToDelete = new List<string> { rootKey };
+
+                // Recursive delete logic
+                void TraverseAndCollect(Guid parentId, List<string> prefixesToSearch)
+                {
+                    foreach (var kvp in allEntities)
+                    {
+                        var item = kvp.Value;
+                        if (item.ParentId == parentId && prefixesToSearch.Contains(item.TypePrefix))
+                        {
+                            keysToDelete.Add(kvp.Key);
+
+                            // Drill down deeper
+                            TraverseAndCollect(item.Id, prefixesToSearch);
+                        }
+                    }
+                }
+
+                TraverseAndCollect(categoryId, prefixMap.Values.ToList());
+
+                // Delete from Dapr
+                foreach (var key in keysToDelete)
+                {
+                    await _dapr.DeleteStateAsync(UnifiedStore, key);
+                    allKeys.Remove(key); // remove from index
+                }
+
+                // Update index
+                await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, allKeys);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while deleting category and its hierarchy for ID: {CategoryId}", categoryId);
+                throw new InvalidOperationException("Failed to delete category hierarchy.", ex);
+            }
+        }
+
     }
 }
