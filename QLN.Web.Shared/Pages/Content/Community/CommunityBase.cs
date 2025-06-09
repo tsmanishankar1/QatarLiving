@@ -56,7 +56,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected List<PostModel>? PostList { get; set; } = [];
         //Ad
-        protected AdModel Ad { get; set; } = null;
+        //protected AdModel Ad { get; set; } = null;
 
         protected MudForm _form;
 
@@ -97,8 +97,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
             {
                 await Task.WhenAll(
                     LoadPosts(),
-                    LoadBanners(),
-                    GetAdAsync()
+                    LoadBanners()
+                    //GetAdAsync()
                 );
             }
             catch (Exception ex)
@@ -112,6 +112,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             var (posts, totalCount) = await GetPostListAsync();
             PostList = posts;
             TotalPosts = totalCount;
+            StateHasChanged();
         }
 
         protected override async Task OnParametersSetAsync()
@@ -126,47 +127,28 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 SelectedForumId = null;
             }
 
-            try
-            {
-                var (posts, totalCount) = await GetPostListAsync();
-                PostList = posts;
-                TotalPosts = totalCount;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Failed to load posts");
-                HasError = true;
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-        private async Task<BannerResponse?> FetchBannerData()
-        {
-            try
-            {
-                var response = await _contentService.GetBannerAsync();
-                if (response.IsSuccessStatusCode && response.Content != null)
-                {
-                    return await response.Content.ReadFromJsonAsync<BannerResponse>();
-                }
-                return null;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"FetchBannerData error: {ex.Message}");
-                return null;
-            }
+            //try
+            //{
+            //    var (posts, totalCount) = await GetPostListAsync();
+            //    PostList = posts;
+            //    TotalPosts = totalCount;
+            //}
+            //catch (Exception ex)
+            //{
+            //    Logger.LogError(ex, "Failed to load posts");
+            //    HasError = true;
+            //}
+            //finally
+            //{
+            //    IsLoading = false;
+            //}
         }
 
         protected async Task HandleCategoryChanged(string forumId)
         {
             SelectedForumId = forumId;
             CurrentPage = 1;
-            var (posts, totalCount) = await GetPostListAsync();
-            PostList = posts;
-            TotalPosts = totalCount;
+            await LoadPosts();
         }
 
         protected async Task HandleSearchResults()
@@ -181,7 +163,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             {
                 IsLoading = true;
                 HasError = false;
-                StateHasChanged();
+                //StateHasChanged(); // dont need to run this here it can cause a rerender
 
                 int? forumId = int.TryParse(SelectedForumId, out var parsedId) ? parsedId : null;
                 Console.WriteLine("current page in GetPostListAsync", CurrentPage);
@@ -226,7 +208,6 @@ namespace QLN.Web.Shared.Pages.Content.Community
             finally
             {
                 IsLoading = false;
-                StateHasChanged();
             }
         }
 
@@ -240,7 +221,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             {
                 "desc" => "desc",
                 "asc" => "asc",
-                _ => "asc" // default to ascending
+                _ => "desc" // default to descending for this one is actually newest items first
             };
         }
 
@@ -250,18 +231,14 @@ namespace QLN.Web.Shared.Pages.Content.Community
             Console.WriteLine($"Sort changed to: {newSortId}");
             SelectedCategoryId = newSortId;
             CurrentPage = 1;
-            var (posts, totalCount) = await GetPostListAsync();
-            PostList = posts;
-            TotalPosts = totalCount;
+            await LoadPosts();
             StateHasChanged();
         }
         protected async Task HandlePageSizeChange(int newPageSize)
         {
             PageSize = newPageSize;
             CurrentPage = 1;
-            var (posts, totalCount) = await GetPostListAsync();
-            PostList = posts;
-            TotalPosts = totalCount;
+            await LoadPosts();
             StateHasChanged();
         }
 
@@ -271,56 +248,15 @@ namespace QLN.Web.Shared.Pages.Content.Community
             Console.WriteLine("current page", CurrentPage);
             Logger.LogInformation($"Page changed to: {CurrentPage}");
 
-            var (posts, totalCount) = await GetPostListAsync();
-            PostList = posts;
-            TotalPosts = totalCount;
+            await LoadPosts();
             StateHasChanged();
         }
 
-        //protected async Task SubscribeAsync()
+        //private async Task GetAdAsync()
         //{
-        //    IsSubscribingToNewsletter = true;
-        //    await _form.Validate();
-
-        //    if (_form.IsValid)
-        //    {
-        //        try
-        //        {
-        //            var success = await NewsLetterSubscriptionService.SubscribeAsync(SubscriptionModel);
-        //            SubscriptionStatusMessage = success ? "Subscribed successfully!" : "Failed to subscribe.";
-        //            if (success)
-        //            {
-        //                Snackbar.Add("Subscription successful!", Severity.Success);
-        //            }
-        //            else
-        //            {
-        //                Snackbar.Add("Failed to subscribe. Please try again later.", Severity.Error);
-        //            }
-
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Logger.LogError(ex, "Newsletter subscription failed.");
-        //            SubscriptionStatusMessage = "An error occurred while subscribing.";
-        //            Snackbar.Add($"Failed to subscribe: {ex.Message}", Severity.Error);
-
-        //        }
-        //        finally
-        //        {
-        //            IsSubscribingToNewsletter = false;
-        //        }
-        //    }
-        //    else
-        //    {
-        //        Snackbar.Add("Failed to subscribe. Please try again later.", Severity.Error);
-
-        //    }
+        //    var response = await AdService.GetAdDetail();
+        //    Ad = response.FirstOrDefault();
         //}
-        private async Task GetAdAsync()
-        {
-            var response = await AdService.GetAdDetail();
-            Ad = response.FirstOrDefault();
-        }
 
         protected bool _isCreatePostDialogOpen = false;
 
@@ -349,9 +285,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         {
             SelectedCategoryId = newId;
             CurrentPage = 1;
-            var (posts, totalCount) = await GetPostListAsync();
-            PostList = posts;
-            TotalPosts = totalCount;
+            var (PostList, TotalPosts) = await GetPostListAsync(); // use one object update rather than a temporary object we reinject in
         }
 
         protected async Task LoadBanners()
@@ -360,7 +294,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
             try
             {
                 // Delay a tiny bit to avoid LightHouse LCP penalties
-                await Task.Delay(800);
+                // Grant: I can't find evidence of how this helps ?
+                //await Task.Delay(800);
 
                 var banners = await _simpleCacheService.GetBannerAsync();
                 DailyHeroBanners = banners?.ContentCommunityHero ?? new();
@@ -467,6 +402,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 finally
                 {
                     IsSubscribingToNewsletter = false;
+                StateHasChanged();
                 }
             
            
