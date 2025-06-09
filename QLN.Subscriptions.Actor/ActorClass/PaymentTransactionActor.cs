@@ -151,6 +151,12 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 }
 
                 using var scope = ServiceProvider.CreateScope();
+                // NOTE this wont work as this is only implemented in the backend api at the moment - to be discussed.
+
+                // this should be changed to publish a message to a queue that the backend API service is listening
+                // to that updates a user object to generate an expiry on the user object - this service should never
+                // change that database
+
                 var userManagementService = scope.ServiceProvider.GetRequiredService<IExternalSubscriptionService>();
 
                 var result = await userManagementService.HandleSubscriptionExpiryAsync(userId, CancellationToken.None);
