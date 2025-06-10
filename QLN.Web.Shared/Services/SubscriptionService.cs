@@ -34,10 +34,30 @@ namespace QLN.Web.Shared.Services
          
         }
 
-        public async Task<SubscriptionModel?> GetSubscriptionAsync(Guid id)
+        public async Task<SubscriptionResponse?> GetSubscriptionAsync(int id,int id2)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var response = await _httpClient.GetAsync($"api/subscriptions/getsubscription?verticalTypeId=3&categoryId=1");
+
+                if (!response.IsSuccessStatusCode)
+                    return null;
+
+                var result = await response.Content.ReadFromJsonAsync<SubscriptionResponse>();
+                return result;
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"HTTP request error: {ex.Message}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected error: {ex.Message}");
+                return null;
+            }
         }
+
 
         public async Task<bool> UpdateSubscriptionAsync(SubscriptionModel model)
         {

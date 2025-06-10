@@ -3,6 +3,8 @@
 @using QLN.Web.Shared.Components.BreadCrumb
 @using QLN.Web.Shared.Models
 @using MudBlazor
+@using QLN.Web.Shared.Components.EmptyCard
+
 
 
 @if (_actionSucess){
@@ -15,10 +17,13 @@
         OnClick="CloseSuccessPopup" />
     </div>
 }
-<MudContainer MaxWidth="MaxWidth.Large" Class="py-6 px-4" Style="background-color: #F2F4F7;">
-    <Breadcrumb Items="breadcrumbItems" />
+<div style="width: 100%;background-color: var(--color-secondary-background);">
+    <div class="responsive-container" >
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-6 px-4" Style="background-color: #F2F4F7;width:100%">
+            <Breadcrumb Items="breadcrumbItems" />
 
     <div style="width: 100%;display:flex;justify-content:center;align-items:center;">
+
         <div style="width: 90%;display:flex;justify-content:center;align-items:center;">
             <div style="text-align: center; margin-bottom: 24px;">
                 <MudText Typo="Typo.h5" Class="font-semibold mb-1" Style="color:#242424;">
@@ -121,7 +126,7 @@
 
                 <MudGrid GutterSize="4" Style="margin-top: 16px;">
 
-                    @if (_isLoadingPlans)
+                    @if (IsLoading)
                     {
                         <MudItem xs="12" >
                             <div style="display: flex; justify-content: center; align-items: center; height: 200px; text-align: center;">
@@ -129,15 +134,11 @@
                             </div>
                         </MudItem>
                     }
-                    else if (_isError)
+                    else if (HasError)
                     {
-                        <MudItem xs="12">
-                            <div style="display: flex; justify-content: center; align-items: center; height: 200px; text-align: center;">
-                                <MudText Color="Color.Error" Typo="Typo.subtitle1">
-                                    No subscription plans available at the moment.
-                                </MudText>
-                            </div>
-                        </MudItem>
+                     
+                        <EmptyCard Title="No subscription plans available at the moment." Subtitle="Please check back later for updates." />
+
                     }
                     else if (_plans != null && _plans.Any())
                     {
@@ -158,11 +159,8 @@
                     }
                     else
                     {
-                        <MudItem xs="12">
-                            <MudText Color="Color.Info" Typo="Typo.subtitle1">
-                                No subscription plans available at the moment.
-                            </MudText>
-                        </MudItem>
+                        <EmptyCard Title="No subscription plans available at the moment." Subtitle="Please check back later for updates." />
+
                     }
 
                 </MudGrid>
@@ -287,7 +285,9 @@
     </MudGrid>
 </MudContainer>
 
+</div>
 
+</div>
 
 
 <style>
@@ -307,4 +307,32 @@
     .container{
         background-color: #F2F4F7;
     }
+        .responsive-container {
+        width: 100%;
+        padding: 0 40px;
+    }
+
+   
+    @@media (max-width: 600px) {
+        .vertical-tabs-toolbar {
+            display: flex;
+            flex-direction: row;
+            overflow-x: auto;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .vertical-tab {
+            min-width: 100px;
+            flex: 0 0 auto;
+        }
+
+        .mud-paper {
+            margin-top: 24px;
+        }
+        .mud-button {
+        width: 100% !important;
+    }
+    }
+
 </style>

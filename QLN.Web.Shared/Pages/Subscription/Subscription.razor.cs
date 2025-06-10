@@ -35,8 +35,8 @@ namespace QLN.Web.Shared.Pages.Subscription
         private string _authToken;
         private bool _isLoading = false;
 
-        private bool _isError = false;
-        private bool _isLoadingPlans = false;
+        protected bool IsLoading { get; set; } = true;
+        protected bool HasError { get; set; } = false;
         private int _activeTabIndex;
         private int _activeVerticalTabIndex = 2;
 
@@ -50,8 +50,8 @@ namespace QLN.Web.Shared.Pages.Subscription
         protected override async void OnInitialized()
         {
             InitializeBreadcrumbs();
-            LoadSubscriptionPlans();
-            //await LoadSubscriptionPlansFromApi("3", "1");
+            //LoadSubscriptionPlans();
+            await LoadSubscriptionPlansFromApi(3, 1);
         }
         private List<BreadcrumbItem> breadcrumbItems = new();
         private List<SubscriptionPlan> _plans = new();
@@ -79,55 +79,56 @@ namespace QLN.Web.Shared.Pages.Subscription
         };
         }
 
-        private void LoadSubscriptionPlans()
-        {
-            _plans = new List<SubscriptionPlan>
-        {
-            new() { Id="1",SubscriptionName = "1 flyer", Price = 50, Duration = "1 day" },
-            new() {Id="2", SubscriptionName = "2 flyer", Price = 150, Duration = "1 Week" },
-            new() { Id="3",SubscriptionName = "3 flyer", Price =250, Duration = "2 Week" },
-            new() { Id="4",SubscriptionName = "4 flyer", Price = 1500, Duration = "1 Month" },
-            new() { Id="5",SubscriptionName = "12 flyer", Price = 3000, Duration = "3 Months" },
-            new() {Id="6", SubscriptionName = "24 flyer", Price = 6000, Duration = "6 Months" },
-            new() {Id="7", SubscriptionName = "48 flyer", Price = 10000, Duration = "12 Months" },
-        };
-        }
-        
-
-        //private async Task LoadSubscriptionPlansFromApi(string verticalId, string categoryId)
+        //private void LoadSubscriptionPlans()
         //{
-        //    _isLoadingPlans = true;
-        //    _isError = false;
-        //    try
-        //    {
-        //        var url = $"api/getSubscription?verticalId={Uri.EscapeDataString(verticalId)}&categoryId={Uri.EscapeDataString(categoryId)}";
-
-        //        var response = await Api.GetAsyncWithToken<SubscriptionResponse>(url,_authToken);
-
-        //        if (response is not null && response.Subscriptions?.Any() == true)
-        //        {
-        //            _plans = response.Subscriptions;
-        //        }
-        //        if (_plans == null || !_plans.Any())
-        //        {
-        //            _isError = true;
-        //        }
-
-        //    }
-        //    catch (HttpRequestException ex)
-        //    {
-        //        Snackbar.Add($"Error fetching plans: {ex.Message}", Severity.Error);
-        //        _isError = true;
-        //        _isLoadingPlans = false;
-
-
-        //    }
-        //    finally
-        //    {
-        //        _isLoadingPlans = false;
-        //        StateHasChanged();
-        //    }
+        //    _plans = new List<SubscriptionPlan>
+        //{
+        //    new() { Id="1",SubscriptionName = "1 flyer", Price = 50, Duration = "1 day" },
+        //    new() {Id="2", SubscriptionName = "2 flyer", Price = 150, Duration = "1 Week" },
+        //    new() { Id="3",SubscriptionName = "3 flyer", Price =250, Duration = "2 Week" },
+        //    new() { Id="4",SubscriptionName = "4 flyer", Price = 1500, Duration = "1 Month" },
+        //    new() { Id="5",SubscriptionName = "12 flyer", Price = 3000, Duration = "3 Months" },
+        //    new() {Id="6", SubscriptionName = "24 flyer", Price = 6000, Duration = "6 Months" },
+        //    new() {Id="7", SubscriptionName = "48 flyer", Price = 10000, Duration = "12 Months" },
+        //};
         //}
+
+
+        private async Task LoadSubscriptionPlansFromApi(int verticalId, int categoryId)
+        {
+           
+            try
+            {
+                IsLoading = true;
+                HasError = false;
+
+
+                var response = await SubscriptionService.GetSubscriptionAsync( verticalId,  categoryId);
+
+                if (response?.Subscriptions != null && response.Subscriptions.Any())
+                {
+                    _plans = response.Subscriptions;
+                }
+                else
+                {
+                    HasError = true;
+                }
+
+            }
+            catch (HttpRequestException ex)
+            {
+                Snackbar.Add($"Error fetching plans: {ex.Message}", Severity.Error);
+                HasError = true;
+                IsLoading = false;
+
+
+            }
+            finally
+            {
+                IsLoading = false;
+                StateHasChanged();
+            }
+        }
 
 
         private void SetVeritcalTab(int index)

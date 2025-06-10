@@ -114,10 +114,13 @@ namespace QLN.Web.Shared.Models
                     }
                 }
             }
+        public List<SubscriptionPlan> Subscriptions { get; set; } = new();
+       
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+     
     }
 
 }
