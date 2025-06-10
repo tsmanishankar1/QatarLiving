@@ -1,99 +1,142 @@
-﻿using Azure.Search.Documents.Indexes;
+﻿using Azure.Core.Serialization;
+using Azure.Search.Documents.Indexes;
+using Microsoft.Spatial;
+using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace QLN.Common.DTO_s
 {
     public class ClassifiedsIndex
     {
-        [SimpleField(IsKey = true)]
-        public string AdId { get; set; } = Guid.NewGuid().ToString();
+        // Primary key
+        [SimpleField(IsKey = true, IsFilterable = true)]
+        public string Id { get; set; } = Guid.NewGuid().ToString();
 
+        // --- COMMON AD FIELDS ---
         [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string? SubVertical { get; set; }
 
-        [SimpleField(IsFilterable = true, IsSortable = true)]
-        public string UserId { get; set; } = string.Empty;
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? Title { get; set; } = string.Empty;
-
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string Description { get; set; } = string.Empty;
+        [SimpleField(IsFilterable = true)]
+        public string? UserId { get; set; }
 
         [SimpleField(IsFilterable = true)]
-        public bool? IsFeaturedItem { get; set; }
+        public string? SubscriptionId { get; set; }
 
         [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? Category { get; set; } = string.Empty;
+        public string? Title { get; set; }
 
         [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? Brand { get; set; } = string.Empty;
+        public string? Description { get; set; }
 
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? L1Category { get; set; } = string.Empty;
+        [SimpleField(IsFilterable = true)]
+        public bool? IsFeatured { get; set; }
 
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? L2Category { get; set; } = string.Empty;
+        [SimpleField(IsFilterable = true)]
+        public bool? IsPromoted { get; set; }
 
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? Capacity { get; set; } = string.Empty;
+        [SimpleField(IsFilterable = true)]
+        public string? Status { get; set; }
 
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? Location { get; set; } = string.Empty;
-
-        [SimpleField(IsFilterable = true, IsSortable = true, IsFacetable = true)]
+        [SimpleField(IsFilterable = true, IsSortable = true)]
         [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
         public double? Price { get; set; }
 
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? Zone { get; set; } = string.Empty;
+        // --- CATEGORIES ---
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public string? CategoryId { get; set; }
 
         [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? StreetNumber { get; set; } = string.Empty;
+        public string? Category { get; set; }
 
         [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? BuildingNumber { get; set; } = string.Empty;
+        public string? L1Category { get; set; }
 
         [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? Make { get; set; } = string.Empty;
+        public string? L2Category { get; set; }
 
+        // --- LOCATION & CONTACT ---
         [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? Model { get; set; } = string.Empty;
+        public string? Location { get; set; }
 
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? Condition { get; set; } = string.Empty;
-
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? Storage { get; set; } = string.Empty;
-
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? Colour { get; set; } = string.Empty;
-
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? Coverage { get; set; } = string.Empty;
-
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? SizeType { get; set; } = string.Empty;
-
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? Size { get; set; } = string.Empty;
-
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? Gender { get; set; } = string.Empty;
-
-        [SimpleField(IsSortable = true)]
-        public DateTime CreatedDate { get; set; }
-
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? FlyerFileName { get; set; }
-
-        [SimpleField(IsFilterable = false)]
-        public string? FlyerCoverImageUrl { get; set; }
+        [JsonConverter(typeof(MicrosoftSpatialGeoJsonConverter))]
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public GeographyPoint? GeoLocation { get; set; }
 
         [SearchableField(IsFilterable = true)]
-        public string? FlyerXmlLink { get; set; }
+        public string? StreetNumber { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? BuildingNumber { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Zone { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Latitude { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Longitude { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? PhoneNumber { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? WhatsappNumber { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? ContactEmail { get; set; }
+
+        // --- DATES ---
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public DateTime? CreatedDate { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
+        public DateTime? ModifiedDate { get; set; }
+
+        [SimpleField(IsFilterable = true)]
         public DateTime? ExpiryDate { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public DateTime? RefreshExpiry { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public int? RemainingRefreshes { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public int? TotalAllowedRefreshes { get; set; }
+
+        // --- ITEM-AD SPECIFIC ---
+
+        [SearchableField(IsFilterable = true)]
+        public string? Brand { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Make { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Model { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Capacity { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Storage { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Colour { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Coverage { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? SizeType { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Size { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Gender { get; set; }
 
         [SimpleField(IsFilterable = true)]
         public int? BatteryPercentage { get; set; }
@@ -101,7 +144,7 @@ namespace QLN.Common.DTO_s
         [SimpleField(IsFilterable = true)]
         public bool? HasWarrantyCertificate { get; set; }
 
-        [SimpleField(IsFilterable = false)]
+        [SearchableField(IsFilterable = true)]
         public string? WarrantyCertificateUrl { get; set; }
 
         [SearchableField(IsFilterable = true)]
@@ -111,16 +154,82 @@ namespace QLN.Common.DTO_s
         public string? Ram { get; set; }
 
         [SearchableField(IsFilterable = true)]
-        public string? PhoneNumber { get; set; }
-
-        [SearchableField(IsFilterable = true)]
-        public string? WhatsappNumber { get; set; }
-
-        [SearchableField(IsFilterable = true)]
         public string? Resolution { get; set; }
 
-        [SimpleField(IsFilterable = false, IsFacetable = false)]
-        public List<string>? ImageUrls { get; set; }
+        [SearchableField(IsFilterable = true)]
+        public string? FlyerFileName { get; set; }
 
+        [SimpleField(IsFilterable = true)]
+        public string? FlyerFileUrl { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? FlyerXmlLink { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public string? FlyerCoverImageUrl { get; set; }
+
+        // --- COLLECTIBLE-ITEM SPECIFIC ---
+
+        [SimpleField(IsFilterable = true)]
+        public int? Theme { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public bool? HasAuthenticityCertificate { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public string? AuthenticityUrl { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? YearEra { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public int? CountryOfOrigin { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public int? Language { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public bool? IsGraded { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public int? GradingCompany { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Grade { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Rarity { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public int? Package { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Material { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? SerialNumber { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public bool? IsSigned { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? SignedBy { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public bool? IsFramed { get; set; }
+
+        // --- PRE-LOVED-AD SPECIFIC ---
+        [SearchableField(IsFilterable = true)]
+        public string? Inclusion { get; set; }
+        public IList<ImageInfo>? Images { get; set; }
+
+        public class ImageInfo
+        {
+            [SearchableField(IsFilterable = true)]
+            public string Url { get; set; } = string.Empty;
+
+            [SimpleField(IsFilterable = true)]
+            public int Order { get; set; }
+        }
     }
 }

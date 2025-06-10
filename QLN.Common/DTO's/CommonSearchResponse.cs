@@ -22,7 +22,7 @@ namespace QLN.Common.DTO_s
     {
         public string VerticalName { get; set; } = string.Empty;
         public ClassifiedsIndex? ClassifiedsItem { get; set; }
-        public ServicesIndex? ServicesItems { get; set; }
+        public ServicesIndex? ServicesItem { get; set; }
         public BackofficemasterIndex? MasterItem { get; set; }
     }
 }
