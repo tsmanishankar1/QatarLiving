@@ -27,11 +27,35 @@ namespace QLN.Common.Infrastructure.DTO_s
 
         [JsonPropertyName($"{QueuePrefix}_most_popular_articles")]
         public BaseQueueResponse<ContentPost> MostPopularArticles { get; set; }
+
+        [JsonPropertyName($"{QueuePrefix}_watch_on_qatar_living")]
+        public BaseQueueResponse<ContentVideo> WatchOnQatarLiving { get; set; }
     }
 
     public class QlnNewsNewsCommunityPageResponse
     {
         [JsonPropertyName(DrupalContentConstants.QlnNewsNewsCommunity)]
-        public QlnNewsNewsCommunity QlnNewsNewsCommunity { get; set; }
+        public QlnNewsNewsCommunity News { get; set; }
+
+        public static explicit operator GenericNewsPageResponse(QlnNewsNewsCommunityPageResponse source)
+        {
+            if (source.News == null) return new GenericNewsPageResponse
+            {
+                News = new GenericNewsPage()
+            };
+
+            return new GenericNewsPageResponse
+            {
+                News = new GenericNewsPage
+                {
+                    TopStory = source.News.TopStory,
+                    Articles1 = source.News.Articles1,
+                    Articles2 = source.News.Articles2,
+                    MoreArticles = source.News.MoreArticles,
+                    MostPopularArticles = source.News.MostPopularArticles,
+                    WatchOnQatarLiving = source.News.WatchOnQatarLiving
+                }
+            };
+        }
     }
 }

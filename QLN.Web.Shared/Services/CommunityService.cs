@@ -10,56 +10,37 @@ namespace QLN.Web.Shared.Services
     {
         private readonly HttpClient _httpClient;
 
-        public CommunityService(HttpClient httpClient): base(httpClient)
+        public CommunityService(HttpClient httpClient) : base(httpClient)
         {
             _httpClient = httpClient;
         }
 
-        public async Task<PostListResponse> GetPostsAsync(int? forumId, string order, int page, int pageSize)
+        public async Task<(List<PostListDto> Posts, int TotalCount)> GetPostsAsync(int? forumId, string? order, int page, int pageSize)
         {
+
+            var requestUri = $"/api/content/community?page={page}&page_size={pageSize}";
+
+            if(forumId != null)
+            {
+                requestUri += $"&forum_id={forumId}";
+            }
+
+            if(!string.IsNullOrEmpty(order))
+            {
+                requestUri += $"&order={order}";
+            }
+
 
             try
             {
-                var url = $"api/content/community?" +
-                          $"forum_id={forumId}&" +
-                          $"order={order}&" +
-                          $"page={page}&" +
-                          $"page_size={pageSize}";
 
-
-                var response = await _httpClient.GetFromJsonAsync<PostListResponse>(url);
-
-                //if(response != null && response.Items.Any())
-                //{
-                //    var postList = new List<PostListDto>();
-
-                //    foreach (var item in response.Items)
-                //    {
-                //        postList.Add(new PostListDto
-                //        {
-                //            category_id = item.CategoryId,
-                //            date_created = item.DateCreated,
-                //            description = item.Description,
-                //            image_url = item.ImageUrl,
-                //            nid = item.Nid,
-                //            forum_category = item.ForumCategory,
-                //            forum_id = item.ForumId,
-                //            slug = item.Slug,
-                //            title = item.Title,
-                //            user_name = item.UserName,
-                //            comment_count = item.CommentCount
-                //        });
-                //    }
-
-                //    return postList;
-                //}
-
-                return response ?? new PostListResponse();
+                var response = await _httpClient.GetFromJsonAsync<PostListResponse>(requestUri);
+                return (response.items, response.total);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"API Error: {ex.Message}");
-                return new PostListResponse();
+                return (null, 0);
             }
         }
         public async Task<PostDetailsDto> GetPostBySlugAsync(string slug)
@@ -108,12 +89,40 @@ namespace QLN.Web.Shared.Services
                 return new List<SelectOption>();
             }
         }
+        public async Task<bool> PostCommentAsync(CommentPostRequest request)
+        {
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/content/comment/save", request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error posting comment: {ex.Message}");
+                return false;
+            }
+        }
+        public async Task<PaginatedCommentResponse> GetCommentsByPostIdAsync(int nid, int page, int pageSize)
+        {
+            try
+            {
+                var url = $"api/content/comments/{nid}?page={page}&page_size={pageSize}";
+                var response = await _httpClient.GetFromJsonAsync<PaginatedCommentResponse>(url);
+                return response ?? new PaginatedCommentResponse();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"API Error: {ex.Message}");
+                return new PaginatedCommentResponse();
+            }
+        }
+
         public class CategoryResponse
         {
             [JsonPropertyName("forum_categories")]
             public List<ForumCategory> Forum_Categories { get; set; }
         }
-        
+
 
     }
 }

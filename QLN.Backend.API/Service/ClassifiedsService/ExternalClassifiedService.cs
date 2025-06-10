@@ -10,6 +10,7 @@ using Dapr;
 using Dapr.Client;
 using Google.Api;
 using Microsoft.Extensions.Hosting;
+using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.EventLogger;
@@ -687,6 +688,90 @@ namespace QLN.Backend.API.Service.ClassifiedService
         }   
 
 
+        public async Task<NestedCategoryDto> GetCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (categoryId == Guid.Empty)
+                    throw new ArgumentException("Invalid category ID", nameof(categoryId));
+
+                var result = await _dapr.InvokeMethodAsync<NestedCategoryDto>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/{Vertical}/category-hierarchy/{categoryId}",
+                    cancellationToken
+                );
+
+                return result ?? throw new KeyNotFoundException($"No hierarchy found for category ID: {categoryId}");
+            }
+            catch(Exception ex)
+            {
+                _log.LogException(ex);
+                throw;
+            }
+        }
+
+        public async Task<bool> DeleteCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (categoryId == Guid.Empty)
+                    throw new ArgumentException("Invalid category ID", nameof(categoryId));
+
+                var response = await _dapr.InvokeMethodAsync<HttpResponseMessage>(
+                    HttpMethod.Delete,
+                    SERVICE_APP_ID,
+                    $"api/{Vertical}/category-hierarchy/{categoryId}",
+                    cancellationToken);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                throw;
+            }
+        }
+
+        public async Task<ItemAdsAndDashboardResponse> GetUserItemsAdsWithDashboard(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<ItemAdsAndDashboardResponse>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/{Vertical}/itemsAd-dashboard-byId?userId={userId}",
+                    cancellationToken
+                );
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                throw;
+            }
+        }
+
+        public async Task<PrelovedAdsAndDashboardResponse> GetUserPrelovedAdsAndDashboard(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<PrelovedAdsAndDashboardResponse>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/{Vertical}/prelovedAd-dashboard-byId?userId={userId}",
+                    cancellationToken
+                );
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                throw;
+            }
+        }
 
         public async Task<bool> SaveSearch(SaveSearchRequestDto dto ,Guid userId, CancellationToken cancellationToken = default)
         {
@@ -743,11 +828,57 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 _log.LogException(ex);
                 throw;
             }
-        }       
+        }
 
         public Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
+
+        public async Task<CollectiblesResponse> GetCollectibles(string userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new ArgumentException("User ID is required", nameof(userId));
+
+                // Optional: log the request start
+                _log.LogException(new Exception($"Starting to fetch collectibles for userId: {userId}"));
+
+                var result = await _dapr.InvokeMethodAsync<CollectiblesResponse>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/{Vertical}/collectibles-by-id?userId={userId}",
+                    cancellationToken
+                );
+
+                // Optional: log success
+                _log.LogException(new Exception($"Successfully fetched collectibles for userId: {userId}"));
+
+                return result ?? new CollectiblesResponse();
+            }
+            catch (DaprException dex)
+            {
+                _log.LogException(new Exception($"DaprException while fetching collectibles for userId: {userId}. Message: {dex.Message}", dex));
+                if (dex.InnerException != null)
+                {
+                    _log.LogException(new Exception($"Inner exception: {dex.InnerException.Message}", dex.InnerException));
+                }
+
+                throw new InvalidOperationException("Failed to fetch collectibles due to Dapr error.", dex);
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(new Exception($"Unexpected error while fetching collectibles for userId: {userId}. Message: {ex.Message}", ex));
+                if (ex.InnerException != null)
+                {
+                    _log.LogException(new Exception($"Inner exception: {ex.InnerException.Message}", ex.InnerException));
+                }
+
+                throw new InvalidOperationException("An unexpected error occurred while fetching collectibles.", ex);
+            }
+        }
+
+
     }
 }

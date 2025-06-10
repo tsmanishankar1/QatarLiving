@@ -1,8 +1,4 @@
-﻿using Dapr.Actors.Client;
-using Dapr.Actors;
-using Dapr.Actors.Runtime;
-using Microsoft.Extensions.Logging;
-using QLN.Common.DTO_s;
+﻿using Dapr.Actors.Runtime;
 using QLN.Common.Infrastructure.Subscriptions;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
@@ -15,14 +11,10 @@ namespace QLN.Subscriptions.Actor.ActorClass
         private const string StateKey = "subscription-data";
         private readonly ILogger<SubscriptionActor> _logger;
         private static readonly ConcurrentDictionary<string, SubscriptionDto> _memoryCache = new ConcurrentDictionary<string, SubscriptionDto>();
-
-        // Flag to track if we're experiencing state store issues
         private static volatile bool _stateStoreUnstable = false;
         private static DateTime _lastStateStoreFailure = DateTime.MinValue;
-        private static readonly TimeSpan _circuitBreakDuration = TimeSpan.FromMinutes(1); // Reduced from 2 minutes to 1 minute
-
-        // Keep track of pending operations to avoid flooding the state store
-        private static readonly SemaphoreSlim _stateStoreThrottle = new SemaphoreSlim(5, 5); // Max 5 concurrent state operations
+        private static readonly TimeSpan _circuitBreakDuration = TimeSpan.FromMinutes(1); 
+        private static readonly SemaphoreSlim _stateStoreThrottle = new SemaphoreSlim(5, 5); 
 
         public SubscriptionActor(ActorHost host, ILogger<SubscriptionActor> logger) : base(host)
         {
@@ -39,32 +31,29 @@ namespace QLN.Subscriptions.Actor.ActorClass
             {
                 _logger.LogInformation("[Actor {ActorId}] FastSetDataAsync started for subscription {Name}", actorKey, data.subscriptionName);
 
-                // Update timestamp
+
                 data.lastUpdated = DateTime.UtcNow;
 
-                // ALWAYS update our in-memory cache first to ensure requests succeed
                 _memoryCache[actorKey] = data;
 
-                // Skip state store operations if circuit breaker is active
                 if (_stateStoreUnstable && DateTime.UtcNow - _lastStateStoreFailure < _circuitBreakDuration)
                 {
                     _logger.LogWarning("[Actor {ActorId}] State store circuit breaker active - using memory cache only", actorKey);
                     return true;
                 }
 
-                // Only try to access the state store if we can acquire the semaphore without waiting too long
                 if (await _stateStoreThrottle.WaitAsync(TimeSpan.FromMilliseconds(500), cancellationToken))
                 {
                     try
                     {
-                        // Use very short timeout for state operation
-                        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(1)); // Reduced from 2 seconds
+
+                        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(1)); 
                         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, cancellationToken);
 
                         await StateManager.SetStateAsync(StateKey, data, linkedCts.Token);
-                        await StateManager.SaveStateAsync(linkedCts.Token); // Added SaveStateAsync
+                        await StateManager.SaveStateAsync(linkedCts.Token); 
 
-                        // Reset state store stability flag if operation succeeds
+
                         _stateStoreUnstable = false;
                     }
                     catch (Exception ex) when (
@@ -72,7 +61,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                         ex is SocketException ||
                         ex.InnerException is SocketException)
                     {
-                        // Mark state store as unstable but continue since we have the data in memory
+                       
                         _stateStoreUnstable = true;
                         _lastStateStoreFailure = DateTime.UtcNow;
                         _logger.LogWarning(ex, "[Actor {ActorId}] State store operation failed, activating circuit breaker, data preserved in memory", actorKey);
@@ -108,8 +97,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
         public async Task<bool> SetDataAsync(SubscriptionDto data, CancellationToken cancellationToken = default)
         {
-            // IMPORTANT FIX: For immediate user-facing operations, use FastSetDataAsync to avoid delays
-            // This removes a major source of request delays
+           
             return await FastSetDataAsync(data, cancellationToken);
         }
 
@@ -122,7 +110,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             {
                 _logger.LogInformation("[Actor {ActorId}] GetDataAsync started", actorKey);
 
-                // First check memory cache for data - this is the performance critical path
+              
                 if (_memoryCache.TryGetValue(actorKey, out var cachedData))
                 {
                     var cacheDuration = DateTime.UtcNow - start;
@@ -131,23 +119,23 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     return cachedData;
                 }
 
-                // Check if state store is experiencing issues
+               
                 if (_stateStoreUnstable && DateTime.UtcNow - _lastStateStoreFailure < _circuitBreakDuration)
                 {
                     _logger.LogWarning("[Actor {ActorId}] GetDataAsync - State store circuit breaker active and no data in memory cache", actorKey);
                     return null;
                 }
 
-                // Only try to access the state store if we can acquire the semaphore without waiting too long
+               
                 if (await _stateStoreThrottle.WaitAsync(TimeSpan.FromMilliseconds(500), cancellationToken))
                 {
                     try
                     {
-                        // Use very short timeout for state operation
-                        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(1)); // Reduced from 2 seconds
+                       
+                        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(1)); 
                         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, cancellationToken);
 
-                        // Use TryGetStateAsync instead of ContainsStateAsync + GetStateAsync
+                       
                         var conditionalValue = await StateManager.TryGetStateAsync<SubscriptionDto>(StateKey, linkedCts.Token);
 
                         if (!conditionalValue.HasValue)
@@ -158,13 +146,13 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
                         var data = conditionalValue.Value;
 
-                        // Store in memory cache for future requests
+                        
                         if (data != null)
                         {
                             _memoryCache[actorKey] = data;
                         }
 
-                        // Reset state store stability flag since operation succeeded
+                       
                         _stateStoreUnstable = false;
 
                         var duration = DateTime.UtcNow - start;
@@ -178,7 +166,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                         ex is SocketException ||
                         ex.InnerException is SocketException)
                     {
-                        // Mark state store as unstable
+                       
                         _stateStoreUnstable = true;
                         _lastStateStoreFailure = DateTime.UtcNow;
                         _logger.LogWarning(ex, "[Actor {ActorId}] State store operation failed in GetDataAsync, activating circuit breaker", actorKey);

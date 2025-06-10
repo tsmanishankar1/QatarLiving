@@ -12,14 +12,14 @@
         public string News { get; set; } = "https://www.qatarliving.com/news";
         public string Company { get; set; } = "https://www.qatarliving.com/company";
         public string Banner { get; set; } = "https://www.qatarliving.com/banner";
-        public string Subscription { get; set; } = "https://www.qatarliving.com/subscription";
+        public string Subscription { get; set; } = "https://www.qatarliving.com/user/subscriptions";
         public string PayToPublish { get; set; } = "https://www.qatarliving.com/pay-to-publish";
         public string Payments { get; set; } = "https://www.qatarliving.com/payments";
         public string Content { get; set; } = "https://www.qatarliving.com/content";
         public string Vehicles { get; set; } = "https://www.qatarliving.com/vehicles";
         public string Services { get; set; } = "https://www.qatarliving.com/services";
         public string Jobs { get; set; } = "https://www.qatarliving.com/jobs";
-        public string Rewards { get; set; } = "https://www.qatarliving.com/rewards";
+        public string Rewards { get; set; } = "https://qlr.qatarliving.com/en/rewards";
         public string Forums { get; set; } = "https://www.qatarliving.com/forums";
         public string eShops { get; set; } = "https://www.qatarliving.com/eshops";
         public string GoogleStore { get; set; } = "https://play.google.com/store/apps/details?id=com.qatarliving.classifieds&hl=en";
@@ -37,6 +37,33 @@
         public string SocialTikTok { get; set; } = "https://www.tiktok.com/notfound";
         public string Base { get; set; } = "https://www.qatarliving.com/";
         public string AllVideos { get; set; } = "https://www.youtube.com/@QatarLivingOfficial/videos";
+
+        public string PostAd { get; set; } = "https://www.qatarliving.com/node/add/classified";
+
+        public string Residential { get; set; } = "https://qlp.qatarliving.com/en/properties/residential?purpose=For+Rent";
+        public string Commercial { get; set; } = "https://qlp.qatarliving.com/en/properties/commercial?purpose=For+Rent";
+        public string International { get; set; } = "https://qlp.qatarliving.com/en/properties/international?purpose=For+Sale";
+
+        public string Cars { get; set; } = "https://qlv.qatarliving.com/en/vehicles/cars";
+        public string Showrooms { get; set; } = "https://www.qatarliving.com/showrooms";
+
+        public string CarRentals { get; set; } = "https://www.qatarliving.com/vehicles/car-rentals";
+
+        public string Furniture { get; set; } = "https://www.qatarliving.com/classifieds/furniture-decor";
+
+        public string Electronics { get; set; } = "https://www.qatarliving.com/classifieds/electronics";
+
+        public string Fashion { get; set; } = "https://www.qatarliving.com/classifieds/fashion-beauty";
+
+        public string Phone { get; set; } = "https://www.qatarliving.com/classifieds/mobile-phones-tablets";
+
+        public string Labour { get; set; } = "https://www.qatarliving.com/services/labor-moving";
+
+        public string HouseholdServices { get; set; } = "https://www.qatarliving.com/services/household-services";
+
+        public string CleaningServices { get; set; } = "https://www.qatarliving.com/services/cleaning-services";
+
+        public string ComputerServices { get; set; } = "https://www.qatarliving.com/services/computer-services";
 
     }
 }

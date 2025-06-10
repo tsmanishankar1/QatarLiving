@@ -4,17 +4,18 @@
 @using QLN.Web.Shared.Pages.Content.Daily
 @using QLN.Web.Shared.Components.DailyFeaturedEventCard
 @using QLN.Web.Shared.Pages.Content.Daily.DailyNewsCard
-@using QLN.Web.Shared.Pages.Content.Daily.DailyVideoCards
 @using QLN.Web.Shared.Pages.Content.Daily.DailyNewsLetter
 @using QLN.Web.Shared.Pages.Content.Daily.DailyMoreArticle
 @using QLN.Web.Shared.Pages.Content.Daily.DailyHighlights
 @using QLN.Web.Shared.Pages.Content.Daily.DailyIntheKnow
+@using QLN.Web.Shared.Pages.Content.Daily.DailyVideoCards
 @using QLN.Web.Shared.Pages.Content.Daily.MoreEvents
 @using QLN.Web.Shared.Components.EmptyCard
 @using QLN.Web.Shared.Pages.Content.Events
 @using QLN.Web.Shared.Components.BannerSwiper
 @using QLN.Web.Shared.Components.BannerTakeOver
 @using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.Skeletons.FeaturedItemSkeleton
+@using QLN.Common.Infrastructure.DTO_s;
 @layout ContentLayout
 
 <PageTitle>Qatar Living | The go-to place for lifestyle, news, and events</PageTitle>
@@ -40,7 +41,6 @@
     </div>
     <div class="responsive-news-container">
         <div class="max-container">
-
             <MudGrid GutterSize="5px" Style="margin-bottom: 20px;">
                 <MudItem xs="12" md="8">
                     <MudGrid GutterSize="10px">
@@ -57,7 +57,7 @@
                         {
                             <MudItem xs="12">
                                 <EmptyCard Title="No event banners found."
-                                    Subtitle="Please check back later for updates." />
+                                           Subtitle="Please check back later for updates." />
                             </MudItem>
                         }
                         else
@@ -74,27 +74,27 @@
 
                 </MudItem>
                 <MudItem xs="12" md="4">
-                    <DailyMoreArticle Items="@MoreArticles" isLoading="isLoading" />
+                        <DailyMoreArticle Items="@MoreArticles" isLoading="isLoading" />
                 </MudItem>
             </MudGrid>
 
             <MudGrid GutterSize="16px">
 
-                @if (TopicQueue1.Count() > 0)
+                @if (TopStories.Count() > 0)
                 {
                     <!-- Left column: news cards -->
                     <MudItem xs="12" md="9" lg="9">
                         <MudGrid GutterSize="16px">
-                            @foreach (var item in TopicQueue1.Take(3))
-                            {
+                            <MudVirtualize Context="item" T="ContentPost" Items="TopStories">
                                 <MudItem xs="12" sm="6" md="4" lg="4">
-                                    <DailyNewsCard Item="item" IsHorizontal="false" />
+                                        <DailyNewsCard Item="item" IsHorizontal="false" />
                                 </MudItem>
-                            }
+                            </MudVirtualize>
 
                         </MudGrid>
                     </MudItem>
                 }
+
                 <!-- Right column: newsletter -->
                 <MudItem xs="12" md="3" lg="3">
                     <DailyNewsLetter />
@@ -107,42 +107,40 @@
     </div>
     <div class="responsive-news-container-daily">
         <div class="max-container">
-            <DailyFeaturedEvents Items="@FeaturedEvents" Loading="isLoading" />
+                <DailyFeaturedEvents Items="@FeaturedEvents" Loading="isLoading" />
 
             <MoreEvents />
-            @if (isLoadingBanners)
-            {
-                <BannerSkleton />
-            }
-            else if (DailyTakeOver1Banners?.Any() == true)
-            {
-                <BannerTakeOver BannerItems="DailyTakeOver1Banners" Loading="isLoadingBanners" />
-            }
-            else
-            {
-                <EmptyCard Title="No daily banners found." Subtitle="Please check back later for updates." />
-            }
+                @if (isLoadingBanners)
+                {
+                    <BannerSkleton />
+                }
+                else if (DailyTakeOver1Banners?.Any() == true)
+                {
+                    <BannerTakeOver BannerItems="DailyTakeOver1Banners" Loading="isLoadingBanners" />
+                }
+                else
+                {
+                    <EmptyCard Title="No daily banners found." Subtitle="Please check back later for updates." />
+                }
 
         </div>
 
     </div>
-    @if (Videos.Count > 0)
+    @if (VideoList.Count > 0)
     {
-
-
         <div class="max-container">
 
-            <DailyVideoCards Items="@Videos" />
+            <DailyVideoCards QueueLabel="@VideoQueueLabel" Items="@VideoList" />
         </div>
     }
     <div class="responsive-news-container">
 
         <div class="max-container">
-            @if (TopicQueue2.Count() > 0)
-            {
-                <DailyHighlights QueueLabel="@TopicQueue2Label" ListOfItems="TopicQueue2" />
-            }
 
+            @if (TopicQueue1.Count() > 0)
+            {
+                    <DailyHighlights QueueLabel="@TopicQueue1Label" ListOfItems="TopicQueue1" />
+            }
             @if (isLoadingBanners)
             {
                 <BannerSkleton />
@@ -156,13 +154,24 @@
                 <EmptyCard Title="No daily banners found." Subtitle="Please check back later for updates." />
             }
 
+            @if (TopicQueue2.Count() > 0)
+            {
+                    <DailyHighlights QueueLabel="@TopicQueue2Label" ListOfItems="TopicQueue2" />
+            }
+
+
+
             @if (TopicQueue3.Count() > 0)
             {
-                <DailyHighlights QueueLabel="@TopicQueue3Label" ListOfItems="TopicQueue3" />
+                    <DailyHighlights QueueLabel="@TopicQueue3Label" ListOfItems="TopicQueue3" />
             }
             @if (TopicQueue4.Count() > 0)
             {
-                <DailyHighlights QueueLabel="@TopicQueue4Label" ListOfItems="TopicQueue4" />
+                    <DailyHighlights QueueLabel="@TopicQueue4Label" ListOfItems="TopicQueue4" />
+            }
+            @if (TopicQueue5.Count() > 0)
+            {
+                    <DailyHighlights QueueLabel="@TopicQueue5Label" ListOfItems="TopicQueue5" />
             }
         </div>
     </div>
@@ -245,6 +254,15 @@
         .carousel-responsive-container {
             margin-bottom: 5px;
             padding: 0 5px;
+        }
+
+        .mud-grid-item {
+            display: flex;
+            justify-content: center;
+        }
+
+        .mud-form {
+            width: 100%;
         }
     }
 </style>

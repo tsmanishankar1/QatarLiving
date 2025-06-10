@@ -5,10 +5,23 @@ namespace QLN.Web.Shared.Pages.Content.Daily.DailyHighlights
 {
     public class DailyHighlightsBase : ComponentBase
     {
+        [Inject] NavigationManager NavigationManager { get; set; }
         [Parameter]
         public string QueueLabel {  get; set; }
 
         [Parameter]
         public List<ContentEvent> ListOfItems { get; set; }
+
+        protected void NavigateToDetailPage(ContentEvent item)
+        {
+            if (item.NodeType.Contains("post") && !string.IsNullOrWhiteSpace(item.Slug))
+            {
+                NavigationManager.NavigateTo($"/content/article/details/{item.Slug}");
+            }
+            else if (item.NodeType.Contains("event") && !string.IsNullOrWhiteSpace(item.Slug))
+            {
+                NavigationManager.NavigateTo($"/content/events/details/{item.Slug}");
+            }
+        }
     }
 }

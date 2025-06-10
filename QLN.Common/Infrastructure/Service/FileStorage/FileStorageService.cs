@@ -40,7 +40,6 @@ namespace QLN.Common.Infrastructure.Service.FileStorage
                 throw;
             }
         }
-
         public Task DeleteFile(string path)
         {
             try

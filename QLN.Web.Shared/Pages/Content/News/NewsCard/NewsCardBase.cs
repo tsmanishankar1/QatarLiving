@@ -9,9 +9,16 @@ public class NewsCardBase : ComponentBase
      [Parameter]
     public ContentPost news { get; set; } = new ContentPost();
     protected bool imageLoaded = false;
+    protected bool imageFailed = false;
+    protected string? currentImageUrl;
     protected override void OnParametersSet()
     {
-            imageLoaded = false; 
+       if (currentImageUrl != news.ImageUrl)
+        {
+            currentImageUrl = news.ImageUrl;
+            imageLoaded = false;
+            imageFailed = false;
+        }
     }
     protected void OnImageLoaded()
     {
@@ -20,9 +27,12 @@ public class NewsCardBase : ComponentBase
     }
     protected void OnImageError()
     {
-            imageLoaded = true; 
-            StateHasChanged();
+        imageLoaded = true;
+        imageFailed = false;
+        StateHasChanged();
     }
+    protected bool ShowEmptyCard =>
+        string.IsNullOrWhiteSpace(news?.ImageUrl) || imageFailed;
  
  
     [Parameter]

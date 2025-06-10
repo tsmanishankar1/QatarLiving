@@ -60,11 +60,52 @@ namespace QLN.Backend.API.Service.ContentService
         public async Task<T?> GetPostsFromDrupalAsync<T>(string queue_name, CancellationToken cancellationToken)
         {
             return await httpClient.GetFromJsonAsync<T>($"{DrupalContentConstants.LandingPath}/{queue_name}", cancellationToken);
-        }
 
-        public async Task<List<ContentEvent>?> GetEventsFromDrupalAsync(CancellationToken cancellationToken)
+        }
+        // qlnapi/events?category_id=126205&location_id=102701&date=2025-01-01'
+        public async Task<ContentEventsResponse?> GetEventsFromDrupalAsync(
+            CancellationToken cancellationToken, 
+            string? category_id = null,
+            string? location_id = null,
+            string? from = null,
+            string? to = null,
+            string? order = null,
+            int? page = null, 
+            int? page_size = null
+            )
         {
-            return await httpClient.GetFromJsonAsync<List<ContentEvent>>(DrupalContentConstants.EventsPath, cancellationToken);
+            page ??= 1;
+            page_size ??= 20;
+
+            string requestUri = $"{DrupalContentConstants.EventsPath}?page={page}&page_size={page_size}";
+
+            if (!string.IsNullOrEmpty(order))
+            {
+                requestUri += $"&order={order}";
+            }
+
+            if (!string.IsNullOrEmpty(category_id))
+            {
+                requestUri += $"&category_id={category_id}";
+            }
+
+            if (!string.IsNullOrEmpty(location_id))
+            {
+                requestUri += $"&location_id={location_id}";
+            }
+
+            if (!string.IsNullOrEmpty(from))
+            {
+                requestUri += $"&from={from}";
+            }
+
+            if (!string.IsNullOrEmpty(to))
+            {
+                requestUri += $"&to={to}";
+            }
+
+
+            return await httpClient.GetFromJsonAsync<ContentEventsResponse>(requestUri, cancellationToken);
         }
 
         public async Task<CategoriesResponse?> GetCategoriesFromDrupalAsync(CancellationToken cancellationToken)
@@ -72,8 +113,18 @@ namespace QLN.Backend.API.Service.ContentService
             return await httpClient.GetFromJsonAsync<CategoriesResponse>(DrupalContentConstants.CategoriesPath, cancellationToken);
         }
 
-        public async Task<CommunitiesResponse?> GetCommunitiesFromDrupalAsync(CancellationToken cancellationToken, string? forum_id = null, string? order = "asc", int? page = 1, int? page_size = 10)
+        public async Task<CommunitiesResponse?> GetCommunitiesFromDrupalAsync(
+            CancellationToken cancellationToken, 
+            string? forum_id = null, 
+            string? order = null, 
+            int? page = null, 
+            int? page_size = null
+            )
         {
+            page ??= 1;
+            page_size ??= 10; // default of 10 for Communities
+            if (string.IsNullOrEmpty(order)) order = "asc";
+
             string requestUri = $"{DrupalContentConstants.CommunityPath}?page={page}&page_size={page_size}&order={order}";
             if (!string.IsNullOrEmpty(forum_id))
             {
@@ -83,8 +134,17 @@ namespace QLN.Backend.API.Service.ContentService
             return await httpClient.GetFromJsonAsync<CommunitiesResponse>(requestUri, cancellationToken);
         }
 
-        public async Task<GetCommentsResponse?> GetCommentsFromDrupalAsync(string forum_id, CancellationToken cancellationToken, int? page = 1, int? page_size = 10)
+        public async Task<GetCommentsResponse?> GetCommentsFromDrupalAsync(
+            string forum_id, 
+            CancellationToken cancellationToken, 
+            int? page = 1, 
+            int? page_size = 10
+            )
         {
+            page ??= 1;
+            page_size ??= 10; // default of 10 for Comments
+            //if (string.IsNullOrEmpty(order)) order = "asc";
+
             return await httpClient.GetFromJsonAsync<GetCommentsResponse>($"{DrupalContentConstants.CommentsGetPath}/{forum_id}?page={page}&page_size={page_size}", cancellationToken);
         }
 

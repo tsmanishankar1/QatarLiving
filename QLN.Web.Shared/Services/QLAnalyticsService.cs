@@ -1,4 +1,5 @@
-﻿using QLN.Web.Shared.Models;
+﻿using Microsoft.JSInterop;
+using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
 using System;
 using System.Collections.Generic;
@@ -12,11 +13,14 @@ namespace QLN.Web.Shared.Services
     public partial class QLAnalyticsService : IQLAnalyticsService
     {
         private readonly HttpClient _httpClient;
+        private readonly IJSRuntime _jsRuntime;
 
         public QLAnalyticsService(
-            HttpClient httpClient)
+            HttpClient httpClient,
+            IJSRuntime jsRuntime)
         {
             _httpClient = httpClient;
+            _jsRuntime = jsRuntime;
         }
 
         public async Task TrackEventAsync(
@@ -196,6 +200,76 @@ namespace QLN.Web.Shared.Services
                 browserId,
                 sessionId
             );
+        }
+        public async Task TrackEventFromClientAsync(
+            QLAnalyticsCallProps props,
+            string browserId,
+            string sessionId)
+        {
+            try
+            {
+                var headers = new Dictionary<string, string>
+                {
+                    { "Content-Type", "application/json" },
+                    { "X-Browser-ID", browserId },
+                    { "X-Session-ID", sessionId }
+                };
+
+                if (!string.IsNullOrEmpty(props.Token))
+                {
+                    headers["Authorization"] = $"Bearer {props.Token}";
+                }
+
+                var queryParams = new Dictionary<string, string>
+                {
+                    { "type", props.AnalyticType.ToString() },
+                    { "vertical", props.VerticalTag.ToString() }
+                };
+
+                string urlSuffix = "";
+                if (props.AnalyticType == (int)AnalyticType.ACTION_TRACKING)
+                {
+                    urlSuffix = "/action-tracking";
+                }
+
+                var queryString = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
+                var url = $"/analytics{urlSuffix}?{queryString}";
+
+                // Compose the body
+                var body = new Dictionary<string, object?>();
+                if (props.AdditionalTag != null)
+                    body["additional_tag"] = props.AdditionalTag;
+
+                var propsType = typeof(QLAnalyticsCallProps);
+                foreach (var prop in propsType.GetProperties())
+                {
+                    if (prop.Name == nameof(QLAnalyticsCallProps.Token) ||
+                        prop.Name == nameof(QLAnalyticsCallProps.AnalyticType) ||
+                        prop.Name == nameof(QLAnalyticsCallProps.VerticalTag))
+                        continue;
+
+                    var value = prop.GetValue(props);
+                    if (value != null)
+                    {
+                        var key = string.Concat(prop.Name.Select((x, i) =>
+                            i > 0 && char.IsUpper(x) ? "_" + char.ToLower(x) : char.ToLower(x).ToString()));
+                        body[key] = value;
+                    }
+                }
+
+                var fetchRequest = new
+                {
+                    method = "POST",
+                    headers,
+                    body = JsonSerializer.Serialize(body)
+                };
+
+                await _jsRuntime.InvokeVoidAsync("fetch", url, fetchRequest);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"This error occurred when calling analytics from client. Error: {ex}");
+            }
         }
     }
 

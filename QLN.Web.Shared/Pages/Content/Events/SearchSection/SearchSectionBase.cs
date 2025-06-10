@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.Logging;
-using QLN.Common.Infrastructure.DTO_s;
 using Microsoft.JSInterop;
 using MudBlazor;
+using QLN.Common.Infrastructure.DTO_s;
+using QLN.Web.Shared.Pages.Content.News;
 
 namespace QLN.Web.Shared.Components.NewCustomSelect
 {
@@ -12,26 +13,42 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
     {
         [Inject] protected IJSRuntime JSRuntime { get; set; }
         [Inject] protected ILogger<SearchSectionBase> Logger { get; set; }
-[Inject] protected NavigationManager NavigationManager { get; set; }
+        [Inject] protected NavigationManager NavigationManager { get; set; }
+
+        [Parameter] public EventCallback<string> OnCategoryChanged { get; set; }
+        [Parameter] public EventCallback<string> OnLocationChanged { get; set; }
 
         [Parameter] public List<EventCategory> Categories { get; set; } = [];
-
+        [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
+        [Parameter] public List<Area> Areas { get; set; } = [];
+        protected List<Area> FilteredAreas = new(); // filtered list for search
+        protected List<Area> SelectedAreas = new(); // selected areas
         protected List<SelectOption> PropertyTypes = new();
         protected string SelectedPropertyTypeId;
+        private string _fromDate;
+        private string _toDate;
+
+        protected bool ShouldShowClearAll =>
+            !string.IsNullOrEmpty(SelectedPropertyTypeId)
+            || SelectedAreas.Any()
+            || !string.IsNullOrEmpty(SelectedDateLabel);
+
+        protected string SelectedLocationId;
 
         protected bool _showDatePicker = false;
-        protected string SelectedDateLabel = "";
+        protected string SelectedDateLabel;
         protected bool _dateSelected = false;
         protected DateTime? _selectedDate;
 
         protected bool IsMobile = false;
         protected int windowWidth;
         private bool _jsInitialized = false;
+        private bool _dateRangeApplied = false;
+        private DateRange _confirmedDateRange = new();
+
         protected ElementReference _popoverDiv;
 
         protected DotNetObjectReference<SearchSectionBase>? _dotNetRef;
-
-
 
         private const int MobileBreakpoint = 770;
 
@@ -39,49 +56,124 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
         protected DateRange _dateRange = new();
 
 
-
-        protected void ToggleDatePicker() => _showDatePicker = !_showDatePicker;
-       protected MudDatePicker _datePickerRef;
-
-protected async Task ApplyDatePicker()
-{
-    if (_selectedDate != null)
-    {
-        SelectedDateLabel = _selectedDate.Value.ToString("yyyy-MM-dd"); // format for URL
-
-        _showDatePicker = false;
-
-        // Navigate to your desired URL with the selected date
-        var url = $"https://www.qatarliving.com/events/day/{SelectedDateLabel}";
-        NavigationManager.NavigateTo(url, forceLoad: true);
-
-        StateHasChanged();
-    }
-}
-
-protected void CancelDatePicker()
-{
-    _showDatePicker = false;
-    _selectedDate = null;
-    SelectedDateLabel = string.Empty;
-    StateHasChanged();
-}
-
-
-        protected async Task OnRangeChanged(DateRange range)
+        protected void ToggleDatePicker()
         {
-            _dateRange = range;
+            _showDatePicker = !_showDatePicker;
+
+            if (_showDatePicker)
+            {
+                // Set the picker to last confirmed value
+                _dateRange = new DateRange(_confirmedDateRange.Start, _confirmedDateRange.End);
+            }
         }
 
-      protected void HandleCategoryChanged(string id)
+
+        protected MudDatePicker _datePickerRef;
+
+        protected async Task ApplyDatePicker()
+        {
+            if (_dateRange?.Start != null)
+            {
+                var startDate = _dateRange.Start.Value;
+                var endDate = _dateRange.End ?? _dateRange.Start.Value;
+
+                _confirmedDateRange = new DateRange(startDate, endDate); // ← save confirmed range
+
+                if (startDate.Date == endDate.Date)
+                {
+                    SelectedDateLabel = $"{startDate:dd-MM-yyyy}";
+                    await OnDateChanged.InvokeAsync((startDate.ToString("yyyy-MM-dd"), null));
+                }
+                else
+                {
+                    SelectedDateLabel = $"{startDate:dd-MM-yyyy} to {endDate:dd-MM-yyyy}";
+                    await OnDateChanged.InvokeAsync((startDate.ToString("yyyy-MM-dd"), endDate.ToString("yyyy-MM-dd")));
+                }
+
+                _showDatePicker = false;
+                StateHasChanged();
+            }
+        }
+
+
+        protected async Task PerformSearch(string keyword)
+        {
+            FilteredAreas = Areas
+                .Where(a => a.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            StateHasChanged();
+        }
+
+        protected async Task ClearAllFilters()
+        {
+            SelectedPropertyTypeId = null;
+            SelectedLocationId = null;
+            SelectedAreas.Clear();
+            FilteredAreas = Areas;
+            _selectedDate = null;
+            SelectedDateLabel = string.Empty;
+
+            await OnCategoryChanged.InvokeAsync(null);
+            await OnLocationChanged.InvokeAsync(null);
+            await OnDateChanged.InvokeAsync((null, null));
+
+            StateHasChanged();
+        }
+
+        protected async Task HandleLocationSelectionChanged(List<Area> selected)
+        {
+            SelectedAreas = selected;
+
+            var selectedId = SelectedAreas.FirstOrDefault()?.Id;
+
+            if (!string.IsNullOrWhiteSpace(selectedId))
+            {
+                await OnLocationChanged.InvokeAsync(selectedId);
+            }
+        }
+        protected async void CancelDatePicker()
+        {
+            _showDatePicker = false;
+            _selectedDate = null;
+            SelectedDateLabel = string.Empty;
+            _confirmedDateRange = new();
+            if (_dateRange?.Start != null || _dateRange?.End != null)
+            {
+                await OnDateChanged.InvokeAsync((null, null));
+            }
+
+            StateHasChanged();
+        }
+
+        protected async Task HandleCategoryChanged(string id)
         {
             SelectedPropertyTypeId = id;
 
-            if (!string.IsNullOrWhiteSpace(id))
+            await OnCategoryChanged.InvokeAsync(id);
+
+        }
+
+        protected async Task HandleLocationChanged(string location)
+        {
+            SelectedLocationId = location;
+
+            await OnLocationChanged.InvokeAsync(location);
+
+            StateHasChanged();
+
+        }
+
+        protected async Task CallApiForLocationChange(List<Area> selected)
+        {
+            var selectedId = selected.FirstOrDefault()?.Id;
+            if (!string.IsNullOrWhiteSpace(selectedId))
             {
-                // Navigate to new URL with type query string
-                var targetUrl = $"https://www.qatarliving.com/events?type={id}";
-                NavigationManager.NavigateTo(targetUrl, forceLoad: true); // forceLoad to trigger full page load
+                await OnLocationChanged.InvokeAsync(selectedId);
+            }
+            else
+            {
+                await OnLocationChanged.InvokeAsync(null);
             }
         }
         protected void HandleDatePickerFocusOut(FocusEventArgs e)
@@ -114,7 +206,7 @@ protected void CancelDatePicker()
 
             if (_showDatePicker)
             {
-                _dotNetRef ??= DotNetObjectReference.Create(this); // ✅ Fix type here too
+                _dotNetRef ??= DotNetObjectReference.Create(this);
                 await JSRuntime.InvokeVoidAsync("registerPopoverClickAway", _popoverDiv, _dotNetRef);
             }
         }
@@ -135,7 +227,7 @@ protected void CancelDatePicker()
         }
 
 
-        protected override Task OnInitializedAsync()
+        protected override async Task OnInitializedAsync()
         {
             PropertyTypes = Categories.Select(cat => new SelectOption
             {
@@ -143,8 +235,21 @@ protected void CancelDatePicker()
                 Label = cat.Name
             }).ToList();
 
-            return Task.CompletedTask;
+            FilteredAreas = Areas;
+
+            // 👇 Extract `perselect` query param from the URI
+            var uri = new Uri(NavigationManager.Uri);
+            var queryParams = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+
+            if (queryParams.TryGetValue("perselect", out var selectedId))
+            {
+                // Call the filter logic with the ID from query string
+                await HandleCategoryChanged(selectedId);
+            }
+
+            return;
         }
+
 
         public class SelectOption
         {
