@@ -6,16 +6,15 @@ namespace QLN.Common.DTO_s
     public class ClassifiedsIndex
     {
         [SimpleField(IsKey = true)]
-        public string Id { get; set; } = Guid.NewGuid().ToString();
-
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? Title { get; set; } = string.Empty;
-
-        [SearchableField(IsFilterable = true)]
-        public string? DocType { get; set; }
+        public string AdId { get; set; } = Guid.NewGuid().ToString();
 
         [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string? SubVertical { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public string UserId { get; set; } = string.Empty;
+        [SearchableField(IsFilterable = true, IsFacetable = true)]
+        public string? Title { get; set; } = string.Empty;
 
         [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string Description { get; set; } = string.Empty;
@@ -23,17 +22,8 @@ namespace QLN.Common.DTO_s
         [SimpleField(IsFilterable = true)]
         public bool? IsFeaturedItem { get; set; }
 
-        [SimpleField(IsFilterable = true)]
-        public bool? IsFeaturedCategory { get; set; }
-
-        [SimpleField(IsFilterable = true)]
-        public bool? IsFeaturedStore { get; set; }
-
         [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string? Category { get; set; } = string.Empty;
-
-        [SimpleField(IsFilterable = false)]
-        public string? CategoryImageUrl { get; set; }
 
         [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string? Brand { get; set; } = string.Empty;
@@ -42,25 +32,13 @@ namespace QLN.Common.DTO_s
         public string? L1Category { get; set; } = string.Empty;
 
         [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? Capacity { get; set; } = string.Empty;
-
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string? L2Category { get; set; } = string.Empty;
 
         [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? Location { get; set; } = string.Empty;
-
-        [SimpleField(IsFilterable = true)]
-        public string? BannerTitle { get; set; }
-
-        [SimpleField(IsFilterable = false)]
-        public string? BannerImageUrl { get; set; }
+        public string? Capacity { get; set; } = string.Empty;
 
         [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? StoreName { get; set; }
-
-        [SimpleField(IsFilterable = false)]
-        public string? StoreLogoUrl { get; set; }
+        public string? Location { get; set; } = string.Empty;
 
         [SimpleField(IsFilterable = true, IsSortable = true, IsFacetable = true)]
         [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
@@ -144,28 +122,5 @@ namespace QLN.Common.DTO_s
         [SimpleField(IsFilterable = false, IsFacetable = false)]
         public List<string>? ImageUrls { get; set; }
 
-        [SimpleField(IsFilterable = true, IsSortable = true)]
-        public string UserId { get; set; } = string.Empty;
-
-        [SimpleField(IsFilterable = true, IsSortable = true)]
-        public bool IsPublished { get; set; }
-
-        [SimpleField(IsFilterable = true, IsSortable = true)]
-        public long Impressions { get; set; }
-
-        [SimpleField(IsFilterable = true, IsSortable = true)]
-        public long Views { get; set; }
-
-        [SimpleField(IsFilterable = true, IsSortable = true)]
-        public long Calls { get; set; }
-
-        [SimpleField(IsFilterable = true, IsSortable = true)]
-        public long WhatsAppClicks { get; set; }
-
-        [SimpleField(IsFilterable = true, IsSortable = true)]
-        public long Shares { get; set; }
-
-        [SimpleField(IsFilterable = true, IsSortable = true)]
-        public long Saves { get; set; }
     }
 }
