@@ -1,4 +1,6 @@
 @using MudBlazor
+@using QLN.Web.Shared.Components.CustomPagination
+@using QLN.Web.Shared.Components.NewCustomSelect
 
 <div class="footer-pagination-container">
     <div class="pagination-row">
@@ -6,30 +8,29 @@
         <MudButton Variant="Variant.Outlined" Disabled="@IsFirstPage" OnClick="@GoToPreviousPage"
             Class="pagination-button">
             <MudIcon Icon="@Icons.Material.Filled.ArrowBack" Class="me-1 pagination-icon" />
-            Previous
+            <span class="pagination-text">Previous</span>
+
         </MudButton>
 
-        <!-- Pagination -->
-        <MudPagination @bind-SelectedPage="CurrentPage" ShowPreviousButton="false" ShowNextButton="false"
-            PageSize="@PageSize" TotalItems="@TotalItems" Rounded="true" HideFirstLastPage="true" BoundaryCount="1"
-            SiblingCount="1" Class="custom-pagination" OnPageChanged="HandlePageChanged" />
+        <!-- Custom Pagination -->
+        <CustomPagination TotalItems="TotalItems" PageSize="PageSize" CurrentPage="CurrentPage"
+            OnPageChange="HandlePageChanged" />
+
 
         <!-- Next Button -->
         <MudButton Variant="Variant.Outlined" Disabled="@IsLastPage" OnClick="@GoToNextPage" Class="pagination-button">
-            Next
+            <span class="pagination-text">Next</span>
             <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Class="ms-1 pagination-icon" />
         </MudButton>
     </div>
 
     <!-- Page Size Dropdown Centered Below -->
     <div class="page-size-container">
-        <MudSelect T="int" Dense="true" Variant="Variant.Outlined" @bind-Value="PageSize"
-            OnValueChanged="HandlePageSizeChanged" Class="page-size-dropdown">
-            @foreach (var size in PageSizeOptions)
-            {
-                <MudSelectItem Value="@size">@($"{size} results per page")</MudSelectItem>
-            }
-        </MudSelect>
+        <div class="page-size-dropdown">
+            <NewCustomSelect TItem="int" Label="" Items="PageSizeOptions" SelectedId="@PageSize.ToString()"
+                SelectedIdChanged="OnPageSizeChanged" GetId="item => item.ToString()"
+                GetLabel="@(item => $"{item} results per page")" Placeholder="Select page size" />
+        </div>
     </div>
 </div>
 
@@ -40,7 +41,9 @@
     [Parameter] public int PageSize { get; set; }
     [Parameter] public EventCallback<int> OnPageChange { get; set; }
     [Parameter] public EventCallback<int> OnPageSizeChange { get; set; }
-    [Parameter] public List<int> PageSizeOptions { get; set; } = new() { 12, 24, 36 };
+
+    // Page size options list
+    private List<int> PageSizeOptions = new() { 12, 24, 36 };
 
     private bool IsFirstPage => CurrentPage <= 1;
     private bool IsLastPage => CurrentPage * PageSize >= TotalItems;
@@ -62,10 +65,14 @@
         await OnPageChange.InvokeAsync(page);
     }
 
-    private async Task HandlePageSizeChanged(int newSize)
+    // Convert SelectedId string to int and propagate change
+    private async Task OnPageSizeChanged(string selectedId)
     {
-        await OnPageSizeChange.InvokeAsync(newSize);
-        await OnPageChange.InvokeAsync(1); // Reset to first page
+        if (int.TryParse(selectedId, out var newSize) && newSize != PageSize)
+        {
+            await OnPageSizeChange.InvokeAsync(newSize);
+            await OnPageChange.InvokeAsync(1); // reset to page 1 on page size change
+        }
     }
 }
 <style>
@@ -136,11 +143,32 @@
     .page-size-container {
         display: flex;
         justify-content: center;
+        max-width: 100%;
+
     }
 
     .page-size-dropdown {
-        min-width: 200px;
-        background-color: white;
+        min-width: 290px;
         color: #344054;
+    }
+
+    .pagination-text {
+        display: inline;
+    }
+
+    @@media (max-width: 600px) {
+        .pagination-text {
+            display: none;
+        }
+
+        .pagination-button {
+            min-width: 40px !important;
+            padding: 0 !important;
+            justify-content: center;
+        }
+
+        .pagination-icon {
+            margin: 0 !important;
+        }
     }
 </style>

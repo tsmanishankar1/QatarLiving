@@ -12,6 +12,7 @@
   <ItemGroup>
     <PackageReference Include="Azure.Search.Documents" Version="11.7.0-beta.3" />
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
+    <PackageReference Include="Dapr.Actors" Version="1.15.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.15">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

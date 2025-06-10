@@ -1,0 +1,375 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="failed_network_message" xml:space="preserve">
+    <value>No internet available. Check your network connection</value>
+  </data>
+  <data name="network_failed" xml:space="preserve">
+    <value>Network Offline</value>
+  </data>
+  <data name="page_not_found" xml:space="preserve">
+    <value>Sorry, that page isn't here.</value>
+  </data>
+  <data name="incorrect_address" xml:space="preserve">
+    <value>We may have moved the page you're looking for or you may have typed the address incorrectly. </value>
+  </data>
+  <data name="what_you_can_do" xml:space="preserve">
+    <value>What you can do:</value>
+  </data>
+  <data name="visit_our" xml:space="preserve">
+    <value>Visit our</value>
+  </data>
+  <data name="homepage" xml:space="preserve">
+    <value>homepage</value>
+  </data>
+  <data name="correct_content" xml:space="preserve">
+    <value>to find the content you were searching for.</value>
+  </data>
+  <data name="typed_wrong_address" xml:space="preserve">
+    <value>If you typed the address (URL), check the spelling.</value>
+  </data>
+  <data name="popular_content" xml:space="preserve">
+    <value>You may also find our most popular content helpful:</value>
+  </data>
+  <data name="shop_cars_for_sale" xml:space="preserve">
+    <value>Shop cars for sale</value>
+  </data>
+  <data name="unexpected_error" xml:space="preserve">
+    <value>Sorry, unexpected error</value>
+  </data>
+  <data name="something_went_wrong" xml:space="preserve">
+    <value>Something Went Wrong. Try again Later!!</value>
+  </data>
+  <data name="error_404" xml:space="preserve">
+    <value>error 404</value>
+  </data>
+  <data name="error_500" xml:space="preserve">
+    <value>error 500</value>
+  </data>
+  <data name="cars_for_sale" xml:space="preserve">
+    <value>Cars for Sale</value>
+  </data>
+  <data name="not_available" xml:space="preserve">
+    <value>This car is no longer available.</value>
+  </data>
+  <data name="not_available_body" xml:space="preserve">
+    <value>The car is most likely sold or has been removed for some reason.</value>
+  </data>
+  <data name="not_available_body2" xml:space="preserve">
+    <value>Visit the Cars Section to search thousands of cars.</value>
+  </data>
+  <data name="description_required_error" xml:space="preserve">
+    <value>Please enter the offer description.</value>
+  </data>
+  <data name="description_max_length_error" xml:space="preserve">
+    <value>The description should be a maximum of {{charLimit}} characters.</value>
+  </data>
+  <data name="properties" xml:space="preserve">
+    <value>Properties</value>
+  </data>
+  <data name="vehicles" xml:space="preserve">
+    <value>Vehicles</value>
+  </data>
+  <data name="properties.residential" xml:space="preserve">
+    <value>Residential</value>
+  </data>
+  <data name="properties.commercial" xml:space="preserve">
+    <value>Commercial</value>
+  </data>
+  <data name="properties.international" xml:space="preserve">
+    <value>International</value>
+  </data>
+  <data name="classifieds" xml:space="preserve">
+    <value>Classifieds</value>
+  </data>
+  <data name="services" xml:space="preserve">
+    <value>Services</value>
+  </data>
+  <data name="jobs" xml:space="preserve">
+    <value>Jobs</value>
+  </data>
+  <data name="rewards" xml:space="preserve">
+    <value>Rewards</value>
+  </data>
+  <data name="more.news" xml:space="preserve">
+    <value>News</value>
+  </data>
+  <data name="more.events" xml:space="preserve">
+    <value>Events</value>
+  </data>
+  <data name="more.forum" xml:space="preserve">
+    <value>Forums</value>
+  </data>
+  <data name="more.business-or-place" xml:space="preserve">
+    <value>Business pages</value>
+  </data>
+  <data name="more.eshops" xml:space="preserve">
+    <value>eShops</value>
+  </data>
+  <data name="post_ad" xml:space="preserve">
+    <value>Post Ad</value>
+  </data>
+  <data name="login" xml:space="preserve">
+    <value>login</value>
+  </data>
+  <data name="sign_up" xml:space="preserve">
+    <value>Sign up</value>
+  </data>
+  <data name="my_saved_ads" xml:space="preserve">
+    <value>My saved ads</value>
+  </data>
+  <data name="my_saved_searches" xml:space="preserve">
+    <value>My saved searches</value>
+  </data>
+  <data name="manage_my_ads" xml:space="preserve">
+    <value>Manage my ads</value>
+  </data>
+  <data name="my_account" xml:space="preserve">
+    <value>My account</value>
+  </data>
+  <data name="dashboard" xml:space="preserve">
+    <value>Dashboard</value>
+  </data>
+  <data name="logout" xml:space="preserve">
+    <value>Logout</value>
+  </data>
+  <data name="hi" xml:space="preserve">
+    <value>Hi</value>
+  </data>
+  <data name="facebook" xml:space="preserve">
+    <value>facebook</value>
+  </data>
+  <data name="twitter" xml:space="preserve">
+    <value>twitter</value>
+  </data>
+  <data name="instagram" xml:space="preserve">
+    <value>instagram</value>
+  </data>
+  <data name="linkedin" xml:space="preserve">
+    <value>linkedIn</value>
+  </data>
+  <data name="snapchat" xml:space="preserve">
+    <value>snapchat</value>
+  </data>
+  <data name="youtube" xml:space="preserve">
+    <value>youtube</value>
+  </data>
+  <data name="tiktok" xml:space="preserve">
+    <value>tikTok</value>
+  </data>
+  <data name="qatar_living" xml:space="preserve">
+    <value>qatar living</value>
+  </data>
+  <data name="profile_image" xml:space="preserve">
+    <value>Profile Image</value>
+  </data>
+  <data name="account" xml:space="preserve">
+    <value>account</value>
+  </data>
+  <data name="dashboard_icon" xml:space="preserve">
+    <value>dashboard icon</value>
+  </data>
+  <data name="edit_icon" xml:space="preserve">
+    <value>edit icon</value>
+  </data>
+  <data name="buy_premium" xml:space="preserve">
+    <value>Buy Premium</value>
+  </data>
+  <data name="account_icon" xml:space="preserve">
+    <value>account icon</value>
+  </data>
+  <data name="hamburger_icon" xml:space="preserve">
+    <value>hamburger icon</value>
+  </data>
+  <data name="add_icon" xml:space="preserve">
+    <value>add icon</value>
+  </data>
+  <data name="favorite_icon" xml:space="preserve">
+    <value>favorite icon</value>
+  </data>
+  <data name="agents" xml:space="preserve">
+    <value>Agents</value>
+  </data>
+  <data name="agencies" xml:space="preserve">
+    <value>Agencies</value>
+  </data>
+  <data name="news" xml:space="preserve">
+    <value>News</value>
+  </data>
+  <data name="events" xml:space="preserve">
+    <value>Events</value>
+  </data>
+  <data name="forum" xml:space="preserve">
+    <value>Forums</value>
+  </data>
+  <data name="business-or-place" xml:space="preserve">
+    <value>Business pages</value>
+  </data>
+  <data name="eshops" xml:space="preserve">
+    <value>eShops</value>
+  </data>
+  <data name="premium_subscriptions" xml:space="preserve">
+    <value>Premium subscriptions</value>
+  </data>
+  <data name="other" xml:space="preserve">
+    <value>Other</value>
+  </data>
+  <data name="explore" xml:space="preserve">
+    <value>Explore</value>
+  </data>
+  <data name="copy_right" xml:space="preserve">
+    <value>Copyright &#169; 2024 Qatar Living. All rights reserved.</value>
+  </data>
+  <data name="stay_connected" xml:space="preserve">
+    <value>Let's stay connected</value>
+  </data>
+  <data name="want_to_advertise" xml:space="preserve">
+    <value>Want to advertise on Qatar Living?</value>
+  </data>
+  <data name="advertise_page_link" xml:space="preserve">
+    <value>Advertise page</value>
+  </data>
+  <data name="advertise_page" xml:space="preserve">
+    <value>Take a look at our </value>
+  </data>
+  <data name="subscribe_newsletter" xml:space="preserve">
+    <value>Subscribe to our newsletter to get the latest updates</value>
+  </data>
+  <data name="help" xml:space="preserve">
+    <value>Help</value>
+  </data>
+  <data name="rules_for_posting_ad" xml:space="preserve">
+    <value>Rules for posting ads</value>
+  </data>
+  <data name="website_terms" xml:space="preserve">
+    <value>Website Terms</value>
+  </data>
+  <data name="advertising_terms" xml:space="preserve">
+    <value>Advertising Terms</value>
+  </data>
+  <data name="subscribe" xml:space="preserve">
+    <value>Subscribe</value>
+  </data>
+  <data name="our_mobile_app" xml:space="preserve">
+    <value>Our Mobile App</value>
+  </data>
+  <data name="qatar_living_mobile_app" xml:space="preserve">
+    <value>Qatar Living mobile app</value>
+  </data>
+</root>

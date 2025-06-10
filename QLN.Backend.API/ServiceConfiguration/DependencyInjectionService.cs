@@ -1,6 +1,15 @@
-﻿using QLN.Backend.API.Service.BannerService;
+﻿using QLN.Backend.API.Service;
+using QLN.Backend.API.Service.AnalyticsService;
+using QLN.Backend.API.Service.BannerService;
 using QLN.Backend.API.Service.ClassifiedService;
-using QLN.Common.Infrastructure.IService.BannerService;
+using QLN.Backend.API.Service.CompanyService;
+using QLN.Backend.API.Service.ContentService;
+using QLN.Backend.API.Service.SearchService;
+using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.ICompanyService;
+using QLN.Common.Infrastructure.IService.IBannerService;
+using QLN.Common.Infrastructure.IService.IContentService;
+using QLN.Common.Infrastructure.IService.ISearchService;
 
 namespace QLN.Backend.API.ServiceConfiguration
 {
@@ -8,9 +17,56 @@ namespace QLN.Backend.API.ServiceConfiguration
     {
         public static IServiceCollection ClassifiedServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddTransient<IBannerService, ExternalBannerService>();
             services.AddTransient<IClassifiedService, ExternalClassifiedService>();
 
+            return services;
+        }
+        public static IServiceCollection AnalyticsServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddTransient<IAnalyticsService, ExternalAnalyticsService>();
+
+            return services;
+        }
+        public static IServiceCollection SearchServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddTransient<ISearchService, ExternalSearchService>();
+
+            return services;
+        }
+
+        public static IServiceCollection ContentServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            var drupalUrl = configuration.GetSection("BaseUrl")["LegacyDrupal"] ?? throw new ArgumentNullException("LegacyDrupal");
+
+            if (Uri.TryCreate(drupalUrl, UriKind.Absolute, out var drupalBaseUrl))
+            {
+                services.AddHttpClient<IContentService, ExternalContentService>(option => 
+                    {
+                        option.BaseAddress = drupalBaseUrl;
+                    });
+            }
+
+            return services;
+        }
+
+        public static IServiceCollection BannerServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            var drupalUrl = configuration.GetSection("BaseUrl")["LegacyDrupal"] ?? throw new ArgumentNullException("LegacyDrupal");
+
+            if (Uri.TryCreate(drupalUrl, UriKind.Absolute, out var drupalBaseUrl))
+            {
+                services.AddHttpClient<IBannerService, ExternalBannerService>(option =>
+                {
+                    option.BaseAddress = drupalBaseUrl;
+                });
+            }
+
+            return services;
+        }
+
+        public static IServiceCollection CompanyConfiguration(this IServiceCollection services, IConfiguration config)
+        {
+            services.AddTransient<ICompanyService, ExternalCompanyService>();
             return services;
         }
     }

@@ -46,6 +46,27 @@ namespace QLN.Web.Shared.Services
             return default!;
         }
 
+
+        public async Task<T?> GetAsyncWithToken<T>(string endpoint, string authToken)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{_baseUrl}/{endpoint}");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
+
+            var response = await _http.SendAsync(request);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                return JsonSerializer.Deserialize<T>(responseContent, jsonOptions);
+            }
+            await HandleError(response);
+            return default!;
+        }
+
         public async Task<T?> PostAsync<TRequest, T>(string endpoint, TRequest data, string? accessToken = null)
         {
             var token = await GetTokenAsync();

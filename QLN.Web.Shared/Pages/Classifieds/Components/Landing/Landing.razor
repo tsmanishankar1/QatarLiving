@@ -1,71 +1,171 @@
 @using MudBlazor
-@inject NavigationManager Navigation
+@inject ApiService Api
+@using QLN.Web.Shared.Services
 @using QLN.Web.Shared.Components.Carousel
-@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components
+@using QLN.Web.Shared.Components.Classifieds.FeaturedItemCard
+@using QLN.Web.Shared.Components.Classifieds.FeaturedCategoryCard
+@using QLN.Web.Shared.Components.Classifieds.StoreCard
+@using QLN.Web.Shared.Components.Classifieds.CategoryAdCard
+
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.SearchBarSection
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.FeaturedItemSection
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.FeaturedCategorySection
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.SubscriptionSection
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.StoreDealsSection
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.CategoryAdSection
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.SeasonalSection
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.SocialMediaSection
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.FAQsSection
+@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.PopularSearchesSection
 
 <!-- Page: Classifieds -->
 
 <!-- Main Container -->
 <div style="width: 100%; background-color: var(--color-secondary-background);">
-    <div style="width: 100%; padding: 0 40px;">
+    <div class="responsive-container">
 
         <!-- Carousel Banner -->
         <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
             Transition="Transition.Slide" />
 
         <!-- Search Bar Section -->
-        <SearchBarSection />
+        <SearchBarSection OnSearchCompleted="HandleSearchResults" />
 
-        <!-- Featured Categories -->
-        <FeaturedCategoriesSection />
+        <!-- Featured item -->
+
+        <FeaturedItemSection FeaturedItems="featuredItemData" Loading="isLoading" />
+
     </div>
-    <!-- Featured Cards -->
-    <FeaturedCardsSection />
+    <!-- Featured Categories -->
+    <FeaturedCategorySection FeaturedCategories="featuredCategoryData" Loading="isLoading" />
 
     <!-- Subscription Card -->
-    <SubscriptionCard OnSubscribeClick="@HandleSubscribeClick"/>
+    <SubscriptionSection />
 
 
-    <div style="width: 100%; padding: 0 40px;">
+    <div class="responsive-container">
         <!-- Store Deals -->
-        <StoreDealsSection />
+        <StoreDealsSection Stores="storeData" />
 
         <!-- Category Card 1 -->
-        <CategoryCard1 />
+        <CategoryAdSection Categories="@categoryListDataOne" />
 
         <div class="category-banner-wrapper">
-            <img src="/images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
+            <img src="/qln-images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
         </div>
 
         <!-- Category Card 2 -->
-        <CategoryCard2 />
+        <CategoryAdSection Categories="@categoryListDataTwo" />
 
-        <Seasonal />
+        <!-- Seasonal Section -->
+        <SeasonalSection />
 
     </div>
 
     <!-- Social Media Section -->
-    <SocialMediaCard />
+    <SocialMediaSection />
 
     <!-- FAQs Section -->
     <FAQsSection />
 
     <!-- Popular Searches Section -->
-    <PopularSearches />
+    <PopularSearchesSection />
 </div>
 
 @code {
     private List<string> carouselImages = new()
 {
-"/images/category1.png",
-"/images/category1.png",
-"/images/category1.png"
+"/qln-images/category1.png",
+"/qln-images/category1.png",
+"/qln-images/category1.png"
 };
-    private void HandleSubscribeClick()
+
+    private List<FeaturedItemCard.FeaturedItem> SearchResults = new();
+    private bool isLoading = true;
+
+    private async Task HandleSearchResults(List<FeaturedItemCard.FeaturedItem> results)
     {
-        Navigation.NavigateTo("/subscription-details");
+        StateHasChanged();
+
+        // Map each result item manually (e.g. if `results` are of a raw DTO type)
+        featuredItemData = results.Select(item => new FeaturedItemCard.FeaturedItem
+        {
+            Id = item.Id,
+            Title = item.Title,
+            Category = item.Category,
+            Location = item.Location,
+            ImageUrls = item.ImageUrls?.ToList() ?? new List<string>(),
+            IsFeatured = true
+        }).ToList();
+
     }
 
+    private List<FeaturedItemCard.FeaturedItem> featuredItemData = new();
+    private List<FeaturedCategoryCard.CategoryItem> featuredCategoryData = new();
+    private List<StoreCard.StoreItem> storeData = new();
+    private List<CategoryAdCard.CategoryItem> categoryListDataOne = new();
+    private List<CategoryAdCard.CategoryItem> categoryListDataTwo = new();
+    public class LandingResponse
+    {
+        public List<FeaturedItemCard.FeaturedItem> FeaturedItems { get; set; } = new();
+        public List<FeaturedCategoryCard.CategoryItem> FeaturedCategories { get; set; } = new();
+        public List<StoreCard.StoreItem> FeaturedStores { get; set; } = new();
+        public List<CategoryAdCard.CategoryItem> CategoryAdCounts { get; set; } = new();
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        {
+            await LoadLandingData();
+            StateHasChanged(); // trigger UI update after async fetch
+        }
+    }
+    private async Task LoadLandingData()
+    {
+        isLoading = true;
+        try
+        {
+            var response = await Api.GetAsync<LandingResponse>("api/classified/landing");
+            if (response is null) return;
+
+            featuredItemData = response.FeaturedItems.Select(item => new FeaturedItemCard.FeaturedItem
+            {
+                Id = item.Id,
+                Title = item.Title,
+                Category = item.Category,
+                Location = item.Location,
+                Price = item.Price,
+                ImageUrls = item.ImageUrls?.ToList() ?? new List<string>(),
+                IsFeatured = true
+            }).ToList();
+
+            featuredCategoryData = response.FeaturedCategories.Select(cat => new FeaturedCategoryCard.CategoryItem
+            {
+                Category = cat.Category,
+                ImageUrl = cat.ImageUrl
+            }).ToList();
+
+            storeData = response.FeaturedStores.Select(store => new StoreCard.StoreItem
+            {
+                StoreName = store.StoreName,
+                LogoUrl = store.LogoUrl,
+                ItemCount = store.ItemCount
+            }).ToList();
+
+            var categoryAds = response.CategoryAdCounts.Select(cat => new CategoryAdCard.CategoryItem
+            {
+                Category = cat.Category,
+                Count = cat.Count,
+                ImageUrl = cat.ImageUrl
+            }).ToList();
+
+            categoryListDataOne = categoryAds.Take(4).ToList();
+            categoryListDataTwo = categoryAds.Skip(4).ToList();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
 }
 
 <style>
@@ -82,5 +182,23 @@
         border-radius: 8px;
         object-fit: cover;
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+
+    .responsive-container {
+        width: 100%;
+        padding: 0 40px;
+        box-sizing: border-box;
+    }
+
+    @@media (max-width: 768px) {
+        .responsive-container {
+            padding: 0 16px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .responsive-container {
+            padding: 0 5px;
+        }
     }
 </style>

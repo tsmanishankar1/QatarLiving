@@ -1,0 +1,110 @@
+@page "/content/videos"
+@inherits VideosBase
+@layout ContentLayout
+@using MudBlazor
+@using QLN.Web.Shared.Pages.Content.News.NewsCard
+@using QLN.Web.Shared.Pages.Content.News.NewsLetter
+@using QLN.Web.Shared.Pages.Content.News.PopularArticles
+@using QLN.Web.Shared.Pages.Content.News.VideoCards
+@using QLN.Web.Shared.Components.ViewToggleButtons
+@using QLN.Web.Shared.Pages.Content.News.MoreArticle
+@inject IJSRuntime JSRuntime
+@using QLN.Web.Shared.Components.Carousel
+<MudGrid Class="full-width" Justify="Justify.Center" >
+<MudItem xs="12">
+    <div class="carousel-padding">
+        <CarouselBanner ImageUrls="carouselImages"
+                        ShowArrows="true"
+                        EnableSwipeGesture="true"
+                        AutoCycle="true"
+                        Transition="Transition.Slide" />
+    </div>
+    </MudItem>
+    <MudItem xs="12">
+    <div class="carousel-padding">
+       
+    </div>
+    </MudItem>
+    <MudItem xs="12">
+    <div class="video-padding">
+        <VideoCards />
+    </div>
+    </MudItem>
+    <div class="container-color">
+     <MudGrid GutterSize="0" Class="grid-padding responsive-grid">
+    @foreach (var news in NewsList)
+    {
+        <MudItem xs="12" sm="6" md="4"> 
+            <div class="card-wrapper">
+                <NewsCard Item="news" IsHorizontal="true" />
+            </div>
+        </MudItem>
+    }
+    </MudGrid>
+    <MudItem xs="12">
+    <div class="carousel-padding">
+        <CarouselBanner ImageUrls="carouselImages"
+                        ShowArrows="true"
+                        EnableSwipeGesture="true"
+                        AutoCycle="true"
+                        Transition="Transition.Slide" />
+    </div>
+    </MudItem>
+    <MudGrid GutterSize="0" Class="grid-padding responsive-grid py-5">
+    @foreach (var news in MoreNewsList)
+    {
+        <MudItem xs="12" sm="6" md="4"> 
+            <div class="card-wrapper">
+                <NewsCard Item="news" IsHorizontal="true" />
+            </div>
+        </MudItem>
+    }
+    </MudGrid>
+</div>
+
+
+</MudGrid>
+
+
+<style>
+     .full-width {
+    background-color: var(--color-secondary-background)
+    }
+    .carousel-padding {
+    padding-left: 98px;
+    padding-right: 98px;
+    }
+    .video-padding{
+    padding-left: 98px;
+    padding-right: 98px;
+    padding-top: 20px;
+    background-color: #FAFAFA;
+    }
+    .container-color{
+        padding-top: 30px;
+        background-color: #FFFFFF;
+    }
+    .grid-padding {
+    padding-left: 110px;
+    padding-right: 98px;
+    }
+    .card-wrapper {
+    border-right: 1px solid #F0F0F0;
+    }
+     
+    @@media (max-width: 600px) {
+    .carousel-padding {
+    padding-left: 0px;
+    padding-right: 0px;
+    }
+    .video-padding{
+    padding-left: 0px;
+    padding-right: 0px;
+    background-color: #FAFAFA;
+    }
+     .grid-padding {
+    padding-left: 20px;
+    padding-right: 0px;
+    }
+        }
+</style> 

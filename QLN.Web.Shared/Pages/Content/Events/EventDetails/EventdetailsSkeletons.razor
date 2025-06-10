@@ -1,0 +1,42 @@
+@using MudBlazor
+
+<MudGrid Class="py-4" GutterSize="16px">
+    <MudItem xs="12" md="8">
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="490px" Style="border-radius: 4px;" />
+        <MudPaper Elevation="0" Width="100%" Class="custom-card pa-4">
+            <MudSkeleton Width="80%" Height="16px" />
+            <MudSkeleton Width="100%" Height="28px" />
+            <MudSkeleton Width="70%" Height="24px" />
+            <MudSkeleton Width="80%" Height="16px" />
+            <MudSkeleton Width="100%" Height="28px" />
+            <MudSkeleton Width="70%" Height="24px" />
+        </MudPaper>
+    </MudItem>
+
+    <!-- Right Side: Details Card -->
+    <MudItem xs="12" md="4">
+        <MudPaper Elevation="0" Class="custom-card pa-4">
+            <MudSkeleton Width="80%" Height="16px" />
+            <MudSkeleton Width="100%" Height="28px" />
+            <MudSkeleton Width="70%" Height="24px" />
+            <MudSkeleton Width="80%" Height="16px" />
+            <MudSkeleton Width="100%" Height="28px" />
+            <MudSkeleton Width="70%" Height="24px" />
+
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="290px"
+                Style="border-radius: 4px;" />
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<style>
+    .custom-card {
+        display: flex;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 12px;
+        background: white;
+        padding: 16px !important;
+        border-radius: 8px;
+    }
+</style>
