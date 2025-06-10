@@ -24,13 +24,14 @@ namespace QLN.Classified.MS.Service
     public class ClassifiedService : IClassifiedService
     {
         private readonly IWebHostEnvironment _env;
-        private readonly Dapr.Client.DaprClient _dapr;        
+        private readonly Dapr.Client.DaprClient _dapr;
 
         private const string UnifiedStore = "adstore";
-        private const string UnifiedIndexKey = "ad-index";               
+        private const string UnifiedIndexKey = "ad-index";
         private readonly ILogger<ClassifiedService> _logger;
         private readonly string itemJsonPath = Path.Combine("ClassifiedMockData", "itemsAdsMock.json");
         private readonly string prelovedJsonPath = Path.Combine("ClassifiedMockData", "prelovedAdsMock.json");
+        private readonly string CollectablesonPath = Path.Combine("ClassifiedMockData", "collectables.json");
         public ClassifiedService(Dapr.Client.DaprClient dapr, ILogger<ClassifiedService> logger, IWebHostEnvironment env)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
@@ -135,11 +136,11 @@ namespace QLN.Classified.MS.Service
             }
             catch (ArgumentException argEx)
             {
-                throw; 
+                throw;
             }
             catch (InvalidOperationException logicEx)
             {
-                throw; 
+                throw;
             }
             catch (Exception ex)
             {
@@ -154,7 +155,7 @@ namespace QLN.Classified.MS.Service
                 var items = await GetItemsByType(GetTypePrefix(AdInformation.Category));
 
                 if (items == null || items.Count == 0)
-                    return new List<CategoriesDto>(); 
+                    return new List<CategoriesDto>();
 
                 return items
                     .Where(i => i != null)
@@ -197,11 +198,11 @@ namespace QLN.Classified.MS.Service
             }
             catch (ArgumentException)
             {
-                throw; 
+                throw;
             }
             catch (InvalidOperationException)
             {
-                throw; 
+                throw;
             }
             catch (Exception ex)
             {
@@ -217,7 +218,7 @@ namespace QLN.Classified.MS.Service
                 var items = await GetItemsByType(typePrefix);
 
                 if (items == null || items.Count == 0)
-                    return new List<CategoriesDto>(); 
+                    return new List<CategoriesDto>();
 
                 return items
                     .Where(i => i != null)
@@ -230,7 +231,7 @@ namespace QLN.Classified.MS.Service
             }
             catch (InvalidOperationException)
             {
-                throw; 
+                throw;
             }
             catch (Exception ex)
             {
@@ -287,11 +288,11 @@ namespace QLN.Classified.MS.Service
             }
             catch (ArgumentException)
             {
-                throw; 
+                throw;
             }
             catch (KeyNotFoundException)
             {
-                throw; 
+                throw;
             }
             catch (Exception ex)
             {
@@ -1563,6 +1564,42 @@ namespace QLN.Classified.MS.Service
             catch(Exception ex)
             {
                 throw new InvalidOperationException("Unexpected error occurred while generating Preloved ads and dashboard summary.", ex);
+            }
+        }
+
+        public async Task<CollectiblesResponse> GetCollectibles(string userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new ArgumentException("User ID is required", nameof(userId));
+
+                var fullPath = Path.Combine(_env.ContentRootPath, CollectablesonPath);
+
+                if (!File.Exists(fullPath))
+                    throw new FileNotFoundException("JSON data file not found", fullPath);
+
+                var json = await File.ReadAllTextAsync(fullPath, cancellationToken);
+                var allData = JsonSerializer.Deserialize<CollectiblesResponse>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+
+                if (allData == null)
+                    return new CollectiblesResponse();
+
+                var targetUserId = Guid.Parse(userId);
+
+                if (allData.UserId != targetUserId)
+                    return new CollectiblesResponse();
+
+                return allData;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error reading collectibles: {ex.Message}");
+                throw;
             }
         }
 
