@@ -3182,6 +3182,116 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
             .ExcludeFromDescription();
 
+            group.MapGet("/collectibles", async Task<Results<
+               Ok<CollectiblesResponse>,
+               BadRequest<ProblemDetails>,
+               UnauthorizedHttpResult,
+               ProblemHttpResult>>
+            (
+                IClassifiedService service,
+                HttpContext context,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                Guid? userId = context.User.GetId();
+
+                if (userId == null || userId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Valid User ID must be provided in the token.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+
+                try
+                {
+                    var result = await service.GetCollectibles(userId.ToString(), cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (FileNotFoundException fileEx)
+                {
+                    return TypedResults.Problem(
+                        title: "File Not Found",
+                        detail: fileEx.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        instance: context.Request.Path);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path);
+                }
+            })
+            .WithName("GetCollectibles")
+            .WithTags("Collectibles")
+            .WithSummary("Get collectibles for the logged-in user")
+            .WithDescription("Returns collectibles data for the current user based on token.")
+            .Produces<CollectiblesResponse>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .RequireAuthorization();
+
+            group.MapGet("/collectibles-by-id", async Task<Results<
+                  Ok<CollectiblesResponse>,
+                  BadRequest<ProblemDetails>,
+                  ProblemHttpResult>>
+              (
+                  [Required][FromQuery] Guid userId,
+                  IClassifiedService service,
+                  HttpContext context,
+                  CancellationToken cancellationToken
+              ) =>
+            {
+                if (userId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Valid User ID must be provided in the query.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+
+                try
+                {
+                    var result = await service.GetCollectibles(userId.ToString(), cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (FileNotFoundException fileEx)
+                {
+                    return TypedResults.Problem(
+                        title: "File Not Found",
+                        detail: fileEx.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        instance: context.Request.Path);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path);
+                }
+            })
+            .WithName("GetCollectiblesById")
+            .WithTags("Collectibles")
+            .WithSummary("Get collectibles for a specified user ID")
+            .WithDescription("Returns collectibles data for a given user ID passed as query parameter.")
+            .Produces<CollectiblesResponse>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .ExcludeFromDescription()
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
         }
@@ -3242,123 +3352,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            group.MapGet("/collectibles", async Task<Results<
-                Ok<CollectiblesResponse>,
-                BadRequest<ProblemDetails>,
-                UnauthorizedHttpResult,
-                ProblemHttpResult>>
-             (
-                 IClassifiedService service,
-                 HttpContext context,
-                 CancellationToken cancellationToken
-             ) =>
-            {
-                Guid? userId = context.User.GetId();
-
-                if (userId == null || userId == Guid.Empty)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Valid User ID must be provided in the token.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
-                    });
-                }
-
-                try
-                {
-                    var result = await service.GetCollectibles(userId.ToString(), cancellationToken);
-                    return TypedResults.Ok(result);
-                }
-                catch (FileNotFoundException fileEx)
-                {
-                    return TypedResults.Problem(
-                        title: "File Not Found",
-                        detail: fileEx.Message,
-                        statusCode: StatusCodes.Status404NotFound,
-                        instance: context.Request.Path);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: context.Request.Path);
-                }
-            })
-             .WithName("GetCollectibles")
-             .WithTags("Collectibles")
-             .WithSummary("Get collectibles for the logged-in user")
-             .WithDescription("Returns collectibles data for the current user based on token.")
-             .Produces<CollectiblesResponse>(StatusCodes.Status200OK)
-             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-             .Produces(StatusCodes.Status401Unauthorized)
-             .RequireAuthorization();
-
-
-
-            group.MapGet("/collectibles-by-id", async Task<Results<
-                  Ok<CollectiblesResponse>,
-                  BadRequest<ProblemDetails>,
-                  ProblemHttpResult>>
-              (
-                  [Required][FromQuery] Guid userId,
-                  IClassifiedService service,
-                  HttpContext context,
-                  CancellationToken cancellationToken
-              ) =>
-            {
-                if (userId == Guid.Empty)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Valid User ID must be provided in the query.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
-                    });
-                }
-
-                try
-                {
-                    var result = await service.GetCollectibles(userId.ToString(), cancellationToken);
-                    return TypedResults.Ok(result);
-                }
-                catch (FileNotFoundException fileEx)
-                {
-                    return TypedResults.Problem(
-                        title: "File Not Found",
-                        detail: fileEx.Message,
-                        statusCode: StatusCodes.Status404NotFound,
-                        instance: context.Request.Path);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: context.Request.Path);
-                }
-            })
-            .WithName("GetCollectiblesById")
-            .WithTags("Collectibles")
-            .WithSummary("Get collectibles for a specified user ID")
-            .WithDescription("Returns collectibles data for a given user ID passed as query parameter.")
-            .Produces<CollectiblesResponse>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .ExcludeFromDescription()
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
+           
 
             return group;
         }
-
 
     }
 }

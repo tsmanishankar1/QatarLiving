@@ -31,7 +31,7 @@ namespace QLN.Classified.MS.Service
         private readonly ILogger<ClassifiedService> _logger;
         private readonly string itemJsonPath = Path.Combine("ClassifiedMockData", "itemsAdsMock.json");
         private readonly string prelovedJsonPath = Path.Combine("ClassifiedMockData", "prelovedAdsMock.json");
-        private readonly string jsonPath = "collectables.json";
+        private readonly string CollectablesonPath = Path.Combine("ClassifiedMockData", "collectables.json");
         public ClassifiedService(Dapr.Client.DaprClient dapr, ILogger<ClassifiedService> logger, IWebHostEnvironment env)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
@@ -1549,7 +1549,7 @@ namespace QLN.Classified.MS.Service
                 if (string.IsNullOrWhiteSpace(userId))
                     throw new ArgumentException("User ID is required", nameof(userId));
 
-                var fullPath = Path.Combine(_env.ContentRootPath, jsonPath);
+                var fullPath = Path.Combine(_env.ContentRootPath, CollectablesonPath);
 
                 if (!File.Exists(fullPath))
                     throw new FileNotFoundException("JSON data file not found", fullPath);
