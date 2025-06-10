@@ -16,6 +16,8 @@ using static System.Net.WebRequestMethods;
 using Microsoft.JSInterop;
 using BreadcrumbItem = QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem;
 using static QLN.Web.Shared.Pages.Subscription.SubscriptionDetails;
+using QLN.Web.Shared.Contracts;
+using QLN.Web.Shared.Services.Interfaces;
 
 namespace QLN.Web.Shared.Pages.Subscription
 {
@@ -27,6 +29,7 @@ namespace QLN.Web.Shared.Pages.Subscription
         [Inject] private NavigationManager Navigation { get; set; } = default!;
         [Inject] private ApiService Api { get; set; } = default!;
         [Inject] protected IJSRuntime _jsRuntime { get; set; }
+        [Inject] protected ISubscriptionService SubscriptionService { get; set; }
 
         private MudForm _form;
         private string _authToken;
@@ -47,8 +50,8 @@ namespace QLN.Web.Shared.Pages.Subscription
         protected override async void OnInitialized()
         {
             InitializeBreadcrumbs();
-            //LoadSubscriptionPlans();
-            await LoadSubscriptionPlansFromApi("3", "1");
+            LoadSubscriptionPlans();
+            //await LoadSubscriptionPlansFromApi("3", "1");
         }
         private List<BreadcrumbItem> breadcrumbItems = new();
         private List<SubscriptionPlan> _plans = new();
@@ -91,40 +94,40 @@ namespace QLN.Web.Shared.Pages.Subscription
         }
         
 
-        private async Task LoadSubscriptionPlansFromApi(string verticalId, string categoryId)
-        {
-            _isLoadingPlans = true;
-            _isError = false;
-            try
-            {
-                var url = $"api/getSubscription?verticalId={Uri.EscapeDataString(verticalId)}&categoryId={Uri.EscapeDataString(categoryId)}";
+        //private async Task LoadSubscriptionPlansFromApi(string verticalId, string categoryId)
+        //{
+        //    _isLoadingPlans = true;
+        //    _isError = false;
+        //    try
+        //    {
+        //        var url = $"api/getSubscription?verticalId={Uri.EscapeDataString(verticalId)}&categoryId={Uri.EscapeDataString(categoryId)}";
 
-                var response = await Api.GetAsyncWithToken<SubscriptionResponse>(url,_authToken);
+        //        var response = await Api.GetAsyncWithToken<SubscriptionResponse>(url,_authToken);
 
-                if (response is not null && response.Subscriptions?.Any() == true)
-                {
-                    _plans = response.Subscriptions;
-                }
-                if (_plans == null || !_plans.Any())
-                {
-                    _isError = true;
-                }
+        //        if (response is not null && response.Subscriptions?.Any() == true)
+        //        {
+        //            _plans = response.Subscriptions;
+        //        }
+        //        if (_plans == null || !_plans.Any())
+        //        {
+        //            _isError = true;
+        //        }
 
-            }
-            catch (HttpRequestException ex)
-            {
-                Snackbar.Add($"Error fetching plans: {ex.Message}", Severity.Error);
-                _isError = true;
-                _isLoadingPlans = false;
+        //    }
+        //    catch (HttpRequestException ex)
+        //    {
+        //        Snackbar.Add($"Error fetching plans: {ex.Message}", Severity.Error);
+        //        _isError = true;
+        //        _isLoadingPlans = false;
 
 
-            }
-            finally
-            {
-                _isLoadingPlans = false;
-                StateHasChanged();
-            }
-        }
+        //    }
+        //    finally
+        //    {
+        //        _isLoadingPlans = false;
+        //        StateHasChanged();
+        //    }
+        //}
 
 
         private void SetVeritcalTab(int index)
@@ -203,7 +206,7 @@ namespace QLN.Web.Shared.Pages.Subscription
                     };
 
                     Console.WriteLine(JsonSerializer.Serialize(payload));
-                    var response = await Api.PostAsync<object, object>("api/payment/subscribe", payload, _authToken);
+                    var response = await SubscriptionService.PurchaseSubscription(payload);
                     Snackbar.Add("Subscription added!", Severity.Success);
                     _isPaymentDialogOpen = false;
 

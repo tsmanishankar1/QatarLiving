@@ -17,6 +17,8 @@ using QLN.Web.Shared.MockServices;
 using QLN.Web.Shared.Contracts;
 using GoogleAnalytics.Blazor;
 using Microsoft.AspNetCore.ResponseCompression;
+using QLN.Web.Shared.Pages.Services;
+using QLN.Web.Shared.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -222,7 +224,11 @@ builder.Services.AddHttpClient<ISearchService, CommunitySearchService>(client =>
 {
     client.BaseAddress = new Uri(qatarLivingAPI);
 });
-
+builder.Services.AddHttpClient<ApiService>();
+builder.Services.AddHttpClient<ISubscriptionService, SubscriptionService>(client =>
+{
+    client.BaseAddress = new Uri(contentVerticalAPIUrl);
+});
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ISimpleMemoryCache, SimpleMemoryCache>(); // add shared Banner Service
 

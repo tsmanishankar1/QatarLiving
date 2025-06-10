@@ -9,5 +9,7 @@ namespace QLN.Web.Shared.Services.Interfaces
         Task<SubscriptionModel?> GetSubscriptionAsync(Guid id);
         Task<bool> UpdateSubscriptionAsync(SubscriptionModel model);
         Task<bool> DeleteSubscriptionAsync(Guid id);
+        Task<bool> PurchaseSubscription(object model);
+
     }
 }

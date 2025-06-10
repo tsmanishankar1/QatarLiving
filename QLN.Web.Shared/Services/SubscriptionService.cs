@@ -1,19 +1,21 @@
 ﻿using QLN.Web.Shared.Models;
+using QLN.Web.Shared.Pages.Subscription;
 using QLN.Web.Shared.Services.Interfaces;
+using System.Net.Http.Json;
 
 
 namespace QLN.Web.Shared.Services
 {
-    public class SubscriptionService : ISubscriptionService
+    public class SubscriptionService : ServiceBase<SubscriptionService>, ISubscriptionService
     {
-        private readonly HttpClient _http;
-        private readonly ApiService _api;
+        private readonly HttpClient _httpClient;
 
-        public SubscriptionService(HttpClient http, ApiService api)
+      
+        public SubscriptionService(HttpClient httpClient) : base(httpClient)
         {
-            _http = http;
-            _api = api;
+            _httpClient = httpClient;
         }
+
 
         public async Task<bool> AddSubscriptionAsync(SubscriptionModel model)
         {
@@ -27,9 +29,9 @@ namespace QLN.Web.Shared.Services
                 model.SubCategory,
                 model.Description
             };
-
-            var result = await _api.PostAsync<object, object>("api/subscription/add", payload);
-            return result is not null;
+            var response = await _httpClient.PostAsJsonAsync("api/subscription/add", payload);
+            return response.IsSuccessStatusCode;
+         
         }
 
         public async Task<SubscriptionModel?> GetSubscriptionAsync(Guid id)
@@ -49,17 +51,22 @@ namespace QLN.Web.Shared.Services
                 model.SubCategory,
                 model.Description
             };
-
-            var result = await _api.PatchAsync<object, object>("api/subscription/edit", payload);
-            return result is not null;
+            var response = await _httpClient.PatchAsJsonAsync("api/subscription/update", payload);
+            return response.IsSuccessStatusCode;
         }
 
         public async Task<bool> DeleteSubscriptionAsync(Guid id)
         {
-            var result = await _api.DeleteAsync($"api/subscription/delete/{id}");
-            return result;
+            var response = await _httpClient.DeleteAsync($"api/subscription/delete/{id}");
+            return response.IsSuccessStatusCode;
         }
+        public async Task<bool> PurchaseSubscription(object payload)
+        {
+          
+            var response = await _httpClient.PostAsJsonAsync("api/subscription/add", payload);
+            return response.IsSuccessStatusCode;
 
+        }
     }
 
 }

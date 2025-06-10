@@ -18,7 +18,6 @@ namespace QLN.Web.Shared
             services.Configure<ApiSettings>(configuration.GetSection("ApiSettings"));
             services.AddHttpClient<ApiService>();
 
-            services.AddScoped<ISubscriptionService, SubscriptionService>();
 
 
             return services;
