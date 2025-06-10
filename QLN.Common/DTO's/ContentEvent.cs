@@ -4,6 +4,9 @@ namespace QLN.Common.Infrastructure.DTO_s
 {
     public class ContentEvent : ContentPost
     {
+        [JsonPropertyName("category_id")]
+        public string CategroryId { get; set; }
+
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("entity_organizer")]
         public string EntityOrganizer { get; set; }
@@ -35,5 +38,13 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("event_location")]
         public string EventLocation { get; set; }
+         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonPropertyName("image_url")]
+        public string ImageUrl { get; set; }
+
+        // ✅ NEW: Map `slug`
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonPropertyName("slug")]
+        public string Slug { get; set; }
     }
 }

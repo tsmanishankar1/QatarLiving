@@ -17,22 +17,27 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 
-builder.Services.AddScoped<IExternalSubscriptionService, ExternalSubscriptionService>();
+// hiding this as it is not implemented here - this project cannot depend on the Backend.API project.
 
-builder.Services
-  .AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
-  {
-      options.Tokens.EmailConfirmationTokenProvider = "emailconfirmation";
-  })
-  .AddTokenProvider<
-      QLN.Common.Infrastructure.TokenProvider.EmailTokenProvider<ApplicationUser>
-  >("emailconfirmation")
-  .AddEntityFrameworkStores<QatarlivingDevContext>()
-  .AddDefaultTokenProviders();
+//builder.Services.AddScoped<IExternalSubscriptionService, ExternalSubscriptionService>();
+
+// I am not aware of anything looking up data on a DB (as yet)
+// I don't think this project should depend on the Backend.API project
+// and it should not touch this database - this should only ever be touched by the Backend.API project
+//builder.Services
+//  .AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
+//  {
+//      options.Tokens.EmailConfirmationTokenProvider = "emailconfirmation";
+//  })
+//  .AddTokenProvider<
+//      QLN.Common.Infrastructure.TokenProvider.EmailTokenProvider<ApplicationUser>
+//  >("emailconfirmation")
+//  .AddEntityFrameworkStores<QatarlivingDevContext>()
+//  .AddDefaultTokenProviders();
 
 
-builder.Services.AddDbContext<QatarlivingDevContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+//builder.Services.AddDbContext<QatarlivingDevContext>(options =>
+//    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddActors(options =>
 {

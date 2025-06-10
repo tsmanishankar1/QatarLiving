@@ -2,6 +2,7 @@
 @using QLN.Web.Shared.Components.DailyFeaturedEventCard
 @using QLN.Web.Shared.Components.EmptyCard
 @using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.Skeletons.FeaturedCategorySkeleton
+@using QLN.Common.Infrastructure.DTO_s;
 
 <div class="daily-categories-wrapper">
     <div class="daily-categories-header">
@@ -31,17 +32,17 @@
                     <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
                 </div>
 
-                <div class="swiper-wrapper">
-                    @foreach (var item in Items)
-                    {
+                <div class="swiper-wrapper @(Items.Count <= 5 ? "les5swiper-wrapper" : "")">
+                    <MudVirtualize Context="item" Items="Items" T="ContentEvent">
                         <div class="swiper-slide swiper-slide-Card">
                             <DailyFeaturedEventCard Item="item" OnClickCallback="OnClickEvent" />
                         </div>
-                    }
+                    </MudVirtualize>
                 </div>
             </div>
-            <!-- Pagination dots -->
-            <div class="swiper-categories-pagination"></div>
+            <div class="swiper-categories-pagination-wrapper">
+                <div class="swiper-categories-pagination"></div>
+            </div>
         </div>
     }
 </div>
@@ -49,7 +50,7 @@
 <style>
     .daily-categories-wrapper {
         width: 100%;
-        font-family: 'Public Sans';
+        font-family: 'Public Sans', sans-serif;
     }
 
     .daily-categories-header {
@@ -63,15 +64,16 @@
         color: var(--color-text-heading);
     }
 
-    /* Only apply center alignment if swiper-center class is present */
-    .swiper-categories .swiper-wrapper {
+    /* Center-align slides only if 'les5swiper-wrapper' class is present */
+    .swiper-wrapper.les5swiper-wrapper {
         justify-content: center !important;
     }
+
 
     .swiper-categories-container {
         position: relative;
         width: 100%;
-        padding: 0rem 2.5rem;
+        padding: 0rem;
     }
 
     .swiper-categories {
@@ -121,10 +123,18 @@
         right: 20px;
     }
 
-    /* Swiper pagination dots styling */
+    .swiper-categories-pagination-wrapper {
+        display: flex;
+        justify-content: center;
+        /* shift to right */
+        align-items: center;
+        width: 100%;
+        margin-top: 10px;
+        padding-left: 130px;
+    }
+
     .swiper-categories-pagination {
         text-align: center;
-        margin-top: 5px;
         user-select: none;
     }
 
@@ -149,12 +159,26 @@
         .swiper-categories-container:hover .arrow-button {
             opacity: 1;
         }
+
+        .swiper-categories-pagination-wrapper {
+            display: flex;
+            justify-content: center;
+            /* shift to right */
+            align-items: center;
+            width: 100%;
+            margin-top: 10px;
+            padding-left: 130px;
+        }
     }
 
     /* Hide arrows permanently on mobile */
     @@media (max-width: 770px) {
         .arrow-button {
             display: none !important;
+        }
+
+        .swiper-wrapper.les5swiper-wrapper {
+            justify-content: flex-start !important;
         }
 
         .swiper-categories-container {
@@ -165,6 +189,16 @@
 
         .swiper-categories-pagination {
             margin-top: 0px;
+        }
+
+        .swiper-categories-pagination-wrapper {
+            display: flex;
+            justify-content: center;
+            /* shift to right */
+            align-items: center;
+            width: 100%;
+            margin-top: 10px;
+            padding-left: 130px;
         }
     }
 </style>

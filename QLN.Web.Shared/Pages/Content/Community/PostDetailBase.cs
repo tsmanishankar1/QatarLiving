@@ -17,6 +17,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         [Inject] protected ICommunityService CommunityService { get; set; } = default!;
         [Inject] protected ILogger<PostDetailBase> Logger { get; set; } = default!;
         [Inject] private IContentService _contentService { get; set; }
+        [Inject] private ISimpleMemoryCache _simpleCacheService { get; set; }
 
         protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
         protected QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem? postBreadcrumbItem;
@@ -35,6 +36,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected bool isLoadingBanners = true;
         protected List<BannerItem> DailyHeroBanners { get; set; } = new();
+        protected List<BannerItem> CommunitySideBanners { get; set; } = new();
 
 
         protected override async Task OnParametersSetAsync()
@@ -44,13 +46,13 @@ namespace QLN.Web.Shared.Pages.Content.Community
             // Update breadcrumb for current slug
             postBreadcrumbItem = new()
             {
-                Label = slug ?? "Not Found",
+                Label =  "Not Found",
                 Url = $"/content/community/post/detail/{slug}",
                 IsLast = true
             };
             postBreadcrumbCategory = new()
             {
-                Label = slug ?? "Not Found",
+                Label = "Not Found",
                 //Url = "/content/community",
                 Url = $"/content/community"
             };
@@ -93,6 +95,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                         Slug = fetched.slug,
                         Comments = fetched.comments?.Select(c => new CommentModel
                         {
+                            Id = c.nid,
                             CreatedBy = c.user_name ?? "Unknown User",
                             CreatedAt = c.created_date,      
                             Description = c.subject ?? "No content to display",
@@ -133,8 +136,9 @@ namespace QLN.Web.Shared.Pages.Content.Community
             isLoadingBanners = true;
             try
             {
-                var banners = await FetchBannerData();
-                DailyHeroBanners = banners?.DailyHero ?? new();
+                var banners = await _simpleCacheService.GetBannerAsync();
+                DailyHeroBanners = banners?.ContentCommunityPostHero ?? new();
+                CommunitySideBanners = banners?.ContentCommunityPostSide ?? new (); 
 
             }
             catch (Exception ex)

@@ -17,6 +17,7 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonPropertyName("user_name")]
         public string UserName { get; set; }
 
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("forum_id")]
         public string ForumId { get; set; }
 
@@ -26,6 +27,7 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonPropertyName("description")]
         public string Description { get; set; }
 
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("category")]
         public string Category { get; set; }
 

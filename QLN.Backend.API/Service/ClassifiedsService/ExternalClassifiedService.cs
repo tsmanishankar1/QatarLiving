@@ -688,14 +688,14 @@ namespace QLN.Backend.API.Service.ClassifiedService
         }   
 
 
-        public async Task<CategoryHierarchyDto> GetCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
+        public async Task<NestedCategoryDto> GetCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
         {
             try
             {
                 if (categoryId == Guid.Empty)
                     throw new ArgumentException("Invalid category ID", nameof(categoryId));
 
-                var result = await _dapr.InvokeMethodAsync<CategoryHierarchyDto>(
+                var result = await _dapr.InvokeMethodAsync<NestedCategoryDto>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/{Vertical}/category-hierarchy/{categoryId}",
@@ -705,6 +705,28 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 return result ?? throw new KeyNotFoundException($"No hierarchy found for category ID: {categoryId}");
             }
             catch(Exception ex)
+            {
+                _log.LogException(ex);
+                throw;
+            }
+        }
+
+        public async Task<bool> DeleteCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (categoryId == Guid.Empty)
+                    throw new ArgumentException("Invalid category ID", nameof(categoryId));
+
+                var response = await _dapr.InvokeMethodAsync<HttpResponseMessage>(
+                    HttpMethod.Delete,
+                    SERVICE_APP_ID,
+                    $"api/{Vertical}/category-hierarchy/{categoryId}",
+                    cancellationToken);
+
+                return true;
+            }
+            catch (Exception ex)
             {
                 _log.LogException(ex);
                 throw;

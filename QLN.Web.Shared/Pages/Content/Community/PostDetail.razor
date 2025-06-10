@@ -6,8 +6,9 @@
 @using QLN.Web.Shared.Pages.Content.Events
 @using QLN.Web.Shared.Components.BannerSwiper
 @using QLN.Web.Shared.Components.EmptyCard
+@using QLN.Web.Shared.Components.AdBanner
 
-<div class="container">
+<div class="community-container">
     <div class="container-inner-wrapper">
 
       @*   <!-- Carousel Banner -->
@@ -41,7 +42,7 @@
                     @if (IsLoading)
                     {
                         <MudPaper Class="pa-4">
-                            <MudSkeleton Height="200px" Width="100%" Animation="Animation.Wave" />
+                            <MudSkeleton Height="400px" Width="100%" Animation="Animation.Wave" />
                             <MudSkeleton Height="32px" Width="70%" Animation="Animation.Wave" Class="my-2" />
                             <MudSkeleton Height="20px" Width="90%" Animation="Animation.Wave" />
                             <MudSkeleton Height="20px" Width="80%" Animation="Animation.Wave" />
@@ -50,14 +51,8 @@
                     }
                     else if (HasError)
                     {
-                        <MudPaper Class="pa-4 mt-8" Color="Color.Error" Elevation="0">
-                            <MudText Typo="Typo.h6" Color="Color.Error">
-                                Oops! Something went wrong while loading community posts.
-                            </MudText>
-                            <MudText Typo="Typo.body2">
-                                Please try again later.
-                            </MudText>
-                        </MudPaper>
+                        <EmptyCard Title="No Posts found." Subtitle="Please check back later for updates." />
+
                     }
                     else if (SelectedPost != null)
                     {
@@ -70,10 +65,12 @@
                         </div>
                         <CommentSection Comment="SelectedPost" />
 
+
                     }
                     else
                     {
-                        <MudAlert Severity="Severity.Warning">Post not found</MudAlert>
+                        <EmptyCard Title="No Posts found." Subtitle="Please check back later for updates." />
+
                     }
 
                     
@@ -84,7 +81,20 @@
                     <div>
                         <PostList />
                     </div>
-                    <MudImage Src="/qln-images/content/Ad.png" Alt="Advertisement" Style="width: 340px; height: 402px;margin-top:12px" />
+                    <div class="post-details-ad-wrapper">
+                            @if (isLoadingBanners)
+                            {
+                                <BannerSkleton />
+                            }
+                            else if (CommunitySideBanners?.Any() == true)
+                            {
+                                <AdBanner BannerItems="CommunitySideBanners" />
+                            }
+                            else
+                            {
+                                <EmptyCard Title="No  banners found." Subtitle="Please check back later for updates." />
+                            }
+                        </div>
                 </MudItem>
             </MudGrid>
         </MudContainer>
@@ -94,7 +104,7 @@
 </div>
 
 <style>
-    .container {
+    .community-container {
         width: 100%;
         background-color: var(--color-secondary-background);
     }
@@ -151,13 +161,31 @@
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
     }
 
-    @@media (max-width: 700px) and (min-width: 375px) {
+    .post-details-ad-wrapper {
+        padding: 0;
+        margin-top: 16px;
+        width: 340px;
+        height: 402px;
+        overflow: hidden;
+    }
+
+    @@media (max-width: 700px) and (min-width: 275px) {
         .container-inner-wrapper {
-            padding: 0 8px 25px 8px;
+            padding: 0 4px 14px 4px;
         }
 
         .ad-image {
             max-width: 100%;
+        }
+
+        .post-details-ad-wrapper {
+            padding: 0;
+            margin-top: 16px;
+            width: 100%;
+            overflow: hidden;
+            display:flex;
+            justify-content:center;
+            align-items:center;
         }
     }
 </style>

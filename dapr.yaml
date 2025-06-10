@@ -16,9 +16,12 @@ apps:
 #   command:
 #   - dotnet
 #   - run
-- appDirPath: QLN.Subscriptions.Actor
-  appID: qln-subscriptions-actor
-  appPort: 5056
+  - appID: qln-subscriptions-actor
+    appDirPath: QLN.Subscriptions.Actor
+    appPort: 5056
+    command:
+      - dotnet
+      - run
 
   - appID: qln-classified-ms
     appDirPath: QLN.Classified.MS

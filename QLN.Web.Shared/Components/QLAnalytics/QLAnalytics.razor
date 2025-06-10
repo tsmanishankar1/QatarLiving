@@ -36,6 +36,12 @@
             sessionId
         );
 
+        await QLAnalyticsService.TrackEventFromClientAsync(
+            AnalyticsProps,
+            browserId,
+            sessionId
+        );
+
         await base.OnInitializedAsync();  
     }  
 

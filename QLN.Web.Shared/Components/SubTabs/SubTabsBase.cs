@@ -22,18 +22,37 @@ namespace QLN.Web.Shared.Components
             UpdateActiveTab(e.Location);
             InvokeAsync(StateHasChanged);
         }
+     protected void UpdateActiveTab(string currentUri)
+{
+    var currentPath = new Uri(currentUri).AbsolutePath.TrimEnd('/').ToLower();
 
-      protected void UpdateActiveTab(string currentUri)
+    foreach (var item in Tabs)
     {
-        var currentPath = new Uri(currentUri).AbsolutePath.ToLower();
+        item.IsActive = false;
+    }
 
-        foreach (var item in Tabs)
+    TabItem? activeTab = null;
+
+    foreach (var tab in Tabs)
+    {
+        bool match = tab.ActiveRoutePaths.Any(path =>
         {
-            var tabPath = new Uri(NavigationManager.BaseUri + item.Route.TrimStart('/')).AbsolutePath.ToLower();
-            item.IsActive = currentPath.StartsWith(tabPath);
+            var normalized = path.TrimEnd('/').ToLower();
+            // Check if currentPath contains normalized path anywhere
+            return currentPath.Contains(normalized);
+        });
+
+        if (match)
+        {
+            activeTab = tab; // last matching tab wins
         }
     }
 
+    if (activeTab != null)
+    {
+        activeTab.IsActive = true;
+    }
+}
 
 
         protected async Task OnTabSelected(TabItem selected)
@@ -54,6 +73,7 @@ namespace QLN.Web.Shared.Components
             public string Text { get; set; }
             public string Route { get; set; }
             public string ImagePath { get; set; }
+            public List<string> ActiveRoutePaths { get; set; } = new();
             public bool IsActive { get; set; }
         }
     }

@@ -1,35 +1,27 @@
 @inherits DailyVideoCardsBase
+@using QLN.Common.Infrastructure.DTO_s
 
 <div class="watch-section">
     <!-- Main Video -->
     <div class="main-video-wrapper video-card">
         <iframe width="100%" height="100%" muted loop style="object-fit: cover; border-radius: 6px;"
-                src="@SelectedVideo.VideoUrl">
+            src="@YTVideoEmbedURL">
         </iframe>
-
-        <div class="video-overlay-top">
-            <span class="video-label">Video</span>
-            <h2 class="main-title">@SelectedVideo.Title</h2>
-        </div>
-
-            <div class="video-overlay-center" @onclick="() => NavigatetoArticle(SelectedVideo)">
-                <MudIcon Icon="@Icons.Material.Filled.PlayArrow" />
-            </div>
     </div>
 
     <!-- Video List -->
     <div class="video-list-container">
         <div class="section-title">
             <h3 class="section-heading">
-                <span class="accent-bar"></span>Watch on Qatar Living
+                <span class="accent-bar"></span>@(string.IsNullOrEmpty(QueueLabel) is true ? "Watch on Qatar Living" :
+                                QueueLabel)
             </h3>
         </div>
         <div class="video-list">
-            @foreach (var item in Items)
-            {
-                <div class="video-card" @onclick="() => NavigatetoArticle(item)">
+            <MudVirtualize Context="item" Items="Items" T="ContentVideo">
+                <div class="video-card" @onclick="() => PlayVideo(item)">
                     <div class="thumbnail-container">
-                        <img src="@item.VideoUrl." class="thumbnail" />
+                        <img src="@item.ImageUrl" class="thumbnail" />
                         <div class="play-icon-daily">
                             <MudIcon Icon="@Icons.Material.Filled.PlayArrow" />
                         </div>
@@ -37,15 +29,15 @@
                     <div class="video-title">
                         @if (item == SelectedVideo)
                         {
-                            <span class="selected-title">@item.Title</span>
+                            <span class="selected-title vedio-title-text">@item.Title</span>
                         }
                         else
                         {
-                            <a class="list-title" href="#">@item.Title</a>
+                            <span class="list-title vedio-title-text">@item.Title</span>
                         }
                     </div>
                 </div>
-            }
+            </MudVirtualize>
 
             <div class="video-cards-view-all" @onclick="OnClickViewAll">
                 <span class="video-cards-view-all">View all videos</span>
@@ -64,7 +56,7 @@
         margin: 20px auto;
         width: 100%;
         padding: 16px;
-        font-family: 'Public Sans';
+        font-family: 'Public Sans', sans-serif;
         flex-wrap: wrap;
     }
 
@@ -191,6 +183,32 @@
         display: flex;
         align-items: center;
         font-size: 14px;
+        cursor: pointer;
+    }
+
+    .video-title:hover {
+        text-decoration: underline;
+        color: var(--color-primary);
+        cursor: pointer;
+    }
+
+
+    .vedio-title-text {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        /* Limit to 3 lines */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        /* Hide overflow and scrollbars */
+        text-overflow: ellipsis;
+        white-space: normal;
+        scrollbar-width: none;
+        /* Hide scrollbar in Firefox */
+    }
+
+    .vedio-title-text::-webkit-scrollbar {
+        display: none;
+        /* Hide scrollbar in Webkit browsers */
     }
 
     .section-heading {
@@ -281,7 +299,6 @@
     .video-list-container {
         width: 35%;
         order: 1;
-
     }
 
     .video-list {
@@ -313,6 +330,5 @@
         .video-list {
             height: auto;
         }
-
     }
 </style>

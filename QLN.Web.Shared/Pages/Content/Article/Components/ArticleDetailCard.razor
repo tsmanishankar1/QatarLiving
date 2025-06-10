@@ -5,74 +5,94 @@
     <div class="event-title">@Post.Title</div>
 
     <div class="event-image-container">
-                        @if (loading){
-                            <MudSkeleton 
-                                SkeletonType="SkeletonType.Rectangle" 
-                                Animation="Animation.Wave" 
-                                Class="rounded shadow-container" />
-                        }
-                        else if(@Post==null){
-                             <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
-                        }
-                        else{
-                            @if(string.IsNullOrEmpty(Post.ImageUrl)){
-                                 <EmptyCard Title="No Images Available" Subtitle="" />
+        @if (loading)
+        {
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Animation="Animation.Wave"
+                Class="rounded shadow-container" />
+        }
+        else if (@Post == null)
+        {
+            <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
+        }
+        else
+        {
+            @if (string.IsNullOrEmpty(Post.ImageUrl))
+            {
+                <EmptyCard Title="No Images Available" Subtitle="" />
+            }
+            else
+            {
+                @if (!imageLoaded)
+                {
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Class="event-image" />
+                }
+                <img src="@Post.ImageUrl" alt="News Image" class="event-image"
+                    style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                    @onerror="OnImageError" />
+            }
+        }
+
+        <div class="author-wrapper">
+            <div class="main-author">
+                <div style="gap: 8px;">
+                    @(string.IsNullOrWhiteSpace(Post.UserName) ? "" : Post.UserName)
+                    <h3 class="main-title">@FormattedDate</h3>
+                </div>
+            </div>
+
+
+            <div class="icons">
+                <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu" AnchorOrigin="Origin.BottomLeft"
+                    TransformOrigin="Origin.TopRight">
+                    <ActivatorContent>
+                        <MudIconButton Icon="@Icons.Material.Filled.Share" Class="icons-color" />
+                    </ActivatorContent>
+                    <ChildContent>
+                        @foreach (var item in shareMenuItems)
+                        {
+                            if (item.OnClick != null)
+                            {
+                                <MudMenuItem OnClick="@item.OnClick">
+                                    <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                </MudMenuItem>
                             }
-                            else{
-                                @if (!imageLoaded)
-                                {
-                                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Class="event-image" />
-                                }
-                                <img src="@Post.ImageUrl" alt="News Image" class="event-image"
-                                style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
-                                @onerror="OnImageError" />
+                            else
+                            {
+                                <MudMenuItem Href="@item.Route" Target="@(item.OpenInNewTab ? "_blank" : "_self")">
+                                    <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                </MudMenuItem>
                             }
                         }
+                    </ChildContent>
+                </MudMenu>
 
-                    <div class="author-wrapper">
-                    <div class="main-author">
-                        <div style="gap: 8px;">
-                        @(string.IsNullOrWhiteSpace(Post.UserName) ? "" : Post.UserName) • <a href="#" class="main-source">Qatar Living</a>  
-                            <img src="/qln-images/tick.svg" alt="Qatarliving" />
-                         <h3 class="main-title">@FormattedDate</h3>
-                         </div>
-                    </div> 
-                    
-
-                    <div class="icons">
-                     <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu">
-                            <ActivatorContent>
-                                <MudIconButton Icon="@Icons.Material.Filled.Share" Class="icons-color" />
-                            </ActivatorContent>
-                            <ChildContent>
-                                @foreach (var item in shareMenuItems)
-                                {
-                                    <MudMenuItem Href="@item.Route" Target="@(item.OpenInNewTab ? "_blank" : "_self")">
-                                        <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
-                                    </MudMenuItem>
-                                }
-                            </ChildContent>
-                        </MudMenu>
-
-                    <div class="comment-badge">
-                        <img src="/qln-images/comment_icon.svg" alt="Comments"  />
-                        <span class="count">@commentsCount</span>
-                    </div>
+                <div class="comment-badge">
+                    <img src="/qln-images/comment_icon.svg" alt="Comments" />
+                    <span class="count">@commentsCount</span>
+                </div>
             </div>
         </div>
     </div>
-     @if (loading){
-        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="100%" Animation="Animation.Wave" />
-        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="60%" Animation="Animation.Wave" />
-        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="100%" Animation="Animation.Wave" />
-        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="60%" Animation="Animation.Wave" />
-        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="100%" Animation="Animation.Wave" />
-        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="60%" Animation="Animation.Wave" />
-     }
-     else{
-    <div class="event-description">
-        <div>@ParsedDescription</div>
-    </div>
+    @if (loading)
+    {
+        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="100%"
+            Animation="Animation.Wave" />
+        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="60%"
+            Animation="Animation.Wave" />
+        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="100%"
+            Animation="Animation.Wave" />
+        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="60%"
+            Animation="Animation.Wave" />
+        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="100%"
+            Animation="Animation.Wave" />
+        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="60%"
+            Animation="Animation.Wave" />
+    }
+    else
+    {
+        <div class="event-description">
+            <div>@ParsedDescription</div>
+        </div>
     }
 </div>
 
@@ -82,13 +102,38 @@
         padding: 16px;
         background-color: white;
         border-radius: 12px;
-        font-family: 'Public Sans';
+        font-family: 'Public Sans', sans-serif;
     }
-    .main-title{
+
+    .main-title {
         font-family: 'Public Sans', sans-serif;
         font-weight: 500;
         font-size: 13px;
         color: var(--color-text-heading);
+    }
+
+    .share-icon {
+        margin: 0;
+        width: 32px;
+        height: 32px;
+    }
+
+    .mud-popover .mud-list {
+        max-height: inherit;
+        overflow-y: auto;
+        display: flex !important;
+    }
+
+    .mud-menu-item {
+        padding: 0px 6px 0px 0px !important;
+    }
+
+    .mud-menu-list {
+        padding-left: 6px;
+    }
+
+    .mud-menu-item .mud-menu-item-text {
+        margin: 4px 0px 0px 0px !important;
     }
 
     .event-title {
@@ -125,7 +170,8 @@
         align-items: center;
         color: var(--color-primary);
     }
-    .shadow-container{
+
+    .shadow-container {
         width: 100%;
         height: 421px;
     }
@@ -140,17 +186,18 @@
     .icons-color {
         color: var(--color-accent)
     }
+
     .icon-circle-border {
-    border: 1px solid #E3E3E3;         
-    border-radius: 50%;             
-    padding: 8px;                   
-    width: 40px;                    
-    height: 40px;
-    display: flex;                   
-    align-items: center;
-    justify-content: center;
-    color: var(--color-accent)                  
-}
+        border: 1px solid #E3E3E3;
+        border-radius: 50%;
+        padding: 8px;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-accent)
+    }
 
     .location-icon {
         font-size: 14px;
@@ -179,76 +226,85 @@
         line-height: 1.6;
         font-family: 'Public Sans', sans-serif;
     }
+
     .event-description p {
         margin-bottom: 2rem;
     }
+
     .event-description img {
-    max-width: 100%;
-    height: auto;
-    display: block;
-    margin: 1rem auto; 
-    border-radius: 8px;
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 1rem auto;
+        border-radius: 8px;
     }
+
+    .event-description a {
+        color: #00426D !important;
+        text-decoration: underline !important;
+    }
+
     .comment-badge {
-    display: flex;
-    border: 1px solid #E3E3E3; 
-    border-radius: 50px;
-    padding: 8px 10px;
-    gap: 5px;
+        display: flex;
+        border: 1px solid #E3E3E3;
+        border-radius: 50px;
+        padding: 8px 10px;
+        gap: 5px;
     }
 
-.comment-badge .icon {
-    color: var(--color-primary) ; 
-    height: 24px;
-    width: 24px;
-}
+    .comment-badge .icon {
+        color: var(--color-primary);
+        height: 24px;
+        width: 24px;
+    }
 
-.comment-badge .count {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-primary);
-}
- 
-    .main-author{
-    font-family: 'Public Sans', sans-serif;
-    font-weight: 500;
-    font-size: 14px;
-    color: var(--color-text-heading);
+    .comment-badge .count {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--color-primary);
+    }
+
+    .main-author {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 14px;
+        color: var(--color-text-heading);
     }
 
     .main-source {
-    font-family: 'Public Sans', sans-serif;
-    font-weight: 500;
-    font-size: 14px;
-    color: var(--color-primary);
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 14px;
+        color: var(--color-primary);
     }
 
     .verified {
         color: var(--color-primary);
         font-weight: bold;
     }
-    .author-wrapper {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    padding: 16px;
-}
-@@media (max-width: 768px) {
-    .author-wrapper {
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    padding: 10px;
-    flex-direction: column; 
-    align-items: flex-start;
-    }
-    @@media (max-width: 600px) {
-        .shadow-container{
-            width: 100%;
-            height: 200px;
-        }
-    }
-</style>
 
- 
+    .author-wrapper {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        padding: 16px;
+    }
+
+    @@media (max-width: 768px) {
+        .author-wrapper {
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 10px;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        @@media (max-width: 600px) {
+            .shadow-container {
+                width: 100%;
+                height: 200px;
+            }
+        }
+</style>

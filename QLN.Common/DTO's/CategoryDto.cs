@@ -133,12 +133,30 @@ namespace QLN.Common.Infrastructure.DTO_s
         public string Name { get; set; }
     }
 
-    public class CategoryHierarchyDto
+    public class NestedCategoryDto
     {
-        public CategoriesDto Category { get; set; }
-        public List<CategoriesDto> SubCategories { get; set; } = new();
-        public List<CategoriesDto> Brands { get; set; } = new();
-        public List<CategoriesDto> Models { get; set; } = new();
+        public Guid Id { get; set; }
+        public string Name { get; set; }
+        public List<NestedSubCategoryDto> SubCategories { get; set; } = new();
+    }
+
+    public class NestedSubCategoryDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; }
+        public List<NestedBrandDto> Brands { get; set; } = new();
+    }
+    public class NestedBrandDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; }
+        public List<NestedModelDto> Models { get; set; } = new();
+    }
+
+    public class NestedModelDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; }
         public List<CategoriesDto> Rams { get; set; } = new();
         public List<CategoriesDto> Processors { get; set; } = new();
         public List<CategoriesDto> Resolutions { get; set; } = new();

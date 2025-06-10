@@ -1,21 +1,24 @@
 @inherits NewsLetterBase
 @using QLN.Web.Shared.Components.CustomButton
+
 <div class="newsletter-container">
     <h2 style="text-align: center;">Get The QL newsletter. Sign up to receive the top stories you need to know right now.</h2>
-    <input type="email" placeholder="Enter your email" class="email-input" required />
+     <MudForm @ref="_form">
+        <input type="email" placeholder="Enter your email" class="email-input" required @bind="SubscriptionModel.Email"/>
 
-    <CustomButton id="forgetPasswordButton" BackgroundColor="#FF7F38" TextColor="#FFFFFF" Text="Subscribe" Disabled="@IsSubscribingToNewsletter"
-                  OnClick="@SubscribeAsync" Class="reset-button">
-        @if (IsSubscribingToNewsletter)
-        {
-            <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" />
-            @("Subscribing...")
-        }
-        else
-        {
-            @("Subscribe")
-        }
-    </CustomButton>
+        <CustomButton id="forgetPasswordButton" BackgroundColor="#FF7F38" TextColor="#FFFFFF" Text="Subscribe" Disabled="@IsSubscribingToNewsletter"
+                    OnClick="@SubscribeAsync" Class="reset-button">
+            @if (IsSubscribingToNewsletter)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" />
+                @("Subscribing...")
+            }
+            else
+            {
+                @("Subscribe")
+            }
+        </CustomButton>
+     </MudForm>
 </div>
 
 <style>
@@ -28,7 +31,7 @@
         border: 1px solid #F0F0F0;
         border-radius: 6px;
         background-color: #FFFFFF;
-        font-family: sans-serif;
+        font-family: 'Public Sans', sans-serif;
         display: flex;
         flex-direction: column;
         align-items: center;

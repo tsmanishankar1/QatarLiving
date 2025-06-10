@@ -2,12 +2,14 @@
 @inherits NewsBase
 @layout ContentLayout
 @using MudBlazor
+@using QLN.Web.Shared.Pages.Content.Daily.DailyVideoCards
 @using QLN.Web.Shared.Pages.Content.News.NewsCard
 @using QLN.Web.Shared.Pages.Content.News.NewsLetter
 @using QLN.Web.Shared.Pages.Content.News.PopularArticles
 @using QLN.Web.Shared.Pages.Content.Daily.DailyNewsCard
 @using QLN.Web.Shared.Pages.Content.News.VideoCards
 @using QLN.Web.Shared.Pages.Content.Daily.DailyNewsLetter
+@using QLN.Web.Shared.Components.AdBanner
 @using QLN.Web.Shared.Components.ViewToggleButtons
 @using QLN.Web.Shared.Components.BannerSwiper
 @using QLN.Web.Shared.Pages.Content.Events
@@ -17,6 +19,9 @@
 @using QLN.Web.Shared.Pages.Content.News.Skeletons
 @inject IJSRuntime JSRuntime
 @using QLN.Web.Shared.Components.Carousel
+
+<PageTitle>Qatar Living | The go-to place for lifestyle, news, and events</PageTitle>
+
 <div style="width: 100%;background-color: var(--color-secondary-background); align-items:center">
     <div class="carousel-responsive-container">
         <div class="max-container">
@@ -72,10 +77,11 @@
                                         @if (!imageLoaded)
                                         {
                                             <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="200px" Class="main-image" />
-                                        }
+                                        } 
                                             <img src="@topNewsSlot.ImageUrl" alt="News Image" class="main-image"
                                             style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
-                                            @onerror="OnImageError" />
+                                            @onerror="OnImageError" key="@topNewsSlot.ImageUrl" /> 
+                                            @* <img src="@topNewsSlot.ImageUrl" alt="News Image" class="main-image"> *@
                                         }
                                     }
                                     @if (isLoading){
@@ -87,21 +93,18 @@
                                     {
                                     }
                                     else{
-                                        <span class="category-style">Sports</span>
+                                         @if (!string.IsNullOrWhiteSpace(topNewsSlot?.Category)){
+                                            <span class="category-style">@topNewsSlot?.Category</span>
+                                         }
                                         <h2 class="main-title">@topNewsSlot.Title</h2>
                                         <div class="author-wrapper">
                                         <div class="main-author">
                                         @if (!string.IsNullOrWhiteSpace(@topNewsSlot?.UserName))
                                         {
-                                            @topNewsSlot.UserName <span>•</span>
+                                            @topNewsSlot.UserName 
                                         }
-                                        <a href="#" class="main-source">Qatar Living</a>  
-                                        <img src="/qln-images/tick.svg" alt="Qatarliving" />
                                         </div>
-                                        <div class="comment-badge">
-                                        <img src="/qln-images/comment_icon.svg" alt="Comments" class="comment-icon" />
-                                        <span class="count">12</span>
-                                        </div> 
+                                       
                                         </div>
                                     }
                                 </div>
@@ -109,7 +112,7 @@
                         </div>
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <MoreArticle Articles="@moreArticleListSlot" loading="@isLoading" selectedTab="@SelectedTab"/>
+                        <MoreArticle Articles="@moreArticleListSlot" loading="@isLoading" selectedMainTab="@_selectedView" selectedTab="@subTabLabel"/>
                     </MudItem>
                 </MudGrid>
                <div class="flex-container" style="padding-bottom: 40px;">
@@ -125,18 +128,19 @@
                         }
                         </div>
                     }
+                    else if(topNewsListSlot?.Count == 1){
+                        <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
+                    }
                     else if (topNewsListSlot != null && topNewsListSlot.Any())
                     {
-                        @foreach (var news in topNewsListSlot.Take(3))
-                    { 
+                        var thirdItem = topNewsListSlot.LastOrDefault();
+                        @foreach (var news in topNewsListSlot.Skip(1).Take(3))
+                        { 
                         <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)"/>
-                         @if(news != topNewsListSlot.Last()){
+                        @if(news != thirdItem){
                             <div style="width: 1px; height: auto; background-color: #F0F0F0; align-self: stretch; margin: 0 14px"></div>
                         } 
                     } 
-                    }
-                    else{
-                        <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
                     }
                     <div class="newsletter-wrapper" style="padding-left: 10px;"> 
                     <NewsLetter />
@@ -164,26 +168,18 @@
             </div>
             </div>
         </div>  
+    @if (VideoList?.Count > 0)
+    {
         <div class="video-container">  
             <div class="max-container">
-                @* <div class="video-padding"> *@
-                <VideoCards Articles="@mostWatchedArticleListSlot" selectedTab="@SelectedTab" loading="@isLoading" />
-                @* </div> *@
+            <DailyVideoCards Items="@VideoList" />
             </div>
         </div> 
-    </div> 
-    
-
-
-
-
-   
-   
-
+    }
     
         <div class="news-container" style="padding-top: 30px;">   
             <div class="max-container">
-                    <div class="flex-container">
+                    <div class="content-list-container">
                         @if(isLoading){
                         <div class="horizontal-stack"> 
                         @for (int i = 0; i < 5; i++)
@@ -212,11 +208,14 @@
                         }
                     </div>
                     <div class="poular-article-container" >
-                <PopularArticles Articles="@popularArticleListSlot" selectedTab="@SelectedTab" loading="@isLoading" />
-                            <img src="/qln-images/classifieds/detail_ad.svg"  alt="Product Image" />
+                <PopularArticles Articles="@popularArticleListSlot" selectedMainTab="@_selectedView" selectedTab="@subTabLabel" loading="@isLoading" />
+
+                            <div class="ad-container-style">
+                            <AdBanner BannerItems="NewsSideBanners" />
+                            </div>
                     </div>
                     <div class="grid-padding">
-                    <MudGrid GutterSize="0" Class="pb-3 pt-8">
+                    <MudGrid GutterSize="0" Class="pb-3 pt-8 mt-2">
                          @if(isLoading){
                             @for (int i = 0; i < 9; i++)
                         {
@@ -276,11 +275,9 @@
                     </div>
                 </div>
         </div>      
-
-
 </div>
 
-
+</div>
 <style>
     .card-with-divider {
     position: relative;
@@ -290,7 +287,7 @@
 }
      .carousel-responsive-container {
         width: 100%;
-        padding: 0px 30px;
+        @* padding: 0px 30px; *@
         margin-bottom: 40px;
         box-sizing: border-box;
     }
@@ -316,6 +313,7 @@
         max-width: 1170px;
         margin: 0 auto;
         width: 100%;
+        @* padding: 0px 16px !important; *@
 }
 .responsive-news-container-daily {
         width: 100%;
@@ -359,7 +357,7 @@
     height: auto;
     background-color: #F0F0F0;
     align-self: stretch;
-    margin: 0 14px;
+    margin: 0 5px;
 }
 .video-container{
     width: 100%;
@@ -373,17 +371,26 @@
     align-items: stretch;
     gap: 0; /* spacing will come from the divider itself */
 }
+.ad-container-style{
+     width: 340px;
+    height: 402px;
+}
 .news-tabs {
     width: 100%;
     display: flex;
-    overflow-x: hidden;
+    overflow-x: auto;
     margin: 23px 0px;
     @* padding: 8px 16px; *@
     align-items:center;
     gap: 8px;
     white-space: nowrap;
     justify-content: space-between;
+     scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;
     @* padding: 0px 100px; *@
+}
+.news-tabs::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
 }
 .ad-style{
     padding-right: 100px;
@@ -527,12 +534,19 @@
 
 .flex-container {
     width: 100%;
-    @* justify-content: flex-start; *@
     justify-content: space-between;
+    @* align-items: flex-end; *@
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0px; 
+}
+.content-list-container {
+    width: 100%;
+    justify-content: flex-start;
     align-items: flex-start;
     display: flex;
     flex-wrap: wrap;
-    gap: 15px; 
+    gap: 0px; 
 }
 .skeleton-container{
     justify-content: space-between;
@@ -575,6 +589,17 @@
     @* display: flex; *@
     @* justify-content: center; *@
     @* width: 340px; *@
+}
+@@media (max-width: 430px) {
+.divider-vertical {
+   display: none;
+}
+}
+@@media (max-width: 768px) {
+    .ad-container-style {
+        height: 220px !important; 
+        width: 100% !important;   
+    }
 }
 
 
@@ -664,6 +689,15 @@
     flex-wrap: wrap;
     gap: 10px; 
 }
+.content-list-container {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0px; 
+}
+}
+.news-tabs{
+    padding-left: 0px !important;
 }
 @@media (max-width: 375px) {
     .custom-text {
@@ -672,6 +706,16 @@
         padding-left: 5px;
         padding-right: 5px;    
         font-family: 'Public Sans', sans-serif;
+    }
+    .max-container {
+        max-width: 1170px;
+        margin: 0 auto;
+        width: 100%;
+        padding: 0px 25px;
+    }
+    .ad-container-style {
+        height: 150px !important; 
+        width: 100% !important;   
     }
      .grid-padding {
         padding-right: 16px;
@@ -686,6 +730,13 @@
     flex-wrap: wrap;
     gap: 10px; 
     }
+    .content-list-container {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 0px; 
+}
     .poular-article-container {
         display: flex;
         flex-direction: column;
@@ -703,6 +754,10 @@
         padding-right: 2px;    
         font-family: 'Public Sans', sans-serif;
     }
+    .ad-container-style {
+        height: 150px !important; 
+        width: 100% !important;   
+    }
      .flex-container {
         width: 100%;
         justify-content: flex-start;
@@ -712,6 +767,13 @@
         flex-wrap: wrap;
         gap: 0px; 
     }
+    .content-list-container {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 0px; 
+}
     .poular-article-container {
         display: flex;
         flex-direction: column;
@@ -747,6 +809,14 @@
         padding-right: 5px;
         gap: 0px; 
     }
+    .content-list-container {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    gap: 0px; 
+}
+    
     .grid-padding {
     padding-left: 16px;
     padding-right: 16px;
@@ -754,7 +824,7 @@
     .news-tabs {
     width: 100%;
     display: flex;
-    overflow-x: hidden;
+    overflow-x: auto;
     margin: 23px 0px;
     align-items:center;
     gap: 8px;
@@ -785,6 +855,13 @@
         justify-content: space-between;
         padding: 0px 100px;
     }
+    .content-list-container {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    gap: 0px; 
+}
 }
 @@media (max-width: 425px){
      .poular-article-container {
@@ -798,6 +875,10 @@
      .divider-vertical {
         display: none;
     }
+     .ad-container-style {
+        height: 150px !important; 
+        width: 100% !important;   
+    }
     .flex-container {
         width: 100%;
         justify-content: flex-start;
@@ -805,6 +886,15 @@
         flex-direction: column;
         display: flex;
         flex-wrap: wrap;
+        padding-left: 5px;      
+        padding-right: 5px;
+        gap: 0px; 
+    }
+    .content-list-container {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        flex-direction: column;
         padding-left: 5px;      
         padding-right: 5px;
         gap: 0px; 
