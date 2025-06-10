@@ -14,7 +14,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
     {
         public static void MapAllBackOfficeEndpoints(this WebApplication app)
         {
-            var servicesGroup = app.MapGroup("/api/services/landing").WithTags("ServicesLandingPageMaster");
+            var servicesGroup = app.MapGroup("/api/services/landing").WithTags("ServicesBackOffice");
 
             servicesGroup.MapBackOfficeMasterEndpoints(
               vertical: ConstantValues.Verticals.Services,
@@ -76,7 +76,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
             );
 
 
-            var classifiedsGroup = app.MapGroup("/api/classifieds/landing").WithTags("ClassifiedsLandingPageMaster");
+            var classifiedsGroup = app.MapGroup("/api/classifieds/landing").WithTags("ClassifiedsBackOffice");
 
             classifiedsGroup.MapBackOfficeMasterEndpoints(
               vertical: ConstantValues.Verticals.Classifieds,
