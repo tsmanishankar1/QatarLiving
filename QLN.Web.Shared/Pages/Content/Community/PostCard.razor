@@ -3,7 +3,7 @@
 @using MudBlazor
 @using QLN.Web.Shared.Components.EmptyCard
 
-<MudPaper Class="post-card p-4" Elevation="0" @onclick="() => { if (!IsDetailView) NavigateToPostDetail(); }">
+<MudPaper Class="@($"post-card p-4 {(IsDetailView ? "" : "hover-expand")}")" Elevation="0" @onclick="() => { if (!IsDetailView) NavigateToPostDetail(); }">
     <div class="post-header d-flex justify-space-between align-center">
         <div class="post-tag">@Post.Category</div>
         @if (!IsDetailView)
@@ -206,6 +206,16 @@
         padding: 16px;
         margin-top: 16px;
     }
+
+            .hover-expand {
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .hover-expand:hover {
+        transform: scale(1.02);
+    }
+    
 
     .post-header {
         display: flex;

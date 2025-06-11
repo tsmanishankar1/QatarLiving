@@ -437,7 +437,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                 }
             })
             .WithName("GetLandingByQueue")
-            .WithDescription("Tester method for testing out as yet unmapped Drupal queues - returns a dynamic object so isnt very efficient")
             .WithTags("Content");
 
             return group;
@@ -474,7 +473,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints
                         page,
                         page_size);
 
-                    //AddFullCachingToHeader(context, EVENTS_CACHE_EXPIRY_IN_MINS);
+                    // disabled caching as need to possibly pass accross some client
+                    // headers from the front end for this to be effective.
+
+                    //AddFullCachingToHeader(context, EVENTS_CACHE_EXPIRY_IN_MINS); 
 
                     return Results.Ok(model);
                 }

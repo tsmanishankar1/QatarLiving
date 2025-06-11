@@ -15,19 +15,26 @@ namespace QLN.Web.Shared.Services
             _httpClient = httpClient;
         }
 
-        public async Task<(List<PostListDto> Posts, int TotalCount)> GetPostsAsync(int? forumId, string order, int page, int pageSize)
+        public async Task<(List<PostListDto> Posts, int TotalCount)> GetPostsAsync(int? forumId, string? order, int page, int pageSize)
         {
+
+            var requestUri = $"/api/content/community?page={page}&page_size={pageSize}";
+
+            if(forumId != null)
+            {
+                requestUri += $"&forum_id={forumId}";
+            }
+
+            if(!string.IsNullOrEmpty(order))
+            {
+                requestUri += $"&order={order}";
+            }
+
 
             try
             {
-                var url = $"api/content/community?" +
-                          $"forum_id={forumId}&" +
-                          $"order={order}&" +
-                          $"page={page}&" +
-                          $"page_size={pageSize}";
 
-
-                var response = await _httpClient.GetFromJsonAsync<PostListResponse>(url);
+                var response = await _httpClient.GetFromJsonAsync<PostListResponse>(requestUri);
                 return (response.items, response.total);
             }
             catch (Exception ex)

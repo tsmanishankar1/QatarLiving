@@ -22,6 +22,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
 using QLN.Common.Infrastructure.CustomEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
+using Azure.Core.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -164,6 +165,11 @@ builder.Services.AddSingleton<DaprClient>(_ =>
 builder.Services.AddActors(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
+builder.Services.ConfigureHttpJsonOptions(opts =>
+{
+    opts.SerializerOptions.Converters
+        .Add(new MicrosoftSpatialGeoJsonConverter());
 });
 
 builder.Services.AddResponseCaching();

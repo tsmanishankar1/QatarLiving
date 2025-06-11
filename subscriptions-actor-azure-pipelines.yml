@@ -4,17 +4,17 @@ trigger:
     - qln-dev
   paths:
     include:
-    - search-ms-azure-pipelines.yml
-    - QLN.SearchService/*
+    - subscriptions-actor-azure-pipelines.yml
+    - QLN.Subscriptions.Actor/*
     - QLN.Common/*
 
 variables:
  - name: acrRegistry
    value: qlnv2-ezftf8ehejdadpfn
  - name: appName
-   value: QLN.SearchService
+   value: QLN.Subscriptions.Actor
  - name: appShortName
-   value: search-ms
+   value: subscriptions-actor
 
 pool:
   vmImage: ubuntu-latest

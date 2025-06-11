@@ -6,7 +6,7 @@ trigger:
     include:
     - classifieds-ms-azure-pipelines.yml
     - QLN.Classified.MS/*
-    # - QLN.Common/*
+    - QLN.Common/*
 
 variables:
  - name: acrRegistry
