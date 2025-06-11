@@ -22,6 +22,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
 using QLN.Common.Infrastructure.CustomEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -184,6 +185,7 @@ builder.Services.BannerServicesConfiguration(builder.Configuration);
 builder.Services.AnalyticsServicesConfiguration(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
+builder.Services.EventConfiguration(builder.Configuration);
 builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
 var app = builder.Build();
@@ -218,7 +220,8 @@ classifiedGroup.MapClassifiedsEndpoints();
 
 var servicesGroup = app.MapGroup("/api/services");
 servicesGroup.MapServicesEndpoints();
-
+var eventGroup = app.MapGroup("v2/api/event");
+eventGroup.MapEventEndpoints();
 var contentGroup = app.MapGroup("/api/content");
 contentGroup.MapContentLandingEndpoints();
 

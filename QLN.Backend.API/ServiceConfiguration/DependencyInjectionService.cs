@@ -69,5 +69,10 @@ namespace QLN.Backend.API.ServiceConfiguration
             services.AddTransient<ICompanyService, ExternalCompanyService>();
             return services;
         }
+        public static IServiceCollection EventConfiguration(this IServiceCollection services, IConfiguration config)
+        {
+            services.AddTransient<IEventService, ExternalEventService>();
+            return services;
+        }
     }
 }
