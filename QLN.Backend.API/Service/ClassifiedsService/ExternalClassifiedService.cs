@@ -15,6 +15,7 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Utilities;
 
@@ -28,12 +29,14 @@ namespace QLN.Backend.API.Service.ClassifiedService
         private readonly DaprClient _dapr;
         private readonly IEventlogger _log;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IFileStorageBlobService _fileStorageBlob;
 
-        public ExternalClassifiedService(DaprClient dapr, IEventlogger log, IHttpContextAccessor httpContextAccessor)
+        public ExternalClassifiedService(DaprClient dapr, IEventlogger log, IHttpContextAccessor httpContextAccessor, IFileStorageBlobService fileStorageBlob)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
             _log = log ?? throw new ArgumentNullException(nameof(log));
             _httpContextAccessor = httpContextAccessor;
+            _fileStorageBlob = fileStorageBlob;
         }
 
         public async Task<Category> AddCategory(string categoryName, CancellationToken cancellationToken = default)
@@ -834,6 +837,64 @@ namespace QLN.Backend.API.Service.ClassifiedService
         {
             throw new NotImplementedException();
         }
+
+        public async Task<ItemsAdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.UserId == Guid.Empty) throw new ArgumentException("UserId is required.");
+            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+            if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
+                throw new ArgumentException("At least one ad image is required.");
+            if (string.IsNullOrWhiteSpace(dto.CertificateBase64))
+                throw new ArgumentException("Certificate image is required.");
+
+            try
+            {
+                var adId = Guid.NewGuid();
+                
+                var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
+                    ? dto.CertificateFileName
+                    : $"certificate_{dto.UserId}_{adId}.jpg";
+                var certUrl = await _fileStorageBlob.SaveBase64File(dto.CertificateBase64, certFileName, "classifieds-images", cancellationToken);
+                dto.CertificateBase64 = null;
+                dto.CertificateFileName = certUrl; 
+
+                // Upload ad images
+                var imageUrls = new List<string>();
+                for (int i = 0; i < dto.AdImagesBase64.Count; i++)
+                {
+                    var customName = (dto.AdImageFileNames.Count > i && !string.IsNullOrWhiteSpace(dto.AdImageFileNames[i]))
+                        ? dto.AdImageFileNames[i]
+                        : $"Itemsad_{dto.UserId}_{adId}_{i + 1}.jpg";
+
+                    var url = await _fileStorageBlob.SaveBase64File(dto.AdImagesBase64[i], customName, "classifieds-images", cancellationToken);
+                    imageUrls.Add(url);
+                }
+
+                if (imageUrls.Count == 0)
+                    throw new InvalidOperationException("Failed to upload any ad images.");
+
+                dto.AdImagesBase64 = null;
+                dto.AdImageFileNames = imageUrls;
+
+                var result = await _dapr.InvokeMethodAsync<ClassifiedItems, ItemsAdCreatedResponseDto>(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    $"api/classified/items/post-by-id",  
+                    dto,
+                    cancellationToken
+                );
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                throw;
+            }
+        }
+
+
 
         public async Task<CollectiblesResponse> GetCollectibles(string userId, CancellationToken cancellationToken = default)
         {
