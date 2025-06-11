@@ -1,0 +1,105 @@
+@page "/content/daily/backoffice"
+@inherits DailyBackOfficeBase
+@using QLN.Web.Shared.Components.BreadCrumb
+@using QLN.Web.Shared.Pages.Content.BackOffice.Daily.TopStoryBOCard
+
+
+
+<div style="width: 100%;background-color: var(--color-secondary-background);">
+     <div class="max-container">
+    <Breadcrumb Items="breadcrumbItems" />
+     <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px;">
+        <div>
+            <MudText Typo="Typo.h6" Class="font-weight-bold" Style="color: #0b2b4c;">
+                Living Daily Back Office
+            </MudText>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.PlayArrow">
+                Preview
+            </MudButton>
+
+            <MudButton Variant="Variant.Filled" Style="background-color: var(--color-accent); color: white;">
+                Publish Online
+            </MudButton>
+        </div>
+    </div>
+    <h3 class="section-heading">
+                <span class="accent-bar"></span>Hero
+            </h3>
+     </div>
+     <div class="max-container">
+            <MudGrid GutterSize="5px" Style="margin-bottom: 20px;">
+                <MudItem xs="12" md="8">
+                    <MudGrid GutterSize="10px">
+                        
+                            <MudItem xs="12" sm="6" md="6">
+                                <TopStoryBOCard  />
+                            </MudItem>
+                            <MudItem xs="12" sm="6" md="6">
+                                @* <TopEventCard Item="@HighlightedEvent" /> *@
+                                <TopStoryBOCard  />
+                            </MudItem>
+                        
+                    </MudGrid>
+
+
+                </MudItem>
+                <MudItem xs="12" md="4">
+                        @* <DailyMoreArticle Items="@MoreArticles" isLoading="isLoading" /> *@
+                </MudItem>
+            </MudGrid>
+
+            @* <MudGrid GutterSize="16px">
+
+                @if (TopStories.Count() > 0)
+                {
+                    <!-- Left column: news cards -->
+                    <MudItem xs="12" md="9" lg="9">
+                        <MudGrid GutterSize="16px">
+                            <MudVirtualize Context="item" T="ContentPost" Items="TopStories">
+                                <MudItem xs="12" sm="6" md="4" lg="4">
+                                        <DailyNewsCard Item="item" IsHorizontal="false" />
+                                </MudItem>
+                            </MudVirtualize>
+
+                        </MudGrid>
+                    </MudItem>
+                }
+
+                <!-- Right column: newsletter -->
+                <MudItem xs="12" md="3" lg="3">
+                    <DailyNewsLetter />
+                </MudItem>
+            </MudGrid> *@
+
+
+            @* <DailyIntheKnow /> *@
+        </div>
+ </div>
+
+ <style>
+    .max-container {
+        max-width: 1170px;
+        margin: 0 auto;
+        width: 100%;
+    }
+    .section-heading {
+        display: flex;
+        align-items: center;
+        font-family: 'Public Sans', sans-serif;
+        font-size: 25px;
+        font-weight: 600;
+        color: var(--color-primary);
+    }
+
+    .accent-bar {
+        display: inline-block;
+        width: 6px;
+        height: 26px;
+        background-color: var(--color-primary);
+        margin-right: 8px;
+    }
+
+ </style>
