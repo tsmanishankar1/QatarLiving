@@ -44,5 +44,10 @@ namespace QLN.Common.Infrastructure.Constants
             public const string Classifieds = "classifieds";
             public const string Services = "Services";
         }
+        public static class V2ContentNews
+        {
+            public const string v2contentnews = "v2content";
+            public const string v2contentServiceAppId = "qln-content-ms";
+        }
     }
 }

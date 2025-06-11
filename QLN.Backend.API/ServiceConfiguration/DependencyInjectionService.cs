@@ -10,6 +10,8 @@ using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IBannerService;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.ISearchService;
+using QLN.Common.Infrastructure.IService.V2IContent;
+using QLN.Backend.API.Service.V2ContentService;
 
 namespace QLN.Backend.API.ServiceConfiguration
 {
@@ -67,6 +69,11 @@ namespace QLN.Backend.API.ServiceConfiguration
         public static IServiceCollection CompanyConfiguration(this IServiceCollection services, IConfiguration config)
         {
             services.AddTransient<ICompanyService, ExternalCompanyService>();
+            return services;
+        }
+        public static IServiceCollection ContentConfiguration(this IServiceCollection services, IConfiguration config)
+        {
+            services.AddTransient<IV2ContentNews, V2ExternalContentService>();
             return services;
         }
     }

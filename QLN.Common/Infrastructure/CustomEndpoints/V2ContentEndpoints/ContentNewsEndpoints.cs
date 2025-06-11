@@ -1,16 +1,133 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
+using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.IService.V2IContent;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 {
-    internal class ContentNewsEndpoints
+    public static class ContentNewsEndpoints
     {
-        private const int V2CATEGORY_CACHE_EXPIRY_IN_MINS = 60;
-        private const int V2NEWS_CACHE_EXPIRY_IN_MINS = 5;
-        private const int V2COMMUNITY_CACHE_EXPIRY_IN_MINS = 10;
-        private const int V2EVENTS_CACHE_EXPIRY_IN_MINS = 10;
+        // Extension method to register endpoint and return RouteGroupBuilder for chaining
+        public static RouteGroupBuilder MapContentNewsEndpoints(this RouteGroupBuilder group)
+        {
+            group.MapPost("/content/news/process", async Task<Results<
+                Ok<NewsSummary>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                ContentNewsDto dto,
+                IV2ContentNews newsService,
+                HttpContext context
+            ) =>
+            {
+                string userId = context.User?.Identity?.Name ?? ""; 
+
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "User ID is required.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+
+                if (dto == null)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "ContentNewsDto cannot be null.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+
+                try
+                {
+                    var summary = await newsService.ProcessNewsContentAsync(dto, userId);
+                    return TypedResults.Ok(summary);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Processing Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+            .WithName("ProcessNewsContent")
+            .WithTags("Content News")
+            .WithSummary("Process submitted news content")
+            .WithDescription("Processes ContentNewsDto by category and topic, and returns a summary.")
+            .RequireAuthorization()
+            .Produces<NewsSummary>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/content/news/process-by-id", async Task<Results<
+                Ok<NewsSummary>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                ContentNewsRequestByIdDto dto,
+                IV2ContentNews newsService,
+                HttpContext context
+            ) =>
+            {
+                if (string.IsNullOrWhiteSpace(dto?.UserId))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "User ID is required.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+
+                if (dto.NewsContent == null)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "ContentNewsDto cannot be null.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+
+                try
+                {
+                    var summary = await newsService.ProcessNewsContentAsync(dto.NewsContent, dto.UserId);
+                    return TypedResults.Ok(summary);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Processing Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+            .WithName("ProcessNewsContentById")
+            .WithTags("Content News")
+            .WithSummary("Process news content by explicit user ID")
+            .WithDescription("Processes news content using an explicit user ID provided in the request.")
+            .RequireAuthorization()
+            .Produces<NewsSummary>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group; 
+        }
     }
 }

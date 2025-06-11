@@ -1,11 +1,22 @@
+﻿using Dapr.Client;
+using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
+using QLN.Common.Infrastructure.IService.V2IContent;
+using QLN.Content.MS.Service.NewsInternalService;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+//jwt
 
+// Add services to the container.
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddAuthorization();
+
+builder.Services.AddDaprClient();
+
+// ✅ Register your internal service with DI
+builder.Services.AddScoped<IV2ContentNews, NewsInternalService>();
 
 var app = builder.Build();
 
@@ -21,5 +32,10 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// ✅ Map custom minimal endpoints
+app.MapGroup("/api/v2").MapContentNewsEndpoints(); // Adjust prefix if needed
+app.UseHttpsRedirection();
+app.UseAuthorization();
 
 app.Run();

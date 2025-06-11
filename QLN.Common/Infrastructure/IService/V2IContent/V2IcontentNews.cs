@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using QLN.Common.DTO_s;
 
 namespace QLN.Common.Infrastructure.IService.V2IContent
 {
-    internal class V2IcontentNews
+    public interface IV2ContentNews
     {
+        Task<NewsSummary> ProcessNewsContentAsync(ContentNewsDto dto, string userId, CancellationToken cancellationToken = default);
     }
 }
