@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
+using System.Security.Claims;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
 {
@@ -12,17 +13,46 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
     {
         public static RouteGroupBuilder MapCreateEventEndpoints(this RouteGroupBuilder group)
         {
-            group.MapPost("/create", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>>
+            group.MapPost("/create", async Task<Results<
+            Ok<string>,
+            ForbidHttpResult,
+            BadRequest<ProblemDetails>,
+            ProblemHttpResult>>
             (
-                ContentEventDto dto,
-                IEventService service,
-                CancellationToken cancellationToken
+            ContentEventDto dto,
+            IEventService service,
+            HttpContext httpContext,
+            CancellationToken cancellationToken
             ) =>
             {
                 try
                 {
+                    var userId = httpContext.User.FindFirst("sub")?.Value
+                    ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                    if (!Guid.TryParse(userId, out var userGuid))
+                        return TypedResults.Forbid();
+
+                    var userName = httpContext.User.FindFirst("preferred_username")?.Value
+                                ?? httpContext.User.FindFirst("name")?.Value
+                                ?? httpContext.User.Identity?.Name;
+
+                    if (string.IsNullOrWhiteSpace(userName))
+                        return TypedResults.Forbid();
+
+                    dto.user_name = userName;
+
                     var result = await service.CreateEvent(dto, cancellationToken);
                     return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -32,7 +62,60 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             .WithName("CreateEvent")
             .WithTags("Event")
             .WithSummary("Create Event")
-            .WithDescription("Creates a new event and saves it via Dapr state store.");
+            .WithDescription("Creates a new event and sets the user ID from the token.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/createByUserId", async Task<Results<
+            Ok<string>,
+            ForbidHttpResult,
+            BadRequest<ProblemDetails>,
+            ProblemHttpResult>>
+            (
+            ContentEventDto dto,
+            IEventService service,
+            HttpContext httpContext,
+            CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    if (dto.user_name == string.Empty)
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "UserId must be provided in the payload.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+
+                    var result = await service.CreateEvent(dto, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .ExcludeFromDescription()
+            .WithName("CreateEvent")
+            .WithTags("Event")
+            .WithSummary("Create Event")
+            .WithDescription("Creates a new event and sets the user ID from the token.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapGet("/getAll", async Task<Results<Ok<List<ContentEventDto>>, ProblemHttpResult>>
             (

@@ -4,7 +4,7 @@ using QLN.Common.Infrastructure.IService.IContentService;
 using System.Text;
 using System.Text.Json;
 
-namespace QLN.Backend.API.Service.ContentService
+namespace QLN.Backend.API.Service.V2ContentService
 {
     public class ExternalEventService : IEventService
     {
@@ -22,7 +22,7 @@ namespace QLN.Backend.API.Service.ContentService
         {
             try
             {
-                var url = "/v2/api/event/create";
+                var url = "/v2/api/event/createByUserId";
 
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, AppId, url);
                 request.Content = new StringContent(

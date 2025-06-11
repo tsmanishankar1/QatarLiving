@@ -10,7 +10,7 @@ namespace QLN.Common.DTO_s
     {
         public Guid id { get; set; }
         public string image_url { get; set; }
-        public string author_name { get; set; }
+        public string user_name { get; set; }
         public string title { get; set; }
         public string slug { get; set; }
         public EventCategory category { get; set; }
