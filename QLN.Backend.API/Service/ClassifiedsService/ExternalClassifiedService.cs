@@ -848,6 +848,8 @@ namespace QLN.Backend.API.Service.ClassifiedService
             if (string.IsNullOrWhiteSpace(dto.CertificateBase64))
                 throw new ArgumentException("Certificate image is required.");
 
+            var uploadedBlobKeys = new List<string>();
+
             try
             {
                 var adId = Guid.NewGuid();
@@ -856,8 +858,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     ? dto.CertificateFileName
                     : $"certificate_{dto.UserId}_{adId}.jpg";
                 var certUrl = await _fileStorageBlob.SaveBase64File(dto.CertificateBase64, certFileName, "classifieds-images", cancellationToken);
+                uploadedBlobKeys.Add(certFileName);
                 dto.CertificateBase64 = null;
-                dto.CertificateFileName = certUrl; 
+                dto.CertificateFileName = certUrl;
+
+                dto.AdImageFileNames ??= new List<string>();
 
                 // Upload ad images
                 var imageUrls = new List<string>();
@@ -869,6 +874,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                     var url = await _fileStorageBlob.SaveBase64File(dto.AdImagesBase64[i], customName, "classifieds-images", cancellationToken);
                     imageUrls.Add(url);
+                    uploadedBlobKeys.Add(customName);
                 }
 
                 if (imageUrls.Count == 0)
@@ -877,10 +883,12 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 dto.AdImagesBase64 = null;
                 dto.AdImageFileNames = imageUrls;
 
+                _log.LogTrace($"Calling internal service with CertificateUrl: {dto.CertificateFileName} and {imageUrls.Count} images");
+
                 var result = await _dapr.InvokeMethodAsync<ClassifiedItems, ItemsAdCreatedResponseDto>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
-                    $"api/classified/items/post-by-id",  
+                    $"api/classifieds/items/post-by-id",  
                     dto,
                     cancellationToken
                 );
@@ -890,12 +898,22 @@ namespace QLN.Backend.API.Service.ClassifiedService
             catch (Exception ex)
             {
                 _log.LogException(ex);
-                throw;
+                foreach (var blobName in uploadedBlobKeys)
+                {
+                    try
+                    {
+                        await _fileStorageBlob.DeleteFile(blobName, "classifieds-images", cancellationToken);
+                    }
+                    catch (Exception rollbackEx)
+                    {
+                        _log.LogException(rollbackEx);
+                    }
+                }
+
+                throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
             }
-        }
-
-
-
+        }        
+        
         public async Task<CollectiblesResponse> GetCollectibles(string userId, CancellationToken cancellationToken = default)
         {
             try

@@ -39,5 +39,6 @@ namespace QLN.Common.DTO_s
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public Guid UserId { get; set; }
+        public AdStatus Status { get; set; }
     }
 }

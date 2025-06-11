@@ -1697,10 +1697,17 @@ namespace QLN.Classified.MS.Service
             if (string.IsNullOrWhiteSpace(dto.CertificateFileName))
                 throw new ArgumentException("Certificate URL must be provided.");
 
+            var adId = Guid.NewGuid();
+            var key = $"ad-{adId}";
+
             try
-            {
-                var adId = Guid.NewGuid();
-              
+            {                                            
+                var existing = await _dapr.GetStateAsync<object>(UnifiedStore, key);
+                if (existing != null)
+                {
+                    throw new InvalidOperationException($"Ad with key {key} already exists.");
+                }
+
                 var adItem = new
                 {
                     Id = adId,
@@ -1733,10 +1740,10 @@ namespace QLN.Classified.MS.Service
                     dto.Latitude,
                     dto.Longitude,
                     dto.UserId,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    Status = AdStatus.Draft
                 };
-
-                var key = $"ad-{adId}";
+                
                 var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
                 index.Add(key);
 
@@ -1752,6 +1759,11 @@ namespace QLN.Classified.MS.Service
                     ImageUrls = dto.AdImageFileNames,
                     CreatedAt = DateTime.UtcNow
                 };
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
+            {
+                _logger.LogWarning(ex, "Duplicate ad insert attempt.");
+                throw new InvalidOperationException("Ad already exists. Conflict occurred during ad creation.", ex);
             }
             catch (ArgumentException ex)
             {
@@ -1769,5 +1781,6 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while creating the ad. Please try again later.", ex);
             }
         }
+
     }
 }
