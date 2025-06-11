@@ -14,7 +14,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
     {
         public static void MapAllBackOfficeEndpoints(this WebApplication app)
         {
-            var servicesGroup = app.MapGroup("/api/services/landing").WithTags("ServicesLandingPageMaster");
+            var servicesGroup = app.MapGroup("/api/services/landing").WithTags("ServicesBackOffice");
 
             servicesGroup.MapBackOfficeMasterEndpoints(
               vertical: ConstantValues.Verticals.Services,
@@ -47,8 +47,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
 
             servicesGroup.MapBackOfficeMasterEndpoints(
                 vertical: ConstantValues.Verticals.Services,
+                routeSegment: "social-post",
+                entityType: ConstantValues.EntityTypes.SocialPostSection
+            );
+
+            servicesGroup.MapBackOfficeMasterEndpoints(
+                vertical: ConstantValues.Verticals.Services,
                 routeSegment: "social-links",
                 entityType: ConstantValues.EntityTypes.SocialMediaLink
+            );
+
+            servicesGroup.MapBackOfficeMasterEndpoints(
+                vertical: ConstantValues.Verticals.Services,
+                routeSegment: "social-videos",
+                entityType: ConstantValues.EntityTypes.SocialMediaVideos
             );
 
             servicesGroup.MapBackOfficeMasterEndpoints(
@@ -64,7 +76,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
             );
 
 
-            var classifiedsGroup = app.MapGroup("/api/classifieds/landing").WithTags("ClassifiedsLandingPageMaster");
+            var classifiedsGroup = app.MapGroup("/api/classifieds/landing").WithTags("ClassifiedsBackOffice");
 
             classifiedsGroup.MapBackOfficeMasterEndpoints(
               vertical: ConstantValues.Verticals.Classifieds,
@@ -76,6 +88,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
                vertical: ConstantValues.Verticals.Classifieds,
                routeSegment: "featured-items",
                entityType: ConstantValues.EntityTypes.FeaturedItems
+            );
+
+            classifiedsGroup.MapBackOfficeMasterEndpoints(
+               vertical: ConstantValues.Verticals.Classifieds,
+               routeSegment: "featured-stores",
+               entityType: ConstantValues.EntityTypes.FeaturedStores
             );
 
             classifiedsGroup.MapBackOfficeMasterEndpoints(
@@ -97,8 +115,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
 
             classifiedsGroup.MapBackOfficeMasterEndpoints(
                 vertical: ConstantValues.Verticals.Classifieds,
+                routeSegment: "social-post",
+                entityType: ConstantValues.EntityTypes.SocialPostSection
+            );
+
+            classifiedsGroup.MapBackOfficeMasterEndpoints(
+                vertical: ConstantValues.Verticals.Classifieds,
                 routeSegment: "social-links",
                 entityType: ConstantValues.EntityTypes.SocialMediaLink
+            );
+
+            classifiedsGroup.MapBackOfficeMasterEndpoints(
+                vertical: ConstantValues.Verticals.Classifieds,
+                routeSegment: "social-videos",
+                entityType: ConstantValues.EntityTypes.SocialMediaVideos
             );
 
             classifiedsGroup.MapBackOfficeMasterEndpoints(

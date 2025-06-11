@@ -16,7 +16,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
         {
             const string TAG = "Analytics";
 
-            // ─── GET SUMMARY ─────────────────────────────────────────────────
             group.MapGet("/getAnalytics/{section}/{entityId}", async (
                         [FromRoute] string section,
                         [FromRoute] string entityId,
@@ -91,7 +90,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status502BadGateway)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            // ─── POST/UPSERT ────────────────────────────────────────────────
             group.MapPost("/upsertAnalytics", async (
                         [FromBody] AnalyticsEventRequest req,
                         IAnalyticsService svc,
