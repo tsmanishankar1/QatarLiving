@@ -1,4 +1,5 @@
 ﻿using Dapr.Client;
+using Microsoft.AspNetCore.Identity;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
@@ -16,13 +17,15 @@ namespace QLN.Backend.API.Service.CompanyService
         private readonly ILogger<ExternalCompanyService> _logger;
         private readonly IExtendedEmailSender<ApplicationUser> _emailSender;
         private readonly IFileStorageBlobService _blobStorage;
+        private readonly UserManager<ApplicationUser> _userManager;
         public ExternalCompanyService(DaprClient dapr, ILogger<ExternalCompanyService> logger, 
-            IExtendedEmailSender<ApplicationUser> emailSender, IFileStorageBlobService blobStorage)
+            IExtendedEmailSender<ApplicationUser> emailSender, IFileStorageBlobService blobStorage, UserManager<ApplicationUser> userManager)
         {
             _dapr = dapr;
             _logger = logger;
             _emailSender = emailSender;
             _blobStorage = blobStorage;
+            _userManager = userManager;
         }
 
         public async Task<string> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
@@ -195,7 +198,9 @@ namespace QLN.Backend.API.Service.CompanyService
                 if (company == null)
                     throw new KeyNotFoundException($"Company with ID {dto.CompanyId} not found.");
 
-                var shouldSendEmail = !company.IsVerified == true && (dto.IsVerified ?? false) && !string.IsNullOrWhiteSpace(company.Email);
+                var wasNotVerified = !company.IsVerified.GetValueOrDefault(false);
+                var isNowVerified = dto.IsVerified.GetValueOrDefault(false);
+                var shouldSendEmail = wasNotVerified && isNowVerified && !string.IsNullOrWhiteSpace(company.Email);
 
                 var requestDto = new CompanyApproveDto
                 {
@@ -218,11 +223,23 @@ namespace QLN.Backend.API.Service.CompanyService
                 {
                     var subject = "Company Profile Approved - Qatar Living";
                     var htmlBody = _emailSender.GetApprovalEmailTemplate(company.BusinessName);
-
                     await _emailSender.SendEmail(company.Email, subject, htmlBody);
                     _logger.LogInformation("Approval email sent to {Email}", company.Email);
                 }
-
+                if (isNowVerified)
+                {
+                    var companyOwnerId = company.UserId.ToString();
+                    if (!string.IsNullOrWhiteSpace(companyOwnerId))
+                    {
+                        var user = await _userManager.FindByIdAsync(companyOwnerId);
+                        if (user != null)
+                        {
+                            user.IsCompany = true;
+                            user.UpdatedAt = DateTime.UtcNow;
+                            var updateResult = await _userManager.UpdateAsync(user);
+                        }
+                    }
+                }
                 var rawJson = await response.Content.ReadAsStringAsync();
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
             }

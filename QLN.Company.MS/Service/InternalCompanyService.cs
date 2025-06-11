@@ -286,8 +286,11 @@ namespace QLN.Company.MS.Service
         {
             try
             {
-                var allCompanies = await GetAllCompanies(cancellationToken);
-                var company = allCompanies.FirstOrDefault(c => c.Id == dto.CompanyId);
+                var company = await _dapr.GetStateAsync<CompanyProfileDto>(
+                            ConstantValues.CompanyStoreName,
+                            dto.CompanyId.ToString(),
+                            cancellationToken: cancellationToken
+                        );
                 if (company == null)
                     throw new KeyNotFoundException($"Company with ID {dto.CompanyId} not found.");
 
