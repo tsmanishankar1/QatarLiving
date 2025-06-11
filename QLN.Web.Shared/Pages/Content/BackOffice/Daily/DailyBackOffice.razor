@@ -2,25 +2,28 @@
 @inherits DailyBackOfficeBase
 @using QLN.Web.Shared.Components.BreadCrumb
 @using QLN.Web.Shared.Pages.Content.BackOffice.Daily.TopStoryBOCard
+@using QLN.Web.Shared.Pages.Content.BackOffice.Daily.TopEventBOCard
+@using QLN.Web.Shared.Pages.Content.BackOffice.Daily.MoreArticleBOCard
+@using QLN.Web.Shared.Pages.Content.BackOffice.Daily.HighlightsBOCard
 
 
 
 <div style="width: 100%;background-color: var(--color-secondary-background);">
      <div class="max-container">
     <Breadcrumb Items="breadcrumbItems" />
-     <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px;">
+     <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0px; padding-bottom: 40px;">
         <div>
-            <MudText Typo="Typo.h6" Class="font-weight-bold" Style="color: #0b2b4c;">
+            <MudText Typo="Typo.h6" Class="font-weight-bold" Style="color: var(--color-primary); font-size: 25px; font-weight: 600;">
                 Living Daily Back Office
             </MudText>
         </div>
 
         <div style="display: flex; gap: 12px;">
-            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.PlayArrow">
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.PlayArrow" Style="text-transform: none;">
                 Preview
             </MudButton>
 
-            <MudButton Variant="Variant.Filled" Style="background-color: var(--color-accent); color: white;">
+            <MudButton Variant="Variant.Filled" Style="background-color: var(--color-accent); color: white; text-transform: none;" OnClick="@OpenDialogAsync">
                 Publish Online
             </MudButton>
         </div>
@@ -39,7 +42,7 @@
                             </MudItem>
                             <MudItem xs="12" sm="6" md="6">
                                 @* <TopEventCard Item="@HighlightedEvent" /> *@
-                                <TopStoryBOCard  />
+                                <TopEventBOCard  />
                             </MudItem>
                         
                     </MudGrid>
@@ -47,35 +50,41 @@
 
                 </MudItem>
                 <MudItem xs="12" md="4">
-                        @* <DailyMoreArticle Items="@MoreArticles" isLoading="isLoading" /> *@
+                        <MoreArticleBOCard />
                 </MudItem>
             </MudGrid>
 
-            @* <MudGrid GutterSize="16px">
-
-                @if (TopStories.Count() > 0)
-                {
+            <MudGrid GutterSize="16px">
                     <!-- Left column: news cards -->
                     <MudItem xs="12" md="9" lg="9">
                         <MudGrid GutterSize="16px">
-                            <MudVirtualize Context="item" T="ContentPost" Items="TopStories">
+                            @* <MudVirtualize Context="item" T="ContentPost" Items="TopStories"> *@
                                 <MudItem xs="12" sm="6" md="4" lg="4">
-                                        <DailyNewsCard Item="item" IsHorizontal="false" />
+                                    <TopStoryBOCard IsMiniCard="true" />
                                 </MudItem>
-                            </MudVirtualize>
+                                <MudItem xs="12" sm="6" md="4" lg="4">
+                                    <TopStoryBOCard IsMiniCard="true" />
+                                </MudItem>
+                                <MudItem xs="12" sm="6" md="4" lg="4">
+                                    <TopStoryBOCard IsMiniCard="true" />
+                                </MudItem>
+                            @* </MudVirtualize> *@
 
                         </MudGrid>
                     </MudItem>
-                }
-
                 <!-- Right column: newsletter -->
-                <MudItem xs="12" md="3" lg="3">
-                    <DailyNewsLetter />
-                </MudItem>
-            </MudGrid> *@
+            </MudGrid> 
 
+             <div style="padding: 90px 0px; gap: 30px;">
+             <HighlightsBOCard QueueLabel="FIFA Arab Cup" ListOfItems="Items" />
+             <HighlightsBOCard QueueLabel="Ramadan" ListOfItems="Items" />
+             <HighlightsBOCard QueueLabel="Moving to Qatar" ListOfItems="Items" />
+             <HighlightsBOCard QueueLabel="Moving to Qatar" ListOfItems="Items" />
+             <HighlightsBOCard QueueLabel="Moving to Qatar" ListOfItems="Items" />
+             </div>
+           
+    
 
-            @* <DailyIntheKnow /> *@
         </div>
  </div>
 
@@ -101,5 +110,11 @@
         background-color: var(--color-primary);
         margin-right: 8px;
     }
+    .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
 
  </style>

@@ -1,13 +1,13 @@
-@inherits TopStoryBOCardBase
-<div class="@($"top-story-list-card {(IsMiniCard ? "mini-card" : "")}")">
+@inherits TopEventBOCardBase
+<div class="top-story-list-card" >
     <div class="top-story-image-wrapper" style="position: relative; display: inline-block;">
        <img src="/qln-images/card1.png" class="top-story-card-img"
                 alt="Top Story Image" />
                  <MudButton StartIcon="@Icons.Material.Filled.Edit"
-               Variant="Variant.Filled"
-               Style="position: absolute; top: 22px; right: 22px; background-color: var(--color-accent); color: white; text-transform: none;">
-            Change
-        </MudButton>
+                Variant="Variant.Filled"
+                Style="position: absolute; top: 22px; right: 22px; background-color: var(--color-accent); color: white; text-transform: none;">
+                Change
+                </MudButton>
     </div>
     <div class="top-story-card-body">
             <h3 class="top-story-title">
@@ -32,9 +32,15 @@
         cursor: pointer;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-    .mini-card {
-    max-width: 274px; 
-    height: 236px;     
+    .Top-event-date {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        background: #0071AF;
+        color: white;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 500;
     }
 
     .top-story-list-card:hover {
