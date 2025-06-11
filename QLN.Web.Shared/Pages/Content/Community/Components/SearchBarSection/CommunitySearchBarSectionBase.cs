@@ -2,13 +2,14 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Models;
+using QLN.Web.Shared.Services;
 
 public class CommunitySearchBarSectionBase : ComponentBase
 {
 
     [Inject] protected ISnackbar Snackbar { get; set; }
     [Inject] protected ICommunityService CommunityService { get; set; }
-
+    [Inject] protected ISearchService CommunitySearchService { get; set; }
     [Parameter] public EventCallback<Dictionary<string, object>> OnSearchCompleted { get; set; }
     [Parameter] public EventCallback<string> OnCategoryChanged { get; set; }
 
@@ -48,22 +49,13 @@ public class CommunitySearchBarSectionBase : ComponentBase
 
     protected async Task PerformSearch()
     {
-        loading = true;
+        
 
-        var payload = new Dictionary<string, object>
-        {
-            ["text"] = searchText
-        };
+       
+            //var success = await CommunitySearchService.PerformSearchAsync(searchText);
+            Snackbar.Add("More features are coming soon!", Severity.Success);
 
-        if (!string.IsNullOrWhiteSpace(selectedCategory))
-        {
-            payload["filters"] = new Dictionary<string, object>
-            {
-                ["Category"] = selectedCategory
-            };
-        }
-
-        await OnSearchCompleted.InvokeAsync(payload);
-
+        
     }
+  
 }

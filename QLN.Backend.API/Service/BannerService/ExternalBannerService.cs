@@ -12,9 +12,9 @@ namespace QLN.Backend.API.Service.BannerService
         //    return await httpClient.GetFromJsonAsync<BannerResponse>(DrupalContentConstants.BannerPath, cancellationToken);
         //}
 
-        public async Task<dynamic?> GetBannersAsync(CancellationToken cancellationToken)
+        public async Task<BannerResponse?> GetBannersAsync(CancellationToken cancellationToken)
         {
-            return await httpClient.GetFromJsonAsync<dynamic>(DrupalContentConstants.BannerPath, cancellationToken);
+            return await httpClient.GetFromJsonAsync<BannerResponse>(DrupalContentConstants.BannerPath, cancellationToken);
         }
     }
 }

@@ -1,61 +1,59 @@
 @inherits EventListBase
-
 @using QLN.Web.Shared.Components.EventListCard
 @using QLN.Web.Shared.Components.PriceSelect
 @using QLN.Web.Shared.Components.PaginationFooter
-@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.Skeletons.FeaturedItemSkeleton
+@using QLN.Web.Shared.Pages.Content.Events.EventsList
 @using QLN.Web.Shared.Components.EmptyCard
 
 <div class="header-event-list">
     <div class="event-header">
-        <h1 class="event-title">Events in Qatar (@FilteredEventItems.Count() results)</h1>
-        <div class="sort-section">
+        <h1 class="event-title">Events in Qatar (@TotalItems results)</h1>
+        @* <div class="sort-section">
             <label class="sort-label">Sort by:</label>
             <div class="sort-dropdown">
                 <PriceSelect Label="" Placeholder="Default" Items="SortOptions" SelectedId="@SelectedSort"
                     SelectedIdChanged="OnSortChanged" GetId="option => option.Id" GetLabel="option => option.Label" />
             </div>
-        </div>
+        </div> *@
     </div>
 
     <MudGrid GutterSize="3">
         @if (Loading)
         {
-            @for (int i = 0; i < 9; i++)
+            @for (int i = 0; i < PageSize; i++)
             {
                 <MudItem xs="12" sm="6" md="4">
-                    <ItemSkeletonCard />
+                    <EventSkeletonCard />
                 </MudItem>
             }
         }
-        else if (FilteredEventItems == null || !FilteredEventItems.Any())
+        else if (Items == null || !Items.Any())
         {
             <MudItem xs="12">
-                <EmptyCard Title="No featured items found."
-                    Subtitle="Please check back later or explore other categories." />
+                <EmptyCard Title="No items found for the selected filters."
+                    Subtitle="Try adjusting the filters or explore different categories." />
             </MudItem>
         }
         else
         {
-            @foreach (var eventItem in PagedFilteredEventItems)
-            {
+            <MudVirtualize Context="eventItem" Items="Items">
                 <MudItem xs="12" sm="6" md="4">
                     <EventListCard Item="@eventItem" OnClick="HandleCardClick" />
                 </MudItem>
-            }
+            </MudVirtualize>
         }
     </MudGrid>
-    @if (!Loading && Items?.Any() == true)
+    @if (Items?.Any() == true)
     {
-        <PaginationFooter TotalItems="@FilteredEventItems.Count()" CurrentPage="@CurrentPage" PageSize="@PageSize"
-            OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
+        <PaginationFooter TotalItems="@TotalItems" CurrentPage="@CurrentPage" PageSize="@PageSize"
+            OnPageChange="HandlePageChange" OnPageSizeChange="HandlePageSizeChange" />
     }
 </div>
 
 <style>
     .header-event-list {
         padding: 1rem 3rem;
-        font-family: 'Public Sans';
+        font-family: 'Public Sans', sans-serif;
     }
 
     .event-header {

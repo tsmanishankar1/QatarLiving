@@ -28,12 +28,36 @@ namespace QLN.Common.Infrastructure.DTO_s
 
         [JsonPropertyName($"{QueuePrefix}_most_popular_articles")]
         public BaseQueueResponse<ContentPost> MostPopularArticles { get; set; }
+
+        [JsonPropertyName($"{QueuePrefix}_watch_on_qatar_living")]
+        public BaseQueueResponse<ContentVideo> WatchOnQatarLiving { get; set; }
     }
 
     public class QlnNewsLifestyleTravelLeisurePageResponse
     {
         [JsonPropertyName(DrupalContentConstants.QlnNewsLifestyleTravelLeisure)]
-        public QlnNewsLifestyleTravelLeisure QlnNewsLifestyleTravelLeisure { get; set; }
+        public QlnNewsLifestyleTravelLeisure News { get; set; }
+
+        public static explicit operator GenericNewsPageResponse(QlnNewsLifestyleTravelLeisurePageResponse source)
+        {
+            if (source.News == null) return new GenericNewsPageResponse
+            {
+                News = new GenericNewsPage()
+            };
+
+            return new GenericNewsPageResponse
+            {
+                News = new GenericNewsPage
+                {
+                    TopStory = source.News.TopStory,
+                    Articles1 = source.News.Articles1,
+                    Articles2 = source.News.Articles2,
+                    MoreArticles = source.News.MoreArticles,
+                    MostPopularArticles = source.News.MostPopularArticles,
+                    WatchOnQatarLiving = source.News.WatchOnQatarLiving
+                }
+            };
+        }
     }
 }
 

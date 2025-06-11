@@ -1,33 +1,28 @@
 ﻿@using System.Globalization
 @inherits PostCardBase
 @using MudBlazor
+@using QLN.Web.Shared.Components.EmptyCard
 
-<MudPaper Class="post-card p-4" Elevation="0" @onclick="() => { if (!IsDetailView) NavigateToPostDetail(); }">
+<MudPaper Class="@($"post-card p-4 {(IsDetailView ? "" : "hover-expand")}")" Elevation="0" @onclick="() => { if (!IsDetailView) NavigateToPostDetail(); }">
     <div class="post-header d-flex justify-space-between align-center">
         <div class="post-tag">@Post.Category</div>
         @if (!IsDetailView)
         {
+
+
             <MudMenu Dense="true" AnchorOrigin="Origin.BottomLeft"
-                     TransformOrigin="Origin.TopCenter"
-                     @bind-IsOpen="@isMenuOpen">
+                     @bind-IsOpen="@isMenuOpen" TransformOrigin="Origin.TopCenter">
                 <ActivatorContent>
-                    <MudIconButton DisableRipple="true"
-                                   Class="menu-icon-button">
-
-
+                    <MudIconButton DisableRipple="true" Class="menu-icon-button">
                         <img src="qln-images/content/Menu.svg"
                              alt="Menu"
                              class="@($"menu-icon {(isMenuOpen ? "menu-open" : "")}")" />
-
                     </MudIconButton>
                 </ActivatorContent>
 
                 <ChildContent>
-
                     <MudMenuItem Class="report-menu-item" OnClick="@OnReport">Report</MudMenuItem>
-
                 </ChildContent>
-
             </MudMenu>
         }
 
@@ -43,8 +38,9 @@
         }
         <div class="post-footer">
             <div class="post-footer-left">
-                <img src="/qln-images/content/Sample.svg" alt="User Avatar" class="post-footer-avatar" />
-                <span class="post-meta">
+                <img src="/qln-images/default_logo.svg" alt="User Avatar" class="post-footer-avatar" />
+              
+ <span class="post-meta">
 
                     <span class="author">@Post.Author  • <span class="date-time">@Post.Time.ToString("MMM dd, yyyy - hh:mm tt")</span></span>
                 </span>
@@ -52,20 +48,41 @@
             </div>
 
             <div class="post-icons">
-                <div class="like-wrapper" @onclick="ToggleLikeAsync">
+                @* <div class="like-wrapper" @onclick="ToggleLikeAsync">
 
-                    <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="icon" />
-                    @*                     <span class="icon-text">@Post.LikeCount</span>
- *@               
-    </div>
+                  <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="icon" />
+                                     <span class="icon-text">@Post.LikeCount</span> 
+    
+    </div> *@
                @*  <div class="like-wrapper" @onclick="ToggleDislikeAsync">
 
                     <img src="@($"qln-images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
                 </div> *@
-                <div class="share-wrapper" @onclick="SharePost">
+                <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight" @onclick:stopPropagation>
+                    <ActivatorContent>
+                        <img src="qln-images/content/Share.svg" class="icon" />
+                    </ActivatorContent>
+                    <ChildContent>
+                        @foreach (var item in shareMenuItems)
+                        {
+                            if (item.OnClick != null)
+                            {
+                                <MudMenuItem OnClick="@item.OnClick">
+                                    <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                </MudMenuItem>
+                            }
+                            else
+                            {
+                                <MudMenuItem Href="@item.Route"  Target="@(item.OpenInNewTab ? "_blank" : "_self")">
+                                    <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                </MudMenuItem>
+                            }
+                        }
+                    </ChildContent>
+                </MudMenu>
 
-                    <img src="qln-images/content/Share.svg" class="icon" />
-                </div>
+
+                
              @*    <div class="post-card-comment-wrapper">
 
                     <img src="qln-images/content/Comment.svg" class="icon" />
@@ -73,7 +90,11 @@
                 </div> *@
             </div>
         </div>
-        <div class="post-body-preview-details">@StripHtml(Post.BodyPreview)</div>
+     if (!string.IsNullOrWhiteSpace(Post.BodyPreview))
+    {
+    <div class="post-body-preview-details">
+        @((MarkupString)Post.BodyPreview)</div>
+    }
         <div class="post-details-report-section">
             <MudChip T="string" Class="report-chip" Variant="Variant.Outlined">
                 <img src="qln-images/content/ReportSVG.svg" class="report-icon" alt="Report" />
@@ -94,19 +115,15 @@
         }
         else
         {
-            <MudPaper Class="pa-4 mt-8" Color="Color.Error" Elevation="0">
-                <MudText Typo="Typo.h6" Color="Color.Error">
-                    Oops! Something went wrong while loading community posts.
-                </MudText>
-                <MudText Typo="Typo.body2">
-                    Please try again later.
-                </MudText>
-            </MudPaper>
+            
+            <EmptyCard Title="Data could not be loaded" Subtitle="Please check back later for updates." />
+
         }
         <div class="post-footer">
             <div class="post-footer-left">
-                <img src="/qln-images/content/Sample.svg" alt="User Avatar" class="post-footer-avatar" />
-                <span class="post-meta">
+                <img src="/qln-images/default_logo.svg" alt="User Avatar" class="post-footer-avatar" />
+               
+ <span class="post-meta">
 
                     <span class="author">@Post.Author  • <span class="date-time">@Post.Time.ToString("MMM dd, yyyy - hh:mm tt")</span></span>
                 </span>
@@ -114,19 +131,36 @@
             </div>
 
             <div class="post-icons">
-                <div class="like-wrapper" @onclick="ToggleLikeAsync">
+               @*  <div class="like-wrapper" @onclick="ToggleLikeAsync">
 
                     <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="icon" />
-                    @*                     <span class="icon-text">@Post.LikeCount</span>
- *@                </div>
+                            </div> *@
                 @*  <div class="like-wrapper" @onclick="ToggleDislikeAsync">
 
                     <img src="@($"qln-images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
                 </div> *@
-                <div class="share-wrapper" @onclick="SharePost">
-
-                    <img src="qln-images/content/Share.svg" class="icon" />
-                </div>
+               <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight" @onclick:stopPropagation>
+                    <ActivatorContent>
+                        <img src="qln-images/content/Share.svg" class="icon" />
+                    </ActivatorContent>
+                    <ChildContent>
+                        @foreach (var item in shareMenuItems)
+                        {
+                            if (item.OnClick != null)
+                            {
+                                <MudMenuItem OnClick="@item.OnClick">
+                                    <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                </MudMenuItem>
+                            }
+                            else
+                            {
+                                <MudMenuItem Href="@item.Route"  Target="@(item.OpenInNewTab ? "_blank" : "_self")">
+                                    <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                </MudMenuItem>
+                            }
+                        }
+                    </ChildContent>
+                </MudMenu>
                 @*    <div class="post-card-comment-wrapper">
 
                     <img src="qln-images/content/Comment.svg" class="icon" />
@@ -142,12 +176,46 @@
 
 
 <style>
+     .share-icon {
+        margin: 0;
+        width: 32px;
+        height: 32px;
+    }
+
+    .mud-popover .mud-list {
+        max-height: inherit;
+        overflow-y: auto;
+        display: flex !important;
+    }
+
+    .mud-menu-item{
+        padding: 0px 6px 0px 0px !important;
+    }
+
+    .mud-menu-list {
+        padding-left: 6px;
+    }
+
+    .mud-menu-item .mud-menu-item-text {
+        margin: 4px 0px 0px 0px !important;
+    }
+
     .post-card {
         border: 1px solid #E0E0E0;
         border-radius: 12px;
         padding: 16px;
         margin-top: 16px;
     }
+
+            .hover-expand {
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .hover-expand:hover {
+        transform: scale(1.02);
+    }
+    
 
     .post-header {
         display: flex;
@@ -215,6 +283,16 @@
         .author, .date-time {
             font-size: 12px;
         }
+
+        .post-title {
+            font-family: 'Public Sans', sans-serif;
+            font-size: 20px;
+            line-height: 1.2;
+            font-weight: 600;
+            color: #242424;
+            word-break: break-word;
+            white-space: normal;
+        }
     }
 
     .post-body-preview {
@@ -241,7 +319,18 @@
         line-height: 2;
     }
 
+    .post-body-preview-details img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 1rem auto;
+        border-radius: 8px;
+    }
 
+    .post-body-preview-details a {
+        color: #00426D !important; 
+        text-decoration: underline !important;
+    }
     .post-footer {
         display: flex;
         justify-content: space-between;
@@ -258,8 +347,9 @@
         align-items: center;
         gap: 4px;
         padding: 2px 4px;
+        border-radius: 25px;
+        background-color: #F4F4FA;
     }
-
 
     .menu-icon {
         width: 20px;
@@ -300,12 +390,28 @@
         height: 48px;
         padding-top: 4px;
         padding-bottom: 4px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 1px solid #D0D5DD;
+        border-radius: 4px;
     }
 
         .report-menu-item:hover {
             background-color: transparent !important;
         }
 
+        .report-menu-item .mud-menu-item-text {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+    .mud-elevation-8 {
+        box-shadow: none !important;
+    }
     .icon {
         width: 18px;
         height: 18px;
@@ -342,6 +448,9 @@
         border-radius: 16px;
         gap: 6px;
     }
+
+  
+
 
     .share-wrapper {
         padding: 8px;
@@ -399,4 +508,6 @@
         font-family: 'Public Sans', sans-serif;
         margin-left: 4px;
     }
+
+  
 </style>

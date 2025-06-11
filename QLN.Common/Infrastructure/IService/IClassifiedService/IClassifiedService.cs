@@ -1,4 +1,5 @@
-﻿using QLN.Common.Infrastructure.DTO_s;
+﻿using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.Model;
 using System;
 using System.Collections.Generic;
@@ -10,10 +11,6 @@ namespace QLN.Common.Infrastructure.IService
 {
     public interface IClassifiedService
     {
-        Task<IEnumerable<ClassifiedIndexDto>> Search(CommonSearchRequest request);
-        Task<ClassifiedIndexDto?> GetById(string id);
-        Task<string> Upload(ClassifiedIndexDto document);
-        Task<ClassifiedLandingPageResponse> GetLandingPage();
         Task<Category> AddCategory(string categoryName, CancellationToken cancellationToken = default);
         Task<List<CategoriesDto>> GetAllCategories(CancellationToken cancellationToken = default);
         Task<Category> AddSubCategory(string name, Guid categoryId, CancellationToken cancellationToken = default);
@@ -46,8 +43,14 @@ namespace QLN.Common.Infrastructure.IService
         Task<List<CategoriesDto>> GetAllSizeTypes(CancellationToken cancellationToken = default);
         Task<Category> AddZone(string name, CancellationToken cancellationToken = default);
         Task<List<CategoriesDto>> GetAllZones(CancellationToken cancellationToken = default);
+        Task<NestedCategoryDto> GetCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default);
         Task<bool> SaveSearch(SaveSearchRequestDto dto, Guid userId, CancellationToken cancellationToken = default);
         Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default);
         Task<List<SavedSearchResponseDto>> GetSearches(string userId, CancellationToken cancellationToken = default);
+        Task<ItemAdsAndDashboardResponse> GetUserItemsAdsWithDashboard(Guid userId, CancellationToken cancellationToken = default);
+        Task<PrelovedAdsAndDashboardResponse> GetUserPrelovedAdsAndDashboard(Guid userId, CancellationToken cancellationToken = default);
+        Task<bool> DeleteCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default);
+        Task<ItemsAdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default);
+        Task<CollectiblesResponse> GetCollectibles(string userId, CancellationToken cancellationToken = default);
     }
 }

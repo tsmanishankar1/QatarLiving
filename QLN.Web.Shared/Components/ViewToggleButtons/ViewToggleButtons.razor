@@ -2,12 +2,12 @@
     @foreach (var item in Items)
     {
         <div class="view-toggle-item @(SelectedValue == item.Value ? "active" : "")"
-             @onclick="() => OnSelected.InvokeAsync(item.Value)">
-            
+            @onclick="() => OnSelected.InvokeAsync(item.Value)">
+
             @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
             {
                 <img src="@item.ImageUrl" alt="@item.Label"
-                     class="toggle-icon @(SelectedValue == item.Value ? "filter-white" : "filter-gray")" />
+                    class="toggle-icon @(SelectedValue == item.Value ? "filter-white" : "filter-gray")" />
             }
             <span class="@TextClass">@item.Label</span>
         </div>
@@ -20,9 +20,9 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 6px;
+        padding: 6px 6px;
         border-radius: 6px;
-        height: 60px; 
+        height: 60px;
         gap: 4px;
         background-color: var(--color-background);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -32,7 +32,7 @@
         display: flex;
         align-items: center;
         gap: 6px;
-        padding: 8px 12px;
+        padding: 10px 12px;
         border-radius: 6px;
         background-color: var(--color-background);
         cursor: pointer;
@@ -45,6 +45,7 @@
     .view-toggle-item.active {
         background-color: var(--color-accent);
         color: var(--color-background);
+        animation: activeToggleAnimation 0.3s ease-in-out;
     }
 
     .toggle-icon {
@@ -61,5 +62,23 @@
     /* Neutral gray tint for inactive icon */
     .filter-gray {
         filter: brightness(0) saturate(100%) invert(53%) sepia(0%) saturate(1031%) hue-rotate(176deg) brightness(93%) contrast(91%);
+    }
+
+    @@keyframes activeToggleAnimation {
+        0% {
+            transform: scale(1);
+            background-color: var(--color-background);
+        }
+
+        50% {
+            transform: scale(1.05);
+            background-color: var(--color-accent-light, #f9c97c);
+            /* optional lighter accent */
+        }
+
+        100% {
+            transform: scale(1);
+            background-color: var(--color-accent);
+        }
     }
 </style>

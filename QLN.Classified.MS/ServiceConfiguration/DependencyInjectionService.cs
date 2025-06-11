@@ -1,14 +1,17 @@
 ﻿using QLN.Classified.MS.Service;
+using QLN.Classified.MS.Service.ServicesAdService;
 using QLN.Common.Infrastructure.IService;
 
-namespace QLN.Common.Infrastructure.ServiceConfiguration
+
+namespace QLN.Classifieds.MS.ServiceConfiguration
 {
     public static class DependencyInjectionService
     {
-        public static IServiceCollection ClassifiedServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection ClassifiedInternalServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
 
             services.AddTransient<IClassifiedService, ClassifiedService>();
+            services.AddTransient<IServicesService, ServicesAdService>();
             return services;
         }
     }

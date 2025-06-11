@@ -3,7 +3,7 @@
 # @QLN.Backend.API_HostAddress = https://qlc-bo-qa.qatarliving.com
 # @QLN.Backend.API_HostAddress = https://qlm-bo.qatarliving.com
 
-@DrupalQueue = qln_news_news_qatar
+@DrupalQueue = qln_news_finance_market_update
 
 GET {{QLN.Backend.API_HostAddress}}/api/content/{{DrupalQueue}}/landing
 Accept: application/json
@@ -22,8 +22,16 @@ Accept: application/json
 
 ###
 
-GET {{QLN.Backend.API_HostAddress}}/api/content/events
+GET {{QLN.Backend.API_HostAddress}}/api/content/events?category_id=126206&date=2026-01-02
 Accept: application/json
+Cache-Control: no-cache
+
+###
+
+GET {{QLN.Backend.API_HostAddress}}/api/content/events?from=20240101&to=20250101
+Accept: application/json
+Cache-Control: no-cache
+
 
 ###
 
@@ -82,8 +90,11 @@ GET {{QLN.Drupal.API_HostAddress}}/qlnapi/categories
 Accept: application/json
 
 ###
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/events?page=1&page_size=10&order=asc&category_id=126206
+Accept: application/json
 
-GET {{QLN.Drupal.API_HostAddress}}/qlnapi/events
+###
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/events?to=20250101
 Accept: application/json
 
 ###

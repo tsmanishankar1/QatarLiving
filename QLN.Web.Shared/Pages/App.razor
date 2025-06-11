@@ -5,27 +5,75 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
-    <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
+
+    <link rel="preload" href="/qln-images/qatar-living-logo-sized.webp" as="image" type="image/webp">
+
+    <link rel="stylesheet" href="_content/QLN.Web.Shared/bootstrap/bootstrap.min.css" />
     <link rel="stylesheet" href="QLN.Blazor.Base.styles.css" />
     <link rel="stylesheet" href="_content/QLN.Web.Shared/css/app.css" />
     <link rel="stylesheet" href="_content/QLN.Web.Shared/css/site.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
-    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+        rel="stylesheet" as="style">
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" media="print"
+        onload="this.media='all'">
+
+    @* <link rel="preload" href="fonts/PublicSans.woff2" as="font" type="font/woff2" crossorigin="anonymous"> *@
+
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript>
+        <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet">
+    </noscript>
+
     <link rel="icon" type="image/svg+xml" href="fav-icon.svg">
     <HeadOutlet />
 </head>
 
+@* <HeadContent>
+    <style>
+        @@font -face {
+            font-family: 'Public Sans';
+            src: url('/fonts/PublicSans.woff2') format('woff2');
+            font-weight: 100;
+            font-style: normal;
+            font-display: swap;
+        }
+        @@font -face {
+            font-family: 'Public Sans';
+            src: url('/fonts/PublicSans.woff2') format('woff2');
+            font-weight: 100;
+            font-style: italic;
+        }
+        /* ... Repeat for 200–900 weights + italics ... */
+        @@font -face {
+            font-family: 'Public Sans';
+            src: url('/fonts/PublicSans.woff2') format('woff2');
+            font-weight: 700;
+            font-style: normal;
+        }
+        @@font -face {
+            font-family: 'Public Sans';
+            src: url('/fonts/PublicSans.woff2') format('woff2');
+            font-weight: 700;
+            font-style: italic;
+        }
+    </style>
+</HeadContent> *@
+
 <body>
     <Routes @rendermode="InteractiveServer" />
     <script src="_content/MudBlazor/MudBlazor.min.js?v=8.5.1"></script>
-    <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
-    <script src="_framework/blazor.web.js"></script>
-    <script src="_content/GoogleAnalytics.Blazor/googleanalytics.blazor.js"></script>
-    <script src="_content/Extensions.MudBlazor.StaticInput/NavigationObserver.js?v=3.2.0"></script>
+    <div id="reconnect-modal" style="display: none;"></div>
+    <script src="_framework/blazor.web.js" autostart="false"></script>
+    <script src="js/boot.js"></script>
+    <script src="https://unpkg.com/swiper/swiper-bundle.min.js" defer></script>
+    <script src="_content/GoogleAnalytics.Blazor/googleanalytics.blazor.js" defer></script>
+    @* 
+        Script is MIA, not needed maybe?
+        <script src="_content/Extensions.MudBlazor.StaticInput/NavigationObserver.js?v=3.2.0" defer></script> 
+    *@
+
     <script>
         window.setVideoFirstFrame = function (videoElement) {
             videoElement.addEventListener('loadedmetadata', function () {
@@ -113,6 +161,26 @@
 
     </script>
     <script>
+        function adBannerForScreen() {
+            const isMobile = window.innerWidth <= 768;
+
+            document.querySelectorAll('.add-image').forEach(img => {
+                const mobileSrc = img.getAttribute('data-mobile');
+                const desktopSrc = img.getAttribute('data-desktop');
+
+                if (isMobile && mobileSrc) {
+                    img.src = mobileSrc;
+                } else if (desktopSrc) {
+                    img.src = desktopSrc;
+                }
+            });
+        }
+
+        window.addEventListener('load', adBannerForScreen);
+        window.addEventListener('resize', adBannerForScreen);
+    </script>
+
+    <script>
         window.registerImageLoadCallback = (imageId, dotNetRef) => {
             const img = document.getElementById(imageId);
             if (!img) return;
@@ -190,8 +258,8 @@
 
         let takeoverbannerSwiperInstance;
 
-        function initTakeOverBannerSwiper() {
-            const swiperEl = document.querySelector('.takeouverbanner-swiper');
+        function initTakeOverBannerSwiper(swiperId) {
+            const swiperEl = document.getElementById(swiperId);
             if (!swiperEl) {
                 console.warn("Banner swiper element not found");
                 return;
@@ -200,11 +268,12 @@
             const bannerCount = swiperEl.querySelectorAll('.swiper-slide').length;
             const autoplayEnabled = bannerCount > 1;
 
-            if (takeoverbannerSwiperInstance) {
-                takeoverbannerSwiperInstance.destroy(true, true);
+            // Store separate instances if needed by ID (optional enhancement)
+            if (swiperEl.swiper) {
+                swiperEl.swiper.destroy(true, true);
             }
 
-            takeoverbannerSwiperInstance = new Swiper(swiperEl, {
+            const swiperInstance = new Swiper(swiperEl, {
                 slidesPerView: 1,
                 loop: autoplayEnabled,
                 autoplay: autoplayEnabled
@@ -215,7 +284,7 @@
                     }
                     : false,
                 pagination: {
-                    el: '.swiper-pagination',
+                    el: swiperEl.querySelector('.swiper-pagination'),
                     clickable: true
                 }
             });
@@ -225,8 +294,9 @@
                 paginationEl.style.display = "none";
             }
 
-            console.log("Banner Swiper initialized with autoplay:", autoplayEnabled);
+            console.log("Swiper initialized:", swiperId);
         }
+
 
         let featuredSwiperInstance;
 
@@ -290,6 +360,9 @@
                 pagination: {
                     el: '.swiper-categories-pagination',
                     clickable: true,
+                    dynamicBullets: true,
+                    dynamicMainBullets: 7
+
                 },
                 breakpoints: {
                     480: { slidesPerView: 2, spaceBetween: 5 },
@@ -297,9 +370,9 @@
                     640: { slidesPerView: 3.8, spaceBetween: 6 },
                     768: { slidesPerView: 4, spaceBetween: 7 },
                     860: { slidesPerView: 4.8, spaceBetween: 7 },
-                    1024: { slidesPerView: 5.2, spaceBetween: 7 },
-                    1120: { slidesPerView: 6, spaceBetween: 10 },
-                    1200: { slidesPerView: 6, spaceBetween: 13 },
+                    1024: { slidesPerView: 4.9, spaceBetween: 10 },
+                    1120: { slidesPerView: 5.3, spaceBetween: 10 },
+                    1200: { slidesPerView: 5.8, spaceBetween: 10 },
                 },
                 on: {
                     afterInit: function (swiper) {
@@ -342,20 +415,24 @@
         };
     </script>
     <script>
-        Blazor.start({
-            reconnectionOptions: {
-                maxRetries: 5,
-                retryIntervalMilliseconds: 4000
-            },
-            onConnectionDown: (options, error) => {
-                console.warn('Connection down:', error);
-                setTimeout(() => {
-                    location.reload();
-                }, 30000); // reload after 30s if not reconnected
-            }
-        });
-    </script>
 
+        if (!window.__blazorStarted) {
+            window.__blazorStarted = true;
+            Blazor.start({
+                reconnectionOptions: {
+                    maxRetries: 5,
+                    retryIntervalMilliseconds: 4000
+                },
+                onConnectionDown: (options, error) => {
+                    console.warn('Connection down:', error);
+                    setTimeout(() => {
+                        location.reload();
+                    }, 30000); // reload after 30s if not reconnected
+                }
+            });
+        }
+
+    </script>
 </body>
 
 </html>

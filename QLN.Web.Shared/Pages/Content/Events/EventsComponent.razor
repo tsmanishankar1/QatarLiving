@@ -14,42 +14,48 @@
 <PageTitle>All the events in Qatar you don&#039;t want to miss | Qatar Living Events</PageTitle>
 
 <div style="width: 100%;background-color: var(--color-secondary-background);">
-    <div style="max-width: 1170px; margin: 0 auto;">
-        <div class="carousel-responsive-container">
+    <div class="responsive-container" style="margin-bottom: 40px;">
+        <div class="max-container">
 
             <!-- Carousel Banner Swiper -->
-          @if (isLoadingBanners)
-                {
-                    <BannerSkleton />
-                }
-                else if (DailyHeroBanners?.Any() == true)
-                {
-                    <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
-                }
-                else
-                {
-                    <EmptyCard Title="No event banners found."
-                            Subtitle="Please check back later for updates." />
-                }
-
+            @if (isLoadingBanners)
+            {
+                <BannerSkleton />
+            }
+            else if (DailyHeroBanners?.Any() == true)
+            {
+                <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+            }
+            else
+            {
+                <EmptyCard Title="No event banners found." Subtitle="Please check back later for updates." />
+            }
 
         </div>
+    </div>
 
-        <FeaturedEvents FeaturedEvent="FeaturedEventData" Loading="isLoadingFeatured" />
+    <div class="featured-events-responsive-container">
+        <div class="max-container">
+            <FeaturedEvents FeaturedEvent="FeaturedEventData" Loading="isLoadingFeatured" />
+        </div>
+    </div>
 
-        <div class="responsive-container">
-
+    <div class="responsive-container">
+        <div class="max-container">
             @if (isLoadingCategories)
             {
                 <SearchSkeletons />
             }
             else if (EventCategories?.Any() == true)
             {
-                <SearchSection Categories="EventCategories" />
+                <SearchSection Categories="EventCategories" Areas="Areas" OnCategoryChanged="HandleCategoryChanged"
+                    OnLocationChanged="HandleLocationChanged" OnDateChanged="HandleDateChanged" />
             }
 
 
-            <EventsList Items="ListOfEvents" Loading="isLoadingEvents" />
+            <EventsList Items="ListOfEvents.Items" Loading="isLoadingEvents" OnPageChange="HandlePageChange"
+                OnPageSizeChange="HandlePageSizeChange" CurrentPage="@CurrentPage" PageSize="@PageSize"
+                TotalItems="@ListOfEvents.Total" />
         </div>
     </div>
 </div>
@@ -61,11 +67,17 @@
         box-sizing: border-box;
     }
 
-    .carousel-responsive-container {
+    .featured-events-responsive-container {
         width: 100%;
         padding: 0px 40px;
         margin-bottom: 40px;
         box-sizing: border-box;
+        background: linear-gradient(to top, #F5F6FA 0%, #F5F6FA 20%, #FAFAFA 100%);
+    }
+
+    .max-container {
+        max-width: 1170px;
+        margin: 0 auto;
     }
 
     @@media (max-width: 768px) {
@@ -73,7 +85,7 @@
             padding: 0 16px;
         }
 
-        .carousel-responsive-container {
+        .featured-events-responsive-container {
             margin-bottom: 10px;
             padding: 0 16px;
         }

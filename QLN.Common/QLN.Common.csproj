@@ -7,6 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Infrastructure\RepositoryConfiguration\**" />
+    <Compile Remove="Infrastructure\Repository\**" />
+    <EmbeddedResource Remove="Infrastructure\RepositoryConfiguration\**" />
+    <EmbeddedResource Remove="Infrastructure\Repository\**" />
+    <None Remove="Infrastructure\RepositoryConfiguration\**" />
+    <None Remove="Infrastructure\Repository\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Azure.Search.Documents" Version="11.6.0" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.24.1" />
     <PackageReference Include="Dapr.Actors" Version="1.13.1" />
@@ -17,6 +26,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.15" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.3.0" />
+    <PackageReference Include="Microsoft.Azure.Core.Spatial" Version="1.1.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.15" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.15">
       <PrivateAssets>all</PrivateAssets>
@@ -31,12 +41,6 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.6.2" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.8.0" />	  
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Infrastructure\IRepository\" />
-    <Folder Include="Infrastructure\RepositoryConfiguration\" />
-    <Folder Include="Infrastructure\Repository\" />
   </ItemGroup>
 
   <ItemGroup>

@@ -11,6 +11,7 @@ namespace QLN.Web.Shared.Pages.Content.Events.EventDetails
     public class EventDetailsBase : ComponentBase
     {
         [Inject] protected IEventService EventService { get; set; }
+        [Inject] protected ISimpleMemoryCache _simpleCacheService { get; set; }
         [Inject] protected ILogger<EventDetailsBase> Logger { get; set; }
 
         [Parameter] public string slug { get; set; }
@@ -19,6 +20,7 @@ namespace QLN.Web.Shared.Pages.Content.Events.EventDetails
         protected bool isLoadingEventBanners { get; set; } = true;
 
         protected List<BannerItem> DailyHeroBanners { get; set; } = new();
+        protected List<BannerItem> EventSideBanners { get; set; } = new();
         protected ContentEvent eventDetails { get; set; }
 
         protected List<string> carouselImages = new()
@@ -82,8 +84,9 @@ namespace QLN.Web.Shared.Pages.Content.Events.EventDetails
             isLoadingEventBanners = true;
             try
             {
-                var banners = await FetchBannerData();
-                DailyHeroBanners = banners?.DailyHero ?? new List<BannerItem>();
+                var banners = await _simpleCacheService.GetBannerAsync();
+                DailyHeroBanners = banners?.ContentEventsDetailHero ?? new List<BannerItem>();
+                EventSideBanners = banners?.ContentEventsDetailSide ?? new List<BannerItem>();
             }
             catch (Exception ex)
             {

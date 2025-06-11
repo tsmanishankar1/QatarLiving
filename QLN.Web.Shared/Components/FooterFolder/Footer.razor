@@ -1,5 +1,6 @@
 @using Microsoft.Extensions.Options
 @using QLN.Web.Shared.Services
+@using QLN.Web.Shared.Components.NewLetterSubscription
 
 @inject IOptions<NavigationPath> options
 @{
@@ -8,87 +9,111 @@
 
 
 <div class="footer-main">
-    <div class="footer-top">
-        <div class="footer-column">
-            <h4>Explore</h4>
-            <a id="footerPropertiesLink" href={@navigationPath.Properties}>Properties</a>
-            <a id="footerVehiclesLink" href={@navigationPath.Vehicles}>Vehicles</a>
-            <a id="footerClassifiedsLink" href={@navigationPath.Classifieds}>Classifieds</a>
-            <a id="footerServicesLink" href={@navigationPath.Services}>Services</a>
-            <a id="footerJobsLink" href={@navigationPath.Jobs}>Jobs</a>
-            <a id="footerSubcriptionsLink" class="premium" href={@navigationPath.Subscription}>Premium subscriptions</a>
-        </div>
-        <div class="footer-column">
-            <h4>Other</h4>
-            <a href="#">News</a>
-            <a href="#">Events</a>
-            <a href={@navigationPath.Forums}>Forums</a>
-            <a href="#">Business pages</a>
-            <a href={@navigationPath.eShops}>eShops</a>
-        </div>
-        <div class="footer-column">
-            <p>Want to advertise on Qatar Living?</p>
-            <p><strong>Take a look at our <a class="orange-link" href="#">Advertise page</a></strong></p>
-            <p>Subscribe to our newsletter to get the latest updates</p>
-            <div class="newsletter">
-                <input type="email" placeholder="Email" />
-                <button>Subscribe</button>
+    <div class="container">
+        <div class="footer-top">
+            <div class="footer-inline footer-col-341">
+                <div class="footer-column footer-col-full">
+                    <div class="footer-flex-between">
+                        <div class="footer-col-vertical">
+                            <h4>Explore</h4>
+                            <div class="footer-links-col">
+                                <a id="footerPropertiesLink" href="@navigationPath.Properties">Properties</a>
+                                <a id="footerVehiclesLink" href="@navigationPath.Vehicles">Vehicles</a>
+                                <a id="footerClassifiedsLink" href="@navigationPath.Classifieds">Classifieds</a>
+                                <a id="footerServicesLink" href="@navigationPath.Services">Services</a>
+                                <a id="footerJobsLink" href="@navigationPath.Jobs">Jobs</a>
+                                <a id="footerRewardsLink" href="@navigationPath.Rewards">Rewards</a>
+                                @* <a id="footerSubcriptionsLink" class="premium" href="@navigationPath.Subscription">Premium subscriptions</a> *@
+                            </div>
+                        </div>
+                        <div class="footer-col-vertical">
+                            <h4>Other</h4>
+                            <div class="footer-links-col">
+                                <a href="/content/news">News</a>
+                                <a href="/content/events">Events</a>
+                                <a href="/content/community">Community</a>
+                                @* <a href="#">Business pages</a>
+                                <a href="@navigationPath.eShops">eShops</a> *@
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @* <div class="footer-column">
+            </div> *@
+            <div class="footer-inline footer-col-435">
+                <div class="footer-column footer-col-full">
+                    <p>Want to advertise on Qatar Living?</p>
+                    <p><strong>Take a look at our <a class="orange-link" href="#">Advertise page</a></strong></p>
+                    <NewLetterSubscription/>
+                </div>
+            </div>
+            <div class="footer-inline footer-col-135">
+                <div class="footer-column footer-apps footer-col-full">
+                    @if (DarkMode)
+                    {
+                        <img src="/qln-images/dark_mode_logo.svg" alt="Qatar Living" width="132.5" height="40.33" class="logo" />
+                    }
+                    else
+                    {
+                        <img src="/qln-images/new_qatar_logo.png" alt="Qatar Living" width="132.5" height="40.33" class="logo" />
+                    }
+                    <p>Our Mobile App</p>
+                    <div class="store-badges">
+                        <a href="@navigationPath.GoogleStore" target="_blank" rel="noopener">
+                            <img src="/qln-images/google_play_logo.svg" class="store-badge" alt="Get it on Google Play" />
+                        </a>
+                        <a href="@navigationPath.AppleStore" target="_blank" rel="noopener">
+                            <img src="/qln-images/app_store_logo.svg" class="store-badge" alt="Download on the App Store" />
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="footer-column footer-apps">
-            <img src="/qln-images/new_qatar_logo.png" alt="Qatar Living" width="132.5" height="40.33" class="logo" />
-            <p>Our Mobile App</p>
-            <div class="store-badges">
-
-                <a href={@navigationPath.GoogleStore}
-                    target="_blank" rel="noopener">
-                    <img src="/qln-images/google_play_logo.svg" class="store-badge" alt="Get it on Google Play" />
-                </a>
-                <a href={@navigationPath.AppleStore} target="_blank" rel="noopener">
-                    <img src="/qln-images/app_store_logo.svg" class="store-badge" alt="Download on the App Store" />
-                </a>
+        <hr />
+        <div class="footer-bottom">
+            <div class="footer-link">
+                <div class="footer-links">
+                    <a href="@navigationPath.AdvertisingTerms">Advertising Terms</a>
+                    <a href="@navigationPath.TermsOfUse">Website Terms</a>
+                    <a href="@navigationPath.PostingRules">Rules for posting ads</a>
+                    <a href="@navigationPath.HelpLink">Help</a>
+                </div>
+                <p class="footer-copyright">Copyright © 2024 Qatar Living. All rights reserved.</p>
             </div>
-        </div>
-    </div>
-    <hr />
-    <div class="footer-bottom">
-        <div class="footer-link">
-            <div class="footer-links">
-                <a href={@navigationPath.AdvertisingTerms}>Advertising Terms</a>
-                <a href={@navigationPath.TermsOfUse}>Website Terms</a>
-                <a href={@navigationPath.PostingRules}>Rules for posting ads</a>
-                <a href={@navigationPath.HelpLink}>Help</a>
-            </div>
-            <p style="padding-top: 1rem;">Copyright © 2024 Qatar Living. All rights reserved.</p>
-        </div>
-        <div class="footer-social">
-            <p>Let's stay connected</p>
-            <div class="social-icons">
-                    <a href="{@navigationPath.SocialFacebook}" target="_blank" rel="noopener noreferrer">
+            <div class="footer-social">
+                <p>Let's stay connected</p>
+                <div class="social-icons">
+                    <a href="@navigationPath.SocialFacebook" target="_blank" rel="noopener noreferrer">
                         <img src="/qln-images/facebook_logo.svg" alt="Facebook" class="social-icon" />
                     </a>
-                    <a href="{@navigationPath.SocialTwitter}" target="_blank" rel="noopener">
+                    <a href="@navigationPath.SocialTwitter" target="_blank" rel="noopener">
                         <img src="/qln-images/twitter.svg" alt="Twitter" class="social-icon" />
                     </a>
-                    <a href="{@navigationPath.SocialInstagram}" target="_blank" rel="noopener">
+                    <a href="@navigationPath.SocialInstagram" target="_blank" rel="noopener">
                         <img src="/qln-images/instagram.svg" alt="Instagram" class="social-icon" />
                     </a>
-                    <a href="{@navigationPath.SocialSnapChat}" target="_blank" rel="noopener">
+                    <a href="@navigationPath.SocialSnapChat" target="_blank" rel="noopener">
                         <img src="/qln-images/snapchat.svg" alt="Snapchat" class="social-icon" />
                     </a>
-                    <a href="{@navigationPath.SocialLinkedIn}" target="_blank" rel="noopener">
+                    <a href="@navigationPath.SocialLinkedIn" target="_blank" rel="noopener">
                         <img src="/qln-images/linkedin.svg" alt="LinkedIn" class="social-icon" />
                     </a>
-                    <a href="{@navigationPath.SocialYouTube}" target="_blank" rel="noopener">
+                    <a href="@navigationPath.SocialYouTube" target="_blank" rel="noopener">
                         <img src="/qln-images/youtube.svg" alt="YouTube" class="social-icon" />
                     </a>
-                    <a href="{@navigationPath.SocialTikTok}" target="_blank" rel="noopener">
+                    <a href="@navigationPath.SocialTikTok" target="_blank" rel="noopener">
                         <img src="/qln-images/tiktok.svg" alt="TikTok" class="social-icon" />
                     </a>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+@code {
+    [Parameter] public bool DarkMode { get; set; }
+}
 
 <style>
     body {
@@ -100,89 +125,111 @@
         background-color: #003A63;
         color: white;
         padding: 40px 20px;
-        font-family: Arial, sans-serif;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .container {
+        max-width: 1170px;
+        margin: 0 auto;
+        padding: 0 15px;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .footer-top {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        gap: 30px;
+        white-space: nowrap !important;
+        width: 100%
     }
 
     .footer-column {
-        flex: 1 1 200px;
+        @* flex: 1 1 200px; *@
         display: flex;
         flex-direction: column;
     }
 
-    .footer-column h4 {
-        margin-bottom: 10px;
-        color: white;
-    }
+        .footer-column h4 {
+            margin-bottom: 10px;
+            color: white;
+        }
 
-    .footer-column a {
-        color: white;
-        text-decoration: none;
-        margin: 5px 0;
-        font-size: 14px;
-    }
+        .footer-column a {
+            color: white;
+            text-decoration: none;
+            margin: 5px 0;
+            font-size: 14px;
+        }
 
-    .footer-column:nth-child(1) a,
-    .footer-column:nth-child(2) a {
-        text-decoration: underline;
-    }
+        .footer-column:nth-child(1) a,
+        .footer-column:nth-child(2) a {
+            text-decoration: underline;
+        }
 
-    .footer-column .premium {
-        color: orange;
-    }
+        .footer-column .premium {
+            color: #FF7F38;
+        }
 
-    .footer-column .orange-link {
-        color: orange;
-        text-decoration: underline;
-    }
+        .footer-column .orange-link {
+            color: #FF7F38;
+            text-decoration: underline;
+        }
 
     .footer-apps {
-        padding-left: 50px;
+        align-items: center;
+        padding-left: 0px !important;
     }
 
-    .footer-apps .logo {
-        max-width: 120px;
-        margin-bottom: 10px;
-    }
+        .footer-apps .logo {
+            max-width: 120px;
+            margin-bottom: 10px;
+        }
 
     .store-badge {
         max-width: 130px;
         margin: 5px 0;
         display: flex;
+    }
 
+    .footer-inline {
+        display: inline-block;
+        vertical-align: top;
+    }
+
+    .footer-col-341 {
+        width: 341px;
+    }
+
+    .footer-col-435 {
+        width: 435px;
+    }
+
+    .footer-col-135 {
+        width: 135px;
+    }
+
+    .footer-col-full {
+        width: 100%;
+    }
+
+    .footer-flex-between {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .footer-col-vertical {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        height: 100%;
+    }
+
+    .footer-copyright {
+        padding-top: 1rem;
     }
 
     .store-badges {
         display: flex;
         gap: 10px;
         flex-direction: column
-    }
-
-    .newsletter {
-        display: flex;
-        margin-top: 10px;
-    }
-
-    .newsletter input {
-        flex: 1;
-        padding: 10px;
-        border-radius: 4px 0 0 4px;
-        border: none;
-    }
-
-    .newsletter button {
-        padding: 10px 20px;
-        border: none;
-        background-color: #FF7B3D;
-        color: white;
-        border-radius: 0 4px 4px 0;
-        cursor: pointer;
     }
 
     hr {
@@ -209,6 +256,12 @@
         display: flex;
         flex-direction: row;
         flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .footer-links-col {
+        display: flex;
+        flex-direction: column;
         gap: 15px;
     }
 
@@ -248,14 +301,45 @@
         transition: background-color 0.3s, color 0.3s;
     }
 
-    .icon-circle:hover {
-        background-color: white;
-        color: #003A63;
+        .icon-circle:hover {
+            background-color: white;
+            color: #003A63;
+        }
+
+    @@media (max-width: 1040px) {
+        .store-badges {
+            flex-direction: row !important;
+            justify-content: space-between;
+        }
+
+        .footer-col-135 {
+            width: 100% !important;
+        }
+
+            .footer-col-135 .footer-column {
+                align-items: center;
+                text-align: center;
+            }
+
+            .footer-col-135 .store-badges {
+                align-items: center;
+            }
     }
 
-    @@media (max-width: 600px) {
-        .store-badges {
-            flex-direction: column !important;
+    @@media (max-width: 435px) {
+        .footer-col-435 {
+            width: 100% !important;
+            min-width: 0;
+            box-sizing: border-box;
+            display: block;
+            word-break: break-word;
+            white-space: normal;
         }
+
+            .footer-col-435 .footer-column {
+                width: 100% !important;
+                min-width: 0;
+                white-space: normal;
+            }
     }
 </style>

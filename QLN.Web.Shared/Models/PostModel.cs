@@ -1,4 +1,6 @@
-﻿namespace QLN.Web.Shared.Model
+﻿using System.Text.Json.Serialization;
+
+namespace QLN.Web.Shared.Model
 {
     public class PostModel
     {
@@ -37,6 +39,7 @@
 
     public class CommentModel
     {
+        public string Id { get; set; }
         public string Avatar { get; set; } = string.Empty;
         public string CreatedBy { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
@@ -45,10 +48,7 @@
         public int UnlikeCount { get; set; }
         public bool IsByCurrentUser { get; set; }
     }
-    public class PostListResponse
-    {
-        public List<PostListDto> Posts { get; set; }
-    }
+
 
     public class PostListDto
     {
@@ -62,7 +62,10 @@
         public string slug { get; set; }
         public string description { get; set; }
         public string image_url { get; set; }
-        public List<CommentDto> comments { get; set; } = new();
+        public string category { get; set; }
+        public string like_count { get; set; }
+        public string comment_count { get; set; }
+        //public List<CommentDto> comments { get; set; } = new();
 
     }
     public class PostDetailsDto
@@ -81,7 +84,7 @@
     }
     public class CommentDto
     {
-        public string comment_id { get; set; } = string.Empty;
+        public string nid { get; set; } 
         public string user_name { get; set; } = string.Empty;
         public DateTime created_date { get; set; }
         public string subject { get; set; } = string.Empty;
@@ -90,6 +93,32 @@
         public string profile_picture { get; set; }
 
     }
+    public class PaginatedCommentResponse
+    {
+        public int total_comments { get; set; }
+        public int page { get; set; }
+        public int page_size { get; set; }
+        public List<CommentItem> comments { get; set; }
 
+    }
+    public class CommentItem
+    {
+        public string comment_id { get; set; }
+        public string user_id { get; set; }
+        public string user_name { get; set; }
+        public string subject { get; set; }
+        public string date_created { get; set; }
+        public string profile_picture { get; set; }
+        public int LikeCount { get; set; }
+        public int UnlikeCount { get; set; }
+    }
+    public class PostListResponse
+    {
+        [JsonPropertyName("items")]
+        public List<PostListDto> items { get; set; }
+
+        [JsonPropertyName("total")]
+        public int total { get; set; }
+    }
 
 }
