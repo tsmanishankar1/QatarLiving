@@ -10,6 +10,7 @@ using QLN.Common.Infrastructure.IService.IEmailService;
 using QLN.Common.Infrastructure.Model;
 using Microsoft.AspNetCore.Identity;
 using QLN.Common.Infrastructure.IService.IAuthService;
+using System.Text;
 
 namespace QLN.Company.MS.Service
 {
@@ -21,14 +22,12 @@ namespace QLN.Company.MS.Service
         private readonly IFileStorageService _fileStorage;
         private readonly IExtendedEmailSender<ApplicationUser> _emailSender;
         private readonly IConfiguration _config;
-        private readonly UserManager<ApplicationUser> _userManager;
         public InternalCompanyService(
             DaprClient dapr,
             IWebHostEnvironment env,
             ILogger<InternalCompanyService> logger,
             IFileStorageService fileStorage,
             IExtendedEmailSender<ApplicationUser> emailSender,
-            UserManager<ApplicationUser> userManager,
             IConfiguration config)
         {
             _dapr = dapr;
@@ -37,7 +36,6 @@ namespace QLN.Company.MS.Service
             _fileStorage = fileStorage;
             _emailSender = emailSender;
             _config = config;
-            _userManager = userManager;
         }
 
         public async Task<string> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
@@ -337,48 +335,27 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-
         public async Task<string> ApproveCompany(Guid userId, CompanyApproveDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
                 var allCompanies = await GetAllCompanies(cancellationToken);
                 var company = allCompanies.FirstOrDefault(c => c.Id == dto.CompanyId);
-
                 if (company == null)
                     throw new KeyNotFoundException($"Company with ID {dto.CompanyId} not found.");
 
                 var wasPreviouslyVerified = company.IsVerified;
-
                 company.IsVerified = dto.IsVerified ?? false;
                 company.Status = dto.Status;
                 company.UpdatedUtc = DateTime.UtcNow;
                 company.UpdatedBy = userId;
 
                 await _dapr.SaveStateAsync(
-                   ConstantValues.CompanyStoreName,
-                   company.Id.ToString(),
-                   company,
-                   cancellationToken: cancellationToken
+                    ConstantValues.CompanyStoreName,
+                    company.Id.ToString(),
+                    company,
+                    cancellationToken: cancellationToken
                 );
-                if (wasPreviouslyVerified == false && company.IsVerified == true && !string.IsNullOrWhiteSpace(company.Email))
-                {
-                    var subject = "Company Profile Approved - Qatar Living";
-                    var htmlBody = $@"Hi {company.BusinessName},<br/><br/>
-                          Your company profile has been <b>approved</b> by the Qatar Living team.<br/>
-                          You can now access features exclusive to verified companies.<br/><br/>
-                          Regards,<br/>Qatar Living Team";
-                    _logger.LogInformation("wasPreviouslyVerified: {WasVerified}, IsVerified Now: {IsNowVerified}, Email: {Email}",
-                    wasPreviouslyVerified, company.IsVerified, company.Email);
-
-                    await _emailSender.SendEmailAsync(company.Email, subject, htmlBody);
-                    var user = await _userManager.FindByIdAsync(company.UserId.ToString());
-                    if (user != null)
-                    {
-                        user.IsCompany = true;
-                        await _userManager.UpdateAsync(user);
-                    }
-                }
 
                 return "Company Profile Approved Successfully";
             }

@@ -1,26 +1,16 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore.Migrations.Operations;
-using QLN.Common.DTO_s;
+﻿using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Service;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.DTO_s
 {
     public class CompanyProfileDto : BaseCompanyDto
     {
-        public Guid Id { get; set; }
         [Required]
         public VerticalType VerticalId { get; set; }
         public CompanyCategory? CategoryId { get; set; }
         public Guid UserId { get; set; }
-        [Required]
-        public string? BusinessName { get; set; } = string.Empty;
         [Required]
         public string Country { get; set; } = string.Empty;
         [Required]
@@ -51,14 +41,14 @@ namespace QLN.Common.Infrastructure.DTO_s
     public class CompanyProfileCompletionStatusDto
     {
         public Guid CompanyId { get; set; }
-        public string? BusinessName { get; set; }
+        public string BusinessName { get; set; } = string.Empty;
         public int CompletionPercentage { get; set; }
         public List<string> PendingFields { get; set; } = new();
     }
     public class CompanyProfileVerificationStatusDto
     {
         public Guid CompanyId { get; set; }
-        public string BusinessName { get; set; } = null!;
+        public string BusinessName { get; set; } = string.Empty;
         public VerticalType VerticalId { get; set; }
         public bool? IsVerified { get; set; }
         public CompanyStatus? Status { get; set; } 
@@ -72,10 +62,10 @@ namespace QLN.Common.Infrastructure.DTO_s
     public class CompanyApprovalResponseDto
     {
         public Guid CompanyId { get; set; }
-        public string Name { get; set; } = default!;
+        public string Name { get; set; } = string.Empty;
         public bool? IsVerified { get; set; }
         public CompanyStatus? StatusId { get; set; }
-        public string StatusName { get; set; } = default!;
+        public string StatusName { get; set; } = string.Empty;
         public DateTime? UpdatedUtc { get; set; }
     }
 }

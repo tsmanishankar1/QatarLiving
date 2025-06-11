@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace QLN.Common.DTO_s
 {
     public class BaseCompanyDto
     {
+        public Guid Id { get; set; }
+        [Required]
+        public string BusinessName { get; set; } = string.Empty;
         [Required, Phone]
         public string PhoneNumber { get; set; } = string.Empty;
         [Required]

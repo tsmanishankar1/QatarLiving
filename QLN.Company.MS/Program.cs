@@ -1,13 +1,8 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
-using QLN.Common.Infrastructure.DbContext;
-using QLN.Common.Infrastructure.IService.IAuthService;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IEmailService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.Model;
-using QLN.Common.Infrastructure.Service.AuthService;
 using QLN.Common.Infrastructure.Service.FileStorage;
 using QLN.Common.Infrastructure.Service.SmtpService;
 using QLN.Company.MS.Service;
@@ -22,15 +17,6 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICompanyService, InternalCompanyService>();
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IExtendedEmailSender<ApplicationUser>, EmailSenderService>();
-builder.Services.AddDbContext<QatarlivingDevContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
-{
-    options.SignIn.RequireConfirmedEmail = true;
-})
-.AddEntityFrameworkStores<QatarlivingDevContext>()  
-.AddDefaultTokenProviders();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

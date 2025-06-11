@@ -8,5 +8,7 @@ namespace QLN.Common.Infrastructure.IService.IEmailService
         Task SendTwoFactorCode(TUser user, string email, string code);
         Task SendOtpEmailAsync(string email, string otp);
         Task SendEmailAsync(string toEmail, string subject, string htmlBody);
+        string GetApprovalEmailTemplate(string? businessName);
+        Task SendEmail(string toEmail, string subject, string htmlBody);
     }
 }

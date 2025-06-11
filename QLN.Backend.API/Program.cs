@@ -15,11 +15,7 @@ using QLN.Common.Swagger;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using System.Text.Json.Serialization;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
-using QLN.Common.Infrastructure.IService;
-using Microsoft.AspNetCore.Authorization;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication;
 using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
 using System.Security.Claims;
@@ -178,7 +174,6 @@ builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
 builder.Services.ContentServicesConfiguration(builder.Configuration);
 builder.Services.BannerServicesConfiguration(builder.Configuration);
-
 builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
 builder.Services.SubscriptionConfiguration(builder.Configuration);
@@ -197,7 +192,6 @@ if (app.Environment.IsDevelopment())
         options.DocumentTitle = "Qatar Management API";
     });
 }
-
 
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
@@ -223,8 +217,6 @@ app.MapGroup("/api/subscriptions")
 
 app.MapGroup("/api/PayToPublish")
     .MapPayToPublishEndpoints();
-
-
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.Run();

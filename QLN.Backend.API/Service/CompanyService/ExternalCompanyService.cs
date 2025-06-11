@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Http;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
+using QLN.Common.Infrastructure.IService.IEmailService;
+using QLN.Common.Infrastructure.Model;
 using System.ComponentModel.Design;
 using System.Net;
 using System.Net.Http.Headers;
@@ -15,10 +17,12 @@ namespace QLN.Backend.API.Service.CompanyService
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<ExternalCompanyService> _logger;
-        public ExternalCompanyService(DaprClient dapr, ILogger<ExternalCompanyService> logger)
+        private readonly IExtendedEmailSender<ApplicationUser> _emailSender;
+        public ExternalCompanyService(DaprClient dapr, ILogger<ExternalCompanyService> logger, IExtendedEmailSender<ApplicationUser> emailSender)
         {
             _dapr = dapr;
             _logger = logger;
+            _emailSender = emailSender;
         }
         public async Task<string> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
@@ -154,20 +158,44 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
+
         public async Task<string> ApproveCompany(Guid userId, CompanyApproveDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = $"/api/companyprofile/approveByUserId?userId={userId}";
+                var allCompanies = await GetAllCompanies(cancellationToken);
+                var company = allCompanies.FirstOrDefault(c => c.Id == dto.CompanyId);
 
+                if (company == null)
+                    throw new KeyNotFoundException($"Company with ID {dto.CompanyId} not found.");
+
+                var shouldSendEmail = !company.IsVerified == true && (dto.IsVerified ?? false) && !string.IsNullOrWhiteSpace(company.Email);
+
+                var requestDto = new CompanyApproveDto
+                {
+                    CompanyId = dto.CompanyId,
+                    IsVerified = dto.IsVerified,
+                    Status = dto.Status
+                };
+
+                var url = $"/api/companyprofile/approveByUserId?userId={userId}";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.CompanyServiceAppId, url);
                 request.Content = new StringContent(
-                    JsonSerializer.Serialize(dto),
+                    JsonSerializer.Serialize(requestDto),
                     Encoding.UTF8,
                     "application/json");
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
-                response.EnsureSuccessStatusCode(); 
+                response.EnsureSuccessStatusCode();
+
+                if (shouldSendEmail)
+                {
+                    var subject = "Company Profile Approved - Qatar Living";
+                    var htmlBody = _emailSender.GetApprovalEmailTemplate(company.BusinessName);
+
+                    await _emailSender.SendEmail(company.Email, subject, htmlBody);
+                    _logger.LogInformation("Approval email sent to {Email}", company.Email);
+                }
 
                 var rawJson = await response.Content.ReadAsStringAsync();
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
@@ -178,7 +206,6 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-
         public async Task<CompanyApprovalResponseDto?> GetCompanyApprovalInfo(Guid companyId, CancellationToken cancellationToken = default)
         {
             try
