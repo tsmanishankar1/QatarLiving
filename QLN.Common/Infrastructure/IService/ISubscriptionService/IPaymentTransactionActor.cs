@@ -10,9 +10,10 @@ namespace QLN.Common.Infrastructure.IService.ISubscriptionService
 {
     public interface IPaymentTransactionActor : IActor
     {
-        Task<bool> FastSetDataAsync(PaymentTransactionDto data, CancellationToken cancellationToken = default);
         Task<bool> SetDataAsync(PaymentTransactionDto data, CancellationToken cancellationToken = default);
+        Task<bool> FastSetDataAsync(PaymentTransactionDto data, CancellationToken cancellationToken = default);
         Task<PaymentTransactionDto?> GetDataAsync(CancellationToken cancellationToken = default);
+        Task CheckSubscriptionExpiryAsync();
     }
 
 }

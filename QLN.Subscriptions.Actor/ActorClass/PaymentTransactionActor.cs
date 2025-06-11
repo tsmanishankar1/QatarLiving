@@ -1,15 +1,12 @@
 ﻿using Dapr.Actors;
 using Dapr.Actors.Runtime;
-using Microsoft.AspNetCore.Identity;
+using Dapr.Client;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.IService.ISubscriptionService;
-using QLN.Common.Infrastructure.Model;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using QLN.Common.Infrastructure.DbContext;
 
 namespace QLN.Subscriptions.Actor.ActorClass
 {
@@ -17,14 +14,19 @@ namespace QLN.Subscriptions.Actor.ActorClass
     {
         private const string StateKey = "payment-transaction-data";
         private const string TimerName = "subscription-expiry-timer";
-        private readonly ILogger<PaymentTransactionActor> _logger;
+        private const string PubSubName = "pubsub";
+        private const string ExpiryTopicName = "subscription-expiry";
 
-        // Static service provider - set this during application startup
-        public static IServiceProvider ServiceProvider { get; set; }
+        private readonly ILogger<PaymentTransactionActor> _logger;
+        private readonly DaprClient _daprClient;
 
         public PaymentTransactionActor(ActorHost host, ILogger<PaymentTransactionActor> logger) : base(host)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+            // Create DaprClient directly instead of using DI
+            var daprClientBuilder = new DaprClientBuilder();
+            _daprClient = daprClientBuilder.Build();
         }
 
         public async Task<bool> SetDataAsync(PaymentTransactionDto data, CancellationToken cancellationToken = default)
@@ -65,23 +67,13 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             try
             {
-               
                 var istTimeZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time");
-
-              
                 var nowIst = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, istTimeZone);
-
-               
-                var today115Pm = new DateTime(nowIst.Year, nowIst.Month, nowIst.Day, 18,15, 0);
-
-               
+                var today115Pm = new DateTime(nowIst.Year, nowIst.Month, nowIst.Day, 12, 09, 0);
                 var next115Pm = nowIst <= today115Pm ? today115Pm : today115Pm.AddDays(1);
-
-               
                 var next115PmUtc = TimeZoneInfo.ConvertTimeToUtc(next115Pm, istTimeZone);
                 var dueTime = next115PmUtc - DateTime.UtcNow;
 
-               
                 if (dueTime <= TimeSpan.Zero)
                 {
                     dueTime = TimeSpan.FromDays(1) + dueTime;
@@ -90,7 +82,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 _logger.LogInformation("[PaymentActor {ActorId}] Scheduling expiry check for {NextCheck} IST (in {DueTime})",
                     Id, next115Pm, dueTime);
 
-                
                 await RegisterTimerAsync(
                     TimerName,
                     nameof(CheckSubscriptionExpiryAsync),
@@ -117,14 +108,29 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     return;
                 }
 
-               
                 if (paymentData.EndDate <= DateTime.UtcNow)
                 {
                     _logger.LogInformation("[PaymentActor {ActorId}] Subscription expired for user {UserId}. EndDate: {EndDate}",
                         Id, paymentData.UserId, paymentData.EndDate);
 
-                    
-                    await HandleExpiredSubscriptionAsync(paymentData.UserId);
+                    // Publish subscription expiry message with retry logic
+                    var published = await PublishSubscriptionExpiryWithRetryAsync(paymentData);
+
+                    if (published)
+                    {
+                        // Update state to mark as processed only if publish succeeded
+                        paymentData.LastUpdated = DateTime.UtcNow;
+                        await StateManager.SetStateAsync(StateKey, paymentData);
+                        await StateManager.SaveStateAsync();
+
+                        // Unregister timer as subscription has expired
+                        await UnregisterTimerAsync(TimerName);
+                        _logger.LogInformation("[PaymentActor {ActorId}] Unregistered expiry timer for expired subscription", Id);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("[PaymentActor {ActorId}] Failed to publish expiry message after retries. Will retry on next timer execution.", Id);
+                    }
                 }
                 else
                 {
@@ -138,59 +144,84 @@ namespace QLN.Subscriptions.Actor.ActorClass
             }
         }
 
-        private async Task HandleExpiredSubscriptionAsync(Guid userId)
+        private async Task<bool> PublishSubscriptionExpiryWithRetryAsync(PaymentTransactionDto paymentData)
+        {
+            const int maxRetries = 3;
+            const int baseDelayMs = 1000;
+
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            {
+                try
+                {
+                    await PublishSubscriptionExpiryAsync(paymentData);
+                    _logger.LogInformation("[PaymentActor {ActorId}] Successfully published subscription expiry message for user {UserId} on attempt {Attempt}",
+                        Id, paymentData.UserId, attempt);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "[PaymentActor {ActorId}] Failed to publish subscription expiry message for user {UserId} on attempt {Attempt}/{MaxRetries}",
+                        Id, paymentData.UserId, attempt, maxRetries);
+
+                    if (attempt < maxRetries)
+                    {
+                        var delay = TimeSpan.FromMilliseconds(baseDelayMs * Math.Pow(2, attempt - 1));
+                        await Task.Delay(delay);
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private async Task PublishSubscriptionExpiryAsync(PaymentTransactionDto paymentData)
         {
             try
             {
-                _logger.LogInformation("[PaymentActor {ActorId}] Handling expired subscription for user {UserId}", Id, userId);
+                // First, check if pubsub component is available
+                var healthResponse = await _daprClient.CheckHealthAsync();
+                //if (!healthResponse.IsHealthy)
+                //{
+                //    throw new InvalidOperationException("Dapr sidecar is not healthy");
+                //}
 
-                if (ServiceProvider == null)
+                var expiryMessage = new SubscriptionExpiryMessage
                 {
-                    _logger.LogError("[PaymentActor {ActorId}] ServiceProvider is not set", Id);
-                    return;
-                }
+                    UserId = paymentData.UserId,
+                    SubscriptionId = paymentData.SubscriptionId,
+                    PaymentTransactionId = paymentData.Id,
+                    ExpiryDate = paymentData.EndDate,
+                    ProcessedAt = DateTime.UtcNow
+                };
 
-                using var scope = ServiceProvider.CreateScope();
-                var userManagementService = scope.ServiceProvider.GetRequiredService<IExternalSubscriptionService>();
+                await _daprClient.PublishEventAsync(PubSubName, ExpiryTopicName, expiryMessage);
 
-                var result = await userManagementService.HandleSubscriptionExpiryAsync(userId, CancellationToken.None);
-
-                if (result)
-                {
-                    _logger.LogInformation("[PaymentActor {ActorId}] Successfully handled subscription expiry for user {UserId}", Id, userId);
-
-                    var paymentData = await GetDataAsync();
-                    if (paymentData != null)
-                    {
-                        paymentData.LastUpdated = DateTime.UtcNow;
-                        await StateManager.SetStateAsync(StateKey, paymentData);
-                        await StateManager.SaveStateAsync();
-                    }
-
-                    await UnregisterTimerAsync(TimerName);
-                    _logger.LogInformation("[PaymentActor {ActorId}] Unregistered expiry timer for expired subscription", Id);
-                }
-                else
-                {
-                    _logger.LogError("[PaymentActor {ActorId}] Failed to handle subscription expiry for user {UserId}", Id, userId);
-                }
+                _logger.LogInformation("[PaymentActor {ActorId}] Published subscription expiry message for user {UserId}",
+                    Id, paymentData.UserId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[PaymentActor {ActorId}] Error handling expired subscription for user {UserId}", Id, userId);
+                _logger.LogError(ex, "[PaymentActor {ActorId}] Error publishing subscription expiry message for user {UserId}. Error: {ErrorMessage}",
+                    Id, paymentData.UserId, ex.Message);
+                throw;
             }
         }
-
 
         protected override async Task OnActivateAsync()
         {
             _logger.LogInformation("[PaymentActor {ActorId}] Actor activated", Id);
 
-          
-            var paymentData = await GetDataAsync();
-            if (paymentData != null && paymentData.EndDate > DateTime.UtcNow)
+            try
             {
-                await ScheduleExpiryCheckAsync();
+                var paymentData = await GetDataAsync();
+                if (paymentData != null && paymentData.EndDate > DateTime.UtcNow)
+                {
+                    await ScheduleExpiryCheckAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[PaymentActor {ActorId}] Error during actor activation", Id);
             }
 
             await base.OnActivateAsync();
@@ -200,7 +231,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             _logger.LogInformation("[PaymentActor {ActorId}] Actor deactivated", Id);
 
-          
             try
             {
                 await UnregisterTimerAsync(TimerName);
@@ -210,6 +240,8 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 _logger.LogWarning(ex, "[PaymentActor {ActorId}] Error unregistering timer during deactivation", Id);
             }
 
+            // Dispose DaprClient
+            _daprClient?.Dispose();
             await base.OnDeactivateAsync();
         }
     }

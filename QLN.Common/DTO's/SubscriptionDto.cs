@@ -23,7 +23,14 @@ namespace QLN.Common.DTOs
         public Status StatusId { get; set; }
         public DateTime lastUpdated { get; set; }
     }
-
+    public class SubscriptionExpiryMessage
+    {
+        public Guid UserId { get; set; }
+        public Guid SubscriptionId { get; set; }
+        public Guid PaymentTransactionId { get; set; }
+        public DateTime ExpiryDate { get; set; }
+        public DateTime ProcessedAt { get; set; }
+    }
     public class SubscriptionRequestDto
     {
         [Required]
