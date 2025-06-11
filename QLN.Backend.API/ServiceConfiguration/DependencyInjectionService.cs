@@ -10,6 +10,9 @@ using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IBannerService;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.ISearchService;
+using QLN.Common.Infrastructure.IService.IBackOfficeService;
+using QLN.Backend.API.Service.BackOffice;
+using QLN.Common.DTO_s;
 
 namespace QLN.Backend.API.ServiceConfiguration
 {
@@ -18,6 +21,7 @@ namespace QLN.Backend.API.ServiceConfiguration
         public static IServiceCollection ClassifiedServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddTransient<IClassifiedService, ExternalClassifiedService>();
+            services.AddTransient<IBackOfficeService<BackofficemasterIndex>, ExternalBackOfficeService>();
 
             return services;
         }
@@ -33,7 +37,6 @@ namespace QLN.Backend.API.ServiceConfiguration
 
             return services;
         }
-
         public static IServiceCollection ContentServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
             var drupalUrl = configuration.GetSection("BaseUrl")["LegacyDrupal"] ?? throw new ArgumentNullException("LegacyDrupal");

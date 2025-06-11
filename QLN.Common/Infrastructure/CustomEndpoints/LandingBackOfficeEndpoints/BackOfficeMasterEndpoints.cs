@@ -1,104 +1,122 @@
-﻿using System;
+﻿// QLN.Common.Infrastructure.CustomEndpoints/BackOfficeMasterEndpoints.cs
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;      
-using Microsoft.AspNetCore.Http;         
+using Azure;
+using Dapr;
+using Dapr.Client;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;           
-using Microsoft.AspNetCore.Routing;       
-using QLN.Common.DTO_s;                   
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
+using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.DTO_s;
+using QLN.Common.Infrastructure.IService.IBackOfficeService;
 using QLN.Common.Infrastructure.IService.ISearchService;
+using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints
 {
     public static class BackOfficeMasterEndpoints
     {
         /// <summary>
-        /// Maps three endpoints under {routeSegment} on the given group:
-        ///   • POST  /{routeSegment}           → Upsert (create or update) a BackofficemasterIndex doc  
-        ///   • GET   /{routeSegment}           → Retrieve all BackofficemasterIndex docs filtered by vertical & entityType  
-        ///   • GET   /{routeSegment}/{id}      → Retrieve a single BackofficemasterIndex by its composite Id  
-        ///   • DELETE /{routeSegment}/{id}     → Delete a single BackofficemasterIndex document
-        /// Each BackofficemasterIndex is stamped with:
-        ///   d.Vertical   = vertical;
-        ///   d.EntityType = entityType;
-        ///
-        /// The actual Azure Search index name is hard‐coded to “backofficemaster” inside the CommonIndexRequest.
+        /// Maps CRUD + pub-sub endpoints for any back-office master entity.
+        /// Reads from the search index; writes to Dapr state + publishes IndexMessage.
+        /// Includes detailed error and exception handling.
         /// </summary>
-        /// <param name="group">The RouteGroupBuilder under which to map these endpoints (e.g. app.MapGroup("/api/services")).</param>
-        /// <param name="vertical">Logical vertical name (e.g. "services", "classifieds").</param>
-        /// <param name="routeSegment">The path segment (e.g. "featured-categories", "seasonal-picks").</param>
-        /// <param name="entityType">The master‐data entity type (e.g. "FeaturedCategory", "SeasonalPick").</param>
-        /// <returns>The same RouteGroupBuilder, for chaining.</returns>
         public static RouteGroupBuilder MapBackOfficeMasterEndpoints(
             this RouteGroupBuilder group,
             string vertical,
             string routeSegment,
             string entityType)
         {
-            group.MapPost($"/{routeSegment}", async Task<Results<
+            group.MapPost($"/{routeSegment}",
+                async Task<Results<
                     Ok<string>,
                     BadRequest<ProblemDetails>,
-                    ProblemHttpResult>>
-                (
+                    ProblemHttpResult>> (
                     BackofficemasterIndex doc,
-                    [FromServices] ISearchService searchSvc,
-                    CancellationToken cancellationToken
+                    IBackOfficeService<BackofficemasterIndex> stateSvc,
+                    DaprClient dapr,
+                    CancellationToken ct
                 ) =>
-            {
-                if (doc == null)
                 {
-                    return TypedResults.BadRequest(new ProblemDetails
+                    if (doc == null)
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = "Request body must contain a BackofficemasterIndex object.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+
+                    doc.Vertical = vertical;
+                    doc.EntityType = entityType;
+                    if (string.IsNullOrWhiteSpace(doc.Id))
+                        doc.Id = $"{vertical}-{entityType}-{Guid.NewGuid():N}".Substring(0, 8);
+
+                    try
                     {
-                        Title = "Bad Request",
-                        Detail = "Request body must contain a BackofficemasterIndex object.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
+                        await stateSvc.UpsertState(doc, ct);
+                        var msg = new IndexMessage
+                        {
+                            Vertical = vertical,
+                            Action = "Upsert",
+                            UpsertRequest = new CommonIndexRequest
+                            {
+                                VerticalName = ConstantValues.backofficemaster,
+                                MasterItem = doc
+                            }
+                        };
+                        await dapr.PublishEventAsync(
+                            PubSubName,
+                            PubSubTopics.IndexUpdates,
+                            msg,
+                            ct
+                        );
 
-                doc.Vertical = vertical;
-                doc.EntityType = entityType;
-                if (string.IsNullOrWhiteSpace(doc.Id))
-                {
-                    var shortGuid = Guid.NewGuid().ToString("N").Substring(0, 8);
-                    doc.Id = $"{doc.Vertical}-{doc.EntityType}-{shortGuid}";
-                }
-
-                var req = new CommonIndexRequest
-                {
-                    VerticalName = ConstantValues.backofficemaster,
-                    MasterItem = doc
-                };
-
-                try
-                {
-                    await searchSvc.UploadAsync(req);
-                    return TypedResults.Ok("Record created successfully");
-                }
-                catch (ArgumentException ex)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
+                        return TypedResults.Ok("Record saved and queued for indexing.");
+                    }
+                    catch (OperationCanceledException)
                     {
-                        Title = "Invalid Argument",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }
-            })
+                        return TypedResults.Problem(
+                            title: "Request Cancelled",
+                            detail: "The operation was cancelled.",
+                            statusCode: StatusCodes.Status499ClientClosedRequest
+                        );
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Argument",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    catch (DaprException ex)
+                    {
+                        return TypedResults.Problem(
+                            title: "Pub/Sub Error",
+                            detail: $"Failed to publish indexing message: {ex.Message}",
+                            statusCode: StatusCodes.Status502BadGateway
+                        );
+                    }
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem(
+                            title: "Internal Server Error",
+                            detail: ex.Message,
+                            statusCode: StatusCodes.Status500InternalServerError
+                        );
+                    }
+                })
             .WithName($"Upsert_{vertical}_{entityType}")
             .WithSummary($"Upsert a single {entityType}")
-            .WithDescription($"Upserts one {entityType} document into the backoffice-master search index.");
+            .WithDescription($"Write a {entityType} to state store and enqueue it for indexing.");
 
             group.MapGet($"/{routeSegment}", async Task<IResult> (
                     [FromServices] ISearchService searchSvc,
@@ -117,7 +135,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
 
                 try
                 {
-                    CommonSearchResponse response = await searchSvc.SearchAsync(ConstantValues.backofficemaster,searchReq);
+                    CommonSearchResponse response = await searchSvc.SearchAsync(ConstantValues.backofficemaster, searchReq);
                     var list = response.MasterItems ?? new List<BackofficemasterIndex>();
 
                     var filtered = list
@@ -130,10 +148,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
-                        Title = "Invalid Argument",
+                        Title = "Invalid Arguments",
                         Detail = ex.Message,
                         Status = StatusCodes.Status400BadRequest
                     });
+                }
+                catch (RequestFailedException ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Search Service Error",
+                        detail: $"Azure Search failed: {ex.Message}",
+                        statusCode: StatusCodes.Status502BadGateway
+                    );
                 }
                 catch (Exception ex)
                 {
@@ -151,125 +177,148 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapGet($"/{routeSegment}/{{id}}", async Task<IResult> (
+            group.MapGet($"/{routeSegment}/{{id}}",
+                async Task<Results<
+                    Ok<BackofficemasterIndex>,
+                    BadRequest<ProblemDetails>,
+                    NotFound<ProblemDetails>,
+                    ProblemHttpResult>> (
                     string id,
-                    [FromServices] ISearchService searchSvc,
-                    CancellationToken cancellationToken
+                    ISearchService searchSvc,
+                    CancellationToken ct
                 ) =>
-            {
-                if (string.IsNullOrWhiteSpace(id))
                 {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Bad Request",
-                        Detail = "Id must be provided in the URL.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                try
-                {
-                    var doc = await searchSvc.GetByIdAsync<BackofficemasterIndex>(ConstantValues.backofficemaster, id);
-
-                    if (doc is null)
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
+                    if (string.IsNullOrWhiteSpace(id))
+                        return TypedResults.BadRequest(new ProblemDetails
                         {
-                            Title = "Not Found",
-                            Detail = $"{entityType} with Id '{id}' not found under vertical '{vertical}'.",
-                            Status = StatusCodes.Status404NotFound
+                            Title = "Bad Request",
+                            Detail = "Id must be provided.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+
+                    try
+                    {
+                        var doc = await searchSvc.GetByIdAsync<BackofficemasterIndex>(
+                            backofficemaster, id);
+
+                        if (doc == null
+                         || doc.Vertical != vertical
+                         || doc.EntityType != entityType)
+                        {
+                            return TypedResults.NotFound(new ProblemDetails
+                            {
+                                Title = "Not Found",
+                                Detail = $"{entityType} '{id}' not found.",
+                                Status = StatusCodes.Status404NotFound
+                            });
+                        }
+                        return TypedResults.Ok(doc);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Arguments",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
                         });
                     }
-                    if (doc.Vertical != vertical || doc.EntityType != entityType)
+                    catch (RequestFailedException ex)
                     {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = $"No {entityType} with Id '{id}' found under vertical '{vertical}'.",
-                            Status = StatusCodes.Status404NotFound
-                        });
+                        return TypedResults.Problem(
+                            title: "Search Service Error",
+                            detail: $"Azure Search lookup failed: {ex.Message}",
+                            statusCode: StatusCodes.Status502BadGateway
+                        );
                     }
-
-                    return TypedResults.Ok(doc);
-                }
-                catch (ArgumentNullException ex)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
+                    catch (Exception ex)
                     {
-                        Title = "Bad Request",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }
-            })
+                        return TypedResults.Problem(
+                            title: "Internal Server Error",
+                            detail: ex.Message,
+                            statusCode: StatusCodes.Status500InternalServerError
+                        );
+                    }
+                })
             .WithName($"GetById_{vertical}_{entityType}")
-            .WithSummary($"Get a single {entityType} by Id")
-            .WithDescription($"Retrieves one {entityType} document by its Id for vertical '{vertical}'.")
-            .Produces<BackofficemasterIndex>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            .WithSummary($"Get single published {entityType} by Id")
+            .WithDescription($"Retrieve one published {entityType} by Id for vertical '{vertical}'");
 
-            group.MapDelete($"/{routeSegment}/{{id}}", async Task<IResult> (
+            group.MapDelete($"/{routeSegment}/{{id}}",
+                async Task<Results<
+                    NoContent,
+                    BadRequest<ProblemDetails>,
+                    ProblemHttpResult>> (
                     string id,
-                    [FromServices] ISearchService searchSvc,
-                    CancellationToken cancellationToken
+                    IBackOfficeService<BackofficemasterIndex> stateSvc,
+                    DaprClient dapr,
+                    CancellationToken ct
                 ) =>
-            {
-                if (string.IsNullOrWhiteSpace(id))
                 {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Bad Request",
-                        Detail = "Id must be provided in the URL.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
+                    if (string.IsNullOrWhiteSpace(id))
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = "Id must be provided.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
 
-                try
-                {
-                    // Delete from the “backofficemaster” index:
-                    await searchSvc.DeleteAsync(
-                        ConstantValues.backofficemaster,
-                        id
-                    );
-
-                    // On success (or if it wasn't found), return 204 No Content
-                    return TypedResults.NoContent();
-                }
-                catch (ArgumentException ex)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
+                    try
                     {
-                        Title = "Invalid Argument",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }
-            })
+                        await stateSvc.DeleteState(id, ct);
+
+                        var msg = new IndexMessage
+                        {
+                            Vertical = vertical,
+                            Action = "Delete",
+                            DeleteKey = id
+                        };
+                        await dapr.PublishEventAsync(
+                            ConstantValues.PubSubName,
+                            PubSubTopics.IndexUpdates,
+                            msg,
+                            ct
+                        );
+
+                        return TypedResults.NoContent();
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        return TypedResults.Problem(
+                            title: "Request Cancelled",
+                            detail: "The operation was cancelled.",
+                            statusCode: StatusCodes.Status499ClientClosedRequest
+                        );
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Arguments",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    catch (DaprException ex)
+                    {
+                        return TypedResults.Problem(
+                            title: "Pub/Sub Error",
+                            detail: $"Failed to publish delete: {ex.Message}",
+                            statusCode: StatusCodes.Status502BadGateway
+                        );
+                    }
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem(
+                            title: "Internal Server Error",
+                            detail: ex.Message,
+                            statusCode: StatusCodes.Status500InternalServerError
+                        );
+                    }
+                })
             .WithName($"Delete_{vertical}_{entityType}")
             .WithSummary($"Delete a single {entityType} by Id")
-            .WithDescription($"Deletes one {entityType} document by its Id for vertical '{vertical}'.")
-            .Produces(StatusCodes.Status204NoContent)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
+            .WithDescription($"Delete one {entityType} from state store and enqueue its removal from index.");
 
             return group;
         }

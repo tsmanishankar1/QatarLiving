@@ -8,16 +8,14 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Search.Documents" Version="11.6.0" />
+    <PackageReference Include="Dapr.AspNetCore" Version="1.13.1" />
+    <PackageReference Include="Dapr.Client" Version="1.13.1" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.15" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\QLN.Common\QLN.Common.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="CustomEndpoints\" />
   </ItemGroup>
 
 </Project>

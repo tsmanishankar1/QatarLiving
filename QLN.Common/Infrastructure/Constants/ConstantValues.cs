@@ -26,6 +26,7 @@ namespace QLN.Common.Infrastructure.Constants
         public const string DocTypeBanner = "Banner";
         //Index constants
         public const string backofficemaster = "backofficemaster";
+        public const string PubSubName = "pubsub";
         public static class EntityTypes
         {
             public const string HeroBanner = "HeroBanner";
@@ -41,6 +42,10 @@ namespace QLN.Common.Infrastructure.Constants
             public const string FaqItem = "FaqItem";
             public const string CallToAction = "CallToAction";
 
+        }
+        public static class PubSubTopics
+        {
+            public const string IndexUpdates = "index-updates";
         }
         public static class Verticals
         {
