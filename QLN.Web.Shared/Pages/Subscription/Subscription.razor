@@ -55,7 +55,7 @@
     <MudGrid GutterSize="4">
 
         <!-- LEFT SECTION -->
-        <MudItem xs="12" md="9">
+        <MudItem xs="12" md="8">
             <div style="max-width: 800px; margin: 0 auto;">
                  <div style="width: 100%;display:flex;justify-content:center;align-items:center;">
         <div style="width: 90%;display:flex;justify-content:center;align-items:center;">
@@ -127,38 +127,53 @@
 
                 </MudGrid>
 
- 
             </div>
         </MudItem>
 
         <!-- RIGHT SECTION -->
-        <MudItem xs="12" md="3">
+        <MudItem xs="12" md="4">
             <!-- Summary Card -->
-            <MudPaper   Style="@CardStyle" Elevation="2">
-                <MudText Typo="Typo.h6" Class="mb-2">Summary</MudText>
-                @if (_selectedPlan != null)
-                {
-                    <MudText>Plan: @_selectedPlan.Duration</MudText>
-                    <MudText>Price: @_selectedPlan.Price</MudText>
-                }
-                else
-                {
-                    <MudText>No plan selected.</MudText>
-                }
+                    <MudPaper Elevation="2" Class="pa-4">
+                        <MudText Class="summary-header mb-4">Summary</MudText>
 
-                <MudDivider Class="my-2" />
-                <MudText Class="font-bold mt-2">Total: @(_selectedPlan?.Price ?? 0)</MudText>
+                        @if (_selectedPlan != null)
+                        {
+                            <div class="d-flex justify-space-between align-center mb-3">
+                                <div class="d-flex flex-column">
+                                    <MudText Class="summary-title">@_selectedPlan.SubscriptionName</MudText>
+                                    <MudText Class="summary-duration">@_selectedPlan.Duration</MudText>
+                                </div>
+                                <MudText Class="summary-price">@_selectedPlan.Price QAR</MudText>
+                            </div>
 
-                <MudBox Class="mt-4" Style="width: 100%;display: flex; justify-content:center;align-items:center">
-                    <MudButton Disabled="_selectedPlan == null"
-                    OnClick="OpenPaymentDialog"
-                    Class="font-semibold"
-                    Style="@(_selectedPlan == null ?
-               "background-color: #E0E0E0; color: white; width: 200px;" :
-               "background-color: #F26D1E; color: white; width: 200px;")">
-                        Pay Now
-                    </MudButton>
-                </MudBox>
+                            <MudDivider Class="my-3" />
+
+                            <MudCheckBox T="bool" >
+                                <ChildContent>
+                                   <span class="confirmation-label mb-3"> I confirm that I have read and accepted the
+                                    <span class="refund-policy-link"> Refund policy.</span></span>
+                                </ChildContent>
+                            </MudCheckBox>
+
+                            <div class="d-flex justify-space-between align-center">
+                                <MudText Class="summary-total">Total</MudText>
+                                <MudText Class="summary-price">@_selectedPlan.Price QAR</MudText>
+                            </div>
+                        }
+                        else
+                        {
+                            <MudText Class="mb-4">No plan selected.</MudText>
+                        }
+
+                        <MudButton Variant="Variant.Filled"
+                                   FullWidth="true"
+                                   Disabled="_selectedPlan == null"
+                                   OnClick="OpenPaymentDialog"
+                                   Style="background-color: #FF7F38; color: white; height: 48px; font-weight: 600;margin-top:10px;text-transform: none;"
+                                   Class="@(_selectedPlan == null ? "disabled-button" : "")">
+                            Pay now
+                        </MudButton>
+
 
                 @if (_isPaymentDialogOpen)
                 {
@@ -274,7 +289,68 @@
         padding: 0 40px;
     }
 
-   
+    .disabled-button {
+        background-color: #E0E0E0 !important;
+    }
+
+    .summary-header {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 20px;
+        line-height: 34px;
+        color: #242424;
+        border-bottom: 1px solid #D0D5DD;
+    }
+
+    .summary-title {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 16px;
+        line-height: 24px;
+        color: #242424;
+    }
+
+    .summary-duration {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 12px;
+        line-height: 18px;
+        color: #646464;
+    }
+
+    .summary-price {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 16px;
+        line-height: 24px;
+        color: #242424;
+    }
+
+    .summary-total {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 20px;
+        line-height: 34px;
+        color: #242424;
+    }
+
+    .confirmation-label {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 12px;
+        line-height: 18px;
+        color: #242424;
+    }
+
+    .refund-policy-link {
+        color: #FF7F38;
+        font-weight: 500;
+        font-size: 12px;
+        line-height: 18px;
+        text-decoration: underline;
+        cursor: pointer;
+    }
+
     @@media (max-width: 600px) {
         .vertical-tabs-toolbar {
             display: flex;
