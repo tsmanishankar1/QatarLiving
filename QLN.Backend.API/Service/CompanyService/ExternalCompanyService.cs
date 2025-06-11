@@ -263,5 +263,29 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
+        public async Task<List<CompanyProfileDto>> GetCompaniesByTokenUser(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/companyprofile/getByUserId?userId={userId}"; 
+
+                return await _dapr.InvokeMethodAsync<List<CompanyProfileDto>>(
+                    HttpMethod.Get,
+                    ConstantValues.CompanyServiceAppId,
+                    url,
+                    cancellationToken);
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning("No companies found for token user.");
+                return new();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving companies for token user");
+                throw;
+            }
+        }
+
     }
 }

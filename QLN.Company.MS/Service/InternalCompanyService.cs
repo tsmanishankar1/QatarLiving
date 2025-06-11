@@ -417,5 +417,19 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
+        public async Task<List<CompanyProfileDto>> GetCompaniesByTokenUser(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var all = await GetAllCompanies(cancellationToken);
+                return all
+                    .Where(c => c.UserId == userId)
+                    .ToList();
+            }
+            catch(Exception ex)
+            {
+                throw;
+            }
+        }
     }
 }

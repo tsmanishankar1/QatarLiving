@@ -702,5 +702,105 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
             return group;
         }
+        public static RouteGroupBuilder MapGetCompanyProfilesByTokenUser(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getByTokenUser", async Task<IResult> (
+                HttpContext httpContext,
+                [FromServices] ICompanyService service,
+                CancellationToken cancellationToken = default) =>
+            {
+                try
+                {
+                    var tokenUserId = httpContext.User.FindFirst("sub")?.Value
+                                    ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                    if (!Guid.TryParse(tokenUserId, out var userGuid))
+                        return TypedResults.Forbid();
+
+                    var allCompanies = await service.GetCompaniesByTokenUser(userGuid, cancellationToken);
+                    var userCompanies = allCompanies
+                        .Where(c => c.UserId == userGuid)
+                        .ToList();
+                    if (userCompanies.Count == 0)
+                        throw new KeyNotFoundException("No company profiles found for the current user.");
+
+                    return TypedResults.Ok(userCompanies);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetCompanyProfilesByTokenUser")
+            .WithTags("Company")
+            .WithSummary("Get company profiles for logged-in user")
+            .WithDescription("Fetches all companies owned by the current token user")
+            .Produces<List<CompanyProfileDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/getByUserId", async Task<IResult> (
+            [FromQuery] Guid userId,
+            ICompanyService service,
+            CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    if (userId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "UserId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var companies = await service.GetCompaniesByTokenUser(userId, cancellationToken);
+                    return TypedResults.Ok(companies);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetCompaniesByUserId")
+            .WithTags("Company")
+            .WithSummary("Get companies by user ID")
+            .WithDescription("Used internally by Dapr or system components.")
+            .ExcludeFromDescription()
+            .Produces<List<CompanyProfileDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+
     }
 }
