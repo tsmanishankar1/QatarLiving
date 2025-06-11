@@ -18,6 +18,8 @@ using BreadcrumbItem = QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem;
 using static QLN.Web.Shared.Pages.Subscription.SubscriptionDetails;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Services.Interfaces;
+using System.Security.Claims;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace QLN.Web.Shared.Pages.Subscription
 {
@@ -28,6 +30,8 @@ namespace QLN.Web.Shared.Pages.Subscription
 
         [Inject] private NavigationManager Navigation { get; set; } = default!;
         [Inject] private ApiService Api { get; set; } = default!;
+        [Inject] private CookieAuthStateProvider CookieAuthenticationStateProvider { get; set; } = default!;
+
         [Inject] protected IJSRuntime _jsRuntime { get; set; }
         [Inject] protected ISubscriptionService SubscriptionService { get; set; }
 
@@ -56,17 +60,23 @@ namespace QLN.Web.Shared.Pages.Subscription
         private List<BreadcrumbItem> breadcrumbItems = new();
         private List<SubscriptionPlan> _plans = new();
 
+        public string Name { get; set; }
+        public string Email { get; set; }
+
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (firstRender)
+            var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
+            if (authState != null)
             {
-                _authToken = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
-                if (string.IsNullOrWhiteSpace(_authToken))
+                var user = authState.User;
+                if (user.Identity != null && user.Identity.IsAuthenticated)
                 {
-                    _authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjU0NTZhZTY0LTNjMGMtNDJjYS04MGIxLTBjOWQ2YjBkYmY5MiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJqYXNyMjciLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJqYXN3YW50aC5yQGtyeXB0b3NpbmZvc3lzLmNvbSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL21vYmlsZXBob25lIjoiKzkxOTAwMzczODEzOCIsIlVzZXJJZCI6IjU0NTZhZTY0LTNjMGMtNDJjYS04MGIxLTBjOWQ2YjBkYmY5MiIsIlVzZXJOYW1lIjoiamFzcjI3IiwiRW1haWwiOiJqYXN3YW50aC5yQGtyeXB0b3NpbmZvc3lzLmNvbSIsIlBob25lTnVtYmVyIjoiKzkxOTAwMzczODEzOCIsImV4cCI6MTc0NjY5NTE0NywiaXNzIjoiUWF0YXIgTGl2aW5nIiwiYXVkIjoiUWF0YXIgTGl2aW5nIn0.KYxgzCBr5io7jm9SDzh2GE7GADKZ38k3kivgx6gC3PQ";
+                    Name = user.FindFirst(ClaimTypes.Name)?.Value;
+                    Email = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value;
+                    _authToken = user.FindFirst("access")?.Value;
                 }
-
             }
+            StateHasChanged();
 
             await base.OnAfterRenderAsync(firstRender);
         }
@@ -78,6 +88,110 @@ namespace QLN.Web.Shared.Pages.Subscription
             new() { Label = "Subscriptions", Url = "/Subscriptions", IsLast = true },
         };
         }
+
+        private List<VerticalTab> _verticalTabs = new()
+{
+    new VerticalTab
+    {
+        Index = 0,
+        VerticalId = 1,
+        Label = "Properties",
+        Icon = "/qln-images/subscription/Properties.svg",
+        Categories = new()
+        {
+            new CategoryTab { Index = 1, Label = "Real Estate", Icon = "/qln-images/subscription/Stores.svg", CategoryId = 1 },
+            new CategoryTab { Index = 2, Label = "International Real Estate", Icon = "/qln-images/subscription/Stores.svg", CategoryId = 2 },
+           new CategoryTab { Index = 3, Label = "Hotel Estate", Icon = "/qln-images/subscription/Stores.svg", CategoryId = 3 },
+
+        }
+    },
+    new VerticalTab
+    {
+        Index = 1,
+        VerticalId = 2,
+        Label = "Vehicles",
+        Icon = "/qln-images/subscription/Vehicles.svg",
+        Categories = new()
+        {
+            new CategoryTab { Index = 1, Label = "A", Icon = "/qln-images/subscription/Stores.svg", CategoryId = 1 },
+            new CategoryTab { Index = 2, Label = "B", Icon = "/qln-images/subscription/Stores.svg", CategoryId = 2 }
+,
+        }
+    },
+    new VerticalTab
+    {
+        Index = 2,
+        VerticalId = 3,
+        Label = "Classified",
+        Icon = "/qln-images/subscription/Classifieds.svg",
+        Categories = new()
+        {
+            new CategoryTab { Index = 0, Label = "Deals", Icon = "/qln-images/subscription/Deals.svg", CategoryId = 1 },
+            new CategoryTab { Index = 1, Label = "Stores", Icon = "/qln-images/subscription/Stores.svg", CategoryId = 2 },
+            new CategoryTab { Index = 2, Label = "Preloved", Icon = "/qln-images/subscription/Preloved.svg", CategoryId = 3 },
+        }
+    },
+ new VerticalTab
+    {
+        Index = 3,
+        VerticalId = 4,
+        Label = "Services",
+        Icon = "/qln-images/subscription/Services.svg",
+        Categories = new()
+        {
+            new CategoryTab { Index = 0, Label = "Deals", Icon = "/qln-images/subscription/Deals.svg", CategoryId = 1 },
+            new CategoryTab { Index = 1, Label = "Stores", Icon = "/qln-images/subscription/Stores.svg", CategoryId = 2 },
+            new CategoryTab { Index = 2, Label = "Preloved", Icon = "/qln-images/subscription/Preloved.svg", CategoryId = 3 },
+        }
+    },
+         new VerticalTab
+    {
+        Index = 4,
+        VerticalId = 5,
+        Label = "Jobs",
+        Icon = "/qln-images/subscription/Jobs.svg",
+        Categories = new()
+        {
+            new CategoryTab { Index = 0, Label = "Yearly Subscription", Icon = "/qln-images/subscription/Deals.svg", CategoryId = 301 },
+            new CategoryTab { Index = 1, Label = "À La Carte", Icon = "/qln-images/subscription/Stores.svg", CategoryId = 302 },
+        }
+    },
+         new VerticalTab
+    {
+        Index = 5,
+        VerticalId = 6,
+        Label = "Rewards",
+        Icon = "/qln-images/subscription/Rewards.svg",
+        Categories = new()
+        {
+  new CategoryTab { Index = 0, Label = "Yearly Subscription", Icon = "/qln-images/subscription/Deals.svg", CategoryId = 301 },
+            new CategoryTab { Index = 1, Label = "À La Carte", Icon = "/qln-images/subscription/Stores.svg", CategoryId = 302 },
+        }
+    },};
+
+        private async void SetVeritcalTab(int index)
+        {
+            _activeVerticalTabIndex = index;
+            _activeTabIndex = 0;
+            var selectedTab = _verticalTabs.FirstOrDefault(t => t.Index == index);
+            if (selectedTab != null && selectedTab.Categories.Any())
+            {
+                await LoadSubscriptionPlansFromApi(selectedTab.VerticalId, selectedTab.Categories[0].CategoryId);
+            }
+        }
+        private async void SetTab(int index)
+        {
+            _activeTabIndex = index;
+            var selectedTab = _verticalTabs[_activeVerticalTabIndex];
+            var selectedCategory = selectedTab.Categories.ElementAtOrDefault(index);
+            if (selectedCategory != null)
+            {
+                await LoadSubscriptionPlansFromApi(selectedTab.VerticalId, selectedCategory.CategoryId);
+            }
+        }
+
+
+
 
         //private void LoadSubscriptionPlans()
         //{
@@ -96,14 +210,14 @@ namespace QLN.Web.Shared.Pages.Subscription
 
         private async Task LoadSubscriptionPlansFromApi(int verticalId, int categoryId)
         {
-           
+
             try
             {
                 IsLoading = true;
                 HasError = false;
 
 
-                var response = await SubscriptionService.GetSubscriptionAsync( verticalId,  categoryId);
+                var response = await SubscriptionService.GetSubscriptionAsync(verticalId, categoryId);
 
                 if (response?.Subscriptions != null && response.Subscriptions.Any())
                 {
@@ -131,16 +245,6 @@ namespace QLN.Web.Shared.Pages.Subscription
         }
 
 
-        private void SetVeritcalTab(int index)
-        {
-            _activeVerticalTabIndex = index;
-        }
-
-        private void SetTab(int index)
-        {
-            _activeTabIndex = index;
-            _selectedPlan = null;
-        }
 
         private IEnumerable<SubscriptionPlan> GetFilteredPlans()
         {

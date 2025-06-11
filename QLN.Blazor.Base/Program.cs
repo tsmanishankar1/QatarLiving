@@ -24,6 +24,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 var contentVerticalAPIUrl = builder.Configuration["ServiceUrlPaths:ContentVerticalAPI"];
 var qatarLivingAPI = builder.Configuration["ServiceUrlPaths:QatarLivingAPI"];
+var baseURL = builder.Configuration["ServiceUrlPaths:BaseURL"];
 
 Console.WriteLine($"ContentVerticalAPI URL: {contentVerticalAPIUrl}");
 
@@ -39,6 +40,11 @@ if (string.IsNullOrWhiteSpace(qatarLivingAPI))
     throw new InvalidOperationException("QatarLivingAPI URL is missing in configuration.");
 }
 
+if (string.IsNullOrWhiteSpace(baseURL))
+{
+    throw new InvalidOperationException("BaseURL URL is missing in configuration.");
+}
+
 builder.Services.AddCors(options =>
 {
 
@@ -46,7 +52,8 @@ builder.Services.AddCors(options =>
     string[] origins = { 
                 // add more as necessary
                 contentVerticalAPIUrl,
-                qatarLivingAPI
+                qatarLivingAPI,
+                baseURL
     };
 
     // filter out distinct URLs
@@ -227,7 +234,7 @@ builder.Services.AddHttpClient<ISearchService, CommunitySearchService>(client =>
 builder.Services.AddHttpClient<ApiService>();
 builder.Services.AddHttpClient<ISubscriptionService, SubscriptionService>(client =>
 {
-    client.BaseAddress = new Uri(contentVerticalAPIUrl);
+    client.BaseAddress = new Uri(baseURL);
 });
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ISimpleMemoryCache, SimpleMemoryCache>(); // add shared Banner Service

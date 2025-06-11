@@ -34,11 +34,12 @@ namespace QLN.Web.Shared.Services
          
         }
 
-        public async Task<SubscriptionResponse?> GetSubscriptionAsync(int id,int id2)
+        public async Task<SubscriptionResponse?> GetSubscriptionAsync(int verticalId, int categoryId)
         {
             try
             {
-                var response = await _httpClient.GetAsync($"api/subscriptions/getsubscription?verticalTypeId=3&categoryId=1");
+                var response = await _httpClient.GetAsync(
+                           $"api/subscriptions/getsubscription?verticalTypeId={verticalId}&categoryId={categoryId}");
 
                 if (!response.IsSuccessStatusCode)
                     return null;
