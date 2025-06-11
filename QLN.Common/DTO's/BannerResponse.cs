@@ -21,11 +21,33 @@ namespace QLN.Common.Infrastructure.DTO_s
         public string ImageMobile { get; set; }
 
         [JsonPropertyName("link")]
-        public string Link { get; set; }
+        public string? Link { get; set; }
     }
 
     public class BannerResponse
     {
+        // Data in the response that I have attempted to connect to what it appears to be for
+        
+        [JsonPropertyName("qln_banners_daily_hero")]
+        public List<BannerItem> QlnBannersDailyHero { get; set; } = new();
+
+        [JsonPropertyName("qln_banners_news_world_take_over_1")]
+        public List<BannerItem> QlnBannersNewsWorldTakeOver1 { get; set; } = new();
+
+        [JsonPropertyName("qln_banners_news_middle_east_hero")]
+        public List<BannerItem> QlnBannersNewsMiddleEastHero { get; set; } = new();
+
+        [JsonPropertyName("qln_banners_daily_take_over_1")]
+        public List<BannerItem> QlnBannersDailyTakeOver1 { get; set; } = new();
+
+        [JsonPropertyName("qln_banners_news_qatar_take_over_1")]
+        public List<BannerItem> QlnBannersNewsQatarTakeOver1 { get; set; } = new();
+
+        [JsonPropertyName("qln_banners_daily_take_over_2")]
+        public List<BannerItem> QlnBannersNewsQatarTakeOver2 { get; set; } = new();
+
+        // Original list of mappings, some are null on the current response from existing QL API and so we don't have this to display
+
         [JsonPropertyName("content_daily_hero")]
         public List<BannerItem> ContentDailyHero { get; set; } = new();
 
