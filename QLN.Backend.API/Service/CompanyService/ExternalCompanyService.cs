@@ -1,14 +1,11 @@
 ﻿using Dapr.Client;
-using Microsoft.AspNetCore.Http;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IEmailService;
+using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.Model;
-using System.ComponentModel.Design;
 using System.Net;
-using System.Net.Http.Headers;
-using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 namespace QLN.Backend.API.Service.CompanyService
@@ -18,16 +15,34 @@ namespace QLN.Backend.API.Service.CompanyService
         private readonly DaprClient _dapr;
         private readonly ILogger<ExternalCompanyService> _logger;
         private readonly IExtendedEmailSender<ApplicationUser> _emailSender;
-        public ExternalCompanyService(DaprClient dapr, ILogger<ExternalCompanyService> logger, IExtendedEmailSender<ApplicationUser> emailSender)
+        private readonly IFileStorageBlobService _blobStorage;
+        public ExternalCompanyService(DaprClient dapr, ILogger<ExternalCompanyService> logger, 
+            IExtendedEmailSender<ApplicationUser> emailSender, IFileStorageBlobService blobStorage)
         {
             _dapr = dapr;
             _logger = logger;
             _emailSender = emailSender;
+            _blobStorage = blobStorage;
         }
+
         public async Task<string> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
+                if (!string.IsNullOrWhiteSpace(dto.CRDocument))
+                {
+                    var crFileName = $"{dto.BusinessName}_{dto.UserId}.pdf"; 
+                    var crBlobUrl = await _blobStorage.SaveBase64File(dto.CRDocument, crFileName, "crdocument", cancellationToken);
+                    dto.CRDocument = crBlobUrl;
+                }
+
+                if (!string.IsNullOrWhiteSpace(dto.CompanyLogo))
+                {
+                    var logoFileName = $"{dto.BusinessName}_{dto.UserId}.png";
+                    var logoBlobUrl = await _blobStorage.SaveBase64File(dto.CompanyLogo, logoFileName, "companylogo", cancellationToken);
+                    dto.CompanyLogo = logoBlobUrl;
+                }
+
                 var url = "/api/companyprofile/createByUserId";
 
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.CompanyServiceAppId, url);
@@ -42,7 +57,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 var rawJson = await response.Content.ReadAsStringAsync();
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating company profile");
                 throw;
@@ -71,7 +86,6 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-
         public async Task<List<CompanyProfileDto>> GetAllCompanies(CancellationToken cancellationToken = default)
         {
             try
@@ -89,11 +103,24 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<string> UpdateCompany(CompanyProfileDto dto, Guid id, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = $"/api/companyprofile/updateByUserId?id={id}";
+                if (!string.IsNullOrWhiteSpace(dto.CRDocument))
+                {
+                    var crFileName = $"{dto.BusinessName}_{dto.UserId}.pdf";
+                    var crBlobUrl = await _blobStorage.SaveBase64File(dto.CRDocument, crFileName, "crdocument", cancellationToken);
+                    dto.CRDocument = crBlobUrl;
+                }
+
+                if (!string.IsNullOrWhiteSpace(dto.CompanyLogo))
+                {
+                    var logoFileName = $"{dto.BusinessName}_{dto.UserId}.png";
+                    var logoBlobUrl = await _blobStorage.SaveBase64File(dto.CompanyLogo, logoFileName, "companylogo", cancellationToken);
+                    dto.CompanyLogo = logoBlobUrl;
+                }
+                var url = $"/api/companyprofile/updateByUserId";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.CompanyServiceAppId, url);
                 request.Content = new StringContent(
                     JsonSerializer.Serialize(dto),
@@ -108,7 +135,7 @@ namespace QLN.Backend.API.Service.CompanyService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating company profile with ID: {Id}", id);
+                _logger.LogError(ex, "Error updating company profile");
                 throw;
             }
         }
@@ -158,7 +185,6 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-
         public async Task<string> ApproveCompany(Guid userId, CompanyApproveDto dto, CancellationToken cancellationToken = default)
         {
             try

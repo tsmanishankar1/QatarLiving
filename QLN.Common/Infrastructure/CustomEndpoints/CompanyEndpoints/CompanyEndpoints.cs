@@ -1,16 +1,11 @@
-﻿using Google.Api;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Logging;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
-using QLN.Common.Infrastructure.Utilities;
-using System.ComponentModel.Design;
-using System.Net.Http;
 using System.Security.Claims;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
@@ -202,7 +197,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
             (
-                [FromQuery] Guid id,
                 CompanyProfileDto dto,
                 ICompanyService service,
                 HttpContext httpContext,
@@ -216,13 +210,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                     if (!Guid.TryParse(tokenUserId, out var userGuid))
                         return TypedResults.Forbid();
 
-                    var existingCompany = await service.GetCompanyById(id, cancellationToken);
+                    var existingCompany = await service.GetCompanyById(dto.Id, cancellationToken);
                     if (existingCompany == null)
                     {
                         return TypedResults.NotFound(new ProblemDetails
                         {
                             Title = "Not Found",
-                            Detail = $"Company with ID '{id}' not found.",
+                            Detail = $"Company with ID not found.",
                             Status = StatusCodes.Status404NotFound
                         });
                     }
@@ -232,7 +226,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
                     dto.UserId = userGuid;
 
-                    var updated = await service.UpdateCompany(dto, id, cancellationToken);
+                    var updated = await service.UpdateCompany(dto, cancellationToken);
                     return TypedResults.Ok(updated);
                 }
                 catch (InvalidDataException ex)
@@ -267,7 +261,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 ProblemHttpResult>>
             (
                 CompanyProfileDto dto,
-                Guid id,
                 ICompanyService service,
                 CancellationToken cancellationToken = default) =>
             {
@@ -281,7 +274,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
 
-                    var result = await service.UpdateCompany(dto, id, cancellationToken);
+                    var result = await service.UpdateCompany(dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)

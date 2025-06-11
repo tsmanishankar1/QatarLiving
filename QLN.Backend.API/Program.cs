@@ -20,6 +20,8 @@ using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
 using System.Security.Claims;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
+using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.Service.FileStorage;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -166,8 +168,7 @@ builder.Services.AddActors(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
-builder.Services.AddResponseCaching();   
-
+builder.Services.AddResponseCaching();
 
 builder.Services.AddDaprClient();
 builder.Services.ServicesConfiguration(builder.Configuration);

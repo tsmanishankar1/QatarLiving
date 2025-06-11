@@ -13,7 +13,7 @@ namespace QLN.Common.Infrastructure.IService.ICompanyService
         Task<string> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default);
         Task<CompanyProfileDto?> GetCompanyById(Guid id, CancellationToken cancellationToken = default);
         Task<List<CompanyProfileDto>> GetAllCompanies(CancellationToken cancellationToken = default);
-        Task<string> UpdateCompany(CompanyProfileDto dto, Guid id, CancellationToken cancellationToken = default);
+        Task<string> UpdateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default);
         Task DeleteCompany(Guid id, CancellationToken cancellationToken = default);
         Task<List<CompanyProfileCompletionStatusDto?>> GetCompanyProfileCompletionStatus(Guid userId, VerticalType vertical, CancellationToken cancellationToken = default);
         Task<string> ApproveCompany(Guid userId, CompanyApproveDto dto, CancellationToken cancellationToken = default);
