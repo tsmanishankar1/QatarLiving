@@ -8,21 +8,29 @@ namespace QLN.Common.DTO_s
         // Shared class for item content
         public class Item
         {
+            public Guid id { get; set; }
             public string page_name { get; set; }
             public string queue_name { get; set; }
             public string queue_label { get; set; }
             public string node_type { get; set; }
-            public string nid { get; set; }
             public string date_created { get; set; }
             public string image_url { get; set; }
             public string user_name { get; set; }
             public string title { get; set; }
             public string slug { get; set; }
-            public string category { get; set; }
+            public Category category { get; set; }
             public string category_id { get; set; }
             public string description { get; set; }
         }
 
+        public enum Category
+        {
+            None = 0,         // default fallback
+            News=1,
+            Business=2,
+            Sports=3,
+            Lifestyle=4,
+        }
         // Enum for possible queue labels
         public enum QueueLabel
         {
