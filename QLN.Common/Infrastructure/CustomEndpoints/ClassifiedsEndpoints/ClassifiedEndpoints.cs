@@ -3308,6 +3308,126 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
             .ExcludeFromDescription();
 
+            // itemsAd post
+
+            group.MapPost("items/post", async Task<IResult> (
+                HttpContext httpContext,
+                ClassifiedItems dto,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                try
+                {
+                    var userId = httpContext.User.GetId();
+                    if (userId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Authenticated user ID is missing or invalid.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    dto.UserId = userId;
+                    var result = await service.CreateClassifiedItemsAd(dto, token);
+                    return TypedResults.Ok(result);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Ad Creation Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+                .WithName("PostItemsAd")
+                .WithTags("Classifieds")
+                .WithSummary("Post classified items ad using authenticated user")
+                .WithDescription("Takes user ID from JWT token and creates the ad.")
+                .Produces<ItemsAdCreatedResponseDto>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .RequireAuthorization();
+
+            group.MapPost("items/post-by-id", async Task<IResult> (
+                ClassifiedItems dto,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                try
+                {
+                    if (dto.UserId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "User ID must not be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.CreateClassifiedItemsAd(dto, token);
+                    return TypedResults.Ok(result);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Ad Creation Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+                .WithName("PostItemsAdById")
+                .WithTags("Classifieds")
+                .WithSummary("Post classified items ad using provided UserId")
+                .WithDescription("For admin/service scenarios where the UserId is passed explicitly.")
+                .Produces<ItemsAdCreatedResponseDto>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .ExcludeFromDescription();
+
+
 
             return group;
         }

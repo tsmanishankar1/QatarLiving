@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Search.Documents" Version="11.6.0" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.24.1" />
     <PackageReference Include="Dapr.Actors" Version="1.13.1" />
     <PackageReference Include="Dapr.Actors.AspNetCore" Version="1.13.1" />
     <PackageReference Include="FirebaseAdmin" Version="3.2.0" />
@@ -39,10 +40,6 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.6.2" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.8.0" />	  
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Infrastructure\IService\IServicesService\" />
   </ItemGroup>
 
   <ItemGroup>
