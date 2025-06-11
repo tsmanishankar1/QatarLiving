@@ -1,5 +1,7 @@
 ﻿using Azure;
 using Azure.AI.FormRecognizer.DocumentAnalysis;
+using Azure.Search.Documents;
+using Azure.Search.Documents.Models;
 using Microsoft.Extensions.Options;
 using QLN.AIPOV.Backend.Application.Interfaces;
 using QLN.AIPOV.Backend.Application.Models.Config;
@@ -12,13 +14,16 @@ namespace QLN.AIPOV.Backend.Domain.HttpClients
     {
         private readonly DocumentAnalysisClient _documentAnalysisClient;
         private readonly DocumentIntelligenceSettingsModel _settings;
+        private readonly SearchClient _searchClient;
 
-        public DocumentIntelligenceClient(IOptions<DocumentIntelligenceSettingsModel> settings)
+        public DocumentIntelligenceClient(IOptions<DocumentIntelligenceSettingsModel> settings,
+            SearchClient searchClient)
         {
             _settings = settings.Value;
             _documentAnalysisClient = new DocumentAnalysisClient(
                 new Uri(_settings.Endpoint),
                 new AzureKeyCredential(_settings.ApiKey));
+            _searchClient = searchClient ?? throw new ArgumentNullException(nameof(searchClient), "Search client cannot be null.");
         }
 
         public async Task<CVData> ExtractCVDataAsync(Stream documentStream, string contentType, CancellationToken cancellationToken = default)
@@ -44,48 +49,59 @@ namespace QLN.AIPOV.Backend.Domain.HttpClients
                     cvData.ResumeText = result.Content;
                 }
 
-                // First try to extract from Documents if available
-                if (result.Documents != null && result.Documents.Count > 0)
+                if (!result.KeyValuePairs.Any()) return new CVData
                 {
-                    var document = result.Documents[0];
+                    IsSuccessful = false,
+                    ErrorMessage = "No key-value pairs found in the document."
+                };
 
-                    // Try to extract fields from structured data
-                    if (document.Fields.TryGetValue("Name", out var nameField) && nameField.Value != null)
-                        cvData.Name = nameField.Value.AsString();
-
-                    if (document.Fields.TryGetValue("Surname", out var surnameField) && surnameField.Value != null)
-                        cvData.Surname = surnameField.Value.AsString();
-
-                    if (document.Fields.TryGetValue("Email", out var emailField) && emailField.Value != null)
-                        cvData.Email = emailField.Value.AsString();
-
-                    if (document.Fields.TryGetValue("ContactNumber", out var contactField) && contactField.Value != null)
-                        cvData.ContactNumber = contactField.Value.AsString();
-                }
-                // Fall back to paragraph parsing if Documents is null or empty
-                else if (result.Paragraphs != null && result.Paragraphs.Count > 0)
+                // pass extracted data to search index
+                var document = new SearchDocument { { "id", Guid.NewGuid().ToString() } };
+                foreach (var keyValuePair in result.KeyValuePairs)
                 {
-                    foreach (var paragraph in result.Paragraphs)
+                    switch (keyValuePair.Key.Content)
                     {
-                        if (paragraph.Content == null) continue;
-
-                        var content = paragraph.Content.Trim();
-
-                        // Check if paragraph contains multiple fields
-                        if (content.Contains("Firstname:") &&
-                           (content.Contains("Last Name:") || content.Contains("Surname:")) &&
-                           (content.Contains("Contact Number:") || content.Contains("Email:")))
-                        {
-                            // Extract all fields from compound paragraph
-                            ExtractFieldsFromCompoundParagraph(content, cvData);
-                        }
-                        else
-                        {
-                            // Process single-field paragraphs
-                            ProcessSingleFieldParagraph(content, cvData);
-                        }
+                        case "Full Name" when keyValuePair.Value != null && !string.IsNullOrEmpty(keyValuePair.Value.Content):
+                            {
+                                var fullNameContent = keyValuePair.Value.Content;
+                                if (fullNameContent.Contains(" "))
+                                {
+                                    var fullNameParts = fullNameContent.Split(" ");
+                                    document.Add("FirstName", fullNameParts[0]);
+                                    document.Add("LastName", fullNameParts[^1]);
+                                    cvData.Name = fullNameParts[0];
+                                    cvData.Surname = fullNameParts[^1];
+                                }
+                                break;
+                            }
+                        case "Name" or "First Name" or "FirstName" when keyValuePair.Value != null && !string.IsNullOrEmpty(keyValuePair.Value.Content):
+                            {
+                                document.Add("FirstName", keyValuePair.Value.Content);
+                                cvData.Name = keyValuePair.Value.Content;
+                            }
+                            break;
+                        case "LastName" or "Last Name" or "Surname" when keyValuePair.Value != null && !string.IsNullOrEmpty(keyValuePair.Value.Content):
+                            {
+                                document.Add("LastName", keyValuePair.Value.Content);
+                                cvData.Surname = keyValuePair.Value.Content;
+                            }
+                            break;
+                        case "Email" or "Email Address" or "EmailAddress" when keyValuePair.Value != null && !string.IsNullOrEmpty(keyValuePair.Value.Content):
+                            {
+                                document.Add("Email", keyValuePair.Value.Content);
+                                cvData.Email = keyValuePair.Value.Content;
+                            }
+                            break;
+                        case "Mobile Number" or "MobileNumber" or "Cell" or "Cell No" or "CellNo" or "Contact Number" or "ContactNumber" when keyValuePair.Value != null && !string.IsNullOrEmpty(keyValuePair.Value.Content):
+                            {
+                                document.Add("MobileNumber", keyValuePair.Value.Content);
+                                cvData.ContactNumber = keyValuePair.Value.Content;
+                            }
+                            break;
                     }
                 }
+
+                var response = await _searchClient.UploadDocumentsAsync(new[] { document }, cancellationToken: cancellationToken);
 
                 return cvData;
             }

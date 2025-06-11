@@ -1,5 +1,6 @@
 ﻿using Azure;
 using Azure.AI.OpenAI;
+using Azure.Search.Documents;
 using QLN.AIPOV.Backend.Application.Interfaces;
 using QLN.AIPOV.Backend.Application.Models.Config;
 using QLN.AIPOV.Backend.Domain.HttpClients;
@@ -43,6 +44,21 @@ namespace QLN.AIPOV.Backend.API
 
             services.AddSingleton(new AzureOpenAIClient(new Uri(config.Endpoint),
                 new AzureKeyCredential(config.ApiKey)));
+
+            return services;
+        }
+
+        public static IServiceCollection AddAzureAISearchClient(this IServiceCollection services, IConfiguration configuration)
+        {
+            // Register your Azure AI Search client here
+            var searchConfig = configuration.GetSection("AzureAISearch").Get<AzureAISearchSettingsModel>();
+            if (searchConfig == null || string.IsNullOrEmpty(searchConfig.SearchApiKey) || string.IsNullOrEmpty(searchConfig.Endpoint))
+                throw new ArgumentException("Azure AI Search API Key and Endpoint must be provided.");
+            if (string.IsNullOrEmpty(searchConfig.Endpoint) || string.IsNullOrEmpty(searchConfig.SearchApiKey))
+                throw new ArgumentException("Azure AI Search configuration is missing.");
+            var endpoint = new Uri(searchConfig.Endpoint);
+            var credential = new AzureKeyCredential(searchConfig.SearchApiKey);
+            services.AddSingleton(new SearchClient(endpoint, searchConfig.SearchIndexName, credential));
 
             return services;
         }

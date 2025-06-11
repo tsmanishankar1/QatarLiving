@@ -1,0 +1,117 @@
+﻿@page "/hybrid-search"
+@using Azure.Search.Documents.Models
+
+<MudContainer Class="mt-4">
+    <MudCard>
+        <MudCardHeader>
+            <MudText Typo="Typo.h5">Hybrid Document Search</MudText>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="SearchQuery" 
+                                 Label="Search Query" 
+                                 Variant="Variant.Outlined" 
+                                 Adornment="Adornment.End" 
+                                 AdornmentIcon="@Icons.Material.Filled.Search"
+                                 AdornmentColor="Color.Primary"
+                                 @onkeyup="HandleKeyPress"
+                                 Immediate="true"
+                                 FullWidth="true" />
+                </MudItem>
+                <MudItem xs="12" Class="d-flex justify-end">
+                    <MudButton Variant="Variant.Filled" 
+                              Color="Color.Primary"
+                              OnClick="PerformSearchAsync"
+                              Disabled="@IsLoading">
+                        Search
+                    </MudButton>
+                </MudItem>
+                
+                @if (IsLoading)
+                {
+                    <MudItem xs="12" Class="d-flex justify-center my-6">
+                        <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+                    </MudItem>
+                }
+                else if (SearchResults.Count > 0)
+                {
+                    <MudItem xs="12" Class="mt-4">
+                        <MudText Typo="Typo.h6" Class="mb-2">Search Results (@SearchResults.Count)</MudText>
+                        <MudDivider />
+                        
+                        <MudExpansionPanel>
+                            <TitleContent>
+                                <MudText>Debug: View Raw Document Fields</MudText>
+                            </TitleContent>
+                            <ChildContent>
+                                @foreach (var result in SearchResults)
+                                {
+                                    <MudPaper Class="pa-2 my-2">
+                                        @foreach (var field in result)
+                                        {
+                                            <MudText>@field.Key: @field.Value</MudText>
+                                        }
+                                    </MudPaper>
+                                }
+                            </ChildContent>
+                        </MudExpansionPanel>
+                        
+                        <MudList Clickable="true" T="SearchDocument">
+                            @foreach (var result in SearchResults)
+                            {
+                                <MudListItem>
+                                    <MudCard Elevation="0" Class="pa-2">
+                                        @if (result.TryGetValue("title", out var title))
+                                        {
+                                            <MudText Typo="Typo.h6">@title</MudText>
+                                        }
+                                        else if (result.TryGetValue("name", out var name))
+                                        {
+                                            <MudText Typo="Typo.h6">@name</MudText>
+                                        }
+                                        
+                                        @if (result.TryGetValue("content", out var content))
+                                        {
+                                            <MudText Typo="Typo.body2" Class="text-truncate">@content</MudText>
+                                        }
+                                        else if (result.TryGetValue("description", out var description))
+                                        {
+                                            <MudText Typo="Typo.body2" Class="text-truncate">@description</MudText>
+                                        }
+                                        
+                                        <MudChipSet T="string">
+                                            @foreach(var field in result.Where(f => !IsCommonField(f.Key)))
+                                            {
+                                                <MudChip T="string" Size="Size.Small" Color="Color.Default">@field.Key: @field.Value</MudChip>
+                                            }
+                                        </MudChipSet>
+                                    </MudCard>
+                                </MudListItem>
+                                <MudDivider />
+                            }
+                        </MudList>
+                    </MudItem>
+                }
+                else if (!string.IsNullOrWhiteSpace(SearchQuery))
+                {
+                    <MudItem xs="12" Class="d-flex justify-center my-6">
+                        <MudText Typo="Typo.subtitle1">No results found for your search criteria.</MudText>
+                    </MudItem>
+                }
+                <MudItem xs="12" md="12">
+                    <MudButton OnClick="async () => await DiagnoseIndex()" Color="Color.Secondary">
+                        Diagnose Index
+                    </MudButton>
+
+                    @if (!string.IsNullOrEmpty(IndexDiagnostics))
+                    {
+                        <MudPaper Class="pa-4 mt-4">
+                            <MudText>@IndexDiagnostics</MudText>
+                        </MudPaper>
+                    }
+                </MudItem>
+            </MudGrid>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>

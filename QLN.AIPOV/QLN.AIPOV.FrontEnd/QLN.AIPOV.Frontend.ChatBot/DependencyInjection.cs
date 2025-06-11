@@ -10,6 +10,7 @@ namespace QLN.AIPOV.FrontEnd.ChatBot
         public static IServiceCollection AddServices(this IServiceCollection services)
         {
             services.AddScoped<ICvAnalyzerService, CVAnalyzerService>();
+            services.AddScoped<IAzureSearchService, AzureSearchService>();
             return services;
         }
 
