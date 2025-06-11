@@ -1,5 +1,4 @@
-﻿using QLN.Backend.API.Service;
-using QLN.Backend.API.Service.AnalyticsService;
+﻿using QLN.Backend.API.Service.AnalyticsService;
 using QLN.Backend.API.Service.BannerService;
 using QLN.Backend.API.Service.ClassifiedService;
 using QLN.Backend.API.Service.CompanyService;
@@ -10,6 +9,7 @@ using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IBannerService;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.ISearchService;
+using QLN.Backend.API.Service.V2ContentService;
 
 namespace QLN.Backend.API.ServiceConfiguration
 {

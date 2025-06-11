@@ -8,7 +8,7 @@ namespace QLN.Content.MS.Service
     public class InternalEventService : IEventService
     {
         private readonly DaprClient _dapr;
-        private const string StoreName = "statestore";
+        private const string StoreName = "v2contentstatestore";
         private const string IndexKey = "event-index";
 
         public InternalEventService(DaprClient dapr)

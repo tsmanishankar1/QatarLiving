@@ -108,7 +108,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 }
             })
             .ExcludeFromDescription()
-            .WithName("CreateEvent")
+            .WithName("CreateEventByUserId")
             .WithTags("Event")
             .WithSummary("Create Event")
             .WithDescription("Creates a new event and sets the user ID from the token.")
@@ -163,15 +163,33 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             .WithSummary("Get Event By ID")
             .WithDescription("Retrieves a single event by its GUID identifier.");
 
-            group.MapPut("/update", async Task<Results<Ok<string>, ProblemHttpResult>>
+            group.MapPut("/update", async Task<Results<Ok<string>,
+            ForbidHttpResult,
+            BadRequest<ProblemDetails>,
+            ProblemHttpResult>>
             (
-                ContentEventDto dto,
-                IEventService service,
-                CancellationToken cancellationToken
+            ContentEventDto dto,
+            IEventService service,
+            HttpContext httpContext,
+            CancellationToken cancellationToken
             ) =>
             {
                 try
                 {
+                    var userId = httpContext.User.FindFirst("sub")?.Value
+                    ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                    if (!Guid.TryParse(userId, out var userGuid))
+                        return TypedResults.Forbid();
+
+                    var userName = httpContext.User.FindFirst("preferred_username")?.Value
+                                ?? httpContext.User.FindFirst("name")?.Value
+                                ?? httpContext.User.Identity?.Name;
+
+                    if (string.IsNullOrWhiteSpace(userName))
+                        return TypedResults.Forbid();
+
+                    dto.user_name = userName;
                     var result = await service.UpdateEvent(dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
@@ -182,6 +200,40 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             })
             .WithName("UpdateEvent")
             .WithTags("Event")
+            .WithSummary("Update Event")
+            .WithDescription("Updates a new event and saves it via Dapr state store.");
+
+            group.MapPut("/updateByUserId", async Task<Results<Ok<string>,
+            ForbidHttpResult,
+            BadRequest<ProblemDetails>,
+            ProblemHttpResult>>
+            (
+            ContentEventDto dto,
+            IEventService service,
+            HttpContext httpContext,
+            CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    if (dto.user_name == string.Empty)
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "UserId must be provided in the payload.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    var result = await service.UpdateEvent(dto, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("UpdateEventByUserId")
+            .WithTags("Event")
+            .ExcludeFromDescription()
             .WithSummary("Update Event")
             .WithDescription("Updates a new event and saves it via Dapr state store.");
 

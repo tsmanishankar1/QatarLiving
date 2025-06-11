@@ -89,7 +89,7 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                var url = "/v2/api/event/update";
+                var url = "/v2/api/event/updateByUserId";
 
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, AppId, url);
                 request.Content = new StringContent(
