@@ -66,5 +66,12 @@
 
         public string ComputerServices { get; set; } = "https://www.qatarliving.com/services/computer-services";
 
+        public string PropertiesProfileMenu { get; set; } = "https://qlp.qatarliving.com/en/properties/dashboard?status=published";
+        public string VehiclesProfileMenu { get; set; } = "https://qlv.qatarliving.com/en/vehicles/dashboard";
+        public string RewardsProfileMenu { get; set; } = "https://qlr.qatarliving.com/en/rewards/dashboard";
+
+        public string ClassifiedsProfileMenu(int userId) => $"https://www.qatarliving.com/user/{userId}/classifieds";
+        public string JobsProfileMenu(int userId) => $"https://www.qatarliving.com/user/{userId}/jobs";
+
     }
 }
