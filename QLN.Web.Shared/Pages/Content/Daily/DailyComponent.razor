@@ -14,7 +14,7 @@
 @using QLN.Web.Shared.Pages.Content.Events
 @using QLN.Web.Shared.Components.BannerSwiper
 @using QLN.Web.Shared.Components.BannerTakeOver
-@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.Skeletons.FeaturedItemSkeleton
+@using QLN.Web.Shared.Pages.Classifieds.Landing.Components.Skeletons.FeaturedItemSkeleton
 @using QLN.Common.Infrastructure.DTO_s;
 @layout ContentLayout
 
@@ -57,7 +57,7 @@
                         {
                             <MudItem xs="12">
                                 <EmptyCard Title="No event banners found."
-                                           Subtitle="Please check back later for updates." />
+                                    Subtitle="Please check back later for updates." />
                             </MudItem>
                         }
                         else
@@ -74,7 +74,7 @@
 
                 </MudItem>
                 <MudItem xs="12" md="4">
-                        <DailyMoreArticle Items="@MoreArticles" isLoading="isLoading" />
+                    <DailyMoreArticle Items="@MoreArticles" isLoading="isLoading" />
                 </MudItem>
             </MudGrid>
 
@@ -87,7 +87,7 @@
                         <MudGrid GutterSize="16px">
                             <MudVirtualize Context="item" T="ContentPost" Items="TopStories">
                                 <MudItem xs="12" sm="6" md="4" lg="4">
-                                        <DailyNewsCard Item="item" IsHorizontal="false" />
+                                    <DailyNewsCard Item="item" IsHorizontal="false" />
                                 </MudItem>
                             </MudVirtualize>
 
@@ -107,21 +107,21 @@
     </div>
     <div class="responsive-news-container-daily">
         <div class="max-container">
-                <DailyFeaturedEvents Items="@FeaturedEvents" Loading="isLoading" />
+            <DailyFeaturedEvents Items="@FeaturedEvents" Loading="isLoading" />
 
             <MoreEvents />
-                @if (isLoadingBanners)
-                {
-                    <BannerSkleton />
-                }
-                else if (DailyTakeOver1Banners?.Any() == true)
-                {
-                    <BannerTakeOver BannerItems="DailyTakeOver1Banners" Loading="isLoadingBanners" />
-                }
-                else
-                {
-                    <EmptyCard Title="No daily banners found." Subtitle="Please check back later for updates." />
-                }
+            @if (isLoadingBanners)
+            {
+                <BannerSkleton />
+            }
+            else if (DailyTakeOver1Banners?.Any() == true)
+            {
+                <BannerTakeOver BannerItems="DailyTakeOver1Banners" Loading="isLoadingBanners" />
+            }
+            else
+            {
+                <EmptyCard Title="No daily banners found." Subtitle="Please check back later for updates." />
+            }
 
         </div>
 
@@ -139,7 +139,7 @@
 
             @if (TopicQueue1.Count() > 0)
             {
-                    <DailyHighlights QueueLabel="@TopicQueue1Label" ListOfItems="TopicQueue1" />
+                <DailyHighlights QueueLabel="@TopicQueue1Label" ListOfItems="TopicQueue1" />
             }
             @if (isLoadingBanners)
             {
@@ -156,22 +156,22 @@
 
             @if (TopicQueue2.Count() > 0)
             {
-                    <DailyHighlights QueueLabel="@TopicQueue2Label" ListOfItems="TopicQueue2" />
+                <DailyHighlights QueueLabel="@TopicQueue2Label" ListOfItems="TopicQueue2" />
             }
 
 
 
             @if (TopicQueue3.Count() > 0)
             {
-                    <DailyHighlights QueueLabel="@TopicQueue3Label" ListOfItems="TopicQueue3" />
+                <DailyHighlights QueueLabel="@TopicQueue3Label" ListOfItems="TopicQueue3" />
             }
             @if (TopicQueue4.Count() > 0)
             {
-                    <DailyHighlights QueueLabel="@TopicQueue4Label" ListOfItems="TopicQueue4" />
+                <DailyHighlights QueueLabel="@TopicQueue4Label" ListOfItems="TopicQueue4" />
             }
             @if (TopicQueue5.Count() > 0)
             {
-                    <DailyHighlights QueueLabel="@TopicQueue5Label" ListOfItems="TopicQueue5" />
+                <DailyHighlights QueueLabel="@TopicQueue5Label" ListOfItems="TopicQueue5" />
             }
         </div>
     </div>
