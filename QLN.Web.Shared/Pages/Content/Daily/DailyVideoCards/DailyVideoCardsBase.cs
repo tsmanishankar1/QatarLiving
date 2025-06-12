@@ -1,8 +1,11 @@
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Services;
+using System.Runtime.CompilerServices;
 using System.Web;
 
 public class DailyVideoCardsBase : ComponentBase
@@ -24,24 +27,24 @@ public class DailyVideoCardsBase : ComponentBase
 
     protected override void OnInitialized()
     {
-        SelectedVideo = Items?.Where(x => !string.IsNullOrEmpty(x.VideoUrl)).FirstOrDefault() ?? new();
+        SelectedVideo = Items?.FirstOrDefault() ?? new();
 
         YTVideoEmbedURL = ConvertToEmbedUrl(SelectedVideo.VideoUrl);
     }
 
-    protected async override Task OnAfterRenderAsync(bool firstRender)
+    protected async override Task OnParametersSetAsync()
     {
-        if (!firstRender) return;
+
         try
         {
+            SelectedVideo = new();
             YTVideoEmbedURL = string.Empty;
-            SelectedVideo = Items?.Where(x => !string.IsNullOrEmpty(x.VideoUrl)).FirstOrDefault() ?? new();
-
+            SelectedVideo = Items?.FirstOrDefault() ?? new();
             YTVideoEmbedURL = ConvertToEmbedUrl(SelectedVideo.VideoUrl);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "OnAfterRenderAsync");
+            Logger.LogError(ex, "OnParametersSetAsync");
         }
     }
 
