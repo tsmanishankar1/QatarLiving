@@ -53,7 +53,6 @@ namespace QLN.Common.Infrastructure.IService
         Task<(Guid AdId, string Title, DateTime CreatedAt)> CreateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default);
         Task<(Guid AdId, string Title, DateTime CreatedAt)> CreateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default);
         Task<CollectiblesResponse> GetCollectibles(string userId, CancellationToken cancellationToken = default);
-        Task<(Guid AdId, string Title, DateTime CreatedAt)> CreateClassifiedDealsAd(ClassifiedDeals dto, CancellationToken cancellationToken = default);
-        Task DeleteClassifiedItemsAd(Guid adId, CancellationToken cancellationToken = default);
+        Task<(Guid AdId, string Title, DateTime CreatedAt)> CreateClassifiedDealsAd(ClassifiedDeals dto, CancellationToken cancellationToken = default);        
     }
 }
