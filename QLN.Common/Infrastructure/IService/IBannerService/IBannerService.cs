@@ -10,6 +10,6 @@ namespace QLN.Common.Infrastructure.IService.IBannerService
     public interface IBannerService
     {
         //Task<BannerResponse?> GetBannersAsync(CancellationToken cancellationToken);
-        Task<dynamic?> GetBannersAsync(CancellationToken cancellationToken);
+        Task<BannerResponse?> GetBannersAsync(CancellationToken cancellationToken);
     }
 }

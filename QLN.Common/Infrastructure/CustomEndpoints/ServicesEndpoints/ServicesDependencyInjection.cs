@@ -7,7 +7,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
     {
         public static RouteGroupBuilder MapServicesEndpoints(this RouteGroupBuilder group)
         {
-            group.MapServicesFeaturedItemEndpoint();
+            group.MapServicesFeaturedItemEndpoint()
+                .MapServiceEndpoints();
 
             return group;
         }

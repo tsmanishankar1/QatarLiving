@@ -44,7 +44,7 @@
             <div class="footer-inline footer-col-435">
                 <div class="footer-column footer-col-full">
                     <p>Want to advertise on Qatar Living?</p>
-                    <p><strong>Take a look at our <a class="orange-link" href="#">Advertise page</a></strong></p>
+                    <p><strong>Take a look at our <a class="orange-link" href="@navigationPath.Advertise">Advertise page</a></strong></p>
                     <NewLetterSubscription/>
                 </div>
             </div>
@@ -327,18 +327,19 @@
     }
 
     @@media (max-width: 435px) {
-    .footer-col-435 {
-        width: 100% !important;
-        min-width: 0;
-        box-sizing: border-box;
-        display: block;
-        word-break: break-word;
-        white-space: normal;
+        .footer-col-435 {
+            width: 100% !important;
+            min-width: 0;
+            box-sizing: border-box;
+            display: block;
+            word-break: break-word;
+            white-space: normal;
+        }
+
+            .footer-col-435 .footer-column {
+                width: 100% !important;
+                min-width: 0;
+                white-space: normal;
+            }
     }
-    .footer-col-435 .footer-column {
-        width: 100% !important;
-        min-width: 0;
-        white-space: normal;
-    }
-}
 </style>

@@ -36,9 +36,8 @@
                 }
             </NavLink>
         </div>
-        <div style="display: flex; align-items: center; gap: 36px;">
+        <div class="nav-main-conainer">
             <div class="nav-container">
-                <nav class="nav-links">
                     <NavLink id="propertiesLink" href=@{
                     navigationPath.Properties
                                         }
@@ -70,7 +69,6 @@
                     <img src="/qln-images/header/arrow_down.svg" alt="Down arrow"
                         style="width: 20px; height: 20px; margin-left: 5px;" />
                 </NavLink> *@
-                </nav>
             </div>
 
             <div class="post-button-wrapper">
@@ -465,6 +463,18 @@ Route = "/more-features-coming-soon"
         width: 126px;
         height: 48px;
     }
+    .nav-main-conainer{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .nav-container{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-direction: row;
+    }
+
 
     /* Responsive media query: shrink avatar icons on larger screens (>450px) */
     @@media (max-width: 450px) {
@@ -479,25 +489,12 @@ Route = "/more-features-coming-soon"
         }
     }
 
-    @@media (max-width: 998px) {
+
+    @@media (max-width: 1000px) {
         .desktop-post-btn {
             display: none !important;
         }
-
-        .mobile-post-icon {
-            display: inline-block !important;
-        }
-
-        .fav-avatar-custom{
-            display: none !important;
-        }
-        .fav-avatar-icon{
-            display:  inline-block !important;
-        }
-    }
-
-    @@media (max-width: 768px) {
-        .desktop-post-btn {
+        .nav-main-conainer{
             display: none !important;
         }
         .fav-avatar-icon{
@@ -522,13 +519,7 @@ Route = "/more-features-coming-soon"
         .nav-container {
             display: none !important;
         }
-
-        .nav-links {
-            flex-direction: column;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
+ 
 
     }
 </style>

@@ -54,8 +54,8 @@ namespace QLN.Web.Shared.Pages.Content.News
         new() { Label = "Sports", Value = "sports" },
         new() { Label = "Lifestyle", Value = "lifestyle" }
     };
-    protected List<ViewToggleButtons.ViewToggleOption> routerList = new()
-    {   
+        protected List<ViewToggleButtons.ViewToggleOption> routerList = new()
+    {
     new() { Label = "News", Value = "news" },
     new() { Label = "Qatar", Value = "qatar" },
     new() { Label = "Middle East", Value = "middleeast" },
@@ -115,13 +115,14 @@ namespace QLN.Web.Shared.Pages.Content.News
 
         protected async override Task OnInitializedAsync()
         {
+            Console.WriteLine("OnInitializedAsync called in NewsBase" + isLoading);
             isLoading = true;
             if (currentImageUrl != topNewsSlot?.ImageUrl)
-        {
-            currentImageUrl = topNewsSlot?.ImageUrl;
-            imageLoaded = false;
-            imageFailed = false;
-        }
+            {
+                currentImageUrl = topNewsSlot?.ImageUrl;
+                imageLoaded = false;
+                imageFailed = false;
+            }
             try
             {
                 var uri = navManager.ToAbsoluteUri(navManager.Uri);
@@ -152,16 +153,20 @@ namespace QLN.Web.Shared.Pages.Content.News
             }
             finally
             {
-                isLoading = false;
+                // isLoading = false;
             }
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (!firstRender) return;
-
             isLoading = true;
-
+            // StateHasChanged();
+            if (!firstRender)
+            {
+                isLoading = false;
+                // StateHasChanged();
+                return;
+            }
             try
             {
                 await Task.WhenAll(
@@ -182,7 +187,14 @@ namespace QLN.Web.Shared.Pages.Content.News
 
         private async Task LoadInitialData()
         {
-            NewsContent = await _simpleCacheService.GetCurrentNews("Qatar") ?? new();
+            if (!string.IsNullOrEmpty(SelectedTab))
+            {
+                NewsContent = await _simpleCacheService.GetCurrentNews(SelectedTab) ?? new();
+            }
+            else
+            {
+                NewsContent = await _simpleCacheService.GetCurrentNews("Qatar") ?? new();
+            }
             StateHasChanged();
         }
 
@@ -206,9 +218,9 @@ namespace QLN.Web.Shared.Pages.Content.News
             }
             else
             {
-                    Tabs = Array.Empty<string>();
-                }
-            
+                Tabs = Array.Empty<string>();
+            }
+
         }
         protected void OnImageLoaded()
         {
@@ -218,13 +230,13 @@ namespace QLN.Web.Shared.Pages.Content.News
         }
         protected override void OnParametersSet()
         {
-            imageLoaded = false; 
+            imageLoaded = false;
         }
- 
+
         protected void OnImageError()
         {
-            imageLoaded = true; 
-            imageFailed = true; 
+            imageLoaded = true;
+            imageFailed = true;
             StateHasChanged();
         }
         protected async Task LoadBanners(string tab)
@@ -242,7 +254,7 @@ namespace QLN.Web.Shared.Pages.Content.News
                 isLoadingBanners = false;
             }
         }
-        
+
         protected async void SelectTab(string tab)
         {
             isLoading = true;
@@ -254,8 +266,8 @@ namespace QLN.Web.Shared.Pages.Content.News
             isLoading = false;
             StateHasChanged();
         }
-       
-         
+
+
         protected void onclick(ContentPost news)
         {
             if (!string.IsNullOrEmpty(_selectedView) && !string.IsNullOrEmpty(subTabLabel))

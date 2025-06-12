@@ -50,5 +50,7 @@ namespace QLN.Common.Infrastructure.IService
         Task<ItemAdsAndDashboardResponse> GetUserItemsAdsWithDashboard(Guid userId, CancellationToken cancellationToken = default);
         Task<PrelovedAdsAndDashboardResponse> GetUserPrelovedAdsAndDashboard(Guid userId, CancellationToken cancellationToken = default);
         Task<bool> DeleteCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default);
+        Task<ItemsAdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default);
+        Task<CollectiblesResponse> GetCollectibles(string userId, CancellationToken cancellationToken = default);
     }
 }

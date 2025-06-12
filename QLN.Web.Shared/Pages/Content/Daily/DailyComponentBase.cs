@@ -129,8 +129,8 @@ namespace QLN.Web.Shared.Pages.Content.Daily
             {
                 var banners = await _simpleCacheService.GetBannerAsync();
                 DailyHeroBanners = banners?.ContentDailyHero ?? new();
-                DailyTakeOver1Banners = banners?.ContentDailyTakeoverFirst ?? new();
-                DailyTakeOver2Banners = banners?.ContentDailyTakeoverSecond ?? new();
+                DailyTakeOver1Banners = banners?.ContentDailyTakeoverFirst ?? new(); // these are currently empty from source
+                DailyTakeOver2Banners = banners?.ContentDailyTakeoverSecond ?? new(); // these are currently empty from source
             }
             catch (Exception ex)
             {
