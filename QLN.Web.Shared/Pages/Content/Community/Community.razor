@@ -33,7 +33,7 @@
                 <EmptyCard Title="No  banners found." Subtitle="Please check back later for updates." />
             }
 
-            <CommunitySearchBarSection OnSearchCompleted="HandleSearchResults" OnCategoryChanged="HandleCategoryChanged" />
+            <CommunitySearchBarSection OnSearchCompleted="HandleSearchResults" OnCategoryChanged="HandleCategoryChanged" InitialCategoryId="@categoryId" />
             <div class="section-container">
 
                 <MudGrid>
@@ -203,7 +203,7 @@
     }
 
     .postcard-margin-top {
-        margin-top: 30px;
+        margin-top: 20px;
     }
 
     .community-header {
