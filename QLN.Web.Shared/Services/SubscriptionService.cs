@@ -1,6 +1,6 @@
 ﻿using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Pages.Subscription;
-using QLN.Web.Shared.Services.Interfaces;
+using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 

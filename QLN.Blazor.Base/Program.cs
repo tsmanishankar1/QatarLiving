@@ -18,7 +18,6 @@ using QLN.Web.Shared.Contracts;
 using GoogleAnalytics.Blazor;
 using Microsoft.AspNetCore.ResponseCompression;
 using QLN.Web.Shared.Pages.Services;
-using QLN.Web.Shared.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -233,6 +232,11 @@ builder.Services.AddHttpClient<ISearchService, CommunitySearchService>(client =>
 });
 builder.Services.AddHttpClient<ApiService>();
 builder.Services.AddHttpClient<ISubscriptionService, SubscriptionService>(client =>
+{
+    client.BaseAddress = new Uri(baseURL);
+});
+
+builder.Services.AddHttpClient<IClassifiedDashboardService, ClassfiedDashboardService>(client =>
 {
     client.BaseAddress = new Uri(baseURL);
 });

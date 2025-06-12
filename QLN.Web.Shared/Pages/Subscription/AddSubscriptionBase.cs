@@ -4,7 +4,7 @@ using MudBlazor;
 using QLN.Web.Shared.Helpers;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services;
-using QLN.Web.Shared.Services.Interfaces;
+using QLN.Web.Shared.Services.Interface;
 using System.ComponentModel;
 using System.Text.Json;
 

@@ -1,7 +1,7 @@
 ﻿using QLN.Web.Shared.Models;
 
 
-namespace QLN.Web.Shared.Services.Interfaces
+namespace QLN.Web.Shared.Services.Interface
 {
     public interface ISubscriptionService
     {
