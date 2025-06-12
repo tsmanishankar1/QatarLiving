@@ -245,6 +245,7 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
             {
                 // Call the filter logic with the ID from query string
                 await HandleCategoryChanged(selectedId);
+                await JSRuntime.InvokeVoidAsync("scrollToElementById", "search-section");
             }
 
             return;
