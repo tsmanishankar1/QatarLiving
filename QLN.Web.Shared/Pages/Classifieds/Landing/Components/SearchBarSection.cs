@@ -7,7 +7,6 @@ using static QLN.Web.Shared.Helpers.HttpErrorHelper;
 public class SearchBarSectionBase : ComponentBase
 {
     [Inject] protected ISnackbar Snackbar { get; set; }
-    [Inject] protected ApiService Api { get; set; }
 
     [Parameter] public EventCallback<List<FeaturedItemCard.FeaturedItem>> OnSearchCompleted { get; set; }
 
@@ -41,32 +40,6 @@ public class SearchBarSectionBase : ComponentBase
 
         loading = true;
 
-       var payload = new Dictionary<string, object>
-    {
-        ["text"] = searchText
-    };
-
-    if (!string.IsNullOrWhiteSpace(selectedCategory))
-    {
-        payload["filters"] = new Dictionary<string, object>
-        {
-            ["Category"] = selectedCategory
-        };
-    }
-
-        try
-        {
-            var result = await Api.PostAsync<object, List<FeaturedItemCard.FeaturedItem>>("api/classified/search", payload);
-
-            await OnSearchCompleted.InvokeAsync(result);
-        }
-        catch (HttpRequestException ex)
-        {
-            HandleHttpException(ex, Snackbar);
-        }
-        finally
-        {
-            loading = false;
-        }
+     
     }
 }

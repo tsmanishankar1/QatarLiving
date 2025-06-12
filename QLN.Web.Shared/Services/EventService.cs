@@ -18,7 +18,7 @@ namespace QLN.Web.Shared.Services
         }
 
         /// <inheritdoc />
-        public async Task<HttpResponseMessage?> GetAllEventsAsync(string? category_id = null, string? location_id = null, string? from = null, string? to = null, int? page = 1, int? page_size = 20, string? order = "asc")
+        public async Task<HttpResponseMessage?> GetAllEventsAsync(string? category_id = null, string? location_id = null, string? from = null, string? to = null, int? page = 1, int? page_size = 20, string? order = "desc")
         {
 
             string requestUri = $"api/content/events?page={page}&page_size={page_size}&order={order}";

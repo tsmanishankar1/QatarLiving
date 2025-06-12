@@ -24,6 +24,7 @@
         public string eShops { get; set; } = "https://www.qatarliving.com/eshops";
         public string GoogleStore { get; set; } = "https://play.google.com/store/apps/details?id=com.qatarliving.classifieds&hl=en";
         public string AppleStore { get; set; } = "https://apps.apple.com/us/app/qatar-living/id961568535";
+        public string Advertise { get; set; } = "https://www.qatarliving.com/advertise";
         public string AdvertisingTerms { get; set; } = "https://www.qatarliving.com/advertisingterms";
         public string TermsOfUse { get; set; } = "https://www.qatarliving.com/terms-of-use";
         public string PostingRules { get; set; } = "https://www.qatarliving.com/rules-advertising";
