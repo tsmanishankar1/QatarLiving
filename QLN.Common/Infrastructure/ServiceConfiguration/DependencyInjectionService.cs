@@ -25,7 +25,7 @@ namespace QLN.Common.Infrastructure.ServiceConfiguration
             services.AddTransient<QLN.Common.Infrastructure.TokenProvider.EmailTokenProvider<ApplicationUser>>();
             services.AddTransient<QLN.Common.Infrastructure.TokenProvider.CommonTokenProvider<ApplicationUser>>();            
             services.AddScoped<IEventlogger, Eventlogger>();
-            services.AddScoped<IFileStorageService, FileStorageService>();
+            services.AddScoped<IFileStorageBlobService, FileStorageBlobService>();
 
             return services;
         }

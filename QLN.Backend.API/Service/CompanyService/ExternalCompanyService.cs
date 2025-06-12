@@ -1,12 +1,12 @@
 ﻿using Dapr.Client;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
-using System.ComponentModel.Design;
+using QLN.Common.Infrastructure.IService.IEmailService;
+using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.Model;
 using System.Net;
-using System.Net.Http.Headers;
-using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 namespace QLN.Backend.API.Service.CompanyService
@@ -15,15 +15,37 @@ namespace QLN.Backend.API.Service.CompanyService
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<ExternalCompanyService> _logger;
-        public ExternalCompanyService(DaprClient dapr, ILogger<ExternalCompanyService> logger)
+        private readonly IExtendedEmailSender<ApplicationUser> _emailSender;
+        private readonly IFileStorageBlobService _blobStorage;
+        private readonly UserManager<ApplicationUser> _userManager;
+        public ExternalCompanyService(DaprClient dapr, ILogger<ExternalCompanyService> logger, 
+            IExtendedEmailSender<ApplicationUser> emailSender, IFileStorageBlobService blobStorage, UserManager<ApplicationUser> userManager)
         {
             _dapr = dapr;
             _logger = logger;
+            _emailSender = emailSender;
+            _blobStorage = blobStorage;
+            _userManager = userManager;
         }
+
         public async Task<string> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
+                if (!string.IsNullOrWhiteSpace(dto.CRDocument))
+                {
+                    var crFileName = $"{dto.BusinessName}_{dto.UserId}.pdf"; 
+                    var crBlobUrl = await _blobStorage.SaveBase64File(dto.CRDocument, crFileName, "crdocument", cancellationToken);
+                    dto.CRDocument = crBlobUrl;
+                }
+
+                if (!string.IsNullOrWhiteSpace(dto.CompanyLogo))
+                {
+                    var logoFileName = $"{dto.BusinessName}_{dto.UserId}.png";
+                    var logoBlobUrl = await _blobStorage.SaveBase64File(dto.CompanyLogo, logoFileName, "companylogo", cancellationToken);
+                    dto.CompanyLogo = logoBlobUrl;
+                }
+
                 var url = "/api/companyprofile/createByUserId";
 
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.CompanyServiceAppId, url);
@@ -38,19 +60,19 @@ namespace QLN.Backend.API.Service.CompanyService
                 var rawJson = await response.Content.ReadAsStringAsync();
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating company profile");
                 throw;
             }
         }
 
-        public async Task<CompanyProfileEntity?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
+        public async Task<CompanyProfileDto?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
                 var url = $"/api/companyprofile/getById?id={id}";
-                return await _dapr.InvokeMethodAsync<CompanyProfileEntity>(
+                return await _dapr.InvokeMethodAsync<CompanyProfileDto>(
                     HttpMethod.Get,
                     ConstantValues.CompanyServiceAppId,
                     url,
@@ -67,17 +89,16 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-
-        public async Task<List<CompanyProfileEntity>> GetAllCompanies(CancellationToken cancellationToken = default)
+        public async Task<List<CompanyProfileDto>> GetAllCompanies(CancellationToken cancellationToken = default)
         {
             try
             {
-                var response = await _dapr.InvokeMethodAsync<List<CompanyProfileEntity>>(
+                var response = await _dapr.InvokeMethodAsync<List<CompanyProfileDto>>(
                     HttpMethod.Get,
                     ConstantValues.CompanyServiceAppId,
                     "api/companyprofile/getAll",
                     cancellationToken);
-                return response ?? new List<CompanyProfileEntity>();
+                return response ?? new List<CompanyProfileDto>();
             }
             catch (Exception ex)
             {
@@ -85,11 +106,24 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<string> UpdateCompany(CompanyProfileDto dto, Guid id, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = $"/api/companyprofile/updateByUserId?id={id}";
+                if (!string.IsNullOrWhiteSpace(dto.CRDocument))
+                {
+                    var crFileName = $"{dto.BusinessName}_{dto.UserId}.pdf";
+                    var crBlobUrl = await _blobStorage.SaveBase64File(dto.CRDocument, crFileName, "crdocument", cancellationToken);
+                    dto.CRDocument = crBlobUrl;
+                }
+
+                if (!string.IsNullOrWhiteSpace(dto.CompanyLogo))
+                {
+                    var logoFileName = $"{dto.BusinessName}_{dto.UserId}.png";
+                    var logoBlobUrl = await _blobStorage.SaveBase64File(dto.CompanyLogo, logoFileName, "companylogo", cancellationToken);
+                    dto.CompanyLogo = logoBlobUrl;
+                }
+                var url = $"/api/companyprofile/updateByUserId";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.CompanyServiceAppId, url);
                 request.Content = new StringContent(
                     JsonSerializer.Serialize(dto),
@@ -104,7 +138,7 @@ namespace QLN.Backend.API.Service.CompanyService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating company profile with ID: {Id}", id);
+                _logger.LogError(ex, "Error updating company profile");
                 throw;
             }
         }
@@ -154,44 +188,58 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<List<CompanyProfileVerificationStatusDto>> GetVerificationStatus(Guid userId, VerticalType verticalType, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var url = $"/api/companyprofile/verificationstatusbyuserId?userId={userId}&vertical={verticalType}";
-                var response = await _dapr.InvokeMethodAsync<List<CompanyProfileVerificationStatusDto>>(
-                    HttpMethod.Get,
-                    ConstantValues.CompanyServiceAppId,
-                    url,
-                    cancellationToken);
-                return response ?? new List<CompanyProfileVerificationStatusDto>();
-            }
-            catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
-            {
-                _logger.LogWarning(ex, "Company with ID not found.");
-                return new List<CompanyProfileVerificationStatusDto>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving verification status for user {UserId} and vertical {VerticalType}", userId, verticalType);
-                throw;
-            }
-        }
         public async Task<string> ApproveCompany(Guid userId, CompanyApproveDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = $"/api/companyprofile/approveByUserId?userId={userId}";
+                var allCompanies = await GetAllCompanies(cancellationToken);
+                var company = allCompanies.FirstOrDefault(c => c.Id == dto.CompanyId);
 
+                if (company == null)
+                    throw new KeyNotFoundException($"Company with ID {dto.CompanyId} not found.");
+
+                var wasNotVerified = !company.IsVerified.GetValueOrDefault(false);
+                var isNowVerified = dto.IsVerified.GetValueOrDefault(false);
+                var shouldSendEmail = wasNotVerified && isNowVerified && !string.IsNullOrWhiteSpace(company.Email);
+
+                var requestDto = new CompanyApproveDto
+                {
+                    CompanyId = dto.CompanyId,
+                    IsVerified = dto.IsVerified,
+                    Status = dto.Status
+                };
+
+                var url = $"/api/companyprofile/approveByUserId?userId={userId}";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.CompanyServiceAppId, url);
                 request.Content = new StringContent(
-                    JsonSerializer.Serialize(dto),
+                    JsonSerializer.Serialize(requestDto),
                     Encoding.UTF8,
                     "application/json");
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
-                response.EnsureSuccessStatusCode(); 
+                response.EnsureSuccessStatusCode();
 
+                if (shouldSendEmail)
+                {
+                    var subject = "Company Profile Approved - Qatar Living";
+                    var htmlBody = _emailSender.GetApprovalEmailTemplate(company.BusinessName);
+                    await _emailSender.SendEmail(company.Email, subject, htmlBody);
+                    _logger.LogInformation("Approval email sent to {Email}", company.Email);
+                }
+                if (isNowVerified)
+                {
+                    var companyOwnerId = company.UserId.ToString();
+                    if (!string.IsNullOrWhiteSpace(companyOwnerId))
+                    {
+                        var user = await _userManager.FindByIdAsync(companyOwnerId);
+                        if (user != null)
+                        {
+                            user.IsCompany = true;
+                            user.UpdatedAt = DateTime.UtcNow;
+                            var updateResult = await _userManager.UpdateAsync(user);
+                        }
+                    }
+                }
                 var rawJson = await response.Content.ReadAsStringAsync();
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
             }
@@ -201,7 +249,6 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-
         public async Task<CompanyApprovalResponseDto?> GetCompanyApprovalInfo(Guid companyId, CancellationToken cancellationToken = default)
         {
             try
@@ -226,12 +273,14 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<List<CompanyProfileVerificationStatusDto>> VerificationStatus(Guid userId, bool isVerified, CancellationToken cancellationToken = default)
+        public async Task<List<CompanyProfileVerificationStatusDto>> VerificationStatus(Guid userId, VerticalType vertical, bool isVerified, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = $"/api/companyprofile/verifiedstatusbyuserId?isverified={isVerified.ToString().ToLower()}&userId={userId}";
-
+                var url = $"/api/companyprofile/verifiedstatusbyuserId" +
+                                  $"?isverified={isVerified.ToString().ToLower()}" +
+                                  $"&userId={userId}" +
+                                  $"&vertical={vertical}";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.CompanyServiceAppId, url);
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
@@ -257,5 +306,29 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
+        public async Task<List<CompanyProfileDto>> GetCompaniesByTokenUser(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/companyprofile/getByUserId?userId={userId}"; 
+
+                return await _dapr.InvokeMethodAsync<List<CompanyProfileDto>>(
+                    HttpMethod.Get,
+                    ConstantValues.CompanyServiceAppId,
+                    url,
+                    cancellationToken);
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning("No companies found for token user.");
+                return new();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving companies for token user");
+                throw;
+            }
+        }
+
     }
 }
