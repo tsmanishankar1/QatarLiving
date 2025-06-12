@@ -3,6 +3,7 @@ using System.Net.Mail;
 using System.Net;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.IService.IEmailService;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 namespace QLN.Common.Infrastructure.Service.SmtpService
 {
     public class EmailSenderService : IExtendedEmailSender<ApplicationUser>
@@ -65,7 +66,7 @@ namespace QLN.Common.Infrastructure.Service.SmtpService
             await SendEmailAsync(email, subject, body);
         }
 
-        private async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
+        public async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
         {
             var smtpConfig = _config.GetSection("Smtp");
 
@@ -86,6 +87,56 @@ namespace QLN.Common.Infrastructure.Service.SmtpService
             mail.To.Add(toEmail);
 
             await client.SendMailAsync(mail);
+        }
+        public async Task SendEmail(string toEmail, string subject, string htmlBody)
+        {
+            var smtpConfig = _config.GetSection("Smtp");
+
+            string host = smtpConfig["Host"];
+            string portStr = smtpConfig["Port"];
+            string username = smtpConfig["Username"];
+            string password = smtpConfig["Password"];
+            string fromEmail = smtpConfig["email"];
+            string displayName = smtpConfig["DisplayName"];
+
+            if (string.IsNullOrWhiteSpace(host) ||
+                string.IsNullOrWhiteSpace(portStr) ||
+                string.IsNullOrWhiteSpace(username) ||
+                string.IsNullOrWhiteSpace(password) ||
+                string.IsNullOrWhiteSpace(fromEmail))
+            {
+                throw new InvalidOperationException("SMTP configuration is missing required values.");
+            }
+
+            if (!int.TryParse(portStr, out int port))
+            {
+                throw new InvalidOperationException("SMTP port is not a valid number.");
+            }
+
+            var client = new SmtpClient(host, port)
+            {
+                Credentials = new NetworkCredential(username, password),
+                EnableSsl = true
+            };
+
+            var mail = new MailMessage
+            {
+                From = new MailAddress(fromEmail, displayName),
+                Subject = subject,
+                Body = htmlBody,
+                IsBodyHtml = true
+            };
+
+            mail.To.Add(toEmail);
+
+            await client.SendMailAsync(mail);
+        }
+        public string GetApprovalEmailTemplate(string companyName)
+        {
+         return $@"Hi {companyName},<br/><br/>
+        Your company profile has been approved by the Qatar Living team.<br/>
+        You can now access features exclusive to verified companies.<br/><br/>
+        Regards,<br/>Qatar Living Team";
         }
     }
 }
