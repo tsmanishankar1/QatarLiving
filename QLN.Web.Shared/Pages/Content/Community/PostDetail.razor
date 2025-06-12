@@ -22,11 +22,11 @@
             {
                 <BannerSkleton />
             }
-            else if (DailyHeroBanners?.Any() == true)
+            else if (ContentCommunityPostHero?.Any() == true)
             {
                 <div class="category-banner-wrapper">
 
-                    <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+                    <BannerSwiper BannerItems="ContentCommunityPostHero" Loading="isLoadingBanners" />
                 </div>
             }
             else
