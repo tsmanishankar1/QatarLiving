@@ -207,7 +207,6 @@
                                                               Immediate="true"
                                                               MaxLength="5"
                                                               @bind-Value="_model.Expiry"
-                                                              @bind-Value:event="oninput"
                                                               For="@(() => _model.Expiry)" />
                                         </MudItem>
                                         <MudItem xs="6">
@@ -244,7 +243,7 @@
 
                                         <MudButton id="paymentBtn" Variant="Variant.Filled"
                                                    Style="background-color: #41979a; color: white;"
-                                                   OnClick="SubmitMockCardPayment">
+                                                               OnClick="PaymentSubmit">
                                             Pay ₹@_selectedPlan?.Price
                                         </MudButton>
                                     </MudStack>

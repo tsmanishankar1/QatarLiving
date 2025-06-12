@@ -1,36 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
-using QLN.Web.Shared.Components.BreadCrumb;
 using QLN.Web.Shared.Helpers;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services;
-using static System.Net.WebRequestMethods;
-using Microsoft.JSInterop;
 using BreadcrumbItem = QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem;
-using static QLN.Web.Shared.Pages.Subscription.SubscriptionDetails;
-using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Services.Interfaces;
 using System.Security.Claims;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using Microsoft.AspNetCore.Http;
 
 namespace QLN.Web.Shared.Pages.Subscription
 {
     public partial class Subscription : ComponentBase
     {
-        [Inject] private IDialogService DialogService { get; set; } = default!;
         [Inject] private ISnackbar Snackbar { get; set; } = default!;
 
         [Inject] private NavigationManager Navigation { get; set; } = default!;
         [Inject] private ApiService Api { get; set; } = default!;
         [Inject] private CookieAuthStateProvider CookieAuthenticationStateProvider { get; set; } = default!;
+        [Inject] private IHttpContextAccessor HttpContextAccessor { get; set; }
 
         [Inject] protected IJSRuntime _jsRuntime { get; set; }
         [Inject] protected ISubscriptionService SubscriptionService { get; set; }
@@ -56,30 +45,29 @@ namespace QLN.Web.Shared.Pages.Subscription
             InitializeBreadcrumbs();
             //LoadSubscriptionPlans();
             await LoadSubscriptionPlansFromApi(3, 1);
+           
         }
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                var cookie = HttpContextAccessor.HttpContext?.Request.Cookies["qat"];
+                _authToken = cookie;
+
+                Console.WriteLine("Access Token from cookie after render: " + _authToken);
+
+                StateHasChanged(); // refresh if necessary
+            }
+        }
+
         private List<BreadcrumbItem> breadcrumbItems = new();
         private List<SubscriptionPlan> _plans = new();
 
         public string Name { get; set; }
         public string Email { get; set; }
 
-        protected override async Task OnAfterRenderAsync(bool firstRender)
-        {
-            var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
-            if (authState != null)
-            {
-                var user = authState.User;
-                if (user.Identity != null && user.Identity.IsAuthenticated)
-                {
-                    Name = user.FindFirst(ClaimTypes.Name)?.Value;
-                    Email = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value;
-                    _authToken = user.FindFirst("access")?.Value;
-                }
-            }
-            StateHasChanged();
+       
 
-            await base.OnAfterRenderAsync(firstRender);
-        }
         private void InitializeBreadcrumbs()
         {
             breadcrumbItems = new()
@@ -221,7 +209,20 @@ namespace QLN.Web.Shared.Pages.Subscription
 
                 if (response?.Subscriptions != null && response.Subscriptions.Any())
                 {
-                    _plans = response.Subscriptions;
+                    //_plans = response.Subscriptions;
+                    _plans = response.Subscriptions.Select(plan => new SubscriptionPlan
+                    {
+                        Id = plan.Id,
+                        SubscriptionName = plan.SubscriptionName,
+                        Price = plan.Price,
+                        Currency = plan.Currency,
+                        Duration = plan.Duration,
+                        Description = plan.Description,
+                        VerticalId = response.VerticalTypeId,
+                        VerticalName = response.VerticalName,
+                        CategoryId = response.CategoryId,
+                        CategoryName = response.CategoryName
+                    }).ToList();
                 }
                 else
                 {
@@ -246,17 +247,6 @@ namespace QLN.Web.Shared.Pages.Subscription
 
 
 
-        private IEnumerable<SubscriptionPlan> GetFilteredPlans()
-        {
-            return _activeTabIndex switch
-            {
-                0 => _plans.Take(3),
-                1 => _plans.Skip(3).Take(1),
-                2 => _plans.Skip(4),
-                _ => _plans
-            };
-        }
-
         private void OpenPaymentDialog()
         {
             _isPaymentDialogOpen = true;
@@ -275,10 +265,18 @@ namespace QLN.Web.Shared.Pages.Subscription
                 p.Duration == plan.Duration &&
                 p.Price == plan.Price &&
                 p.SubscriptionName == plan.SubscriptionName &&
-                p.Id == plan.Id);
+                p.Id == plan.Id
+                );
+            if (_selectedPlan != null)
+            {
+                _selectedPlan.VerticalId = plan.VerticalId;
+                _selectedPlan.VerticalName = plan.VerticalName;
+                _selectedPlan.CategoryId = plan.CategoryId;
+                _selectedPlan.CategoryName = plan.CategoryName;
+            }
         }
 
-        private async Task SubmitMockCardPayment()
+        private async Task PaymentSubmit()
         {
 
             _isLoading = true;
@@ -297,8 +295,8 @@ namespace QLN.Web.Shared.Pages.Subscription
                     var payload = new
                     {
                         subscriptionId = _selectedPlan?.Id,
-                        verticalId = 3,
-                        subcategoryId = 1,
+                        verticalId = _selectedPlan.VerticalId,
+                        categoryId = _selectedPlan.CategoryId,
                         cardDetails = new
                         {
                             cardNumber = _model.CardNumber,
@@ -311,11 +309,17 @@ namespace QLN.Web.Shared.Pages.Subscription
                     };
 
                     Console.WriteLine(JsonSerializer.Serialize(payload));
-                    var response = await SubscriptionService.PurchaseSubscription(payload);
-                    Snackbar.Add("Subscription added!", Severity.Success);
-                    _isPaymentDialogOpen = false;
-
-                    _actionSucess = true;
+                    var response = await SubscriptionService.PurchaseSubscription(payload, _authToken);
+                    if (response)
+                    {
+                        Snackbar.Add("Subscription added!", Severity.Success);
+                        _isPaymentDialogOpen = false;
+                        _actionSucess = true;
+                    }
+                    else
+                    {
+                        Snackbar.Add("Failed to subscribe. Please try again.", Severity.Error);
+                    }
 
                 }
                 catch (HttpRequestException ex)
