@@ -101,6 +101,19 @@ namespace QLN.AIPOV.Backend.Domain.HttpClients
                     }
                 }
 
+                // Extract work history from the document
+                var workHistoryEntries = ExtractWorkHistory(result);
+                if (workHistoryEntries.Count > 0)
+                {
+                    // Add only the most recent job (first in the list) as the WorkHistory complex type
+                    document.Add("WorkHistory", workHistoryEntries[0]);
+
+                    // Store all work history as a concatenated string in WorkExperience field
+                    var workExperience = string.Join(" | ", workHistoryEntries.Select(wh =>
+                        $"{wh["Company"]} - {wh["Position"]} ({wh["Period"]})"));
+                    document.Add("WorkExperience", workExperience);
+                }
+
                 var response = await _searchClient.UploadDocumentsAsync(new[] { document }, cancellationToken: cancellationToken);
 
                 return cvData;
@@ -115,101 +128,136 @@ namespace QLN.AIPOV.Backend.Domain.HttpClients
             }
         }
 
-        private void ProcessSingleFieldParagraph(string content, CVData cvData)
+        private List<SearchDocument> ExtractWorkHistory(AnalyzeResult result)
         {
-            // Extract name
-            if (content.StartsWith("Firstname:", StringComparison.OrdinalIgnoreCase) ||
-                content.StartsWith("First name:", StringComparison.OrdinalIgnoreCase))
-            {
-                var parts = content.Split(':', 2);
-                if (parts.Length > 1)
-                    cvData.Name = parts[1].Trim();
-            }
+            var workHistoryList = new List<SearchDocument>();
+            var inWorkHistorySection = false;
+            SearchDocument? currentJob = null;
+            var lastLabel = string.Empty;
 
-            // Extract surname
-            else if (content.Contains("Last Name", StringComparison.OrdinalIgnoreCase) ||
-                     content.Contains("Surname", StringComparison.OrdinalIgnoreCase))
-            {
-                var parts = content.Split(':', 2);
-                if (parts.Length > 1)
-                    cvData.Surname = parts[1].Trim();
-            }
+            // First try to identify work history section
+            if (result.Paragraphs == null) return workHistoryList;
 
-            // Extract contact number
-            else if (content.StartsWith("Contact Number:", StringComparison.OrdinalIgnoreCase) ||
-                     content.StartsWith("Phone:", StringComparison.OrdinalIgnoreCase) ||
-                     content.StartsWith("Tel:", StringComparison.OrdinalIgnoreCase))
+            for (var i = 0; i < result.Paragraphs.Count; i++)
             {
-                var parts = content.Split(':', 2);
-                if (parts.Length > 1)
-                    cvData.ContactNumber = parts[1].Trim();
-            }
+                var paragraph = result.Paragraphs[i];
+                if (paragraph.Content == null) continue;
+                var content = paragraph.Content.Trim();
 
-            // Extract email
-            else if (content.StartsWith("Email:", StringComparison.OrdinalIgnoreCase))
-            {
-                var parts = content.Split(':', 2);
-                if (parts.Length > 1)
-                    cvData.Email = parts[1].Trim();
-            }
-        }
-
-        private void ExtractFieldsFromCompoundParagraph(string content, CVData cvData)
-        {
-            // Extract firstname using regex
-            var firstNameMatch = Regex.Match(content, @"Firstname:\s*([^\s].*?)(?:\s+(?:Last Name|Surname|Contact Number|Email):|\s*$)", RegexOptions.IgnoreCase);
-            if (firstNameMatch is { Success: true, Groups.Count: > 1 })
-            {
-                cvData.Name = firstNameMatch.Groups[1].Value.Trim();
-
-                if (cvData.Name.Contains(" "))
-                    cvData.Name = cvData.Name.Split(" ")[0];
-            }
-
-            // Extract surname/last name
-            var surnameMatch = Regex.Match(content, @"(?:Last Name|Surname):\s*([^\s].*?)(?:\s+(?:Firstname|Contact Number|Email):|\s*$)", RegexOptions.IgnoreCase);
-            if (surnameMatch is { Success: true, Groups.Count: > 1 })
-            {
-                cvData.Surname = surnameMatch.Groups[1].Value.Trim();
-                if (cvData.Surname.Contains(" "))
-                    cvData.Surname = cvData.Surname.Split(" ")[0];
-            }
-
-            // Extract contact number
-            var contactMatch = Regex.Match(content, @"Contact Number:\s*([^\s].*?)(?:\s+(?:Firstname|Last Name|Surname|Email):|\s*$)", RegexOptions.IgnoreCase);
-            if (contactMatch is { Success: true, Groups.Count: > 1 })
-            {
-                cvData.ContactNumber = contactMatch.Groups[1].Value.Trim();
-            }
-
-            // Extract email
-            var emailMatch = Regex.Match(content, @"Email:\s*([^\s].*?)(?:\s+(?:Firstname|Last Name|Surname|Contact Number):|\s*$)", RegexOptions.IgnoreCase);
-            if (emailMatch is { Success: true, Groups.Count: > 1 })
-            {
-                cvData.Email = emailMatch.Groups[1].Value.Trim();
-                if (cvData.Email.Contains(" "))
-                    cvData.Email = cvData.Email.Split(" ")[0];
-            }
-
-            // Fallback to simple email pattern if the above doesn't work
-            if (string.IsNullOrEmpty(cvData.Email))
-            {
-                var simpleEmailMatch = Regex.Match(content, @"[\w\.-]+@[\w\.-]+\.\w+");
-                if (simpleEmailMatch.Success)
+                // Check for section headers
+                if (Regex.IsMatch(content, @"^(EMPLOYMENT HISTORY|FULLTIME EMPLOYMENT HISTORY)$", RegexOptions.IgnoreCase))
                 {
-                    cvData.Email = simpleEmailMatch.Value;
-                    if (cvData.Email.Contains(" "))
-                        cvData.Email = cvData.Email.Split(" ")[0];
+                    inWorkHistorySection = true;
+                    continue;
+                }
+                // Check for end of work history section
+                else if (inWorkHistorySection && Regex.IsMatch(content, @"^(EDUCATION|OTHER EMPLOYMENT INFORMATION|EDUCATION & TRAINING)$", RegexOptions.IgnoreCase))
+                {
+                    inWorkHistorySection = false;
+                    continue;
+                }
+
+                if (!inWorkHistorySection) continue;
+
+                // Check for labels
+                if (content.Equals("Company", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Start a new job entry
+                    if (currentJob != null)
+                    {
+                        workHistoryList.Add(currentJob);
+                    }
+
+                    currentJob = new SearchDocument();
+                    lastLabel = "Company";
+                }
+                else if (content.Equals("Period", StringComparison.OrdinalIgnoreCase))
+                {
+                    lastLabel = "Period";
+                }
+                else if (content.Equals("Position", StringComparison.OrdinalIgnoreCase))
+                {
+                    lastLabel = "Position";
+                }
+                else if (content.Equals("Duties", StringComparison.OrdinalIgnoreCase))
+                {
+                    lastLabel = "Duties";
+                }
+                // Handle values (content after a label)
+                else if (!string.IsNullOrEmpty(lastLabel) && currentJob != null)
+                {
+                    // Skip "For a more detailed description..." lines
+                    if (content.StartsWith("For a more detailed description", StringComparison.OrdinalIgnoreCase))
+                    {
+                        lastLabel = string.Empty;
+                        continue;
+                    }
+
+                    if (lastLabel == "Company")
+                    {
+                        currentJob["Company"] = content;
+                    }
+                    else if (lastLabel == "Period")
+                    {
+                        currentJob["Period"] = content;
+                    }
+                    else if (lastLabel == "Position")
+                    {
+                        currentJob["Position"] = content;
+                    }
+                    else if (lastLabel == "Duties")
+                    {
+                        // For duties, collect multiple lines
+                        var dutiesList = new List<string> { content };
+                        var nextIndex = i + 1;
+
+                        // Continue until next label or section break
+                        while (nextIndex < result.Paragraphs.Count)
+                        {
+                            var nextPara = result.Paragraphs[nextIndex];
+                            if (nextPara.Content == null) break;
+
+                            var nextContent = nextPara.Content.Trim();
+
+                            if (nextContent.StartsWith("Confidential"))
+                            {
+                                nextIndex++;
+                                continue;
+                            }
+
+                            // Check if we've reached a new label or section
+                            if (nextContent.Equals("Company", StringComparison.OrdinalIgnoreCase) ||
+                                nextContent.Equals("Period", StringComparison.OrdinalIgnoreCase) ||
+                                nextContent.Equals("Position", StringComparison.OrdinalIgnoreCase) ||
+                                nextContent.Equals("Duties", StringComparison.OrdinalIgnoreCase) ||
+                                nextContent.StartsWith("For a more detailed", StringComparison.OrdinalIgnoreCase) ||
+                                Regex.IsMatch(nextContent, @"^(EDUCATION|OTHER EMPLOYMENT INFORMATION|EDUCATION & TRAINING)$", RegexOptions.IgnoreCase))
+                            {
+                                break;
+                            }
+
+                            // Add this line as part of duties
+                            dutiesList.Add(nextContent);
+                            i = nextIndex; // Skip ahead since we've processed this paragraph
+                            nextIndex++;
+                        }
+
+                        currentJob["Duties"] = string.Join(" | ", dutiesList.Where(d => !string.IsNullOrWhiteSpace(d)));
+                        lastLabel = string.Empty; // Reset after collecting duties
+                    }
+
+                    // Reset the label after handling value
+                    if (lastLabel != "Duties") lastLabel = string.Empty;
                 }
             }
 
-            // Fallback to phone number pattern
-            if (!string.IsNullOrEmpty(cvData.ContactNumber)) return;
-            var phoneMatch = Regex.Match(content, @"(?:\+\d{1,3}\s?)?(?:\(\d{1,4}\)\s?)?\d{1,4}[-\s]?\d{1,4}[-\s]?\d{1,4}");
-            if (phoneMatch.Success)
+            // Add the last job if we have one
+            if (currentJob != null)
             {
-                cvData.ContactNumber = phoneMatch.Value;
+                workHistoryList.Add(currentJob);
             }
+
+            return workHistoryList;
         }
     }
 }
