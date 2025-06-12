@@ -129,42 +129,43 @@
                 </MudTooltip>
 
                 <!-- Main Menu Items -->
-                @foreach (var item in profileMenuItems)
+             @foreach (var item in profileMenuItems)
+{
+    var isDashboard = item.Text == "Dashboards";
+    
+    if (isDashboard)
+    {
+        <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight">
+           <ActivatorContent>
+            <div class="nested-menu-item-content">
+                <img src="@item.ImageSrc" alt="@item.Text" class="menu-item-icon" />
+                <span class="menu-item-text">@item.Text</span>
+            </div>
+        </ActivatorContent>
+            <ChildContent>
+                @foreach (var nested in nestedProfileMenuItems)
                 {
-                    if (item.Text == "Dashboards")
-                    {
-                        <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight">
-                            <ActivatorContent>
-                                <MudMenuItem Class="menu-item">
-                                    <div class="nested-menu-item-content">
-                                        <img src="@item.ImageSrc" alt="@item.Text" class="menu-item-icon" />
-                                        <span class="menu-item-text">@item.Text</span>
-                                    </div>
-                                </MudMenuItem>
-                            </ActivatorContent>
-                            <ChildContent>
-                                @foreach (var nested in nestedProfileMenuItems)
-                                {
-                                    <MudMenuItem OnClick="@(() => NavManager.NavigateTo(nested.Route))" Class="menu-item">
-                                        <div class="menu-item-content">
-                                            <img src="@nested.ImageSrc" alt="@nested.Text" class="menu-item-icon" />
-                                            <span class="menu-item-text">@nested.Text</span>
-                                        </div>
-                                    </MudMenuItem>
-                                }
-                            </ChildContent>
-                        </MudMenu>
-                    }
-                    else
-                    {
-                        <MudMenuItem OnClick="@(() => NavManager.NavigateTo(item.Route))"Class="menu-item">
-                            <div class="menu-item-content">
-                                <img src="@item.ImageSrc" alt="@item.Text" class="menu-item-icon" />
-                                <span class="menu-item-text @(item.Text == "Logout" ? "logout-item" : "")">@item.Text</span>
-                            </div>
-                        </MudMenuItem>
-                    }
+                    <MudMenuItem OnClick="@(() => NavManager.NavigateTo(nested.Route))" Class="menu-item">
+                        <div class="menu-item-content">
+                            <img src="@nested.ImageSrc" alt="@nested.Text" class="menu-item-icon" />
+                            <span class="menu-item-text">@nested.Text</span>
+                        </div>
+                    </MudMenuItem>
                 }
+            </ChildContent>
+        </MudMenu>
+    }
+    else
+    {
+        <MudMenuItem OnClick="@(() => NavManager.NavigateTo(item.Route))" Class="menu-item">
+            <div class="menu-item-content">
+                <img src="@item.ImageSrc" alt="@item.Text" class="menu-item-icon" />
+                <span class="menu-item-text @(item.Text == "Logout" ? "logout-item" : "")">@item.Text</span>
+            </div>
+        </MudMenuItem>
+    }
+}
+
             }
             else
             {
@@ -487,16 +488,17 @@ Route = "/more-features-coming-soon"
         padding: 8px 30px;
         width: 100%;
     }
-    .nested-menu-item-content{
-        display: flex;
+   .nested-menu-item-content {
+      display: flex;
         justify-content: flex-start;
         align-items: center;
         gap: 16px;
         font-family: public-sans, sans-serif;
         border-bottom: 1px solid #EAECF0;
-        padding:  8px 0;
+        padding: 8px 0;
         width: 100%;
-    }
+    border-bottom: 1px solid #EAECF0;
+}
     .menu-item:last-child .menu-item-content {
         border-bottom: none;
     }
