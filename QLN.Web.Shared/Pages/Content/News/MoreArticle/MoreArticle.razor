@@ -1,6 +1,6 @@
 @inherits MoreArticleBase
 @using QLN.Web.Shared.Components.EmptyCard
-<div class="more-articles side-spacing" style="padding-top: 20px;">
+<div class="more-articles article-side-spacing" style="padding-top: 20px;">
     <h3 class="section-heading" style="color: var(--color-text-heading);">
         <span class="accent-bar"></span>More Articles
     </h3>
@@ -188,10 +188,9 @@
 }
 
     @@media (max-width: 768px) {
-        .side-spacing {
-            padding-right: 16px;
-            padding-left: 16px;
-        }
+         .article-side-spacing {
+            padding-left: 16px; 
+        } 
     }
 
     @@media (max-width: 1024px) {
@@ -202,9 +201,18 @@
             object-fit: cover;
         }
 
-        .side-spacing {
-            @* padding-right: 16px;
-            padding-left: 16px; *@
-        }
+        .article-side-spacing {
+             padding-right: 16px;
+            padding-left: 16px; 
     }
+    @@media (max-width: 320px) {
+         .article-side-spacing {
+            padding-left: 10px;
+        }
+        }
+    @@media (max-width: 375px) {
+        .article-side-spacing {
+            padding-left: 10px;
+        } 
+        }
 </style>
