@@ -63,4 +63,7 @@ app.UseHttpsRedirection();
 app.MapGroup("/api/classifieds")
    .MapClassifiedEndpoints();
 
+var servicesGroup = app.MapGroup("/api/services");
+servicesGroup.MapServicesEndpoints();
+
 app.Run();

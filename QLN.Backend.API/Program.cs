@@ -10,6 +10,7 @@ using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
+using Microsoft.AspNetCore.Authorization;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
 using QLN.Common.Infrastructure.DbContext;
@@ -19,11 +20,9 @@ using QLN.Common.Infrastructure.TokenProvider;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Authorization;
 using QLN.Common.Infrastructure.CustomEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
 using Azure.Core.Serialization;
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
@@ -171,23 +170,19 @@ builder.Services.ConfigureHttpJsonOptions(opts =>
     opts.SerializerOptions.Converters
         .Add(new MicrosoftSpatialGeoJsonConverter());
 });
-
 builder.Services.AddResponseCaching();
-
 builder.Services.AddResponseCompression(options =>
     {
         options.EnableForHttps = true;
         options.MimeTypes = new[] { "text/css", "application/javascript", "text/html", "application/json" };
     });
-
 builder.Services.AddDaprClient();
-
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
 builder.Services.SearchServicesConfiguration(builder.Configuration);
 builder.Services.ContentServicesConfiguration(builder.Configuration);
-builder.Services.BannerServicesConfiguration(builder.Configuration);
 builder.Services.AnalyticsServicesConfiguration(builder.Configuration);
+builder.Services.BannerServicesConfiguration(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
 builder.Services.SubscriptionConfiguration(builder.Configuration);
@@ -212,42 +207,30 @@ if (builder.Configuration.GetValue<bool>("EnableSwagger"))
     });
 }
 
-
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
-
 var companyGroup = app.MapGroup("/api/companyprofile");
 companyGroup.MapCompanyEndpoints()
     .RequireAuthorization();
 var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedsEndpoints();
-
 var servicesGroup = app.MapGroup("/api/services");
 servicesGroup.MapServicesEndpoints();
-
 var contentGroup = app.MapGroup("/api/content");
 contentGroup.MapContentLandingEndpoints();
-
 var bannerGroup = app.MapGroup("/api/banner");
 bannerGroup.MapBannerEndpoints();
-
 var analyticGroup = app.MapGroup("/api/analytics");
 analyticGroup.MapAnalyticsEndpoints();
-
 app.MapGroup("/api/subscriptions")
    .MapSubscriptionEndpoints();
-
    app.MapGroup("/api/payments")
     .MapPaymentEndpoints()
     .RequireAuthorization();
-
 app.MapGroup("/api/PayToPublish")
     .MapPayToPublishEndpoints();
-
-
 app.MapAllBackOfficeEndpoints();
 app.MapLandingPageEndpoints();
-
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.Run();

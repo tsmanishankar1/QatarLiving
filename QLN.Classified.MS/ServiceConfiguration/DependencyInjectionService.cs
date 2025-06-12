@@ -1,5 +1,7 @@
 ﻿using QLN.Classified.MS.Service;
+using QLN.Classified.MS.Service.ServicesAdService;
 using QLN.Common.Infrastructure.IService;
+
 
 namespace QLN.Classifieds.MS.ServiceConfiguration
 {
@@ -9,6 +11,7 @@ namespace QLN.Classifieds.MS.ServiceConfiguration
         {
 
             services.AddTransient<IClassifiedService, ClassifiedService>();
+            services.AddTransient<IServicesService, ServicesAdService>();
             return services;
         }
     }

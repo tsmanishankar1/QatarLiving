@@ -17,6 +17,7 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.Service.FileStorage;
 using static Dapr.Client.Autogen.Grpc.v1.Dapr;
 
 namespace QLN.Classified.MS.Service
@@ -1678,6 +1679,106 @@ namespace QLN.Classified.MS.Service
             {
                 _logger.LogError(ex, "Error while deleting category and its hierarchy for ID: {CategoryId}", categoryId);
                 throw new InvalidOperationException("Failed to delete category hierarchy.", ex);
+            }
+        }
+
+        // itemsAd post
+        public async Task<ItemsAdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+
+            if (dto.UserId == Guid.Empty) throw new ArgumentException("UserId is required.");
+
+            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+
+            if (dto.AdImageFileNames == null || dto.AdImageFileNames.Count == 0)
+                throw new ArgumentException("Image URLs must be provided.");
+
+            if (string.IsNullOrWhiteSpace(dto.CertificateFileName))
+                throw new ArgumentException("Certificate URL must be provided.");
+
+            var adId = Guid.NewGuid();
+            var key = $"ad-{adId}";
+
+            try
+            {                                            
+                var existing = await _dapr.GetStateAsync<object>(UnifiedStore, key);
+                if (existing != null)
+                {
+                    throw new InvalidOperationException($"Ad with key {key} already exists.");
+                }
+
+                var adItem = new
+                {
+                    Id = adId,
+                    dto.SubVertical,
+                    dto.Title,
+                    dto.Description,
+                    dto.Category,
+                    dto.SubCategory,
+                    dto.Brand,
+                    dto.Model,
+                    dto.Price,
+                    dto.Condition,
+                    dto.Color,
+                    dto.Capacity,
+                    dto.Processor,
+                    dto.Coverage,
+                    dto.Ram,
+                    dto.Resolution,
+                    dto.BatteryPercentage,
+                    dto.SizeType,
+                    dto.SizeValue,
+                    dto.Gender,
+                    CertificateUrl = dto.CertificateFileName,
+                    ImageUrls = dto.AdImageFileNames,
+                    dto.PhoneNumber,
+                    dto.WhatsAppNumber,
+                    dto.Zone,
+                    dto.StreetNumber,
+                    dto.BuildingNumber,
+                    dto.Latitude,
+                    dto.Longitude,
+                    dto.UserId,
+                    CreatedAt = DateTime.UtcNow,
+                    Status = AdStatus.Draft
+                };
+                
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+                index.Add(key);
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
+                await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, index);
+
+                return new ItemsAdCreatedResponseDto
+                {
+                    AdId = adId,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    CertificateUrl = dto.CertificateFileName,
+                    ImageUrls = dto.AdImageFileNames,
+                    CreatedAt = DateTime.UtcNow
+                };
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
+            {
+                _logger.LogWarning(ex, "Duplicate ad insert attempt.");
+                throw new InvalidOperationException("Ad already exists. Conflict occurred during ad creation.", ex);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation failed in CreateClassifiedItemsAd");
+                throw;
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Operation error while creating classified ad.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Unhandled error occurred during ad creation.");
+                throw new InvalidOperationException("An unexpected error occurred while creating the ad. Please try again later.", ex);
             }
         }
 
