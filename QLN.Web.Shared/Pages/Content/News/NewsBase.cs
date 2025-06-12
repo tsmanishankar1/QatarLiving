@@ -153,16 +153,18 @@ namespace QLN.Web.Shared.Pages.Content.News
             }
             finally
             {
-                isLoading = false;
+                // isLoading = false;
             }
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             isLoading = true;
+            // StateHasChanged();
             if (!firstRender)
-            { 
+            {
                 isLoading = false;
+                // StateHasChanged();
                 return;
             }
             try
