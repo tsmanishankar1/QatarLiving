@@ -10,6 +10,7 @@ using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
+using Microsoft.AspNetCore.Authorization;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
 using QLN.Common.Infrastructure.DbContext;
@@ -169,7 +170,7 @@ builder.Services.ConfigureHttpJsonOptions(opts =>
     opts.SerializerOptions.Converters
         .Add(new MicrosoftSpatialGeoJsonConverter());
 });
-
+builder.Services.AddResponseCaching();
 builder.Services.AddResponseCompression(options =>
     {
         options.EnableForHttps = true;
@@ -179,6 +180,7 @@ builder.Services.AddDaprClient();
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
 builder.Services.SearchServicesConfiguration(builder.Configuration);
+builder.Services.ContentServicesConfiguration(builder.Configuration);
 builder.Services.AnalyticsServicesConfiguration(builder.Configuration);
 builder.Services.BannerServicesConfiguration(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
@@ -225,6 +227,8 @@ app.MapGroup("/api/subscriptions")
    app.MapGroup("/api/payments")
     .MapPaymentEndpoints()
     .RequireAuthorization();
+app.MapGroup("/api/PayToPublish")
+    .MapPayToPublishEndpoints();
 app.MapAllBackOfficeEndpoints();
 app.MapLandingPageEndpoints();
 app.UseHttpsRedirection();
