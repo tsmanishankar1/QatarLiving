@@ -155,7 +155,7 @@ public class ArticleBase : ComponentBase
                 breadcrumbItems = new()
                 {
                 new() { Label = "Daily", Url = "/content/daily"},
-                new() { Label = SelectedPost.Category, Url = $"/content/news"},
+                // new() { Label = SelectedPost.Category, Url = $"/content/news"},
 
                 new() { Label = newsArticle.Title, Url = $"/content/article/details/{slug}", IsLast = true },
                 };

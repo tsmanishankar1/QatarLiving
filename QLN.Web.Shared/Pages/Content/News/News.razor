@@ -23,8 +23,8 @@
 <PageTitle>Qatar Living | The go-to place for lifestyle, news, and events</PageTitle>
 
 <div style="width: 100%;background-color: var(--color-secondary-background); align-items:center">
-    <div class="carousel-responsive-container">
-        <div class="max-container">
+    @* <div class="carousel-responsive-container"> *@
+        <div class="max-carousel-container">
             <!-- Carousel Banner -->
             @if (isLoadingBanners)
             {
@@ -40,7 +40,7 @@
                            Subtitle="Please check back later for updates." />
             }
         </div>
-    </div>
+    @* </div> *@
     <div class="tooggle-container">
         <ViewToggleButtons Items="@_viewOptions" SelectedValue="@_selectedView" OnSelected="SetViewMode" TextClass="custom-text" />
     </div>
@@ -103,7 +103,7 @@
                                         {
                                             <span class="category-style">@topNewsSlot?.Category</span>
                                         }
-                                        <h2 class="main-title">@topNewsSlot.Title</h2>
+                                        <h2 class="main-title-style">@topNewsSlot.Title</h2>
                                         <div class="author-wrapper">
                                             <div class="main-author">
                                                 @if (!string.IsNullOrWhiteSpace(@topNewsSlot?.UserName))
@@ -120,7 +120,7 @@
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MoreArticle Articles="@moreArticleListSlot" loading="@isLoading" selectedMainTab="@_selectedView" selectedTab="@subTabLabel" />
-                    </MudItem>
+                    </MudItem> 
                 </MudGrid>
                 <div class="flex-container" style="padding-bottom: 40px;">
                     @if (isLoading)
@@ -156,8 +156,9 @@
                         <NewsLetter />
                     </div>
                 </div>
-                <div class="carousel-responsive-container">
-                    <div class="max-container">
+            </div>
+            <div class="max-carousel-container">
+                    @* <div class="max-container"> *@
                         <!-- Carousel Banner -->
                         @if (isLoadingBanners)
                         {
@@ -165,19 +166,18 @@
                         }
                         else if (DailyHeroBanners?.Any() == true)
                         {
-                            <div style="height: 150px;">
+                            @* <div style="height: 150px;"> *@
                                 <BannerTakeOver BannerItems="@DailyTakeOverBanners" Loading="@isLoadingBanners" />
-                            </div>
+                            @* </div> *@
                         }
                         else
                         {
                             <EmptyCard Title="No event banners found."
                                        Subtitle="Please check back later for updates." />
                         }
-                    </div>
+                    @* </div> *@
                 </div>
             </div>
-        </div>
         @if (VideoList?.Count > 0)
         {
             <div class="video-container">
@@ -220,13 +220,16 @@
                         <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
                     }
                 </div>
+            </div>
+            <div class="popular-container">
                 <div class="poular-article-container">
                     <PopularArticles Articles="@popularArticleListSlot" selectedMainTab="@_selectedView" selectedTab="@subTabLabel" loading="@isLoading" />
-
                     <div class="ad-container-style">
                         <AdBanner BannerItems="NewsSideBanners" />
                     </div>
                 </div>
+            </div>
+                <div class="max-container">
                 <div class="grid-padding">
                     <MudGrid GutterSize="0" Class="pb-3 pt-8 mt-2">
                         @if (isLoading)
@@ -266,13 +269,16 @@
                         {
                             @for (int i = 0; i < articleListSlot2.Take(9).Count(); i++)
                             {
+                                var showDivider = ((i + 1) % 3) == 0;
                                 var news = articleListSlot2[i];
                                 <MudItem xs="12" sm="6" md="4">
                                     <div class="card-with-divider">
                                         <NewsCard news="news" IsHorizontal="true" OnClick="() => onclick(news)" />
-                                        @if ((i + 1) % 3 != 0)
+                                        @if (!showDivider)
                                         {
+                                            <MudHidden xs="true" sm="true">
                                             <div style="width: 1px; height: auto; background-color: #F0F0F0; align-self: stretch; margin: 0 14px"></div>
+                                            </MudHidden>
                                         }
                                     </div>
                                 </MudItem>
@@ -284,7 +290,7 @@
                         }
                     </MudGrid>
                 </div>
-            </div>
+                </div>
         </div>
     </div>
 
@@ -327,6 +333,19 @@
         max-width: 1170px;
         margin: 0 auto;
         width: 100%;
+        @* padding: 0px 16px !important; *@
+    }
+    .popular-container {
+        max-width: 1170px;
+        margin: 0 auto;
+        width: 100%;
+        padding: 0px 16px !important;
+    }
+     .max-carousel-container {
+        max-width: 1170px;
+        margin: 0 auto;
+        width: 100%;
+        margin-bottom: 40px;
         @* padding: 0px 16px !important; *@
     }
 
@@ -394,10 +413,10 @@
         gap: 0; /* spacing will come from the divider itself */
     }
 
-    .ad-container-style {
+    @* .ad-container-style {
         width: 340px;
         height: 402px;
-    }
+    } *@
 
     .news-tabs {
         width: 100%;
@@ -460,6 +479,10 @@
         cursor: pointer;
         flex-shrink: 0;
     }
+    @* .mud-grid-spacing-xs-6 > .mud-grid-item {
+    padding-left: 0px !important;
+    padding-top: 24px;
+} *@
 
     .category-style {
         font-family: 'Public Sans', sans-serif;
@@ -468,7 +491,7 @@
         color: var(--color-accent);
     }
 
-    .main-title {
+    .main-title-style {
         font-family: 'Public Sans', sans-serif;
         font-weight: 600;
         font-size: 25px;
@@ -626,8 +649,8 @@
         align-items: center;
         padding: 0px;
         width: 100%;
-        padding-left: 42px;
-        padding-right: 42px;
+        @* padding-left: 42px;
+        padding-right: 42px; *@
         padding-top: 50px;
     }
 
@@ -658,6 +681,16 @@
             padding-left: 10px;
             padding-right: 10px;
             font-family: 'Public Sans', sans-serif;
+        }
+        .max-carousel-container {
+            margin: 0 auto;
+            width: 100%;
+        }
+        .popular-container {
+            @* max-width: 1170px; *@
+            margin: 0 auto;
+            width: 100%;
+        @* padding: 0px 16px !important; *@
         }
 
         .news-tabs-wrapper {
@@ -719,8 +752,8 @@
             gap: 35px;
             align-items: center;
             width: 100%;
-            padding-left: 10px;
-            padding-right: 10px;
+            @* padding-left: 10px;
+            padding-right: 10px; *@
         }
 
         .multiple-container {
@@ -810,8 +843,8 @@
             display: flex;
             flex-direction: column;
             gap: 24px;
-            padding-left: 16px;
-            padding-right: 16px;
+            @* padding-left: 16px;
+            padding-right: 16px; *@
             align-items: center;
         }
     }
@@ -852,8 +885,8 @@
             display: flex;
             flex-direction: column;
             gap: 24px;
-            padding-left: 16px;
-            padding-right: 16px;
+            @* padding-left: 16px;
+            padding-right: 16px; *@
             align-items: center;
         }
     }
@@ -870,8 +903,8 @@
             display: flex;
             flex-direction: row;
             gap: 24px;
-            padding-left: 16px;
-            padding-right: 16px;
+            @* padding-left: 16px;
+            padding-right: 16px; *@
             align-items: center;
         }
 
@@ -951,8 +984,8 @@
             display: flex;
             flex-direction: column;
             gap: 24px;
-            padding-left: 16px;
-            padding-right: 16px;
+            @* padding-left: 16px;
+            padding-right: 16px; *@
             align-items: center;
         }
 
@@ -1015,8 +1048,8 @@
             display: flex;
             flex-direction: column;
             gap: 24px;
-            padding-left: 16px;
-            padding-right: 16px;
+            @* padding-left: 16px;
+            padding-right: 16px; *@
             align-items: center;
         }
     }
@@ -1045,8 +1078,8 @@
             display: flex;
             flex-direction: column;
             gap: 24px;
-            padding-left: 16px;
-            padding-right: 16px;
+            @* padding-left: 16px;
+            padding-right: 16px; *@
             align-items: center;
         }
     }
