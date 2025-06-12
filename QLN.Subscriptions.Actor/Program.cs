@@ -12,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 //builder.Services.AddScoped<IExternalSubscriptionService, ExternalSubscriptionService>();
-builder.Services.AddScoped<IPayToPublishService, ExternalPayToPublishService>();
+//builder.Services.AddScoped<IPayToPublishService, ExternalPayToPublishService>();
 ThreadPool.SetMinThreads(Environment.ProcessorCount * 4, Environment.ProcessorCount * 4);
 
 // Or configure Kestrel limits:
@@ -53,7 +53,7 @@ builder.Services.AddActors(options =>
 var app = builder.Build();
 
 //PaymentTransactionActor.ServiceProvider = app.Services;
-PayToPublishPaymentActor.ServiceProvider = app.Services;
+//PayToPublishPaymentActor.ServiceProvider = app.Services;
 
 
 if (app.Environment.IsDevelopment())
