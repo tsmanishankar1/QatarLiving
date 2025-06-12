@@ -161,15 +161,14 @@ builder.Services.AddSingleton<DaprClient>(_ =>
     return new DaprClientBuilder()
         .Build();
 });
-#endregion
 builder.Services.AddActors(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
+builder.Services.AddDaprClient();
+#endregion
 
 builder.Services.AddResponseCaching();   
-
-builder.Services.AddDaprClient();
 
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
@@ -182,6 +181,14 @@ builder.Services.CompanyConfiguration(builder.Configuration);
 builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
 var app = builder.Build();
+
+#region DAPR Subscriptions
+
+app.UseCloudEvents();
+
+app.MapSubscribeHandler();
+
+#endregion
 
 app.UseResponseCaching();                
 
@@ -225,7 +232,7 @@ app.MapGroup("/api/subscriptions")
     .MapPaymentEndpoints()
     .RequireAuthorization(); // so because you have authorize here, it means all these endpoints need authorization - I am overriding it later on by adding AllowAnonymous as an option on a per endpoint implementation
 
-app.MapGroup("/api/PayToPublish")
+app.MapGroup("/api/paytopublish")
     .MapPayToPublishEndpoints();
 
 
@@ -234,4 +241,5 @@ app.MapLandingPageEndpoints();
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
+
 app.Run();
