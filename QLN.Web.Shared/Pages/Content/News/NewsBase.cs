@@ -115,6 +115,7 @@ namespace QLN.Web.Shared.Pages.Content.News
 
         protected async override Task OnInitializedAsync()
         {
+            Console.WriteLine("OnInitializedAsync called in NewsBase" + isLoading);
             isLoading = true;
             if (currentImageUrl != topNewsSlot?.ImageUrl)
         {
@@ -158,10 +159,12 @@ namespace QLN.Web.Shared.Pages.Content.News
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (!firstRender) return;
-
             isLoading = true;
-
+            if (!firstRender)
+            { 
+                isLoading = false;
+                return;
+            }
             try
             {
                 await Task.WhenAll(
@@ -182,7 +185,14 @@ namespace QLN.Web.Shared.Pages.Content.News
 
         private async Task LoadInitialData()
         {
-            NewsContent = await _simpleCacheService.GetCurrentNews("Qatar") ?? new();
+            if (!string.IsNullOrEmpty(SelectedTab))
+            {
+                NewsContent = await _simpleCacheService.GetCurrentNews(SelectedTab) ?? new();
+            }
+            else
+            {
+                NewsContent = await _simpleCacheService.GetCurrentNews("Qatar") ?? new();
+            }
             StateHasChanged();
         }
 
