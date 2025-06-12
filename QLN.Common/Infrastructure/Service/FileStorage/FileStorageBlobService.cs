@@ -13,9 +13,9 @@ namespace QLN.Common.Infrastructure.Service.FileStorage
     public class FileStorageBlobService : IFileStorageBlobService
     {
         private readonly BlobServiceClient _blobServiceClient;
-        private readonly ILogger<FileStorageService> _logger;
+        private readonly ILogger<FileStorageBlobService> _logger;
 
-        public FileStorageBlobService(IConfiguration configuration, ILogger<FileStorageService> logger)
+        public FileStorageBlobService(IConfiguration configuration, ILogger<FileStorageBlobService> logger)
         {
             var connectionString = configuration["AzureBlobStorage:ConnectionString"];
             _blobServiceClient = new BlobServiceClient(connectionString);
