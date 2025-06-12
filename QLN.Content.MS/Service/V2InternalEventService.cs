@@ -18,9 +18,11 @@ namespace QLN.Content.MS.Service
         {
             try
             {
+                if (!EventCategory.Categories.ContainsKey(dto.Category))
+                    throw new ArgumentException($"Invalid category: '{dto.Category}'.");
                 var id = Guid.NewGuid();
                 dto.Id = id;
-                dto.CreatedBy = dto.UserId;
+                dto.CreatedBy = dto.User_id;
                 dto.CreatedAt = DateTime.UtcNow;
                 dto.UpdatedBy = null;
                 dto.UpdatedAt = null;
@@ -69,6 +71,7 @@ namespace QLN.Content.MS.Service
             try
             {
                 var result = await _dapr.GetStateAsync<V2ContentEventDto>(ConstantValues.V2ContentEvents.ContentStoreName, id.ToString(), cancellationToken: cancellationToken);
+
                 return result;
             }
             catch (Exception ex)
@@ -83,11 +86,12 @@ namespace QLN.Content.MS.Service
             {
                 if (dto.Id == Guid.Empty)
                     throw new ArgumentException("Event ID is required for update.");
-
+                if (!EventCategory.Categories.ContainsKey(dto.Category))
+                    throw new ArgumentException($"Invalid category: '{dto.Category}'.");
                 var existing = await _dapr.GetStateAsync<V2ContentEventDto>(ConstantValues.V2ContentEvents.ContentStoreName, dto.Id.ToString(), null, cancellationToken:cancellationToken);
                 dto.CreatedAt = existing.CreatedAt;
                 dto.CreatedBy = existing.CreatedBy;
-                dto.UpdatedBy = dto.UserId; 
+                dto.UpdatedBy = dto.User_id; 
                 dto.UpdatedAt = DateTime.UtcNow;
 
                 await _dapr.SaveStateAsync(ConstantValues.V2ContentEvents.ContentStoreName, dto.Id.ToString(), dto, cancellationToken: cancellationToken);

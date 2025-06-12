@@ -6,13 +6,18 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.DTO_s
 {
-    public enum EventCategory
+    public static class EventCategory
     {
-        None = 0,         
-        News = 1,
-        Business = 2,
-        Sports = 3,
-        Lifestyle = 4,
-        Entertainment = 5
+        public static readonly Dictionary<string, string> Categories = new()
+        {
+            { "music", "Music" },
+            { "performing_arts", "Performing Arts" },
+            { "classes_and_workshops", "Classes & Workshops" },
+            { "festivals", "Festivals" },
+            { "exhibition", "Exhibition" },
+            { "lifestyle", "Lifestyle" },
+            { "social_events", "Social Events" },
+            { "entertainment", "Entertainment" }
+        };
     }
 }

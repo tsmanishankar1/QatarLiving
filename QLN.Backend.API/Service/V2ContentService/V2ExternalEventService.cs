@@ -25,11 +25,11 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                if (!string.IsNullOrWhiteSpace(dto.ImageUrl))
+                if (!string.IsNullOrWhiteSpace(dto.Image_url))
                 {
-                    var imageName = $"{dto.Title} _ {dto.UserId}.png";
-                    var BlobUrl = await _blobStorage.SaveBase64File(dto.ImageUrl, imageName, "imageurl", cancellationToken);
-                    dto.ImageUrl = BlobUrl;
+                    var imageName = $"{dto.Title} _ {dto.User_id}.png";
+                    var BlobUrl = await _blobStorage.SaveBase64File(dto.Image_url, imageName, "imageurl", cancellationToken);
+                    dto.Image_url = BlobUrl;
                 }
                 var url = "/v2/api/event/createByUserId";
 
@@ -98,11 +98,11 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                if (!string.IsNullOrWhiteSpace(dto.ImageUrl))
+                if (!string.IsNullOrWhiteSpace(dto.Image_url))
                 {
-                    var imageName = $"{dto.Title}_{dto.UserId}.png";
-                    var BlobUrl = await _blobStorage.SaveBase64File(dto.ImageUrl, imageName, "imageurl", cancellationToken);
-                    dto.ImageUrl = BlobUrl;
+                    var imageName = $"{dto.Title}_{dto.User_id}.png";
+                    var BlobUrl = await _blobStorage.SaveBase64File(dto.Image_url, imageName, "imageurl", cancellationToken);
+                    dto.Image_url = BlobUrl;
                 }
                 var url = "/v2/api/event/updateByUserId";
 
@@ -120,7 +120,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
             catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                _logger.LogWarning(ex, "Company with ID not found.");
+                _logger.LogWarning(ex, "Event with ID not found.");
                 return null;
             }
             catch (Exception ex)
@@ -145,7 +145,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
             catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                _logger.LogWarning(ex, "Company with ID {id} not found.", id);
+                _logger.LogWarning(ex, "Event with ID {id} not found.", id);
                 return null;
             }
             catch (Exception ex)

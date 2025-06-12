@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Routing;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.Utilities;
-using System.Security.Claims;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
 {
@@ -34,8 +33,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
 
                     if (!userId.HasValue || string.IsNullOrWhiteSpace(userName))
                         return TypedResults.Forbid();
-                    dto.UserId = userId ?? Guid.Empty;
-                    dto.UserName = userName;
+                    dto.User_id = userId ?? Guid.Empty;
+                    dto.User_name = userName;
 
                     var result = await service.CreateEvent(dto, cancellationToken);
                     return TypedResults.Ok(result);
@@ -77,7 +76,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             {
                 try
                 {
-                    if (dto.UserId == Guid.Empty || string.IsNullOrWhiteSpace(dto.UserName))
+                    if (dto.User_id == Guid.Empty || string.IsNullOrWhiteSpace(dto.User_name))
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Validation Error",
@@ -187,8 +186,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
 
                     if (!userId.HasValue || string.IsNullOrWhiteSpace(userName))
                         return TypedResults.Forbid();
-                    dto.UserId = userId ?? Guid.Empty;
-                    dto.UserName = userName;
+                    dto.User_id = userId ?? Guid.Empty;
+                    dto.User_name = userName;
                     var result = await service.UpdateEvent(dto, cancellationToken);
                     if (result == null)
                         throw new KeyNotFoundException($"Event with ID not found.");
@@ -239,7 +238,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             {
                 try
                 {
-                    if (dto.UserId == Guid.Empty || string.IsNullOrWhiteSpace(dto.UserName))
+                    if (dto.User_id == Guid.Empty || string.IsNullOrWhiteSpace(dto.User_name))
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Validation Error",
