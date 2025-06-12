@@ -108,44 +108,67 @@
 
                    <img src="/qln-images/header/add_post_svg.svg" alt="Post" class="mobile-post-icon"
                     @onclick="OnPostAdClicked" />
-            <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+        <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
                 <ActivatorContent>
                     <div id="userIcon" style="display: flex; align-items: center; gap: 0.5rem;" class="cursor-pointer">
                         <MudAvatar Size="Size.Medium" Class="avatar-custom">
                             <img src="/qln-images/header/account.svg" alt="Account" class="avatar-icon" />
                         </MudAvatar>
-                        <MudTooltip Text="@Name">
-                            <span class="user-name">
-                                @((Name?.Length > 10) ? Name.Substring(0, 10) + "..." :
-                                                                Name)
-                            </span>
-                        </MudTooltip>
                     </div>
                 </ActivatorContent>
 
+    <ChildContent>
+        <div class="vertical-button-group">
+            @if (IsLoggedIn)
+            {
+                <!-- Username -->
+                <MudTooltip Text="@Name">
+                    <span class="menu-username">
+                        @((Name?.Length > 20) ? Name.Substring(0, 20) + "..." : Name)
+                    </span>
+                </MudTooltip>
 
-                <ChildContent>
-                    <div class="vertical-button-group">
-                    @if (IsLoggedIn == true)
+                <!-- Main Menu Items -->
+                @foreach (var item in profileMenuItems)
+                {
+                    if (item.Text == "Dashboards")
                     {
-                        <MudButton id="profileButton" Variant="Variant.Outlined" Color="Color.Warning"
-                            StartIcon="@Icons.Material.Filled.AccountCircle"
-                            Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
-                            OnClick="@GoToProfile" Class="no-capitalize">
-
-                            My Profile
-                        </MudButton>
-
-                        <MudButton id="logoutButton" Variant="Variant.Filled" Color="Color.Warning"
-                            StartIcon="@Icons.Material.Filled.Logout"
-                            Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
-                            OnClick="@GoToLogout" Class="no-capitalize">
-                            Logout
-                        </MudButton>
+                        <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight">
+                            <ActivatorContent>
+                                <MudMenuItem Class="menu-item">
+                                    <div class="nested-menu-item-content">
+                                        <img src="@item.ImageSrc" alt="@item.Text" class="menu-item-icon" />
+                                        <span class="menu-item-text">@item.Text</span>
+                                    </div>
+                                </MudMenuItem>
+                            </ActivatorContent>
+                            <ChildContent>
+                                @foreach (var nested in nestedProfileMenuItems)
+                                {
+                                    <MudMenuItem OnClick="@(() => NavManager.NavigateTo(nested.Route))" Class="menu-item">
+                                        <div class="menu-item-content">
+                                            <img src="@nested.ImageSrc" alt="@nested.Text" class="menu-item-icon" />
+                                            <span class="menu-item-text">@nested.Text</span>
+                                        </div>
+                                    </MudMenuItem>
+                                }
+                            </ChildContent>
+                        </MudMenu>
                     }
                     else
                     {
-                        <MudButton id="loginButton" Variant="Variant.Outlined" Color="Color.Warning"
+                        <MudMenuItem OnClick="@(() => NavManager.NavigateTo(item.Route))"Class="menu-item">
+                            <div class="menu-item-content">
+                                <img src="@item.ImageSrc" alt="@item.Text" class="menu-item-icon" />
+                                <span class="menu-item-text @(item.Text == "Logout" ? "logout-item" : "")">@item.Text</span>
+                            </div>
+                        </MudMenuItem>
+                    }
+                }
+            }
+            else
+            {
+              <MudButton id="loginButton" Variant="Variant.Outlined" Color="Color.Warning"
                             StartIcon="@Icons.Material.Filled.Login"
                             Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
                             OnClick="@GoToLogin" Class="no-capitalize">
@@ -158,10 +181,12 @@
                             OnClick="@GoToRegister" Class="no-capitalize">
                             Sign Up
                         </MudButton>
-                    }
-                    </div>
-                </ChildContent>
-            </MudMenu>
+            }
+        </div>
+    </ChildContent>
+</MudMenu>
+
+
         </div>
     </div>
 </header>
@@ -178,6 +203,7 @@
     public string Email { get; set; } = String.Empty;
     public bool IsLoggedIn { get; set; } = false;
 
+private bool showDashboards = false;
     private NavigationPath navigationPath;
     private bool _isDarkMode;
     private MudThemeProvider _mudThemeProvider;
@@ -337,6 +363,76 @@ Route = "/more-features-coming-soon"
 }
 };
 
+
+
+private List<MenuItem> profileMenuItems = new()
+{
+    new MenuItem {
+        Text = "My account",
+        ImageSrc = "/qln-images/header/my_account_icon.svg",
+       Route = null
+    },
+    new MenuItem {
+        Text = "My saved ads",
+        ImageSrc = "/qln-images/header/my_saved_ad_icon.svg",
+        Route = "/more-features-coming-soon"
+    },
+    new MenuItem {
+        Text = "My saved searches",
+        ImageSrc = "/qln-images/header/my _saved_searches_icon.svg",
+        Route = "/classifieds/createform"
+    },
+    new MenuItem {
+        Text = "Dashboards",
+        ImageSrc = "/qln-images/header/dashboards_icon.svg",
+          Route = null
+    },
+    new MenuItem {
+        Text = "Manage my ads",
+        ImageSrc = "/qln-images/header/manage_my_ads_icon.svg",
+        Route = "/more-features-coming-soon"
+    },
+    new MenuItem {
+        Text = "Logout",
+        ImageSrc = "/qln-images/header/logout_icon.svg",
+          Route = null // Or leave Route null and use an OnClick handler
+    }
+};
+
+
+    private List<MenuItem> nestedProfileMenuItems = new List<MenuItem>
+{
+new MenuItem {
+Text = "Properties",
+ImageSrc = "/qln-images/post-icons/ad_properties.svg",
+Route = "/more-features-coming-soon"
+},
+new MenuItem {
+Text = "Vehicles",
+ImageSrc = "/qln-images/post-icons/ad_vehicles.svg",
+Route = "/more-features-coming-soon"
+},
+new MenuItem {
+Text = "Classifieds",
+ImageSrc = "/qln-images/post-icons/ad_classifieds.svg",
+Route = "/classifieds/createform"
+},
+new MenuItem {
+Text = "Services",
+ImageSrc = "/qln-images/post-icons/ad_services.svg",
+Route = "/more-features-coming-soon"
+},
+new MenuItem {
+Text = "Jobs",
+ImageSrc = "/qln-images/post-icons/ad_jobs.svg",
+Route = "/more-features-coming-soon"
+},
+new MenuItem {
+Text = "Rewards",
+ImageSrc = "/qln-images/post-icons/ad_rewards.svg",
+Route = "/more-features-coming-soon"
+}
+};
     private class MenuItem
     {
         public string Text { get; set; }
@@ -391,7 +487,16 @@ Route = "/more-features-coming-soon"
         padding: 8px 30px;
         width: 100%;
     }
-
+    .nested-menu-item-content{
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 16px;
+        font-family: public-sans, sans-serif;
+        border-bottom: 1px solid #EAECF0;
+        padding:  8px 0;
+        width: 100%;
+    }
     .menu-item:last-child .menu-item-content {
         border-bottom: none;
     }
@@ -474,8 +579,18 @@ Route = "/more-features-coming-soon"
       justify-content: space-between;
       flex-direction: row;
     }
+    .logout-item {
+    color: #F04438 !important;
+}
 
 
+.menu-username {
+    font-weight: 600;
+    padding: 12px 16px 10px 16px;
+    font-size: 14px;
+    color: #101828;
+    width: 100%;
+}
     /* Responsive media query: shrink avatar icons on larger screens (>450px) */
     @@media (max-width: 450px) {
         .avatar-icon {
