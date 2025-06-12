@@ -121,11 +121,9 @@
                         @if (IsLoggedIn)
                         {
                             <!-- Username -->
-                            <MudTooltip Text="@Name">
-                                <span class="menu-username">
+                                <span class="menu-username"title="@Name">
                                     @((Name?.Length > 20) ? Name.Substring(0, 20) + "..." : Name)
                                 </span>
-                            </MudTooltip>
 
                                 @foreach (var item in profileMenuItems)
                             {
@@ -157,7 +155,7 @@
                                 }
                                 else
                                 {
-                                    <MudMenuItem OnClick="@(() => NavManager.NavigateTo(item.Route))" Class="menu-item">
+                                    <MudMenuItem OnClick="@(() => HandleProfileMenuClick(item))" Class="menu-item">
                                         <div class="menu-item-content">
                                             <img src="@item.ImageSrc" alt="@item.Text" class="menu-item-icon" />
                                             <span class="menu-item-text @(item.Text == "Logout" ? "logout-item" : "")">@item.Text</span>
@@ -165,8 +163,6 @@
                                     </MudMenuItem>
                                 }
                             }
-
-
                         }
                         else
                         {
@@ -202,9 +198,11 @@
     public string Name { get; set; } = String.Empty;
     public string Email { get; set; } = String.Empty;
     public bool IsLoggedIn { get; set; } = false;
-public int CurrentUserId { get; set; }
-private bool showDashboards = false;
+    public int CurrentUserId { get; set; }
+    private bool showDashboards = false;
     private NavigationPath navigationPath;
+    private List<MenuItem> profileMenuItems = new();
+    private List<MenuItem> nestedProfileMenuItems = new();
     private bool _isDarkMode;
     private MudThemeProvider _mudThemeProvider;
    protected override async Task OnInitializedAsync()
@@ -224,39 +222,26 @@ private bool showDashboards = false;
         }
     }
 
-    // Initialize nestedProfileMenuItems dynamically
+   // Nested dashboard items
     nestedProfileMenuItems = new List<MenuItem>
     {
-        new MenuItem {
-            Text = "Properties",
-            ImageSrc = "/qln-images/post-icons/ad_properties.svg",
-            Route = navigationPath.PropertiesProfileMenu
-        },
-        new MenuItem {
-            Text = "Vehicles",
-            ImageSrc = "/qln-images/post-icons/ad_vehicles.svg",
-            Route = navigationPath.VehiclesProfileMenu
-        },
-        new MenuItem {
-            Text = "Classifieds",
-            ImageSrc = "/qln-images/post-icons/ad_classifieds.svg",
-            Route = navigationPath.VehiclesProfileMenu
-        },
-        new MenuItem {
-            Text = "Services",
-            ImageSrc = "/qln-images/post-icons/ad_services.svg",
-          Route = navigationPath.VehiclesProfileMenu
-        },
-        new MenuItem {
-            Text = "Jobs",
-            ImageSrc = "/qln-images/post-icons/ad_jobs.svg",
-            Route = navigationPath.VehiclesProfileMenu
-        },
-        new MenuItem {
-            Text = "Rewards",
-            ImageSrc = "/qln-images/post-icons/ad_rewards.svg",
-            Route = navigationPath.RewardsProfileMenu
-        }
+        new MenuItem { Text = "Properties", ImageSrc = "/qln-images/post-icons/ad_properties.svg", Route = navigationPath.PropertiesProfileMenu },
+        new MenuItem { Text = "Vehicles", ImageSrc = "/qln-images/post-icons/ad_vehicles.svg", Route = navigationPath.VehiclesProfileMenu },
+        new MenuItem { Text = "Classifieds", ImageSrc = "/qln-images/post-icons/ad_classifieds.svg", Route = navigationPath.ClassifiedsProfileMenu(CurrentUserId) },
+        new MenuItem { Text = "Services", ImageSrc = "/qln-images/post-icons/ad_services.svg", Route = navigationPath.VehiclesProfileMenu }, // Placeholder
+        new MenuItem { Text = "Jobs", ImageSrc = "/qln-images/post-icons/ad_jobs.svg", Route = navigationPath.JobsProfileMenu(CurrentUserId) },
+        new MenuItem { Text = "Rewards", ImageSrc = "/qln-images/post-icons/ad_rewards.svg", Route = navigationPath.RewardsProfileMenu }
+    };
+
+    // Top-level profile items
+    profileMenuItems = new List<MenuItem>
+    {
+        new MenuItem { Text = "My account", ImageSrc = "/qln-images/header/my_account_icon.svg", Route = navigationPath.MyProfileMenu(CurrentUserId) },
+        new MenuItem { Text = "My saved ads", ImageSrc = "/qln-images/header/my_saved_ad_icon.svg", Route = navigationPath.MySavedAdsProfileMenu(CurrentUserId) },
+        new MenuItem { Text = "My saved searches", ImageSrc = "/qln-images/header/my _saved_searches_icon.svg", Route = navigationPath.MySavedSearchesProfileMenu },
+        new MenuItem { Text = "Dashboards", ImageSrc = "/qln-images/header/dashboards_icon.svg", Route = null },
+        new MenuItem { Text = "Manage my ads", ImageSrc = "/qln-images/header/manage_my_ads_icon.svg", Route = navigationPath.ManageMyAdsProfileMenu(CurrentUserId) },
+        new MenuItem { Text = "Logout", ImageSrc = "/qln-images/header/logout_icon.svg", Route = null }
     };
 
     StateHasChanged();
@@ -328,6 +313,7 @@ private bool showDashboards = false;
         // CookieAuthenticationStateProvider.LogoutUser();
         Name = string.Empty;
         Email = string.Empty;
+        CurrentUserId = 0;
         IsLoggedIn = false;
 
         var destination = GetDestination();
@@ -366,6 +352,18 @@ private bool showDashboards = false;
     // NavManager.NavigateTo("https:www.qatarliving.com/node/add/classified");
     // }
 
+private void HandleProfileMenuClick(MenuItem item)
+{
+    if (item.Text == "Logout")
+    {
+        GoToLogout(); // No navigation
+    }
+    else if (!string.IsNullOrEmpty(item.Route))
+    {
+        NavManager.NavigateTo(item.Route);
+    }
+}
+
     private List<MenuItem> postMenuItems = new List<MenuItem>
 {
 new MenuItem {
@@ -401,40 +399,6 @@ Route = "/more-features-coming-soon"
 };
 
 
-
-private List<MenuItem> profileMenuItems = new()
-{
-    new MenuItem {
-        Text = "My account",
-        ImageSrc = "/qln-images/header/my_account_icon.svg",
-       Route = null
-    },
-    new MenuItem {
-        Text = "My saved ads",
-        ImageSrc = "/qln-images/header/my_saved_ad_icon.svg",
-        Route = "/more-features-coming-soon"
-    },
-    new MenuItem {
-        Text = "My saved searches",
-        ImageSrc = "/qln-images/header/my _saved_searches_icon.svg",
-        Route = "/classifieds/createform"
-    },
-    new MenuItem {
-        Text = "Dashboards",
-        ImageSrc = "/qln-images/header/dashboards_icon.svg",
-          Route = null
-    },
-    new MenuItem {
-        Text = "Manage my ads",
-        ImageSrc = "/qln-images/header/manage_my_ads_icon.svg",
-        Route = "/more-features-coming-soon"
-    },
-    new MenuItem {
-        Text = "Logout",
-        ImageSrc = "/qln-images/header/logout_icon.svg",
-          Route = null // Or leave Route null and use an OnClick handler
-    }
-};
 
 
    
@@ -608,7 +572,7 @@ private List<MenuItem> profileMenuItems = new()
 
 .menu-username {
     font-weight: 600;
-    padding: 12px 16px 10px 16px;
+    padding: 12px 16px 5px 20px;
     font-size: 14px;
     color: #101828;
     width: 100%;
