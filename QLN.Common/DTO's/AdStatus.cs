@@ -9,10 +9,12 @@ namespace QLN.Common.DTO_s
     public enum AdStatus
     {
         Draft = 0,
-        Published = 1,
-        Unpublished = 2,
-        Moderated = 3,
-        Removed = 4,
-        Expired = 5
+        PendingApproval = 1,
+        Approved = 2,
+        Published = 3,
+        Unpublished = 4,        
+        Rejected = 5,
+        Expired = 6,
+        NeedsModification = 7
     }
 }

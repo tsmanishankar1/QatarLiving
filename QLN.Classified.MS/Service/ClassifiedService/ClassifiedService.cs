@@ -1683,7 +1683,7 @@ namespace QLN.Classified.MS.Service
         }
 
         // itemsAd post
-        public async Task<ItemsAdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default)
+        public async Task<(Guid AdId, string Title, DateTime CreatedAt)> CreateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
@@ -1721,13 +1721,103 @@ namespace QLN.Classified.MS.Service
                     dto.Price,
                     dto.Condition,
                     dto.Color,
+                    dto.Inclusion,
                     dto.Capacity,
                     dto.Processor,
                     dto.Coverage,
                     dto.Ram,
                     dto.Resolution,
                     dto.BatteryPercentage,
-                    dto.SizeType,
+                    dto.Size,
+                    dto.SizeValue,
+                    dto.Gender,
+                    CertificateUrl = dto.CertificateFileName,
+                    ImageUrls = dto.AdImageFileNames,
+                    dto.PhoneNumber,
+                    dto.WhatsAppNumber,
+                    dto.Zone,
+                    dto.StreetNumber,
+                    dto.BuildingNumber,
+                    dto.Latitude,
+                    dto.Longitude,
+                    dto.UserId,                    
+                    CreatedAt = DateTime.UtcNow,
+                    Status = AdStatus.Draft
+                };
+                
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+                index.Add(key);
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
+                await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, index);
+
+                return (AdI: adId, Title: dto.Title, CreatedAt: DateTime.UtcNow);
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
+            {
+                _logger.LogWarning(ex, "Duplicate ad insert attempt.");
+                throw new InvalidOperationException("Ad already exists. Conflict occurred during Items ad creation.", ex);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation failed in CreateClassifiedItemsAd");
+                throw;
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Operation error while creating classified Items ad.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Unhandled error occurred during ad creation.");
+                throw new InvalidOperationException("An unexpected error occurred while creating the Items ad. Please try again later.", ex);
+            }
+        }
+
+        public async Task<(Guid AdId, string Title, DateTime CreatedAt)> CreateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+
+            if (dto.UserId == Guid.Empty) throw new ArgumentException("UserId is required.");
+
+            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+
+            if (dto.AdImageFileNames == null || dto.AdImageFileNames.Count == 0)
+                throw new ArgumentException("Image URLs must be provided.");
+
+            if (string.IsNullOrWhiteSpace(dto.CertificateFileName))
+                throw new ArgumentException("Certificate URL must be provided.");
+
+            var adId = Guid.NewGuid();
+            var key = $"ad-{adId}";
+            try
+            {
+                var existing = await _dapr.GetStateAsync<object>(UnifiedStore, key);
+                if (existing != null)
+                {
+                    throw new InvalidOperationException($"Ad with key {key} already exists.");
+                }
+                var adItem = new
+                {
+                    Id = adId,
+                    dto.SubVertical,
+                    dto.Title,
+                    dto.Description,
+                    dto.Category,
+                    dto.SubCategory,
+                    dto.Brand,
+                    dto.Model,
+                    dto.Price,
+                    dto.Condition,
+                    dto.Color,                    
+                    dto.Capacity,
+                    dto.Processor,
+                    dto.Coverage,
+                    dto.Ram,
+                    dto.Resolution,
+                    dto.BatteryPercentage,
+                    dto.Size,
                     dto.SizeValue,
                     dto.Gender,
                     CertificateUrl = dto.CertificateFileName,
@@ -1743,44 +1833,93 @@ namespace QLN.Classified.MS.Service
                     CreatedAt = DateTime.UtcNow,
                     Status = AdStatus.Draft
                 };
-                
+
                 var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
                 index.Add(key);
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
                 await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, index);
 
-                return new ItemsAdCreatedResponseDto
-                {
-                    AdId = adId,
-                    Title = dto.Title,
-                    Description = dto.Description,
-                    CertificateUrl = dto.CertificateFileName,
-                    ImageUrls = dto.AdImageFileNames,
-                    CreatedAt = DateTime.UtcNow
-                };
+                return (AdI: adId, Title: dto.Title, CreatedAt: DateTime.UtcNow);
+
             }
             catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
             {
                 _logger.LogWarning(ex, "Duplicate ad insert attempt.");
-                throw new InvalidOperationException("Ad already exists. Conflict occurred during ad creation.", ex);
+                throw new InvalidOperationException("Ad already exists. Conflict occurred during Preloved ad creation.", ex);
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Validation failed in CreateClassifiedItemsAd");
+                _logger.LogWarning(ex, "Validation failed in CreateClassifiedPrelovedAd");
                 throw;
             }
             catch (InvalidOperationException ex)
             {
-                _logger.LogError(ex, "Operation error while creating classified ad.");
+                _logger.LogError(ex, "Operation error while creating classified Preloved ad.");
                 throw;
             }
             catch (Exception ex)
             {
                 _logger.LogCritical(ex, "Unhandled error occurred during ad creation.");
-                throw new InvalidOperationException("An unexpected error occurred while creating the ad. Please try again later.", ex);
+                throw new InvalidOperationException("An unexpected error occurred while creating the Preloved ad. Please try again later.", ex);
+            }        
+        }
+
+        public async Task<(Guid AdId, string Title, DateTime CreatedAt)> CreateClassifiedDealsAd(ClassifiedDeals dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+
+            if (dto.UserId == Guid.Empty) throw new ArgumentException("UserId is required.");
+
+            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+
+            if (dto.AdImageFileNames == null || dto.AdImageFileNames.Count == 0)
+                throw new ArgumentException("Image URLs must be provided.");
+
+            if (string.IsNullOrWhiteSpace(dto.FlyerName))
+                throw new ArgumentException("Flyer URL must be provided.");
+
+            var adId = Guid.NewGuid();
+            var key = $"ad-{adId}";
+            try
+            {
+                var existing = await _dapr.GetStateAsync<object>(UnifiedStore, key);
+                if (existing != null)
+                {
+                    throw new InvalidOperationException($"Ad with key {key} already exists.");
+                }
+                var adItem = new
+                {
+                    Id = adId,
+                    dto.SubVertical,
+                    dto.Title,
+                    FlyerFile = dto.FlyerName,
+                    ImageUrl = dto.AdImageFileNames,
+                    dto.XMLLink,
+                    dto.ExpiryDate,
+                    dto.PhoneNumber,
+                    dto.WhatsAppNumber,
+                    dto.Location,
+                    dto.UserId,
+                    CreatedAt = DateTime.UtcNow,
+                    Status = AdStatus.Draft
+                };
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+                index.Add(key);
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
+                await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, index);
+
+                return (AdI: adId, Title: dto.Title, CreatedAt: DateTime.UtcNow);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Unhandled error occurred during ad creation.");
+                throw new InvalidOperationException("An unexpected error occurred while creating the Deals ad. Please try again later.", ex);
             }
         }
+        
 
     }
 }

@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.DTO_s
 {
-    public class ClassifiedItems : CommonAdBase
-    {        
-        public string? Inclusion { get; set; }
+    public class ClassifiedPreloved : CommonAdBase
+    {
     }
 }

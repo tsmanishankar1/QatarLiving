@@ -838,7 +838,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             throw new NotImplementedException();
         }
 
-        public async Task<ItemsAdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default)
+        public async Task<(Guid AdId, string Title, DateTime CreatedAt)> CreateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
             if (dto.UserId == Guid.Empty) throw new ArgumentException("UserId is required.");
@@ -847,6 +847,10 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw new ArgumentException("At least one ad image is required.");
             if (string.IsNullOrWhiteSpace(dto.CertificateBase64))
                 throw new ArgumentException("Certificate image is required.");
+
+            if (!string.Equals(dto.SubVertical, "Items", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("This endpoint only supports posting ads under the 'Items' subvertical.");
+
 
             var uploadedBlobKeys = new List<string>();
 
@@ -885,7 +889,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 _log.LogTrace($"Calling internal service with CertificateUrl: {dto.CertificateFileName} and {imageUrls.Count} images");
 
-                var result = await _dapr.InvokeMethodAsync<ClassifiedItems, ItemsAdCreatedResponseDto>(
+               await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
                     $"api/classifieds/items/post-by-id",  
@@ -893,7 +897,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     cancellationToken
                 );
 
-                return result;
+                return (AdId: adId, Title: dto.Title, CreatedAt: DateTime.UtcNow);
             }
             catch (Exception ex)
             {
@@ -912,8 +916,169 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
             }
-        }        
-        
+        }
+
+        public async Task<(Guid AdId, string Title, DateTime CreatedAt)> CreateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.UserId == Guid.Empty) throw new ArgumentException("UserId is required.");
+            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+            if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
+                throw new ArgumentException("At least one ad image is required.");
+            if (string.IsNullOrWhiteSpace(dto.CertificateBase64))
+                throw new ArgumentException("Certificate image is required.");
+
+            if (!string.Equals(dto.SubVertical, "Preloved", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("This endpoint only supports posting ads under the 'Preloved' subvertical.");
+
+
+            var uploadedBlobKeys = new List<string>();
+
+            try
+            {
+                var adId = Guid.NewGuid();
+
+                var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
+                    ? dto.CertificateFileName
+                    : $"certificate_{dto.UserId}_{adId}.jpg";
+                var certUrl = await _fileStorageBlob.SaveBase64File(dto.CertificateBase64, certFileName, "classifieds-images", cancellationToken);
+                uploadedBlobKeys.Add(certFileName);
+                dto.CertificateBase64 = null;
+                dto.CertificateFileName = certUrl;
+
+                dto.AdImageFileNames ??= new List<string>();
+
+                // Upload ad images
+                var imageUrls = new List<string>();
+                for (int i = 0; i < dto.AdImagesBase64.Count; i++)
+                {
+                    var customName = (dto.AdImageFileNames.Count > i && !string.IsNullOrWhiteSpace(dto.AdImageFileNames[i]))
+                        ? dto.AdImageFileNames[i]
+                        : $"Itemsad_{dto.UserId}_{adId}_{i + 1}.jpg";
+
+                    var url = await _fileStorageBlob.SaveBase64File(dto.AdImagesBase64[i], customName, "classifieds-images", cancellationToken);
+                    imageUrls.Add(url);
+                    uploadedBlobKeys.Add(customName);
+                }
+
+                if (imageUrls.Count == 0)
+                    throw new InvalidOperationException("Failed to upload any ad images.");
+
+                dto.AdImagesBase64 = null;
+                dto.AdImageFileNames = imageUrls;
+
+                _log.LogTrace($"Calling internal service with CertificateUrl: {dto.CertificateFileName} and {imageUrls.Count} images");
+
+                await _dapr.InvokeMethodAsync(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/preloved/post-by-id",
+                    dto,
+                    cancellationToken
+                );
+
+                return (AdId: adId, Title: dto.Title, CreatedAt: DateTime.UtcNow);
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                foreach (var blobName in uploadedBlobKeys)
+                {
+                    try
+                    {
+                        await _fileStorageBlob.DeleteFile(blobName, "classifieds-images", cancellationToken);
+                    }
+                    catch (Exception rollbackEx)
+                    {
+                        _log.LogException(rollbackEx);
+                    }
+                }
+
+                throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
+            }
+        }
+
+        public async Task<(Guid AdId, string Title, DateTime CreatedAt)> CreateClassifiedDealsAd(ClassifiedDeals dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.UserId == Guid.Empty) throw new ArgumentException("UserId is required.");
+            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+            if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
+                throw new ArgumentException("At least one ad image is required.");
+            if (string.IsNullOrWhiteSpace(dto.FlyerFile))
+                throw new ArgumentException("FlyerFile image is required.");
+
+            if (!string.Equals(dto.SubVertical, "Deals", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("This endpoint only supports posting ads under the 'Deals' subvertical.");
+
+            var uploadedBlobKeys = new List<string>();
+
+            try
+            {
+                var adId = Guid.NewGuid();
+
+                var flyerName = !string.IsNullOrWhiteSpace(dto.FlyerName)
+                    ? dto.FlyerName
+                    : $"certificate_{dto.UserId}_{adId}.jpg";
+
+                var FlyerUrl = await _fileStorageBlob.SaveBase64File(dto.FlyerFile, flyerName, "classifieds-images", cancellationToken);
+                uploadedBlobKeys.Add(flyerName);
+                dto.FlyerFile = null;
+                dto.FlyerName = FlyerUrl;
+
+                dto.AdImageFileNames ??= new List<string>();
+
+
+                var imageUrls = new List<string>();
+                for (int i = 0; i < dto.AdImagesBase64.Count; i++)
+                {
+                    var customName = (dto.AdImageFileNames.Count > i && !string.IsNullOrWhiteSpace(dto.AdImageFileNames[i]))
+                        ? dto.AdImageFileNames[i]
+                        : $"DealsAd_{dto.UserId}_{adId}_{i + 1}.jpg";
+
+                    var url = await _fileStorageBlob.SaveBase64File(dto.AdImagesBase64[i], customName, "classifieds-images", cancellationToken);
+                    imageUrls.Add(url);
+                    uploadedBlobKeys.Add(customName);
+                }
+
+                if (imageUrls.Count == 0)
+                    throw new InvalidOperationException("Failed to upload any ad images.");
+
+                dto.AdImagesBase64 = null;
+                dto.AdImageFileNames = imageUrls;
+
+                _log.LogTrace($"Calling internal deals endpoint with cert: {dto.FlyerName} and {imageUrls.Count} images");
+
+                await _dapr.InvokeMethodAsync(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/deals/post-by-id",
+                    dto,
+                    cancellationToken
+                );
+
+                return (AdId: adId, Title: dto.Title, CreatedAt: DateTime.UtcNow);
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+
+                foreach (var blobName in uploadedBlobKeys)
+                {
+                    try
+                    {
+                        await _fileStorageBlob.DeleteFile(blobName, "classifieds-images", cancellationToken);
+                    }
+                    catch (Exception rollbackEx)
+                    {
+                        _log.LogException(rollbackEx);
+                    }
+                }
+
+                throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
+            }
+        }
+
         public async Task<CollectiblesResponse> GetCollectibles(string userId, CancellationToken cancellationToken = default)
         {
             try
@@ -958,6 +1123,18 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
+        public async Task DeleteClassifiedItemsAd(Guid adId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                
+            }
+            catch(Exception ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to delete Classified Items Ad.", ex);
+            }
+        }
 
     }
 }
