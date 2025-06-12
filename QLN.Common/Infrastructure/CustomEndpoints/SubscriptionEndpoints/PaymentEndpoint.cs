@@ -183,7 +183,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
             })
             .WithName("HandleSubscriptionExpiry")
             .WithTags("Internal")
-            .ExcludeFromDescription(); // Hide from Swagger since this is internal
+            .ExcludeFromDescription() // Hide from Swagger since this is internal
+            .AllowAnonymous(); // AllowAnonymous as a subscribing endpoint is not a user, it needs to subscribe to the topic "anonymously"
 
             // ADDITIONAL: Health check endpoint for pub/sub debugging
             group.MapGet("/health/pubsub", async (
@@ -210,7 +211,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
             })
             .WithName("PubSubHealthCheck")
             .WithTags("Health")
-            .ExcludeFromDescription();
+            .ExcludeFromDescription() // Hide from Swagger since this is internal
+            .AllowAnonymous(); // AllowAnonymous as a subscribing endpoint is not a user, it needs to subscribe to the topic "anonymously"
 
             return group;
         }
