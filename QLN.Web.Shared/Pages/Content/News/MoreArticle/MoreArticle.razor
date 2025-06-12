@@ -29,7 +29,7 @@
         {
             <div class="article-entry">
                 <div class="article-content">
-                    <a class="article-title" href="@($"/content/article/details/{article.Slug}?category={selectedMainTab}&subcategory={selectedTab}")">
+                    <a class="more-article-title" href="@($"/content/article/details/{article.Slug}?category={selectedMainTab}&subcategory={selectedTab}")">
                         @article.Title
                     </a>
                 </div>
@@ -144,7 +144,7 @@
     }
 
     
-    .article-title {
+    .more-article-title {
         display: -webkit-box;
         -webkit-line-clamp: 3;
         /* Number of lines to show */
@@ -161,7 +161,7 @@
         /* 3 lines x line-height */
     }
 
-    .article-title:hover {
+    .more-article-title:hover {
         text-decoration: underline;
         color: var(--color-primary);
     }
@@ -214,5 +214,20 @@
         .article-side-spacing {
             padding-left: 10px;
         } 
+    }
+    @@media (max-width: 400px) {
+        .more-article-title {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        font-size: 14px;
+        text-overflow: ellipsis;
+        white-space: normal;
+        font-weight: 600;
+        color: var(--color-text-heading);
+        line-height: 1.4;
+        max-height: calc(1.4em * 3);
         }
+    }
 </style>
