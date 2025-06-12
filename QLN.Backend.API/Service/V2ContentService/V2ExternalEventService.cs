@@ -1,30 +1,39 @@
 ﻿using Dapr.Client;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IContentService;
+using QLN.Common.Infrastructure.IService.IFileStorage;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 
 namespace QLN.Backend.API.Service.V2ContentService
 {
-    public class ExternalEventService : IEventService
+    public class V2ExternalEventService : IV2EventService
     {
         private readonly DaprClient _dapr;
-        private readonly ILogger<ExternalEventService> _logger;
-        private const string AppId = "qln-event-ms";
-
-        public ExternalEventService(DaprClient dapr, ILogger<ExternalEventService> logger)
+        private readonly ILogger<V2ExternalEventService> _logger;
+        private readonly IFileStorageBlobService _blobStorage;
+        public V2ExternalEventService(DaprClient dapr, ILogger<V2ExternalEventService> logger, IFileStorageBlobService blobStorage)
         {
             _dapr = dapr;
             _logger = logger;
+            _blobStorage = blobStorage;
         }
 
-        public async Task<string> CreateEvent(ContentEventDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateEvent(V2ContentEventDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
+                if (!string.IsNullOrWhiteSpace(dto.ImageUrl))
+                {
+                    var imageName = $"{dto.Title} _ {dto.UserId}.png";
+                    var BlobUrl = await _blobStorage.SaveBase64File(dto.ImageUrl, imageName, "imageurl", cancellationToken);
+                    dto.ImageUrl = BlobUrl;
+                }
                 var url = "/v2/api/event/createByUserId";
 
-                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, AppId, url);
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2ContentEvents.EventServiceAppId, url);
                 request.Content = new StringContent(
                     JsonSerializer.Serialize(dto),
                     Encoding.UTF8,
@@ -43,16 +52,16 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-        public async Task<List<ContentEventDto>> GetAllEvents(CancellationToken cancellationToken = default)
+        public async Task<List<V2ContentEventDto>> GetAllEvents(CancellationToken cancellationToken = default)
         {
             try
             {
-                return await _dapr.InvokeMethodAsync<List<ContentEventDto>>(
+                return await _dapr.InvokeMethodAsync<List<V2ContentEventDto>>(
                     HttpMethod.Get,
-                    AppId,
+                    ConstantValues.V2ContentEvents.EventServiceAppId,
                     "/v2/api/event/getAll",
                     cancellationToken
-                ) ?? new List<ContentEventDto>();
+                ) ?? new List<V2ContentEventDto>();
             }
             catch (Exception ex)
             {
@@ -61,15 +70,15 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-        public async Task<ContentEventDto?> GetEventById(Guid id, CancellationToken cancellationToken = default)
+        public async Task<V2ContentEventDto?> GetEventById(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
                 var url = $"/v2/api/event/getById/{id}";
 
-                return await _dapr.InvokeMethodAsync<ContentEventDto>(
+                return await _dapr.InvokeMethodAsync<V2ContentEventDto>(
                     HttpMethod.Get,
-                    AppId,
+                    ConstantValues.V2ContentEvents.EventServiceAppId,
                     url,
                     cancellationToken);
             }
@@ -85,13 +94,19 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-        public async Task<string> UpdateEvent(ContentEventDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateEvent(V2ContentEventDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
+                if (!string.IsNullOrWhiteSpace(dto.ImageUrl))
+                {
+                    var imageName = $"{dto.Title}_{dto.UserId}.png";
+                    var BlobUrl = await _blobStorage.SaveBase64File(dto.ImageUrl, imageName, "imageurl", cancellationToken);
+                    dto.ImageUrl = BlobUrl;
+                }
                 var url = "/v2/api/event/updateByUserId";
 
-                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, AppId, url);
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.V2ContentEvents.EventServiceAppId, url);
                 request.Content = new StringContent(
                     JsonSerializer.Serialize(dto),
                     Encoding.UTF8,
@@ -103,6 +118,11 @@ namespace QLN.Backend.API.Service.V2ContentService
                 var rawJson = await response.Content.ReadAsStringAsync();
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
             }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning(ex, "Company with ID not found.");
+                return null;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating event");
@@ -110,18 +130,23 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-        public async Task<bool> DeleteEvent(Guid id, CancellationToken cancellationToken = default)
+        public async Task<string> DeleteEvent(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
                 var url = $"/v2/api/event/delete/{id}";
 
-                return await _dapr.InvokeMethodAsync<bool>(
+                return await _dapr.InvokeMethodAsync<string>(
                     HttpMethod.Delete,
-                    AppId,
+                    ConstantValues.V2ContentEvents.EventServiceAppId,
                     url,
                     cancellationToken
                 );
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning(ex, "Company with ID {id} not found.", id);
+                return null;
             }
             catch (Exception ex)
             {

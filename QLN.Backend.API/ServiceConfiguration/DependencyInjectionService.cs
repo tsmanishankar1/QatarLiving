@@ -76,7 +76,7 @@ namespace QLN.Backend.API.ServiceConfiguration
         }
         public static IServiceCollection EventConfiguration(this IServiceCollection services, IConfiguration config)
         {
-            services.AddTransient<IEventService, ExternalEventService>();
+            services.AddTransient<IV2EventService, V2ExternalEventService>();
             return services;
         }
     }

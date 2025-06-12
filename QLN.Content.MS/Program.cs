@@ -7,7 +7,7 @@ builder.Services.AddControllers();
 builder.Services.AddDaprClient();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddScoped<IEventService, InternalEventService>();
+builder.Services.AddScoped<IV2EventService, V2InternalEventService>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
