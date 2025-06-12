@@ -10,6 +10,9 @@ using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IBannerService;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.ISearchService;
+using QLN.Backend.API.Service.ServicesService;
+using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.Service.FileStorage;
 using QLN.Common.Infrastructure.IService.IBackOfficeService;
 using QLN.Backend.API.Service.BackOffice;
 using QLN.Common.DTO_s;
@@ -21,6 +24,8 @@ namespace QLN.Backend.API.ServiceConfiguration
         public static IServiceCollection ClassifiedServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddTransient<IClassifiedService, ExternalClassifiedService>();
+            services.AddTransient<IServicesService, ExternalServiceService>();
+            services.AddScoped<IFileStorageBlobService, FileStorageBlobService>();
             services.AddTransient<IBackOfficeService<BackofficemasterIndex>, ExternalBackOfficeService>();
 
             return services;
