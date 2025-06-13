@@ -13,7 +13,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
         public static RouteGroupBuilder MapNewsContentEndpoints(this RouteGroupBuilder group)
         {
 
-            group.MapContentNewsEndpoints();
+            group.MapContentNewsEndpoints()
+               .MapContentBannerEndpoints();
             return group;
         }
     }

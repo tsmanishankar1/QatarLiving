@@ -66,6 +66,12 @@ namespace QLN.SearchService.Service
                     response.ClassifiedsItems = classifieds.ToList();
                     break;
 
+                case "services":
+                    var services = await _repo.SearchAsync<ServicesIndex>(
+                        vertical, opts, req.Text);
+                    response.ServicesItems = services.ToList();
+                    break;
+
                 case "backofficemaster":
                     var masters = await _repo.SearchAsync<BackofficemasterIndex>(
                         vertical, opts, req.Text);
@@ -95,6 +101,13 @@ namespace QLN.SearchService.Service
                            ?? throw new ArgumentException("ClassifiedsItem is required for classifieds.", nameof(request.ClassifiedsItem));
                     _logger.LogInformation("Uploading ClassifiedIndex Id={Id} to '{Vertical}'", classifieds.Id, vertical);
                     return await _repo.UploadAsync<ClassifiedsIndex>(vertical, classifieds);
+
+                case "services":
+                    var svc = request.ServicesItem
+                           ?? throw new ArgumentException("ServicesItem is required for services.", nameof(request.ServicesItem));
+                    _logger.LogInformation("Uploading ServicesIndex Id={Id} to '{Vertical}'",
+                        svc.Id, vertical);
+                    return await _repo.UploadAsync<ServicesIndex>(vertical, svc);
 
                 case "backofficemaster":
                     var master = request.MasterItem

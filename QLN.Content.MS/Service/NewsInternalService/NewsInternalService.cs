@@ -58,5 +58,8 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
             return await _daprClient.GetStateAsync<NewsSummary>(StateStoreName, userId, cancellationToken: cancellationToken);
         }
+  
+
+    
     }
 }

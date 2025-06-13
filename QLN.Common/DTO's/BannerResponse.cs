@@ -20,8 +20,18 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonPropertyName("image_mobile")]
         public string ImageMobile { get; set; }
 
+
+        [JsonPropertyName("image_desktop_url")]
+        public string ImageDesktopUrl { get; set; }
+
+        [JsonPropertyName("image_mobile_url")]
+        public string ImageMobileUrl { get; set; }
+
         [JsonPropertyName("link")]
         public string? Link { get; set; }
+
+        [JsonPropertyName("created_by")]
+        public string CreatedBy { get; set; }
     }
 
     public class BannerResponse

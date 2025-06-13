@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.V2IContent;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
@@ -18,8 +19,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
             (
-                ContentNewsDto dto,
-                IV2ContentNews newsService,
+                [FromBody] ContentNewsDto dto,
+                [FromServices] IV2ContentNews newsService,
                 HttpContext context
             ) =>
             {
@@ -76,8 +77,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
             (
-                ContentNewsRequestByIdDto dto,
-                IV2ContentNews newsService,
+                [FromBody] ContentNewsRequestByIdDto dto,
+                [FromServices] IV2ContentNews newsService,
                 HttpContext context
             ) =>
             {
@@ -126,8 +127,141 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .Produces<NewsSummary>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
+         
             return group; 
         }
-    }
+
+
+ 
+            public static RouteGroupBuilder MapContentBannerEndpoints(this RouteGroupBuilder group)
+            {
+                // POST - Requires Authorization
+                group.MapPost("/content/banner", async Task<Results<
+                    Ok<BannerResponse>,
+                    BadRequest<ProblemDetails>,
+                    ProblemHttpResult>>
+                (
+                    [FromBody] BannerCreateRequest dto,
+                   [FromServices] IV2contentBannerService bannerService,
+                    HttpContext context,
+                    CancellationToken ct
+                ) =>
+                {
+                    // UserId from JWT claims
+                    // Instead of extracting from context.User...
+                    string userId = dto.CreatedBy; // <-- set this in your Dapr caller
+                    if (string.IsNullOrWhiteSpace(userId))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "CreatedBy (userId) is required.",
+                            Status = StatusCodes.Status400BadRequest,
+                            Instance = context.Request.Path
+                        });
+                    }
+
+                    if (dto == null)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "BannerCreateRequest cannot be null.",
+                            Status = StatusCodes.Status400BadRequest,
+                            Instance = context.Request.Path
+                        });
+                    }
+                    if (string.IsNullOrWhiteSpace(dto.Category))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Category is required.",
+                            Status = StatusCodes.Status400BadRequest,
+                            Instance = context.Request.Path
+                        });
+                    }
+                    if (string.IsNullOrWhiteSpace(dto.Code))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Code is required.",
+                            Status = StatusCodes.Status400BadRequest,
+                            Instance = context.Request.Path
+                        });
+                    }
+
+                    try
+                    {
+                        var result = await bannerService.SaveBannerAsync(dto, userId, ct);
+                        return TypedResults.Ok(result);
+                    }
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem(
+                            title: "Failed to create banner",
+                            detail: ex.Message,
+                            statusCode: StatusCodes.Status500InternalServerError,
+                            instance: context.Request.Path
+                        );
+                    }
+                })
+                //.WithName("CreateContentBanners")
+                .WithTags("Content Banner")
+                .WithSummary("Create or update a banner (requires JWT)")
+                .WithDescription("Uploads images to blob and saves the banner info, requires JWT and validates userId.")
+                //.RequireAuthorization() // <---- Authorization only for POST!
+                .Produces<BannerResponse>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+                // GET - No Authorization
+                group.MapGet("/content/banner/{category}", async Task<Results<
+                    Ok<List<BannerItem>>,
+                    ProblemHttpResult>>
+                (
+                   string category,
+                   [FromServices] IV2contentBannerService bannerService,
+                    HttpContext context,
+                    CancellationToken ct
+                ) =>
+                {
+                    if (string.IsNullOrWhiteSpace(category))
+                    {
+                        return TypedResults.Problem(
+                            title: "Validation Error",
+                            detail: "Category is required.",
+                            statusCode: StatusCodes.Status400BadRequest,
+                            instance: context.Request.Path
+                        );
+                    }
+
+                    try
+                    {
+                        var banners = await bannerService.GetBannersByCategoryAsync(category, ct);
+                        return TypedResults.Ok(banners);
+                    }
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem(
+                            title: "Failed to get banners",
+                            detail: ex.Message,
+                            statusCode: StatusCodes.Status500InternalServerError,
+                            instance: context.Request.Path
+                        );
+                    }
+                })
+                .WithName("GetContentBannersByCategory")
+                .WithTags("Content Banner")
+                .WithSummary("Get banners by category (public, no JWT needed)")
+                .WithDescription("Returns all banners for the given category from Dapr state store. No auth needed.")
+                .Produces<List<BannerItem>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+                return group;
+            }
+        }
+    
 }

@@ -8,8 +8,8 @@
 
   <ItemGroup>
     <PackageReference Include="Dapr.AspNetCore" Version="1.13.1" />
-    <PackageReference Include="Dapr.Client" Version="1.13.1" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+	  <PackageReference Include="Dapr.Client" Version="1.13.1" />
+	  <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,163 @@
+@using MudBlazor
+@using QLN.Web.Shared.Services
+@using QLN.Web.Shared.Components.Carousel
+@using QLN.Web.Shared.Components.Classifieds.FeaturedItemCard
+@using QLN.Web.Shared.Components.Classifieds.FeaturedCategoryCard
+@using QLN.Web.Shared.Components.Classifieds.StoreCard
+@using QLN.Web.Shared.Components.Classifieds.CategoryAdCard
+
+@using QLN.Web.Shared.Pages.Classifieds.Landing.Components
+
+<!-- Page: Classifieds -->
+
+<!-- Main Container -->
+<div style="width: 100%; background-color: var(--color-secondary-background);">
+    <div class="responsive-container">
+
+        <!-- Carousel Banner -->
+        <CarouselBanner ImageUrls="carouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
+            Transition="Transition.Slide" />
+
+        <!-- Search Bar Section -->
+        <SearchBarSection OnSearchCompleted="HandleSearchResults" />
+
+        <!-- Featured item -->
+
+        <FeaturedItemSection FeaturedItems="featuredItemData" Loading="isLoading" />
+
+    </div>
+    <!-- Featured Categories -->
+    <FeaturedCategorySection FeaturedCategories="featuredCategoryData" Loading="isLoading" />
+
+    <!-- Subscription Card -->
+    <SubscriptionSection />
+
+
+    <div class="responsive-container">
+        <!-- Store Deals -->
+        <StoreDealsSection Stores="storeData" />
+
+        <!-- Category Card 1 -->
+        <CategoryAdSection Categories="@categoryListDataOne" />
+
+        <div class="category-banner-wrapper">
+            <img src="/qln-images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
+        </div>
+
+        <!-- Category Card 2 -->
+        <CategoryAdSection Categories="@categoryListDataTwo" />
+
+        <!-- Seasonal Section -->
+        <SeasonalSection />
+
+    </div>
+
+    <!-- Social Media Section -->
+    <SocialMediaSection />
+
+    <!-- FAQs Section -->
+    <FAQsSection />
+
+    <!-- Popular Searches Section -->
+    <PopularSearchesSection />
+</div>
+
+@code {
+    private List<string> carouselImages = new()
+{
+"/qln-images/category1.png",
+"/qln-images/category1.png",
+"/qln-images/category1.png"
+};
+
+    private bool isLoading = true;
+
+    private List<FeaturedItemCard.FeaturedItem> featuredItemData = new()
+{
+new() { Id = "1", Title = "iPhone 14", Category = "Mobiles", Location = "Chennai", Price = 70000, ImageUrls = new
+List<string>{"/images/iphone.jpg"}, IsFeatured = true },
+new() { Id = "2", Title = "Samsung TV", Category = "Electronics", Location = "Bangalore", Price = 40000, ImageUrls = new
+List<string>{"/images/tv.jpg"}, IsFeatured = true }
+};
+
+    private List<FeaturedCategoryCard.CategoryItem> featuredCategoryData = new()
+{
+new() { Category = "Mobiles", ImageUrl = "/images/mobile-category.jpg" },
+new() { Category = "Furniture", ImageUrl = "/images/furniture-category.jpg" }
+};
+
+    private List<StoreCard.StoreItem> storeData = new()
+{
+new() { StoreName = "Mega Electronics", LogoUrl = "/images/store-logo1.png", ItemCount = 120 },
+new() { StoreName = "HomeStyle", LogoUrl = "/images/store-logo2.png", ItemCount = 45 }
+};
+
+    private List<CategoryAdCard.CategoryItem> categoryListDataOne = new()
+{
+new() { Category = "Laptops", Count = 40, ImageUrl = "/images/laptop.jpg" },
+new() { Category = "Bikes", Count = 32, ImageUrl = "/images/bike.jpg" }
+};
+
+    private List<CategoryAdCard.CategoryItem> categoryListDataTwo = new()
+{
+new() { Category = "Books", Count = 27, ImageUrl = "/images/book.jpg" },
+new() { Category = "Real Estate", Count = 10, ImageUrl = "/images/real-estate.jpg" }
+};
+
+    private async Task HandleSearchResults(List<FeaturedItemCard.FeaturedItem> results)
+    {
+        featuredItemData = results.Select(item => new FeaturedItemCard.FeaturedItem
+        {
+            Id = item.Id,
+            Title = item.Title,
+            Category = item.Category,
+            Location = item.Location,
+            ImageUrls = item.ImageUrls?.ToList() ?? new List<string>(),
+            IsFeatured = true
+        }).ToList();
+
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Simulate small loading delay
+        await Task.Delay(500);
+        isLoading = false;
+    }
+}
+
+<style>
+    .category-banner-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    .category-banner-image {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        object-fit: cover;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+
+    .responsive-container {
+        width: 100%;
+        padding: 0 40px;
+        box-sizing: border-box;
+    }
+
+    @@media (max-width: 768px) {
+        .responsive-container {
+            padding: 0 16px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .responsive-container {
+            padding: 0 5px;
+        }
+    }
+</style>
