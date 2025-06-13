@@ -108,57 +108,78 @@
 
                    <img src="/qln-images/header/add_post_svg.svg" alt="Post" class="mobile-post-icon"
                     @onclick="OnPostAdClicked" />
-            <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+        <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
                 <ActivatorContent>
                     <div id="userIcon" style="display: flex; align-items: center; gap: 0.5rem;" class="cursor-pointer">
                         <MudAvatar Size="Size.Medium" Class="avatar-custom">
                             <img src="/qln-images/header/account.svg" alt="Account" class="avatar-icon" />
                         </MudAvatar>
-                        <MudTooltip Text="@Name">
-                            <span class="user-name">
-                                @((Name?.Length > 10) ? Name.Substring(0, 10) + "..." :
-                                                                Name)
-                            </span>
-                        </MudTooltip>
                     </div>
                 </ActivatorContent>
-
-
                 <ChildContent>
                     <div class="vertical-button-group">
-                    @if (IsLoggedIn == true)
-                    {
-                        <MudButton id="profileButton" Variant="Variant.Outlined" Color="Color.Warning"
-                            StartIcon="@Icons.Material.Filled.AccountCircle"
-                            Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
-                            OnClick="@GoToProfile" Class="no-capitalize">
+                        @if (IsLoggedIn)
+                        {
+                            <!-- Username -->
+                                <span class="menu-username"title="@Name">
+                                    @((Name?.Length > 20) ? Name.Substring(0, 20) + "..." : Name)
+                                </span>
 
-                            My Profile
-                        </MudButton>
+                                @foreach (var item in profileMenuItems)
+                            {
+                                var isDashboard = item.Text == "Dashboards";
 
-                        <MudButton id="logoutButton" Variant="Variant.Filled" Color="Color.Warning"
-                            StartIcon="@Icons.Material.Filled.Logout"
-                            Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
-                            OnClick="@GoToLogout" Class="no-capitalize">
-                            Logout
-                        </MudButton>
-                    }
-                    else
-                    {
+                                if (isDashboard)
+                                {
+                                    <MudMenu OffsetY="true" AnchorOrigin="Origin.TopLeft" TransformOrigin="Origin.TopRight">
+                                        <ActivatorContent>
+                                        <MudMenuItem Class="menu-item">
+                                                <div class="nested-menu-item-content" style="width: 212px">
+                                                <img src="@item.ImageSrc" alt="@item.Text" class="menu-item-icon" />
+                                                <span class="menu-item-text">@item.Text</span>
+                                            </div>
+                                            </MudMenuItem>
+                                        </ActivatorContent>
+                                        <ChildContent>
+                                            @foreach (var nested in nestedProfileMenuItems)
+                                            {
+                                                <MudMenuItem OnClick="@(() => NavManager.NavigateTo(nested.Route))" Class="menu-item">
+                                                    <div class="nested-menu-item-list-content">
+                                                        <img src="@nested.ImageSrc" alt="@nested.Text" class="menu-item-icon nested-icon-color" />
+                                                        <span class="menu-item-text">@nested.Text</span>
+                                                    </div>
+                                                </MudMenuItem>
+                                            }
+                                        </ChildContent>
+                                    </MudMenu>
+                                }
+                                else
+                                {
+                                    <MudMenuItem OnClick="@(() => HandleProfileMenuClick(item))" Class="menu-item">
+                                        <div class="menu-item-content">
+                                            <img src="@item.ImageSrc" alt="@item.Text" class="menu-item-icon" />
+                                            <span class="menu-item-text @(item.Text == "Logout" ? "logout-item" : "")">@item.Text</span>
+                                        </div>
+                                    </MudMenuItem>
+                                }
+                            }
+                        }
+                        else
+                        {
                         <MudButton id="loginButton" Variant="Variant.Outlined" Color="Color.Warning"
-                            StartIcon="@Icons.Material.Filled.Login"
-                            Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
-                            OnClick="@GoToLogin" Class="no-capitalize">
-                            Login
-                        </MudButton>
+                                        StartIcon="@Icons.Material.Filled.Login"
+                                        Style="margin: 8px 12px 8px 12px; color: #ff7b00; border-color: #ff7b00; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
+                                        OnClick="@GoToLogin" Class="no-capitalize">
+                                        Login
+                                    </MudButton>
 
-                        <MudButton id="SignupButton" Variant="Variant.Filled" Color="Color.Warning"
-                            StartIcon="@Icons.Material.Filled.PersonAdd"
-                            Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
-                            OnClick="@GoToRegister" Class="no-capitalize">
-                            Sign Up
-                        </MudButton>
-                    }
+                                    <MudButton id="SignupButton" Variant="Variant.Filled" Color="Color.Warning"
+                                        StartIcon="@Icons.Material.Filled.PersonAdd"
+                                        Style="margin: 8px 12px; background-color: #ff7b00; color: white; width: calc(100% - 24px); font-weight: bold;text-transform: capitalize;"
+                                        OnClick="@GoToRegister" Class="no-capitalize">
+                                        Sign Up
+                                    </MudButton>
+                        }
                     </div>
                 </ChildContent>
             </MudMenu>
@@ -177,28 +198,54 @@
     public string Name { get; set; } = String.Empty;
     public string Email { get; set; } = String.Empty;
     public bool IsLoggedIn { get; set; } = false;
-
+    public int CurrentUserId { get; set; }
+    private bool showDashboards = false;
     private NavigationPath navigationPath;
+    private List<MenuItem> profileMenuItems = new();
+    private List<MenuItem> nestedProfileMenuItems = new();
     private bool _isDarkMode;
     private MudThemeProvider _mudThemeProvider;
-    protected override async Task OnInitializedAsync()
-    {
-        navigationPath = options.Value;
+   protected override async Task OnInitializedAsync()
+{
+    navigationPath = options.Value;
 
-        @* await base.OnInitializedAsync();   *@
-        var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
-        if (authState != null)
+    var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
+    if (authState != null)
+    {
+        var user = authState.User;
+        if (user.Identity != null && user.Identity.IsAuthenticated)
         {
-            var user = authState.User;
-            if (user.Identity != null && user.Identity.IsAuthenticated)
-            {
-                Name = user.FindFirst(ClaimTypes.Name)?.Value;
-                Email = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value;
-                IsLoggedIn = true;
-            }
+            Name = user.FindFirst(ClaimTypes.Name)?.Value;
+            Email = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value;
+            CurrentUserId = int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uid) ? uid : 0;
+            IsLoggedIn = true;
         }
-        StateHasChanged();
     }
+
+   // Nested dashboard items
+    nestedProfileMenuItems = new List<MenuItem>
+    {
+        new MenuItem { Text = "Properties", ImageSrc = "/qln-images/post-icons/ad_properties.svg", Route = navigationPath.PropertiesProfileMenu },
+        new MenuItem { Text = "Vehicles", ImageSrc = "/qln-images/post-icons/ad_vehicles.svg", Route = navigationPath.VehiclesProfileMenu },
+        new MenuItem { Text = "Classifieds", ImageSrc = "/qln-images/post-icons/ad_classifieds.svg", Route = navigationPath.ClassifiedsProfileMenu(CurrentUserId) },
+        new MenuItem { Text = "Services", ImageSrc = "/qln-images/post-icons/ad_services.svg", Route = navigationPath.VehiclesProfileMenu }, // Placeholder
+        new MenuItem { Text = "Jobs", ImageSrc = "/qln-images/post-icons/ad_jobs.svg", Route = navigationPath.JobsProfileMenu(CurrentUserId) },
+        new MenuItem { Text = "Rewards", ImageSrc = "/qln-images/post-icons/ad_rewards.svg", Route = navigationPath.RewardsProfileMenu }
+    };
+
+    // Top-level profile items
+    profileMenuItems = new List<MenuItem>
+    {
+        new MenuItem { Text = "My account", ImageSrc = "/qln-images/header/my_account_icon.svg", Route = navigationPath.MyProfileMenu(CurrentUserId) },
+        new MenuItem { Text = "My saved ads", ImageSrc = "/qln-images/header/my_saved_ad_icon.svg", Route = navigationPath.MySavedAdsProfileMenu(CurrentUserId) },
+        new MenuItem { Text = "My saved searches", ImageSrc = "/qln-images/header/my _saved_searches_icon.svg", Route = navigationPath.MySavedSearchesProfileMenu },
+        new MenuItem { Text = "Dashboards", ImageSrc = "/qln-images/header/dashboards_icon.svg", Route = null },
+        new MenuItem { Text = "Manage my ads", ImageSrc = "/qln-images/header/manage_my_ads_icon.svg", Route = navigationPath.ManageMyAdsProfileMenu(CurrentUserId) },
+        new MenuItem { Text = "Logout", ImageSrc = "/qln-images/header/logout_icon.svg", Route = null }
+    };
+
+    StateHasChanged();
+}
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -217,6 +264,7 @@
             {
                 Name = user.FindFirst(ClaimTypes.Name)?.Value;
                 Email = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value;
+                CurrentUserId = int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uid) ? uid : 0;
                 IsLoggedIn = true;
             }
             else
@@ -265,6 +313,7 @@
         // CookieAuthenticationStateProvider.LogoutUser();
         Name = string.Empty;
         Email = string.Empty;
+        CurrentUserId = 0;
         IsLoggedIn = false;
 
         var destination = GetDestination();
@@ -303,6 +352,18 @@
     // NavManager.NavigateTo("https:www.qatarliving.com/node/add/classified");
     // }
 
+private void HandleProfileMenuClick(MenuItem item)
+{
+    if (item.Text == "Logout")
+    {
+        GoToLogout(); // No navigation
+    }
+    else if (!string.IsNullOrEmpty(item.Route))
+    {
+        NavManager.NavigateTo(item.Route);
+    }
+}
+
     private List<MenuItem> postMenuItems = new List<MenuItem>
 {
 new MenuItem {
@@ -337,6 +398,10 @@ Route = "/more-features-coming-soon"
 }
 };
 
+
+
+
+   
     private class MenuItem
     {
         public string Text { get; set; }
@@ -392,7 +457,31 @@ Route = "/more-features-coming-soon"
         width: 100%;
     }
 
+      .nested-menu-item-content {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 16px;
+        font-family: public-sans, sans-serif;
+        border-bottom: 1px solid #EAECF0;
+        padding: 8px 30px;
+        width: 100%;
+    }
+    .nested-menu-item-list-content{
+         display: flex;
+        justify-content: flex-start;
+        align-items: ;
+        gap: 16px;
+        font-family: public-sans, sans-serif;
+        border-bottom: 1px solid #EAECF0;
+        padding: 8px 50px 8px 20px;
+        width: 100%;
+    }
+
     .menu-item:last-child .menu-item-content {
+        border-bottom: none;
+    }
+    .menu-item:last-child .nested-menu-item-list-content {
         border-bottom: none;
     }
 
@@ -401,7 +490,9 @@ Route = "/more-features-coming-soon"
         height: 22px;
         object-fit: contain;
     }
-
+    .nested-icon-color {
+           filter: brightness(0) saturate(100%) invert(38%) sepia(10%) saturate(1192%) hue-rotate(174deg) brightness(91%) contrast(86%);
+    }
     .menu-item-text {
         font-size: 13px;
         font-weight: 500;
@@ -474,8 +565,18 @@ Route = "/more-features-coming-soon"
       justify-content: space-between;
       flex-direction: row;
     }
+    .logout-item {
+    color: #F04438 !important;
+}
 
 
+.menu-username {
+    font-weight: 600;
+    padding: 12px 16px 5px 20px;
+    font-size: 14px;
+    color: #101828;
+    width: 100%;
+}
     /* Responsive media query: shrink avatar icons on larger screens (>450px) */
     @@media (max-width: 450px) {
         .avatar-icon {
