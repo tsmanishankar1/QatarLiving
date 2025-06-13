@@ -31,11 +31,11 @@
         public string HelpLink { get; set; } = "https://www.qatarliving.com/help";
         public string SocialFacebook { get; set; } = "https://www.facebook.com/QatarLiving";
         public string SocialTwitter { get; set; } = "https://twitter.com/qatarliving/";
-        public string SocialInstagram { get; set; } = "https://www.instagram.com/qatarliving/#";
+        public string SocialInstagram { get; set; } = "https://www.instagram.com/qatarliving/";
         public string SocialSnapChat { get; set; } = "https://www.snapchat.com/add/qatar_living";
         public string SocialLinkedIn { get; set; } = "https://www.linkedin.com/company/qatarliving-com";
         public string SocialYouTube { get; set; } = "https://www.youtube.com/channel/UCcsJRinZg4qYGLRDkFiVHcQ";
-        public string SocialTikTok { get; set; } = "https://www.tiktok.com/notfound";
+        public string SocialTikTok { get; set; } = "https://www.tiktok.com/@qatarliving";
         public string Base { get; set; } = "https://www.qatarliving.com/";
         public string AllVideos { get; set; } = "https://www.youtube.com/@QatarLivingOfficial/videos";
 
