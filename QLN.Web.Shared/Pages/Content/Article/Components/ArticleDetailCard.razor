@@ -8,7 +8,7 @@
         @if (loading)
         {
             <MudSkeleton SkeletonType="SkeletonType.Rectangle" Animation="Animation.Wave"
-                Class="rounded shadow-container" />
+                         Class="rounded shadow-container" />
         }
         else if (@Post == null)
         {
@@ -27,8 +27,8 @@
                     <MudSkeleton SkeletonType="SkeletonType.Rectangle" Class="event-image" />
                 }
                 <img src="@Post.ImageUrl" alt="News Image" class="event-image"
-                    style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
-                    @onerror="OnImageError" />
+                     style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                     @onerror="OnImageError" />
             }
         }
 
@@ -43,7 +43,7 @@
 
             <div class="icons">
                 <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu" AnchorOrigin="Origin.BottomLeft"
-                    TransformOrigin="Origin.TopRight">
+                         TransformOrigin="Origin.TopRight">
                     <ActivatorContent>
                         <MudIconButton Icon="@Icons.Material.Filled.Share" Class="icons-color" />
                     </ActivatorContent>
@@ -76,17 +76,17 @@
     @if (loading)
     {
         <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="100%"
-            Animation="Animation.Wave" />
+                     Animation="Animation.Wave" />
         <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="60%"
-            Animation="Animation.Wave" />
+                     Animation="Animation.Wave" />
         <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="100%"
-            Animation="Animation.Wave" />
+                     Animation="Animation.Wave" />
         <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="60%"
-            Animation="Animation.Wave" />
+                     Animation="Animation.Wave" />
         <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="100%"
-            Animation="Animation.Wave" />
+                     Animation="Animation.Wave" />
         <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="60%"
-            Animation="Animation.Wave" />
+                     Animation="Animation.Wave" />
     }
     else
     {
@@ -227,22 +227,29 @@
         font-family: 'Public Sans', sans-serif;
     }
 
-    .event-description p {
-        margin-bottom: 2rem;
-    }
+        .event-description p {
+            margin-bottom: 2rem;
+        }
 
-    .event-description img {
-        max-width: 100%;
-        height: auto;
-        display: block;
-        margin: 1rem auto;
-        border-radius: 8px;
-    }
+        .event-description img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 1rem auto;
+            border-radius: 8px;
+        }
 
-    .event-description a {
-        color: #00426D !important;
-        text-decoration: underline !important;
-    }
+        .event-description a {
+            color: #00426D !important;
+            text-decoration: underline !important;
+        }
+
+
+        .event-description iframe {
+            height: auto !important;
+            max-width: 100%;
+            border: none;
+        }
 
     .comment-badge {
         display: flex;
@@ -252,17 +259,17 @@
         gap: 5px;
     }
 
-    .comment-badge .icon {
-        color: var(--color-primary);
-        height: 24px;
-        width: 24px;
-    }
+        .comment-badge .icon {
+            color: var(--color-primary);
+            height: 24px;
+            width: 24px;
+        }
 
-    .comment-badge .count {
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--color-primary);
-    }
+        .comment-badge .count {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
 
     .main-author {
         font-family: 'Public Sans', sans-serif;
