@@ -21,9 +21,9 @@
                 <div class="user-left" @onclick="() => GoToProfile.InvokeAsync()">
                     <img src="/qln-images/header/user_Icons.svg" alt="User" class="user-avatar" />
                     <div class="user-info">
-                        <div class="user-name"> @((Name?.Length > 10) ? Name.Substring(0, 10) + "..." :
+                        <div class="user-name"> @((Name?.Length > 20) ? Name.Substring(0, 20) + "..." :
                                                 Name)</div>
-                                                 <div class="user-email"> @((Email?.Length > 10) ? Email.Substring(0, 10) + "..." :
+                                                 <div class="user-email"> @((Email?.Length > 20) ? Email.Substring(0, 20) + "..." :
                                                 Email)</div>
             </div>
         </div>

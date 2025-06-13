@@ -131,7 +131,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                     CommentList.Comments = response.comments.Select(c => new CommentModel
                     {
                         Id = c.comment_id,
-                        CreatedBy = !string.IsNullOrWhiteSpace(c.user_name) ? c.user_name : "User " + c.user_id,
+                        CreatedBy = !string.IsNullOrWhiteSpace(c.user_name) ? c.user_name : "User not found",
                         CreatedAt = DateTime.TryParse(c.date_created, out var date) ? date : DateTime.Now,
                         Description = c.subject ?? "No content to display",
                         LikeCount = c.LikeCount,
