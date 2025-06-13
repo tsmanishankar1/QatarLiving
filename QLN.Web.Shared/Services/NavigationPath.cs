@@ -77,5 +77,7 @@
         public string MySavedAdsProfileMenu(int userId) => $"https://www.qatarliving.com/user/{userId}/wishlist";
         public string ManageMyAdsProfileMenu(int userId) => $"https://www.qatarliving.com/user/{userId}/classifieds";
 
+        public string WishlistBase { get; set; } = "https://www.qatarliving.com/user/<USER_ID>/wishlist";
+
     }
 }

@@ -205,25 +205,25 @@
     private List<MenuItem> nestedProfileMenuItems = new();
     private bool _isDarkMode;
     private MudThemeProvider _mudThemeProvider;
-   protected override async Task OnInitializedAsync()
-{
-    navigationPath = options.Value;
-
-    var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
-    if (authState != null)
+    protected override async Task OnInitializedAsync()
     {
-        var user = authState.User;
-        if (user.Identity != null && user.Identity.IsAuthenticated)
-        {
-            Name = user.FindFirst(ClaimTypes.Name)?.Value;
-            Email = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value;
-            CurrentUserId = int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uid) ? uid : 0;
-            IsLoggedIn = true;
-        }
-    }
+        navigationPath = options.Value;
 
-   // Nested dashboard items
-    nestedProfileMenuItems = new List<MenuItem>
+        var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState != null)
+        {
+            var user = authState.User;
+            if (user.Identity != null && user.Identity.IsAuthenticated)
+            {
+                Name = user.FindFirst(ClaimTypes.Name)?.Value;
+                Email = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value;
+                CurrentUserId = int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uid) ? uid : 0;
+                IsLoggedIn = true;
+            }
+        }
+
+        // Nested dashboard items
+        nestedProfileMenuItems = new List<MenuItem>
     {
         new MenuItem { Text = "Properties", ImageSrc = "/qln-images/post-icons/ad_properties.svg", Route = navigationPath.PropertiesProfileMenu },
         new MenuItem { Text = "Vehicles", ImageSrc = "/qln-images/post-icons/ad_vehicles.svg", Route = navigationPath.VehiclesProfileMenu },
@@ -233,8 +233,8 @@
         new MenuItem { Text = "Rewards", ImageSrc = "/qln-images/post-icons/ad_rewards.svg", Route = navigationPath.RewardsProfileMenu }
     };
 
-    // Top-level profile items
-    profileMenuItems = new List<MenuItem>
+        // Top-level profile items
+        profileMenuItems = new List<MenuItem>
     {
         new MenuItem { Text = "My account", ImageSrc = "/qln-images/header/my_account_icon.svg", Route = navigationPath.MyProfileMenu(CurrentUserId) },
         new MenuItem { Text = "My saved ads", ImageSrc = "/qln-images/header/my_saved_ad_icon.svg", Route = navigationPath.MySavedAdsProfileMenu(CurrentUserId) },
@@ -244,8 +244,8 @@
         new MenuItem { Text = "Logout", ImageSrc = "/qln-images/header/logout_icon.svg", Route = null }
     };
 
-    StateHasChanged();
-}
+        StateHasChanged();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -286,7 +286,12 @@
 
     private void GoToFavourites()
     {
-        NavManager.NavigateTo($"{navigationPath.Base}/user/0/wishlist", forceLoad: true); // need to check if this should be th
+        // Get WishList Url from AppSettings.Json
+        string wishListURLBase = navigationPath.WishlistBase;
+        // Replace UserID with Current UserID
+        string wishListURL =  wishListURLBase.Replace("<USER_ID>", $"{CurrentUserId}");
+        // Navigate
+        NavManager.NavigateTo(wishListURL);
     }
 
     private void GoToProfile()
