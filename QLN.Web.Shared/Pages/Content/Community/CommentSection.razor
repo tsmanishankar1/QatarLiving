@@ -44,7 +44,7 @@ else
     }
     else
     {
-        @if (Comment.Comments == null || !Comment.Comments.Any())
+        @if (Comments == null || !Comments.Any())
         {
             <div class="comment-section-empty">
                 <div class="comment-title">Comments</div>
@@ -104,7 +104,7 @@ else
 
 
 
-                @foreach (var c in CommentList.Comments)
+                @foreach (var c in Comments)
                 {
                     <div class="comment-item @(c.IsByCurrentUser ? "my-comment" : "other-comment")">
                         <img src="@("/qln-images/default_logo.svg")" alt="User Avatar" class="post-footer-comment-avatar" />
@@ -141,7 +141,7 @@ else
                     <div class="comment-divider"></div>
 
                 }
-                @if (CommentList?.Comments?.Any() == true)
+                @if (Comments?.Any() == true)
                 {
                 <div class="pagination-container">
                     <PaginationFooter TotalItems="@TotalCount"
