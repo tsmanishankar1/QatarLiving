@@ -278,7 +278,7 @@
         // Replace UserID with Current UserID
         string wishListURL =  wishListURLBase.Replace("<USER_ID>", $"{CurrentUserId}");
         // Navigate
-        NavManager.NavigateTo(wishListURL);
+        NavManager.NavigateTo(wishListURL, forceLoad: true);
     }
 
     private void GoToProfile()
@@ -346,7 +346,7 @@
         }
         else if (!string.IsNullOrEmpty(item.Route))
         {
-            NavManager.NavigateTo(item.Route);
+            NavManager.NavigateTo(item.Route, forceLoad: true);
         }
     }
 
