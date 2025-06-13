@@ -64,11 +64,6 @@
                                         navigationPath.Rewards
                                         }
  class="nav-link">Rewards</NavLink>
-                    @* <NavLink id="rewardsLink" class="nav-link d-flex align-items-center">
-                    More
-                    <img src="/qln-images/header/arrow_down.svg" alt="Down arrow"
-                        style="width: 20px; height: 20px; margin-left: 5px;" />
-                </NavLink> *@
             </div>
 
             <div class="post-button-wrapper">
@@ -81,17 +76,6 @@
                             <span class="post-ad-text">Post Ad</span>
                         </MudButton>
                     </ActivatorContent>
-                    @* <ChildContent>
-                @foreach (var item in postMenuItems)
-                {
-                  <MudMenuItem  OnClick="@(() => NavManager.NavigateTo(item.Route))" Class="menu-item">
-                <div id="options-@item.Text" class="menu-item-content">
-                    <img src="@item.ImageSrc" alt="@item.Text" class="menu-item-icon" />
-                    <span class="menu-item-text">@item.Text</span>
-                </div>
-            </MudMenuItem>
-                    }
-                </ChildContent> *@
                 </MudMenu>
             </div>
         </div>
@@ -205,25 +189,34 @@
     private List<MenuItem> nestedProfileMenuItems = new();
     private bool _isDarkMode;
     private MudThemeProvider _mudThemeProvider;
-   protected override async Task OnInitializedAsync()
-{
-    navigationPath = options.Value;
 
-    var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
-    if (authState != null)
+    // Menu Items with UserID
+    public string ClassifiedsProfileMenuUrl { get; set; } = string.Empty;
+    public string JobsProfileMenu { get; set; } = string.Empty;
+    public string MyProfileMenu { get; set; } = string.Empty;
+    public string MySavedAdsProfileMenu { get; set; } = string.Empty;
+    public string ManageMyAdsProfileMenu { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
     {
-        var user = authState.User;
-        if (user.Identity != null && user.Identity.IsAuthenticated)
-        {
-            Name = user.FindFirst(ClaimTypes.Name)?.Value;
-            Email = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value;
-            CurrentUserId = int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uid) ? uid : 0;
-            IsLoggedIn = true;
-        }
-    }
+        navigationPath = options.Value;
 
-   // Nested dashboard items
-    nestedProfileMenuItems = new List<MenuItem>
+        var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState != null)
+        {
+            var user = authState.User;
+            if (user.Identity != null && user.Identity.IsAuthenticated)
+            {
+                Name = user.FindFirst(ClaimTypes.Name)?.Value;
+                Email = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value;
+                CurrentUserId = int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uid) ? uid : 0;
+                IsLoggedIn = true;
+                SetProfileMenu();
+            }
+        }
+
+        // Nested dashboard items
+        nestedProfileMenuItems = new List<MenuItem>
     {
         new MenuItem { Text = "Properties", ImageSrc = "/qln-images/post-icons/ad_properties.svg", Route = navigationPath.PropertiesProfileMenu },
         new MenuItem { Text = "Vehicles", ImageSrc = "/qln-images/post-icons/ad_vehicles.svg", Route = navigationPath.VehiclesProfileMenu },
@@ -233,8 +226,8 @@
         new MenuItem { Text = "Rewards", ImageSrc = "/qln-images/post-icons/ad_rewards.svg", Route = navigationPath.RewardsProfileMenu }
     };
 
-    // Top-level profile items
-    profileMenuItems = new List<MenuItem>
+        // Top-level profile items
+        profileMenuItems = new List<MenuItem>
     {
         new MenuItem { Text = "My account", ImageSrc = "/qln-images/header/my_account_icon.svg", Route = navigationPath.MyProfileMenu(CurrentUserId) },
         new MenuItem { Text = "My saved ads", ImageSrc = "/qln-images/header/my_saved_ad_icon.svg", Route = navigationPath.MySavedAdsProfileMenu(CurrentUserId) },
@@ -244,8 +237,8 @@
         new MenuItem { Text = "Logout", ImageSrc = "/qln-images/header/logout_icon.svg", Route = null }
     };
 
-    StateHasChanged();
-}
+        StateHasChanged();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -266,6 +259,7 @@
                 Email = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value;
                 CurrentUserId = int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uid) ? uid : 0;
                 IsLoggedIn = true;
+                SetProfileMenu();
             }
             else
             {
@@ -346,62 +340,33 @@
 
     }
 
-
-    // private void OnPostClicked()
-    // {
-    // NavManager.NavigateTo("https:www.qatarliving.com/node/add/classified");
-    // }
-
-private void HandleProfileMenuClick(MenuItem item)
-{
-    if (item.Text == "Logout")
+    private void HandleProfileMenuClick(MenuItem item)
     {
-        GoToLogout(); // No navigation
+        if (item.Text == "Logout")
+        {
+            GoToLogout(); // No navigation
+        }
+        else if (!string.IsNullOrEmpty(item.Route))
+        {
+            NavManager.NavigateTo(item.Route);
+        }
     }
-    else if (!string.IsNullOrEmpty(item.Route))
+
+
+    private void SetProfileMenu()
     {
-        NavManager.NavigateTo(item.Route);
+        ClassifiedsProfileMenuUrl =  ReplaceUrlWithUserID(navigationPath.ClassifiedsProfileMenu, CurrentUserId);
+        JobsProfileMenu = ReplaceUrlWithUserID(navigationPath.JobsProfileMenu, CurrentUserId);
+        MyProfileMenu = ReplaceUrlWithUserID(navigationPath.MyProfileMenu, CurrentUserId);
+        MySavedAdsProfileMenu = ReplaceUrlWithUserID(navigationPath.MySavedAdsProfileMenu, CurrentUserId);
+        ManageMyAdsProfileMenu = ReplaceUrlWithUserID(navigationPath.ManageMyAdsProfileMenu, CurrentUserId);
     }
-}
 
-    private List<MenuItem> postMenuItems = new List<MenuItem>
-{
-new MenuItem {
-Text = "Properties",
-ImageSrc = "/qln-images/post-icons/ad_properties.svg",
-Route = "/more-features-coming-soon"
-},
-new MenuItem {
-Text = "Vehicles",
-ImageSrc = "/qln-images/post-icons/ad_vehicles.svg",
-Route = "/more-features-coming-soon"
-},
-new MenuItem {
-Text = "Classifieds",
-ImageSrc = "/qln-images/post-icons/ad_classifieds.svg",
-Route = "/classifieds/createform"
-},
-new MenuItem {
-Text = "Services",
-ImageSrc = "/qln-images/post-icons/ad_services.svg",
-Route = "/more-features-coming-soon"
-},
-new MenuItem {
-Text = "Jobs",
-ImageSrc = "/qln-images/post-icons/ad_jobs.svg",
-Route = "/more-features-coming-soon"
-},
-new MenuItem {
-Text = "Rewards",
-ImageSrc = "/qln-images/post-icons/ad_rewards.svg",
-Route = "/more-features-coming-soon"
-}
-};
+    private string ReplaceUrlWithUserID(string url,int userID)
+    {
+        return url.Replace("<USER_ID>", $"{userID}");
+    }
 
-
-
-
-   
     private class MenuItem
     {
         public string Text { get; set; }
