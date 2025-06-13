@@ -68,7 +68,7 @@ public class MoreArticleSectionBase : ComponentBase
     }
     protected void NavigateToEventArticle(ContentEvent article)
     {
-        var url = $"/content/article/details/{article.Slug}";
+        var url = $"/content/daily/article/details/{article.Slug}";
         navManager.NavigateTo(url, forceLoad: true);
     }
 }
