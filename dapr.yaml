@@ -16,16 +16,19 @@ apps:
 #   command:
 #   - dotnet
 #   - run
-- appDirPath: QLN.Subscriptions.Actor
-  appID: qln-subscriptions-actor
-  appPort: 5056
-
-  - appID: qln-classified-ms
-    appDirPath: QLN.Classified.MS
-    appPort: 5276
+  - appID: qln-subscriptions-actor
+    appDirPath: QLN.Subscriptions.Actor
+    appPort: 5056
     command:
-      - dotnet
-      - run
+    - dotnet
+    - run
+
+  # - appID: qln-classified-ms
+  #   appDirPath: QLN.Classified.MS
+  #   appPort: 5276
+  #   command:
+  #     - dotnet
+  #     - run
 # - appDirPath: QLN.Blazor.Base
 #   appID: qln-blazor-base
 #   appPort: 5047
@@ -33,15 +36,15 @@ apps:
 #   - dotnet
 #   - run
 
-  - appID: qln-search-ms
-    appDirPath: QLN.SearchService
-    appPort: 5244
-    command:
-      - dotnet
-      - run
-  - appID: qln-company-ms
-    appDirPath: QLN.Company.MS
-    appPort: 5139
-    command:
-      - dotnet
-      - run
+  # - appID: qln-search-ms
+  #   appDirPath: QLN.SearchService
+  #   appPort: 5244
+  #   command:
+  #     - dotnet
+  #     - run
+  # - appID: qln-company-ms
+  #   appDirPath: QLN.Company.MS
+  #   appPort: 5139
+  #   command:
+  #     - dotnet
+  #     - run
