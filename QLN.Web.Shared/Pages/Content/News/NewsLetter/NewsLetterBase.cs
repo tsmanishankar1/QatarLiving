@@ -73,22 +73,28 @@ public class NewsLetterBase : ComponentBase
                         msg = errorsElement.ToString();
                     }
                 }
-                
+
                 if (response.IsSuccessStatusCode && successPatteren.Equals(msg, StringComparison.OrdinalIgnoreCase))
 
                 {
                     Snackbar.Add($"Subscription submitted: {msg}", Severity.Success);
                     SubscriptionStatusMessage = $"Subscription submitted: {msg}";
+                    SubscriptionModel.Email = string.Empty;
+                    StateHasChanged();
                 }
                 else if (response.IsSuccessStatusCode && !string.IsNullOrWhiteSpace(msg))
                 {
                     Snackbar.Add($"{msg}", Severity.Warning);
                     SubscriptionStatusMessage = $"{msg}";
+                    SubscriptionModel.Email = string.Empty;
+                    StateHasChanged();
                 }
                 else
                 {
                     Snackbar.Add("Failed to subscribe. Please try again.", Severity.Error);
                     SubscriptionStatusMessage = "Failed to subscribe. Please try again.";
+                    SubscriptionModel.Email = string.Empty;
+                    StateHasChanged();
                 }
             }
             catch (Exception ex)
