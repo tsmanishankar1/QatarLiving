@@ -10,11 +10,14 @@ public class CommunitySearchBarSectionBase : ComponentBase
     [Inject] protected ISnackbar Snackbar { get; set; }
     [Inject] protected ICommunityService CommunityService { get; set; }
     [Inject] protected ISearchService CommunitySearchService { get; set; }
+    [Inject] protected NavigationManager NavigationManager { get; set; }
+
     [Parameter] public EventCallback<Dictionary<string, object>> OnSearchCompleted { get; set; }
     [Parameter] public EventCallback<string> OnCategoryChanged { get; set; }
 
 
-
+    [Parameter]
+    public string InitialCategoryId { get; set; }
 
     protected string searchText;
     protected string selectedCategory;
@@ -30,7 +33,11 @@ public class CommunitySearchBarSectionBase : ComponentBase
         try
         {
             CategorySelectOptions = await CommunityService.GetForumCategoriesAsync();
-           
+            if (!string.IsNullOrEmpty(InitialCategoryId))
+            {
+                SelectedCategoryId = InitialCategoryId;
+            }
+
         }
         catch (Exception ex)
         {
@@ -44,7 +51,17 @@ public class CommunitySearchBarSectionBase : ComponentBase
     protected async Task OnCategoryChange(string newId)
     {
         SelectedCategoryId = newId;
-        await OnCategoryChanged.InvokeAsync(newId); 
+        await OnCategoryChanged.InvokeAsync(newId);
+        NavigationManager.NavigateTo($"content/community?categoryId={newId}", forceLoad: false);
+    }
+
+    protected override void OnParametersSet()
+    {
+        // Update selected category when parameter changes
+        if (!string.IsNullOrEmpty(InitialCategoryId) && SelectedCategoryId != InitialCategoryId)
+        {
+            SelectedCategoryId = InitialCategoryId;
+        }
     }
 
     protected async Task PerformSearch()
