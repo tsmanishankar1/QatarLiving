@@ -35,7 +35,7 @@
         public string SocialSnapChat { get; set; } = "https://www.snapchat.com/add/qatar_living";
         public string SocialLinkedIn { get; set; } = "https://www.linkedin.com/company/qatarliving-com";
         public string SocialYouTube { get; set; } = "https://www.youtube.com/channel/UCcsJRinZg4qYGLRDkFiVHcQ";
-        public string SocialTikTok { get; set; } = "https://www.tiktok.com/notfound";
+        public string SocialTikTok { get; set; } = "https://www.tiktok.com/@qatarliving";
         public string Base { get; set; } = "https://www.qatarliving.com/";
         public string AllVideos { get; set; } = "https://www.youtube.com/@QatarLivingOfficial/videos";
 
