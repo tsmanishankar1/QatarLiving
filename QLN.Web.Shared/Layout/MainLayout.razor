@@ -280,7 +280,12 @@
 
     private void GoToFavourites()
     {
-        NavManager.NavigateTo($"{navigationPath.Base}/user/0/wishlist", forceLoad: true); // need to check if this should be th
+        // Get WishList Url from AppSettings.Json
+        string wishListURLBase = navigationPath.WishlistBase;
+        // Replace UserID with Current UserID
+        string wishListURL =  wishListURLBase.Replace("<USER_ID>", $"{CurrentUserId}");
+        // Navigate
+        NavManager.NavigateTo(wishListURL);
     }
 
     private void GoToProfile()
