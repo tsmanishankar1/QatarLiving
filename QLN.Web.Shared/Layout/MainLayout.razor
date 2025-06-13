@@ -220,20 +220,20 @@
     {
         new MenuItem { Text = "Properties", ImageSrc = "/qln-images/post-icons/ad_properties.svg", Route = navigationPath.PropertiesProfileMenu },
         new MenuItem { Text = "Vehicles", ImageSrc = "/qln-images/post-icons/ad_vehicles.svg", Route = navigationPath.VehiclesProfileMenu },
-        new MenuItem { Text = "Classifieds", ImageSrc = "/qln-images/post-icons/ad_classifieds.svg", Route = navigationPath.ClassifiedsProfileMenu(CurrentUserId) },
+        new MenuItem { Text = "Classifieds", ImageSrc = "/qln-images/post-icons/ad_classifieds.svg", Route = ClassifiedsProfileMenuUrl },
         new MenuItem { Text = "Services", ImageSrc = "/qln-images/post-icons/ad_services.svg", Route = navigationPath.VehiclesProfileMenu }, // Placeholder
-        new MenuItem { Text = "Jobs", ImageSrc = "/qln-images/post-icons/ad_jobs.svg", Route = navigationPath.JobsProfileMenu(CurrentUserId) },
-        new MenuItem { Text = "Rewards", ImageSrc = "/qln-images/post-icons/ad_rewards.svg", Route = navigationPath.RewardsProfileMenu }
+        new MenuItem { Text = "Jobs", ImageSrc = "/qln-images/post-icons/ad_jobs.svg", Route = JobsProfileMenu },
+        new MenuItem { Text = "Rewards", ImageSrc = "/qln-images/post-icons/ad_rewards.svg", Route = navigationPath.Rewards }
     };
 
         // Top-level profile items
         profileMenuItems = new List<MenuItem>
     {
-        new MenuItem { Text = "My account", ImageSrc = "/qln-images/header/my_account_icon.svg", Route = navigationPath.MyProfileMenu(CurrentUserId) },
-        new MenuItem { Text = "My saved ads", ImageSrc = "/qln-images/header/my_saved_ad_icon.svg", Route = navigationPath.MySavedAdsProfileMenu(CurrentUserId) },
-        new MenuItem { Text = "My saved searches", ImageSrc = "/qln-images/header/my _saved_searches_icon.svg", Route = navigationPath.MySavedSearchesProfileMenu },
+        new MenuItem { Text = "My account", ImageSrc = "/qln-images/header/my_account_icon.svg", Route = MyProfileMenu },
+        new MenuItem { Text = "My saved ads", ImageSrc = "/qln-images/header/my_saved_ad_icon.svg", Route = MySavedAdsProfileMenu },
+        new MenuItem { Text = "My saved searches", ImageSrc = "/qln-images/header/my _saved_searches_icon.svg", Route = MySavedAdsProfileMenu },
         new MenuItem { Text = "Dashboards", ImageSrc = "/qln-images/header/dashboards_icon.svg", Route = null },
-        new MenuItem { Text = "Manage my ads", ImageSrc = "/qln-images/header/manage_my_ads_icon.svg", Route = navigationPath.ManageMyAdsProfileMenu(CurrentUserId) },
+        new MenuItem { Text = "Manage my ads", ImageSrc = "/qln-images/header/manage_my_ads_icon.svg", Route = ManageMyAdsProfileMenu },
         new MenuItem { Text = "Logout", ImageSrc = "/qln-images/header/logout_icon.svg", Route = null }
     };
 
