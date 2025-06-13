@@ -36,7 +36,8 @@ namespace QLN.Web.Shared.Pages.Content.Daily.DailyIntheKnow
                 Icon = "/qln-images/content/lifestyle_icon.svg",
                 Label = "Lifestyle",
                 QLCategLink = "forum/fashion",
-                CategorySlug = "lifestyle"
+                CategorySlug = "lifestyle",
+                SubcategorySlug = "fashion-and-style"
             },
             new CategoryItem
             {
