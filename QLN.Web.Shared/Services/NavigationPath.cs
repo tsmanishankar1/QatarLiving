@@ -31,7 +31,7 @@
         public string HelpLink { get; set; } = "https://www.qatarliving.com/help";
         public string SocialFacebook { get; set; } = "https://www.facebook.com/QatarLiving";
         public string SocialTwitter { get; set; } = "https://twitter.com/qatarliving/";
-        public string SocialInstagram { get; set; } = "https://www.instagram.com/qatarliving/#";
+        public string SocialInstagram { get; set; } = "https://www.instagram.com/qatarliving/";
         public string SocialSnapChat { get; set; } = "https://www.snapchat.com/add/qatar_living";
         public string SocialLinkedIn { get; set; } = "https://www.linkedin.com/company/qatarliving-com";
         public string SocialYouTube { get; set; } = "https://www.youtube.com/channel/UCcsJRinZg4qYGLRDkFiVHcQ";
@@ -71,11 +71,13 @@
         public string RewardsProfileMenu { get; set; } = "https://qlr.qatarliving.com/en/rewards/dashboard";
         public string MySavedSearchesProfileMenu { get; set; } =  "https://qlv.qatarliving.com/en/vehicles/favourites?tab=saved-searches";
 
-        public string ClassifiedsProfileMenu(int userId) => $"https://www.qatarliving.com/user/{userId}/classifieds";
-        public string JobsProfileMenu(int userId) => $"https://www.qatarliving.com/user/{userId}/jobs";
-         public string MyProfileMenu(int userId) => $"https://www.qatarliving.com/user/{userId}";
-        public string MySavedAdsProfileMenu(int userId) => $"https://www.qatarliving.com/user/{userId}/wishlist";
-        public string ManageMyAdsProfileMenu(int userId) => $"https://www.qatarliving.com/user/{userId}/classifieds";
+        public string ClassifiedsProfileMenu { get; set; } = "https://www.qatarliving.com/user/<USER_ID>/classifieds";
+        public string JobsProfileMenu { get; set; } = "https://www.qatarliving.com/user/<USER_ID>/jobs";
+         public string MyProfileMenu { get; set; } = "https://www.qatarliving.com/user/<USER_ID>";
+        public string MySavedAdsProfileMenu { get; set; } = "https://www.qatarliving.com/user/<USER_ID>/wishlist";
+        public string ManageMyAdsProfileMenu { get; set; } = "https://www.qatarliving.com/user/<USER_ID>/classifieds";
+
+        public string WishlistBase { get; set; } = "https://www.qatarliving.com/user/<USER_ID>/wishlist";
 
     }
 }
