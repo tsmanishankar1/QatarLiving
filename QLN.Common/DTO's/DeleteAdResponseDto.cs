@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.DTO_s
 {
-    public class ClassifiedPreloved : CommonAdBase
+    public class DeleteAdResponseDto
     {
-        public Guid Id { get; set; }
+        public string Message { get; set; }         
+        public List<string> DeletedImages { get; set; } = new();
     }
 }

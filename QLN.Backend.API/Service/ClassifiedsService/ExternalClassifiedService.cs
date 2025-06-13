@@ -838,7 +838,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             throw new NotImplementedException();
         }
 
-        public async Task<(Guid AdId, string Title, DateTime CreatedAt)> CreateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
             if (dto.UserId == Guid.Empty) throw new ArgumentException("UserId is required.");
@@ -857,6 +857,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             try
             {
                 var adId = Guid.NewGuid();
+                dto.Id = adId;
                 
                 var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
                     ? dto.CertificateFileName
@@ -897,7 +898,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     cancellationToken
                 );
 
-                return (AdId: adId, Title: dto.Title, CreatedAt: DateTime.UtcNow);
+                return new AdCreatedResponseDto { AdId = adId, Title = dto.Title, CreatedAt = DateTime.UtcNow, Message = "Items Ad created successfully" };
             }
             catch (Exception ex)
             {
@@ -918,7 +919,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<(Guid AdId, string Title, DateTime CreatedAt)> CreateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
             if (dto.UserId == Guid.Empty) throw new ArgumentException("UserId is required.");
@@ -937,6 +938,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             try
             {
                 var adId = Guid.NewGuid();
+                dto.Id = adId;
 
                 var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
                     ? dto.CertificateFileName
@@ -977,7 +979,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     cancellationToken
                 );
 
-                return (AdId: adId, Title: dto.Title, CreatedAt: DateTime.UtcNow);
+                return new AdCreatedResponseDto { AdId = adId, Title = dto.Title, CreatedAt = DateTime.UtcNow, Message = "Preloved Ad created successfully" };
             }
             catch (Exception ex)
             {
@@ -998,7 +1000,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<(Guid AdId, string Title, DateTime CreatedAt)> CreateClassifiedDealsAd(ClassifiedDeals dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedDealsAd(ClassifiedDeals dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
             if (dto.UserId == Guid.Empty) throw new ArgumentException("UserId is required.");
@@ -1016,6 +1018,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             try
             {
                 var adId = Guid.NewGuid();
+                dto.Id = adId;
 
                 var flyerName = !string.IsNullOrWhiteSpace(dto.FlyerName)
                     ? dto.FlyerName
@@ -1057,7 +1060,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     cancellationToken
                 );
 
-                return (AdId: adId, Title: dto.Title, CreatedAt: DateTime.UtcNow);
+                return new AdCreatedResponseDto { AdId = adId, Title = dto.Title, CreatedAt = DateTime.UtcNow, Message = "Deals Ad created successfully" };
             }
             catch (Exception ex)
             {
@@ -1123,11 +1126,34 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task DeleteClassifiedItemsAd(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<DeleteAdResponseDto> DeleteClassifiedItemsAd(Guid adId, CancellationToken cancellationToken = default)
         {
             try
             {
-                
+                if (adId == Guid.Empty)
+                    throw new ArgumentException("Ad ID is required.");
+
+                List<string> blobNamesToDelete = new();
+
+                var response = await _dapr.InvokeMethodAsync<DeleteAdResponseDto>(
+                    HttpMethod.Delete,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/items-ad/{adId}",
+                    cancellationToken
+                    );
+
+
+                if (response?.DeletedImages?.Count > 0)
+                {
+                    foreach (var blobName in response.DeletedImages)
+                    {
+                        await _fileStorageBlob.DeleteFile(blobName, "classifieds-images", cancellationToken);
+                    }
+
+                    _log.LogException(new Exception($"Deleted blobs for Ad ID: {adId}"));
+                }
+
+                return response;
             }
             catch(Exception ex)
             {
@@ -1136,5 +1162,77 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
+        public async Task<DeleteAdResponseDto> DeleteClassifiedPrelovedAd(Guid adId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (adId == Guid.Empty)
+                    throw new ArgumentException("Ad ID is required.");
+
+                List<string> blobNamesToDelete = new();
+
+                var response = await _dapr.InvokeMethodAsync<DeleteAdResponseDto>(
+                    HttpMethod.Delete,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/preloved-ad/{adId}",
+                    cancellationToken
+                );
+
+                if (response?.DeletedImages?.Count > 0)
+                {
+                    foreach (var blobName in response.DeletedImages)
+                    {
+                        await _fileStorageBlob.DeleteFile(blobName, "classifieds-images", cancellationToken);
+                    }
+
+                    _log.LogException(new Exception($"Deleted blobs for Preloved Ad ID: {adId}"));
+                }
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to delete Classified Preloved Ad.", ex);
+            }
+        }
+
+        public async Task<DeleteAdResponseDto> DeleteClassifiedDealsAd(Guid adId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (adId == Guid.Empty)
+                    throw new ArgumentException("Ad ID is required.");
+
+                List<string> blobNamesToDelete = new();
+
+                var response = await _dapr.InvokeMethodAsync<DeleteAdResponseDto>(
+                    HttpMethod.Delete,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/deals-ad/{adId}",
+                    cancellationToken
+                );
+
+                if (response?.DeletedImages?.Count > 0)
+                {
+                    foreach (var blobName in response.DeletedImages)
+                    {
+                        await _fileStorageBlob.DeleteFile(blobName, "classifieds-images", cancellationToken);
+                    }
+
+                    _log.LogException(new Exception($"Deleted blobs for Deals Ad ID: {adId}"));
+                }
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to delete Classified Deals Ad.", ex);
+            }
+        }
+
+
     }
 }
+
