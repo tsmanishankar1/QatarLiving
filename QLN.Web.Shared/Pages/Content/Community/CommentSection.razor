@@ -141,6 +141,8 @@ else
                     <div class="comment-divider"></div>
 
                 }
+                @if (CommentList?.Comments?.Any() == true)
+                {
                 <div class="pagination-container">
                     <PaginationFooter TotalItems="@TotalCount"
                                       CurrentPage="@CurrentPage"
@@ -148,7 +150,7 @@ else
                                       OnPageChange="HandlePageChange"
                                       OnPageSizeChange="HandlePageSizeChange" />
                 </div>
-
+                }
 
             </div>
 
@@ -162,6 +164,7 @@ else
         background-color: #fff;
         box-shadow: 0 0 4px rgba(0,0,0,0.1);
         margin-top: 10px;
+        margin-bottom: 10px;
     }
 
     .comment-input-wrapper {
