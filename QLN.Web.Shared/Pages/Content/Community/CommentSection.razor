@@ -113,7 +113,7 @@ else
                             <div class="comment-header">
                                 <div class="comment-meta">
                                     <span class="created-by">@c.CreatedBy</span>  •
-                                    <span class="created-at">@c.CreatedAt.ToString("g")</span>
+                                    <span class="created-at">@c.CreatedAt.ToString("MMMM d, yyyy - HH:mm")</span>
                                 </div>
 
                                 <MudMenu Dense="true" AnchorOrigin="Origin.BottomLeft"
@@ -303,7 +303,7 @@ else
 
     .created-at {
         font-family: 'Public Sans', sans-serif;
-        font-weight: 400;
+        font-weight: 500;
         font-size: 12px;
         line-height: 18px;
         letter-spacing: 0;
@@ -316,6 +316,8 @@ else
         font-size: 16px;
         margin-top: -6px;
         color: #242424;
+        word-break: break-word;
+        white-space: pre-wrap;
     }
 
     .comment-title {
