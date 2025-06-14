@@ -15,7 +15,7 @@ public class DailyMoreArticleBase : ComponentBase
 
     protected void NavigatetoArticle(ContentEvent article)
     {
-        NavigationManager.NavigateTo($"/content/article/details/{article.Slug}");
+        NavigationManager.NavigateTo($"/content/daily/article/details/{article.Slug}");
     }
 
 }

@@ -20,7 +20,7 @@ else
 
 
 <div style="width: 100%; background-color: var(--color-secondary-background);">
-    <div class="responsive-container">
+    <div class="banner-responsive-container">
         @if (isLoadingEventBanners)
         {
             <BannerSkleton />
@@ -33,8 +33,9 @@ else
         {
             <EmptyCard Title="No event banners found." Subtitle="Please check back later for updates." />
         }
+        </div>
 
-
+       <div class="responsive-container">
 
         <Breadcrumb Items="breadcrumbItems" />
 
@@ -51,9 +52,6 @@ else
             <EmptyCard Title="Featured event details not found."
                 Subtitle="Please try again later or explore other available events." />
         }
-
-
-
     </div>
 </div>
 
@@ -66,15 +64,29 @@ else
         margin: 0 auto;
     }
 
+     .banner-responsive-container {
+        width: 100%;
+        padding: 0 40px;
+        box-sizing: border-box;
+        max-width: 1170px;
+        margin: 0 auto;
+    }
+
     @@media (max-width: 768px) {
         .responsive-container {
             padding: 0 16px;
+        }
+        .banner-responsive-container{
+             padding: 0;
         }
     }
 
     @@media (max-width: 480px) {
         .responsive-container {
             padding: 0 5px;
+        }
+        .banner-responsive-container{
+             padding: 0;
         }
     }
 </style>

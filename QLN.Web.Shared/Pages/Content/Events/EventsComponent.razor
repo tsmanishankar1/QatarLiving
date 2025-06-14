@@ -14,7 +14,7 @@
 <PageTitle>All the events in Qatar you don&#039;t want to miss | Qatar Living Events</PageTitle>
 
 <div style="width: 100%;background-color: var(--color-secondary-background);">
-    <div class="responsive-container" style="margin-bottom: 40px;">
+    <div class="banner-responsive-container" style="margin-bottom: 40px;">
         <div class="max-container">
 
             <!-- Carousel Banner Swiper -->
@@ -40,7 +40,7 @@
         </div>
     </div>
 
-    <div class="responsive-container">
+    <div class="responsive-container" id="search-section">
         <div class="max-container">
             @if (isLoadingCategories)
             {
@@ -66,7 +66,11 @@
         padding: 0 40px;
         box-sizing: border-box;
     }
-
+    .banner-responsive-container{
+        width: 100%;
+        padding: 0 40px;
+        box-sizing: border-box;
+    }
     .featured-events-responsive-container {
         width: 100%;
         padding: 0px 40px;
@@ -89,6 +93,9 @@
             margin-bottom: 10px;
             padding: 0 16px;
         }
+        .banner-responsive-container{
+            padding: 0;
+        }
     }
 
     @@media (max-width: 480px) {
@@ -99,6 +106,9 @@
         .carousel-responsive-container {
             margin-bottom: 5px;
             padding: 0 5px;
+        }
+         .banner-responsive-container{
+            padding: 0;
         }
     }
 </style>

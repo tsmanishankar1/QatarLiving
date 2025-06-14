@@ -121,6 +121,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
             if (!string.IsNullOrEmpty(categoryId))
             {
                 SelectedForumId = categoryId;
+                await HandleCategoryChanged(categoryId);
+
             }
             else
             {

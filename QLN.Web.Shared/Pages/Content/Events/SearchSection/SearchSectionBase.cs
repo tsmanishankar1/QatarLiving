@@ -244,6 +244,7 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
             if (queryParams.TryGetValue("perselect", out var selectedId))
             {
                 // Call the filter logic with the ID from query string
+                await JSRuntime.InvokeVoidAsync("scrollToElementById", "search-section");
                 await HandleCategoryChanged(selectedId);
             }
 

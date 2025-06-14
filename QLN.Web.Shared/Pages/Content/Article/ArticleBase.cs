@@ -20,6 +20,7 @@ public class ArticleBase : ComponentBase
     public bool isLoading { get; set; } = true;
     protected bool imageLoaded = false;
     protected List<BannerItem> DailyHeroBanners { get; set; } = new();
+    protected ContentsDailyPageResponse LandingContent { get; set; } = new ContentsDailyPageResponse();
     protected List<BannerItem> ArticleSideBanners { get; set; } = new();
     protected bool isLoadingBanners = true;
     public List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
@@ -27,6 +28,7 @@ public class ArticleBase : ComponentBase
     protected QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem? postBreadcrumbCategory;
     protected QlnNewsNewsQatarPageResponse QatarNewsContent { get; set; } = new QlnNewsNewsQatarPageResponse();
     protected List<ContentPost> moreArticleList { get; set; } = new List<ContentPost>();
+    protected List<ContentEvent> vMoreArticles { get; set; } = new List<ContentEvent>();
     protected GenericNewsPageResponse? NewsContent { get; set; }
     [Inject] private ILogger<NewsCardBase> Logger { get; set; }
     [Inject] private ISimpleMemoryCache _simpleCacheService { get; set; }
@@ -149,21 +151,25 @@ public class ArticleBase : ComponentBase
                 new() { Label = subcategoryLabel, Url = $"/content/news?category={category}&subcategory={subcategory}"},
                 new() { Label = newsArticle.Title, Url = $"/content/article/details/{category}/{subcategory}/{slug}", IsLast = true },
                 };
+                NewsContent = await GetNewsAsync<GenericNewsPageResponse>(subcategoryLabel);
+                moreArticleList = NewsContent?.News?.MoreArticles?.Items ?? new List<ContentPost>();
             }
             else
             {
                 breadcrumbItems = new()
                 {
                 new() { Label = "Daily", Url = "/content/daily"},
-                new() { Label = SelectedPost.Category, Url = $"/content/news"},
+                // new() { Label = SelectedPost.Category, Url = $"/content/news"},
 
-                new() { Label = newsArticle.Title, Url = $"/content/article/details/{slug}", IsLast = true },
+                new() { Label = newsArticle.Title, Url = $"/content/daily/article/details/{slug}", IsLast = true },
                 };
+                moreArticleList = null;
+                LandingContent = await _simpleCacheService.GetContentLandingAsync() ?? new();
+                vMoreArticles = LandingContent?.ContentsDaily?.DailyMoreArticles?.Items ?? [];
+                Console.WriteLine("vMoreArticles count: " + vMoreArticles.Count);
             }
 
             // QatarNewsContent = await GetNewsQatarAsync();
-            NewsContent = await GetNewsAsync<GenericNewsPageResponse>(subcategoryLabel);
-            moreArticleList = NewsContent?.News?.MoreArticles?.Items ?? new List<ContentPost>();
         }
         catch (Exception ex)
         {

@@ -43,7 +43,7 @@ new CategoryItem { Label = "Exhibitions" ,Id = "114741"}
 
     protected void NavigatetoAllEvents(CategoryItem item)
     {
-        if (!string.IsNullOrEmpty(item.Id))
+        if (item != null && !string.IsNullOrEmpty(item.Id))
         {
             NavigationManager.NavigateTo($"/content/events?perselect={item.Id}");
         }
@@ -52,6 +52,7 @@ new CategoryItem { Label = "Exhibitions" ,Id = "114741"}
             NavigationManager.NavigateTo("/content/events");
         }
     }
+
 
 }
 <style>
