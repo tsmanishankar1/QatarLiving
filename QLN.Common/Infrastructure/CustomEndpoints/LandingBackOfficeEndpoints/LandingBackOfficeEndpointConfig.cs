@@ -10,7 +10,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
     /// with separate EntityTypes (featured‐categories, seasonal‐picks, social‐links, faqs, ready‐to‐grow).
     /// Under the hood, these endpoints call ISearchService (ExternalSearchService via Dapr).
     /// </summary>
-    public static class BackOfficeEndpointConfig
+    public static class LandingBackOfficeEndpointConfig
     {
         public static void MapAllBackOfficeEndpoints(this WebApplication app)
         {

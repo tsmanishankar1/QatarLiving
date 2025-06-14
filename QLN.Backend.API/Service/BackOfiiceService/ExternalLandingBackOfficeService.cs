@@ -11,15 +11,15 @@ using QLN.Common.Infrastructure.IService.IBackOfficeService;
 
 namespace QLN.Backend.API.Service.BackOffice
 {
-    public class ExternalBackOfficeService : IBackOfficeService<LandingBackOfficeIndex>
+    public class ExternalLandingBackOfficeService : IBackOfficeService<LandingBackOfficeIndex>
     {
         private readonly DaprClient _dapr;
-        private readonly ILogger<ExternalBackOfficeService> _logger;
-        private readonly string SERVICE_APP_ID = ConstantValues.ClassifiedServiceApp;
+        private readonly ILogger<ExternalLandingBackOfficeService> _logger;
+        private readonly string SERVICE_APP_ID = ConstantValues.ServiceAppIds.ClassifiedServiceApp;
 
-        public ExternalBackOfficeService(
+        public ExternalLandingBackOfficeService(
             DaprClient dapr,
-            ILogger<ExternalBackOfficeService> logger)
+            ILogger<ExternalLandingBackOfficeService> logger)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));

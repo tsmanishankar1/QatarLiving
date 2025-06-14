@@ -229,8 +229,6 @@ app.MapGroup("/api/subscriptions")
     .RequireAuthorization();
 app.MapGroup("/api/PayToPublish")
     .MapPayToPublishEndpoints();
-/*var backOfficeGroup = app.MapGroup("/api/backoffice").WithTags("BackOffice");
-backOfficeGroup.MapBackOfficeEndpoints();*/
 app.MapAllBackOfficeEndpoints();
 app.MapLandingPageEndpoints();
 app.UseHttpsRedirection();

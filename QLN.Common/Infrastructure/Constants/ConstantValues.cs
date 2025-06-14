@@ -18,8 +18,6 @@ namespace QLN.Common.Infrastructure.Constants
         public const string CompanyServiceAppId = "qln-company-ms";
         // Classifieds Constants
         public const string ClassifiedsVertical = "classifieds";
-        public const string ClassifiedServiceApp = "qln-classified-ms";
-        public const string SearchServiceApp = "qln-search-ms";
         public const string DocTypeStore = "Store";
         public const string DocTypeCategory = "Category";
         public const string DocTypeAd = "Ad";
@@ -61,7 +59,16 @@ namespace QLN.Common.Infrastructure.Constants
             public const string ReadyToGrow = "ready-to-grow";
             public const string PopularSearch = "popular-search";
         }
-
+        public static class ServiceAppIds
+        {
+            public const string ClassifiedServiceApp = "qln-classified-ms";
+            public const string SearchServiceApp = "qln-search-ms";
+        }
+        public static class StateStoreNames
+        {
+            public const string LandingBackOfficeStore = "landingbackofficestore";
+            public const string LandingBackOfficeKey = "landing-backoffice-keys";
+        }
         public static class PubSubTopics
         {
             public const string IndexUpdates = "index-updates";

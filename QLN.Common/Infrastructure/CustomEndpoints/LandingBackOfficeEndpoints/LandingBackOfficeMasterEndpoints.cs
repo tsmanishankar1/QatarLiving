@@ -14,7 +14,7 @@ using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints
 {
-    public static class BackOfficeMasterEndpoints
+    public static class LandingBackOfficeMasterEndpoints
     {
         public static RouteGroupBuilder MapBackOfficeMasterEndpoints(
             this RouteGroupBuilder group,

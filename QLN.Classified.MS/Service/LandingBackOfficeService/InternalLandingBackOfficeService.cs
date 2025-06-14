@@ -6,20 +6,21 @@ using System.Threading.Tasks;
 using Dapr.Client;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IBackOfficeService;
 
 namespace QLN.Classified.MS.Service.BackOfficeService
 {
-    public class InternalClassifiedsBackOfficeService : IBackOfficeService<LandingBackOfficeIndex>
+    public class InternalLandingBackOfficeService : IBackOfficeService<LandingBackOfficeIndex>
     {
         private readonly DaprClient _dapr;
-        private readonly ILogger<InternalClassifiedsBackOfficeService> _logger;
-        private const string STORE_NAME = "classifiedsbackoffice";
-        private const string KEY_LIST = "classifieds-backoffice-keys";
+        private readonly ILogger<InternalLandingBackOfficeService> _logger;
+        private const string STORE_NAME = ConstantValues.StateStoreNames.LandingBackOfficeStore;
+        private const string KEY_LIST = ConstantValues.StateStoreNames.LandingBackOfficeKey;
 
-        public InternalClassifiedsBackOfficeService(
+        public InternalLandingBackOfficeService(
             DaprClient dapr,
-            ILogger<InternalClassifiedsBackOfficeService> logger)
+            ILogger<InternalLandingBackOfficeService> logger)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));

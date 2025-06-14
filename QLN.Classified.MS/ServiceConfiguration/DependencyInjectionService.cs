@@ -15,7 +15,7 @@ namespace QLN.Classifieds.MS.ServiceConfiguration
 
             services.AddTransient<IClassifiedService, ClassifiedService>();
             services.AddTransient<IServicesService, ServicesAdService>();
-            services.AddTransient<IBackOfficeService<LandingBackOfficeIndex>, InternalClassifiedsBackOfficeService>();
+            services.AddTransient<IBackOfficeService<LandingBackOfficeIndex>, InternalLandingBackOfficeService>();
             return services;
         }
     }
