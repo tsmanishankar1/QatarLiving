@@ -63,7 +63,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
                             Action = "Upsert",
                             UpsertRequest = new CommonIndexRequest
                             {
-                                VerticalName = backofficemaster,
+                                VerticalName = LandingBackOffice,
                                 MasterItem = doc
                             }
                         };
@@ -100,7 +100,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
                 try
                 {
                     _logger.LogInformation("Searching for {EntityType} under {Vertical}", entityType, vertical);
-                    var response = await searchSvc.SearchAsync(backofficemaster, searchReq);
+                    var response = await searchSvc.SearchAsync(LandingBackOffice, searchReq);
                     var items = response.MasterItems ?? new List<LandingBackOfficeIndex>();
 
                     if (items.Any(x => !string.IsNullOrWhiteSpace(x.ParentId)))
@@ -127,7 +127,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
                     try
                     {
                         _logger.LogInformation("Retrieving {Id}", id);
-                        var doc = await searchSvc.GetByIdAsync<LandingBackOfficeIndex>(backofficemaster, id);
+                        var doc = await searchSvc.GetByIdAsync<LandingBackOfficeIndex>(LandingBackOffice, id);
 
                         if (doc == null || doc.Vertical != vertical || doc.EntityType != entityType)
                         {
@@ -162,7 +162,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
 
                         var msg = new IndexMessage
                         {
-                            Vertical = backofficemaster,
+                            Vertical = LandingBackOffice,
                             Action = "Delete",
                             DeleteKey = id
                         };
@@ -193,7 +193,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
                     i.Vertical,
                     i.EntityType,
                     i.Order,
-                    i.Url,
+                    i.RediectUrl,
                     i.ImageUrl,
                     i.IsActive,
                     Children = BuildHierarchy(items, i.Id)

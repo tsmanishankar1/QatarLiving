@@ -33,7 +33,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                         }
                     };
 
-                    return FetchDocsFromIndexAsync(searchSvc, ConstantValues.backofficemaster, sr, vertical, entityType);
+                    return FetchDocsFromIndexAsync(searchSvc, ConstantValues.LandingBackOffice, sr, vertical, entityType);
                 }
 
                 var bannerTask = FetchSegmentAsync(ConstantValues.EntityTypes.HeroBanner);
@@ -95,7 +95,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                         }
                     };
 
-                    return FetchDocsFromIndexAsync(searchSvc, ConstantValues.backofficemaster, sr, vertical, entityType);
+                    return FetchDocsFromIndexAsync(searchSvc, ConstantValues.LandingBackOffice, sr, vertical, entityType);
                 }
 
                 var bannerTask = FetchSegmentAsync(ConstantValues.EntityTypes.HeroBanner);
@@ -177,7 +177,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                     i.Vertical,
                     i.EntityType,
                     i.Order,
-                    i.Url,
+                    i.RediectUrl,
                     i.ImageUrl,
                     i.IsActive,
                     Children = BuildHierarchy(items, i.Id)

@@ -25,8 +25,7 @@ namespace QLN.Common.Infrastructure.Constants
         public const string DocTypeAd = "Ad";
         public const string DocTypeBanner = "Banner";
         //Index constants
-        public const string Backofficemaster = "backofficemaster";
-        public const string LandingBackOfficeIndex = "landingbackoffice";
+        public const string LandingBackOffice = "landingbackoffice";
         public const string Analytics = "analytics";
         public const string PubSubName = "pubsub";
         public static class EntityTypes

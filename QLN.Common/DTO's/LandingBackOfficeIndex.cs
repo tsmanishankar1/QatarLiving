@@ -13,10 +13,10 @@ namespace QLN.Common.DTO_s
         public string Id { get; set; } = default!;
 
         [SearchableField(IsFilterable = true, IsSortable= true)]
-        public string EntityType { get; set; } = default!;     // e.g. "FeaturedService"
+        public string EntityType { get; set; } = default!;   
 
         [SearchableField(IsFilterable= true, IsSortable= true)]
-        public string Vertical { get; set; } = default!;      // ← New= e.g. "Services", "Classifieds"
+        public string Vertical { get; set; } = default!;  
 
         [SearchableField(IsFilterable= true, IsSortable= true)]
         public string Title { get; set; } = default!;
@@ -34,7 +34,7 @@ namespace QLN.Common.DTO_s
         public bool IsActive { get; set; } = true;
 
         [SimpleField(IsFilterable= true)]
-        public string? Url { get; set; }
+        public string? RediectUrl { get; set; }
 
         [SearchableField]
         public string? ImageUrl { get; set; }
@@ -44,10 +44,6 @@ namespace QLN.Common.DTO_s
 
         [SimpleField(IsFilterable= true)]
         public int? RotationSeconds { get; set; }
-
-        [SimpleField(IsFilterable= true)]
-        public bool? HideWhenSubscribed { get; set; }
-
         [SearchableField]
         public string? PayloadJson { get; set; }
     }

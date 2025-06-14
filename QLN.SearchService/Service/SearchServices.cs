@@ -72,7 +72,7 @@ namespace QLN.SearchService.Service
                     response.ServicesItems = services.ToList();
                     break;
 
-                case "backofficemaster":
+                case "landingbackoffice":
                     var masters = await _repo.SearchAsync<LandingBackOfficeIndex>(
                         vertical, opts, req.Text);
                     response.MasterItems = masters.ToList();
