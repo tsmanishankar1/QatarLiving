@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.DTO_s
 {
-    public class BackofficemasterIndex
+    public class LandingBackOfficeIndex
     {
         [SimpleField(IsKey = true)]
         public string Id { get; set; } = default!;

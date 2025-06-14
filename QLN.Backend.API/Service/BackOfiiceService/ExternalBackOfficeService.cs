@@ -1,5 +1,4 @@
-﻿// QLN.Backend.API/Service/BackOffice/ExternalBackOfficeService.cs
-using System;
+﻿using System;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -12,12 +11,11 @@ using QLN.Common.Infrastructure.IService.IBackOfficeService;
 
 namespace QLN.Backend.API.Service.BackOffice
 {
-    public class ExternalBackOfficeService : IBackOfficeService<BackofficemasterIndex>
+    public class ExternalBackOfficeService : IBackOfficeService<LandingBackOfficeIndex>
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<ExternalBackOfficeService> _logger;
-        private readonly string _appId = ConstantValues.ClassifiedServiceApp;
-        // e.g. "classifieds-ms" or whatever you named your back-office microservice
+        private readonly string SERVICE_APP_ID = ConstantValues.ClassifiedServiceApp;
 
         public ExternalBackOfficeService(
             DaprClient dapr,
@@ -27,49 +25,84 @@ namespace QLN.Backend.API.Service.BackOffice
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task UpsertState(BackofficemasterIndex item, CancellationToken ct)
+        public async Task<string> UpsertState(LandingBackOfficeIndex item, CancellationToken cancellationToken)
         {
-            if (item == null) throw new ArgumentNullException(nameof(item));
+            if (item == null)
+                throw new ArgumentNullException(nameof(item), "Backoffice master item is required.");
+
+            var vertical = item.Vertical?.ToLowerInvariant()
+                ?? throw new ArgumentException("Vertical is required", nameof(item.Vertical));
 
             var route = ToSlug(item.EntityType);
-            var method = $"api/classifieds/landing/{route}";
+            var method = $"/api/{vertical}/landing/{route}";
 
-            _logger.LogDebug("Upserting back-office state via Dapr: {AppId}/{Method}", _appId, method);
-            await _dapr.InvokeMethodAsync<BackofficemasterIndex, object>(
-                HttpMethod.Post, _appId, method, item, cancellationToken: ct);
+            try
+            {
+                _logger.LogInformation("Invoking Dapr POST to {AppId}{Method} for Id={Id}", SERVICE_APP_ID, method, item.Id);
+
+                var result = await _dapr.InvokeMethodAsync<LandingBackOfficeIndex, string>(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    method,
+                    item,
+                    cancellationToken
+                );
+
+                _logger.LogInformation("Successfully upserted Id={Id} to back-office state store", item.Id);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to upsert Id={Id} to back-office via Dapr. Route={Route}", item.Id, method);
+                throw;
+            }
         }
 
-        public async Task<BackofficemasterIndex?> GetByIdState(string id, CancellationToken ct)
+        public Task<LandingBackOfficeIndex?> GetByIdState(string id, CancellationToken ct)
         {
-            throw new NotSupportedException("GET By ID is not used by back-office endpoints");
+            throw new NotSupportedException("GetByIdState is not supported in ExternalBackOfficeService.");
         }
 
-        public async Task<IList<BackofficemasterIndex>> GetAllState(CancellationToken ct)
+        public Task<IList<LandingBackOfficeIndex>> GetAllState(CancellationToken ct)
         {
-            throw new NotSupportedException("GetAllState is not used by back-office endpoints");
+            throw new NotSupportedException("GetAllState is not supported in ExternalBackOfficeService.");
         }
 
         public async Task DeleteState(string id, CancellationToken ct)
         {
             if (string.IsNullOrWhiteSpace(id))
-                throw new ArgumentException("Id is required", nameof(id));
+                throw new ArgumentException("Id is required for deletion.", nameof(id));
 
-            var parts = id.Split('-', 3, StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length < 3)
-                throw new ArgumentException("Id must be in format '<vertical>-<entityType>-<guid>'", nameof(id));
+            try
+            {
+                var parts = id.Split('-', 3, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length < 3)
+                    throw new ArgumentException("Id must be in format '<vertical>-<entityType>-<guid>'", nameof(id));
 
-            var (vertical, entityType) = (parts[0], parts[1]);
-            var route = ToSlug(entityType);
-            var method = $"api/classifieds/landing/{route}/{id}";
+                var vertical = parts[0].ToLowerInvariant();
+                var entityType = parts[1];
+                var route = ToSlug(entityType);
 
-            _logger.LogDebug("Deleting back-office state via Dapr: {AppId}/{Method}", _appId, method);
-            await _dapr.InvokeMethodAsync(
-                HttpMethod.Delete, _appId, method, cancellationToken: ct);
+                var method = $"/api/{vertical}/landing/{route}/{id}";
+
+                _logger.LogInformation("Invoking Dapr DELETE to {AppId}{Method} for Id={Id}", SERVICE_APP_ID, method, id);
+
+                await _dapr.InvokeMethodAsync(
+                    HttpMethod.Delete,
+                    SERVICE_APP_ID,
+                    method,
+                    cancellationToken: ct
+                );
+
+                _logger.LogInformation("Successfully deleted Id={Id} from back-office state", id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete Id={Id} via Dapr", id);
+                throw;
+            }
         }
 
-        /// <summary>
-        /// Converts a PascalCase EntityType (e.g. "HeroBanner") into a kebab-case routeSegment ("hero-banner").
-        /// </summary>
         private static string ToSlug(string pascal)
         {
             return string.Concat(pascal

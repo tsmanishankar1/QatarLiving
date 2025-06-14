@@ -26,7 +26,7 @@ namespace QLN.Backend.API.ServiceConfiguration
             services.AddTransient<IClassifiedService, ExternalClassifiedService>();
             services.AddTransient<IServicesService, ExternalServiceService>();
             services.AddScoped<IFileStorageBlobService, FileStorageBlobService>();
-            services.AddTransient<IBackOfficeService<BackofficemasterIndex>, ExternalBackOfficeService>();
+            services.AddTransient<IBackOfficeService<LandingBackOfficeIndex>, ExternalBackOfficeService>();
 
             return services;
         }

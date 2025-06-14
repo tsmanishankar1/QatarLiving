@@ -9,7 +9,7 @@ namespace QLN.Common.Infrastructure.IService.IBackOfficeService
     public interface IBackOfficeService<T>
         where T : class
     {
-        Task UpsertState(T item, CancellationToken ct);
+        Task<string> UpsertState(T item, CancellationToken ct);
         Task<T?> GetByIdState(string id, CancellationToken ct);
         Task<IList<T>> GetAllState(CancellationToken ct);
         Task DeleteState(string id, CancellationToken ct);

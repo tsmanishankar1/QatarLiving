@@ -13,6 +13,7 @@ using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Classifieds.MS.ServiceConfiguration;
+using QLN.Common.Infrastructure.CustomEndpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -65,5 +66,6 @@ app.MapGroup("/api/classifieds")
 
 var servicesGroup = app.MapGroup("/api/services");
 servicesGroup.MapServicesEndpoints();
+app.MapAllBackOfficeEndpoints();
 
 app.Run();

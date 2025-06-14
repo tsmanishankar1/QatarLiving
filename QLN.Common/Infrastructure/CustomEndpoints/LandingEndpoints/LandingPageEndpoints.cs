@@ -2,24 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;        
-using Microsoft.AspNetCore.Http;           
-using Microsoft.AspNetCore.Mvc;            
-using QLN.Common.DTO_s;                    
-using QLN.Common.Infrastructure.Constants; 
-using QLN.Common.Infrastructure.IService.ISearchService; 
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.IService.ISearchService;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
 {
-    /// <summary>
-    /// Maps two “landing‐page” endpoints:
-    ///   • GET /api/landing/services     → Returns a LandingPageDto for the Services vertical
-    ///   • GET /api/landing/classifieds  → Returns a LandingPageDto for the Classifieds vertical
-    ///
-    /// Each handler calls ISearchService.SearchAsync against the “backofficemaster” index,
-    /// filtering by Vertical and EntityType for each segment, then bundles all results into
-    /// a single LandingPageDto.
-    /// </summary>
     public static class LandingPageEndpoints
     {
         public static void MapLandingPageEndpoints(this WebApplication app)
@@ -30,33 +21,36 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
             {
                 var vertical = ConstantValues.Verticals.Services;
 
-                Task<IEnumerable<BackofficemasterIndex>> FetchSegmentAsync(string entityType)
+                Task<IEnumerable<LandingBackOfficeIndex>> FetchSegmentAsync(string entityType)
                 {
                     var sr = new CommonSearchRequest
                     {
                         Top = 100,
                         Filters = new Dictionary<string, object>
                         {
-                            { "Vertical",   vertical     },
-                            { "EntityType", entityType   }
+                            { "Vertical", vertical },
+                            { "EntityType", entityType }
                         }
                     };
 
-                    return FetchDocsFromIndexAsync(searchSvc, ConstantValues.backofficemaster, sr,
-                        vertical, entityType);
+                    return FetchDocsFromIndexAsync(searchSvc, ConstantValues.backofficemaster, sr, vertical, entityType);
                 }
+
                 var bannerTask = FetchSegmentAsync(ConstantValues.EntityTypes.HeroBanner);
                 var featuredServicesTask = FetchSegmentAsync(ConstantValues.EntityTypes.FeaturedServices);
-                var featuredTask = FetchSegmentAsync( ConstantValues.EntityTypes.FeaturedCategory);
-                var categoriesTask = FetchSegmentAsync( ConstantValues.EntityTypes.Category);
-                var seasonalTask = FetchSegmentAsync( ConstantValues.EntityTypes.SeasonalPick);
+                var featuredTask = FetchSegmentAsync(ConstantValues.EntityTypes.FeaturedCategory);
+                var categoriesTask = FetchSegmentAsync(ConstantValues.EntityTypes.Category);
+                var seasonalTask = FetchSegmentAsync(ConstantValues.EntityTypes.SeasonalPick);
                 var socialPostTask = FetchSegmentAsync(ConstantValues.EntityTypes.SocialPostSection);
-                var socialMediaLinkTask = FetchSegmentAsync( ConstantValues.EntityTypes.SocialMediaLink);
+                var socialMediaLinkTask = FetchSegmentAsync(ConstantValues.EntityTypes.SocialMediaLink);
                 var socialMediaVideosTask = FetchSegmentAsync(ConstantValues.EntityTypes.SocialMediaVideos);
-                var faqTask = FetchSegmentAsync( ConstantValues.EntityTypes.FaqItem);
-                var ctaTask = FetchSegmentAsync( ConstantValues.EntityTypes.CallToAction);
+                var faqTask = FetchSegmentAsync(ConstantValues.EntityTypes.FaqItem);
+                var ctaTask = FetchSegmentAsync(ConstantValues.EntityTypes.ReadyToGrow);
+                var popularSearchTask = FetchSegmentAsync(ConstantValues.EntityTypes.PopularSearch);
 
-                await Task.WhenAll(bannerTask, featuredServicesTask, featuredTask, categoriesTask, seasonalTask, socialPostTask, socialMediaLinkTask, socialMediaVideosTask, faqTask, ctaTask);
+                await Task.WhenAll(bannerTask, featuredServicesTask, featuredTask, categoriesTask, seasonalTask,
+                                   socialPostTask, socialMediaLinkTask, socialMediaVideosTask,
+                                   faqTask, ctaTask, popularSearchTask);
 
                 var dto = new LandingPageDto
                 {
@@ -69,7 +63,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                     SocialLinks = await socialMediaLinkTask,
                     SocialMediaVideos = await socialMediaVideosTask,
                     FaqItems = await faqTask,
-                    ReadyToGrow = await ctaTask
+                    ReadyToGrow = await ctaTask,
+                    PopularSearches = BuildHierarchy((await popularSearchTask).ToList(), null)
                 };
 
                 return TypedResults.Ok(dto);
@@ -79,43 +74,46 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
             .Produces<LandingPageDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status500InternalServerError)
             .WithSummary("Get all landing‐page data for Services")
-            .WithDescription("Returns featured categories, categories, seasonal picks, social links, faqs, and CTAs for the Services landing page.");
+            .WithDescription("Returns featured categories, categories, seasonal picks, social links, faqs, CTAs, and popular searches for the Services landing page.");
 
 
             app.MapGet("/api/landing/classifieds", async (
                     [FromServices] ISearchService searchSvc
                 ) =>
             {
-                var vertical =  ConstantValues.Verticals.Classifieds;
+                var vertical = ConstantValues.Verticals.Classifieds;
 
-                Task<IEnumerable<BackofficemasterIndex>> FetchSegmentAsync(string entityType)
+                Task<IEnumerable<LandingBackOfficeIndex>> FetchSegmentAsync(string entityType)
                 {
                     var sr = new CommonSearchRequest
                     {
                         Top = 100,
                         Filters = new Dictionary<string, object>
                         {
-                            { "Vertical",   vertical     },
-                            { "EntityType", entityType   }
+                            { "Vertical", vertical },
+                            { "EntityType", entityType }
                         }
                     };
 
-                    return FetchDocsFromIndexAsync(searchSvc, ConstantValues.backofficemaster, sr,
-                        vertical, entityType);
+                    return FetchDocsFromIndexAsync(searchSvc, ConstantValues.backofficemaster, sr, vertical, entityType);
                 }
+
                 var bannerTask = FetchSegmentAsync(ConstantValues.EntityTypes.HeroBanner);
                 var featuredItemsTask = FetchSegmentAsync(ConstantValues.EntityTypes.FeaturedItems);
-                var featuredCategoryTask = FetchSegmentAsync( ConstantValues.EntityTypes.FeaturedCategory);
+                var featuredCategoryTask = FetchSegmentAsync(ConstantValues.EntityTypes.FeaturedCategory);
                 var featuredStoresTask = FetchSegmentAsync(ConstantValues.EntityTypes.FeaturedStores);
-                var categoriesTask = FetchSegmentAsync( ConstantValues.EntityTypes.Category);
-                var seasonalTask = FetchSegmentAsync( ConstantValues.EntityTypes.SeasonalPick);
+                var categoriesTask = FetchSegmentAsync(ConstantValues.EntityTypes.Category);
+                var seasonalTask = FetchSegmentAsync(ConstantValues.EntityTypes.SeasonalPick);
                 var socialPostTask = FetchSegmentAsync(ConstantValues.EntityTypes.SocialPostSection);
-                var socialMediaLinkTask = FetchSegmentAsync( ConstantValues.EntityTypes.SocialMediaLink);
+                var socialMediaLinkTask = FetchSegmentAsync(ConstantValues.EntityTypes.SocialMediaLink);
                 var socialMediaVideosTask = FetchSegmentAsync(ConstantValues.EntityTypes.SocialMediaVideos);
-                var faqTask = FetchSegmentAsync( ConstantValues.EntityTypes.FaqItem);
-                var ctaTask = FetchSegmentAsync( ConstantValues.EntityTypes.CallToAction);
+                var faqTask = FetchSegmentAsync(ConstantValues.EntityTypes.FaqItem);
+                var ctaTask = FetchSegmentAsync(ConstantValues.EntityTypes.ReadyToGrow);
+                var popularSearchTask = FetchSegmentAsync(ConstantValues.EntityTypes.PopularSearch);
 
-                await Task.WhenAll(bannerTask, featuredItemsTask, featuredCategoryTask, featuredStoresTask, categoriesTask, seasonalTask, socialPostTask, socialMediaLinkTask, socialMediaVideosTask, faqTask, ctaTask);
+                await Task.WhenAll(bannerTask, featuredItemsTask, featuredCategoryTask, featuredStoresTask, categoriesTask,
+                                   seasonalTask, socialPostTask, socialMediaLinkTask, socialMediaVideosTask,
+                                   faqTask, ctaTask, popularSearchTask);
 
                 var dto = new LandingPageDto
                 {
@@ -129,7 +127,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                     SocialLinks = await socialMediaLinkTask,
                     SocialMediaVideos = await socialMediaVideosTask,
                     FaqItems = await faqTask,
-                    ReadyToGrow = await ctaTask
+                    ReadyToGrow = await ctaTask,
+                    PopularSearches = BuildHierarchy((await popularSearchTask).ToList(), null)
                 };
 
                 return TypedResults.Ok(dto);
@@ -139,15 +138,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
             .Produces<LandingPageDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status500InternalServerError)
             .WithSummary("Get all landing‐page data for Classifieds")
-            .WithDescription("Returns featured categories, categories, seasonal picks, social links, faqs, and CTAs for the Classifieds landing page.");
+            .WithDescription("Returns featured categories, categories, seasonal picks, social links, faqs, CTAs, and popular searches for the Classifieds landing page.");
         }
 
-        /// <summary>
-        /// Helper to call ISearchService.SearchAsync and return
-        /// exactly those BackofficemasterIndex docs that match
-        /// both “Vertical” and “EntityType.”
-        /// </summary>
-        private static async Task<IEnumerable<BackofficemasterIndex>> FetchDocsFromIndexAsync(
+        public static async Task<IEnumerable<LandingBackOfficeIndex>> FetchDocsFromIndexAsync(
             ISearchService searchSvc,
             string indexName,
             CommonSearchRequest request,
@@ -156,21 +150,38 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
         {
             try
             {
-                // Call the search service
                 var response = await searchSvc.SearchAsync(indexName, request);
+                var all = response.MasterItems ?? new List<LandingBackOfficeIndex>();
 
-                // If the search returned MasterItems, filter again just in case
-                var all = response.MasterItems ?? new List<BackofficemasterIndex>();
                 return all
                     .Where(d => d.Vertical == expectedVertical && d.EntityType == expectedEntityType)
                     .ToList();
             }
             catch (Exception ex)
             {
-                // Log or rethrow as needed. For brevity, we rethrow here.
                 throw new InvalidOperationException(
                     $"Error fetching '{expectedEntityType}' for vertical '{expectedVertical}'", ex);
             }
+        }
+
+        private static IEnumerable<object> BuildHierarchy(List<LandingBackOfficeIndex> items, string? parentId)
+        {
+            return items
+                .Where(i => i.ParentId == parentId)
+                .OrderBy(i => i.Order)
+                .Select(i => new
+                {
+                    i.Id,
+                    i.Title,
+                    i.ParentId,
+                    i.Vertical,
+                    i.EntityType,
+                    i.Order,
+                    i.Url,
+                    i.ImageUrl,
+                    i.IsActive,
+                    Children = BuildHierarchy(items, i.Id)
+                }).ToList<object>();
         }
     }
 }

@@ -25,7 +25,9 @@ namespace QLN.Common.Infrastructure.Constants
         public const string DocTypeAd = "Ad";
         public const string DocTypeBanner = "Banner";
         //Index constants
-        public const string backofficemaster = "backofficemaster";
+        public const string Backofficemaster = "backofficemaster";
+        public const string LandingBackOfficeIndex = "landingbackoffice";
+        public const string Analytics = "analytics";
         public const string PubSubName = "pubsub";
         public static class EntityTypes
         {
@@ -40,9 +42,27 @@ namespace QLN.Common.Infrastructure.Constants
             public const string SocialPostSection = "SocialPostSection";
             public const string SocialMediaVideos = "SocialMediaVideos";
             public const string FaqItem = "FaqItem";
-            public const string CallToAction = "CallToAction";
+            public const string ReadyToGrow = "ReadyToGrow";
+            public const string PopularSearch = "PopularSearch";
 
         }
+        public static class EntityRoutes
+        {
+            public const string HeroBanner = "hero-banner";
+            public const string FeaturedItems = "featured-items";
+            public const string FeaturedServices = "featured-services";
+            public const string FeaturedCategory = "featured-category";
+            public const string FeaturedStores = "featured-stores";
+            public const string Category = "category";
+            public const string SeasonalPick = "seasonal-pick";
+            public const string SocialMediaLink = "social-media-link";
+            public const string SocialPostSection = "social-post-section";
+            public const string SocialMediaVideos = "social-media-videos";
+            public const string FaqItem = "faq-item";
+            public const string ReadyToGrow = "ready-to-grow";
+            public const string PopularSearch = "popular-search";
+        }
+
         public static class PubSubTopics
         {
             public const string IndexUpdates = "index-updates";
