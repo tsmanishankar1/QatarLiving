@@ -1,39 +1,104 @@
-﻿@page "/testpage"  
-@using QLN.Web.Shared.Components.QLAnalytics  
-@using QLN.Web.Shared.Services  
+﻿@using QLN.Common.Infrastructure.DTO_s
+@using QLN.Web.Shared.Components.QLAnalytics
+@using Microsoft.Extensions.Logging
+@inject ILogger<BannerHero> Logger
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
 
-<h3>TestPage</h3>  
+<div id="banner-hero" class="banner-wrapper">
+    <div class="hero-carousel-container">
+        <div class="hero-slides-wrapper" style="transform: translateX(-@($"{CurrentIndex * 100}%"))">
+            @foreach (var (banner, index) in BannersToRender.Select((b, i) => (b, i)))
+            {
+                var id = $"banner-{banner.Code}-{index}";
+                <div class="carousel-slide" id="@id" data-code="@banner.Code" data-duration="@banner.Duration">
+                    @if (!string.IsNullOrWhiteSpace(banner.Link))
+                    {
+                        <a href="@banner.Link" target="_blank" rel="noopener noreferrer">
+                            <img class="banner-image"
+                                 src="@banner.ImageDesktop"
+                                 data-mobile="@banner.ImageMobile"
+                                 data-desktop="@banner.ImageDesktop"
+                                 alt="@banner.Alt"
+                                 @onclick="@(() => TriggerBannerAnalytics(banner, "click"))" />
+                        </a>
+                    }
+                    else
+                    {
+                        <img class="banner-image"
+                             src="@banner.ImageDesktop"
+                             data-mobile="@banner.ImageMobile"
+                             data-desktop="@banner.ImageDesktop"
+                             alt="@banner.Alt" />
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
 
-<QLAnalytics AnalyticsProps=@analyticsCallProps />  
-
-@inject NavigationManager NavigationManager  
+@if (AnalyticsProps != null)
+{
+    <QLAnalytics @key="AnalyticsKey" AnalyticsProps="@AnalyticsProps" />
+}
 
 @code {
-    private QLAnalyticsCallProps analyticsCallProps = new QLAnalyticsCallProps();  
+    [Parameter] public List<BannerItem> BannerItems { get; set; } = new();
+    [Parameter] public bool Loading { get; set; }
 
-    // populate the analyticsCallProps with some test data  
-    protected override void OnInitialized()  
-    {  
-        base.OnInitialized();  
+    private List<BannerItem> BannersToRender => BannerItems.Count == 1
+        ? new() { BannerItems[0], BannerItems[0] }
+        : BannerItems;
 
-        // get the url we are on  
-        var uri = NavigationManager.Uri;
+    private int CurrentIndex = 0;
+    private QLAnalyticsCallProps? AnalyticsProps;
+    private string AnalyticsKey = Guid.NewGuid().ToString();
+    private DotNetObjectReference<BannerHero>? _dotNetRef;
 
-        analyticsCallProps = new QLAnalyticsCallProps
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("setupBannerTracking", _dotNetRef);
+        }
+    }
+
+    [JSInvokable]
+    public Task TriggerBannerAnalytics(string bannerCode, string? duration, string eventType)
+    {
+        Logger.LogInformation("Triggering banner analytics: {EventType}, {BannerCode}, Duration: {Duration}",
+            eventType, bannerCode, duration ?? "N/A");
+
+        AnalyticsProps = new QLAnalyticsCallProps
+        {
+            Action = eventType == "view" ? "AutoBannerImpression" : "AutoBannerClick",
+            AnalyticType = eventType == "view"
+                ? (int)AnalyticType.VIEW_BANNER_IMPRESSION
+                : (int)AnalyticType.BANNER_CLICK,
+            Url = new Uri(NavigationManager.Uri).AbsolutePath,
+            Lead = AnalyticsLead.SMS_REVEAL,
+            VerticalTag = (int)VerticalTag.CONTENT,
+            AdditionalTag = new Dictionary<string, string>
             {
-                Action = "TestAction",
-                AnalyticType = (int)AnalyticType.VIEW_BANNER_IMPRESSION,
-                AdId = [0],
-                Impressions = [0],
-                Url = uri,
-                Lead = AnalyticsLead.SMS_REVEAL,
-                VerticalTag = (int)VerticalTag.CONTENT,
-                AdditionalTag = new Dictionary<string, string>
-                {
-                    { "TestKey1", "TestValue1" },
-                    { "TestKey2", "TestValue2" },
-                    { "SampleTag", "SampleValue" }
-                }
-            };
-    }  
+                { "BannerCode", bannerCode },
+                { "Duration", duration ?? "N/A" }
+            }
+        };
+
+        AnalyticsKey = Guid.NewGuid().ToString();
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private void TriggerBannerAnalytics(BannerItem banner, string eventType)
+    {
+        _ = TriggerBannerAnalytics(banner.Code!, banner.Duration, eventType);
+    }
+
+    public void Dispose()
+    {
+        _dotNetRef?.Dispose();
+    }
 }
+

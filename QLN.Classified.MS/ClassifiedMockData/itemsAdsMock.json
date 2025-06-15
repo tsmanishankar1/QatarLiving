@@ -16,6 +16,7 @@
     "storeName": "Store 18",
     "storeLogoUrl": null,
     "price": 1000,
+    "priceType": "QAR",
     "zone": "Education City",
     "streetNumber": "14",
     "buildingNumber": "20",
@@ -42,10 +43,10 @@
     "whatsappNumber": "+974600000018",
     "resolution": "",
     "imageUrls": [
-      "https://www.techlicious.com/images/phones/apple-silicone-case-for-iphone-12-670px.jpg"
+      "/qln-images/subscription/Gucci.png"
     ],
     "userId": "975454b5-012b-4d54-b152-e30f36f363e2",
-    "Status": 1,
+    "Status": 3,
     "isPromoted": true,
     "refreshExpiry": "2025-08-25T15:30:00+05:30",
     "remainingRefreshes": 99,
@@ -74,6 +75,7 @@
     "storeName": "Store 18",
     "storeLogoUrl": null,
     "price": 800,
+    "priceType": "QAR",
     "zone": "Al Sadd",
     "streetNumber": "20",
     "buildingNumber": "5",
@@ -99,9 +101,11 @@
     "phoneNumber": "+974600000019",
     "whatsappNumber": "+974600000019",
     "resolution": "",
-    "imageUrls": [],
+    "imageUrls": [
+      "/qln-images/subscription/Gucci.png"
+    ],
     "userId": "975454b5-012b-4d54-b152-e30f36f363e2",
-    "Status": 1,
+    "Status": 3,
     "isPromoted": false,
     "refreshExpiry": "2025-08-26T15:30:00+05:30",
     "remainingRefreshes": 76,
@@ -130,6 +134,7 @@
     "storeName": "Store 19",
     "storeLogoUrl": null,
     "price": 350,
+    "priceType": "QAR",
     "zone": "Wakra",
     "streetNumber": "10",
     "buildingNumber": "2",
@@ -155,9 +160,11 @@
     "phoneNumber": "+974600000020",
     "whatsappNumber": "+974600000020",
     "resolution": "",
-    "imageUrls": [],
+    "imageUrls": [
+      "/qln-images/subscription/Gucci.png"
+    ],
     "userId": "975454b5-012b-4d54-b152-e30f36f363e2",
-    "Status": 2,
+    "Status": 4,
     "isPromoted": false,
     "refreshExpiry": null,
     "remainingRefreshes": 0,
