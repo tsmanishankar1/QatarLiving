@@ -79,5 +79,10 @@ namespace QLN.Backend.API.ServiceConfiguration
             services.AddTransient<IV2EventService, V2ExternalEventService>();
             return services;
         }
+        public static IServiceCollection NewsConfiguration(this IServiceCollection services, IConfiguration config)
+        {
+            services.AddTransient<IV2NewsService, V2ExternalNewsService>();
+            return services;
+        }
     }
 }

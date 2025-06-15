@@ -53,5 +53,12 @@ namespace QLN.Common.Infrastructure.Constants
             public const string EventIndexKey = "event-index";
             public const string EventServiceAppId = "qln-event-ms";
         }
+
+        public static class V2ContentNews
+        {
+            public const string ContentStoreName = "v2newsstatestore";
+            public const string NewsIndexKey = "news-index";
+            public const string NewsServiceAppId = "qln-news-ms";
+        }
     }
 }
