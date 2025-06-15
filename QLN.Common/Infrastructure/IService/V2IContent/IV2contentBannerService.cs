@@ -14,5 +14,9 @@ namespace QLN.Common.Infrastructure.IService.V2IContent
     {
         Task<BannerResponse> SaveBannerAsync(BannerCreateRequest dto, string userId, CancellationToken cancellationToken = default);
         Task<List<BannerItem>> GetBannersByCategoryAsync(string category, CancellationToken cancellationToken = default);
+
+        Task<BannerResponse> UpdateBannerAsync(BannerUpdateRequest dto, string userId, CancellationToken ct = default);
+        Task<bool> DeleteBannerFromStateAsync(string category, string code, CancellationToken ct = default);
+
     }
 }

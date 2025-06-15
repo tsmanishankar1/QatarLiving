@@ -51,4 +51,49 @@ public class BannerService : IV2contentBannerService
         var banners = await _daprClient.GetStateAsync<List<BannerItem>>(StateStore, key, null, null, ct) ?? new();
         return banners;
     }
+
+    public async Task<BannerResponse> UpdateBannerAsync(BannerUpdateRequest dto, string userId, CancellationToken ct = default)
+    {
+        var key = GetCategoryKey(dto.Category);
+        var banners = await _daprClient.GetStateAsync<List<BannerItem>>(StateStore, key, null, null, ct) ?? new();
+
+        var banner = banners.FirstOrDefault(x => x.Code == dto.Code);
+        if (banner == null)
+            throw new Exception("Banner not found!");
+
+        // Update the fields as needed
+        if (dto.Alt != null) banner.Alt = dto.Alt;
+        if (dto.Category != null) banner.Category = dto.Category;
+        if (dto.Code != null) banner.Code = dto.Code;
+        if (dto.Duration != null) banner.Duration = dto.Duration;
+        if (dto.Link != null) banner.Link = dto.Link;
+        // Update image URLs if sent
+        if (dto.ImageDesktopBase64 != null) banner.ImageDesktopUrl = dto.ImageDesktopBase64;
+        if (dto.ImageMobileBase64 != null) banner.ImageMobileUrl = dto.ImageMobileBase64;
+
+        await _daprClient.SaveStateAsync(StateStore, key, banners);
+
+        return new BannerResponse
+        {
+            QlnBannersDailyHero = banners
+        };
+    }
+    public async Task<bool> DeleteBannerFromStateAsync(string category, string code, CancellationToken ct = default)
+    {
+        var key = $"banner-{category.ToLower()}";
+
+        var banners = await _daprClient.GetStateAsync<List<BannerItem>>(StateStore, key, cancellationToken: ct) ?? new();
+        var bannerToDelete = banners.FirstOrDefault(b => b.Code == code);
+
+        if (bannerToDelete == null)
+            return false;
+
+        banners.RemoveAll(b => b.Code == code);
+
+        // Save updated list back
+        await _daprClient.SaveStateAsync(StateStore, key, banners, cancellationToken: ct);
+        return true;
+    }
+
+
 }

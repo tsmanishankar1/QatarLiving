@@ -5,6 +5,9 @@ namespace QLN.Common.Infrastructure.DTO_s
 {
     public class BannerItem
     {
+        [JsonPropertyName("Category")]
+        public string Category { get; set; }
+
         [JsonPropertyName("code")]
         public string Code { get; set; }
 
