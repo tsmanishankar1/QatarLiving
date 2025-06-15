@@ -9,32 +9,22 @@
 @using QLN.Web.Shared.Components.AdBanner
 
 <div class="community-container">
-    <div class="container-inner-wrapper">
-
-      @*   <!-- Carousel Banner -->
-        <div class="category-banner-wrapper">
-            <img src="/qln-images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
-        </div> *@
-          
-
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-4" Style="max-width:1170px">
-            @if (isLoadingBanners)
+   <div class="post-banner-responsive-container">
+               @if (isLoadingBanners)
             {
                 <BannerSkleton />
             }
-            else if (DailyHeroBanners?.Any() == true)
+            else if (ContentCommunityPostHero?.Any() == true)
             {
-                <div class="category-banner-wrapper">
 
-                    <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
-                </div>
+            <BannerSwiper BannerItems="ContentCommunityPostHero" Loading="isLoadingBanners" />
             }
             else
             {
                 <EmptyCard Title="No Banners found." Subtitle="Please check back later for updates." />
             }
-
-
+              </div>
+         <div class="container-inner-wrapper">
             <Breadcrumb Items="breadcrumbItems" />
             <MudGrid>
                 <!-- Left Section -->
@@ -97,9 +87,6 @@
                         </div>
                 </MudItem>
             </MudGrid>
-        </MudContainer>
-
-
     </div>
 </div>
 
@@ -111,7 +98,17 @@
 
     .container-inner-wrapper {
         width: 100%;
-        padding: 0px 50px 50px 50px;
+        padding: 0 40px;
+        box-sizing: border-box;
+        max-width: 1170px;
+        margin: 0 auto;
+    }
+    .post-banner-responsive-container{
+        width: 100%;
+        padding: 0 40px;
+        box-sizing: border-box;
+        max-width: 1170px;
+        margin: 0 auto;
     }
     .disclaimer-section {
         background-color: #FFF8EC;
@@ -171,9 +168,11 @@
 
     @@media (max-width: 700px) and (min-width: 275px) {
         .container-inner-wrapper {
-            padding: 0 4px 14px 4px;
+            padding: 0 5px;
         }
-
+         .post-banner-responsive-container{
+             padding: 0;
+        }
         .ad-image {
             max-width: 100%;
         }

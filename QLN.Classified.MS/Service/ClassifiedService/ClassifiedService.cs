@@ -17,6 +17,7 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.Service.FileStorage;
 using static Dapr.Client.Autogen.Grpc.v1.Dapr;
 
 namespace QLN.Classified.MS.Service
@@ -24,13 +25,14 @@ namespace QLN.Classified.MS.Service
     public class ClassifiedService : IClassifiedService
     {
         private readonly IWebHostEnvironment _env;
-        private readonly Dapr.Client.DaprClient _dapr;        
+        private readonly Dapr.Client.DaprClient _dapr;
 
         private const string UnifiedStore = "adstore";
-        private const string UnifiedIndexKey = "ad-index";               
+        private const string UnifiedIndexKey = "ad-index";
         private readonly ILogger<ClassifiedService> _logger;
         private readonly string itemJsonPath = Path.Combine("ClassifiedMockData", "itemsAdsMock.json");
         private readonly string prelovedJsonPath = Path.Combine("ClassifiedMockData", "prelovedAdsMock.json");
+        private readonly string CollectablesonPath = Path.Combine("ClassifiedMockData", "collectables.json");
         public ClassifiedService(Dapr.Client.DaprClient dapr, ILogger<ClassifiedService> logger, IWebHostEnvironment env)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
@@ -135,11 +137,11 @@ namespace QLN.Classified.MS.Service
             }
             catch (ArgumentException argEx)
             {
-                throw; 
+                throw;
             }
             catch (InvalidOperationException logicEx)
             {
-                throw; 
+                throw;
             }
             catch (Exception ex)
             {
@@ -154,7 +156,7 @@ namespace QLN.Classified.MS.Service
                 var items = await GetItemsByType(GetTypePrefix(AdInformation.Category));
 
                 if (items == null || items.Count == 0)
-                    return new List<CategoriesDto>(); 
+                    return new List<CategoriesDto>();
 
                 return items
                     .Where(i => i != null)
@@ -197,11 +199,11 @@ namespace QLN.Classified.MS.Service
             }
             catch (ArgumentException)
             {
-                throw; 
+                throw;
             }
             catch (InvalidOperationException)
             {
-                throw; 
+                throw;
             }
             catch (Exception ex)
             {
@@ -217,7 +219,7 @@ namespace QLN.Classified.MS.Service
                 var items = await GetItemsByType(typePrefix);
 
                 if (items == null || items.Count == 0)
-                    return new List<CategoriesDto>(); 
+                    return new List<CategoriesDto>();
 
                 return items
                     .Where(i => i != null)
@@ -230,7 +232,7 @@ namespace QLN.Classified.MS.Service
             }
             catch (InvalidOperationException)
             {
-                throw; 
+                throw;
             }
             catch (Exception ex)
             {
@@ -287,11 +289,11 @@ namespace QLN.Classified.MS.Service
             }
             catch (ArgumentException)
             {
-                throw; 
+                throw;
             }
             catch (KeyNotFoundException)
             {
-                throw; 
+                throw;
             }
             catch (Exception ex)
             {
@@ -1566,6 +1568,42 @@ namespace QLN.Classified.MS.Service
             }
         }
 
+        public async Task<CollectiblesResponse> GetCollectibles(string userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new ArgumentException("User ID is required", nameof(userId));
+
+                var fullPath = Path.Combine(_env.ContentRootPath, CollectablesonPath);
+
+                if (!File.Exists(fullPath))
+                    throw new FileNotFoundException("JSON data file not found", fullPath);
+
+                var json = await File.ReadAllTextAsync(fullPath, cancellationToken);
+                var allData = JsonSerializer.Deserialize<CollectiblesResponse>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+
+                if (allData == null)
+                    return new CollectiblesResponse();
+
+                var targetUserId = Guid.Parse(userId);
+
+                if (allData.UserId != targetUserId)
+                    return new CollectiblesResponse();
+
+                return allData;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error reading collectibles: {ex.Message}");
+                throw;
+            }
+        }
+
         public async Task<bool> DeleteCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
         {
             if (categoryId == Guid.Empty)
@@ -1641,6 +1679,106 @@ namespace QLN.Classified.MS.Service
             {
                 _logger.LogError(ex, "Error while deleting category and its hierarchy for ID: {CategoryId}", categoryId);
                 throw new InvalidOperationException("Failed to delete category hierarchy.", ex);
+            }
+        }
+
+        // itemsAd post
+        public async Task<ItemsAdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+
+            if (dto.UserId == Guid.Empty) throw new ArgumentException("UserId is required.");
+
+            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+
+            if (dto.AdImageFileNames == null || dto.AdImageFileNames.Count == 0)
+                throw new ArgumentException("Image URLs must be provided.");
+
+            if (string.IsNullOrWhiteSpace(dto.CertificateFileName))
+                throw new ArgumentException("Certificate URL must be provided.");
+
+            var adId = Guid.NewGuid();
+            var key = $"ad-{adId}";
+
+            try
+            {                                            
+                var existing = await _dapr.GetStateAsync<object>(UnifiedStore, key);
+                if (existing != null)
+                {
+                    throw new InvalidOperationException($"Ad with key {key} already exists.");
+                }
+
+                var adItem = new
+                {
+                    Id = adId,
+                    dto.SubVertical,
+                    dto.Title,
+                    dto.Description,
+                    dto.Category,
+                    dto.SubCategory,
+                    dto.Brand,
+                    dto.Model,
+                    dto.Price,
+                    dto.Condition,
+                    dto.Color,
+                    dto.Capacity,
+                    dto.Processor,
+                    dto.Coverage,
+                    dto.Ram,
+                    dto.Resolution,
+                    dto.BatteryPercentage,
+                    dto.SizeType,
+                    dto.SizeValue,
+                    dto.Gender,
+                    CertificateUrl = dto.CertificateFileName,
+                    ImageUrls = dto.AdImageFileNames,
+                    dto.PhoneNumber,
+                    dto.WhatsAppNumber,
+                    dto.Zone,
+                    dto.StreetNumber,
+                    dto.BuildingNumber,
+                    dto.Latitude,
+                    dto.Longitude,
+                    dto.UserId,
+                    CreatedAt = DateTime.UtcNow,
+                    Status = AdStatus.Draft
+                };
+                
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+                index.Add(key);
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
+                await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, index);
+
+                return new ItemsAdCreatedResponseDto
+                {
+                    AdId = adId,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    CertificateUrl = dto.CertificateFileName,
+                    ImageUrls = dto.AdImageFileNames,
+                    CreatedAt = DateTime.UtcNow
+                };
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
+            {
+                _logger.LogWarning(ex, "Duplicate ad insert attempt.");
+                throw new InvalidOperationException("Ad already exists. Conflict occurred during ad creation.", ex);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation failed in CreateClassifiedItemsAd");
+                throw;
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Operation error while creating classified ad.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Unhandled error occurred during ad creation.");
+                throw new InvalidOperationException("An unexpected error occurred while creating the ad. Please try again later.", ex);
             }
         }
 

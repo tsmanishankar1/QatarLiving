@@ -30,6 +30,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             isMenuOpen = open;
             StateHasChanged();
         }
+
         protected void OnReport()
         {
             Console.WriteLine($"Reporting post: {Post.Title}");

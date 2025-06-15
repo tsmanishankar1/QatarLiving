@@ -12,7 +12,7 @@ public class DailyNewsCardBase : ComponentBase
     {
         if (Item.NodeType.Contains("post") && !string.IsNullOrWhiteSpace(Item.Slug))
         {
-            NavigationManager.NavigateTo($"/content/article/details/{Item.Slug}");
+            NavigationManager.NavigateTo($"/content/daily/article/details/{Item.Slug}");
         }
         else if (Item.NodeType.Contains("event") && !string.IsNullOrWhiteSpace(Item.Slug))
         {

@@ -3,6 +3,8 @@
 @using QLN.Web.Shared.Components.EmptyCard
  @using QLN.Web.Shared.Components.AdBanner
 
+@if (Articles != null)
+{
 <div class="card-container">
 
     <h3><span class="accent-bar">|</span> More Articles</h3>
@@ -52,11 +54,67 @@
         <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
     }
 
+     <div style="width: 340px; height: 402px;">
+            <AdBanner BannerItems="ArticleSideBanners" />
+   </div>
+
+</div>
+}
+else if(Events != null){
+<div class="card-container">
+
+    <h3><span class="accent-bar">|</span> More Articles</h3>
+    @if (loading)
+        {
+            @for (int i = 0; i < 4; i++)
+            {
+                <div class="skeleton-item">
+                    <MudSkeleton Width="120px" SkeletonType="SkeletonType.Rectangle" Height="70px" Variant="Rectangle" Class="rounded" />
+                    <div class="skeleton-text">
+                        <MudSkeleton Height="20px" SkeletonType="SkeletonType.Text" Width="100%" />
+                        <MudSkeleton Height="20px" SkeletonType="SkeletonType.Text" Width="80%" class="skeleton-line-spacing" />
+                    </div>
+                </div>
+            }
+        }
+    else if (Events != null && Events.Any())
+    {
+        <MudVirtualize Context="article" Items="Events">
+                <div class="article-entry" @onclick="@(() => NavigateToEventArticle(article))">
+                    @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
+                    {
+                        @if (!imageLoaded)
+                        {
+                                <MudSkeleton SkeletonType="SkeletonType.Rectangle" class="article-image" />
+                        }
+                        <img src="@article.ImageUrl" alt="" class="article-image"
+                        style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                        @onerror="OnImageError" />
+                    }
+                    else
+                    {
+                        <EmptyCard Title="No Images Available" Subtitle="" />
+                    }
+                   <div class="article-content">
+                        <div class="@(selectedEvent == article ? "selected-title" : "article-title")">
+                        @article.Title
+                        </div>
+                  </div>
+                </div>
+            </MudVirtualize>  
+    }
+    else
+    {
+        <EmptyCard Title="No Article found" Subtitle="Please check back later or explore other categories." />
+    }
+
     <div style="width: 340px; height: 402px;">
             <AdBanner BannerItems="ArticleSideBanners" />
     </div>
 
-    </div>
+</div>
+
+}
 
 <style>
     .card-container {

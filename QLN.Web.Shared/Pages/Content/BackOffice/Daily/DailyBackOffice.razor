@@ -1,0 +1,120 @@
+@page "/content/daily/backoffice"
+@inherits DailyBackOfficeBase
+@using QLN.Web.Shared.Components.BreadCrumb
+@using QLN.Web.Shared.Pages.Content.BackOffice.Daily.TopStoryBOCard
+@using QLN.Web.Shared.Pages.Content.BackOffice.Daily.TopEventBOCard
+@using QLN.Web.Shared.Pages.Content.BackOffice.Daily.MoreArticleBOCard
+@using QLN.Web.Shared.Pages.Content.BackOffice.Daily.HighlightsBOCard
+
+
+
+<div style="width: 100%;background-color: var(--color-secondary-background);">
+     <div class="max-container">
+    <Breadcrumb Items="breadcrumbItems" />
+     <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0px; padding-bottom: 40px;">
+        <div>
+            <MudText Typo="Typo.h6" Class="font-weight-bold" Style="color: var(--color-primary); font-size: 25px; font-weight: 600;">
+                Living Daily Back Office
+            </MudText>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.PlayArrow" Style="text-transform: none;">
+                Preview
+            </MudButton>
+
+            <MudButton Variant="Variant.Filled" Style="background-color: var(--color-accent); color: white; text-transform: none;" OnClick="@OpenDialogAsync">
+                Publish Online
+            </MudButton>
+        </div>
+    </div>
+    <h3 class="section-heading">
+                <span class="accent-bar"></span>Hero
+            </h3>
+     </div>
+     <div class="max-container">
+            <MudGrid GutterSize="5px" Style="margin-bottom: 20px;">
+                <MudItem xs="12" md="8">
+                    <MudGrid GutterSize="10px">
+                        
+                            <MudItem xs="12" sm="6" md="6">
+                                <TopStoryBOCard  />
+                            </MudItem>
+                            <MudItem xs="12" sm="6" md="6">
+                                @* <TopEventCard Item="@HighlightedEvent" /> *@
+                                <TopEventBOCard  />
+                            </MudItem>
+                        
+                    </MudGrid>
+
+
+                </MudItem>
+                <MudItem xs="12" md="4">
+                        <MoreArticleBOCard />
+                </MudItem>
+            </MudGrid>
+
+            <MudGrid GutterSize="16px">
+                    <!-- Left column: news cards -->
+                    <MudItem xs="12" md="9" lg="9">
+                        <MudGrid GutterSize="16px">
+                            @* <MudVirtualize Context="item" T="ContentPost" Items="TopStories"> *@
+                                <MudItem xs="12" sm="6" md="4" lg="4">
+                                    <TopStoryBOCard IsMiniCard="true" />
+                                </MudItem>
+                                <MudItem xs="12" sm="6" md="4" lg="4">
+                                    <TopStoryBOCard IsMiniCard="true" />
+                                </MudItem>
+                                <MudItem xs="12" sm="6" md="4" lg="4">
+                                    <TopStoryBOCard IsMiniCard="true" />
+                                </MudItem>
+                            @* </MudVirtualize> *@
+
+                        </MudGrid>
+                    </MudItem>
+                <!-- Right column: newsletter -->
+            </MudGrid> 
+
+             <div style="padding: 90px 0px; gap: 30px;">
+             <HighlightsBOCard QueueLabel="FIFA Arab Cup" ListOfItems="Items" />
+             <HighlightsBOCard QueueLabel="Ramadan" ListOfItems="Items" />
+             <HighlightsBOCard QueueLabel="Moving to Qatar" ListOfItems="Items" />
+             <HighlightsBOCard QueueLabel="Moving to Qatar" ListOfItems="Items" />
+             <HighlightsBOCard QueueLabel="Moving to Qatar" ListOfItems="Items" />
+             </div>
+           
+    
+
+        </div>
+ </div>
+
+ <style>
+    .max-container {
+        max-width: 1170px;
+        margin: 0 auto;
+        width: 100%;
+    }
+    .section-heading {
+        display: flex;
+        align-items: center;
+        font-family: 'Public Sans', sans-serif;
+        font-size: 25px;
+        font-weight: 600;
+        color: var(--color-primary);
+    }
+
+    .accent-bar {
+        display: inline-block;
+        width: 6px;
+        height: 26px;
+        background-color: var(--color-primary);
+        margin-right: 8px;
+    }
+    .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
+
+ </style>

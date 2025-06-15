@@ -15,6 +15,7 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Utilities;
 
@@ -28,12 +29,14 @@ namespace QLN.Backend.API.Service.ClassifiedService
         private readonly DaprClient _dapr;
         private readonly IEventlogger _log;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IFileStorageBlobService _fileStorageBlob;
 
-        public ExternalClassifiedService(DaprClient dapr, IEventlogger log, IHttpContextAccessor httpContextAccessor)
+        public ExternalClassifiedService(DaprClient dapr, IEventlogger log, IHttpContextAccessor httpContextAccessor, IFileStorageBlobService fileStorageBlob)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
             _log = log ?? throw new ArgumentNullException(nameof(log));
             _httpContextAccessor = httpContextAccessor;
+            _fileStorageBlob = fileStorageBlob;
         }
 
         public async Task<Category> AddCategory(string categoryName, CancellationToken cancellationToken = default)
@@ -828,11 +831,133 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 _log.LogException(ex);
                 throw;
             }
-        }       
+        }
 
         public Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
+
+        public async Task<ItemsAdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.UserId == Guid.Empty) throw new ArgumentException("UserId is required.");
+            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+            if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
+                throw new ArgumentException("At least one ad image is required.");
+            if (string.IsNullOrWhiteSpace(dto.CertificateBase64))
+                throw new ArgumentException("Certificate image is required.");
+
+            var uploadedBlobKeys = new List<string>();
+
+            try
+            {
+                var adId = Guid.NewGuid();
+                
+                var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
+                    ? dto.CertificateFileName
+                    : $"certificate_{dto.UserId}_{adId}.jpg";
+                var certUrl = await _fileStorageBlob.SaveBase64File(dto.CertificateBase64, certFileName, "classifieds-images", cancellationToken);
+                uploadedBlobKeys.Add(certFileName);
+                dto.CertificateBase64 = null;
+                dto.CertificateFileName = certUrl;
+
+                dto.AdImageFileNames ??= new List<string>();
+
+                // Upload ad images
+                var imageUrls = new List<string>();
+                for (int i = 0; i < dto.AdImagesBase64.Count; i++)
+                {
+                    var customName = (dto.AdImageFileNames.Count > i && !string.IsNullOrWhiteSpace(dto.AdImageFileNames[i]))
+                        ? dto.AdImageFileNames[i]
+                        : $"Itemsad_{dto.UserId}_{adId}_{i + 1}.jpg";
+
+                    var url = await _fileStorageBlob.SaveBase64File(dto.AdImagesBase64[i], customName, "classifieds-images", cancellationToken);
+                    imageUrls.Add(url);
+                    uploadedBlobKeys.Add(customName);
+                }
+
+                if (imageUrls.Count == 0)
+                    throw new InvalidOperationException("Failed to upload any ad images.");
+
+                dto.AdImagesBase64 = null;
+                dto.AdImageFileNames = imageUrls;
+
+                _log.LogTrace($"Calling internal service with CertificateUrl: {dto.CertificateFileName} and {imageUrls.Count} images");
+
+                var result = await _dapr.InvokeMethodAsync<ClassifiedItems, ItemsAdCreatedResponseDto>(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/items/post-by-id",  
+                    dto,
+                    cancellationToken
+                );
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                foreach (var blobName in uploadedBlobKeys)
+                {
+                    try
+                    {
+                        await _fileStorageBlob.DeleteFile(blobName, "classifieds-images", cancellationToken);
+                    }
+                    catch (Exception rollbackEx)
+                    {
+                        _log.LogException(rollbackEx);
+                    }
+                }
+
+                throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
+            }
+        }        
+        
+        public async Task<CollectiblesResponse> GetCollectibles(string userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new ArgumentException("User ID is required", nameof(userId));
+
+                // Optional: log the request start
+                _log.LogException(new Exception($"Starting to fetch collectibles for userId: {userId}"));
+
+                var result = await _dapr.InvokeMethodAsync<CollectiblesResponse>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/{Vertical}/collectibles-by-id?userId={userId}",
+                    cancellationToken
+                );
+
+                // Optional: log success
+                _log.LogException(new Exception($"Successfully fetched collectibles for userId: {userId}"));
+
+                return result ?? new CollectiblesResponse();
+            }
+            catch (DaprException dex)
+            {
+                _log.LogException(new Exception($"DaprException while fetching collectibles for userId: {userId}. Message: {dex.Message}", dex));
+                if (dex.InnerException != null)
+                {
+                    _log.LogException(new Exception($"Inner exception: {dex.InnerException.Message}", dex.InnerException));
+                }
+
+                throw new InvalidOperationException("Failed to fetch collectibles due to Dapr error.", dex);
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(new Exception($"Unexpected error while fetching collectibles for userId: {userId}. Message: {ex.Message}", ex));
+                if (ex.InnerException != null)
+                {
+                    _log.LogException(new Exception($"Inner exception: {ex.InnerException.Message}", ex.InnerException));
+                }
+
+                throw new InvalidOperationException("An unexpected error occurred while fetching collectibles.", ex);
+            }
+        }
+
+
     }
 }
