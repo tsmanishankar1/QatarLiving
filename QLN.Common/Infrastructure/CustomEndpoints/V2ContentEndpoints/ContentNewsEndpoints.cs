@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Routing;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.V2IContent;
+using QLN.Common.Infrastructure.Utilities;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 {
@@ -131,8 +132,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             return group;
         }
 
-
-
         public static RouteGroupBuilder MapContentBannerEndpoints(this RouteGroupBuilder group)
         {
             // ✅ POST - Create Banner
@@ -144,16 +143,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 CancellationToken ct
             ) =>
             {
-                var userId = dto.CreatedBy;
+                var userId = context.User.GetId().ToString();
 
                 if (string.IsNullOrWhiteSpace(userId))
-                    return TypedResults.BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "CreatedBy (userId) is required." });
+                    return TypedResults.BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "Authenticated user ID is missing." });
                 if (dto == null)
                     return TypedResults.BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "BannerCreateRequest cannot be null." });
                 if (string.IsNullOrWhiteSpace(dto.Category))
                     return TypedResults.BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "Category is required." });
                 if (string.IsNullOrWhiteSpace(dto.Code))
                     return TypedResults.BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "Code is required." });
+
+                dto.CreatedBy = userId;
 
                 try
                 {
@@ -165,6 +166,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     return TypedResults.Problem(title: "Failed to create banner", detail: ex.Message);
                 }
             })
+            .RequireAuthorization()
             .WithTags("Content Banner")
             .WithSummary("Create a new banner")
             .WithDescription("Creates a banner entry with blob images and stores in Dapr state store.")
@@ -211,12 +213,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 CancellationToken ct
             ) =>
             {
-                var userId = context.User?.Identity?.Name ?? dto.UpdatedBy ?? "";
+                var userId = context.User.GetId().ToString();
                 if (string.IsNullOrWhiteSpace(userId))
-                    return TypedResults.BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "User ID is required." });
+                    return TypedResults.BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "Authenticated user ID is missing." });
 
                 dto.Category = category;
                 dto.Code = code;
+                dto.UpdatedBy = userId;
 
                 try
                 {
@@ -228,6 +231,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     return TypedResults.Problem(title: "Update Failed", detail: ex.Message);
                 }
             })
+            .RequireAuthorization()
             .WithTags("Content Banner")
             .WithSummary("Update banner by category/code")
             .WithDescription("Updates the banner with given category and code.")
@@ -258,11 +262,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     );
                 }
             })
+              .RequireAuthorization()
               .WithName("DeleteBannerFromState")
               .WithTags("Content Banner")
               .WithSummary("Internal API to delete banner directly from Dapr state store")
               .WithDescription("Removes a banner from the Dapr state store without external processing.");
-
 
             // ✅ GET ALL - Grouped by QueueName
             group.MapGet("/content/banner/all", async Task<Results<Ok<Dictionary<string, BaseQueueResponse<BannerItem>>>, ProblemHttpResult>>
@@ -287,7 +291,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .WithDescription("Returns all banners grouped by queue name (e.g. qln_banners_daily_hero)")
             .Produces<Dictionary<string, BaseQueueResponse<BannerItem>>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
 
             return group;
         }

@@ -1,43 +1,66 @@
 ﻿using Dapr.Client;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
-using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.IService.V2IContent;
+using QLN.Common.Infrastructure.Utilities;
+using System.Net;
+using System.Text;
+using System.Text.Json;
 
 namespace QLN.Backend.API.Service.V2ContentService
 {
     public class V2ExternalBannerService : IV2contentBannerService
     {
         private readonly DaprClient _daprClient;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IFileStorageBlobService _fileStorageBlob;
+        private readonly ILogger<V2ExternalBannerService> _logger;
         private const string InternalAppId = "qln-content-ms";
         private const string BlobContainer = "classifieds-images";
 
-        public V2ExternalBannerService(DaprClient daprClient, IFileStorageBlobService fileStorageBlob)
+        public V2ExternalBannerService(
+            DaprClient daprClient,
+            IHttpContextAccessor httpContextAccessor,
+            IFileStorageBlobService fileStorageBlob,
+            ILogger<V2ExternalBannerService> logger)
         {
             _daprClient = daprClient;
+            _httpContextAccessor = httpContextAccessor;
             _fileStorageBlob = fileStorageBlob;
+            _logger = logger;
         }
 
-        public async Task<BannerResponse> SaveBannerAsync(BannerCreateRequest dto, string userId, CancellationToken ct = default)
+        private string GetUserId()
         {
+            var userId = _httpContextAccessor.HttpContext?.User.GetId();
+            return userId?.ToString() ?? throw new UnauthorizedAccessException("User ID not found in token.");
+        }
+
+        public async Task<BannerResponse> SaveBannerAsync(BannerCreateRequest dto, string userId = null, CancellationToken ct = default)
+        {
+            var resolvedUserId = userId ?? GetUserId();
+
             if (!string.IsNullOrEmpty(dto.ImageDesktopBase64))
             {
-                var (desktopExt, desktopBase64) = Base64ImageHelper.ParseBase64Image(dto.ImageDesktopBase64);
-                var desktopName = $"{dto.Code}_desktop.{desktopExt}";
-                var desktopUrl = await _fileStorageBlob.SaveBase64File(desktopBase64, desktopName, BlobContainer, ct);
-                dto.ImageDesktopUrl = desktopUrl;
+                var (ext, base64) = Base64ImageHelper.ParseBase64Image(dto.ImageDesktopBase64);
+                var fileName = $"{dto.Code}_desktop.{ext}";
+                dto.ImageDesktopUrl = await _fileStorageBlob.SaveBase64File(base64, fileName, BlobContainer, ct);
                 dto.ImageDesktopBase64 = null;
             }
 
             if (!string.IsNullOrEmpty(dto.ImageMobileBase64))
             {
-                var (mobileExt, mobileBase64) = Base64ImageHelper.ParseBase64Image(dto.ImageMobileBase64);
-                var mobileName = $"{dto.Code}_mobile.{mobileExt}";
-                var mobileUrl = await _fileStorageBlob.SaveBase64File(mobileBase64, mobileName, BlobContainer, ct);
-                dto.ImageMobileUrl = mobileUrl;
+                var (ext, base64) = Base64ImageHelper.ParseBase64Image(dto.ImageMobileBase64);
+                var fileName = $"{dto.Code}_mobile.{ext}";
+                dto.ImageMobileUrl = await _fileStorageBlob.SaveBase64File(base64, fileName, BlobContainer, ct);
                 dto.ImageMobileBase64 = null;
             }
+
+            dto.CreatedBy = resolvedUserId;
 
             return await _daprClient.InvokeMethodAsync<BannerCreateRequest, BannerResponse>(
                 HttpMethod.Post,
@@ -56,23 +79,25 @@ namespace QLN.Backend.API.Service.V2ContentService
                 ct);
         }
 
-        public async Task<BannerResponse> UpdateBannerAsync(BannerUpdateRequest dto, string userId, CancellationToken ct = default)
+        public async Task<BannerResponse> UpdateBannerAsync(BannerUpdateRequest dto, string userId = null, CancellationToken ct = default)
         {
+            var resolvedUserId = userId ?? GetUserId();
+
             if (!string.IsNullOrEmpty(dto.ImageDesktopBase64))
             {
-                var (desktopExt, desktopBase64) = Base64ImageHelper.ParseBase64Image(dto.ImageDesktopBase64);
-                var desktopName = $"{dto.Code}_desktop.{desktopExt}";
-                var desktopUrl = await _fileStorageBlob.SaveBase64File(desktopBase64, desktopName, BlobContainer, ct);
-                dto.ImageDesktopBase64 = desktopUrl;
+                var (ext, base64) = Base64ImageHelper.ParseBase64Image(dto.ImageDesktopBase64);
+                var fileName = $"{dto.Code}_desktop.{ext}";
+                dto.ImageDesktopBase64 = await _fileStorageBlob.SaveBase64File(base64, fileName, BlobContainer, ct);
             }
 
             if (!string.IsNullOrEmpty(dto.ImageMobileBase64))
             {
-                var (mobileExt, mobileBase64) = Base64ImageHelper.ParseBase64Image(dto.ImageMobileBase64);
-                var mobileName = $"{dto.Code}_mobile.{mobileExt}";
-                var mobileUrl = await _fileStorageBlob.SaveBase64File(mobileBase64, mobileName, BlobContainer, ct);
-                dto.ImageMobileBase64 = mobileUrl;
+                var (ext, base64) = Base64ImageHelper.ParseBase64Image(dto.ImageMobileBase64);
+                var fileName = $"{dto.Code}_mobile.{ext}";
+                dto.ImageMobileBase64 = await _fileStorageBlob.SaveBase64File(base64, fileName, BlobContainer, ct);
             }
+
+            dto.UpdatedBy = resolvedUserId;
 
             return await _daprClient.InvokeMethodAsync<BannerUpdateRequest, BannerResponse>(
                 HttpMethod.Put,
@@ -84,42 +109,23 @@ namespace QLN.Backend.API.Service.V2ContentService
 
         public async Task<bool> DeleteBannerFromStateAsync(string category, string code, CancellationToken ct = default)
         {
-            try
+            var endpoint = $"api/v2/content/banner/delete-state/{category}/{code}";
+
+            var request = _daprClient.CreateInvokeMethodRequest(HttpMethod.Delete, InternalAppId, endpoint);
+
+            var response = await _daprClient.InvokeMethodWithResponseAsync(request, ct);
+
+            if (response.IsSuccessStatusCode)
+                return true;
+            else if (response.StatusCode == HttpStatusCode.NotFound)
+                return false;
+            else
             {
-                if (string.IsNullOrWhiteSpace(category))
-                    throw new ArgumentException("Category is required.", nameof(category));
-                if (string.IsNullOrWhiteSpace(code))
-                    throw new ArgumentException("Code is required.", nameof(code));
-
-                var endpoint = $"api/v2/content/banner/delete-state/{category}/{code}";
-
-                var request = _daprClient.CreateInvokeMethodRequest(
-                    HttpMethod.Delete,
-                    InternalAppId,
-                    endpoint);
-
-                var response = await _daprClient.InvokeMethodWithResponseAsync(request, ct);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    return true;
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-                {
-                    return false;
-                }
-                else
-                {
-                    var error = await response.Content.ReadAsStringAsync(ct);
-                    throw new Exception($"Dapr delete failed with status {response.StatusCode}");
-                }
-            }
-            catch (Exception ex)
-            {
-                throw;
+                var error = await response.Content.ReadAsStringAsync(ct);
+                _logger.LogError("Delete failed: {Error}", error);
+                throw new Exception($"Dapr delete failed with status {response.StatusCode}");
             }
         }
-
 
         public async Task<Dictionary<string, BaseQueueResponse<BannerItem>>> GetAllBannersAsync(CancellationToken ct = default)
         {
