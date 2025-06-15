@@ -22,7 +22,10 @@ namespace QLN.Web.Shared.Pages.Content.Community
         [Parameter]
         public PostModel Comment { get; set; }
 
-        public PostModel CommentList { get; set; } 
+        //public PostModel CommentList { get; set; } 
+
+        public List<CommentModel> Comments { get; set; } = new();
+
         protected string newComment = string.Empty;
 
         protected int CurrentPage { get; set; } = 1;
@@ -43,7 +46,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected override async Task OnInitializedAsync()
         {
-            CommentList = new PostModel();
+            //CommentList = new PostModel();
             var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
             var user = authState.User;
 
@@ -54,6 +57,13 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 Console.WriteLine($"Current User: {CurrentUserId}");
                 IsLoggedIn = true;
             }
+            
+        }
+
+        protected override async void OnAfterRender(bool firstRender)
+        {
+            if (!firstRender) return;
+
             await GetCommentAsync();
         }
 
@@ -113,13 +123,14 @@ namespace QLN.Web.Shared.Pages.Content.Community
             finally
             {
                 IsPosting = false;
+                StateHasChanged();
             }
         }
 
         protected async Task GetCommentAsync()
         {
             IsLoading = true;
-            StateHasChanged();
+            //StateHasChanged();
 
             try
             {
@@ -128,7 +139,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                  TotalCount = response.total_comments;
                 if (response?.comments != null && response.comments.Any())
                 {
-                    CommentList.Comments = response.comments.Select(c => new CommentModel
+                    Comments = response.comments.Select(c => new CommentModel
                     {
                         Id = c.comment_id,
                         CreatedBy = !string.IsNullOrWhiteSpace(c.user_name) ? c.user_name : "User not found",
@@ -143,14 +154,14 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 }
                 else
                 {
-                    CommentList.Comments.Clear(); 
+                    Comments.Clear(); 
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error loading comments: {ex.Message}");
-                CommentList.Comments ??= new List<CommentModel>();
-                CommentList.Comments.Clear();
+                Comments ??= new List<CommentModel>();
+                Comments.Clear();
             }
             finally
             {
@@ -173,7 +184,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
              await GetCommentAsync();
         
-            StateHasChanged();
+            //StateHasChanged();
         }
         protected async Task ToggleLikeAsync()
         {
