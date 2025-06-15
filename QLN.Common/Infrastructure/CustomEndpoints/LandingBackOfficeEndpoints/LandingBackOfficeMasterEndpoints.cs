@@ -10,6 +10,7 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IBackOfficeService;
 using QLN.Common.Infrastructure.IService.ISearchService;
+using System.Text.Json;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints
@@ -24,7 +25,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
         {
             group.MapPost($"/{routeSegment}",
                 async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
-                    LandingBackOfficeIndex doc,
+                    LandingBackOfficeRequestDto dto,
                     [FromServices] IBackOfficeService<LandingBackOfficeIndex> stateSvc,
                     [FromServices] ILoggerFactory loggerFactory,
                     DaprClient dapr,
@@ -32,25 +33,45 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
                 ) =>
                 {
                     var _logger = loggerFactory.CreateLogger("BackOfficeEndpoints");
-                    if (doc == null)
+
+                    if (dto == null)
                     {
                         _logger.LogWarning("POST {RouteSegment}: Request body was null", routeSegment);
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Bad Request",
-                            Detail = "Request body must contain a BackofficemasterIndex object.",
+                            Detail = "Request body must contain a LandingBackOfficeRequestDto.",
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
 
-                    doc.Vertical = vertical;
-                    doc.EntityType = entityType;
-
-                    if (string.IsNullOrWhiteSpace(doc.Id))
+                    // Inject AdId into PayloadJson filters if present
+                    if (!string.IsNullOrWhiteSpace(dto.AdId))
                     {
-                        var guidPart = Guid.NewGuid().ToString("N")[..8];
-                        doc.Id = $"{vertical}-{entityType}-{guidPart}";
+                        if (dto.PayloadJson == null)
+                            dto.PayloadJson = new CommonSearchRequest();
+                        dto.PayloadJson.Filters["Id"] = dto.AdId;
                     }
+                    string id = $"{vertical}-{entityType}-{Guid.NewGuid().ToString("N")[..8]}";
+                    var doc = new LandingBackOfficeIndex
+                    {
+                        Id = id,
+                        Vertical = vertical,
+                        EntityType = entityType,
+                        Title = dto.Title,
+                        Description = dto.Description,
+                        Order = dto.Order ?? 0,
+                        ParentId = dto.ParentId,
+                        IsActive = dto.IsActive,
+                        RediectUrl = dto.RediectUrl,
+                        ImageUrl = dto.ImageUrl,
+                        ListingCount = dto.ListingCount,
+                        RotationSeconds = dto.RotationSeconds,
+                        AdId = dto.AdId
+                    };
+
+                    if (dto.PayloadJson != null)
+                        doc.PayloadJson = JsonSerializer.Serialize(dto.PayloadJson);
 
                     try
                     {
@@ -79,6 +100,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
                         return TypedResults.Problem("Internal Server Error", ex.Message, StatusCodes.Status500InternalServerError);
                     }
                 });
+
 
             group.MapGet($"/{routeSegment}", async Task<IResult> (
                 [FromServices] ISearchService searchSvc,

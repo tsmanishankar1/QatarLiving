@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Dapr.Client;
@@ -30,21 +31,45 @@ namespace QLN.Backend.API.Service.BackOffice
             if (item == null)
                 throw new ArgumentNullException(nameof(item), "Backoffice master item is required.");
 
-            var vertical = item.Vertical?.ToLowerInvariant()
-                ?? throw new ArgumentException("Vertical is required", nameof(item.Vertical));
+            // Build the request DTO
+            var request = new LandingBackOfficeRequestDto
+            {
+                Title = item.Title,
+                Description = item.Description,
+                Order = item.Order,
+                ParentId = item.ParentId,
+                IsActive = item.IsActive,
+                RediectUrl = item.RediectUrl,
+                ImageUrl = item.ImageUrl,
+                ListingCount = item.ListingCount,
+                RotationSeconds = item.RotationSeconds,
+                AdId = item.AdId,
+                PayloadJson = !string.IsNullOrWhiteSpace(item.PayloadJson)
+                                    ? JsonSerializer.Deserialize<CommonSearchRequest>(item.PayloadJson)
+                                    : null
+            };
 
-            var route = ToSlug(item.EntityType);
+            // Determine vertical and route
+            var parts = item.Id.Split('-', 3, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length < 2)
+                throw new ArgumentException("Item.Id must be in format '<vertical>-<entityType>-<guid>'", nameof(item.Id));
+
+            var vertical = parts[0].ToLowerInvariant();
+            var entityType = parts[1];
+            var route = ToSlug(entityType);
             var method = $"/api/{vertical}/landing/{route}";
+
+            _logger.LogInformation("Invoking Dapr POST to {AppId}{Method} for Id={Id}",
+                                    SERVICE_APP_ID, method, item.Id);
 
             try
             {
-                _logger.LogInformation("Invoking Dapr POST to {AppId}{Method} for Id={Id}", SERVICE_APP_ID, method, item.Id);
-
-                var result = await _dapr.InvokeMethodAsync<LandingBackOfficeIndex, string>(
+                // POST the request DTO (not the index)
+                var result = await _dapr.InvokeMethodAsync<LandingBackOfficeRequestDto, string>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
                     method,
-                    item,
+                    request,
                     cancellationToken
                 );
 
@@ -53,7 +78,7 @@ namespace QLN.Backend.API.Service.BackOffice
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to upsert Id={Id} to back-office via Dapr. Route={Route}", item.Id, method);
+                _logger.LogError(ex, "Failed to upsert Id={Id} via Dapr. Route={Route}", item.Id, method);
                 throw;
             }
         }

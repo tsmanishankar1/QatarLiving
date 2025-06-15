@@ -33,7 +33,7 @@ namespace QLN.Backend.API.Service.SearchService
                 throw new ArgumentException("Vertical is required.", nameof(vertical));
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
-
+            
             try
             {
                 var methodName = $"/api/{vertical}/search";
