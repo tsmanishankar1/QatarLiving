@@ -218,86 +218,7 @@
                 }
             });
         };
-        let bannerSwiperInstance;
-
-        function initBannerSwiper() {
-            const swiperEl = document.querySelector('.banner-swiper');
-            if (!swiperEl) {
-                console.warn("Banner swiper element not found");
-                return;
-            }
-
-            const bannerCount = swiperEl.querySelectorAll('.swiper-slide').length;
-            const autoplayEnabled = bannerCount > 1;
-
-            if (bannerSwiperInstance) {
-                bannerSwiperInstance.destroy(true, true);
-            }
-
-            bannerSwiperInstance = new Swiper(swiperEl, {
-                slidesPerView: 1,
-                loop: autoplayEnabled,
-                autoplay: autoplayEnabled
-                    ? {
-                        delay: 5000,
-                        disableOnInteraction: false,
-                        pauseOnMouseEnter: true
-                    }
-                    : false,
-                pagination: {
-                    el: '.swiper-pagination',
-                    clickable: true
-                }
-            });
-            const paginationEl = swiperEl.querySelector('.swiper-pagination');
-            if (paginationEl) {
-                paginationEl.style.display = "none";
-            }
-            console.log("Banner Swiper initialized with autoplay:", autoplayEnabled);
-        }
-
-        let takeoverbannerSwiperInstance;
-
-        function initTakeOverBannerSwiper(swiperId) {
-            const swiperEl = document.getElementById(swiperId);
-            if (!swiperEl) {
-                console.warn("Banner swiper element not found");
-                return;
-            }
-
-            const bannerCount = swiperEl.querySelectorAll('.swiper-slide').length;
-            const autoplayEnabled = bannerCount > 1;
-
-            // Store separate instances if needed by ID (optional enhancement)
-            if (swiperEl.swiper) {
-                swiperEl.swiper.destroy(true, true);
-            }
-
-            const swiperInstance = new Swiper(swiperEl, {
-                slidesPerView: 1,
-                loop: autoplayEnabled,
-                autoplay: autoplayEnabled
-                    ? {
-                        delay: 5000,
-                        disableOnInteraction: false,
-                        pauseOnMouseEnter: true
-                    }
-                    : false,
-                pagination: {
-                    el: swiperEl.querySelector('.swiper-pagination'),
-                    clickable: true
-                }
-            });
-
-            const paginationEl = swiperEl.querySelector('.swiper-pagination');
-            if (paginationEl) {
-                paginationEl.style.display = "none";
-            }
-
-            console.log("Swiper initialized:", swiperId);
-        }
-
-
+      
         let featuredSwiperInstance;
 
         function initFeaturedSwiper() {
@@ -402,19 +323,25 @@
         if (!el) return false;
 
         const rect = el.getBoundingClientRect();
+
+        const windowHeight = window.visualViewport
+            ? window.visualViewport.height
+            : window.innerHeight;
+
+        const windowWidth = window.visualViewport
+            ? window.visualViewport.width
+            : window.innerWidth;
+
         const inViewport = (
-            rect.top < window.innerHeight &&
+            rect.top < windowHeight &&
             rect.bottom > 0 &&
-            rect.left < window.innerWidth &&
+            rect.left < windowWidth &&
             rect.right > 0
         );
 
         return inViewport;
     };
 </script>
-
-
-
     <GBAnchor />
     <script>
         window.registerPopoverClickAway = (popoverDiv, dotNetHelper) => {
