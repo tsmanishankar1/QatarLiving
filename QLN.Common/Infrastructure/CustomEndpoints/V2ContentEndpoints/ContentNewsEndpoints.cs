@@ -135,62 +135,25 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
         public static RouteGroupBuilder MapContentBannerEndpoints(this RouteGroupBuilder group)
         {
-            // POST - Requires Authorization
-            group.MapPost("/content/banner", async Task<Results<
-                Ok<BannerResponse>,
-                BadRequest<ProblemDetails>,
-                ProblemHttpResult>>
+            // ✅ POST - Create Banner
+            group.MapPost("/content/banner", async Task<Results<Ok<BannerResponse>, BadRequest<ProblemDetails>, ProblemHttpResult>>
             (
                 [FromBody] BannerCreateRequest dto,
-               [FromServices] IV2contentBannerService bannerService,
+                [FromServices] IV2contentBannerService bannerService,
                 HttpContext context,
                 CancellationToken ct
             ) =>
             {
-                // UserId from JWT claims
-                // Instead of extracting from context.User...
-                string userId = dto.CreatedBy; // <-- set this in your Dapr caller
-                if (string.IsNullOrWhiteSpace(userId))
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "CreatedBy (userId) is required.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
-                    });
-                }
+                var userId = dto.CreatedBy;
 
+                if (string.IsNullOrWhiteSpace(userId))
+                    return TypedResults.BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "CreatedBy (userId) is required." });
                 if (dto == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "BannerCreateRequest cannot be null.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
-                    });
-                }
+                    return TypedResults.BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "BannerCreateRequest cannot be null." });
                 if (string.IsNullOrWhiteSpace(dto.Category))
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Category is required.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
-                    });
-                }
+                    return TypedResults.BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "Category is required." });
                 if (string.IsNullOrWhiteSpace(dto.Code))
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Code is required.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
-                    });
-                }
+                    return TypedResults.BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "Code is required." });
 
                 try
                 {
@@ -199,43 +162,27 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Failed to create banner",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: context.Request.Path
-                    );
+                    return TypedResults.Problem(title: "Failed to create banner", detail: ex.Message);
                 }
             })
-            //.WithName("CreateContentBanners")
             .WithTags("Content Banner")
-            .WithSummary("Create or update a banner (requires JWT)")
-            .WithDescription("Uploads images to blob and saves the banner info, requires JWT and validates userId.")
-            //.RequireAuthorization() // <---- Authorization only for POST!
+            .WithSummary("Create a new banner")
+            .WithDescription("Creates a banner entry with blob images and stores in Dapr state store.")
             .Produces<BannerResponse>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            // GET - No Authorization
-            group.MapGet("/content/banner/{category}", async Task<Results<
-                Ok<List<BannerItem>>,
-                ProblemHttpResult>>
+            // ✅ GET by Category
+            group.MapGet("/content/banner/{category}", async Task<Results<Ok<List<BannerItem>>, ProblemHttpResult>>
             (
-               string category,
-               [FromServices] IV2contentBannerService bannerService,
+                string category,
+                [FromServices] IV2contentBannerService bannerService,
                 HttpContext context,
                 CancellationToken ct
             ) =>
             {
                 if (string.IsNullOrWhiteSpace(category))
-                {
-                    return TypedResults.Problem(
-                        title: "Validation Error",
-                        detail: "Category is required.",
-                        statusCode: StatusCodes.Status400BadRequest,
-                        instance: context.Request.Path
-                    );
-                }
+                    return TypedResults.Problem(title: "Validation Error", detail: "Category is required.");
 
                 try
                 {
@@ -244,25 +191,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Failed to get banners",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: context.Request.Path
-                    );
+                    return TypedResults.Problem(title: "Failed to get banners", detail: ex.Message);
                 }
             })
-            .WithName("GetContentBannersByCategory")
             .WithTags("Content Banner")
-            .WithSummary("Get banners by category (public, no JWT needed)")
-            .WithDescription("Returns all banners for the given category from Dapr state store. No auth needed.")
+            .WithSummary("Get banners by category")
+            .WithDescription("Returns banners for a given category from Dapr state store.")
             .Produces<List<BannerItem>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-
-
-            // PUT (Update Banner)
+            // ✅ PUT - Update Banner
             group.MapPut("/content/banner/update/{category}/{code}", async Task<Results<Ok<BannerResponse>, BadRequest<ProblemDetails>, ProblemHttpResult>>
             (
                 string category,
@@ -291,17 +229,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 }
             })
             .WithTags("Content Banner")
-            .WithSummary("Update banner by code and category")
-            .WithDescription("Updates banner fields and images by banner code and category.");
+            .WithSummary("Update banner by category/code")
+            .WithDescription("Updates the banner with given category and code.")
+            .Produces<BannerResponse>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            // DELETE (Delete Banner)
+            // ✅ DELETE - Remove Banner
             group.MapDelete("/content/banner/delete-state/{category}/{code}", async Task<Results<Ok, NotFound, ProblemHttpResult>>
-            (
-                string category,
-                string code,
-                [FromServices] IV2contentBannerService bannerService,
-                CancellationToken ct
-            ) =>
+              (
+                  string category,
+                  string code,
+                  [FromServices] IV2contentBannerService bannerService,
+                  CancellationToken ct
+              ) =>
             {
                 try
                 {
@@ -317,10 +258,36 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     );
                 }
             })
-            .WithName("DeleteBannerFromState")
+              .WithName("DeleteBannerFromState")
+              .WithTags("Content Banner")
+              .WithSummary("Internal API to delete banner directly from Dapr state store")
+              .WithDescription("Removes a banner from the Dapr state store without external processing.");
+
+
+            // ✅ GET ALL - Grouped by QueueName
+            group.MapGet("/content/banner/all", async Task<Results<Ok<Dictionary<string, BaseQueueResponse<BannerItem>>>, ProblemHttpResult>>
+            (
+                [FromServices] IV2contentBannerService bannerService,
+                HttpContext context,
+                CancellationToken ct
+            ) =>
+            {
+                try
+                {
+                    var result = await bannerService.GetAllBannersAsync(ct);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(title: "Failed to load all banners", detail: ex.Message);
+                }
+            })
             .WithTags("Content Banner")
-            .WithSummary("Internal API to delete banner directly from Dapr state store")
-            .WithDescription("Removes a banner from the Dapr state store without external processing.");
+            .WithSummary("Get all banners grouped by queue")
+            .WithDescription("Returns all banners grouped by queue name (e.g. qln_banners_daily_hero)")
+            .Produces<Dictionary<string, BaseQueueResponse<BannerItem>>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
             return group;
         }

@@ -18,5 +18,7 @@ namespace QLN.Common.DTO_s
         public string ImageMobileUrl { get; set; }      
         public string Link { get; set; }
         public string CreatedBy { get; set; }
+        public string QueueName { get; set; }
+        public string QueueLabel { get; set; }
     }
 }

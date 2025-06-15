@@ -8,6 +8,7 @@ using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Service.FileStorage;
 using QLN.Content.MS.Service.NewsInternalService;
+using QLN.Content.MS.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 

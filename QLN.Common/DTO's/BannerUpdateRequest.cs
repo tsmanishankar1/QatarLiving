@@ -17,6 +17,8 @@ namespace QLN.Common.DTO_s
         public string? ImageDesktopBase64 { get; set; }
         public string? ImageMobileBase64 { get; set; }
         public string UpdatedBy { get; set; }
+        public string QueueName { get; set; }
+        public string QueueLabel { get; set; }
     }
 
     // For delete

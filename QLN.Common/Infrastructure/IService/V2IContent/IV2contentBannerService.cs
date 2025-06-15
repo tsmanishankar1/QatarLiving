@@ -8,15 +8,18 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.IService.V2IContent
 {
- 
+
 
     public interface IV2contentBannerService
     {
         Task<BannerResponse> SaveBannerAsync(BannerCreateRequest dto, string userId, CancellationToken cancellationToken = default);
         Task<List<BannerItem>> GetBannersByCategoryAsync(string category, CancellationToken cancellationToken = default);
+        Task<BannerResponse> UpdateBannerAsync(BannerUpdateRequest dto, string userId, CancellationToken cancellationToken = default);
+        Task<bool> DeleteBannerFromStateAsync(string category, string code, CancellationToken cancellationToken = default);
 
-        Task<BannerResponse> UpdateBannerAsync(BannerUpdateRequest dto, string userId, CancellationToken ct = default);
-        Task<bool> DeleteBannerFromStateAsync(string category, string code, CancellationToken ct = default);
+        Task<Dictionary<string, BaseQueueResponse<BannerItem>>> GetAllBannersAsync(CancellationToken cancellationToken = default);
 
     }
+
+
 }

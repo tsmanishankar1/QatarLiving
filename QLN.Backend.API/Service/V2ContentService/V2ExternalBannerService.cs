@@ -1,164 +1,133 @@
 ﻿using Dapr.Client;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.DTO_s;
-using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.V2IContent;
-using QLN.Common.Infrastructure.Utilities;
+using QLN.Common.Infrastructure.IService.IFileStorage;
 
-public class V2ExternalBannerService : IV2contentBannerService
+namespace QLN.Backend.API.Service.V2ContentService
 {
-    private readonly DaprClient _daprClient;
-    private readonly ILogger<V2ExternalBannerService> _logger;
-    private readonly IFileStorageBlobService _fileStorageBlob;
-
-    private const string InternalAppId = "qln-content-ms";
-    private const string BlobContainer = "classifieds-images";
-
-    public V2ExternalBannerService(DaprClient daprClient, ILogger<V2ExternalBannerService> logger, IFileStorageBlobService fileStorageBlob)
+    public class V2ExternalBannerService : IV2contentBannerService
     {
-        _daprClient = daprClient;
-        _logger = logger;
-        _fileStorageBlob = fileStorageBlob;
-    }
+        private readonly DaprClient _daprClient;
+        private readonly IFileStorageBlobService _fileStorageBlob;
+        private const string InternalAppId = "qln-content-ms";
+        private const string BlobContainer = "classifieds-images";
 
-    public async Task<BannerResponse> SaveBannerAsync(BannerCreateRequest dto, string userId, CancellationToken ct = default)
-    {
-        if (dto == null) throw new ArgumentNullException(nameof(dto));
-        if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID is required", nameof(userId));
-
-        dto.CreatedBy = userId;
-
-        // Upload images if present (dynamic extension logic)
-        if (!string.IsNullOrEmpty(dto.ImageDesktopBase64))
+        public V2ExternalBannerService(DaprClient daprClient, IFileStorageBlobService fileStorageBlob)
         {
-            var (desktopExt, desktopBase64) = Base64ImageHelper.ParseBase64Image(dto.ImageDesktopBase64);
-            var desktopName = $"{dto.Code}_desktop.{desktopExt}";
-            var desktopUrl = await _fileStorageBlob.SaveBase64File(desktopBase64, desktopName, BlobContainer, ct);
-
-            dto.ImageDesktopUrl = desktopUrl;
-            dto.ImageDesktopBase64 = null;
+            _daprClient = daprClient;
+            _fileStorageBlob = fileStorageBlob;
         }
 
-        if (!string.IsNullOrEmpty(dto.ImageMobileBase64))
+        public async Task<BannerResponse> SaveBannerAsync(BannerCreateRequest dto, string userId, CancellationToken ct = default)
         {
-            var (mobileExt, mobileBase64) = Base64ImageHelper.ParseBase64Image(dto.ImageMobileBase64);
-            var mobileName = $"{dto.Code}_mobile.{mobileExt}";
-            var mobileUrl = await _fileStorageBlob.SaveBase64File(mobileBase64, mobileName, BlobContainer, ct);
-            dto.ImageMobileUrl = mobileUrl;
-            dto.ImageMobileBase64 = null;
-        }
+            if (!string.IsNullOrEmpty(dto.ImageDesktopBase64))
+            {
+                var (desktopExt, desktopBase64) = Base64ImageHelper.ParseBase64Image(dto.ImageDesktopBase64);
+                var desktopName = $"{dto.Code}_desktop.{desktopExt}";
+                var desktopUrl = await _fileStorageBlob.SaveBase64File(desktopBase64, desktopName, BlobContainer, ct);
+                dto.ImageDesktopUrl = desktopUrl;
+                dto.ImageDesktopBase64 = null;
+            }
 
-        // Now call internal (QLN.Content.MS) via Dapr, only with URLs
-        var result = await _daprClient.InvokeMethodAsync<BannerCreateRequest, BannerResponse>(
-            HttpMethod.Post,
-            InternalAppId,
-            "api/v2/content/banner",
-            dto,
-            ct
-        );
+            if (!string.IsNullOrEmpty(dto.ImageMobileBase64))
+            {
+                var (mobileExt, mobileBase64) = Base64ImageHelper.ParseBase64Image(dto.ImageMobileBase64);
+                var mobileName = $"{dto.Code}_mobile.{mobileExt}";
+                var mobileUrl = await _fileStorageBlob.SaveBase64File(mobileBase64, mobileName, BlobContainer, ct);
+                dto.ImageMobileUrl = mobileUrl;
+                dto.ImageMobileBase64 = null;
+            }
 
-        return result;
-    }
-
-    public async Task<List<BannerItem>> GetBannersByCategoryAsync(string category, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrWhiteSpace(category)) throw new ArgumentException("Category is required", nameof(category));
-        var result = await _daprClient.InvokeMethodAsync<List<BannerItem>>(
-            HttpMethod.Get,
-            InternalAppId,
-            $"api/v2/content/banner/{category}",
-            cancellationToken
-        );
-        return result ?? new List<BannerItem>();
-    }
-
-    public async Task<BannerResponse> UpdateBannerAsync(BannerUpdateRequest dto, string userId, CancellationToken ct = default)
-    {
-        if (dto == null) throw new ArgumentNullException(nameof(dto));
-        if (string.IsNullOrWhiteSpace(dto.Category)) throw new ArgumentException("Category is required", nameof(dto.Category));
-        if (string.IsNullOrWhiteSpace(dto.Code)) throw new ArgumentException("Code is required", nameof(dto.Code));
-        if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID is required", nameof(userId));
-
-        dto.UpdatedBy = userId;
-
-        // Handle new desktop image (if updating)
-        if (!string.IsNullOrEmpty(dto.ImageDesktopBase64))
-        {
-            var (desktopExt, desktopBase64) = Base64ImageHelper.ParseBase64Image(dto.ImageDesktopBase64);
-            var desktopName = $"{dto.Code}_desktop.{desktopExt}";
-            var desktopUrl = await _fileStorageBlob.SaveBase64File(desktopBase64, desktopName, BlobContainer, ct);
-
-            // Optionally, add a property for desktopUrl in BannerUpdateRequest and set it here if your internal API expects it
-            // dto.ImageDesktopUrl = desktopUrl;
-
-            dto.ImageDesktopBase64 = null; 
-        }
-
-        // Handle new mobile image (if updating)
-        if (!string.IsNullOrEmpty(dto.ImageMobileBase64))
-        {
-            var (mobileExt, mobileBase64) = Base64ImageHelper.ParseBase64Image(dto.ImageMobileBase64);
-            var mobileName = $"{dto.Code}_mobile.{mobileExt}";
-            var mobileUrl = await _fileStorageBlob.SaveBase64File(mobileBase64, mobileName, BlobContainer, ct);
-
-            // Optionally, add a property for mobileUrl in BannerUpdateRequest and set it here
-            // dto.ImageMobileUrl = mobileUrl;
-
-            dto.ImageMobileBase64 = null; 
-        }
-
-        // Dapr call to internal MS with updated DTO
-        var result = await _daprClient.InvokeMethodAsync<BannerUpdateRequest, BannerResponse>(
-            HttpMethod.Put,
-            InternalAppId,
-            $"api/v2/content/banner/update/{dto.Category}/{dto.Code}",
-            dto,
-            ct
-        );
-
-        return result;
-    }
-
-
-    public async Task<bool> DeleteBannerFromStateAsync(string category, string code, CancellationToken ct = default)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(category))
-                throw new ArgumentException("Category is required.", nameof(category));
-            if (string.IsNullOrWhiteSpace(code))
-                throw new ArgumentException("Code is required.", nameof(code));
-
-            var endpoint = $"api/v2/content/banner/delete-state/{category}/{code}";
-
-            var request = _daprClient.CreateInvokeMethodRequest(
-                HttpMethod.Delete,
+            return await _daprClient.InvokeMethodAsync<BannerCreateRequest, BannerResponse>(
+                HttpMethod.Post,
                 InternalAppId,
-                endpoint);
+                "api/v2/content/banner",
+                dto,
+                ct);
+        }
 
-            var response = await _daprClient.InvokeMethodWithResponseAsync(request, ct);
+        public async Task<List<BannerItem>> GetBannersByCategoryAsync(string category, CancellationToken ct = default)
+        {
+            return await _daprClient.InvokeMethodAsync<List<BannerItem>>(
+                HttpMethod.Get,
+                InternalAppId,
+                $"api/v2/content/banner/{category}",
+                ct);
+        }
 
-            if (response.IsSuccessStatusCode)
+        public async Task<BannerResponse> UpdateBannerAsync(BannerUpdateRequest dto, string userId, CancellationToken ct = default)
+        {
+            if (!string.IsNullOrEmpty(dto.ImageDesktopBase64))
             {
-                return true;
+                var (desktopExt, desktopBase64) = Base64ImageHelper.ParseBase64Image(dto.ImageDesktopBase64);
+                var desktopName = $"{dto.Code}_desktop.{desktopExt}";
+                var desktopUrl = await _fileStorageBlob.SaveBase64File(desktopBase64, desktopName, BlobContainer, ct);
+                dto.ImageDesktopBase64 = desktopUrl;
             }
-            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+
+            if (!string.IsNullOrEmpty(dto.ImageMobileBase64))
             {
-                _logger.LogWarning("Banner not found during deletion: {Category}/{Code}", category, code);
-                return false;
+                var (mobileExt, mobileBase64) = Base64ImageHelper.ParseBase64Image(dto.ImageMobileBase64);
+                var mobileName = $"{dto.Code}_mobile.{mobileExt}";
+                var mobileUrl = await _fileStorageBlob.SaveBase64File(mobileBase64, mobileName, BlobContainer, ct);
+                dto.ImageMobileBase64 = mobileUrl;
             }
-            else
+
+            return await _daprClient.InvokeMethodAsync<BannerUpdateRequest, BannerResponse>(
+                HttpMethod.Put,
+                InternalAppId,
+                $"api/v2/content/banner/update/{dto.Category}/{dto.Code}",
+                dto,
+                ct);
+        }
+
+        public async Task<bool> DeleteBannerFromStateAsync(string category, string code, CancellationToken ct = default)
+        {
+            try
             {
-                var error = await response.Content.ReadAsStringAsync(ct);
-                _logger.LogError("Failed to delete banner. Status: {StatusCode}, Body: {Error}", response.StatusCode, error);
-                throw new Exception($"Dapr delete failed with status {response.StatusCode}");
+                if (string.IsNullOrWhiteSpace(category))
+                    throw new ArgumentException("Category is required.", nameof(category));
+                if (string.IsNullOrWhiteSpace(code))
+                    throw new ArgumentException("Code is required.", nameof(code));
+
+                var endpoint = $"api/v2/content/banner/delete-state/{category}/{code}";
+
+                var request = _daprClient.CreateInvokeMethodRequest(
+                    HttpMethod.Delete,
+                    InternalAppId,
+                    endpoint);
+
+                var response = await _daprClient.InvokeMethodWithResponseAsync(request, ct);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return true;
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return false;
+                }
+                else
+                {
+                    var error = await response.Content.ReadAsStringAsync(ct);
+                    throw new Exception($"Dapr delete failed with status {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw;
             }
         }
-        catch (Exception ex)
+
+
+        public async Task<Dictionary<string, BaseQueueResponse<BannerItem>>> GetAllBannersAsync(CancellationToken ct = default)
         {
-            _logger.LogError(ex, "Unexpected error while deleting banner: {Category}/{Code}", category, code);
-            throw;
+            return await _daprClient.InvokeMethodAsync<Dictionary<string, BaseQueueResponse<BannerItem>>>(
+                HttpMethod.Get,
+                InternalAppId,
+                "api/v2/content/banner/all",
+                ct);
         }
     }
-
 }
