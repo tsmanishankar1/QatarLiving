@@ -6,7 +6,7 @@
 @using QLN.Web.Shared.Pages.Content.Community
 @using QLN.Web.Shared.Components.BreadCrumb
 @using QLN.Web.Shared.Components.EmptyCard
-@using QLN.Web.Shared.Components.BannerSwiper
+@using QLN.Web.Shared.Components.BannerHero
 @using QLN.Web.Shared.Pages.Content.Events
 
 @using MudBlazor
@@ -21,7 +21,7 @@
                 }
                 else if (DailyHeroBanners?.Any() == true)
                 {
-                    <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+                    <BannerHero BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
                 }
                 else
                 {

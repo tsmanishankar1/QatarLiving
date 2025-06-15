@@ -2,13 +2,13 @@
 @using QLN.Web.Shared.Components.QLAnalytics
 @using QLN.Web.Shared.Services
 @using Microsoft.Extensions.Logging
-@inject ILogger<BannerTakeOver> Logger
+@inject ILogger<BannerHero> Logger
 @inject IJSRuntime JS
 @inject NavigationManager NavigationManager
 
 <div id="banner-hero" class="banner-wrapper">
-    <div class="take-carousel-container">
-        <div class="take-slides-wrapper" style="transform: translateX(-@($"{CurrentIndex * 100}%"))">
+    <div class="hero-carousel-container">
+        <div class="hero-slides-wrapper" style="transform: translateX(-@($"{CurrentIndex * 100}%"))">
             @foreach (var (banner, index) in BannersToRender.Select((b, i) => (b, i)))
             {
                 <div class="carousel-slide" id="banner-@banner.Code-@index">
@@ -93,14 +93,14 @@
 }
 
 <style>
-.take-carousel-container {
+.hero-carousel-container {
     position: relative;
     width: 100%;
     overflow: hidden;
-    height: 150px;
+    height: 250px;
 }
 
-.take-slides-wrapper {
+.hero-slides-wrapper {
     display: flex;
     transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     width: 100%;
@@ -120,7 +120,7 @@
 }
 
 @@media (max-width: 768px) {
-    .take-carousel-container {
+    .hero-carousel-container {
         height: 150px;
     }
 

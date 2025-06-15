@@ -1,16 +1,29 @@
 @using QLN.Common.Infrastructure.DTO_s
-@using Microsoft.AspNetCore.Components
+@using QLN.Web.Shared.Components.QLAnalytics
 @inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+@using QLN.Web.Shared.Services
+@using Microsoft.Extensions.Logging
+@inject ILogger<AdBanner> Logger
 
 @if (BannerItems != null && BannerItems.Any())
 {
     @foreach (var item in BannerItems)
     {
         <a href="@item.Link" target="_blank" rel="noopener noreferrer">
-            <img class="ad-banner-image add-image" src="@item.ImageDesktop" data-mobile="@item.ImageMobile"
-                data-desktop="@item.ImageDesktop" alt="@item.Alt" />
+            <img class="ad-banner-image add-image"
+                 id="banner-@item.Code"
+                 src="@item.ImageDesktop"
+                 data-mobile="@item.ImageMobile"
+                 data-desktop="@item.ImageDesktop"
+                 alt="@item.Alt" />
         </a>
     }
+}
+
+@if (AnalyticsProps != null)
+{
+    <QLAnalytics @key="AnalyticsKey" AnalyticsProps="@AnalyticsProps" />
 }
 
 <style>
@@ -38,14 +51,60 @@
 
 @code {
     [Parameter] public List<BannerItem> BannerItems { get; set; } = [];
+
     private bool _initialized = false;
+    private bool _analyticsSent = false;
+    private QLAnalyticsCallProps? AnalyticsProps;
+    private string AnalyticsKey = Guid.NewGuid().ToString();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!_initialized && BannerItems?.Any() == true)
+        if (firstRender && BannerItems.Any() && !_initialized)
         {
             _initialized = true;
             await JS.InvokeVoidAsync("adBannerForScreen");
+            _ = WaitUntilBannerIsVisibleAndTriggerAnalytics();
+        }
+    }
+
+    private async Task WaitUntilBannerIsVisibleAndTriggerAnalytics()
+    {
+
+        while (!_analyticsSent)
+        {
+            foreach (var item in BannerItems)
+            {
+                var id = $"banner-{item.Code}";
+                var isVisible = await JS.InvokeAsync<bool>("isBannerActuallyVisible", id);
+                @* Logger.LogInformation("Checking visibility for banner: {Code}, visible: {Visible}", item.Code, isVisible); *@
+
+                if (isVisible)
+                {
+                    AnalyticsProps = new QLAnalyticsCallProps
+                    {
+                        Action = "StaticBannerImpression",
+                        AnalyticType = (int)AnalyticType.VIEW_BANNER_IMPRESSION,
+                        Impressions = [],
+                        Url = new Uri(NavigationManager.Uri).AbsolutePath,
+                        Lead = AnalyticsLead.SMS_REVEAL,
+                        VerticalTag = (int)VerticalTag.CONTENT,
+                        AdditionalTag = new Dictionary<string, string>
+                        {
+                            { "BannerCode", item.Code },
+                            { "Duration", item.Duration ?? "N/A" }
+                        }
+                    };
+
+                    @* Logger.LogInformation("Triggering analytics for visible banner: {Code}", item.Code); *@
+                    AnalyticsKey = Guid.NewGuid().ToString();
+                    _analyticsSent = true;
+
+                    await InvokeAsync(StateHasChanged);
+                    return;
+                }
+            }
+
+            await Task.Delay(500); // banner is visible
         }
     }
 }
