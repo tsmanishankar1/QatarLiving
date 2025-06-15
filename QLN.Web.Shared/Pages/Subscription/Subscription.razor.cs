@@ -56,7 +56,7 @@ namespace QLN.Web.Shared.Pages.Subscription
 
                 Console.WriteLine("Access Token from cookie after render: " + _authToken);
 
-                StateHasChanged(); // refresh if necessary
+                StateHasChanged(); 
             }
         }
 
@@ -101,8 +101,7 @@ namespace QLN.Web.Shared.Pages.Subscription
         Icon = "/qln-images/subscription/Vehicles.svg",
         Categories = new()
         {
-            new CategoryTab { Index = 1, Label = "A", Icon = "/qln-images/subscription/Stores.svg", CategoryId = 1 },
-            new CategoryTab { Index = 2, Label = "B", Icon = "/qln-images/subscription/Stores.svg", CategoryId = 2 }
+            new CategoryTab { Index = 1, Label = "Vehicles", Icon = "/qln-images/subscription/Stores.svg", CategoryId = 1 }
 ,
         }
     },
@@ -127,10 +126,8 @@ namespace QLN.Web.Shared.Pages.Subscription
         Icon = "/qln-images/subscription/Services.svg",
         Categories = new()
         {
-            new CategoryTab { Index = 0, Label = "Deals", Icon = "/qln-images/subscription/Deals.svg", CategoryId = 1 },
-            new CategoryTab { Index = 1, Label = "Stores", Icon = "/qln-images/subscription/Stores.svg", CategoryId = 2 },
-            new CategoryTab { Index = 2, Label = "Preloved", Icon = "/qln-images/subscription/Preloved.svg", CategoryId = 3 },
-        }
+            new CategoryTab { Index = 0, Label = "Services", Icon = "/qln-images/subscription/Deals.svg", CategoryId = 1 },
+               }
     },
          new VerticalTab
     {
@@ -140,8 +137,7 @@ namespace QLN.Web.Shared.Pages.Subscription
         Icon = "/qln-images/subscription/Jobs.svg",
         Categories = new()
         {
-            new CategoryTab { Index = 0, Label = "Yearly Subscription", Icon = "/qln-images/subscription/Deals.svg", CategoryId = 301 },
-            new CategoryTab { Index = 1, Label = "À La Carte", Icon = "/qln-images/subscription/Stores.svg", CategoryId = 302 },
+            new CategoryTab { Index = 0, Label = "Jobss", Icon = "/qln-images/subscription/Deals.svg", CategoryId = 301 },
         }
     },
          new VerticalTab
