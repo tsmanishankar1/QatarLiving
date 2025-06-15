@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.DTO_s
 {
-    public class ClassifiedItems : CommonAdBase
-    {        
+    public class ClassifiedPreloved : CommonAdBase
+    {
         public Guid Id { get; set; }
-        public string? Inclusion { get; set; }
     }
 }
