@@ -6,27 +6,30 @@ using QLN.Web.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
 using Microsoft.JSInterop;
+using Microsoft.AspNetCore.Http;
 
 namespace QLN.Web.Shared.Services
 {
     public class ApiService
     {
         private readonly HttpClient _http;
-        private readonly IJSRuntime _jsRuntime;
 
         private readonly string _baseUrl;
-        private readonly string _authToken;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public ApiService(HttpClient http, IOptions<ApiSettings> options, IJSRuntime jsRuntime)
+        private string? _authToken;
+
+        public ApiService(HttpClient http, IOptions<ApiSettings> options, IHttpContextAccessor httpContextAccessor)
         {
             _http = http;
             _baseUrl = options.Value.BaseUrl.TrimEnd('/');
-            _jsRuntime = jsRuntime;
-
+            _httpContextAccessor = httpContextAccessor;
         }
+
         private async Task<string?> GetTokenAsync()
         {
-            return await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+            _authToken = _httpContextAccessor.HttpContext?.Request.Cookies["qat"];
+            return _authToken;
         }
 
         public async Task<T?> GetAsync<T>(string endpoint)
