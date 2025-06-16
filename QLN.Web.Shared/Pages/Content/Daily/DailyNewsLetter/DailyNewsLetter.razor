@@ -7,10 +7,19 @@
         right now.
     </h3>
     <MudForm @ref="_form">
-        <input type="email" placeholder="Enter your email" class="email-input" @bind="SubscriptionModel.Email"
-            @bind:event="oninput" required />
+         <MudTextField @bind-Value="SubscriptionModel.Email"
+                  Placeholder="Enter your email"
+                  Variant="Variant.Outlined"
+                  For="@(() => SubscriptionModel.Email)"
+                  Required="true"
+                  RequiredError="Email is required"
+                  InputType="InputType.Email"
+                  Immediate="true"
+                  Margin="Margin.Dense"
+                  />
+
         <MudButton Variant="Variant.Filled" Class="reset-button" Disabled="@IsSubscribingToNewsletter"
-            OnClick="SubscribeAsync" Style="background-color: #FF7F38;color: white;text-transform: capitalize;">
+            OnClick="SubscribeAsync" Style="background-color: #FF7F38;color: white;text-transform: capitalize;margin-top: 10px;">
             @if (IsSubscribingToNewsletter)
             {
                 <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" />
@@ -119,19 +128,4 @@
         margin-bottom: 10px;
     }
 
-
-    .email-input {
-        width: 100%;
-        padding: 8px 10px;
-        font-size: 15px;
-        border: 1px solid #D0D5DD;
-        border-radius: 6px;
-        margin-bottom: 10px;
-        box-sizing: border-box;
-    }
-
-    .email-input:focus {
-        border-color: #ff7f38;
-        outline: none;
-    }
 </style>
