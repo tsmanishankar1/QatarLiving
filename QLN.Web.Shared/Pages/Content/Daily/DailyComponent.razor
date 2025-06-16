@@ -11,7 +11,7 @@
 @using QLN.Web.Shared.Pages.Content.Daily.MoreEvents
 @using QLN.Web.Shared.Components.EmptyCard
 @using QLN.Web.Shared.Pages.Content.Events
-@using QLN.Web.Shared.Components.BannerSwiper
+@using QLN.Web.Shared.Components.BannerHero
 @using QLN.Web.Shared.Components.BannerTakeOver
 @using QLN.Web.Shared.Pages.Classifieds.Landing.Components.Skeletons.FeaturedItemSkeleton
 @using QLN.Common.Infrastructure.DTO_s;
@@ -29,7 +29,7 @@
             }
             else if (DailyHeroBanners?.Any() == true)
             {
-                <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+                    <BannerHero BannerItems="DailyHeroBanners" Loading="isLoadingBanners"/>
             }
             else
             {
@@ -115,7 +115,7 @@
             }
             else if (DailyTakeOver1Banners?.Any() == true)
             {
-                <BannerTakeOver BannerItems="DailyTakeOver1Banners" Loading="isLoadingBanners" />
+                 <BannerTakeOver BannerItems="DailyTakeOver1Banners" Loading="isLoadingBanners" />
             }
             else
             {
@@ -146,7 +146,7 @@
             }
             else if (DailyTakeOver2Banners?.Any() == true)
             {
-                <BannerTakeOver BannerItems="DailyTakeOver2Banners" Loading="isLoadingBanners" />
+                 <BannerTakeOver BannerItems="DailyTakeOver2Banners" Loading="isLoadingBanners" />
             }
             else
             {

@@ -16,7 +16,7 @@ namespace QLN.Backend.API.Service.AnalyticsService
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<ExternalAnalyticsService> _logger;
-        private readonly string SERVICE_APP_ID = ConstantValues.SearchServiceApp;
+        private readonly string SERVICE_APP_ID = ConstantValues.ServiceAppIds.SearchServiceApp;
 
         public ExternalAnalyticsService(
             DaprClient dapr,

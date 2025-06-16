@@ -6,6 +6,7 @@ using Azure.Search.Documents.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IRepository.ISearchServiceRepository;
 using QLN.SearchService.IndexModels;
 
@@ -23,7 +24,7 @@ namespace QLN.SearchService.Repository
             var settings = opts.Value;
             _searchClient = new SearchClient(
                 new Uri(settings.Endpoint),
-                settings.Indexes[Constants.Constants.analytics],
+                settings.Indexes[ConstantValues.Analytics],
                 new AzureKeyCredential(settings.ApiKey)
             );
             _logger = logger;

@@ -72,8 +72,8 @@ namespace QLN.SearchService.Service
                     response.ServicesItems = services.ToList();
                     break;
 
-                case "backofficemaster":
-                    var masters = await _repo.SearchAsync<BackofficemasterIndex>(
+                case "landingbackoffice":
+                    var masters = await _repo.SearchAsync<LandingBackOfficeIndex>(
                         vertical, opts, req.Text);
                     response.MasterItems = masters.ToList();
                     break;
@@ -88,6 +88,7 @@ namespace QLN.SearchService.Service
 
         public async Task<string> UploadAsync(CommonIndexRequest request)
         {
+            Console.WriteLine("Uploaded hitted");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -109,11 +110,11 @@ namespace QLN.SearchService.Service
                         svc.Id, vertical);
                     return await _repo.UploadAsync<ServicesIndex>(vertical, svc);
 
-                case "backofficemaster":
+                case "landingbackoffice":
                     var master = request.MasterItem
                            ?? throw new ArgumentException("Backoffice item.", nameof(request.MasterItem));
-                    _logger.LogInformation("Uploading ClassifiedIndex Id={Id} to '{Vertical}'", master.Id, vertical);
-                    return await _repo.UploadAsync<BackofficemasterIndex>(vertical, master);
+                    _logger.LogInformation("Uploading LandingBackoffice Id={Id} to '{Vertical}'", master.Id, vertical);
+                    return await _repo.UploadAsync<LandingBackOfficeIndex>(vertical, master);
             }
             throw new ArgumentException($"Unsupported vertical: '{vertical}'", nameof(request.VerticalName));
         }
