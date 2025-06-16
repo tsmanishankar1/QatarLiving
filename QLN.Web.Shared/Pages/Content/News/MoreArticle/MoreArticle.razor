@@ -29,9 +29,9 @@
         {
             <div class="article-entry">
                 <div class="article-content">
-                    <a class="more-article-title" href="@($"/content/article/details/{article.Slug}?category={selectedMainTab}&subcategory={selectedTab}")">
+                    <MudLink class="more-article-title" href="@($"/content/article/details/{article.Slug}?category={selectedMainTab}&subcategory={selectedTab}")">
                         @article.Title
-                    </a>
+                    </MudLink>
                 </div>
                 @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
                 {

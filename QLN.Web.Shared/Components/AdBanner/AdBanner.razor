@@ -6,10 +6,10 @@
 {
     @foreach (var item in BannerItems)
     {
-        <a href="@item.Link" target="_blank" rel="noopener noreferrer">
+        <MudLink href="@item.Link" target="_blank" rel="noopener noreferrer">
             <img class="ad-banner-image add-image" src="@item.ImageDesktop" data-mobile="@item.ImageMobile"
                 data-desktop="@item.ImageDesktop" alt="@item.Alt" />
-        </a>
+        </MudLink>
     }
 }
 

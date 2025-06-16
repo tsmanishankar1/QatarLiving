@@ -9,11 +9,11 @@
             @for (int i = 0; i < 2; i++)
             {
                 <div class="swiper-slide">
-                    <a href="@BannerItems[0].Link" target="_blank" rel="noopener noreferrer">
+                    <MudLink href="@BannerItems[0].Link" target="_blank" rel="noopener noreferrer">
                         <img id="banner-img-0-@i" class="take-over-banner-image" src="@BannerItems[0].ImageDesktop"
                             data-mobile="@BannerItems[0].ImageMobile" data-desktop="@BannerItems[0].ImageDesktop"
                             alt="Banner" />
-                    </a>
+                    </MudLink>
                 </div>
             }
         }
@@ -23,10 +23,10 @@
             @foreach (var banner in BannerItems)
             {
                 <div class="swiper-slide">
-                    <a href="@banner.Link" target="_blank" rel="noopener noreferrer">
+                    <MudLink href="@banner.Link" target="_blank" rel="noopener noreferrer">
                         <img id="banner-img-@index" class="take-over-banner-image" src="@banner.ImageDesktop"
                             data-mobile="@banner.ImageMobile" data-desktop="@banner.ImageDesktop" alt="Banner" />
-                    </a>
+                    </MudLink>
                 </div>
                 index++;
             }
