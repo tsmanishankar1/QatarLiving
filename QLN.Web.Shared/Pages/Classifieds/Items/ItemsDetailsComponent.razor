@@ -2,13 +2,12 @@
 @page "/qln/classifieds/preloved/details"
 @page "/qln/classifieds/collectibles/details"
 
-@inject ApiService Api
 @using QLN.Web.Shared.Services
 @using System.Text.Json
 @using Microsoft.AspNetCore.WebUtilities
 @using QLN.Web.Shared.Models
-@using QLN.Web.Shared.Pages.Classifieds.Components.Items.Components.IteamdetailsSection
-@using QLN.Web.Shared.Pages.Classifieds.Components.Items.Components.Skeletons.IteamdetailsSkeletons
+@using QLN.Web.Shared.Pages.Classifieds.Items.Components.IteamdetailsSection
+@using QLN.Web.Shared.Pages.Classifieds.Items.Components.Skeletons.IteamdetailsSkeletons
 @using QLN.Web.Shared.Components.Classifieds.PromotedItemCards
 @inject NavigationManager NavigationManager
 @layout ClassifiedsLayout
@@ -85,26 +84,7 @@
 
     private async Task FetchItemDetailsAsync(string id)
     {
-        try
-        {
-            isLoading = true;
-            errorMessage = null;
-
-            Item = await Api.GetAsync<PromotedItem>($"api/classified/{id}");
-            if (Item == null)
-            {
-                errorMessage = "Item not found.";
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error fetching item: {ex.Message}");
-            errorMessage = "An error occurred while loading the item.";
-        }
-        finally
-        {
-            isLoading = false;
-        }
+     
     }
 
     private List<PromotedItem> items = new()

@@ -9,8 +9,12 @@
     <!-- Parent container for arrows + swiper -->
     <div class="swiper-container">
         <!-- Arrow buttons OUTSIDE .swiper -->
-        <div class="swiper-seasonal-button-prev custom-arrow-button left"></div>
-        <div class="swiper-seasonal-button-next custom-arrow-button right"></div>
+        <div class="swiper-seasonal-button-prev custom-arrow-button seasonalleft">
+            <MudIcon Icon="@Icons.Material.Filled.ChevronLeft" />
+        </div>
+        <div class="swiper-seasonal-button-next custom-arrow-button seasonalright">
+            <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+        </div>
 
         <!-- Swiper slider -->
         <div class="swiper swiper-seasonal">
@@ -28,14 +32,14 @@
 
 @code {
     private List<string> seasonalImages = new()
-{
-"/qln-images/seasonal_image1.svg",
-"/qln-images/seasonal_image2.svg",
-"/qln-images/seasonal_image3.svg",
-"/qln-images/seasonal_image1.svg",
-"/qln-images/seasonal_image2.svg",
-"/qln-images/seasonal_image3.svg"
-};
+        {
+        "/qln-images/seasonal_image1.svg",
+        "/qln-images/seasonal_image2.svg",
+        "/qln-images/seasonal_image3.svg",
+        "/qln-images/seasonal_image1.svg",
+        "/qln-images/seasonal_image2.svg",
+        "/qln-images/seasonal_image3.svg"
+        };
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -85,11 +89,11 @@
         border-radius: 10px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         width: 40px;
-        height: 80%;
+        height: 90%;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #000;
+        color: #00426D;
         z-index: 10;
         cursor: pointer;
         position: absolute;
@@ -105,32 +109,15 @@
     }
 
 
-    .left {
+    .seasonalleft {
         left: 0;
         /* Place outside left edge */
     }
 
-    .right {
+    .seasonalright {
         right: 0;
         /* Place outside right edge */
     }
 
-    @@media (max-width: 768px) {
-        .swiper-container {
-            position: relative;
-            width: 100%;
-            padding: 0 10px;
-            /* Creates space for arrows */
-        }
-
-        .swiper {
-            width: 100%;
-            padding: 2rem 1rem;
-        }
-
-        .seasonal-card {
-            width: 238px;
-        }
-
-    }
+   
 </style>

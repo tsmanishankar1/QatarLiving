@@ -203,22 +203,35 @@
         };
     </script>
     <script>
+        let seasonalSwiperInstance;
         window.initSeasonalSwiper = () => {
-            new Swiper('.swiper-seasonal', {
+            if (seasonalSwiperInstance) {
+                seasonalSwiperInstance.destroy(true, true);
+            }
+
+            const swiperEl = document.querySelector('.swiper-seasonal');
+            if (!swiperEl) {
+                console.warn("Seasonal Swiper element not found");
+                return;
+            }
+
+            seasonalSwiperInstance = new Swiper(swiperEl, {
                 slidesPerView: 'auto',
-                spaceBetween: 16,
+                spaceBetween: 10,
                 navigation: {
                     nextEl: '.swiper-seasonal-button-next',
                     prevEl: '.swiper-seasonal-button-prev'
                 },
                 breakpoints: {
-                    640: { slidesPerView: 1 },
-                    768: { slidesPerView: 2 },
-                    1024: { slidesPerView: 3 }
+                    480: { slidesPerView: 1, spaceBetween: 12 },
+                    640: { slidesPerView: 1.5, spaceBetween: 12 },
+                    768: { slidesPerView: 2, spaceBetween: 14 },
+                    860: { slidesPerView: 2.5, spaceBetween: 16 },
+                    1024: { slidesPerView: 3, spaceBetween: 18 },
+                    1200: { slidesPerView: 3, spaceBetween: 18 }
                 }
             });
         };
-      
         let featuredSwiperInstance;
 
         function initFeaturedSwiper() {
