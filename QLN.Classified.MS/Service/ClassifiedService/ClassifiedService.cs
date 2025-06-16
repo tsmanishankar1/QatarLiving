@@ -1683,7 +1683,7 @@ namespace QLN.Classified.MS.Service
         }
 
         // itemsAd post
-        public async Task<ItemsAdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
@@ -1697,7 +1697,8 @@ namespace QLN.Classified.MS.Service
             if (string.IsNullOrWhiteSpace(dto.CertificateFileName))
                 throw new ArgumentException("Certificate URL must be provided.");
 
-            var adId = Guid.NewGuid();
+            var adId = dto.Id != Guid.Empty ? dto.Id : throw new ArgumentException("Id must be provided");
+
             var key = $"ad-{adId}";
 
             try
@@ -1721,13 +1722,110 @@ namespace QLN.Classified.MS.Service
                     dto.Price,
                     dto.Condition,
                     dto.Color,
+                    dto.Inclusion,
                     dto.Capacity,
                     dto.Processor,
                     dto.Coverage,
                     dto.Ram,
                     dto.Resolution,
                     dto.BatteryPercentage,
-                    dto.SizeType,
+                    dto.Size,
+                    dto.SizeValue,
+                    dto.Gender,
+                    CertificateUrl = dto.CertificateFileName,
+                    ImageUrls = dto.AdImageFileNames,
+                    dto.PhoneNumber,
+                    dto.WhatsAppNumber,
+                    dto.Zone,
+                    dto.StreetNumber,
+                    dto.BuildingNumber,
+                    dto.Latitude,
+                    dto.Longitude,
+                    dto.UserId,                    
+                    CreatedAt = DateTime.UtcNow,
+                    Status = AdStatus.Draft
+                };
+                
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+                index.Add(key);
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
+                await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, index);
+
+                return new AdCreatedResponseDto
+                {
+                    AdId = adId,
+                    Title = dto.Title,
+                    CreatedAt = DateTime.UtcNow,
+                    Message = "Items Ad created successfully"
+                };
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
+            {
+                _logger.LogWarning(ex, "Duplicate ad insert attempt.");
+                throw new InvalidOperationException("Ad already exists. Conflict occurred during Items ad creation.", ex);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation failed in CreateClassifiedItemsAd");
+                throw;
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Operation error while creating classified Items ad.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Unhandled error occurred during ad creation.");
+                throw new InvalidOperationException("An unexpected error occurred while creating the Items ad. Please try again later.", ex);
+            }
+        }
+
+        public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+
+            if (dto.UserId == Guid.Empty) throw new ArgumentException("UserId is required.");
+
+            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+
+            if (dto.AdImageFileNames == null || dto.AdImageFileNames.Count == 0)
+                throw new ArgumentException("Image URLs must be provided.");
+
+            if (string.IsNullOrWhiteSpace(dto.CertificateFileName))
+                throw new ArgumentException("Certificate URL must be provided.");
+
+            var adId = dto.Id != Guid.Empty ? dto.Id : throw new ArgumentException("Id must be provided");
+
+            var key = $"ad-{adId}";
+            try
+            {
+                var existing = await _dapr.GetStateAsync<object>(UnifiedStore, key);
+                if (existing != null)
+                {
+                    throw new InvalidOperationException($"Ad with key {key} already exists.");
+                }
+                var adItem = new
+                {
+                    Id = adId,
+                    dto.SubVertical,
+                    dto.Title,
+                    dto.Description,
+                    dto.Category,
+                    dto.SubCategory,
+                    dto.Brand,
+                    dto.Model,
+                    dto.Price,
+                    dto.Condition,
+                    dto.Color,                    
+                    dto.Capacity,
+                    dto.Processor,
+                    dto.Coverage,
+                    dto.Ram,
+                    dto.Resolution,
+                    dto.BatteryPercentage,
+                    dto.Size,
                     dto.SizeValue,
                     dto.Gender,
                     CertificateUrl = dto.CertificateFileName,
@@ -1743,42 +1841,309 @@ namespace QLN.Classified.MS.Service
                     CreatedAt = DateTime.UtcNow,
                     Status = AdStatus.Draft
                 };
-                
+
                 var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
                 index.Add(key);
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
                 await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, index);
 
-                return new ItemsAdCreatedResponseDto
+                return new AdCreatedResponseDto
                 {
                     AdId = adId,
                     Title = dto.Title,
-                    Description = dto.Description,
-                    CertificateUrl = dto.CertificateFileName,
-                    ImageUrls = dto.AdImageFileNames,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    Message = "Preloved Ad created successfully"
                 };
+
             }
             catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
             {
                 _logger.LogWarning(ex, "Duplicate ad insert attempt.");
-                throw new InvalidOperationException("Ad already exists. Conflict occurred during ad creation.", ex);
+                throw new InvalidOperationException("Ad already exists. Conflict occurred during Preloved ad creation.", ex);
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Validation failed in CreateClassifiedItemsAd");
+                _logger.LogWarning(ex, "Validation failed in CreateClassifiedPrelovedAd");
                 throw;
             }
             catch (InvalidOperationException ex)
             {
-                _logger.LogError(ex, "Operation error while creating classified ad.");
+                _logger.LogError(ex, "Operation error while creating classified Preloved ad.");
                 throw;
             }
             catch (Exception ex)
             {
                 _logger.LogCritical(ex, "Unhandled error occurred during ad creation.");
-                throw new InvalidOperationException("An unexpected error occurred while creating the ad. Please try again later.", ex);
+                throw new InvalidOperationException("An unexpected error occurred while creating the Preloved ad. Please try again later.", ex);
+            }        
+        }
+
+        public async Task<AdCreatedResponseDto> CreateClassifiedDealsAd(ClassifiedDeals dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+
+            if (dto.UserId == Guid.Empty) throw new ArgumentException("UserId is required.");
+
+            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+
+            if (dto.AdImageFileNames == null || dto.AdImageFileNames.Count == 0)
+                throw new ArgumentException("Image URLs must be provided.");
+
+            if (string.IsNullOrWhiteSpace(dto.FlyerName))
+                throw new ArgumentException("Flyer URL must be provided.");
+
+            var adId = dto.Id != Guid.Empty ? dto.Id : throw new ArgumentException("Id must be provided");
+
+            var key = $"ad-{adId}";
+            try
+            {
+                var existing = await _dapr.GetStateAsync<object>(UnifiedStore, key);
+                if (existing != null)
+                {
+                    throw new InvalidOperationException($"Ad with key {key} already exists.");
+                }
+                var adItem = new
+                {
+                    Id = adId,
+                    dto.SubVertical,
+                    dto.Title,
+                    FlyerFile = dto.FlyerName,
+                    ImageUrl = dto.AdImageFileNames,
+                    dto.XMLLink,
+                    dto.ExpiryDate,
+                    dto.PhoneNumber,
+                    dto.WhatsAppNumber,
+                    dto.Location,
+                    dto.UserId,
+                    CreatedAt = DateTime.UtcNow,
+                    Status = AdStatus.Draft
+                };
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+                index.Add(key);
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
+                await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, index);
+
+
+                return new AdCreatedResponseDto
+                {
+                    AdId = adId,
+                    Title = dto.Title,
+                    CreatedAt = DateTime.UtcNow,
+                    Message = "Deals Ad created successfully"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Unhandled error occurred during ad creation.");
+                throw new InvalidOperationException("An unexpected error occurred while creating the Deals ad. Please try again later.", ex);
+            }
+        }
+
+        public async Task<DeleteAdResponseDto> DeleteClassifiedItemsAd(Guid adId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var key = $"ad-{adId}";
+
+                var adObject = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
+
+                if (adObject.ValueKind != JsonValueKind.Object)
+                    throw new KeyNotFoundException($"Ad with ID {adId} not found.");
+
+                _logger.LogInformation("Fetched ad object: {Json}", adObject.ToString());
+
+                var blobNames = new List<string>();
+
+                if (adObject.TryGetProperty("certificateUrl", out var certProp) && certProp.ValueKind == JsonValueKind.String)
+                {
+                    var certUrl = certProp.GetString();
+                    var certBlobName = ExtractBlobName(certUrl);
+                    if (!string.IsNullOrEmpty(certBlobName))
+                        blobNames.Add(certBlobName);
+                }
+
+                if (adObject.TryGetProperty("imageUrls", out var imagesProp) && imagesProp.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var img in imagesProp.EnumerateArray())
+                    {
+                        var imgUrl = img.GetString();
+                        var imgBlobName = ExtractBlobName(imgUrl);
+                        if (!string.IsNullOrEmpty(imgBlobName))
+                            blobNames.Add(imgBlobName);
+                    }
+                }
+
+                _logger.LogInformation("Extracted blob names: {Blobs}", string.Join(", ", blobNames));
+
+                await _dapr.DeleteStateAsync(UnifiedStore, key, cancellationToken: cancellationToken);
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey, cancellationToken: cancellationToken) ?? new();
+                if (index.Contains(key))
+                {
+                    index.Remove(key);
+                    await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, index, cancellationToken: cancellationToken);
+                }
+
+                return new DeleteAdResponseDto
+                {
+                    Message = "Ad deleted successfully",
+                    DeletedImages = blobNames
+                };
+            }
+            catch (JsonException jex)
+            {
+                _logger.LogError(jex, "JSON parsing failed for ad ID: {AdId}", adId);
+                throw new InvalidOperationException("Failed to parse ad JSON. Invalid format.", jex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while deleting classified items ad with ID: {AdId}", adId);
+                throw new InvalidOperationException("An unexpected error occurred while deleting the classified items ad.", ex);
+            }
+        }
+
+        public async Task<DeleteAdResponseDto> DeleteClassifiedPrelovedAd(Guid adId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var key = $"ad-{adId}";
+
+                var adObject = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
+
+                if (adObject.ValueKind != JsonValueKind.Object)
+                    throw new KeyNotFoundException($"Preloved Ad with ID {adId} not found.");
+
+                _logger.LogInformation("Fetched Preloved ad object: {Json}", adObject.ToString());
+
+                var blobNames = new List<string>();
+
+                if (adObject.TryGetProperty("certificateUrl", out var certProp) && certProp.ValueKind == JsonValueKind.String)
+                {
+                    var certUrl = certProp.GetString();
+                    var certBlobName = ExtractBlobName(certUrl);
+                    if (!string.IsNullOrEmpty(certBlobName))
+                        blobNames.Add(certBlobName);
+                }
+
+                if (adObject.TryGetProperty("imageUrls", out var imagesProp) && imagesProp.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var img in imagesProp.EnumerateArray())
+                    {
+                        var imgUrl = img.GetString();
+                        var imgBlobName = ExtractBlobName(imgUrl);
+                        if (!string.IsNullOrEmpty(imgBlobName))
+                            blobNames.Add(imgBlobName);
+                    }
+                }
+
+                _logger.LogInformation("Extracted blob names for Preloved ad: {Blobs}", string.Join(", ", blobNames));
+
+                await _dapr.DeleteStateAsync(UnifiedStore, key, cancellationToken: cancellationToken);
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey, cancellationToken: cancellationToken) ?? new();
+                if (index.Contains(key))
+                {
+                    index.Remove(key);
+                    await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, index, cancellationToken: cancellationToken);
+                }
+
+                return new DeleteAdResponseDto
+                {
+                    Message = "Preloved Ad deleted successfully",
+                    DeletedImages = blobNames
+                };
+
+            }
+            catch (JsonException jex)
+            {
+                _logger.LogError(jex, "JSON parsing failed for Preloved ad ID: {AdId}", adId);
+                throw new InvalidOperationException("Failed to parse Preloved ad JSON. Invalid format.", jex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while deleting classified preloved ad with ID: {AdId}", adId);
+                throw new InvalidOperationException("An unexpected error occurred while deleting the classified preloved ad.", ex);
+            }
+        }
+
+        public async Task<DeleteAdResponseDto> DeleteClassifiedDealsAd(Guid adId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var key = $"ad-{adId}";
+
+                var adObject = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
+
+                if (adObject.ValueKind != JsonValueKind.Object)
+                    throw new KeyNotFoundException($"Ad with ID {adId} not found.");
+
+                _logger.LogInformation("Fetched deals ad object: {Json}", adObject.ToString());
+
+                var blobNames = new List<string>();
+
+                if (adObject.TryGetProperty("flyerFile", out var flyerProp) && flyerProp.ValueKind == JsonValueKind.String)
+                {
+                    var flyerUrl = flyerProp.GetString();
+                    var flyerBlobName = ExtractBlobName(flyerUrl);
+                    if (!string.IsNullOrEmpty(flyerBlobName))
+                        blobNames.Add(flyerBlobName);
+                }
+
+                if (adObject.TryGetProperty("ImageUrl", out var imageUrlsProp) && imageUrlsProp.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var img in imageUrlsProp.EnumerateArray())
+                    {
+                        var imgUrl = img.GetString();
+                        var imgBlobName = ExtractBlobName(imgUrl);
+                        if (!string.IsNullOrEmpty(imgBlobName))
+                            blobNames.Add(imgBlobName);
+                    }
+                }
+                _logger.LogInformation("Extracted blob names for deals ad: {Blobs}", string.Join(", ", blobNames));
+
+                await _dapr.DeleteStateAsync(UnifiedStore, key, cancellationToken: cancellationToken);
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey, cancellationToken: cancellationToken) ?? new();
+
+                if (index.Contains(key))
+                {
+                    index.Remove(key);
+                    await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, index, cancellationToken: cancellationToken);
+                }
+
+                return new DeleteAdResponseDto
+                {
+                    Message = "Deals Ad deleted successfully",
+                    DeletedImages = blobNames
+                };
+            }
+            catch (JsonException jex)
+            {
+                _logger.LogError(jex, "JSON parsing failed for Deals ad ID: {AdId}", adId);
+                throw new InvalidOperationException("Failed to parse Deals ad JSON. Invalid format.", jex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while deleting classified deals ad with ID: {AdId}", adId);
+                throw new InvalidOperationException("An unexpected error occurred while deleting the classified deals ad.", ex);
+            }
+        }
+
+        private static string ExtractBlobName(string? url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+                return null;
+
+            try
+            {
+                return new Uri(url).Segments.LastOrDefault()?.Trim('/');
+            }
+            catch
+            {
+                return null;
             }
         }
 

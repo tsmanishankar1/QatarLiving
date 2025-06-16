@@ -1,6 +1,6 @@
 @inherits MoreArticleBase
 @using QLN.Web.Shared.Components.EmptyCard
-<div class="more-articles side-spacing" style="padding-top: 20px;">
+<div class="more-articles article-side-spacing" style="padding-top: 20px;">
     <h3 class="section-heading" style="color: var(--color-text-heading);">
         <span class="accent-bar"></span>More Articles
     </h3>
@@ -29,7 +29,7 @@
         {
             <div class="article-entry">
                 <div class="article-content">
-                    <a class="article-title" href="@($"/content/article/details/{article.Slug}?category={selectedMainTab}&subcategory={selectedTab}")">
+                    <a class="more-article-title" href="@($"/content/article/details/{article.Slug}?category={selectedMainTab}&subcategory={selectedTab}")">
                         @article.Title
                     </a>
                 </div>
@@ -144,7 +144,7 @@
     }
 
     
-    .article-title {
+    .more-article-title {
         display: -webkit-box;
         -webkit-line-clamp: 3;
         /* Number of lines to show */
@@ -161,9 +161,9 @@
         /* 3 lines x line-height */
     }
 
-    .article-title:hover {
+    .more-article-title:hover {
         text-decoration: underline;
-        color: var(--color-primary);
+        color: var(--color-primary);          
     }
 
     .article-image {
@@ -188,10 +188,9 @@
 }
 
     @@media (max-width: 768px) {
-        .side-spacing {
-            padding-right: 16px;
-            padding-left: 16px;
-        }
+         .article-side-spacing {
+            padding-left: 16px; 
+        } 
     }
 
     @@media (max-width: 1024px) {
@@ -202,9 +201,33 @@
             object-fit: cover;
         }
 
-        .side-spacing {
-            @* padding-right: 16px;
-            padding-left: 16px; *@
+        .article-side-spacing {
+             padding-right: 16px;
+            padding-left: 16px; 
+    }
+    @@media (max-width: 320px) {
+         .article-side-spacing {
+            padding-left: 10px;
+        }
+        }
+    @@media (max-width: 375px) {
+        .article-side-spacing {
+            padding-left: 10px;
+        } 
+    }
+    @@media (max-width: 400px) {
+        .more-article-title {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        font-size: 14px;
+        text-overflow: ellipsis;
+        white-space: normal;
+        font-weight: 600;
+        color: var(--color-text-heading);
+        line-height: 1.4;
+        max-height: calc(1.4em * 3);
         }
     }
 </style>

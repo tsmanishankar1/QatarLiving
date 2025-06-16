@@ -17,6 +17,7 @@ using QLN.Web.Shared.MockServices;
 using QLN.Web.Shared.Contracts;
 using GoogleAnalytics.Blazor;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.AspNetCore.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,6 +72,8 @@ builder.Services.AddRazorComponents()
     {
         options.ClientTimeoutInterval = TimeSpan.FromSeconds(60);
         options.HandshakeTimeout = TimeSpan.FromSeconds(30);
+        options.MaximumReceiveMessageSize = 1024 * 1024;//To Increase the MaximumReceiveMessageSize via HubOptions 1MB.
+
     });
 
 builder.Services.AddMudServices();
@@ -210,6 +213,10 @@ builder.Services.AddHttpClient<INewsService, NewsService>(client =>
     client.BaseAddress = new Uri(contentVerticalAPIUrl);
 });
 builder.Services.AddHttpClient<IEventService, EventService>(client =>
+{
+    client.BaseAddress = new Uri(contentVerticalAPIUrl);
+});
+builder.Services.AddHttpClient<IClassifiedsServices, ClassifiedsServices>(client =>
 {
     client.BaseAddress = new Uri(contentVerticalAPIUrl);
 });
