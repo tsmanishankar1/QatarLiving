@@ -14,7 +14,7 @@
         <!-- Header -->
         <div class="mobile-menu-header">
             <img src="/qln-images/header/logo_mobile.svg" alt="Logo" class="logo" />
-            <MudIconButton Icon="@Icons.Material.Filled.Close" Oncl="() => OnClose.InvokeAsync()" class="close-btn" />
+            <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="() => OnClose.InvokeAsync()" class="close-btn" />
         </div>
         @if (IsLoggedIn)
         {
@@ -307,6 +307,7 @@
         border-radius: 5px;
         font-weight: 600;
         font-size: 14px;
+        text-transform: capitalize;
     }
 
     .login-btn {
@@ -318,6 +319,7 @@
         border-radius: 5px;
         font-weight: 600;
         font-size: 14px;
+        text-transform: capitalize;
     }
 
     .post-btn {
@@ -329,6 +331,7 @@
         border-radius: 5px;
         font-weight: 600;
         font-size: 14px;
+        text-transform: capitalize;
     }
 
 
