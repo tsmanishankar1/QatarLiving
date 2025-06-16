@@ -134,7 +134,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
         public static RouteGroupBuilder MapContentBannerEndpoints(this RouteGroupBuilder group)
         {
-            // ✅ POST - Create Banner
+            //  POST - Create Banner
             group.MapPost("/content/banner", async Task<Results<Ok<BannerResponse>, BadRequest<ProblemDetails>, ProblemHttpResult>>
             (
                 [FromBody] BannerCreateRequest dto,
@@ -174,7 +174,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            // ✅ GET by Category
+            // GET by Category
             group.MapGet("/content/banner/{category}", async Task<Results<Ok<List<BannerItem>>, ProblemHttpResult>>
             (
                 string category,
@@ -202,7 +202,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .Produces<List<BannerItem>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            // ✅ PUT - Update Banner
+            //  PUT - Update Banner
             group.MapPut("/content/banner/update/{category}/{code}", async Task<Results<Ok<BannerResponse>, BadRequest<ProblemDetails>, ProblemHttpResult>>
             (
                 string category,
@@ -239,7 +239,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            // ✅ DELETE - Remove Banner
+            //  DELETE - Remove Banner
             group.MapDelete("/content/banner/delete-state/{category}/{code}", async Task<Results<Ok, NotFound, ProblemHttpResult>>
               (
                   string category,
@@ -268,7 +268,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
               .WithSummary("Internal API to delete banner directly from Dapr state store")
               .WithDescription("Removes a banner from the Dapr state store without external processing.");
 
-            // ✅ GET ALL - Grouped by QueueName
+            //  GET ALL - Grouped by QueueName
             group.MapGet("/content/banner/all", async Task<Results<Ok<Dictionary<string, BaseQueueResponse<BannerItem>>>, ProblemHttpResult>>
             (
                 [FromServices] IV2contentBannerService bannerService,
