@@ -225,6 +225,8 @@ namespace QLN.Common.DTO_s
 
         public class ImageInfo
         {
+            public string AdImageFileNames { get; set; }
+
             [SearchableField(IsFilterable = true)]
             public string Url { get; set; } = string.Empty;
 

@@ -14,10 +14,12 @@ namespace QLN.Common.DTO_s
         public string? Description { get; set; }
         public string? Category { get; set; }
         public string? SubCategory { get; set; }
+        public string? L2Category { get; set; }
         public string? Section { get; set; }
         public string? Brand { get; set; }
         public string? Model { get; set; }
         public decimal? Price { get; set; }
+        public string? PriceType { get; set; }
         public string? Condition { get; set; }
         public string? Color { get; set; }
         public string? Capacity { get; set; }
@@ -38,13 +40,15 @@ namespace QLN.Common.DTO_s
         public string? ContactEmail { get; set; }
         public DateTime? ModifiedDate { get; set; }
         public DateTime? ExpiryDate { get; set; }
-        public int? CountryOfOrigin { get; set; }
-        public int? Language { get; set; }
+        public string? CountryOfOrigin { get; set; }
+        public string? Language { get; set; }
         public string? Zone { get; set; }
         public string? StreetNumber { get; set; }
         public string? BuildingNumber { get; set; }
         public double? Latitude { get; set; }
-        public double? Longitude { get; set; }           
+        public double? Longitude { get; set; }
+        public List<string>? Location { get; set; }
+        public bool? TearmsAndCondition { get; set; }
         public Guid UserId { get; set; }
         [DefaultValue(false)]
         public bool? IsFeatured { get; set; } = false;

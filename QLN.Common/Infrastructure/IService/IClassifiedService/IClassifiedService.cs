@@ -52,10 +52,16 @@ namespace QLN.Common.Infrastructure.IService
         Task<bool> DeleteCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default);
         Task<AdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default);
         Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default);
+        Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(ClassifiedCollectibles dto, CancellationToken cancellationToken = default);
         Task<CollectiblesResponse> GetCollectibles(string userId, CancellationToken cancellationToken = default);
         Task<AdCreatedResponseDto> CreateClassifiedDealsAd(ClassifiedDeals dto, CancellationToken cancellationToken = default);
         Task<DeleteAdResponseDto> DeleteClassifiedItemsAd(Guid adId, CancellationToken cancellationToken = default);
         Task<DeleteAdResponseDto> DeleteClassifiedPrelovedAd(Guid adId, CancellationToken cancellationToken = default);
+        Task<DeleteAdResponseDto> DeleteClassifiedCollectiblesAd(Guid adId, CancellationToken cancellationToken = default);
         Task<DeleteAdResponseDto> DeleteClassifiedDealsAd(Guid adId, CancellationToken cancellationToken = default);
+        Task<ItemAdListDto> GetUserItemsAd(Guid userId, CancellationToken cancellationToken = default);
+        Task<PrelovedAdListDto> GetUserPrelovedAds(Guid userId, CancellationToken cancellationToken = default);
+        Task<DealsAdListDto> GetUserDealsAds(Guid userId, CancellationToken cancellationToken = default);
+        Task<CollectiblesAdListDto> GetUserCollectiblesAds(Guid userId, CancellationToken cancellationToken = default);
     }
 }
