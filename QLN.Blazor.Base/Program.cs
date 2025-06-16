@@ -18,6 +18,7 @@ using QLN.Web.Shared.Contracts;
 using GoogleAnalytics.Blazor;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.SignalR;
+using QLN.Web.Shared.Pages.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
