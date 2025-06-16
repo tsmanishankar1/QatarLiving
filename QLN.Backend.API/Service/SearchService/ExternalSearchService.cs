@@ -14,7 +14,7 @@ namespace QLN.Backend.API.Service.SearchService
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<ExternalSearchService> _logger;
-        private readonly string SERVICE_APP_ID = ConstantValues.SearchServiceApp;
+        private readonly string SERVICE_APP_ID = ConstantValues.ServiceAppIds.SearchServiceApp;
 
         public ExternalSearchService(
             DaprClient dapr,
@@ -33,10 +33,10 @@ namespace QLN.Backend.API.Service.SearchService
                 throw new ArgumentException("Vertical is required.", nameof(vertical));
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
-
+            
             try
             {
-                var methodName = $"api/{vertical}/search";
+                var methodName = $"/api/{vertical}/search";
                 var commonResp = await _dapr.InvokeMethodAsync<CommonSearchRequest, CommonSearchResponse>(
                     HttpMethod.Post,
                     appId: SERVICE_APP_ID,
@@ -74,7 +74,7 @@ namespace QLN.Backend.API.Service.SearchService
             try
             {
                 var vertical = request.VerticalName;
-                var methodName = $"api/{vertical}/upload";
+                var methodName = $"/api/{vertical}/upload";
                 var result = await _dapr.InvokeMethodAsync<CommonIndexRequest, string>(
                     HttpMethod.Post,
                     appId: SERVICE_APP_ID,
@@ -113,7 +113,7 @@ namespace QLN.Backend.API.Service.SearchService
 
             try
             {
-                var methodName = $"api/{vertical}/{key}";
+                var methodName = $"/api/{vertical}/{key}";
                 var doc = await _dapr.InvokeMethodAsync<T?>(
                     HttpMethod.Get,
                     appId: SERVICE_APP_ID,
@@ -151,7 +151,7 @@ namespace QLN.Backend.API.Service.SearchService
 
             try
             {
-                var methodName = $"api/{vertical}/{key}";
+                var methodName = $"/api/{vertical}/{key}";
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Delete,
                     appId: SERVICE_APP_ID,

@@ -3961,8 +3961,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     Top = 100,
                     Filters = new Dictionary<string, object>
                    {
-                        { "IsFeaturedItem",   true },
-                        { "SubVertical", "Items" }
+                        { "IsFeatured",   true },
+                        { "SubVertical", "Item" }
                     }
                 };
 

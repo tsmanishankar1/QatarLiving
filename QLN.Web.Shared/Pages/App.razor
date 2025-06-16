@@ -410,6 +410,13 @@
                 });
             };
         </script>
+        <script>
+            document.querySelectorAll('.mud-popover').forEach(pop => {
+            if (pop.innerHTML.includes('share-icon')) {
+                pop.classList.add('share-popover');
+            }
+            });
+        </script>
 
     <GBAnchor />
     <script>
