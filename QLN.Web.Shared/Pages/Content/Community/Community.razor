@@ -16,10 +16,7 @@
 @using QLN.Web.Shared.Components.BannerSwiper
 
 <div class="community-container">
-    <div class="container-inner-wrapper">
-
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Style="max-width: 1170px;">
-
+     <div class="banner-responsive-container">
             @if (isLoadingBanners)
             {
                 <BannerSkleton />
@@ -32,8 +29,10 @@
             {
                 <EmptyCard Title="No  banners found." Subtitle="Please check back later for updates." />
             }
-
-            <CommunitySearchBarSection OnSearchCompleted="HandleSearchResults" OnCategoryChanged="HandleCategoryChanged" />
+</div>
+    <div class="container-inner-wrapper">
+       
+            <CommunitySearchBarSection OnSearchCompleted="HandleSearchResults" OnCategoryChanged="HandleCategoryChanged" InitialCategoryId="@categoryId" />
             <div class="section-container">
 
                 <MudGrid>
@@ -164,8 +163,6 @@
                 </MudGrid>
 
             </div>
-
-        </MudContainer>
     </div>
 </div>
 
@@ -180,9 +177,18 @@
 
     .container-inner-wrapper {
         width: 100%;
-        padding: 0px 50px 50px 50px;
+        padding: 0 40px;
+        box-sizing: border-box;
+        max-width: 1170px;
+        margin: 0 auto;
     }
-
+    .banner-responsive-container{
+        width: 100%;
+        padding: 0 40px;
+        box-sizing: border-box;
+        max-width: 1170px;
+        margin: 0 auto;
+    }
     .section-container {
         margin-top: 40px;
     }
@@ -203,7 +209,7 @@
     }
 
     .postcard-margin-top {
-        margin-top: 30px;
+        margin-top: 20px;
     }
 
     .community-header {
@@ -379,9 +385,11 @@
 
     @@media (max-width: 700px) and (min-width: 240px) {
         .container-inner-wrapper {
-            padding: 0 2px 12px 2px;
+            padding: 0 10px;
         }
-
+       .banner-responsive-container{
+             padding: 0;
+        }
         .community-newsletter-box,
         .post-ad-wrapper,
         .mud-paper.community-newsletter-box,
@@ -393,9 +401,11 @@
 
     @@media (min-width: 960px) and (max-width: 1145px) {
         .container-inner-wrapper {
-            padding: 0 24px 50px 24px;
+            padding: 0 20px;
         }
-
+        .banner-responsive-container{
+             padding: 0;
+        }
         .community-newsletter-box {
             max-width: 100%;
             width: 100%;
@@ -411,7 +421,9 @@
             margin-top: 0px;
             gap: 10px;
         }
-
+       .banner-responsive-container{
+             padding: 0;
+        }
         .post-ad-wrapper {
             padding: 1px;
             margin-top: 16px;
