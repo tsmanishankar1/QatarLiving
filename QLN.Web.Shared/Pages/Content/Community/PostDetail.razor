@@ -4,7 +4,7 @@
 @inject NavigationManager Navigation
 @using QLN.Web.Shared.Components.BreadCrumb
 @using QLN.Web.Shared.Pages.Content.Events
-@using QLN.Web.Shared.Components.BannerSwiper
+@using QLN.Web.Shared.Components.BannerHero
 @using QLN.Web.Shared.Components.EmptyCard
 @using QLN.Web.Shared.Components.AdBanner
 
@@ -17,7 +17,7 @@
             else if (ContentCommunityPostHero?.Any() == true)
             {
 
-            <BannerSwiper BannerItems="ContentCommunityPostHero" Loading="isLoadingBanners" />
+            <BannerHero BannerItems="ContentCommunityPostHero" Loading="isLoadingBanners" />
             }
             else
             {

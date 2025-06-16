@@ -13,7 +13,7 @@
 @using QLN.Web.Shared.Components.AdBanner
 
 @using QLN.Web.Shared.Pages.Content.Events
-@using QLN.Web.Shared.Components.BannerSwiper
+@using QLN.Web.Shared.Components.BannerHero
 
 <div class="community-container">
      <div class="banner-responsive-container">
@@ -23,7 +23,7 @@
             }
             else if (DailyHeroBanners?.Any() == true)
             {
-                <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+                <BannerHero BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
             }
             else
             {
