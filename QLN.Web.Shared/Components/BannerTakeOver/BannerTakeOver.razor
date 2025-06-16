@@ -1,87 +1,188 @@
 @using QLN.Common.Infrastructure.DTO_s
-@using Microsoft.AspNetCore.Components
+@using QLN.Web.Shared.Components.QLAnalytics
+@using QLN.Web.Shared.Services
+@using Microsoft.Extensions.Logging
+@inject ILogger<BannerTakeOver> Logger
 @inject IJSRuntime JS
+@inject NavigationManager NavigationManager
 
-<div class="swiper takeouverbanner-swiper" id="@_swiperId">
-    <div class="swiper-wrapper">
-        @if (BannerItems?.Count == 1)
-        {
-            @for (int i = 0; i < 2; i++)
+<div id="banner-take" class="banner-wrapper">
+    <div class="take-carousel-container">
+        <div class="take-slides-wrapper" style="transform: translateX(-@($"{CurrentIndex * 100}%"))">
+            @foreach (var (banner, index) in BannersToRender.Select((b, i) => (b, i)))
             {
-                <div class="swiper-slide">
-                    <a href="@BannerItems[0].Link" target="_blank" rel="noopener noreferrer">
-                        <img id="banner-img-0-@i" class="take-over-banner-image" src="@BannerItems[0].ImageDesktop"
-                            data-mobile="@BannerItems[0].ImageMobile" data-desktop="@BannerItems[0].ImageDesktop"
-                            alt="Banner" />
-                    </a>
+                var id = $"banner-{banner.Code}-{index}";
+                <div class="take-carousel-slide" id="@id" data-code="@banner.Code" data-duration="@banner.Duration">
+                    @if (!string.IsNullOrWhiteSpace(banner.Link))
+                    {
+                        <a href="@banner.Link"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           @onmouseenter="PauseRotation"
+                           @onmouseleave="ResumeRotation">
+                            <img class="banner-image"
+                                 src="@banner.ImageDesktop"
+                                 data-mobile="@banner.ImageMobile"
+                                 data-desktop="@banner.ImageDesktop"
+                                 alt="@banner.Alt"
+                                 @onclick="@(() => TriggerBannerAnalytics(banner, "click"))" />
+                        </a>
+                    }
+                    else
+                    {
+                        <img class="banner-image"
+                             src="@banner.ImageDesktop"
+                             data-mobile="@banner.ImageMobile"
+                             data-desktop="@banner.ImageDesktop"
+                             alt="@banner.Alt"
+                             @onclick="@(() => TriggerBannerAnalytics(banner, "click"))" />
+                    }
                 </div>
             }
-        }
-        else if (BannerItems?.Count > 1)
-        {
-            int index = 0;
-            @foreach (var banner in BannerItems)
-            {
-                <div class="swiper-slide">
-                    <a href="@banner.Link" target="_blank" rel="noopener noreferrer">
-                        <img id="banner-img-@index" class="take-over-banner-image" src="@banner.ImageDesktop"
-                            data-mobile="@banner.ImageMobile" data-desktop="@banner.ImageDesktop" alt="Banner" />
-                    </a>
-                </div>
-                index++;
-            }
-        }
+        </div>
     </div>
-
-    <div class="swiper-pagination"></div>
 </div>
 
-<style>
-    .takeouverbanner-swiper {
-        width: 100%;
-    }
-
-    .take-over-banner-image {
-        width: 100%;
-        border-radius: 3px;
-        display: block;
-    }
-
-    @@media (max-width: 768px) {
-        .take-over-banner-image {
-            height: 150px;
-            object-fit: cover;
-        }
-    }
-
-    @@media (min-width: 769px) {
-        .take-over-banner-image {
-            height: 150px;
-            object-fit: cover;
-        }
-    }
-</style>
+@if (AnalyticsProps != null)
+{
+    <QLAnalytics @key="AnalyticsKey" AnalyticsProps="@AnalyticsProps" />
+}
 
 @code {
-    [Parameter] public List<BannerItem> BannerItems { get; set; } = [];
+    [Parameter] public List<BannerItem> BannerItems { get; set; } = new();
+    [Parameter] public bool Loading { get; set; }
 
-    private string _swiperId = $"swiper-{Guid.NewGuid().ToString("N")}";
-    [Parameter] public bool Loading { get; set; } = false;
+    private List<BannerItem> BannersToRender => BannerItems.Count == 1
+        ? new() { BannerItems[0], BannerItems[0] }
+        : BannerItems;
 
-    private bool _bannerInitialized = false;
+    private int CurrentIndex = 0;
+    private QLAnalyticsCallProps? AnalyticsProps;
+    private string AnalyticsKey = Guid.NewGuid().ToString();
+    private DotNetObjectReference<BannerTakeOver>? _dotNetRef;
+    private System.Threading.Timer? _rotationTimer;
+    private bool _isPaused = false;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!_bannerInitialized && !Loading && BannerItems?.Any() == true)
+        if (firstRender && BannersToRender.Any())
         {
-            _bannerInitialized = true;
-
-            // Initialize Swiper
-            await JS.InvokeVoidAsync("initTakeOverBannerSwiper", _swiperId);
-
-
-            // Update banner images based on screen size
-            await JS.InvokeVoidAsync("updateBannerImagesForScreen");
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("setupTakeOverBannerTracking", _dotNetRef);
+            ScheduleNextSlide();
         }
     }
+
+    private void ScheduleNextSlide()
+    {
+        var currentBanner = BannersToRender[CurrentIndex];
+        if (!int.TryParse(currentBanner.Duration, out int seconds) || seconds <= 0)
+        {
+            seconds = 5;
+        }
+
+        _rotationTimer?.Dispose();
+        _rotationTimer = new Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                CurrentIndex = (CurrentIndex + 1) % BannersToRender.Count;
+                StateHasChanged();
+                ScheduleNextSlide();
+            });
+        }, null, seconds * 1000, Timeout.Infinite);
+    }
+
+    private void PauseRotation()
+    {
+        _rotationTimer?.Dispose();
+        _rotationTimer = null;
+        _isPaused = true;
+    }
+
+    private void ResumeRotation()
+    {
+        if (!_isPaused) return;
+        _isPaused = false;
+        ScheduleNextSlide();
+    }
+
+    [JSInvokable("TrackBannerTakeOver")]
+    public Task TrackBannerEvent(string bannerCode, string? duration, string eventType)
+    {
+        @* Logger.LogInformation("Triggering banner analytics: {EventType}, {BannerCode}, Duration: {Duration}",
+            eventType, bannerCode, duration ?? "N/A"); *@
+
+        AnalyticsProps = new QLAnalyticsCallProps
+        {
+            Action = eventType == "view" ? "AutoBannerImpression" : "AutoBannerClick",
+            AnalyticType = eventType == "view"
+                ? (int)AnalyticType.VIEW_BANNER_IMPRESSION
+                : (int)AnalyticType.BANNER_CLICK,
+            Url = new Uri(NavigationManager.Uri).AbsolutePath,
+            Lead = AnalyticsLead.SMS_REVEAL,
+            VerticalTag = (int)VerticalTag.CONTENT,
+            AdditionalTag = new Dictionary<string, string>
+            {
+                { "BannerCode", bannerCode },
+                { "Duration", duration ?? "N/A" }
+            }
+        };
+
+        AnalyticsKey = Guid.NewGuid().ToString();
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private void TriggerBannerAnalytics(BannerItem banner, string eventType)
+    {
+        _ = TrackBannerEvent(banner.Code!, banner.Duration, eventType);
+    }
+
+    public void Dispose()
+    {
+        _rotationTimer?.Dispose();
+        _dotNetRef?.Dispose();
+    }
 }
+
+<style>
+.take-carousel-container {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    height: 150px;
+}
+
+.take-slides-wrapper {
+    display: flex;
+    transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    width: 100%;
+    height: 100%;
+}
+
+.take-carousel-slide {
+    flex: 0 0 100%;
+    height: 100%;
+}
+
+.banner-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 3px;
+}
+
+@@media (max-width: 768px) {
+    .take-carousel-container {
+        height: 150px;
+    }
+
+    .banner-image {
+        height: auto;
+        max-height: 220px;
+    }
+    
+}
+
+</style>
