@@ -315,33 +315,89 @@
 
 
     </script>
-<script>
-    window.isBannerActuallyVisible = function (elementId) {
-        if (document.hidden) return false;
 
-        const el = document.getElementById(elementId);
-        if (!el) return false;
+        <script>
+            window.setupHeroBannerTracking = function (dotNetHelper) {
+                const slides = document.querySelectorAll('.carousel-slide');
 
-        const rect = el.getBoundingClientRect();
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const el = entry.target;
+                            const code = el.dataset.code;
+                            const duration = el.dataset.duration;
+                            dotNetHelper.invokeMethodAsync("TrackBannerEvent", code, duration, "view");
+                        }
+                    });
+                }, { threshold: 0.6 });
 
-        const windowHeight = window.visualViewport
-            ? window.visualViewport.height
-            : window.innerHeight;
+                slides.forEach(slide => {
+                    observer.observe(slide);
 
-        const windowWidth = window.visualViewport
-            ? window.visualViewport.width
-            : window.innerWidth;
+                    slide.addEventListener('click', () => {
+                        const code = slide.dataset.code;
+                        const duration = slide.dataset.duration;
+                        dotNetHelper.invokeMethodAsync("TrackBannerEvent", code, duration, "click");
+                    });
+                });
+            };
 
-        const inViewport = (
-            rect.top < windowHeight &&
-            rect.bottom > 0 &&
-            rect.left < windowWidth &&
-            rect.right > 0
-        );
+            window.setupTakeOverBannerTracking = function (dotNetHelper) {
+                const slides = document.querySelectorAll('.take-carousel-slide');
 
-        return inViewport;
-    };
-</script>
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const el = entry.target;
+                            const code = el.dataset.code;
+                            const duration = el.dataset.duration;
+                            dotNetHelper.invokeMethodAsync("TrackBannerTakeOver", code, duration, "view");
+                        }
+                    });
+                }, { threshold: 0.6 });
+
+                slides.forEach(slide => {
+                    observer.observe(slide);
+
+                    slide.addEventListener('click', () => {
+                        const code = slide.dataset.code;
+                        const duration = slide.dataset.duration;
+                        dotNetHelper.invokeMethodAsync("TrackBannerTakeOver", code, duration, "click");
+                    });
+                });
+            };
+        window.setupAdBannerTracking = function (dotNetHelper) {
+                const banners = document.querySelectorAll('.trackable-banner');
+                const seen = new Set();
+
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const el = entry.target;
+                            const code = el.dataset.code;
+                            const duration = el.dataset.duration;
+
+                            if (!seen.has(code)) {
+                                console.log("Ad banner in view:", code); // For debug
+                                dotNetHelper.invokeMethodAsync("TrackAdBannerEvent", code, duration, "view");
+                                seen.add(code);
+                            }
+                        }
+                    });
+                }, { threshold: 0.6 });
+
+                banners.forEach(banner => {
+                    observer.observe(banner);
+
+                    banner.addEventListener('click', () => {
+                        const code = banner.dataset.code;
+                        const duration = banner.dataset.duration;
+                        dotNetHelper.invokeMethodAsync("TrackAdBannerEvent", code, duration, "click");
+                    });
+                });
+            };
+        </script>
+
     <GBAnchor />
     <script>
         window.registerPopoverClickAway = (popoverDiv, dotNetHelper) => {
