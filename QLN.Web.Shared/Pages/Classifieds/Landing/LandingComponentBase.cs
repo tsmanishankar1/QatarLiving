@@ -17,18 +17,18 @@ public class LandingComponentBase : ComponentBase
         "/qln-images/banner_image.svg"
     };
 
-    protected IEnumerable<BackofficemasterIndex>? HeroBannerList { get; set; }
-    protected IEnumerable<BackofficemasterIndex>? FeaturedItemsList { get; set; }
-    protected IEnumerable<BackofficemasterIndex>? FeaturedServicesList { get; set; }
-    protected IEnumerable<BackofficemasterIndex>? FeaturedCategoriesList { get; set; }
-    protected IEnumerable<BackofficemasterIndex>? ReadyToGrowList { get; set; }
-    protected IEnumerable<BackofficemasterIndex>? FeaturedStoresList { get; set; }
-    protected IEnumerable<BackofficemasterIndex>? CategoriesList { get; set; }
-    protected IEnumerable<BackofficemasterIndex>? SeasonalPicksList { get; set; }
-    protected IEnumerable<BackofficemasterIndex>? SocialPostDetailList { get; set; }
-    protected IEnumerable<BackofficemasterIndex>? SocialLinksList { get; set; }
-    protected IEnumerable<BackofficemasterIndex>? SocialMediaVideosList { get; set; }
-    protected IEnumerable<BackofficemasterIndex>? FaqItemsList { get; set; }
+    protected IEnumerable<LandingBackOfficeIndex>? HeroBannerList { get; set; }
+    protected IEnumerable<LandingFeaturedItemDto>? FeaturedItemsList { get; set; }
+    protected IEnumerable<LandingFeaturedItemDto>? FeaturedServicesList { get; set; }
+    protected IEnumerable<LandingBackOfficeIndex>? FeaturedCategoriesList { get; set; }
+    protected IEnumerable<LandingBackOfficeIndex>? ReadyToGrowList { get; set; }
+    protected IEnumerable<LandingBackOfficeIndex>? FeaturedStoresList { get; set; }
+    protected IEnumerable<LandingBackOfficeIndex>? CategoriesList { get; set; }
+    protected IEnumerable<LandingBackOfficeIndex>? SeasonalPicksList { get; set; }
+    protected IEnumerable<LandingBackOfficeIndex>? SocialPostDetailList { get; set; }
+    protected IEnumerable<LandingBackOfficeIndex>? SocialLinksList { get; set; }
+    protected IEnumerable<LandingBackOfficeIndex>? SocialMediaVideosList { get; set; }
+    protected IEnumerable<LandingBackOfficeIndex>? FaqItemsList { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -42,18 +42,18 @@ public class LandingComponentBase : ComponentBase
 
                 if (landingData != null)
                 {
-                    HeroBannerList = landingData.HeroBanner ?? new List<BackofficemasterIndex>();
-                    FeaturedItemsList = landingData.FeaturedItems ?? new List<BackofficemasterIndex>();
-                    FeaturedServicesList = landingData.FeaturedServices ?? new List<BackofficemasterIndex>();
-                    FeaturedCategoriesList = landingData.FeaturedCategories ?? new List<BackofficemasterIndex>();
-                    ReadyToGrowList = landingData.ReadyToGrow ?? new List<BackofficemasterIndex>();
-                    FeaturedStoresList = landingData.FeaturedStores ?? new List<BackofficemasterIndex>();
-                    CategoriesList = landingData.Categories ?? new List<BackofficemasterIndex>();
-                    SeasonalPicksList = landingData.SeasonalPicks ?? new List<BackofficemasterIndex>();
-                    SocialPostDetailList = landingData.SocialPostDetail ?? new List<BackofficemasterIndex>();
-                    SocialLinksList = landingData.SocialLinks ?? new List<BackofficemasterIndex>();
-                    SocialMediaVideosList = landingData.SocialMediaVideos ?? new List<BackofficemasterIndex>();
-                    FaqItemsList = landingData.FaqItems ?? new List<BackofficemasterIndex>();
+                    HeroBannerList = landingData.HeroBanner ?? new List<LandingBackOfficeIndex>();
+                    FeaturedItemsList = landingData.FeaturedItems ?? new List<LandingFeaturedItemDto>();
+                    FeaturedServicesList = landingData.FeaturedServices ?? new List<LandingFeaturedItemDto>();
+                    FeaturedCategoriesList = landingData.FeaturedCategories ?? new List<LandingBackOfficeIndex>();
+                    ReadyToGrowList = landingData.ReadyToGrow ?? new List<LandingBackOfficeIndex>();
+                    FeaturedStoresList = landingData.FeaturedStores ?? new List<LandingBackOfficeIndex>();
+                    CategoriesList = landingData.Categories ?? new List<LandingBackOfficeIndex>();
+                    SeasonalPicksList = landingData.SeasonalPicks ?? new List<LandingBackOfficeIndex>();
+                    SocialPostDetailList = landingData.SocialPostDetail ?? new List<LandingBackOfficeIndex>();
+                    SocialLinksList = landingData.SocialLinks ?? new List<LandingBackOfficeIndex>();
+                    SocialMediaVideosList = landingData.SocialMediaVideos ?? new List<LandingBackOfficeIndex>();
+                    FaqItemsList = landingData.FaqItems ?? new List<LandingBackOfficeIndex>();
                 }
             }
             else
