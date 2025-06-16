@@ -1,0 +1,186 @@
+﻿@page "/qln/classified/dashboard/items"
+@inherits ItemDashboardBase
+@using MudBlazor
+@using QLN.Web.Shared.Components.BreadCrumb
+@using QLN.Web.Shared.Components.EmptyCard
+
+<div>
+    <MudContainer MaxWidth="MaxWidth.Large" Class="dashboard-container">
+        <Breadcrumb Items="breadcrumbItems" />
+
+        <div class="dashboard-option">
+            <span class="dashboard-text">Dashboard: Items</span>
+            <MudIcon Icon="@Icons.Material.Filled.ArrowDropDown" Class="dropdown-icon" />
+        </div>
+
+        <div class="dashboard-title-container">
+            <MudText class="dashboard-title">
+                Items Dashboard
+            </MudText>
+        </div>
+        <!-- Your dashboard content would go here -->
+        <MudPaper Class="p-4 rounded-xl dashboard-statistics-container">
+
+            @if (_businessProfile is not null)
+            {
+                <MudPaper Class="p-4 dashboard-company-container">
+
+                    <img src="@_businessProfile.LogoUrl" alt="Logo" class="dashboard-company-logo" />
+                    <MudText Typo="Typo.h6" Class="mt-2" Style="color:#004F9A; font-weight: bold;">
+                        @_businessProfile.Name
+                    </MudText>
+                    <MudText Typo="Typo.body2" Style="color: #5F6C7B;">
+                        @_businessProfile.CategoryName -
+                        @_businessProfile.Duration
+                    </MudText>
+                    <MudText Typo="Typo.caption" Class="mt-1" Style="color: #5F6C7B;">Valid from</MudText>
+                    <MudText Typo="Typo.caption" Style="color: #5F6C7B;">
+                        @DateTime.Parse(_businessProfile.ValidFrom).ToString("MMM dd, yyyy") to
+                        @DateTime.Parse(_businessProfile.ValidTo).ToString("MMM dd, yyyy")
+                    </MudText>
+                    <MudButton Variant="Variant.Outlined" Class="font-semibold mt-3"
+                               Style="border-radius: 8px; border: 1px solid #F26D1E; background-color: white; color: #F26D1E; width: 200px;"
+                               OnClick="@NavigateToEditProfile">
+                        Edit Profile
+                    </MudButton>
+                </MudPaper>
+            }
+
+
+            <!-- Summary Cards -->
+            <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between">
+                    <MudText Typo="Typo.caption" Class="dashboard-statistics-title">Summary & Statistics</MudText>
+
+                    <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #FF7F38; border-radius: 6px; padding: 8px 12px; width: fit-content;">
+                        <img src="/qln-images/subscription/Download.svg" alt="Download" style="width: 24px;" />
+                        <span style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 14px; line-height: 22px; color: #FF7F38;">
+                            Download Report
+                        </span>
+                    </div>
+
+
+                </div>
+
+                @if (_isLoading)
+                {
+                    <div class="d-flex justify-content-center mt-5">
+                        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+                    </div>
+                }
+                else if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <EmptyCard Title="Subscription statistics not found for you account " Subtitle="Please check back later for updates." />
+                }
+                else if (stats != null && stats.Any())
+                {
+                    <MudGrid Class="mt-3">
+                        @foreach (var stat in stats)
+                        {
+                            <MudItem xs="6" sm="4" md="3">
+                                <MudPaper Class="p-3 d-flex align-items-center"
+                                          Style="justify-content:center;align-items:center;gap: 20px; border-radius: 12px;height:100px; background-color: #F9FAFB;">
+                                    <img src="/qln-images/subscription/@stat.Icon" style="width: 24px;" />
+                                    <div>
+                                        <MudText Typo="Typo.caption"
+                                                 Style="font-family: 'Public Sans', sans-serif; font-weight: 600; font-size: 14px; line-height: 24px;  color: #242424;">
+                                            @stat.Title
+                                        </MudText>
+                                        <MudText Typo="Typo.subtitle2"
+                                                 Style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 14px;  text-align: center; color: #004F9A;">
+                                            @stat.Value
+                                        </MudText>
+                                    </div>
+                                </MudPaper>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                }
+                else
+                {
+                    <EmptyCard Title="Subscription statistics not found for you account " Subtitle="Please check back later for updates." />
+                }
+
+            </div>
+        </MudPaper>
+
+
+    </MudContainer>
+</div>
+
+<style>
+    .dashboard-container {
+        padding: 20px;
+        background-color: #F2F4F7;
+    }
+
+    .dashboard-option {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 16px;
+        padding : 0px 20px;
+    }
+
+    .dashboard-text {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 16px;
+        line-height: 24px;
+        color: #454545;
+        vertical-align: middle;
+    }
+
+    .dropdown-icon {
+        color: #454545;
+        font-size: 24px;
+    }
+
+    .dashboard-title-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        margin-top: 24px;
+    }
+
+    .dashboard-title {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 25px;
+        line-height: 26px;
+        color: #242424;
+    }
+    .dashboard-statistics-container {
+        padding: 16px;
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        background-color: white;
+    }
+    .dashboard-company-container{
+        width: 260px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border-radius: 12px;
+        background-color: #FAFAFA;
+    }
+
+    .dashboard-company-logo{
+        width: 80px;
+        height: 80px;
+    }
+
+    .dashboard-statistics-title {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 18px;
+        line-height: 26px;
+        letter-spacing: 0;
+        vertical-align: middle;
+        color: #242424;
+    }
+</style>
