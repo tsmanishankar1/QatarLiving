@@ -18,7 +18,6 @@ public class NewsLetterBase : ComponentBase
     protected NewsLetterSubscriptionModel SubscriptionModel { get; set; } = new();
     protected string SubscriptionStatusMessage = string.Empty;
     protected bool IsSubscribingToNewsletter { get; set; } = false;
-    protected MudTheme CustomPaletteTheme = new CustomTheme();
     protected MudForm _form;
 
     protected async Task SubscribeAsync()
