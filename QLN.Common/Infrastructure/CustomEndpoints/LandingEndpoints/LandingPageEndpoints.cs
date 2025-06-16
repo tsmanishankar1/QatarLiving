@@ -19,6 +19,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
             {
                 var vertical = ConstantValues.Verticals.Services;
 
+
                 var bannerTask = FetchSegmentAsync(searchSvc, vertical, ConstantValues.EntityTypes.HeroBanner);
                 var featuredServicesTask = FetchSegmentAsync(searchSvc, vertical, ConstantValues.EntityTypes.FeaturedServices);
                 var featuredCatTask = FetchSegmentAsync(searchSvc, vertical, ConstantValues.EntityTypes.FeaturedCategory);
@@ -37,24 +38,35 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                     faqTask, ctaTask, popularSearchTask
                 );
 
-                var basicServices = (await featuredServicesTask)
-                    .OrderBy(i => i.Order)
+                var indexEntries = (await featuredServicesTask)
+                    .OrderBy(ix => ix.Order)
                     .ToList();
 
-                var enrichedServices = await Task.WhenAll(
-                    basicServices.Select(async idx => new {
-                        Index = idx,
-                        ItemDetails = await searchSvc.GetByIdAsync<ServicesIndex>(
-                            vertical,
-                            idx.AdId ?? throw new InvalidOperationException("AdId missing")
-                        )
-                    })
-                );
+                var featuredServices = new List<LandingFeaturedItemDto>();
+                foreach (var ix in indexEntries)
+                {
+                    var detail = await searchSvc.GetByIdAsync<ServicesIndex>(
+                        vertical,
+                        ix.AdId ?? throw new InvalidOperationException("AdId missing")
+                    );
+                    if (detail == null) continue;
 
-                var result = new LandingPageDto
+                    featuredServices.Add(new LandingFeaturedItemDto
+                    {
+                        Title = detail.Title,
+                        Description = detail.Description,
+                        Category = detail.Category,
+                        Price = detail.Price,
+                        Order = ix.Order,
+                        IsFeatured = true,
+                        ImageURLs = detail.Images
+                    });
+                }
+
+                var dto = new LandingPageDto
                 {
                     HeroBanner = await bannerTask,
-                    FeaturedServices = enrichedServices.Cast<object>(),
+                    FeaturedServices = featuredServices,
                     FeaturedCategories = await featuredCatTask,
                     Categories = await categoriesTask,
                     SeasonalPicks = await seasonalTask,
@@ -66,11 +78,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                     PopularSearches = BuildHierarchy((await popularSearchTask).ToList(), null)
                 };
 
-                return TypedResults.Ok(result);
+                return TypedResults.Ok(dto);
             })
             .WithName("GetServicesLandingPage")
             .WithTags("LandingPage")
-            .Produces<object>(StatusCodes.Status200OK)
+            .Produces<LandingPageDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status500InternalServerError);
 
             app.MapGet("/api/landing/classifieds", async ([FromServices] ISearchService searchSvc) =>
@@ -96,24 +108,37 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                     socialVideosTask, faqTask, ctaTask, popularSearchTask
                 );
 
-                var basicItems = (await featuredItemsTask)
-                    .OrderBy(i => i.Order)
+                var indexEntries = (await featuredItemsTask)
+                    .OrderBy(ix => ix.Order)
                     .ToList();
 
-                var enrichedItems = await Task.WhenAll(
-                    basicItems.Select(async idx => new {
-                        Index = idx,
-                        Detail = await searchSvc.GetByIdAsync<ClassifiedsIndex>(
-                            vertical,
-                            idx.AdId ?? throw new InvalidOperationException("AdId missing")
-                        )
-                    })
-                );
+                var featuredItems = new List<LandingFeaturedItemDto>();
+                foreach (var ix in indexEntries)
+                {
+                    var detail = await searchSvc.GetByIdAsync<ClassifiedsIndex>(
+                        vertical,
+                        ix.AdId ?? throw new InvalidOperationException("AdId missing")
+                    );
+                    if (detail == null) continue;
 
-                var result = new LandingPageDto
+                    featuredItems.Add(new LandingFeaturedItemDto
+                    {
+                        Title = detail.Title,
+                        Description = detail.Description,
+                        Category = detail.Category,
+                        Price = detail.Price,
+                        Order = ix.Order,
+                        Color = detail.Colour,
+                        Location = detail.Location,
+                        IsFeatured = detail.IsFeatured,
+                        ImageURLs = detail.Images
+                    });
+                }
+
+                var dto = new LandingPageDto
                 {
                     HeroBanner = await bannerTask,
-                    FeaturedItems = enrichedItems.Cast<object>(),
+                    FeaturedItems = featuredItems,
                     FeaturedCategories = await featuredCatTask,
                     FeaturedStores = await featuredStoresTask,
                     Categories = await categoriesTask,
@@ -126,11 +151,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                     PopularSearches = BuildHierarchy((await popularSearchTask).ToList(), null)
                 };
 
-                return TypedResults.Ok(result);
+                return TypedResults.Ok(dto);
             })
             .WithName("GetClassifiedsLandingPage")
             .WithTags("LandingPage")
-            .Produces<object>(StatusCodes.Status200OK)
+            .Produces<LandingPageDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status500InternalServerError);
         }
 

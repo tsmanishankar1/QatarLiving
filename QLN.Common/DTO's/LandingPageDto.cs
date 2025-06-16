@@ -9,8 +9,8 @@ namespace QLN.Common.DTO_s
     public class LandingPageDto
     {
         public IEnumerable<LandingBackOfficeIndex>? HeroBanner { get; set; }
-        public IEnumerable<object>? FeaturedItems { get; set; }
-        public IEnumerable<object>? FeaturedServices { get; set; }
+        public IEnumerable<LandingFeaturedItemDto>? FeaturedItems { get; set; }
+        public IEnumerable<LandingFeaturedItemDto>? FeaturedServices { get; set; }
         public IEnumerable<LandingBackOfficeIndex>? FeaturedCategories { get; set; }
         public IEnumerable<LandingBackOfficeIndex>? ReadyToGrow { get; set; }
         public IEnumerable<LandingBackOfficeIndex>? FeaturedStores { get; set; }
