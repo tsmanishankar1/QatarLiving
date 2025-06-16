@@ -1,9 +1,8 @@
-@page "/qln/classifieds/items"
+@page "/qln/classifieds/preloved"
 @using MudBlazor
 @using QLN.Web.Shared.Models
 @inject SearchStateService SearchState
-@using QLN.Web.Shared.Pages.Classifieds.Items.Components
-@using QLN.Web.Shared.Pages.Classifieds.Items.Components.IteamdetailsSection
+@using QLN.Web.Shared.Pages.Classifieds.Preloved.Components
 @layout ClassifiedsLayout
 
 <div style="width: 100%; background-color: var(--color-secondary-background);">
@@ -17,7 +16,7 @@
         </div>
 
 
-        <IteamListSection ViewMode="@currentViewMode" Items="@_items" Loading="_isSearching" />
+        <PrelovedListSection ViewMode="@currentViewMode" Items="@_items" Loading="_isSearching" />
 
     </div>
 </div>
