@@ -11,7 +11,7 @@
 @using QLN.Web.Shared.Services
 @inject IOptions<NavigationPath> options;
 
-<MudThemeProvider @ref="@_mudThemeProvider" />
+<MudThemeProvider @ref="@_mudThemeProvider" Theme="@CustomTheme"/>
 <MudDialogProvider />
 <MudPopoverProvider />
 <MudSnackbarProvider Position="SnackbarPosition.BottomLeft" />
@@ -193,12 +193,29 @@
     public string MyProfileMenu { get; set; } = string.Empty;
     public string MySavedAdsProfileMenu { get; set; } = string.Empty;
     public string ManageMyAdsProfileMenu { get; set; } = string.Empty;
+    private MudTheme CustomTheme;
 
     // Menu items with Alias
     public string ServicesProfileMenu { get; set; } = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
+
+        var customLightPalette = new PaletteLight()
+        {
+            Primary = "#FF7F38"
+        };
+
+        var customDarkPalette = new PaletteDark()
+        {
+            Primary = "#FF7F38"
+        };
+
+        CustomTheme = new MudTheme()
+        {
+            PaletteLight = customLightPalette,
+            PaletteDark = customDarkPalette,
+        };
         navigationPath = options.Value;
 
         var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
