@@ -71,7 +71,7 @@
         public string RewardsProfileMenu { get; set; } = "https://qlr.qatarliving.com/en/rewards/dashboard";
         public string MySavedSearchesProfileMenu { get; set; } =  "https://qlv.qatarliving.com/en/vehicles/favourites?tab=saved-searches";
 
-        public string ClassifiedsProfileMenu { get; set; } = "https://www.qatarliving.com//classifieds/dashboard/<ALIAS>";
+        public string ClassifiedsProfileMenu { get; set; } = "https://www.qatarliving.com/classifieds/dashboard/<ALIAS>";
         public string ServicesProfileMenu { get; set; } = "https://www.qatarliving.com/services/dashboard/<ALIAS>";
         public string JobsProfileMenu { get; set; } = "https://www.qatarliving.com/user/<USER_ID>/listings";
         public string MyProfileMenu { get; set; } = "https://www.qatarliving.com/user/<USER_ID>";
