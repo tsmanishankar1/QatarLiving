@@ -23,7 +23,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 {
     public class ExternalClassifiedService : IClassifiedService
     {
-        private const string SERVICE_APP_ID = ConstantValues.ClassifiedServiceApp;
+        private const string SERVICE_APP_ID = ConstantValues.ServiceAppIds.ClassifiedServiceApp;
         private const string Vertical = ConstantValues.ClassifiedsVertical;
 
         private readonly DaprClient _dapr;

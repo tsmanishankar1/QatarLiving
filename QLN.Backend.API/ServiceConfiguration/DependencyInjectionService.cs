@@ -13,6 +13,9 @@ using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Backend.API.Service.ServicesService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.Service.FileStorage;
+using QLN.Common.Infrastructure.IService.IBackOfficeService;
+using QLN.Backend.API.Service.BackOffice;
+using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Backend.API.Service.V2ContentService;
 
@@ -25,6 +28,7 @@ namespace QLN.Backend.API.ServiceConfiguration
             services.AddTransient<IClassifiedService, ExternalClassifiedService>();
             services.AddTransient<IServicesService, ExternalServiceService>();
             services.AddScoped<IFileStorageBlobService, FileStorageBlobService>();
+            services.AddTransient<IBackOfficeService<LandingBackOfficeIndex>, ExternalLandingBackOfficeService>();
 
             return services;
         }
@@ -40,7 +44,6 @@ namespace QLN.Backend.API.ServiceConfiguration
 
             return services;
         }
-
         public static IServiceCollection ContentServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
             var drupalUrl = configuration.GetSection("BaseUrl")["LegacyDrupal"] ?? throw new ArgumentNullException("LegacyDrupal");

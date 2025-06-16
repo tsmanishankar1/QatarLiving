@@ -2,17 +2,17 @@
 @using QLN.Web.Shared.Components.QLAnalytics
 @using QLN.Web.Shared.Services
 @using Microsoft.Extensions.Logging
-@inject ILogger<BannerTakeOver> Logger
+@inject ILogger<BannerHero> Logger
 @inject IJSRuntime JS
 @inject NavigationManager NavigationManager
 
-<div id="banner-take" class="banner-wrapper">
-    <div class="take-carousel-container">
-        <div class="take-slides-wrapper" style="transform: translateX(-@($"{CurrentIndex * 100}%"))">
+<div id="banner-hero" class="banner-wrapper">
+    <div class="hero-carousel-container">
+        <div class="hero-slides-wrapper" style="transform: translateX(-@($"{CurrentIndex * 100}%"))">
             @foreach (var (banner, index) in BannersToRender.Select((b, i) => (b, i)))
             {
                 var id = $"banner-{banner.Code}-{index}";
-                <div class="take-carousel-slide" id="@id" data-code="@banner.Code" data-duration="@banner.Duration">
+                <div class="carousel-slide" id="@id" data-code="@banner.Code" data-duration="@banner.Duration">
                     @if (!string.IsNullOrWhiteSpace(banner.Link))
                     {
                         <a href="@banner.Link"
@@ -59,7 +59,7 @@
     private int CurrentIndex = 0;
     private QLAnalyticsCallProps? AnalyticsProps;
     private string AnalyticsKey = Guid.NewGuid().ToString();
-    private DotNetObjectReference<BannerTakeOver>? _dotNetRef;
+    private DotNetObjectReference<BannerHero>? _dotNetRef;
     private System.Threading.Timer? _rotationTimer;
     private bool _isPaused = false;
 
@@ -68,7 +68,7 @@
         if (firstRender && BannersToRender.Any())
         {
             _dotNetRef = DotNetObjectReference.Create(this);
-            await JS.InvokeVoidAsync("setupTakeOverBannerTracking", _dotNetRef);
+            await JS.InvokeVoidAsync("setupHeroBannerTracking", _dotNetRef);
             ScheduleNextSlide();
         }
     }
@@ -107,7 +107,7 @@
         ScheduleNextSlide();
     }
 
-    [JSInvokable("TrackBannerTakeOver")]
+    [JSInvokable("TrackBannerEvent")]
     public Task TrackBannerEvent(string bannerCode, string? duration, string eventType)
     {
         @* Logger.LogInformation("Triggering banner analytics: {EventType}, {BannerCode}, Duration: {Duration}",
@@ -147,21 +147,21 @@
 }
 
 <style>
-.take-carousel-container {
+.hero-carousel-container {
     position: relative;
     width: 100%;
     overflow: hidden;
-    height: 150px;
+    height: 250px;
 }
 
-.take-slides-wrapper {
+.hero-slides-wrapper {
     display: flex;
     transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     width: 100%;
     height: 100%;
 }
 
-.take-carousel-slide {
+.carousel-slide {
     flex: 0 0 100%;
     height: 100%;
 }
@@ -174,7 +174,7 @@
 }
 
 @@media (max-width: 768px) {
-    .take-carousel-container {
+    .hero-carousel-container {
         height: 150px;
     }
 
@@ -182,7 +182,6 @@
         height: auto;
         max-height: 220px;
     }
-    
 }
 
 </style>
