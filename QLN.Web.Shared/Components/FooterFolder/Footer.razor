@@ -7,6 +7,8 @@
     var navigationPath = options.Value;
 }
 
+@inject NavigationManager NavigationManager
+
 
 <div class="footer-main">
     <div class="container">
@@ -17,23 +19,23 @@
                         <div class="footer-col-vertical">
                             <h4>Explore</h4>
                             <div class="footer-links-col">
-                                <a id="footerPropertiesLink" href="@navigationPath.Properties">Properties</a>
-                                <a id="footerVehiclesLink" href="@navigationPath.Vehicles">Vehicles</a>
-                                <a id="footerClassifiedsLink" href="@navigationPath.Classifieds">Classifieds</a>
-                                <a id="footerServicesLink" href="@navigationPath.Services">Services</a>
-                                <a id="footerJobsLink" href="@navigationPath.Jobs">Jobs</a>
-                                <a id="footerRewardsLink" href="@navigationPath.Rewards">Rewards</a>
-                                @* <a id="footerSubcriptionsLink" class="premium" href="@navigationPath.Subscription">Premium subscriptions</a> *@
+                                <MudLink id="footerPropertiesLink" OnClick="() => NavigationManager.NavigateTo(navigationPath.Properties, forceLoad: true)">Properties</MudLink>
+                                <MudLink id="footerVehiclesLink" OnClick="() => NavigationManager.NavigateTo(navigationPath.Vehicles, forceLoad: true)">Vehicles</MudLink>
+                                <MudLink id="footerClassifiedsLink" OnClick="() => NavigationManager.NavigateTo(navigationPath.Classifieds, forceLoad: true)">Classifieds</MudLink>
+                                <MudLink id="footerServicesLink" OnClick="() => NavigationManager.NavigateTo(navigationPath.Services, forceLoad: true)">Services</MudLink>
+                                <MudLink id="footerJobsLink" OnClick="() => NavigationManager.NavigateTo(navigationPath.Jobs, forceLoad: true)">Jobs</MudLink>
+                                <MudLink id="footerRewardsLink" OnClick="() => NavigationManager.NavigateTo(navigationPath.Rewards, forceLoad: true)">Rewards</MudLink>
+                                @* <MudLink id="footerSubcriptionsLink" class="premium" href="@navigationPath.Subscription">Premium subscriptions</MudLink> *@
                             </div>
                         </div>
                         <div class="footer-col-vertical">
                             <h4>Other</h4>
                             <div class="footer-links-col">
-                                <a href="/content/news">News</a>
-                                <a href="/content/events">Events</a>
-                                <a href="/content/community">Community</a>
-                                @* <a href="#">Business pages</a>
-                                <a href="@navigationPath.eShops">eShops</a> *@
+                                <MudLink href="/content/news">News</MudLink>
+                                <MudLink href="/content/events">Events</MudLink>
+                                <MudLink href="/content/community">Community</MudLink>
+                                @* <MudLink href="#">Business pages</MudLink>
+                                <MudLink href="@navigationPath.eShops">eShops</MudLink> *@
                             </div>
                         </div>
                     </div>
@@ -44,7 +46,7 @@
             <div class="footer-inline footer-col-435">
                 <div class="footer-column footer-col-full">
                     <p>Want to advertise on Qatar Living?</p>
-                    <p><strong>Take a look at our <a class="orange-link" href="@navigationPath.Advertise">Advertise page</a></strong></p>
+                    <p><strong>Take a look at our <MudLink class="orange-link" OnClick="() => NavigationManager.NavigateTo(navigationPath.Advertise, forceLoad: true)">Advertise page</MudLink></strong></p>
                     <NewLetterSubscription/>
                 </div>
             </div>
@@ -60,12 +62,12 @@
                     }
                     <p>Our Mobile App</p>
                     <div class="store-badges">
-                        <a href="@navigationPath.GoogleStore" target="_blank" rel="noopener">
+                        <MudLink href="@navigationPath.GoogleStore" target="_blank" rel="noopener">
                             <img src="/qln-images/google_play_logo.svg" class="store-badge" alt="Get it on Google Play" />
-                        </a>
-                        <a href="@navigationPath.AppleStore" target="_blank" rel="noopener">
+                        </MudLink>
+                        <MudLink href="@navigationPath.AppleStore" target="_blank" rel="noopener">
                             <img src="/qln-images/app_store_logo.svg" class="store-badge" alt="Download on the App Store" />
-                        </a>
+                        </MudLink>
                     </div>
                 </div>
             </div>
@@ -74,37 +76,37 @@
         <div class="footer-bottom">
             <div class="footer-link">
                 <div class="footer-links">
-                    <a href="@navigationPath.AdvertisingTerms">Advertising Terms</a>
-                    <a href="@navigationPath.TermsOfUse">Website Terms</a>
-                    <a href="@navigationPath.PostingRules">Rules for posting ads</a>
-                    <a href="@navigationPath.HelpLink">Help</a>
+                    <MudLink OnClick="() => NavigationManager.NavigateTo(navigationPath.AdvertisingTerms, forceLoad: true)">Advertising Terms</MudLink>
+                    <MudLink OnClick="() => NavigationManager.NavigateTo(navigationPath.TermsOfUse, forceLoad: true)">Website Terms</MudLink>
+                    <MudLink OnClick="() => NavigationManager.NavigateTo(navigationPath.PostingRules, forceLoad: true)">Rules for posting ads</MudLink>
+                    <MudLink OnClick="() => NavigationManager.NavigateTo(navigationPath.HelpLink, forceLoad: true)">Help</MudLink>
                 </div>
                 <p class="footer-copyright">Copyright © 2024 Qatar Living. All rights reserved.</p>
             </div>
             <div class="footer-social">
                 <p>Let's stay connected</p>
                 <div class="social-icons">
-                    <a href="@navigationPath.SocialFacebook" target="_blank" rel="noopener noreferrer">
+                    <MudLink href="@navigationPath.SocialFacebook" target="_blank" rel="noopener noreferrer">
                         <img src="/qln-images/facebook_logo.svg" alt="Facebook" class="social-icon" />
-                    </a>
-                    <a href="@navigationPath.SocialTwitter" target="_blank" rel="noopener">
+                    </MudLink>
+                    <MudLink href="@navigationPath.SocialTwitter" target="_blank" rel="noopener">
                         <img src="/qln-images/twitter.svg" alt="Twitter" class="social-icon" />
-                    </a>
-                    <a href="@navigationPath.SocialInstagram" target="_blank" rel="noopener">
+                    </MudLink>
+                    <MudLink href="@navigationPath.SocialInstagram" target="_blank" rel="noopener">
                         <img src="/qln-images/instagram.svg" alt="Instagram" class="social-icon" />
-                    </a>
-                    <a href="@navigationPath.SocialSnapChat" target="_blank" rel="noopener">
+                    </MudLink>
+                    <MudLink href="@navigationPath.SocialSnapChat" target="_blank" rel="noopener">
                         <img src="/qln-images/snapchat.svg" alt="Snapchat" class="social-icon" />
-                    </a>
-                    <a href="@navigationPath.SocialLinkedIn" target="_blank" rel="noopener">
+                    </MudLink>
+                    <MudLink href="@navigationPath.SocialLinkedIn" target="_blank" rel="noopener">
                         <img src="/qln-images/linkedin.svg" alt="LinkedIn" class="social-icon" />
-                    </a>
-                    <a href="@navigationPath.SocialYouTube" target="_blank" rel="noopener">
+                    </MudLink>
+                    <MudLink href="@navigationPath.SocialYouTube" target="_blank" rel="noopener">
                         <img src="/qln-images/youtube.svg" alt="YouTube" class="social-icon" />
-                    </a>
-                    <a href="@navigationPath.SocialTikTok" target="_blank" rel="noopener">
+                    </MudLink>
+                    <MudLink href="@navigationPath.SocialTikTok" target="_blank" rel="noopener">
                         <img src="/qln-images/tiktok.svg" alt="TikTok" class="social-icon" />
-                    </a>
+                    </MudLink>
                 </div>
             </div>
         </div>
