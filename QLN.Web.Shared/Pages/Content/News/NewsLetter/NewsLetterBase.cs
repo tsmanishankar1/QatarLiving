@@ -107,6 +107,9 @@ public class NewsLetterBase : ComponentBase
             {
                 IsSubscribingToNewsletter = false;
             }
+        } else
+        {
+            IsSubscribingToNewsletter = false;
         }
     }
 }
