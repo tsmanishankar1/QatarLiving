@@ -1,6 +1,6 @@
+@page "/qln/classifieds/createform"
 @using QLN.Web.Shared.Components.BreadCrumb
-@using QLN.Web.Shared.Pages.Classifieds.Components.CreateForm.Components.CreateFormList
-@using QLN.Web.Shared.Pages.Classifieds.Components.CreateForm.Components.UploadPhotos
+@using QLN.Web.Shared.Pages.Classifieds.CreatePost.Components
 @using MudBlazor
 
 <div class="form-wrapper">
@@ -47,8 +47,8 @@
     {
         breadcrumbItems = new()
 {
-new() { Label = "Classifieds", Url = "/classifieds" },
-new() { Label = "Create Form", Url = "/classifieds/createform", IsLast = true }
+new() { Label = "Classifieds", Url = "/qln/classifieds" },
+new() { Label = "Create Form", Url = "/qln/classifieds/createform", IsLast = true }
 };
     }
 
