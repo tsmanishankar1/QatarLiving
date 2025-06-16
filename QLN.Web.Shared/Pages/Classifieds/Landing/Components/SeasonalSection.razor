@@ -76,11 +76,13 @@
     }
 
     .seasonal-card img {
-        width: 100%;
-        height: auto;
-        max-height: 200px;
-        object-fit: cover;
-        display: block;
+         width: 100%;
+    height: auto;
+    max-height: 200px;
+    object-fit: cover;
+    display: block;
+    transform: scaleX(1); /* Prevent horizontal flip */
+    image-orientation: from-image;
     }
 
     /* Arrow positioning (now relative to .swiper-container) */

@@ -1,6 +1,9 @@
 @using MudBlazor
+@using QLN.Common.DTO_s
 @using QLN.Web.Shared.Components.Classifieds.FeaturedCategoryCard
 @using QLN.Web.Shared.Pages.Classifieds.Landing.Components.Skeletons.FeaturedCategorySkeleton
+@using QLN.Web.Shared.Components.EmptyCard
+@inherits FeaturedCategoriesBase
 
 <div class="categories-wrapper">
     <div class="categories-header">
@@ -15,7 +18,7 @@
     }
     else if (FeaturedCategories?.Any() != true)
     {
-        <MudText>No featured categories found.</MudText>
+        <EmptyCard Title="No featured items found." Subtitle="Please check back later or explore other categories." />
     }
     else
     {
@@ -29,7 +32,7 @@
                     <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
                 </div>
 
-                <div class="swiper-wrapper">
+                <div class="swiper-wrapper @(FeaturedCategories.Count <= 5 ? "les5swiper-wrapper" : "")">
                     @foreach (var category in FeaturedCategories)
                     {
                         <div class="swiper-slide swiper-slide-Card">
@@ -43,33 +46,6 @@
         </div>
     }
 </div>
-
-@code {
-    [Parameter]
-    public bool Loading { get; set; } = false;
-
-    [Parameter]
-    public List<FeaturedCategoryCard.CategoryItem> FeaturedCategories { get; set; } = new();
-
-    [Inject]
-    private IJSRuntime JSRuntime { get; set; } = default!;
-
-    private bool _categoriesSwiperInitialized = false;
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!_categoriesSwiperInitialized && !Loading && FeaturedCategories?.Any() == true)
-        {
-            _categoriesSwiperInitialized = true;
-            await JSRuntime.InvokeVoidAsync("initCategoriesSwiper");
-        }
-    }
-
-    private void HandleCategoryClick(FeaturedCategoryCard.CategoryItem item)
-    {
-        Console.WriteLine($"Clicked category: {item.Category}");
-    }
-}
 
 <style>
     .categories-wrapper {
@@ -97,6 +73,9 @@
     .swiper-categories {
         width: 100%;
         padding: 0;
+    }
+    .swiper-wrapper.les5swiper-wrapper {
+        justify-content: center !important;
     }
 
     .swiper-slide-Card {
@@ -173,9 +152,12 @@
     }
 
     /* Hide arrows permanently on mobile */
-    @@media (max-width: 768px) {
+    @@media (max-width: 770px) {
         .arrow-button {
             display: none !important;
+        }
+          .swiper-wrapper.les5swiper-wrapper {
+            justify-content: flex-start !important;
         }
     }
 </style>

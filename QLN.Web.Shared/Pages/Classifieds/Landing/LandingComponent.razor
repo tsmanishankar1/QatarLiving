@@ -25,28 +25,29 @@
 
         <!-- Featured item -->
 
-        @* <FeaturedItemSection FeaturedItems="FeaturedItemsList" Loading="IsLoading" /> *@
+        <FeaturedItemSection FeaturedItems="FeaturedItemsList?.ToList()"  Loading="IsLoading" />
     </div>
     </div>
     <div class="max-container">
     <!-- Featured Categories -->
-    @* <FeaturedCategorySection FeaturedCategories="FeaturedServicesList" Loading="IsLoading" /> *@
+    <FeaturedCategorySection FeaturedCategories="FeaturedCategoriesList?.ToList()" Loading="IsLoading" />
 
     <!-- Subscription Card -->
-    <SubscriptionSection />
+    <SubscriptionSection Data="ReadyToGrowList?.FirstOrDefault()" Loading="IsLoading" />
+
    </div>
 
     <div class="responsive-container">
         <div class="max-container">
-        @* <!-- Store Deals -->
-        <StoreDealsSection Stores="FeaturedStoresList" />
+        <!-- Store Deals -->
+        <StoreDealsSection  Stores="FeaturedStoresList" Loading="IsLoading"/>
 
         <!-- Category Card 1 -->
-        <CategoryAdSection Categories="@CategoriesList" />
+        @* <CategoryAdSection Categories="@CategoriesList" /> *@
 
 
         <!-- Category Card 2 -->
-        <CategoryAdSection Categories="@CategoriesList" /> *@
+        @* <CategoryAdSection Categories="@CategoriesList" /> *@
 
         <!-- Seasonal Section -->
         <SeasonalSection />

@@ -181,17 +181,6 @@
     </script>
 
     <script>
-        window.registerImageLoadCallback = (imageId, dotNetRef) => {
-            const img = document.getElementById(imageId);
-            if (!img) return;
-
-            img.onload = () => {
-                dotNetRef.invokeMethodAsync("OnImageLoaded");
-            };
-        };
-
-    </script>
-    <script>
         window.toggleBodyScroll = function (shouldLock) {
             document.body.style.overflow = shouldLock ? 'hidden' : '';
         };
@@ -223,7 +212,9 @@
                     prevEl: '.swiper-seasonal-button-prev'
                 },
                 breakpoints: {
-                    480: { slidesPerView: 1, spaceBetween: 12 },
+                    320: { slidesPerView: 1, spaceBetween: 10 },
+                    340: { slidesPerView: 1, spaceBetween: 10 },
+                    480: { slidesPerView: 1, spaceBetween: 10 },
                     640: { slidesPerView: 1.5, spaceBetween: 12 },
                     768: { slidesPerView: 2, spaceBetween: 14 },
                     860: { slidesPerView: 2.5, spaceBetween: 16 },
@@ -326,6 +317,37 @@
             });
         }
 
+let storeSwiperInstance;
+window.initStoreSwiper = () => {
+    if (storeSwiperInstance) {
+        storeSwiperInstance.destroy(true, true);
+    }
+
+    const swiperEl = document.querySelector('.swiper-store');
+    if (!swiperEl) {
+        console.warn("Store Swiper element not found");
+        return;
+    }
+
+    storeSwiperInstance = new Swiper(swiperEl, {
+        slidesPerView: 'auto',
+        spaceBetween: 10,
+        navigation: {
+            nextEl: '.swiper-store-button-next',
+            prevEl: '.swiper-store-button-prev'
+        },
+        breakpoints: {
+            320: { slidesPerView: 1.8, spaceBetween: 5 },
+            340: { slidesPerView: 1.8, spaceBetween: 5 },
+            480: { slidesPerView: 2.5, spaceBetween: 10 },
+            640: { slidesPerView: 3, spaceBetween: 10 },
+            768: { slidesPerView: 4.5, spaceBetween: 10 },
+            860: { slidesPerView: 5, spaceBetween: 10 },
+            1024: { slidesPerView: 6, spaceBetween: 10 },
+            1200: { slidesPerView: 6, spaceBetween: 10 }
+        }
+    });
+};
 
     </script>
 

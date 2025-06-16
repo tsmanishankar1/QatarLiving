@@ -1,9 +1,12 @@
 @using MudBlazor
+@using QLN.Common.DTO_s
 @using QLN.Web.Shared.Components.Classifieds.FeaturedItemCard
 @using QLN.Web.Shared.Components.EmptyCard
 @using QLN.Web.Shared.Pages.Classifieds.Landing.Components.Skeletons.FeaturedItemSkeleton
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@using System.Threading.Tasks;
+@inherits FeaturedItemsBase
 
 <div class="featured-cards-section">
     <div class="featured-header">
@@ -46,38 +49,6 @@
         </div>
     }
 </div>
-
-@code {
-    [Parameter]
-    public bool Loading { get; set; } = false;
-
-    [Parameter]
-    public List<FeaturedItemCard.FeaturedItem> FeaturedItems { get; set; } = new();
-
-    private void HandleHeartClick(FeaturedItemCard.FeaturedItem item)
-    {
-        Console.WriteLine($"Heart clicked for {item.Title}");
-    }
-
-    private void HandleSelect(FeaturedItemCard.FeaturedItem item)
-    {
-        Navigation.NavigateTo($"/classifieds/items/details?id={item.Id}");
-    }
-
-    private bool _swiperInitialized = false;
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!_swiperInitialized && !Loading && FeaturedItems?.Any() == true)
-        {
-            _swiperInitialized = true;
-            await JSRuntime.InvokeVoidAsync("initFeaturedSwiper");
-        }
-    }
-
-
-}
-
 
 <style>
     .featured-cards-section {
