@@ -196,5 +196,76 @@ public static class PayToPublishEndpoints
 
         return group;
     }
-   
+    public static RouteGroupBuilder MapGetPayToPublishPaymentsByUserEndpoint(this RouteGroupBuilder group)
+    {
+        group.MapGet("/paytopublish/user", async (
+            HttpContext context,
+            [FromServices] IPayToPublishService service,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)
+                                 ?? context.User.FindFirst("sub")
+                                 ?? context.User.FindFirst("userId");
+
+                if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+                {
+                    return Results.Unauthorized();
+                }
+
+                var result = await service.GetPaymentsByUserIdAsync(userId, cancellationToken);
+                return Results.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem(
+                    title: "Error Retrieving Payments",
+                    detail: ex.Message,
+                    statusCode: StatusCodes.Status500InternalServerError
+                );
+            }
+        })
+        .WithName("GetPayToPublishPaymentsByUser")
+        .WithTags("PayToPublish")
+        .WithSummary("Get PayToPublish payments by user")
+        .Produces(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        return group;
+    }
+
+    // 4. Alternative endpoint with explicit userId parameter:
+
+    public static RouteGroupBuilder MapGetPayToPublishPaymentsByUserIdEndpoint(this RouteGroupBuilder group)
+    {
+        group.MapGet("/paytopublish/user/{userId:guid}", async (
+            Guid userId,
+            [FromServices] IPayToPublishService service,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var result = await service.GetPaymentsByUserIdAsync(userId, cancellationToken);
+                return Results.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem(
+                    title: "Error Retrieving Payments",
+                    detail: ex.Message,
+                    statusCode: StatusCodes.Status500InternalServerError
+                );
+            }
+        })
+        .WithName("GetPayToPublishPaymentsByUserId")
+        .WithTags("PayToPublish")
+        .WithSummary("Get PayToPublish payments by userId")
+        .Produces(StatusCodes.Status200OK)
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        return group;
+    }
+
 }

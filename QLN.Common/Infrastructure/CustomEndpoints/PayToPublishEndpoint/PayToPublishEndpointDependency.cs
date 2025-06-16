@@ -13,7 +13,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint
                   .MapGetAllPayToPublishEndpoints()
                   .MapDeletePayToPublishEndpoints()
                   .MapGetPayToPublishEndpoints()
-                  .MapUpatePayToPublishEndpoints();
+                  .MapUpatePayToPublishEndpoints()
+                  .MapGetPayToPublishPaymentsByUserEndpoint()
+                 .MapGetPayToPublishPaymentsByUserIdEndpoint();
 
                    return group;
         }

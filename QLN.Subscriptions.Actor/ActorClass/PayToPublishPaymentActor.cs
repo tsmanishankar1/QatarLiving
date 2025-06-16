@@ -12,10 +12,9 @@ namespace QLN.Subscriptions.Actor.ActorClass
         private const string DailyTimerName = "paytopublish-daily-timer";
         private const string SpecificTimerName = "paytopublish-specific-timer";
         private readonly ILogger<PayToPublishPaymentActor> _logger;
-        public static IServiceProvider ServiceProvider { get; set; }
-
+       
         // Configuration for daily check time (make this configurable via appsettings)
-        private static readonly TimeSpan DailyCheckTime = new TimeSpan(17, 36, 0); 
+        private static readonly TimeSpan DailyCheckTime = new TimeSpan(13, 03, 0); 
         private static readonly string TimeZoneId = "India Standard Time";
 
         public PayToPublishPaymentActor(ActorHost host, ILogger<PayToPublishPaymentActor> logger) : base(host)
@@ -183,7 +182,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             _logger.LogInformation("[PaymentActor {ActorId}] Marked payment as expired for user {UserId}", Id, paymentData.UserId);
 
             // Handle the expiry through service
-            await HandleExpiredPayToPublishAsync(paymentData.UserId, paymentData.Id);
+            //await HandleExpiredPayToPublishAsync(paymentData.UserId, paymentData.Id);
 
             // Clean up all timers since subscription is expired
             await CleanupTimersAsync();
@@ -218,40 +217,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
             }
         }
 
-        private async Task HandleExpiredPayToPublishAsync(Guid userId, Guid paymentId)
-        {
-            try
-            {
-                _logger.LogInformation("[PaymentActor {ActorId}] Notifying service about expired pay-to-publish for user {UserId}, payment {PaymentId}",
-                    Id, userId, paymentId);
-
-                if (ServiceProvider == null)
-                {
-                    _logger.LogError("[PaymentActor {ActorId}] ServiceProvider is not set", Id);
-                    return;
-                }
-
-                using var scope = ServiceProvider.CreateScope();
-                var payToPublishService = scope.ServiceProvider.GetRequiredService<IPayToPublishService>();
-
-                var result = await payToPublishService.HandlePaytopyblishExpiryAsync(userId, paymentId, CancellationToken.None);
-
-                if (result)
-                {
-                    _logger.LogInformation("[PaymentActor {ActorId}] Successfully handled pay-to-publish expiry for user {UserId}", Id, userId);
-                }
-                else
-                {
-                    _logger.LogWarning("[PaymentActor {ActorId}] Service returned false for pay-to-publish expiry handling for user {UserId}", Id, userId);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[PaymentActor {ActorId}] Error handling expired pay-to-publish for user {UserId}, payment {PaymentId}", Id, userId, paymentId);
-                // Consider whether to throw or handle gracefully based on your requirements
-                throw;
-            }
-        }
 
         private async Task CleanupTimersAsync()
         {
@@ -339,8 +304,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             return (isActive, paymentData.EndDate, daysRemaining);
         }
-
-        // Additional helper method to reschedule checks (useful for configuration changes)
         public async Task<bool> RescheduleExpiryChecksAsync()
         {
             try

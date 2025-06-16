@@ -304,7 +304,32 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 return false;
             }
         }
+        public async Task<List<PaymentDto>> GetPaymentsByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            var userPayments = new List<PaymentDto>();
+            var paymentIds = _paymentIds.Keys.ToList();
 
+            foreach (var paymentId in paymentIds)
+            {
+                try
+                {
+                    var actor = GetPaymentActorProxy(paymentId);
+                    var paymentData = await actor.GetDataAsync(cancellationToken);
+
+                    if (paymentData != null && paymentData.UserId == userId)
+                    {
+                        userPayments.Add(paymentData);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error retrieving payment data for paymentId {PaymentId}", paymentId);
+                    // Continue processing other payments even if one fails
+                }
+            }
+
+            return userPayments.OrderByDescending(p => p.LastUpdated).ToList();
+        }
         public async Task<bool> HandlePaytopyblishExpiryAsync(Guid userId, CancellationToken cancellationToken = default)
         {
             try

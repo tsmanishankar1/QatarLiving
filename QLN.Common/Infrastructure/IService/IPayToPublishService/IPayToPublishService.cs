@@ -20,6 +20,7 @@ namespace QLN.Common.Infrastructure.IService.IPayToPublishService
         Task<PaymentDto?> GetPaymentAsync(Guid paymentId, CancellationToken cancellationToken = default);
         Task<List<PaymentDto>> GetActivePaymentsForUserAsync(Guid userId, CancellationToken cancellationToken = default);
         Task<List<PaymentDto>> GetExpiredPaymentsForUserAsync(Guid userId, CancellationToken cancellationToken = default);
+        Task<List<PaymentDto>> GetPaymentsByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
     }
 }
 
