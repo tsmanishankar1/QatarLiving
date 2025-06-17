@@ -1,12 +1,8 @@
 ﻿using Dapr.Actors;
 using Dapr.Actors.Runtime;
 using Dapr.Client;
-using Microsoft.Extensions.Logging;
 using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.IService.ISubscriptionService;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace QLN.Subscriptions.Actor.ActorClass
 {
@@ -14,6 +10,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
     {
         private const string StateKey = "payment-transaction-data";
         private const string TimerName = "subscription-expiry-timer";
+        private const string ReminderName = "subscription-expiry-reminder";
         private const string PubSubName = "pubsub";
         private const string ExpiryTopicName = "subscription-expiry";
 
@@ -38,7 +35,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             await StateManager.SetStateAsync(StateKey, data, cancellationToken);
             await StateManager.SaveStateAsync(cancellationToken);
 
-            // Schedule the expiry check when payment data is set
+            // Schedule both timer and reminder when payment data is set
             await ScheduleExpiryCheckAsync();
 
             return true;
@@ -69,7 +66,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             {
                 var istTimeZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time");
                 var nowIst = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, istTimeZone);
-                var today115Pm = new DateTime(nowIst.Year, nowIst.Month, nowIst.Day, 17, 28, 0);
+                var today115Pm = new DateTime(nowIst.Year, nowIst.Month, nowIst.Day, 11, 14, 0);
                 var next115Pm = nowIst <= today115Pm ? today115Pm : today115Pm.AddDays(1);
                 var next115PmUtc = TimeZoneInfo.ConvertTimeToUtc(next115Pm, istTimeZone);
                 var dueTime = next115PmUtc - DateTime.UtcNow;
@@ -82,12 +79,28 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 _logger.LogInformation("[PaymentActor {ActorId}] Scheduling expiry check for {NextCheck} IST (in {DueTime})",
                     Id, next115Pm, dueTime);
 
+                // Register Timer for regular checks
                 await RegisterTimerAsync(
                     TimerName,
                     nameof(CheckSubscriptionExpiryAsync),
-                    null,
+                    null, // state parameter
                     dueTime,
-                    TimeSpan.FromDays(1));
+                    TimeSpan.FromDays(1)); // period - repeats daily
+
+                // Register Reminder as backup (persists across actor deactivation/reactivation)
+                var reminderData = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(new
+                {
+                    ScheduledTime = next115PmUtc,
+                    Purpose = "SubscriptionExpiryCheck"
+                });
+
+                await RegisterReminderAsync(
+                    ReminderName,
+                    reminderData,
+                    dueTime,
+                    TimeSpan.FromDays(1)); // period - repeats daily
+
+                _logger.LogInformation("[PaymentActor {ActorId}] Registered both timer and reminder for expiry checks", Id);
             }
             catch (Exception ex)
             {
@@ -95,11 +108,29 @@ namespace QLN.Subscriptions.Actor.ActorClass
             }
         }
 
+        // Timer callback method
         public async Task CheckSubscriptionExpiryAsync()
+        {
+            await PerformExpiryCheckAsync("Timer");
+        }
+
+        // Reminder callback method (must be public and implement IRemindable interface pattern)
+        public async Task ReceiveReminderAsync(string reminderName, byte[] state, TimeSpan dueTime, TimeSpan period)
+        {
+            _logger.LogInformation("[PaymentActor {ActorId}] Reminder '{ReminderName}' triggered", Id, reminderName);
+
+            if (reminderName == ReminderName)
+            {
+                await PerformExpiryCheckAsync("Reminder");
+            }
+        }
+
+        private async Task PerformExpiryCheckAsync(string triggerSource)
         {
             try
             {
-                _logger.LogInformation("[PaymentActor {ActorId}] Checking subscription expiry at {Time}", Id, DateTime.UtcNow);
+                _logger.LogInformation("[PaymentActor {ActorId}] Checking subscription expiry at {Time} (triggered by {Source})",
+                    Id, DateTime.UtcNow, triggerSource);
 
                 var paymentData = await GetDataAsync();
                 if (paymentData == null)
@@ -123,13 +154,13 @@ namespace QLN.Subscriptions.Actor.ActorClass
                         await StateManager.SetStateAsync(StateKey, paymentData);
                         await StateManager.SaveStateAsync();
 
-                        // Unregister timer as subscription has expired
-                        await UnregisterTimerAsync(TimerName);
-                        _logger.LogInformation("[PaymentActor {ActorId}] Unregistered expiry timer for expired subscription", Id);
+                        // Unregister both timer and reminder as subscription has expired
+                        await CleanupTimersAndRemindersAsync();
+                        _logger.LogInformation("[PaymentActor {ActorId}] Cleaned up timers and reminders for expired subscription", Id);
                     }
                     else
                     {
-                        _logger.LogWarning("[PaymentActor {ActorId}] Failed to publish expiry message after retries. Will retry on next timer execution.", Id);
+                        _logger.LogWarning("[PaymentActor {ActorId}] Failed to publish expiry message after retries. Will retry on next execution.", Id);
                     }
                 }
                 else
@@ -140,7 +171,32 @@ namespace QLN.Subscriptions.Actor.ActorClass
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[PaymentActor {ActorId}] Error during subscription expiry check", Id);
+                _logger.LogError(ex, "[PaymentActor {ActorId}] Error during subscription expiry check (triggered by {Source})", Id, triggerSource);
+            }
+        }
+
+        private async Task CleanupTimersAndRemindersAsync()
+        {
+            try
+            {
+                // Unregister timer
+                await UnregisterTimerAsync(TimerName);
+                _logger.LogInformation("[PaymentActor {ActorId}] Unregistered timer '{TimerName}'", Id, TimerName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[PaymentActor {ActorId}] Error unregistering timer '{TimerName}'", Id, TimerName);
+            }
+
+            try
+            {
+                // Unregister reminder
+                await UnregisterReminderAsync(ReminderName);
+                _logger.LogInformation("[PaymentActor {ActorId}] Unregistered reminder '{ReminderName}'", Id, ReminderName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[PaymentActor {ActorId}] Error unregistering reminder '{ReminderName}'", Id, ReminderName);
             }
         }
 
@@ -178,12 +234,8 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             try
             {
-                // First, check if pubsub component is available
+                // Check if pubsub component is available
                 var healthResponse = await _daprClient.CheckHealthAsync();
-                //if (!healthResponse.IsHealthy)
-                //{
-                //    throw new InvalidOperationException("Dapr sidecar is not healthy");
-                //}
 
                 var expiryMessage = new SubscriptionExpiryMessage
                 {
@@ -216,7 +268,14 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 var paymentData = await GetDataAsync();
                 if (paymentData != null && paymentData.EndDate > DateTime.UtcNow)
                 {
+                    // Check if we already have reminders registered
+                    // If not, schedule new ones (this handles actor reactivation scenarios)
                     await ScheduleExpiryCheckAsync();
+                }
+                else if (paymentData != null && paymentData.EndDate <= DateTime.UtcNow)
+                {
+                    // Clean up any existing timers/reminders for expired subscriptions
+                    await CleanupTimersAndRemindersAsync();
                 }
             }
             catch (Exception ex)
@@ -233,7 +292,9 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
+                // Only unregister timer on deactivation (reminder will persist)
                 await UnregisterTimerAsync(TimerName);
+                _logger.LogInformation("[PaymentActor {ActorId}] Unregistered timer on deactivation (reminder persists)", Id);
             }
             catch (Exception ex)
             {

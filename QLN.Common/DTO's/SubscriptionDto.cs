@@ -23,6 +23,18 @@ namespace QLN.Common.DTOs
         public Status StatusId { get; set; }
         public DateTime lastUpdated { get; set; }
     }
+    public class PaymentCompletedMessage
+    {
+        public Guid UserId { get; set; }
+        public Guid SubscriptionId { get; set; }
+        public Guid PaymentTransactionId { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public decimal Amount { get; set; }
+        public string PaymentMethod { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public DateTime ProcessedAt { get; set; }
+    }
     public class SubscriptionExpiryMessage
     {
         public Guid UserId { get; set; }

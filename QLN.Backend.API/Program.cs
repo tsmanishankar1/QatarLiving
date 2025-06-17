@@ -228,9 +228,9 @@ analyticGroup.MapAnalyticsEndpoints();
 app.MapGroup("/api/subscriptions")
    .MapSubscriptionEndpoints();
 
-   app.MapGroup("/api/payments")
-    .MapPaymentEndpoints()
-    .RequireAuthorization(); // so because you have authorize here, it means all these endpoints need authorization - I am overriding it later on by adding AllowAnonymous as an option on a per endpoint implementation
+app.MapGroup("/api/payments")
+ .MapPaymentEndpoints();
+   //.RequireAuthorization(); // so because you have authorize here, it means all these endpoints need authorization - I am overriding it later on by adding AllowAnonymous as an option on a per endpoint implementation
 
 app.MapGroup("/api/paytopublish")
     .MapPayToPublishEndpoints();
