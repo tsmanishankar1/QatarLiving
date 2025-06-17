@@ -23,6 +23,7 @@ using System.Text.Json.Serialization;
 using QLN.Common.Infrastructure.CustomEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
 using Azure.Core.Serialization;
+using QLN.Common.Infrastructure.CustomEndpoints.Wishlist;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
@@ -209,6 +210,8 @@ if (builder.Configuration.GetValue<bool>("EnableSwagger"))
 
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
+var wishlistgroup = app.MapGroup("/api/wishlist");
+wishlistgroup.MapWishlist();
 var companyGroup = app.MapGroup("/api/companyprofile");
 companyGroup.MapCompanyEndpoints()
     .RequireAuthorization();
