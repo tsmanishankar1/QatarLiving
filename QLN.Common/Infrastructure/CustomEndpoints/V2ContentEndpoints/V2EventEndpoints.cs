@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.Utilities;
 
@@ -33,9 +34,32 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
 
                     if (!userId.HasValue || string.IsNullOrWhiteSpace(userName))
                         return TypedResults.Forbid();
-                    dto.User_id = userId ?? Guid.Empty;
-                    dto.User_name = userName;
 
+                    var items = dto.QlnEvents?.FeaturedEvents?.Items;
+
+                    if (items == null || !items.Any())
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "No event items provided in the payload.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+
+                    foreach (var item in items)
+                    {
+                        item.User_id = userId.Value;
+                        item.UserName = userName;
+
+                        if (item.Comments != null && item.Comments.Any())
+                        {
+                            foreach (var c in item.Comments)
+                            {
+                                c.UserId = userId?.ToString() ?? string.Empty;
+                                c.Username = userName;
+                                c.CreatedDate = DateTime.UtcNow.ToString("o");
+                            }
+                        }
+                    }
                     var result = await service.CreateEvent(dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
@@ -76,7 +100,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             {
                 try
                 {
-                    if (dto.User_id == Guid.Empty || string.IsNullOrWhiteSpace(dto.User_name))
+                    if (dto.QlnEvents?.FeaturedEvents?.Items == null || !dto.QlnEvents.FeaturedEvents.Items.Any())
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Validation Error",
@@ -113,7 +137,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
         }
         public static RouteGroupBuilder MapGetAllEventEndpoints(this RouteGroupBuilder group)
         {
-            group.MapGet("/getAll", async Task<Results<Ok<List<V2ContentEventDto>>, ProblemHttpResult>>
+            group.MapGet("/getAll", static async Task<Results<Ok<V2ContentEventDto>, ProblemHttpResult>>
             (
                 IV2EventService service,
                 CancellationToken cancellationToken
@@ -195,8 +219,31 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
 
                     if (!userId.HasValue || string.IsNullOrWhiteSpace(userName))
                         return TypedResults.Forbid();
-                    dto.User_id = userId ?? Guid.Empty;
-                    dto.User_name = userName;
+                    var items = dto.QlnEvents?.FeaturedEvents?.Items;
+
+                    if (items == null || !items.Any())
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "No event items provided in the payload.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+
+                    foreach (var item in items)
+                    {
+                        item.User_id = userId.Value;
+                        item.UserName = userName;
+
+                        if (item.Comments != null && item.Comments.Any())
+                        {
+                            foreach (var c in item.Comments)
+                            {
+                                c.UserId = userId?.ToString() ?? string.Empty;
+                                c.Username = userName;
+                                c.CreatedDate = DateTime.UtcNow.ToString("o");
+                            }
+                        }
+                    }
                     var result = await service.UpdateEvent(dto, cancellationToken);
                     if (result == null)
                         throw new KeyNotFoundException($"Event with ID not found.");
@@ -247,7 +294,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             {
                 try
                 {
-                    if (dto.User_id == Guid.Empty || string.IsNullOrWhiteSpace(dto.User_name))
+                    if (dto.QlnEvents?.FeaturedEvents?.Items == null || !dto.QlnEvents.FeaturedEvents.Items.Any())
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Validation Error",

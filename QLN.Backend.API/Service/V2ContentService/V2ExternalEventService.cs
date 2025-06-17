@@ -1,6 +1,7 @@
 ﻿using Dapr.Client;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using System.Net;
@@ -25,15 +26,23 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                if (!string.IsNullOrWhiteSpace(dto.Image_url))
-                {
-                    var imageName = $"{dto.Title} _ {dto.User_id}.png";
-                    var BlobUrl = await _blobStorage.SaveBase64File(dto.Image_url, imageName, "imageurl", cancellationToken);
-                    dto.Image_url = BlobUrl;
-                }
-                var url = "/v2/api/event/createByUserId";
+                var items = dto.QlnEvents?.FeaturedEvents?.Items;
 
-                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2ContentEvents.EventServiceAppId, url);
+                if (items == null || !items.Any())
+                    throw new InvalidDataException("No event items provided.");
+
+                foreach (var item in items)
+                {
+                    if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+                    {
+                        var imageName = $"{item.Title}_{item.UserName}.png";
+                        var blobUrl = await _blobStorage.SaveBase64File(item.ImageUrl, imageName, "imageurl", cancellationToken);
+                        item.ImageUrl = blobUrl;
+                    }
+                }
+                var url = "/api/v2/event/createByUserId";
+
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
                 request.Content = new StringContent(
                     JsonSerializer.Serialize(dto),
                     Encoding.UTF8,
@@ -52,16 +61,16 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-        public async Task<List<V2ContentEventDto>> GetAllEvents(CancellationToken cancellationToken = default)
+        public async Task<V2ContentEventDto> GetAllEvents(CancellationToken cancellationToken = default)
         {
             try
             {
-                return await _dapr.InvokeMethodAsync<List<V2ContentEventDto>>(
+                return await _dapr.InvokeMethodAsync<V2ContentEventDto>(
                     HttpMethod.Get,
-                    ConstantValues.V2ContentEvents.EventServiceAppId,
-                    "/v2/api/event/getAll",
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    "/api/v2/event/getAll",
                     cancellationToken
-                ) ?? new List<V2ContentEventDto>();
+                ) ?? new V2ContentEventDto();
             }
             catch (Exception ex)
             {
@@ -74,11 +83,11 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                var url = $"/v2/api/event/getById/{id}";
+                var url = $"/api/v2/event/getById/{id}";
 
                 return await _dapr.InvokeMethodAsync<V2ContentEventDto>(
                     HttpMethod.Get,
-                    ConstantValues.V2ContentEvents.EventServiceAppId,
+                    ConstantValues.V2Content.ContentServiceAppId,
                     url,
                     cancellationToken);
             }
@@ -98,15 +107,23 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                if (!string.IsNullOrWhiteSpace(dto.Image_url))
-                {
-                    var imageName = $"{dto.Title}_{dto.User_id}.png";
-                    var BlobUrl = await _blobStorage.SaveBase64File(dto.Image_url, imageName, "imageurl", cancellationToken);
-                    dto.Image_url = BlobUrl;
-                }
-                var url = "/v2/api/event/updateByUserId";
+                var items = dto.QlnEvents?.FeaturedEvents?.Items;
 
-                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.V2ContentEvents.EventServiceAppId, url);
+                if (items == null || !items.Any())
+                    throw new InvalidDataException("No event items provided.");
+
+                foreach (var item in items)
+                {
+                    if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+                    {
+                        var imageName = $"{item.Title}_{item.UserName}.png";
+                        var blobUrl = await _blobStorage.SaveBase64File(item.ImageUrl, imageName, "imageurl", cancellationToken);
+                        item.ImageUrl = blobUrl;
+                    }
+                }
+                var url = "/api/v2/event/updateByUserId";
+
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.V2Content.ContentServiceAppId, url);
                 request.Content = new StringContent(
                     JsonSerializer.Serialize(dto),
                     Encoding.UTF8,
@@ -134,11 +151,11 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                var url = $"/v2/api/event/delete/{id}";
+                var url = $"/api/v2/event/delete/{id}";
 
                 return await _dapr.InvokeMethodAsync<string>(
                     HttpMethod.Delete,
-                    ConstantValues.V2ContentEvents.EventServiceAppId,
+                    ConstantValues.V2Content.ContentServiceAppId,
                     url,
                     cancellationToken
                 );
