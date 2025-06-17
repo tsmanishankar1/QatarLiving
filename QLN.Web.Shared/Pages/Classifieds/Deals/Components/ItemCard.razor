@@ -1,0 +1,111 @@
+@using MudBlazor
+
+<div class="store-header-wrapper">
+    <div class="store-card">
+        <div class="feture-store-logo-container">
+            <img src="qln-images/stores/hypermarket.svg" class="feture-store-logo" alt="Hypermarket" />
+        </div>
+    </div>
+
+    <MudText Class="company-name pb-2">
+        Baladi Express
+    </MudText>
+
+    <MudButton 
+               Variant="Variant.Filled"
+               Class="pb-2"
+               Style="background-color: var(--color-accent); color: white; border-radius: 6px;"
+               Href="https://example.com">
+               <StartContent>
+            <img src="qln-images/classifieds/world_outline.svg" alt="World" style="width: 20px; height: 20px; margin-right: 8px;" />
+        </StartContent>
+        Visit Website
+    </MudButton>
+
+    <MudButton 
+               Variant="Variant.Filled"
+               Class="pb-2"
+               Style="background-color: var(--color-accent); color: white; border-radius: 6px;"
+               Href="tel:+97450305370">
+                <StartContent>
+            <img src="qln-images/classifieds/call_outline.svg" alt="Call" style="width: 20px; height: 20px; margin-right: 8px;" />
+        </StartContent>
+        +974 50305370
+    </MudButton>
+
+    <MudButton Variant="Variant.Filled"
+                Class="pb-2"
+               Style="background-color: #4BC85A; color: white; border-radius: 6px;"
+               Href="https://wa.me/97450305370"
+               Target="_blank">
+        <StartContent>
+            <img src="qln-images/classifieds/whatsapp_outline.svg" alt="WhatsApp" style="width: 25px; height: 25px; margin-right: 8px;" />
+        </StartContent>
+        +974 50305370
+    </MudButton>
+</div>
+
+<style>
+    .store-header-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 12px;
+    padding: 0px 24px;
+    padding-bottom: 50px;
+}
+
+.store-card {
+    width: 125px;
+    margin-right: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 5px;
+    flex-shrink: 0;
+}
+
+.feture-store-logo-container {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: var(--color-background);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.feture-store-logo {
+    max-width: 100%;
+    max-height: 100%;
+    padding: 10px;
+    object-fit: contain;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.company-name {
+    font-weight: 600;
+    font-size: 25px;
+    color: var(--color-primary);
+    margin-right: 12px;
+}
+
+/* Responsive Adjustments */
+@@media (max-width: 768px) {
+     .store-header-wrapper {
+        padding: 0px 16px;
+        padding-bottom: 20px;
+    } 
+
+    .company-name {
+        font-size: 20px;
+    }
+
+    .store-card {
+        margin-right: 0;
+        @* margin-bottom: 12px; *@
+    }
+}
+</style>
