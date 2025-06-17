@@ -9,6 +9,7 @@ namespace QLN.Common.DTO_s
     public class LandingPageDto
     {
         public IEnumerable<LandingBackOfficeIndex>? HeroBanner { get; set; }
+        public IEnumerable<LandingBackOfficeIndex>? TakeOverBanner { get; set; }
         public IEnumerable<LandingFeaturedItemDto>? FeaturedItems { get; set; }
         public IEnumerable<LandingFeaturedItemDto>? FeaturedServices { get; set; }
         public IEnumerable<LandingBackOfficeIndex>? FeaturedCategories { get; set; }
@@ -20,7 +21,7 @@ namespace QLN.Common.DTO_s
         public IEnumerable<LandingBackOfficeIndex>? SocialLinks { get; set; }
         public IEnumerable<LandingBackOfficeIndex>? SocialMediaVideos { get; set; }
         public IEnumerable<LandingBackOfficeIndex>? FaqItems { get; set; }
-        public IEnumerable<object>? PopularSearches { get; set; }
+        public IEnumerable<PopularSearchDto>? PopularSearches { get; set; }
 
     }
 }

@@ -20,13 +20,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
               vertical: ConstantValues.Verticals.Services,
               routeSegment: ConstantValues.EntityRoutes.HeroBanner,
               entityType: ConstantValues.EntityTypes.HeroBanner
-          );
-
+            );
+            servicesGroup.MapBackOfficeMasterEndpoints(
+              vertical: ConstantValues.Verticals.Services,
+              routeSegment: ConstantValues.EntityRoutes.TakeOverBanner,
+              entityType: ConstantValues.EntityTypes.TakeOverBanner
+            );
             servicesGroup.MapBackOfficeMasterEndpoints(
                vertical: ConstantValues.Verticals.Services,
                routeSegment: ConstantValues.EntityRoutes.FeaturedServices,
                entityType: ConstantValues.EntityTypes.FeaturedServices
-           );
+            );
 
             servicesGroup.MapBackOfficeMasterEndpoints(
                 vertical: ConstantValues.Verticals.Services,
@@ -88,6 +92,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
               vertical: ConstantValues.Verticals.Classifieds,
               routeSegment: ConstantValues.EntityRoutes.HeroBanner,
               entityType: ConstantValues.EntityTypes.HeroBanner
+            );
+            classifiedsGroup.MapBackOfficeMasterEndpoints(
+              vertical: ConstantValues.Verticals.Classifieds,
+              routeSegment: ConstantValues.EntityRoutes.TakeOverBanner,
+              entityType: ConstantValues.EntityTypes.TakeOverBanner
             );
 
             classifiedsGroup.MapBackOfficeMasterEndpoints(

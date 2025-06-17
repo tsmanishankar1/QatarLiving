@@ -46,7 +46,7 @@ namespace QLN.Common.DTO_s
         public int? RotationSeconds { get; set; }
 
         [SimpleField(IsFilterable = true)]
-        public string? AdId { get; set; }
+        public string? EntityId { get; set; }
 
         [SearchableField]
         public string? PayloadJson { get; set; }
