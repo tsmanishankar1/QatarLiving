@@ -11,20 +11,25 @@
         Baladi Express
     </MudText>
 
-    <MudButton StartIcon="@Icons.Material.Filled.Public"
+    <MudButton 
                Variant="Variant.Filled"
                Class="pb-2"
                Style="background-color: var(--color-accent); color: white; border-radius: 6px;"
-               Href="https://example.com"
-               Target="_blank">
+               Href="https://example.com">
+               <StartContent>
+            <img src="qln-images/classifieds/world_outline.svg" alt="World" style="width: 20px; height: 20px; margin-right: 8px;" />
+        </StartContent>
         Visit Website
     </MudButton>
 
-    <MudButton StartIcon="@Icons.Material.Outlined.Call"
+    <MudButton 
                Variant="Variant.Filled"
                Class="pb-2"
                Style="background-color: var(--color-accent); color: white; border-radius: 6px;"
                Href="tel:+97450305370">
+                <StartContent>
+            <img src="qln-images/classifieds/call_outline.svg" alt="Call" style="width: 20px; height: 20px; margin-right: 8px;" />
+        </StartContent>
         +974 50305370
     </MudButton>
 
@@ -34,7 +39,7 @@
                Href="https://wa.me/97450305370"
                Target="_blank">
         <StartContent>
-            <img src="qln-images/whatsApp_share_icon.svg" alt="WhatsApp" style="width: 25px; height: 25px; margin-right: 8px;" />
+            <img src="qln-images/classifieds/whatsapp_outline.svg" alt="WhatsApp" style="width: 25px; height: 25px; margin-right: 8px;" />
         </StartContent>
         +974 50305370
     </MudButton>
@@ -47,6 +52,7 @@
     align-items: end;
     gap: 12px;
     padding: 0px 24px;
+    padding-bottom: 50px;
 }
 
 .store-card {
