@@ -33,8 +33,8 @@ namespace QLN.Web.Shared.Models
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var validationParameters = new TokenValidationParameters
                 {
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
                     ValidateLifetime = false,
                     ValidateIssuerSigningKey = false,
                     SignatureValidator = (token, parameters) =>
@@ -42,8 +42,8 @@ namespace QLN.Web.Shared.Models
                         // Bypass signature validation for demo purposes
                         return new JwtSecurityToken(token);
                     },
-                    //ValidIssuer = _configuration["Jwt:Issuer"],
-                    //ValidAudience = _configuration["Jwt:Audience"],
+                    ValidIssuer = _configuration["Jwt:Issuer"],
+                    ValidAudience = _configuration["Jwt:Audience"],
                     RoleClaimType = ClaimTypes.Role,
                     NameClaimType = ClaimTypes.Name
                 };
