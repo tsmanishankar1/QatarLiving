@@ -32,8 +32,8 @@ namespace QLN.Web.Shared.Models
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var validationParameters = new TokenValidationParameters
                 {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
                     ValidateLifetime = false,
                     ValidateIssuerSigningKey = false,
                     SignatureValidator = (token, parameters) =>
@@ -41,8 +41,8 @@ namespace QLN.Web.Shared.Models
                         // Bypass signature validation for demo purposes
                         return new JwtSecurityToken(token);
                     },
-                    ValidIssuer = _configuration["Jwt:Issuer"],
-                    ValidAudience = _configuration["Jwt:Audience"],
+                    //ValidIssuer = _configuration["Jwt:Issuer"],
+                    //ValidAudience = _configuration["Jwt:Audience"],
                     RoleClaimType = ClaimTypes.Role,
                     NameClaimType = ClaimTypes.Name
                 };
@@ -63,43 +63,50 @@ namespace QLN.Web.Shared.Models
                         if (!string.IsNullOrEmpty(decodedToken))
                         {
 
-                            var drupalToken = JsonSerializer.Deserialize<DrupalJWTToken>(decodedToken);
-                            var identity = (ClaimsIdentity)validatedPrincipal.Identity!;
-
-                            if (drupalToken != null)
+                            try
                             {
-                                // Custom user object
-                                if (drupalToken.DrupalUser != null)
+                                var drupalToken = JsonSerializer.Deserialize<DrupalJWTToken>(decodedToken);
+                                var identity = (ClaimsIdentity)validatedPrincipal.Identity!;
+
+                                if (drupalToken != null)
                                 {
-                                    var user = drupalToken.DrupalUser;
-                                    if (!string.IsNullOrEmpty(user.Uid))
-                                        identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Uid));
-                                    if (!string.IsNullOrEmpty(user.Name))
-                                        identity.AddClaim(new Claim(ClaimTypes.Name, user.Name));
-                                    if (!string.IsNullOrEmpty(user.Email))
-                                        identity.AddClaim(new Claim(ClaimTypes.Email, user.Email));
-                                    if (user.IsAdmin != null)
-                                        identity.AddClaim(new Claim("is_admin", user.IsAdmin.ToString()!));
-                                    if (!string.IsNullOrEmpty(user.QlnextUserId))
-                                        identity.AddClaim(new Claim("qlnext_user_id", user.QlnextUserId));
-                                    if (!string.IsNullOrEmpty(user.Alias))
-                                        identity.AddClaim(new Claim("alias", user.Alias));
-                                    if (!string.IsNullOrEmpty(user.Image))
-                                        identity.AddClaim(new Claim("image", user.Image));
-                                    if (!string.IsNullOrEmpty(user.Status))
-                                        identity.AddClaim(new Claim("status", user.Status));
-                                    if (user.Permissions != null && user.Permissions.Any())
+                                    // Custom user object
+                                    if (drupalToken.DrupalUser != null)
                                     {
-                                        foreach (var perm in user.Permissions)
-                                            identity.AddClaim(new Claim("permission", perm));
+                                        var user = drupalToken.DrupalUser;
+                                        if (!string.IsNullOrEmpty(user.Uid))
+                                            identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Uid));
+                                        if (!string.IsNullOrEmpty(user.Name))
+                                            identity.AddClaim(new Claim(ClaimTypes.Name, user.Name));
+                                        if (!string.IsNullOrEmpty(user.Email))
+                                            identity.AddClaim(new Claim(ClaimTypes.Email, user.Email));
+                                        if (user.IsAdmin != null)
+                                            identity.AddClaim(new Claim("is_admin", user.IsAdmin.ToString()!));
+                                        if (!string.IsNullOrEmpty(user.QlnextUserId))
+                                            identity.AddClaim(new Claim("qlnext_user_id", user.QlnextUserId));
+                                        if (!string.IsNullOrEmpty(user.Alias))
+                                            identity.AddClaim(new Claim("alias", user.Alias));
+                                        if (!string.IsNullOrEmpty(user.Image))
+                                            identity.AddClaim(new Claim("image", user.Image));
+                                        if (!string.IsNullOrEmpty(user.Status))
+                                            identity.AddClaim(new Claim("status", user.Status));
+                                        if (user.Permissions != null && user.Permissions.Any())
+                                        {
+                                            foreach (var perm in user.Permissions)
+                                                identity.AddClaim(new Claim("permission", perm));
+                                        }
+                                        if (user.Roles != null && user.Roles.Any())
+                                        {
+                                            foreach (var role in user.Roles)
+                                                identity.AddClaim(new Claim(ClaimTypes.Role, role));
+                                        }
                                     }
-                                    if (user.Roles != null && user.Roles.Any())
-                                    {
-                                        foreach (var role in user.Roles)
-                                            identity.AddClaim(new Claim(ClaimTypes.Role, role));
-                                    }
+                                    principal = new ClaimsPrincipal(identity);
                                 }
-                                principal = new ClaimsPrincipal(identity);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine("Extracting token from cookie failed: {0}", ex.Message);
                             }
 
                         }
