@@ -27,7 +27,13 @@ namespace QLN.Web.Shared.Models
             var httpContext = _httpContextAccessor.HttpContext;
             ClaimsPrincipal principal = new ClaimsPrincipal(new ClaimsIdentity());
 
-            if (httpContext != null && httpContext.Request.Cookies.TryGetValue("qat", out var jwt) && !string.IsNullOrEmpty(jwt))
+            if(httpContext == null)
+            {
+                Console.WriteLine("HttpContext is null");
+                return Task.FromResult(new AuthenticationState(principal));
+            }
+
+            if (httpContext.Request.Cookies.TryGetValue("qat", out var jwt) && !string.IsNullOrEmpty(jwt))
             {
                 Console.WriteLine("Cookie found: {0}", jwt);
                 var tokenHandler = new JwtSecurityTokenHandler();
