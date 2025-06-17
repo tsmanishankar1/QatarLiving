@@ -3,7 +3,25 @@
 
 <div class="store-card">
     <div class="store-logo-container">
-        <img src="@StoreData.ImageUrl" class="store-logo" alt="@StoreData.Title" />
+         @if (ShowEmptyCard)
+        {
+            <span class="image-fallback-text">No image found</span>
+        }
+        else
+        {
+            @if (!imageLoaded)
+            {
+                <MudSkeleton SkeletonType="SkeletonType.Circle" Width="100px" Height="100px" />
+            }
+
+            <img src="@StoreData.ImageUrl"
+                 class="store-logo"
+                 alt="@StoreData.Title"
+                 style="@(imageLoaded ? "display: block;" : "display: none;")"
+                 @onload="OnImageLoaded"
+                 @onerror="OnImageError"
+                 key="@StoreData.ImageUrl" />
+        }
     </div>
     <div class="store-info">
         <div class="store-name">@StoreData.Title</div>
@@ -68,4 +86,11 @@
         padding: 0;
         min-height: 0;
     }
+        .image-fallback-text {
+        font-size: 0.7rem;
+        color: var(--color-text-caption);
+        text-align: center;
+        padding: 10px;
+    }
+
 </style>

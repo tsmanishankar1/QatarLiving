@@ -22,28 +22,14 @@ public class LandingComponentBase : ComponentBase
     protected IEnumerable<LandingFeaturedItemDto>? FeaturedServicesList { get; set; }
     protected IEnumerable<LandingBackOfficeIndex>? FeaturedCategoriesList { get; set; }
     protected IEnumerable<LandingBackOfficeIndex> ReadyToGrowList { get; set; } = new List<LandingBackOfficeIndex>();
-
+    protected IEnumerable<LandingBackOfficeIndex>? FeaturedStoresList { get; set; } = new List<LandingBackOfficeIndex>();
     protected IEnumerable<LandingBackOfficeIndex>? CategoriesList { get; set; }
-    protected IEnumerable<LandingBackOfficeIndex>? SeasonalPicksList { get; set; }
+    protected IEnumerable<LandingBackOfficeIndex> SeasonalPicksList { get; set; } = new List<LandingBackOfficeIndex>();
     protected IEnumerable<LandingBackOfficeIndex>? SocialPostDetailList { get; set; }
     protected IEnumerable<LandingBackOfficeIndex>? SocialLinksList { get; set; }
     protected IEnumerable<LandingBackOfficeIndex>? SocialMediaVideosList { get; set; }
     protected IEnumerable<LandingBackOfficeIndex>? FaqItemsList { get; set; }
-  protected List<LandingBackOfficeIndex> FeaturedStoresList { get; set; } = new()
-    {
-        new() { Title = "AIRBNB", ImageUrl = "qln-images/stores/vector.svg", ListingCount = 2152 },
-        new() { Title = "Starlink", ImageUrl = "qln-images/stores/starlink.svg", ListingCount = 2152 },
-        new() { Title = "MICROSOFT", ImageUrl = "qln-images/stores/microsoft.svg", ListingCount = 2152 },
-        new() { Title = "Lulu Hypermarket", ImageUrl = "qln-images/stores/hypermarket.svg", ListingCount = 2152 },
-        new() { Title = "City Hypermarket", ImageUrl = "qln-images/stores/hypermarket_city.svg", ListingCount = 1845 },
-        new() { Title = "Al Meera", ImageUrl = "qln-images/stores/meera.svg", ListingCount = 3021 },
-        new() { Title = "MICROSOFT", ImageUrl = "qln-images/stores/microsoft.svg", ListingCount = 2152 },
-        new() { Title = "Lulu Hypermarket", ImageUrl = "qln-images/stores/hypermarket.svg", ListingCount = 2152 },
-        new() { Title = "AIRBNB", ImageUrl = "qln-images/stores/vector.svg", ListingCount = 2152 },
-        new() { Title = "Starlink", ImageUrl = "qln-images/stores/starlink.svg", ListingCount = 2152 },
-        new() { Title = "Al Meera", ImageUrl = "qln-images/stores/meera.svg", ListingCount = 3021 },
-        new() { Title = "MICROSOFT", ImageUrl = "qln-images/stores/microsoft.svg", ListingCount = 2152 }
-    };
+
   protected override async Task OnInitializedAsync()
 {
     try
@@ -61,7 +47,7 @@ public class LandingComponentBase : ComponentBase
                 FeaturedServicesList = (landingData.FeaturedServices ?? Enumerable.Empty<LandingFeaturedItemDto>()).ToList();
                 FeaturedCategoriesList = landingData.FeaturedCategories ?? new List<LandingBackOfficeIndex>();
                 ReadyToGrowList = landingData.ReadyToGrow ?? new List<LandingBackOfficeIndex>();
-
+                FeaturedStoresList = landingData.FeaturedStores ?? new List<LandingBackOfficeIndex>();
                 CategoriesList = landingData.Categories ?? new List<LandingBackOfficeIndex>();
                 SeasonalPicksList = landingData.SeasonalPicks ?? new List<LandingBackOfficeIndex>();
                 SocialPostDetailList = landingData.SocialPostDetail ?? new List<LandingBackOfficeIndex>();
