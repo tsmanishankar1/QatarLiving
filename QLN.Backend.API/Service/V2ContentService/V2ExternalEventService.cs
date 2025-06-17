@@ -33,7 +33,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 }
                 var url = "/v2/api/event/createByUserId";
 
-                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2ContentEvents.EventServiceAppId, url);
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2ContentEvents.ContentServiceAppId, url);
                 request.Content = new StringContent(
                     JsonSerializer.Serialize(dto),
                     Encoding.UTF8,
@@ -58,7 +58,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             {
                 return await _dapr.InvokeMethodAsync<List<V2ContentEventDto>>(
                     HttpMethod.Get,
-                    ConstantValues.V2ContentEvents.EventServiceAppId,
+                    ConstantValues.V2ContentEvents.ContentServiceAppId,
                     "/v2/api/event/getAll",
                     cancellationToken
                 ) ?? new List<V2ContentEventDto>();
@@ -78,7 +78,7 @@ namespace QLN.Backend.API.Service.V2ContentService
 
                 return await _dapr.InvokeMethodAsync<V2ContentEventDto>(
                     HttpMethod.Get,
-                    ConstantValues.V2ContentEvents.EventServiceAppId,
+                    ConstantValues.V2ContentEvents.ContentServiceAppId,
                     url,
                     cancellationToken);
             }
@@ -106,7 +106,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 }
                 var url = "/v2/api/event/updateByUserId";
 
-                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.V2ContentEvents.EventServiceAppId, url);
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.V2ContentEvents.ContentServiceAppId, url);
                 request.Content = new StringContent(
                     JsonSerializer.Serialize(dto),
                     Encoding.UTF8,
@@ -138,7 +138,7 @@ namespace QLN.Backend.API.Service.V2ContentService
 
                 return await _dapr.InvokeMethodAsync<string>(
                     HttpMethod.Delete,
-                    ConstantValues.V2ContentEvents.EventServiceAppId,
+                    ConstantValues.V2ContentEvents.ContentServiceAppId,
                     url,
                     cancellationToken
                 );
