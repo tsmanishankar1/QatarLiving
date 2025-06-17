@@ -1,0 +1,234 @@
+@page "/qln/classifieds/deals/details/preview"
+@using MudBlazor
+@inherits DealsPreviewBase
+<div class="deal-details-container">
+ <div class="deal-max-container">
+    <a href="/qln/classifieds/deals" class="back-link">
+     <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowLeft"
+                    Class="back-to-login-icon" />
+    <span class="back-text">Back to Deals</span>
+</a>
+    <div class="carousel-wrapper">
+    @if (currentIndex > 0)
+    {
+        <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
+                       Class="nav-button-inline"
+                       OnClick="@PreviousImage" />
+    }
+    <div style="display: flex; flex-direction: column;">
+        <img src="@imageUrls[currentIndex]"
+         alt="Deal Image"
+         class="carousel-image-inline" />
+            <div class="mobile-store-center-info">
+                 <div class="store-location">Page 1 out of 12</div>
+                <div class="store-location">Al Sadd, West Bay, Dukhan, Mansoura</div>
+            </div>
+    </div>
+
+    @if (currentIndex < imageUrls.Count - 1)
+    {
+        <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                       Class="nav-button-inline"
+                       OnClick="@NextImage" />
+    }
+</div>
+
+    <div class="deal-footer">
+        <div class="footer-left">
+            <img src="qln-images/stores/hypermarket.svg" alt="Store Logo" class="store-logo" />
+            <div class="store-info">
+                <div class="store-name">Lulu Hypermarket</div>
+                <div class="store-meta">Ramadan Savers · End in 2 Days</div>
+            </div>
+        </div>
+        <div class="store-center-info">
+                 <div class="store-location">Page 1 out of 12</div>
+                <div class="store-location">Al Sadd, West Bay, Dukhan, Mansoura</div>
+        </div>
+
+        <div class="footer-right">
+            <MudButton StartIcon="@Icons.Material.Filled.Public"
+                       Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Style="border-radius: 20px;"
+                       Href="https://luluwebsite.com"
+                       Target="_blank">
+                Visit Website
+            </MudButton>
+        </div>
+    </div>
+    </div>
+</div>
+
+<style>
+    .deal-details-container {
+    background-color: var(--color-secondary-background);
+    width: 100%;
+    align-items: center;
+}
+.deal-max-container{
+        max-width: 1170px;
+        margin: 0 auto;
+        width: 100%;
+        padding: 20px 0px;
+    }
+
+.carousel-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    padding: 0;
+    gap: 24px;
+}
+
+.carousel-image-inline {
+    max-height: 688px;
+    object-fit: contain;
+    border-radius: 6px;
+    flex-shrink: 1;
+    @* width: 100%; *@
+}
+
+.nav-button-inline {
+    background-color: var(--color-accent); 
+    color: white; /* White icon */
+    border-radius: 6px;
+    min-width: 40px;
+    min-height: 100px;
+    width: 40px;
+    height: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.3s ease;
+}
+
+.deal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    @* gap: 12px; *@
+    border-radius: 6px;
+    background-color: #FFFFFF;
+}
+
+.footer-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+
+.store-logo {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    border-radius: 50%;
+    background: white;
+    padding: 6px;
+}
+
+.store-info {
+    display: flex;
+    flex-direction: column;
+    font-size: 14px;
+}
+ .back-to-login-icon {
+        color: var(--color-primary);
+        font-size: 20px;
+        margin-right: 4px;
+    }
+
+.store-name {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--color-primary);
+}
+
+.store-meta {
+    color: var(--mud-palette-text-secondary);
+}
+
+.store-location {
+    font-size: 13px;
+    color: var(--mud-palette-text-secondary);
+}
+
+.footer-right {
+    flex-shrink: 0;
+}
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--color-primary);
+    text-decoration: none;
+    position: relative;
+}
+
+.back-icon {
+    font-size: 20px;
+    margin-right: 4px;
+}
+ .custom-carousel-wrapper {
+        @* position: relative;
+        width: 100%;
+        max-width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center; *@
+    }
+
+    .custom-carousel-image {
+        width: 100%;
+        max-height: 688px;
+        object-fit: contain;
+        border-radius: 6px;
+        display: block;
+    }
+
+    .nav-button {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background-color: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        border-radius: 50%;
+        z-index: 2;
+    }
+
+    .nav-button.left {
+        left: 12px;
+    }
+    .store-center-info {
+        flex: 1; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center;
+
+        }
+
+    .nav-button.right {
+        right: 12px;
+    }
+    .mobile-store-center-info{
+         display: none !important;
+    }
+    @@media (max-width: 768px) {
+    .store-center-info {
+        display: none !important;
+    }
+    .mobile-store-center-info{
+        
+    }
+}
+
+
+</style>
