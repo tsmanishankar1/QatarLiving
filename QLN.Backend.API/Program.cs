@@ -236,7 +236,7 @@ app.MapGroup("/api/subscriptions")
    app.MapGroup("/api/payments")
     .MapPaymentEndpoints()
     .RequireAuthorization();
-app.MapGroup("/api/paytopublish")
+app.MapGroup("/api/PayToPublish")
     .MapPayToPublishEndpoints();
 
 app.MapGroup("/api/v2/content")
