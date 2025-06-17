@@ -29,13 +29,13 @@ namespace QLN.Web.Shared.Models
 
             if(httpContext == null)
             {
-                Console.WriteLine("HttpContext is null");
+                //Console.WriteLine("HttpContext is null");
                 return Task.FromResult(new AuthenticationState(principal));
             }
 
             if (httpContext.Request.Cookies.TryGetValue("qat", out var jwt) && !string.IsNullOrEmpty(jwt))
             {
-                Console.WriteLine("Cookie found: {0}", jwt);
+                //Console.WriteLine("Cookie found: {0}", jwt);
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var validationParameters = new TokenValidationParameters
                 {
@@ -59,7 +59,7 @@ namespace QLN.Web.Shared.Models
                     SecurityToken validatedToken;
                     var validatedPrincipal = tokenHandler.ValidateToken(jwt, validationParameters, out validatedToken);
 
-                    Console.WriteLine("JWT Validated: {0}", validatedPrincipal.Identity?.IsAuthenticated);
+                    //Console.WriteLine("JWT Validated: {0}", validatedPrincipal.Identity?.IsAuthenticated);
 
                     if (validatedToken.ValidTo > DateTime.UtcNow)
                     {
@@ -69,11 +69,11 @@ namespace QLN.Web.Shared.Models
                             ? string.Join(".", decodedTokenParts.Skip(1))
                             : string.Empty;
 
-                        Console.WriteLine("Decoded Token {0}", decodedToken);
+                        //Console.WriteLine("Decoded Token {0}", decodedToken);
 
                         if (!string.IsNullOrEmpty(decodedToken))
                         {
-                            Console.WriteLine("Attempting to deserialize token from cookie");
+                            //Console.WriteLine("Attempting to deserialize token from cookie");
                             try
                             {
                                 var drupalToken = JsonSerializer.Deserialize<DrupalJWTToken>(decodedToken);
@@ -81,7 +81,7 @@ namespace QLN.Web.Shared.Models
 
                                 if (drupalToken != null)
                                 {
-                                    Console.WriteLine("Token deserialized successfully");
+                                    //Console.WriteLine("Token deserialized successfully");
                                     // Custom user object
                                     if (drupalToken.DrupalUser != null)
                                     {
@@ -137,10 +137,10 @@ namespace QLN.Web.Shared.Models
                     principal = new ClaimsPrincipal(new ClaimsIdentity());
                 }
             } 
-            else
-            {
-                Console.WriteLine("Cookie not found");
-            }
+            //else
+            //{
+            //    Console.WriteLine("Cookie not found");
+            //}
 
 
             return Task.FromResult(new AuthenticationState(principal));
