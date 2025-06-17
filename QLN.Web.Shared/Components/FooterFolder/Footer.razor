@@ -19,21 +19,21 @@
                         <div class="footer-col-vertical">
                             <h4>Explore</h4>
                             <div class="footer-links-col">
-                                <MudLink id="footerPropertiesLink" OnClick="() => NavigationManager.NavigateTo(navigationPath.Properties, forceLoad: true)">Properties</MudLink>
-                                <MudLink id="footerVehiclesLink" OnClick="() => NavigationManager.NavigateTo(navigationPath.Vehicles, forceLoad: true)">Vehicles</MudLink>
-                                <MudLink id="footerClassifiedsLink" OnClick="() => NavigationManager.NavigateTo(navigationPath.Classifieds, forceLoad: true)">Classifieds</MudLink>
-                                <MudLink id="footerServicesLink" OnClick="() => NavigationManager.NavigateTo(navigationPath.Services, forceLoad: true)">Services</MudLink>
-                                <MudLink id="footerJobsLink" OnClick="() => NavigationManager.NavigateTo(navigationPath.Jobs, forceLoad: true)">Jobs</MudLink>
-                                <MudLink id="footerRewardsLink" OnClick="() => NavigationManager.NavigateTo(navigationPath.Rewards, forceLoad: true)">Rewards</MudLink>
-                                @* <MudLink id="footerSubcriptionsLink" class="premium" href="@navigationPath.Subscription">Premium subscriptions</MudLink> *@
+                                <MudLink Class="footer-links" id="footerPropertiesLink" OnClick="() => NavigationManager.NavigateTo(navigationPath.Properties, forceLoad: true)">Properties</MudLink>
+                                <MudLink Class="footer-links" id="footerVehiclesLink" OnClick="() => NavigationManager.NavigateTo(navigationPath.Vehicles, forceLoad: true)">Vehicles</MudLink>
+                                <MudLink Class="footer-links" id="footerClassifiedsLink" OnClick="() => NavigationManager.NavigateTo(navigationPath.Classifieds, forceLoad: true)">Classifieds</MudLink>
+                                <MudLink Class="footer-links" id="footerServicesLink" OnClick="() => NavigationManager.NavigateTo(navigationPath.Services, forceLoad: true)">Services</MudLink>
+                                <MudLink Class="footer-links" id="footerJobsLink" OnClick="() => NavigationManager.NavigateTo(navigationPath.Jobs, forceLoad: true)">Jobs</MudLink>
+                                <MudLink Class="footer-links" id="footerRewardsLink" OnClick="() => NavigationManager.NavigateTo(navigationPath.Rewards, forceLoad: true)">Rewards</MudLink>
+                                @* <MudLink Class="footer-links"id="footerSubcriptionsLink" class="premium" href="@navigationPath.Subscription">Premium subscriptions</MudLink> *@
                             </div>
                         </div>
                         <div class="footer-col-vertical">
                             <h4>Other</h4>
                             <div class="footer-links-col">
-                                <MudLink href="/content/news">News</MudLink>
-                                <MudLink href="/content/events">Events</MudLink>
-                                <MudLink href="/content/community">Community</MudLink>
+                                <MudLink Class="footer-links" href="/content/news">News</MudLink>
+                                <MudLink Class="footer-links" href="/content/events">Events</MudLink>
+                                <MudLink Class="footer-links" href="/content/community">Community</MudLink>
                                 @* <MudLink href="#">Business pages</MudLink>
                                 <MudLink href="@navigationPath.eShops">eShops</MudLink> *@
                             </div>
@@ -46,7 +46,7 @@
             <div class="footer-inline footer-col-435">
                 <div class="footer-column footer-col-full">
                     <p>Want to advertise on Qatar Living?</p>
-                    <p><strong>Take a look at our <MudLink class="orange-link" OnClick="() => NavigationManager.NavigateTo(navigationPath.Advertise, forceLoad: true)">Advertise page</MudLink></strong></p>
+                    <p><strong>Take a look at our <MudLink Class="orange-link" OnClick="() => NavigationManager.NavigateTo(navigationPath.Advertise, forceLoad: true)">Advertise page</MudLink></strong></p>
                     <NewLetterSubscription/>
                 </div>
             </div>
@@ -76,10 +76,10 @@
         <div class="footer-bottom">
             <div class="footer-link">
                 <div class="footer-links">
-                    <MudLink OnClick="() => NavigationManager.NavigateTo(navigationPath.AdvertisingTerms, forceLoad: true)">Advertising Terms</MudLink>
-                    <MudLink OnClick="() => NavigationManager.NavigateTo(navigationPath.TermsOfUse, forceLoad: true)">Website Terms</MudLink>
-                    <MudLink OnClick="() => NavigationManager.NavigateTo(navigationPath.PostingRules, forceLoad: true)">Rules for posting ads</MudLink>
-                    <MudLink OnClick="() => NavigationManager.NavigateTo(navigationPath.HelpLink, forceLoad: true)">Help</MudLink>
+                    <MudLink Class="footer-links" OnClick="() => NavigationManager.NavigateTo(navigationPath.AdvertisingTerms, forceLoad: true)">Advertising Terms</MudLink>
+                    <MudLink Class="footer-links" OnClick="() => NavigationManager.NavigateTo(navigationPath.TermsOfUse, forceLoad: true)">Website Terms</MudLink>
+                    <MudLink Class="footer-links" OnClick="() => NavigationManager.NavigateTo(navigationPath.PostingRules, forceLoad: true)">Rules for posting ads</MudLink>
+                    <MudLink Class="footer-links" OnClick="() => NavigationManager.NavigateTo(navigationPath.HelpLink, forceLoad: true)">Help</MudLink>
                 </div>
                 <p class="footer-copyright">Copyright © 2024 Qatar Living. All rights reserved.</p>
             </div>
@@ -167,11 +167,11 @@
         }
 
         .footer-column .premium {
-            color: #FF7F38;
+            color: #FF7F38 !important;
         }
 
         .footer-column .orange-link {
-            color: #FF7F38;
+            color: #FF7F38 !important;
             text-decoration: underline;
         }
 
@@ -267,8 +267,8 @@
         gap: 15px;
     }
 
-    .footer-links a {
-        color: white;
+    .footer-links  {
+        color: white !important;
         text-decoration: underline;
     }
 
