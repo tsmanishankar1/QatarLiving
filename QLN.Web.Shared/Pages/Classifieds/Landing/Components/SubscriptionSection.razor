@@ -2,10 +2,12 @@
 @using QLN.Web.Shared.Components.SubscriptionCard
 @inject NavigationManager Navigation
 @using QLN.Web.Shared.Components.EmptyCard
+@using MudBlazor
 
+<div class="subscription-card-main">
 @if (Loading)
 {
-    <MudSkeleton Height="200px" Width="100%" />
+    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="207px" Width="100%" />
 }
 else if (Data is null)
 {
@@ -20,6 +22,7 @@ else
         ImageSrc="@Data.ImageUrl"
         OnClick="@(() => HandleClick(Data.RediectUrl))" />
 }
+</div>
 
 @code {
     [Parameter] public LandingBackOfficeIndex? Data { get; set; }
@@ -36,3 +39,10 @@ else
         }
     }
 }
+
+<style>
+    .subscription-card-main {
+        width:100%;
+        padding: 10px;
+    }
+</style>

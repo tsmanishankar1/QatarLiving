@@ -28,7 +28,7 @@ public class LandingComponentBase : ComponentBase
     protected IEnumerable<LandingBackOfficeIndex>? SocialPostDetailList { get; set; }
     protected IEnumerable<LandingBackOfficeIndex>? SocialLinksList { get; set; }
     protected IEnumerable<LandingBackOfficeIndex>? SocialMediaVideosList { get; set; }
-    protected IEnumerable<LandingBackOfficeIndex>? FaqItemsList { get; set; }
+    protected IEnumerable<LandingBackOfficeIndex> FaqItemsList { get; set; }  = new List<LandingBackOfficeIndex>();
 
   protected override async Task OnInitializedAsync()
 {
@@ -68,7 +68,7 @@ public class LandingComponentBase : ComponentBase
     }
     finally
     {
-        IsLoading = false;
+        IsLoading = true;
     }
 }
 

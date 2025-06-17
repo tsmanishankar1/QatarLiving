@@ -2,10 +2,8 @@
 @using QLN.Common.DTO_s
 @using QLN.Web.Shared.Components.Classifieds.FeaturedItemCard
 @using QLN.Web.Shared.Components.EmptyCard
-@using QLN.Web.Shared.Pages.Classifieds.Landing.Components.Skeletons.FeaturedItemSkeleton
+@using QLN.Web.Shared.Pages.Classifieds.Skeletons
 @inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
-@using System.Threading.Tasks;
 @inherits FeaturedItemsBase
 
 <div class="featured-cards-section">
@@ -16,7 +14,14 @@
 
     @if (Loading)
     {
-        <FeaturedItemSkeleton />
+         <div class="featured-skeleton-wrapper">
+        @for (int i = 0; i < 4; i++)
+        {
+            <div class="skeleton-slide">
+                <FeaturedItemSkeletonCard />
+            </div>
+        }
+    </div>
     }
     else if (FeaturedItems?.Any() != true)
     {
@@ -148,7 +153,19 @@
         background: #00426D;
     }
 
+    .featured-skeleton-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: center;
+        padding: 0 1rem;
+    }
 
+    /* Each skeleton slide */
+    .skeleton-slide {
+        flex: 0 0 calc(25% - 1rem); /* 4 per row */
+        min-width: 200px;
+    }
     /* Show arrows on hover (only desktop) */
     @@media (min-width: 769px) {
         .swiper-featured-container:hover .arrow-button {
@@ -157,17 +174,31 @@
         }
     }
 
-    /* Hide arrows permanently on mobile & tablet */
-    @@media (max-width: 768px) {
-        .arrow-button {
-            display: none !important;
-        }
-    }
-
-
     @@media (max-width: 768px) {
         .swiper-featured {
             padding: 0 0.5rem;
+        }
+           .arrow-button {
+            display: none !important;
+        }
+      
+    }
+     @@media (max-width: 1000px) {
+         .featured-skeleton-wrapper {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding-left: 12px;
+            scrollbar-width: none;        
+            -ms-overflow-style: none; 
+        }
+
+        .featured-skeleton-wrapper::-webkit-scrollbar {
+            display: none;               
+        }
+
+        .skeleton-slide {
+            flex: 0 0 auto;
+            width: 250px;
         }
     }
 </style>

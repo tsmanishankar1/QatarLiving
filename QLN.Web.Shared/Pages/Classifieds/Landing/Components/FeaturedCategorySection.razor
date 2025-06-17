@@ -1,24 +1,27 @@
 @using MudBlazor
 @using QLN.Common.DTO_s
 @using QLN.Web.Shared.Components.Classifieds.FeaturedCategoryCard
-@using QLN.Web.Shared.Pages.Classifieds.Landing.Components.Skeletons.FeaturedCategorySkeleton
+@using QLN.Web.Shared.Pages.Classifieds.Skeletons
 @using QLN.Web.Shared.Components.EmptyCard
 @inherits FeaturedCategoriesBase
 
 <div class="categories-wrapper">
     <div class="categories-header">
-        <MudContainer MaxWidth="MaxWidth.False">
             <h3 class="section-header">Featured Categories</h3>
-        </MudContainer>
     </div>
 
     @if (Loading)
     {
-        <FeaturedCategorySkeleton />
+     <div class="skeleton-categories-scroll-container">
+        @for (int i = 0; i < 6; i++)
+        {
+            <FeaturedCategorySkeleton />
+        }
+    </div>
     }
     else if (FeaturedCategories?.Any() != true)
     {
-        <EmptyCard Title="No featured items found." Subtitle="Please check back later or explore other categories." />
+        <EmptyCard Title="No Featured categories found." Subtitle="Please check back later or explore other categories." />
     }
     else
     {
@@ -142,7 +145,13 @@
         background: #00426D;
         transform: scale(1.5);
     }
-
+    .skeleton-categories-scroll-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
+        padding: 1rem;
+    }
 
     /* Show arrows on hover only for desktop */
     @@media (min-width: 769px) {
@@ -158,6 +167,19 @@
         }
           .swiper-wrapper.les5swiper-wrapper {
             justify-content: flex-start !important;
+        }
+    }
+    @@media (max-width: 1000px) {
+    .skeleton-categories-scroll-container {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-left: 12px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        }
+
+        .skeleton-categories-scroll-container::-webkit-scrollbar {
+            display: none;
         }
     }
 </style>
