@@ -20,7 +20,9 @@
          alt="Deal Image"
          class="carousel-image-inline" />
             <div class="mobile-store-center-info">
-                 <div class="store-location">Page 1 out of 12</div>
+                <div class="store-location">
+                    Page @(currentIndex + 1) out of @imageUrls.Count
+                </div>
                 <div class="store-location">Al Sadd, West Bay, Dukhan, Mansoura</div>
             </div>
     </div>
@@ -70,7 +72,7 @@
         max-width: 1170px;
         margin: 0 auto;
         width: 100%;
-        padding: 20px 0px;
+        padding: 20px 20px;
     }
 
 .carousel-wrapper {
@@ -87,17 +89,18 @@
     object-fit: contain;
     border-radius: 6px;
     flex-shrink: 1;
-    @* width: 100%; *@
+    width: 100%;
+    max-width: 540px;
 }
 
 .nav-button-inline {
     background-color: var(--color-accent); 
     color: white; /* White icon */
     border-radius: 6px;
-    min-width: 40px;
-    min-height: 100px;
-    width: 40px;
-    height: 100px;
+    min-width: 38px;
+    min-height: 74px;
+    width: 38px;
+    height: 74px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -219,14 +222,17 @@
         right: 12px;
     }
     .mobile-store-center-info{
-         display: none !important;
+         display: none;
     }
     @@media (max-width: 768px) {
     .store-center-info {
         display: none !important;
     }
     .mobile-store-center-info{
-        
+         display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 12px;
     }
 }
 
