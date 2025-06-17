@@ -52,15 +52,15 @@
                             <div class="video-title">
                                 @if (video == SelectedArticle)
                                 {
-                                    <a class="selected-title" href="@($"/content/article/details/{video.Slug}")">
+                                    <MudLink class="selected-title" href="@($"/content/article/details/{video.Slug}")">
                                         @video.Title
-                                    </a>
+                                    </MudLink>
                                 }
                                 else
                                 {
-                                    <a class="list-title" href="@($"/content/article/details/{video.Slug}")">
+                                    <MudLink class="list-title" href="@($"/content/article/details/{video.Slug}")">
                                         @video.Title
-                                    </a>
+                                    </MudLink>
                                 }
                             </div>
                         </div>
