@@ -5,14 +5,14 @@ using QLN.Common.Infrastructure.IService.V2IContent;
 
 namespace QLN.Content.MS.Service
 {
-    public class BannerService : IV2contentBannerService
+    public class V2InternalBannerService : IV2contentBannerService
     {
         private readonly DaprClient _daprClient;
-        private readonly ILogger<BannerService> _logger;
-        private const string StateStore = "bannerstatestore";
+        private readonly ILogger<V2InternalBannerService> _logger;
+        private const string StateStore = "contentstatestore";
         private const string IndexKey = "banner-index";
 
-        public BannerService(DaprClient daprClient, ILogger<BannerService> logger)
+        public V2InternalBannerService(DaprClient daprClient, ILogger<V2InternalBannerService> logger)
         {
             _daprClient = daprClient;
             _logger = logger;

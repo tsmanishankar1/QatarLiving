@@ -1,7 +1,7 @@
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
-  name: bannerstatestore    
+  name: contentstatestore    
   namespace: default
 spec:
   type: state.redis

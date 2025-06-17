@@ -2,6 +2,7 @@
 @using QLN.Web.Shared.Services
 @using QLN.Web.Shared.Models
 @inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
 @inject IOptions<NavigationPath> options
 @{
     var navigationPath = options.Value;
@@ -13,7 +14,7 @@
         <!-- Header -->
         <div class="mobile-menu-header">
             <img src="/qln-images/header/logo_mobile.svg" alt="Logo" class="logo" />
-            <MudIconButton Icon="@Icons.Material.Filled.Close" @onclick="() => OnClose.InvokeAsync()" class="close-btn" />
+            <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="() => OnClose.InvokeAsync()" class="close-btn" />
         </div>
         @if (IsLoggedIn)
         {
@@ -40,13 +41,13 @@
         <div class="auth-buttons">
             @if (IsLoggedIn)
             {
-                <button class="signup-btn" @onclick="@(() => RedirectTo(navigationPath.Subscription))">Buy Premium</button>
-                <button class="post-btn" @onclick="() => OnPostAdClicked.InvokeAsync()">Post Ad</button>
+                <MudButton class="signup-btn" OnClick="@(() => RedirectTo(navigationPath.Subscription))">Buy Premium</MudButton>
+                <MudButton class="post-btn" OnClick="() => OnPostAdClicked.InvokeAsync()">Post Ad</MudButton>
             }
             else
             {
-                <button class="signup-btn" @onclick="() => GoToRegister.InvokeAsync()">Sign Up</button>
-                <button class="login-btn" @onclick="() => GoToLogin.InvokeAsync()">Login</button>
+                <MudButton class="signup-btn" OnClick="() => GoToRegister.InvokeAsync()">Sign Up</MudButton>
+                <MudButton class="login-btn" OnClick="() => GoToLogin.InvokeAsync()">Login</MudButton>
             }
         </div>
         @if (_isProfileMenuOpen)
@@ -206,12 +207,11 @@
     {
         _isProfileMenuOpen = !_isProfileMenuOpen;
     }  
-  void RedirectTo(string url)
+    async void RedirectTo(string url)
     {
         NavigationManager.NavigateTo(url, true); // `true` forces full page reload
+        await HandleLinkClick();
     }
-    [Inject]
-    public NavigationManager NavigationManager { get; set; }
     private async Task HandleLinkClick()
     {
         await OnClose.InvokeAsync();
@@ -307,6 +307,7 @@
         border-radius: 5px;
         font-weight: 600;
         font-size: 14px;
+        text-transform: capitalize;
     }
 
     .login-btn {
@@ -318,6 +319,7 @@
         border-radius: 5px;
         font-weight: 600;
         font-size: 14px;
+        text-transform: capitalize;
     }
 
     .post-btn {
@@ -329,6 +331,7 @@
         border-radius: 5px;
         font-weight: 600;
         font-size: 14px;
+        text-transform: capitalize;
     }
 
 

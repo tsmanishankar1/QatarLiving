@@ -1,5 +1,4 @@
-﻿using QLN.Backend.API.Service;
-using QLN.Backend.API.Service.AnalyticsService;
+﻿using QLN.Backend.API.Service.AnalyticsService;
 using QLN.Backend.API.Service.BannerService;
 using QLN.Backend.API.Service.ClassifiedService;
 using QLN.Backend.API.Service.CompanyService;
@@ -77,6 +76,11 @@ namespace QLN.Backend.API.ServiceConfiguration
         public static IServiceCollection CompanyConfiguration(this IServiceCollection services, IConfiguration config)
         {
             services.AddTransient<ICompanyService, ExternalCompanyService>();
+            return services;
+        }
+        public static IServiceCollection EventConfiguration(this IServiceCollection services, IConfiguration config)
+        {
+            services.AddTransient<IV2EventService, V2ExternalEventService>();
             return services;
         }
         public static IServiceCollection ContentConfiguration(this IServiceCollection services, IConfiguration config)
