@@ -68,7 +68,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .WithTags("Content News")
             .WithSummary("Process submitted news content")
             .WithDescription("Processes ContentNewsDto by category and topic, and returns a summary.")
-            .RequireAuthorization()
+            
             .Produces<NewsSummary>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
@@ -124,7 +124,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .WithTags("Content News")
             .WithSummary("Process news content by explicit user ID")
             .WithDescription("Processes news content using an explicit user ID provided in the request.")
-            .RequireAuthorization()
+            
             .Produces<NewsSummary>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
@@ -166,7 +166,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     return TypedResults.Problem(title: "Failed to create banner", detail: ex.Message);
                 }
             })
-            .RequireAuthorization()
+            
             .WithTags("Content Banner")
             .WithSummary("Create a new banner")
             .WithDescription("Creates a banner entry with blob images and stores in Dapr state store.")
@@ -231,7 +231,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     return TypedResults.Problem(title: "Update Failed", detail: ex.Message);
                 }
             })
-            .RequireAuthorization()
+            
             .WithTags("Content Banner")
             .WithSummary("Update banner by category/code")
             .WithDescription("Updates the banner with given category and code.")
@@ -262,7 +262,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     );
                 }
             })
-              .RequireAuthorization()
+              
               .WithName("DeleteBannerFromState")
               .WithTags("Content Banner")
               .WithSummary("Internal API to delete banner directly from Dapr state store")
