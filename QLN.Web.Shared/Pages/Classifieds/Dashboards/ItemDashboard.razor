@@ -133,32 +133,35 @@
 
 
             <!-- Tabs + Search/Sort -->
-            <div class="d-flex mb-4" style="border-bottom: 1px solid #EAECF0;">
-                <!-- Published Tab (active style) -->
-                <MudButton Variant="Variant.Text" Class="@(_selectedAdsTab == 0 ? "active-tab" : "")"
-                           Style="text-transform: none; font-weight: 600; padding-bottom: 12px; margin-right: 24px; position: relative;"
-                           @onclick="() => _selectedAdsTab = 0">
-                    Published (@publishedAds.Count)
-                    @if (_selectedAdsTab == 0)
-                    {
-                        <div style="position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background-color: #F26D1E;">
-                        </div>
-                    }
-                </MudButton>
-                <!-- Unpublished Tab -->
-                <MudButton Variant="Variant.Text" Class="@(_selectedAdsTab == 1 ? "active-tab" : "")"
-                           Style="text-transform: none; font-weight: 600; padding-bottom: 12px; position: relative;"
-                           @onclick="() => _selectedAdsTab = 1">
-                    Unpublished (@unpublishedAds.Count)
-                    @if (_selectedAdsTab == 1)
-                    {
-                        <div style="position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background-color: #F26D1E;">
-                        </div>
-                    }
-                </MudButton>
+            <div class="d-flex flex-column flex-sm-row mb-4" style="border-bottom: 1px solid #EAECF0;">
+                <!-- First Row (Tabs) -->
+                <div class="d-flex">
+                    <!-- Published Tab (active style) -->
+                    <MudButton Variant="Variant.Text" Class="@(_selectedAdsTab == 0 ? "active-tab" : "")"
+                               Style="text-transform: none; font-weight: 600; padding-bottom: 12px; margin-right: 24px; position: relative;"
+                               @onclick="() => _selectedAdsTab = 0">
+                        Published (@publishedAds.Count)
+                        @if (_selectedAdsTab == 0)
+                        {
+                            <div style="position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background-color: #F26D1E;">
+                            </div>
+                        }
+                    </MudButton>
+                    <!-- Unpublished Tab -->
+                    <MudButton Variant="Variant.Text" Class="@(_selectedAdsTab == 1 ? "active-tab" : "")"
+                               Style="text-transform: none; font-weight: 600; padding-bottom: 12px; position: relative;"
+                               @onclick="() => _selectedAdsTab = 1">
+                        Unpublished (@unpublishedAds.Count)
+                        @if (_selectedAdsTab == 1)
+                        {
+                            <div style="position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background-color: #F26D1E;">
+                            </div>
+                        }
+                    </MudButton>
+                </div>
 
-                <!-- spacer -->
-                <div class="ml-auto d-flex align-items-center">
+                <!-- Second Row (Search/Sort) - will stack below tabs on mobile -->
+                <div class="ml-sm-auto d-flex align-items-center mt-2 mt-sm-0">
                     <MudTextField T="string" Placeholder="Search" Adornment="Adornment.Start"
                                   AdornmentIcon="@Icons.Material.Filled.Search" HideSpinButtons="true" Class="mr-2"
                                   Style="width: 200px;" />
@@ -172,49 +175,60 @@
             <!-- Published Ads -->
             @foreach (var ad in publishedAds)
             {
-                <MudPaper Class="d-flex mt-4 p-4"
+                <MudPaper Class="ad-container d-flex flex-column flex-sm-row mt-4 "
                           Style="border-radius: 0; border: none; border-bottom: 1px solid #EAECF0; box-shadow: none;">
-                    <!-- Image + Checkbox -->
-
-                    <div class="d-flex align-items-center mr-4">
-                        <MudCheckBox T="bool" @bind-Checked="_isChecked" Class="mr-2" />
+                    <!-- First Row (Image + Checkbox) - full width on mobile -->
+                    <div class="d-flex align-items-center mb-3 mb-sm-0 mr-sm-4">
+                        <MudCheckBox T="bool" @bind-Checked="_isChecked" Class="mr-2 ad-checkbox" />
                         <img src="/qln-images/subscription/Gucci.png" alt="Ad Image"
-                             style="width: 240px; height: 180px; border-radius: 4px;" />
+                             style="width: 240px; max-width:100%; height: auto; max-height: 180px; border-radius: 4px;" />
                     </div>
 
-                    <!-- Main Info -->
+                    <!-- Second Column (Main Content) -->
                     <div style="flex:1">
+                        <!-- Category (Row 2) -->
                         <MudText Typo="Typo.body2"
                                  Style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 11px; line-height: 12px; letter-spacing: 0; color: #646464; margin-bottom: 4px;">
                             @ad.Category
                         </MudText>
+
+                        <!-- Title (Row 3) -->
                         <MudText Typo="Typo.h6"
                                  Style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 14px; line-height: 20px; letter-spacing: 0; color: #00426D; margin-bottom: 4px;">
                             @ad.Title
                         </MudText>
-                        <div class="d-flex align-items-center mb-2">
-                            <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" Color="Color.Primary"
-                                     Style="margin-right:4px" />
-                            <MudLink Href="#"
-                                     Style="margin-left:4px;font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 12px; line-height: 18px; letter-spacing: 0; color: #0065A8;">
-                                Certificate.pdf
-                            </MudLink>
-                            <MudIcon Icon="@Icons.Material.Outlined.Place" Size="Size.Small"
-                                     Style="color: #646464;margin-left:4px;" />
-                            <MudText Typo="Typo.caption"
-                                     Style="margin-left:4px;font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 11px; line-height: 12px; letter-spacing: 0; color: #646464;">
-                                @ad.Location
-                            </MudText>
+
+                        <!-- Certificate + Location (Row 4) -->
+                        <div class="d-flex flex-column flex-sm-row align-items-sm-center mb-2">
+                            <div class="d-flex align-items-center mb-2 mb-sm-0">
+                                <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" Color="Color.Primary"
+                                         Style="margin-right:4px" />
+                                <MudLink Href="#"
+                                         Style="margin-left:4px;font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 12px; line-height: 18px; letter-spacing: 0; color: #0065A8;">
+                                    Certificate.pdf
+                                </MudLink>
+                            </div>
+                            <div class="d-flex align-items-center ml-2">
+                                <MudIcon Icon="@Icons.Material.Outlined.Place" Size="Size.Small"
+                                         Style="color: #646464; margin-left: 0; margin-sm-left:4px;" />
+                                <MudText Typo="Typo.caption"
+                                         Style="margin-left:4px;font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 11px; line-height: 12px; letter-spacing: 0; color: #646464;">
+                                    @ad.Location
+                                </MudText>
+                            </div>
                         </div>
+
+                        <!-- Price (Row 5) -->
                         <MudText Typo="Typo.h6"
                                  Style="font-family: 'Public Sans', sans-serif; font-weight: 600; font-size: 20px; line-height: 34px; letter-spacing: 0; color: #242424;">
-                            @ad.Price
+                            @ad.Price @ad.PriceType
                         </MudText>
 
-                        <div class="d-flex mt-2">
+                        <!-- Buttons (Row 6) -->
+                        <div class="d-flex flex-wrap mt-2" style="gap: 8px;">
                             <MudButton Variant="Variant.Text"
-                                       Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424; margin-right: 8px; display: flex; align-items: center;">
-                                <img src="qln-images/subscription/Refresh.svg" alt="Gucci" style=" margin-right: 8px;" />
+                                       Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424; display: flex; align-items: center;">
+                                <img src="qln-images/subscription/Refresh.svg" alt="Gucci" style="margin-right: 8px;" />
                                 <div>
                                     Refresh
                                     <div style="font-size: 0.7em; color: #5F6C7B;">(Exp: @ad.ExpiryDate)</div>
@@ -224,47 +238,34 @@
                             @if (ad.IsFeatured)
                             {
                                 <MudButton Variant="Variant.Text"
-                                           Style="text-transform: none;background-color:#F5F6FA;border-radius:4px; color: #242424; margin-right:8px;">
-                                    <img src="qln-images/subscription/Feature.svg" style=" margin-right: 8px; alt=" Feature" />
-
+                                           Style="text-transform: none;background-color:#F5F6FA;border-radius:4px; color: #242424;">
+                                    <img src="qln-images/subscription/Feature.svg" style="margin-right: 8px;" alt="Feature" />
                                     Unfeature
                                 </MudButton>
                             }
                             else
                             {
                                 <MudButton Variant="Variant.Text"
-                                           Style="text-transform: none;background-color:#F5F6FA;border-radius:4px; color: #242424; margin-right:8px;">
-                                    <img src="qln-images/subscription/Feature.svg" style=" margin-right: 8px; alt=" Feature" />
-
+                                           Style="text-transform: none;background-color:#F5F6FA;border-radius:4px; color: #242424;">
+                                    <img src="qln-images/subscription/Feature.svg" style="margin-right: 8px;" alt="Feature" />
                                     Pay to Feature
                                 </MudButton>
                             }
                             <MudButton Variant="Variant.Text"
-                                       Style="text-transform: none;background-color:#F5F6FA;border-radius:4px; color: #242424; margin-right:8px;">
-                                <img src="qln-images/subscription/Feature.svg" style=" margin-right: 8px;" alt="Feature" />
-
+                                       Style="text-transform: none;background-color:#F5F6FA;border-radius:4px; color: #242424;">
+                                <img src="qln-images/subscription/Feature.svg" style="margin-right: 8px;" alt="Feature" />
                                 Promote
                             </MudButton>
                             <MudIconButton Icon="@Icons.Material.Filled.MoreVert" />
                         </div>
                     </div>
-
-                    @* <!-- Actions -->
-                <div class="d-flex align-items-center" style="margin-top: 32px;">
-                    <MudBadge Style="margin-right: 8px; vertical-align: middle;" Variant="BadgeVariant.Dot" Color="Color.Success" />
-                    <MudText Typo="Typo.caption" Style="color: #5F6C7B;">Active</MudText>
-                </div> *@
-
-
-
-
                 </MudPaper>
 
                 <!-- Stats + Status -->
-                <MudPaper Class="d-flex align-items-center px-4 py-2 mb-4"
+                <MudPaper Class="d-flex flex-column flex-sm-row align-items-sm-center px-4 py-2 mb-4"
                           Style="margin-top:10px;border-radius:0; border:none; border-bottom:1px solid #EAECF0; box-shadow:none;">
                     <!-- Stats -->
-                    <div class="d-flex" style="flex: 1; gap: 16px; flex-wrap: wrap;">
+                    <div class="d-flex flex-wrap" style="flex: 1; gap: 16px;">
                         <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
                             <img src="qln-images/subscription/Impressions.svg" style="width: 16px; height: 16px; color: #00426D;" />
                             <MudText Typo="Typo.caption" Style="margin: 0;">Impressions: @ad.Impressions</MudText>
@@ -291,14 +292,9 @@
                         </div>
                     </div>
 
-
-
-                    <MudText Typo="Typo.caption" Style="color: #5F6C7B;">Listed on 01‑02‑2025</MudText>
+                    <MudText Typo="Typo.caption" Class="mt-2 mt-sm-0" Style="color: #5F6C7B;">Listed on 01‑02‑2025</MudText>
                 </MudPaper>
             }
-
-
-
         </MudPaper>
 
 
@@ -444,6 +440,12 @@
     .my-ad-toolbar-section{
         width:20%
     }
+
+    ad-container
+    {
+        padding:16px
+    }
+
     @@media (max-width: 1007px) {
         .dashboard-container {
             padding-left: 0px;
@@ -522,6 +524,57 @@
 
         .my-ad-toolbar-section {
             width: 100%
+        }
+
+
+        .d-flex.flex-column.flex-sm-row {
+            flex-direction: column !important;
+        }
+
+        .ml-sm-auto {
+            margin-left: 0 !important;
+        }
+
+        .mt-2.mt-sm-0 {
+            margin-top: 8px !important;
+        }
+
+        .d-flex.flex-column.flex-sm-row {
+            flex-direction: column !important;
+        }
+
+        .mb-3.mb-sm-0 {
+            margin-bottom: 12px !important;
+        }
+
+        .mr-sm-4 {
+            margin-right: 0 !important;
+        }
+
+        img {
+            max-width: 100% !important;
+            height: auto !important;
+        }
+
+        .d-flex.flex-wrap {
+            gap: 8px !important;
+        }
+        /* Stats section */
+        .d-flex.flex-column.flex-sm-row.align-items-sm-center {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+        }
+
+        .mt-2.mt-sm-0 {
+            margin-top: 8px !important;
+        }
+
+        .ad-checkbox {
+            display: none !important;
+        }
+
+        .ad-container {
+            padding: 0.5rem !important;
         }
     }
 </style>
