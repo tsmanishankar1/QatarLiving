@@ -5,8 +5,10 @@ namespace QLN.Web.Shared.Pages.Content.BackOffice.Daily.TopStoryBOCard
 {
     public class TopStoryBOCardBase : LayoutComponentBase
     {
-        
+
         [Parameter]
         public bool IsMiniCard { get; set; }
+         [Parameter]
+        public ContentPost Item { get; set; } = new();
     }
 }
