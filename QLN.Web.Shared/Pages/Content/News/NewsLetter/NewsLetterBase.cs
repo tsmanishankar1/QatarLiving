@@ -18,7 +18,6 @@ public class NewsLetterBase : ComponentBase
     protected NewsLetterSubscriptionModel SubscriptionModel { get; set; } = new();
     protected string SubscriptionStatusMessage = string.Empty;
     protected bool IsSubscribingToNewsletter { get; set; } = false;
-
     protected MudForm _form;
 
     protected async Task SubscribeAsync()
@@ -107,18 +106,9 @@ public class NewsLetterBase : ComponentBase
             {
                 IsSubscribingToNewsletter = false;
             }
-        }
-        else
+        } else
         {
             IsSubscribingToNewsletter = false;
-            if (string.IsNullOrWhiteSpace(SubscriptionModel.Email))
-            {
-                Snackbar.Add("Please enter a valid email address.", Severity.Warning);
-            }
-            else
-            {
-                Snackbar.Add("Failed to subscribe. Please try again later.", Severity.Error);
-            }
         }
     }
 }

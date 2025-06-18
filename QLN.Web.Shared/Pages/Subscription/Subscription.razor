@@ -1,8 +1,11 @@
-﻿@page "/subscription"
+﻿@page "/qln/subscription"
+
 @using QLN.Web.Shared.Components.ModalDialog
 @using QLN.Web.Shared.Components.BreadCrumb
 @using QLN.Web.Shared.Models
 @using MudBlazor
+@using QLN.Web.Shared.Components.EmptyCard
+
 
 
 @if (_actionSucess){
@@ -15,11 +18,13 @@
         OnClick="CloseSuccessPopup" />
     </div>
 }
-<MudContainer MaxWidth="MaxWidth.Large" Class="py-6 px-4" Style="background-color: #F2F4F7;">
-    <Breadcrumb Items="breadcrumbItems" />
+<div style="width: 100%;background-color: var(--color-secondary-background);">
+    <div class="responsive-container" >
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-6 px-4" Style="background-color: #F2F4F7;width:100%">
+            <Breadcrumb Items="breadcrumbItems" />
 
     <div style="width: 100%;display:flex;justify-content:center;align-items:center;">
-        <div style="width: 90%;display:flex;justify-content:center;align-items:center;">
+
             <div style="text-align: center; margin-bottom: 24px;">
                 <MudText Typo="Typo.h5" Class="font-semibold mb-1" Style="color:#242424;">
                     Subscription Packages
@@ -29,46 +34,19 @@
                 </MudText>
                 <div class="vertical-tabs">
                     <div class="vertical-tabs-toolbar">
-                        <div class="vertical-tab @( _activeVerticalTabIndex == 0 ? "active" : "" )" @onclick="() => SetVeritcalTab(0)">
+                                @foreach (var tab in _verticalTabs)
+                                {
+                                    <div class="vertical-tab @( _activeVerticalTabIndex == tab.Index ? "active" : "" )"
+                                         @onclick="() => SetVeritcalTab(tab.Index)">
+                                        <img src="@tab.Icon" class="vertical-tab-icon" alt="@tab.Label" />
+                                        <span class="vertical-tab-text">@tab.Label</span>
+                                        <div class="vertical-tab-indicator"></div>
+                                    </div>
+                                }
 
-                                <img src="/qln-images/subscription/Properties.svg" class="vertical-tab-icon" alt="Deals">
-                                <span class="vertical-tab-text">Properties</span>
-                            <div class="vertical-tab-indicator"></div>
-                        </div>
-                        <div class="vertical-tab @( _activeVerticalTabIndex == 1 ? "active" : "" )" @onclick="() => SetVeritcalTab(1)">
-
-                                <img src="/qln-images/subscription/Vehicles.svg" class="vertical-tab-icon" alt="Stores">
-                                <span class="vertical-tab-text">Vehicles</span>
-                            <div class="vertical-tab-indicator"></div>
-                        </div>
-                        <div class="vertical-tab @( _activeVerticalTabIndex == 2 ? "active" : "" )" @onclick="() => SetVeritcalTab(2)">
-
-                                <img src="/qln-images/subscription/Classifieds.svg" class="vertical-tab-icon" alt="Preloved">
-                                <span class="vertical-tab-text">Classified</span>
-                            <div class="vertical-tab-indicator"></div>
-                        </div>
-                        <div class="vertical-tab @( _activeVerticalTabIndex == 3 ? "active" : "" )" @onclick="() => SetVeritcalTab(3)">
-
-                                <img src="/qln-images/subscription/Services.svg" class="vertical-tab-icon" alt="Preloved">
-                                <span class="vertical-tab-text">Services</span>
-                            <div class="vertical-tab-indicator"></div>
-                        </div>
-                        <div class="vertical-tab @( _activeVerticalTabIndex == 4 ? "active" : "" )" @onclick="() => SetVeritcalTab(4)">
-
-                                <img src="/qln-images/subscription/Jobs.svg" class="vertical-tab-icon" alt="Preloved">
-                                <span class="vertical-tab-text">Jobs</span>
-                            <div class="vertical-tab-indicator"></div>
-                        </div>
-                        <div class="vertical-tab  @( _activeVerticalTabIndex == 5 ? "active" : "" )" @onclick="() => SetVeritcalTab(5)">
-
-                                <img src="/qln-images/subscription/Rewards.svg" class="vertical-tab-icon" alt="Preloved">
-                                <span class="vertical-tab-text">Rewards</span>
-                            <div class="vertical-tab-indicator"></div>
-                        </div>
                     </div>
                 </div>
             </div>
-        </div>
     </div>
 
 
@@ -76,7 +54,7 @@
     <MudGrid GutterSize="4">
 
         <!-- LEFT SECTION -->
-        <MudItem xs="12" md="9">
+        <MudItem xs="12" md="8">
             <div style="max-width: 800px; margin: 0 auto;">
                  <div style="width: 100%;display:flex;justify-content:center;align-items:center;">
         <div style="width: 90%;display:flex;justify-content:center;align-items:center;">
@@ -91,37 +69,25 @@
               </div>
                 <div class="custom-tabs">
                     <div class="tabs-toolbar">
-                        <div class="tab @( _activeTabIndex == 0 ? "active" : "" )" @onclick="() => SetTab(0)">
-                            <div style="display:flex;flex-direction:row;gap:10px">
+                                @foreach (var category in _verticalTabs[_activeVerticalTabIndex].Categories)
+                                {
+                                    <div class="tab @( _activeTabIndex == category.Index ? "active" : "" )"
+                                         @onclick="() => SetTab(category.Index)">
+                                        <div style="display:flex;flex-direction:row;gap:10px">
+                                            <img src="@category.Icon" class="tab-icon" alt="@category.Label" />
+                                            <span class="tab-text">@category.Label</span>
+                                        </div>
+                                        <div class="tab-indicator"></div>
+                                    </div>
+                                }
 
-                                <img src="/qln-images/subscription/Deals.svg" class="tab-icon" alt="Deals">
-                                <span class="tab-text">Deals</span>
-                            </div>
-                            <div class="tab-indicator"></div>
-                        </div>
-                        <div class="tab @( _activeTabIndex == 1 ? "active" : "" )" @onclick="() => SetTab(1)">
-                            <div style="display:flex;flex-direction:row;gap:10px">
-
-                                <img src="/qln-images/subscription/Stores.svg" class="tab-icon" alt="Stores">
-                                <span class="tab-text">Stores</span>
-                            </div>
-                            <div class="tab-indicator"></div>
-                        </div>
-                        <div class="tab @( _activeTabIndex == 2 ? "active" : "" )" @onclick="() => SetTab(2)">
-                            <div style="display:flex;flex-direction:row;gap:10px">
-
-                                <img src="/qln-images/subscription/Preloved.svg" class="tab-icon" alt="Preloved">
-                                <span class="tab-text">Preloved</span>
-                            </div>
-                            <div class="tab-indicator"></div>
-                        </div>
                     </div>
                 </div>
 
 
                 <MudGrid GutterSize="4" Style="margin-top: 16px;">
 
-                    @if (_isLoadingPlans)
+                    @if (IsLoading)
                     {
                         <MudItem xs="12" >
                             <div style="display: flex; justify-content: center; align-items: center; height: 200px; text-align: center;">
@@ -129,15 +95,11 @@
                             </div>
                         </MudItem>
                     }
-                    else if (_isError)
+                    else if (HasError)
                     {
-                        <MudItem xs="12">
-                            <div style="display: flex; justify-content: center; align-items: center; height: 200px; text-align: center;">
-                                <MudText Color="Color.Error" Typo="Typo.subtitle1">
-                                    No subscription plans available at the moment.
-                                </MudText>
-                            </div>
-                        </MudItem>
+                     
+                        <EmptyCard Title="No subscription plans available at the moment." Subtitle="Please check back later for updates." />
+
                     }
                     else if (_plans != null && _plans.Any())
                     {
@@ -158,47 +120,59 @@
                     }
                     else
                     {
-                        <MudItem xs="12">
-                            <MudText Color="Color.Info" Typo="Typo.subtitle1">
-                                No subscription plans available at the moment.
-                            </MudText>
-                        </MudItem>
+                        <EmptyCard Title="No subscription plans available at the moment." Subtitle="Please check back later for updates." />
+
                     }
 
                 </MudGrid>
 
- 
             </div>
         </MudItem>
 
         <!-- RIGHT SECTION -->
-        <MudItem xs="12" md="3">
+        <MudItem xs="12" md="4">
             <!-- Summary Card -->
-            <MudPaper   Style="@CardStyle" Elevation="2">
-                <MudText Typo="Typo.h6" Class="mb-2">Summary</MudText>
-                @if (_selectedPlan != null)
-                {
-                    <MudText>Plan: @_selectedPlan.Duration</MudText>
-                    <MudText>Price: @_selectedPlan.Price</MudText>
-                }
-                else
-                {
-                    <MudText>No plan selected.</MudText>
-                }
+                    <MudPaper Elevation="2" Class="pa-4">
+                        <MudText Class="summary-header mb-4">Summary</MudText>
 
-                <MudDivider Class="my-2" />
-                <MudText Class="font-bold mt-2">Total: @(_selectedPlan?.Price ?? 0)</MudText>
+                        @if (_selectedPlan != null)
+                        {
+                            <div class="d-flex justify-space-between align-center mb-3">
+                                <div class="d-flex flex-column">
+                                    <MudText Class="summary-title">@_selectedPlan.SubscriptionName</MudText>
+                                    <MudText Class="summary-duration">@_selectedPlan.Duration</MudText>
+                                </div>
+                                <MudText Class="summary-price">@_selectedPlan.Price QAR</MudText>
+                            </div>
 
-                <MudBox Class="mt-4" Style="width: 100%;display: flex; justify-content:center;align-items:center">
-                    <MudButton Disabled="_selectedPlan == null"
-                    OnClick="OpenPaymentDialog"
-                    Class="font-semibold"
-                    Style="@(_selectedPlan == null ?
-               "background-color: #E0E0E0; color: white; width: 200px;" :
-               "background-color: #F26D1E; color: white; width: 200px;")">
-                        Pay Now
-                    </MudButton>
-                </MudBox>
+                            <MudDivider Class="my-3" />
+
+                            <MudCheckBox T="bool" >
+                                <ChildContent>
+                                   <span class="confirmation-label mb-3"> I confirm that I have read and accepted the
+                                    <span class="refund-policy-link"> Refund policy.</span></span>
+                                </ChildContent>
+                            </MudCheckBox>
+
+                            <div class="d-flex justify-space-between align-center">
+                                <MudText Class="summary-total">Total</MudText>
+                                <MudText Class="summary-price">@_selectedPlan.Price QAR</MudText>
+                            </div>
+                        }
+                        else
+                        {
+                            <MudText Class="mb-4">No plan selected.</MudText>
+                        }
+
+                        <MudButton Variant="Variant.Filled"
+                                   FullWidth="true"
+                                   Disabled="_selectedPlan == null"
+                                   OnClick="OpenPaymentDialog"
+                                   Style="background-color: #FF7F38; color: white; height: 48px; font-weight: 600;margin-top:10px;text-transform: none;"
+                                   Class="@(_selectedPlan == null ? "disabled-button" : "")">
+                            Pay now
+                        </MudButton>
+
 
                 @if (_isPaymentDialogOpen)
                 {
@@ -232,7 +206,6 @@
                                                               Immediate="true"
                                                               MaxLength="5"
                                                               @bind-Value="_model.Expiry"
-                                                              @bind-Value:event="oninput"
                                                               For="@(() => _model.Expiry)" />
                                         </MudItem>
                                         <MudItem xs="6">
@@ -269,7 +242,7 @@
 
                                         <MudButton id="paymentBtn" Variant="Variant.Filled"
                                                    Style="background-color: #41979a; color: white;"
-                                                   OnClick="SubmitMockCardPayment">
+                                                               OnClick="PaymentSubmit">
                                             Pay ₹@_selectedPlan?.Price
                                         </MudButton>
                                     </MudStack>
@@ -287,7 +260,9 @@
     </MudGrid>
 </MudContainer>
 
+</div>
 
+</div>
 
 
 <style>
@@ -304,4 +279,96 @@
         align-items: center;
         z-index: 1000;
     }
+    .container{
+        background-color: #F2F4F7;
+    }
+        .responsive-container {
+        width: 100%;
+        padding: 0 40px;
+    }
+
+    .disabled-button {
+        background-color: #E0E0E0 !important;
+    }
+
+    .summary-header {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 20px;
+        line-height: 34px;
+        color: #242424;
+        border-bottom: 1px solid #D0D5DD;
+    }
+
+    .summary-title {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 16px;
+        line-height: 24px;
+        color: #242424;
+    }
+
+    .summary-duration {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 12px;
+        line-height: 18px;
+        color: #646464;
+    }
+
+    .summary-price {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 16px;
+        line-height: 24px;
+        color: #242424;
+    }
+
+    .summary-total {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 20px;
+        line-height: 34px;
+        color: #242424;
+    }
+
+    .confirmation-label {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 12px;
+        line-height: 18px;
+        color: #242424;
+    }
+
+    .refund-policy-link {
+        color: #FF7F38;
+        font-weight: 500;
+        font-size: 12px;
+        line-height: 18px;
+        text-decoration: underline;
+        cursor: pointer;
+    }
+
+    @@media (max-width: 600px) {
+        .vertical-tabs-toolbar {
+            display: flex;
+            flex-direction: row;
+            overflow-x: auto;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .vertical-tab {
+            min-width: 100px;
+            flex: 0 0 auto;
+        }
+
+        .mud-paper {
+            margin-top: 24px;
+        }
+        .mud-button {
+        width: 100% !important;
+    }
+    }
+
 </style>
