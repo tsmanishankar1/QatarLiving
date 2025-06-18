@@ -1,0 +1,63 @@
+@using MudBlazor;
+@inherits VideoCardBase
+
+<div class="single-video-card">
+                    <div class="thumbnail-container">
+                        <img src="@video.ImageUrl" class="thumbnail" />
+                        <div class="play-icon-daily">
+                            <MudIcon Icon="@Icons.Material.Filled.PlayArrow" />
+                        </div>
+                    </div>
+                    <div class="video-title">
+                            <span class="vedio-title-text">@video.Title</span>
+                    </div>
+                </div>
+<style>
+    .single-video-card {
+        display: flex;
+        margin-bottom: 16px;
+        border-radius: 6px;
+        padding: 8px;
+    }
+
+    .thumbnail-container {
+       position: relative;
+        width: 180px;
+        height: 100px;
+        margin-right: 12px;
+    }
+
+    .thumbnail {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 6px;
+    }
+
+    .play-icon-daily {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 2;
+    }
+
+    .video-title {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        font-size: 16px;
+        font-weight: 600;
+        font-family: 'Public Sans', sans-serif;
+        cursor: pointer;
+    }
+    .vedio-title-text {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
+        scrollbar-width: none;
+    }
+</style>
