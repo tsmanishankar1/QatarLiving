@@ -1,13 +1,14 @@
+@inherits SearchSectionBase
 @inject SearchStateService SearchState
 @using MudBlazor
 @using QLN.Web.Shared.Components.ViewToggleButtons
-@using QLN.Web.Shared.Components.CustomSelect
+@using QLN.Web.Shared.Components.NewCustomSelect
+@using QLN.Web.Shared.Components.CustomSelectCategory
+@using QLN.Web.Shared.Components.PriceRangeSelect
 @using QLN.Web.Shared.Components.MoreFilters
-@inject ISnackbar Snackbar
 @using QLN.Web.Shared.Helpers
-@using QLN.Web.Shared.Pages.Classifieds.Items.Components.PriceRangeSelect
 
-<MudPaper Class="search-container" Elevation="0">
+<div Class="search-container">
     <div class="search-row">
 
         <!-- Search Input -->
@@ -16,7 +17,7 @@
             @if (!_isSearchFocused)
             {
                 <div class="search-icon-left">
-                    <MudIcon Icon="@Icons.Material.Filled.Search" />
+                     <img src="/qln-images/classifieds/iteam_search_icon.svg" alt="Search-left" class="action-icon-img-left" />
                 </div>
             }
 
@@ -49,16 +50,29 @@
         {
             <!-- Category -->
             <div class="short-select">
-                <CustomSelect TItem="string" Options="_categories" SelectedItem="_category"
-                    SelectedItemChanged="value => OnFilterChanged(nameof(_category), value)" Placeholder="Category"
-                    Padding="14px 10px" />
+                 <CustomSelectCategory TItem="CategoryItem"
+                     Items="@_categories"
+                     SelectedId="@_category"
+                     SelectedIdChanged="value => OnFilterChanged(nameof(_category), value)"
+                     GetId="x => x.Id"
+                     GetLabel="x => x.Label"
+                     Placeholder="Category"
+                     BorderRadius="4px"
+                     Padding="13px 10px" />
             </div>
 
             <!-- Brand -->
             <div class="short-select">
-                <CustomSelect TItem="string" Options="_brands" SelectedItem="_brand"
-                    SelectedItemChanged="value => OnFilterChanged(nameof(_brand), value)" Placeholder="Brand"
-                    Padding="14px 10px" IsDisabled="@string.IsNullOrWhiteSpace(_category)" />
+                 <NewCustomSelect TItem="BrandItem"
+                     Items="@_brands"
+                     SelectedId="@_brand"
+                     SelectedIdChanged="value => OnFilterChanged(nameof(_brand), value)"
+                     GetId="x => x.Id"
+                     GetLabel="x => x.Label"
+                     Placeholder="Brand"
+                     Padding="13px 10px"
+                     BorderRadius="4px"
+                     IsDisabled="@string.IsNullOrWhiteSpace(_category)" />
             </div>
 
             <!-- Price -->
@@ -84,108 +98,11 @@
 
 
         <!-- View Toggle Buttons -->
-        <div class=" right-actions">
+        <div class="right-actions">
             <ViewToggleButtons Items="@_viewOptions" SelectedValue="@_selectedView" OnSelected="SetViewMode" />
         </div>
     </div>
-</MudPaper>
-
-@code {
-    private long? SelectedMin;
-    private long? SelectedMax;
-    private string _searchText;
-    private string _category;
-    private string _brand;
-    private bool _isSearchFocused = false;
-    private bool _isSearching = false;
-
-    [Parameter]
-    public EventCallback<string> OnViewModeChanged { get; set; }
-    private async Task ApplyPriceFilter()
-    {
-        SearchState.MinPrice = SelectedMin;
-        SearchState.MaxPrice = SelectedMax;
-
-        await PerformSearch();
-    }
-
-    private async Task ResetPriceFilter()
-    {
-        SelectedMin = null;
-        SelectedMax = null;
-        SearchState.MinPrice = null;
-        SearchState.MaxPrice = null;
-
-        await PerformSearch();
-    }
-    private async Task OnFilterChanged(string field, string value)
-    {
-        if (field == nameof(_category))
-        {
-            _category = value;
-            _brand = null; // Reset brand when category changes
-        }
-        else if (field == nameof(_brand))
-        {
-            _brand = value;
-        }
-
-        await PerformSearch();
-        StateHasChanged();
-    }
-
-    private string _selectedView = "grid";
-
-    private async void SetViewMode(string view)
-    {
-        _selectedView = view;
-        await OnViewModeChanged.InvokeAsync(view);
-    }
-    [Parameter] public EventCallback OnSearchStarted { get; set; }
-    [Parameter]
-    public EventCallback<List<PromotedItem>> OnSearchCompleted { get; set; }
-
-    protected override async Task OnInitializedAsync()
-    {
-        // Restore UI fields from service
-        _searchText = SearchState.SearchText;
-        _category = SearchState.Category;
-        _brand = SearchState.Brand;
-        _selectedView = SearchState.ViewMode;
-        if (SearchState.Results == null || !SearchState.Results.Any())
-        {
-            await PerformSearch();
-        }
-    }
-
-    private async Task PerformSearch()
-    {
-      
-    }
-
-
-
-    private void ClearSearch()
-    {
-        _searchText = string.Empty;
-    }
-
-    private List<ViewToggleButtons.ViewToggleOption> _viewOptions = new()
-{
-new() { ImageUrl = "/qln-images/list_icon.svg", Label = "List", Value = "list" },
-new() { ImageUrl = "/qln-images/grid_icon.svg", Label = "Grid", Value = "grid" }
-};
-
-    private List<string> _categories = new() { "Mobile Phones & Tablets", "Electronics", "Furniture", };
-    private List<string> _brands = new() { "Google", "Apple", "Sony" };
-    private List<(string Label, string Value)> _prices = new()
-{
-("$0 - $100", "0-100"),
-("$100 - $500", "100-500"),
-("$500+", "500")
-};
-}
-
+</div>
 
 <style>
     .search-container {
@@ -209,10 +126,10 @@ new() { ImageUrl = "/qln-images/grid_icon.svg", Label = "Grid", Value = "grid" }
         display: flex;
         align-items: center;
         gap: 8px;
-        width: 360px;
+        width: 270px;
         background-color: white;
         border: 1px solid #ccc;
-        border-radius: 6px;
+        border-radius: 4px;
         padding: 8px 12px;
         transition: width 0.3s ease;
     }
@@ -275,6 +192,10 @@ new() { ImageUrl = "/qln-images/grid_icon.svg", Label = "Grid", Value = "grid" }
         filter: brightness(0) invert(1);
         /* Makes the icon white */
     }
+    .action-icon-img-left{
+          width: 20px;
+        height: 20px;
+    }
 
     .search-btn:hover {
         background: linear-gradient(90deg, #0A426B 0%, #35B7EF 80%);
@@ -289,7 +210,7 @@ new() { ImageUrl = "/qln-images/grid_icon.svg", Label = "Grid", Value = "grid" }
     .short-select {
         display: flex;
         align-items: center;
-        width: 100%;
+        width: 165.5px;
     }
 
     /* More button */
@@ -311,7 +232,7 @@ new() { ImageUrl = "/qln-images/grid_icon.svg", Label = "Grid", Value = "grid" }
     .save-search {
         display: flex;
         align-items: center;
-        width: 100%;
+        width: 115px;
     }
 
     /* Save Search */
@@ -332,6 +253,7 @@ new() { ImageUrl = "/qln-images/grid_icon.svg", Label = "Grid", Value = "grid" }
         display: flex;
         align-items: center;
         gap: 8px;
+        width: 174px;
     }
 
     /* Optional: responsive tweaks */

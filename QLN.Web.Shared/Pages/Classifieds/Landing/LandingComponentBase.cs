@@ -68,7 +68,7 @@ public class LandingComponentBase : ComponentBase
     }
     finally
     {
-        IsLoading = true;
+        IsLoading = false;
     }
 }
 

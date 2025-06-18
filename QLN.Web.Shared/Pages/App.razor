@@ -192,6 +192,18 @@
         };
     </script>
     <script>
+    window.priceRangeDropdown = {
+        init: function (wrapperElement, dotNetHelper) {
+            document.addEventListener('click', function (e) {
+                if (!wrapperElement.contains(e.target)) {
+                    dotNetHelper.invokeMethodAsync('CloseDropdownFromJs');
+                }
+            });
+        }
+    };
+</script>
+
+    <script>
         let seasonalSwiperInstance;
         window.initSeasonalSwiper = () => {
             if (seasonalSwiperInstance) {
@@ -317,37 +329,55 @@
             });
         }
 
-let storeSwiperInstance;
-window.initStoreSwiper = () => {
-    if (storeSwiperInstance) {
-        storeSwiperInstance.destroy(true, true);
-    }
+        let storeSwiperInstance;
+        window.initStoreSwiper = () => {
+            if (storeSwiperInstance) {
+                storeSwiperInstance.destroy(true, true);
+            }
 
-    const swiperEl = document.querySelector('.swiper-store');
-    if (!swiperEl) {
-        console.warn("Store Swiper element not found");
-        return;
-    }
+            const swiperEl = document.querySelector('.swiper-store');
+            if (!swiperEl) {
+                console.warn("Store Swiper element not found");
+                return;
+            }
 
-    storeSwiperInstance = new Swiper(swiperEl, {
-        slidesPerView: 'auto',
-        spaceBetween: 10,
-        navigation: {
-            nextEl: '.swiper-store-button-next',
-            prevEl: '.swiper-store-button-prev'
-        },
-        breakpoints: {
-            320: { slidesPerView: 1.8, spaceBetween: 5 },
-            340: { slidesPerView: 1.8, spaceBetween: 5 },
-            480: { slidesPerView: 2.5, spaceBetween: 10 },
-            640: { slidesPerView: 3, spaceBetween: 10 },
-            768: { slidesPerView: 4.5, spaceBetween: 10 },
-            860: { slidesPerView: 5, spaceBetween: 10 },
-            1024: { slidesPerView: 6, spaceBetween: 10 },
-            1200: { slidesPerView: 6, spaceBetween: 10 }
-        }
-    });
-};
+            storeSwiperInstance = new Swiper(swiperEl, {
+                slidesPerView: 'auto',
+                spaceBetween: 10,
+                navigation: {
+                    nextEl: '.swiper-store-button-next',
+                    prevEl: '.swiper-store-button-prev'
+                },
+                breakpoints: {
+                    320: { slidesPerView: 1.8, spaceBetween: 5 },
+                    340: { slidesPerView: 1.8, spaceBetween: 5 },
+                    480: { slidesPerView: 2.5, spaceBetween: 10 },
+                    640: { slidesPerView: 3, spaceBetween: 10 },
+                    768: { slidesPerView: 4.5, spaceBetween: 10 },
+                    860: { slidesPerView: 5, spaceBetween: 10 },
+                    1024: { slidesPerView: 6, spaceBetween: 10 },
+                    1200: { slidesPerView: 6, spaceBetween: 10 }
+                    },
+                        on: {
+                            afterInit: function (swiper) {
+                                const totalSlides = swiper.slides.length;
+                                const visibleSlides = swiper.params.slidesPerView;
+
+                                const nextBtn = document.querySelector(".swiper-store-button-next");
+                                const prevBtn = document.querySelector(".swiper-store-button-prev");
+
+                                // If all slides fit into view, hide arrows
+                                if (totalSlides <= visibleSlides) {
+                                    nextBtn.style.display = "none";
+                                    prevBtn.style.display = "none";
+                                } else {
+                                    nextBtn.style.display = "";
+                                    prevBtn.style.display = "";
+                                }
+                            },
+                        }
+            });
+        };
 
     </script>
 
