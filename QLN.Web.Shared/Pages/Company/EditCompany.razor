@@ -1,8 +1,7 @@
 ﻿@page "/qln/dashboard/company/edit/{id}"
-@inject ISnackbar Snackbar
 
 @using QLN.Web.Shared.Components.BreadCrumb
-
+@using QLN.Web.Shared.Components.EmptyCard
 
 <div style=" background-color: #F2F4F7; height: 100%;width:100%;padding: 24px;">
     <div Class=" mt-1 ml-10">
@@ -10,8 +9,244 @@
 
     </div>
 
-    
+    @if (isCompanyLoading)
+    {
+        <div class="p-6">
+            <!-- Breadcrumb Skeleton -->
+            <MudSkeleton Width="30%" Height="24px" Animation="Animation.Pulse" Class="mb-4" />
+
+            <MudPaper Class="d-flex pa-4" Style="gap: 24px;">
+                <!-- Left-side Image Skeleton -->
+                <div style="width: 180px; height: 180px;">
+                    <MudSkeleton Variant="Variant.Circular" Width="180px" Height="180px" Animation="Animation.Pulse" />
+                </div>
+
+                <!-- Right-side Form Skeleton -->
+                <div class="flex-grow-1">
+                    <MudStack Spacing="2">
+                        <MudSkeleton Width="50%" Height="32px" />
+                        <MudSkeleton Width="70%" Height="32px" />
+                        <MudSkeleton Width="40%" Height="32px" />
+                        <MudSkeleton Width="60%" Height="32px" />
+                        <MudSkeleton Width="30%" Height="32px" />
+                        <MudSkeleton Width="80%" Height="32px" />
+                    </MudStack>
+                </div>
+            </MudPaper>
+        </div>
+    }
+ 
+
+    else if (companyProfile != null)
+    {
+        <MudContainer Class="p-6" Style="background-color: #F2F4F7;">
+            <MudGrid>
+                <!-- Contact Information -->
+                <MudItem xs="12">
+                    <MudText Class="heading-style mt-2 ml-14">Contact Information</MudText>
+                </MudItem>
+
+                <!-- Logo Upload -->
+                <MudItem xs="12" sm="3">
+                    @if (!string.IsNullOrEmpty(companyProfile.CompanyLogo))
+                    {
+                        <MudPaper Elevation="1" Class="d-flex align-center justify-center p-2" Style="height: 240px;width:240px;">
+                            <img src="@companyProfile.CompanyLogo" alt="Company Logo" style="max-height: 100%; max-width: 100%; object-fit: contain;" />
+                        </MudPaper>
+                    }
+                    else
+                    {
+                        <MudPaper Elevation="1" Class="d-flex flex-column align-center justify-center p-4" Style="height: 240px;width:240px; border: 2px dashed #ccc;">
+                            <div style="width: 64px; height: 64px; background-color: #E0E0E0; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <img src="/qln-images/Upload.svg" alt="Upload" style="height: 48px;" />
+                            </div>
+                            <MudText style="margin-top: 8px; color: #FF7F38; font-size: 14px; font-weight: 500;">Upload image</MudText>
+                        </MudPaper>
+                    }
+
+                    <MudText Typo="Typo.caption" Class="upload-subtitle">Recommended size: 1920×1200 pixels</MudText>
+                </MudItem>
+
+                <MudItem xs="12" sm="9">
+                    <MudTextField id="businessName" @bind-Value="companyProfile.BusinessName" Label="Business Name" Required="true" Class="form-input no-underline" />
+                    <MudSelect T="string" Label="Country*" @bind-Value="companyProfile.Country" Class="select-input no-underline">
+                        <MudSelectItem Value="@("Qatar")">Qatar</MudSelectItem>
+                        <MudSelectItem Value="@("UAE")">UAE</MudSelectItem>
+                    </MudSelect>
+
+                    <MudSelect T="string" Label="City*" @bind-Value="companyProfile.City" Class="select-input no-underline">
+                        <MudSelectItem Value="@("Doha")">Doha</MudSelectItem>
+                        <MudSelectItem Value="@("Dubai")">Dubai</MudSelectItem>
+                    </MudSelect>
+
+                    <MudTextField @bind-Value="companyProfile.BranchLocations[0]" Label="Branches" Class="form-input no-underline" />
+                    <MudTextField @bind-Value="companyProfile.PhoneNumber" Label="Phone Number"  Class="form-input no-underline" Adornment="Adornment.Start" AdornmentText="+974" />
+                    <MudTextField @bind-Value="companyProfile.WhatsAppNumber" Label="WhatsApp Number"  Class="form-input no-underline" Adornment="Adornment.Start" AdornmentText="+974" />
+                    <MudTextField @bind-Value="companyProfile.Email" Label="Email" Class="form-input no-underline" />
+                    <MudTextField @bind-Value="companyProfile.WebsiteUrl" Label="Website URL" Class="form-input no-underline" />
+                    <MudTextField @bind-Value="companyProfile.FacebookUrl" Label="Facebook URL"  Class="form-input no-underline" />
+                    <MudTextField @bind-Value="companyProfile.InstagramUrl" Label="Instagram URL" Class="form-input no-underline" />
+                    <!-- Operating Hours -->
+
+                    <MudText Typo="Typo.h6" Class="section-header">Operating Hours</MudText>
+
+                    <MudGrid class="grid-flex">
+                        <div class="row-flex">
+
+                                <MudTextField Class="grid-input no-underline" Label="Start Day" @bind-Value="companyProfile.StartDay" />
+                               <MudTextField Label="End Day" @bind-Value="companyProfile.EndDay" Class="grid-input no-underline" />
+                        </div>
+                        <div class="row-flex">
+
+                                <MudTextField Label="Start Hour" @bind-Value="companyProfile.StartHour" Class="grid-input no-underline" />
+                          
+                                <MudTextField Label="End Hour" @bind-Value="companyProfile.EndHour" Class="grid-input no-underline" />
+                        </div>
+                    </MudGrid>
+
+                    <!-- Company Profile -->
+                    <MudText Typo="Typo.h6" Class="heading-style">Company Profile</MudText>
+
+                    <MudSelect T="string" Label="Nature of Business*" @bind-Value="companyProfile.NatureOfBusiness" Class="select-input no-underline" />
+                    <MudSelect T="int" Label="Company Size*" @bind-Value="companyProfile.CompanySize" Class="select-input no-underline">
+                        @foreach (var item in Enum.GetValues<CompanySize>())
+                        {
+                            <MudSelectItem T="int" Value="@(Convert.ToInt32(item))">@GetDisplayName(item)</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudSelect T="int" Label="Company Type*" @bind-Value="companyProfile.CompanyType" Class="select-input no-underline">
+                        @foreach (var item in Enum.GetValues<CompanyType>())
+                        {
+                            <MudSelectItem T="int" Value="@(Convert.ToInt32(item))">@GetDisplayName(item)</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudTextField @bind-Value="companyProfile.UserDesignation" Label="User Designation" Class="description-input no-underline" />
+                    <MudTextField T="string" Label="Business Description" @bind-Value="companyProfile.BusinessDescription" Lines="5" Class="description-input no-underline" />
+
+                    <!-- License & Visibility -->
+                    <MudText Typo="Typo.h6" Class="heading-style">License & Visibility</MudText>
+
+                    <MudTextField T="int" @bind-Value="companyProfile.CrNumber" Label="CR Number" Class="form-input no-underline" />
+                    <MudPaper Class="d-flex align-center mt-2 p-2 form-input no-underline">
+                        <MudText Typo="Typo.body1">CR Document*</MudText>
+                        <MudSpacer />
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" EndIcon="@Icons.Material.Filled.Upload">
+                            Upload
+                        </MudButton>
+                    </MudPaper>
+                    <MudText Typo="Typo.caption">Supported file formats: PDF, PNG, JPG. Max: 10MB</MudText>
+
+                    <!-- Save Button -->
+                    <MudItem xs="12" Class="mt-4">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" style="width:472px" OnClick="SaveCompanyProfileAsync">Save</MudButton>
+                    </MudItem>
+                </MudItem>
+
+
+            </MudGrid>
+        </MudContainer>
+    }
+
+    else
+    {
+        <EmptyCard Title="Company Profile Not Found" Subtitle="The company profile you are trying to edit does not exist." />
+    }
 </div>
 
 
+ <style>
 
+    .heading-style {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 18px;
+        line-height: 26px;
+        color: #00426D;
+        margin-top: 14px;
+    }
+
+   
+    .form-input {
+        justify-content: center;
+        width: 472px;
+        height:60px;
+        margin-top: 14px;
+        background-color: #FFFFFF;
+        border-radius: 6px;
+        padding: 10px;
+        position: relative;
+    }
+
+    .select-input {
+        justify-content: center;
+        margin-top: 14px;
+        background-color: #FFFFFF;
+        border-radius: 6px;
+        padding: 10px;
+        position: relative;
+    }
+
+    .mud-select {
+        display: flex;
+        flex-grow: 1;
+        position: relative;
+        max-width: 472px !important;
+    }
+    .description-input{
+        justify-content: center;
+        width: 472px;
+        margin-top: 14px;
+        background-color: #FFFFFF;
+        border-radius: 6px;
+        padding: 10px;
+        position: relative;
+    }
+
+    .grid-flex {
+        display: flex;
+        gap: 10px;
+        flex-direction:column;
+        margin-top:10px;
+        margin-left: 10px;
+        width: 472px;
+
+    }
+    .row-flex {
+        display: flex;
+        gap: 10px;
+        width:100%;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    .grid-input {
+        width: 232px !important;
+        background-color: #FFFFFF;
+        padding: 14px;
+        margin-top: 10px;
+        height:60px;
+    }
+
+    .upload-subtitle {
+        color: #9E9E9E;
+        text-align: center;
+        margin-top: 8px;
+    }
+
+        .grid-input .mud-input-slot {
+            border-bottom: none !important;
+        }
+
+    .section-header {
+        font-weight: 600;
+        font-size: 1.125rem;
+        margin: 1.5rem 0 0.75rem 0;
+        color: #333;
+    }
+    .no-underline .mud-input-underline::before,
+    .no-underline .mud-input-underline::after {
+        border-bottom: none !important;
+    }
+  </style>

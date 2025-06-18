@@ -1,4 +1,6 @@
-﻿namespace QLN.Web.Shared.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace QLN.Web.Shared.Models
 {
     public class CompanyProfileModel
     {
@@ -33,6 +35,39 @@
         public bool IsActive { get; set; }
         public string CreatedBy { get; set; }
         public DateTime CreatedUtc { get; set; }
+
     }
 
+    public enum CompanySize
+    {
+        [Display(Name = "0–10")]
+        Size_0_10 = 1,
+
+        [Display(Name = "11–50")]
+        Size_11_50 = 2,
+
+        [Display(Name = "51–200")]
+        Size_51_200 = 3,
+
+        [Display(Name = "201–500")]
+        Size_201_500 = 4,
+
+        [Display(Name = "500+")]
+        Size_500_Plus = 5
+    }
+
+    public enum CompanyType
+    {
+        [Display(Name = "SME")]
+        SME = 1,
+
+        [Display(Name = "Enterprise")]
+        Enterprise = 2,
+
+        [Display(Name = "MNC")]
+        MNC = 3,
+
+        [Display(Name = "Government")]
+        Government = 4
+    }
 }
