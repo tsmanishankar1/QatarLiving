@@ -38,703 +38,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             _httpContextAccessor = httpContextAccessor;
             _fileStorageBlob = fileStorageBlob;
         }
-
-        public async Task<Category> AddCategory(string categoryName, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                return await _dapr.InvokeMethodAsync<string, Category>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/category",
-                    categoryName,
-                    cancellationToken
-                );
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllCategories(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/categories",
-                    cancellationToken
-                    );
-
-                return result ?? new List<CategoriesDto>();
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<Category> AddSubCategory(string name, Guid categoryId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var body = new
-                {
-                    Name = name,
-                    CategoryId = categoryId
-                };
-
-                return await _dapr.InvokeMethodAsync<object, Category>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/subcategory",
-                    body,
-                    cancellationToken
-                );
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-        public async Task<List<CategoriesDto>> GetAllSubCategories(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/subcategory",
-                    cancellationToken
-                );
-
-                return result ?? new List<CategoriesDto>();
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<CategoryDto?> GetCategoryWithSubCategories(Guid categoryId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<CategoryDto>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/subcategory/by-category/{categoryId}"                    
-                );
-
-                return result ?? new CategoryDto();
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<Category> AddBrand(string name, Guid subCategoryId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var body = new
-                {
-                    Name = name,
-                    SubCategoryId = subCategoryId
-                };
-
-                return await _dapr.InvokeMethodAsync<object, Category>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/brand",
-                    body, cancellationToken                    
-                );
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllBrands(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/brand"
-                );
-
-                return result ?? new List<CategoriesDto>();
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<SubCategoryWithBrandsDto> GetSubCategoryWithBrands(Guid subCategoryId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<SubCategoryWithBrandsDto> (
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/brand/by-subcategory/{subCategoryId}"
-                );
-
-                return result ?? new SubCategoryWithBrandsDto();
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<Category> AddModel(string name, Guid brandId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var body = new { Name = name, BrandId = brandId };
-
-                return await _dapr.InvokeMethodAsync<object, Category>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/model",
-                    body,
-                    cancellationToken
-                );
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-        public async Task<List<CategoriesDto>> GetAllModels(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/model",
-                    cancellationToken
-                );
-
-                return result ?? new List<CategoriesDto>();
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-        public async Task<BrandWithModelsDto> GetBrandWithModels(Guid brandId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<BrandWithModelsDto> (
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/model/by-brand/{brandId}",
-                    cancellationToken
-                );
-
-                return result ?? new BrandWithModelsDto();
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<Category> AddCondition(string name, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var body = new { Name = name };
-
-                return await _dapr.InvokeMethodAsync<object, Category>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/condition",
-                    body,
-                    cancellationToken
-                );
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllConditions(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/condition",
-                    cancellationToken
-                );
-
-                return result ?? new List<CategoriesDto>();
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<Category> AddColor(string name, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var body = new { Name = name };
-
-                return await _dapr.InvokeMethodAsync<object, Category>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/color",
-                    body,
-                    cancellationToken
-                );
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllColors(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/color",
-                    cancellationToken
-                );
-
-                return result ?? new List<CategoriesDto>();
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<Category> AddCapacity(string name, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var body = new { Name = name };
-
-                return await _dapr.InvokeMethodAsync<object, Category>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/capacity",
-                    body,
-                    cancellationToken
-                );
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllCapacities(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/capacity",
-                    cancellationToken
-                );
-
-                return result ?? new List<CategoriesDto>();
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<Category> AddProcessor(string name, Guid modelId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var body = new { Name = name, ModelId = modelId };
-
-                return await _dapr.InvokeMethodAsync<object, Category>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/processor",
-                    body,
-                    cancellationToken
-                );
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllProcessors(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/processor",
-                    cancellationToken
-                );
-
-                return result ?? new List<CategoriesDto>();
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<ModelWithProcessorsDto?> GetModelWithProcessors(Guid modelId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<ModelWithProcessorsDto>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/processor/by-model/{modelId}",
-                    cancellationToken
-                );
-
-                return result ?? new ModelWithProcessorsDto();
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<Category> AddCoverage(string name, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var body = new { Name = name };
-
-                return await _dapr.InvokeMethodAsync<object, Category>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/coverage",
-                    body,
-                    cancellationToken
-                );
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllCoverages(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/coverage",
-                    cancellationToken
-                );
-
-                return result ?? new List<CategoriesDto>();
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-        public async Task<Category> AddRam(string name, Guid modelId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var body = new { Name = name, ModelId = modelId };
-
-                return await _dapr.InvokeMethodAsync<object, Category>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/ram",
-                    body,
-                    cancellationToken
-                );
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllRams(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/ram",
-                    cancellationToken
-                );
-
-                return result ?? new List<CategoriesDto>();
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<ModelWithRamDto?> GetModelWithRam(Guid modelId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<ModelWithRamDto>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/ram/by-model/{modelId}",
-                    cancellationToken
-                );
-
-                return result ?? new ModelWithRamDto();
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<Category> AddResolution(string name, Guid modelId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var body = new { Name = name, ModelId = modelId };
-
-                return await _dapr.InvokeMethodAsync<object, Category>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/resolution",
-                    body,
-                    cancellationToken
-                );
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllResolutions(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/resolution",
-                    cancellationToken
-                );
-
-                return result ?? new List<CategoriesDto>();
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<ModelWithResolutionsDto?> GetModelWithResolutions(Guid modelId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<ModelWithResolutionsDto>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/resolution/by-model/{modelId}",
-                    cancellationToken
-                );
-
-                return result ?? new ModelWithResolutionsDto();
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<Category> AddSizeType(string name, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var body = new { Name = name };
-
-                return await _dapr.InvokeMethodAsync<object, Category>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/size-type",
-                    body,
-                    cancellationToken
-                );
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllSizeTypes(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/size-type",
-                    cancellationToken
-                );
-
-                return result ?? new List<CategoriesDto>();
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-      
-        public async Task<Category> AddZone(string name, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var body = new { Name = name };
-
-                return await _dapr.InvokeMethodAsync<object, Category>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/zone",
-                    body,
-                    cancellationToken
-                );
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllZones(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<List<CategoriesDto>>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/zone",
-                    cancellationToken
-                );
-
-                return result ?? new List<CategoriesDto>();
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }   
-
-
-        public async Task<NestedCategoryDto> GetCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                if (categoryId == Guid.Empty)
-                    throw new ArgumentException("Invalid category ID", nameof(categoryId));
-
-                var result = await _dapr.InvokeMethodAsync<NestedCategoryDto>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/category-hierarchy/{categoryId}",
-                    cancellationToken
-                );
-
-                return result ?? throw new KeyNotFoundException($"No hierarchy found for category ID: {categoryId}");
-            }
-            catch(Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<bool> DeleteCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                if (categoryId == Guid.Empty)
-                    throw new ArgumentException("Invalid category ID", nameof(categoryId));
-
-                var response = await _dapr.InvokeMethodAsync<HttpResponseMessage>(
-                    HttpMethod.Delete,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/category-hierarchy/{categoryId}",
-                    cancellationToken);
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
+       
 
         public async Task<ItemAdsAndDashboardResponse> GetUserItemsAdsWithDashboard(Guid userId, CancellationToken cancellationToken = default)
         {
@@ -776,16 +80,16 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<bool> SaveSearch(SaveSearchRequestDto dto ,Guid userId, CancellationToken cancellationToken = default)
+        public async Task<bool> SaveSearch(SaveSearchRequestDto dto, Guid userId, CancellationToken cancellationToken = default)
         {
             try
             {
                 var requestDto = new SaveSearchRequestByIdDto
                 {
-                UserId = userId,
-                Name = dto.Name,
-                CreatedAt = dto.CreatedAt,
-                SearchQuery = dto.SearchQuery
+                    UserId = userId,
+                    Name = dto.Name,
+                    CreatedAt = dto.CreatedAt,
+                    SearchQuery = dto.SearchQuery
                 };
 
                 var result = await _dapr.InvokeMethodAsync<SaveSearchRequestByIdDto, string>(
@@ -851,54 +155,60 @@ namespace QLN.Backend.API.Service.ClassifiedService
             if (!string.Equals(dto.SubVertical, "Items", StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("This endpoint only supports posting ads under the 'Items' subvertical.");
 
-
             var uploadedBlobKeys = new List<string>();
 
             try
             {
                 var adId = Guid.NewGuid();
                 dto.Id = adId;
-                
+
+
+                var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateBase64);
+
+                // Upload certificate
                 var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
                     ? dto.CertificateFileName
-                    : $"certificate_{dto.UserId}_{adId}.jpg";
-                var certUrl = await _fileStorageBlob.SaveBase64File(dto.CertificateBase64, certFileName, "classifieds-images", cancellationToken);
+                    : $"certificate_{dto.UserId}_{adId}.{certExt}";
+
+                var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(certFileName);
-                dto.CertificateBase64 = null;
                 dto.CertificateFileName = certUrl;
+                dto.CertificateBase64 = null;
 
-                dto.AdImageFileNames ??= new List<string>();
-
-                // Upload ad images
-                var imageUrls = new List<string>();
+                // Upload images with order
                 for (int i = 0; i < dto.AdImagesBase64.Count; i++)
                 {
-                    var customName = (dto.AdImageFileNames.Count > i && !string.IsNullOrWhiteSpace(dto.AdImageFileNames[i]))
-                        ? dto.AdImageFileNames[i]
-                        : $"Itemsad_{dto.UserId}_{adId}_{i + 1}.jpg";
+                    var image = dto.AdImagesBase64[i];
+                    var (imgExt, base64Image) = Base64ImageHelper.ParseBase64Image(image.Url);
 
-                    var url = await _fileStorageBlob.SaveBase64File(dto.AdImagesBase64[i], customName, "classifieds-images", cancellationToken);
-                    imageUrls.Add(url);
+                    var customName = !string.IsNullOrWhiteSpace(image.AdImageFileNames)
+                        ? image.AdImageFileNames
+                        : $"Itemsad_{dto.UserId}_{adId}_{i + 1}.{imgExt}";
+
+                    var url = await _fileStorageBlob.SaveBase64File(base64Image, customName, "classifieds-images", cancellationToken);
                     uploadedBlobKeys.Add(customName);
+
+                    image.AdImageFileNames = customName;
+                    image.Url = url;
                 }
 
-                if (imageUrls.Count == 0)
-                    throw new InvalidOperationException("Failed to upload any ad images.");
+                _log.LogTrace($"Calling internal service with {dto.AdImagesBase64.Count} images");
 
-                dto.AdImagesBase64 = null;
-                dto.AdImageFileNames = imageUrls;
-
-                _log.LogTrace($"Calling internal service with CertificateUrl: {dto.CertificateFileName} and {imageUrls.Count} images");
-
-               await _dapr.InvokeMethodAsync(
+                await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
-                    $"api/classifieds/items/post-by-id",  
+                    $"api/classifieds/items/post-by-id",
                     dto,
                     cancellationToken
                 );
 
-                return new AdCreatedResponseDto { AdId = adId, Title = dto.Title, CreatedAt = DateTime.UtcNow, Message = "Items Ad created successfully" };
+                return new AdCreatedResponseDto
+                {
+                    AdId = adId,
+                    Title = dto.Title,
+                    CreatedAt = DateTime.UtcNow,
+                    Message = "Items Ad created successfully"
+                };
             }
             catch (Exception ex)
             {
@@ -932,7 +242,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
             if (!string.Equals(dto.SubVertical, "Preloved", StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("This endpoint only supports posting ads under the 'Preloved' subvertical.");
 
-
             var uploadedBlobKeys = new List<string>();
 
             try
@@ -940,36 +249,35 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var adId = Guid.NewGuid();
                 dto.Id = adId;
 
+                var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateBase64);
+
                 var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
                     ? dto.CertificateFileName
-                    : $"certificate_{dto.UserId}_{adId}.jpg";
-                var certUrl = await _fileStorageBlob.SaveBase64File(dto.CertificateBase64, certFileName, "classifieds-images", cancellationToken);
+                    : $"certificate_{dto.UserId}_{adId}.{certExt}";
+
+                var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(certFileName);
-                dto.CertificateBase64 = null;
                 dto.CertificateFileName = certUrl;
+                dto.CertificateBase64 = null;
 
-                dto.AdImageFileNames ??= new List<string>();
-
-                // Upload ad images
-                var imageUrls = new List<string>();
                 for (int i = 0; i < dto.AdImagesBase64.Count; i++)
                 {
-                    var customName = (dto.AdImageFileNames.Count > i && !string.IsNullOrWhiteSpace(dto.AdImageFileNames[i]))
-                        ? dto.AdImageFileNames[i]
-                        : $"Itemsad_{dto.UserId}_{adId}_{i + 1}.jpg";
+                    var image = dto.AdImagesBase64[i];
 
-                    var url = await _fileStorageBlob.SaveBase64File(dto.AdImagesBase64[i], customName, "classifieds-images", cancellationToken);
-                    imageUrls.Add(url);
+                    var (imgExt, base64Image) = Base64ImageHelper.ParseBase64Image(image.Url);
+
+                    var customName = !string.IsNullOrWhiteSpace(image.AdImageFileNames)
+                        ? image.AdImageFileNames
+                        : $"PrelovedAd_{dto.UserId}_{adId}_{i + 1}.{imgExt}";
+
+                    var url = await _fileStorageBlob.SaveBase64File(base64Image, customName, "classifieds-images", cancellationToken);
                     uploadedBlobKeys.Add(customName);
+
+                    image.AdImageFileNames = customName;
+                    image.Url = url;
                 }
 
-                if (imageUrls.Count == 0)
-                    throw new InvalidOperationException("Failed to upload any ad images.");
-
-                dto.AdImagesBase64 = null;
-                dto.AdImageFileNames = imageUrls;
-
-                _log.LogTrace($"Calling internal service with CertificateUrl: {dto.CertificateFileName} and {imageUrls.Count} images");
+                _log.LogTrace($"Calling internal service with CertificateUrl: {dto.CertificateFileName} and {dto.AdImagesBase64.Count} images");
 
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
@@ -979,7 +287,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     cancellationToken
                 );
 
-                return new AdCreatedResponseDto { AdId = adId, Title = dto.Title, CreatedAt = DateTime.UtcNow, Message = "Preloved Ad created successfully" };
+                return new AdCreatedResponseDto
+                {
+                    AdId = adId,
+                    Title = dto.Title,
+                    CreatedAt = DateTime.UtcNow,
+                    Message = "Preloved Ad created successfully"
+                };
             }
             catch (Exception ex)
             {
@@ -1020,38 +334,35 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var adId = Guid.NewGuid();
                 dto.Id = adId;
 
-                // Upload certificate
+
+                var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateBase64);
+
                 var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
                     ? dto.CertificateFileName
-                    : $"certificate_{dto.UserId}_{adId}.jpg";
+                    : $"certificate_{dto.UserId}_{adId}.{certExt}";
 
-                var certUrl = await _fileStorageBlob.SaveBase64File(dto.CertificateBase64, certFileName, "classifieds-images", cancellationToken);
+                var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(certFileName);
-                dto.CertificateBase64 = null;
                 dto.CertificateFileName = certUrl;
+                dto.CertificateBase64 = null;
 
-                dto.AdImageFileNames ??= new List<string>();
-
-                // Upload ad images
-                var imageUrls = new List<string>();
                 for (int i = 0; i < dto.AdImagesBase64.Count; i++)
                 {
-                    var customName = (dto.AdImageFileNames.Count > i && !string.IsNullOrWhiteSpace(dto.AdImageFileNames[i]))
-                        ? dto.AdImageFileNames[i]
-                        : $"collectibles_ad_{dto.UserId}_{adId}_{i + 1}.jpg";
+                    var image = dto.AdImagesBase64[i];
+                    var (imgExt, base64Image) = Base64ImageHelper.ParseBase64Image(image.Url);
 
-                    var url = await _fileStorageBlob.SaveBase64File(dto.AdImagesBase64[i], customName, "classifieds-images", cancellationToken);
-                    imageUrls.Add(url);
-                    uploadedBlobKeys.Add(customName);
+                    var fileName = !string.IsNullOrWhiteSpace(image.AdImageFileNames)
+                        ? image.AdImageFileNames
+                        : $"collectibles_ad_{dto.UserId}_{adId}_{i + 1}.{imgExt}";
+
+                    var blobUrl = await _fileStorageBlob.SaveBase64File(base64Image, fileName, "classifieds-images", cancellationToken);
+                    uploadedBlobKeys.Add(fileName);
+
+                    image.AdImageFileNames = fileName;
+                    image.Url = blobUrl;
                 }
 
-                if (imageUrls.Count == 0)
-                    throw new InvalidOperationException("Failed to upload any ad images.");
-
-                dto.AdImagesBase64 = null;
-                dto.AdImageFileNames = imageUrls;
-
-                _log.LogTrace($"Calling internal collectibles service with CertificateUrl: {dto.CertificateFileName} and {imageUrls.Count} images");
+                _log.LogTrace($"Calling internal collectibles service with {dto.AdImagesBase64.Count} images and cert: {dto.CertificateFileName}");
 
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
@@ -1072,7 +383,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
             catch (Exception ex)
             {
                 _log.LogException(ex);
-
                 foreach (var blobName in uploadedBlobKeys)
                 {
                     try
@@ -1109,37 +419,35 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var adId = Guid.NewGuid();
                 dto.Id = adId;
 
+                var (flyerExt, flyerBase64) = Base64ImageHelper.ParsePdfFile(dto.FlyerFile);
+
                 var flyerName = !string.IsNullOrWhiteSpace(dto.FlyerName)
                     ? dto.FlyerName
-                    : $"certificate_{dto.UserId}_{adId}.jpg";
+                    : $"deals_flyer_{dto.UserId}_{adId}.{flyerExt}";
 
-                var FlyerUrl = await _fileStorageBlob.SaveBase64File(dto.FlyerFile, flyerName, "classifieds-images", cancellationToken);
+                var flyerUrl = await _fileStorageBlob.SaveBase64File(dto.FlyerFile, flyerName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(flyerName);
                 dto.FlyerFile = null;
-                dto.FlyerName = FlyerUrl;
+                dto.FlyerName = flyerUrl;
 
-                dto.AdImageFileNames ??= new List<string>();
-
-
-                var imageUrls = new List<string>();
                 for (int i = 0; i < dto.AdImagesBase64.Count; i++)
                 {
-                    var customName = (dto.AdImageFileNames.Count > i && !string.IsNullOrWhiteSpace(dto.AdImageFileNames[i]))
-                        ? dto.AdImageFileNames[i]
-                        : $"DealsAd_{dto.UserId}_{adId}_{i + 1}.jpg";
+                    var image = dto.AdImagesBase64[i];
 
-                    var url = await _fileStorageBlob.SaveBase64File(dto.AdImagesBase64[i], customName, "classifieds-images", cancellationToken);
-                    imageUrls.Add(url);
-                    uploadedBlobKeys.Add(customName);
+                    var (imgExt, base64Image) = Base64ImageHelper.ParseBase64Image(image.Url);
+
+                    var fileName = !string.IsNullOrWhiteSpace(image.AdImageFileNames)
+                        ? image.AdImageFileNames
+                        : $"DealsAd_{dto.UserId}_{adId}_{i + 1}.{imgExt}";
+
+                    var url = await _fileStorageBlob.SaveBase64File(base64Image, fileName, "classifieds-images", cancellationToken);
+                    uploadedBlobKeys.Add(fileName);
+
+                    image.AdImageFileNames = fileName;
+                    image.Url = url;
                 }
 
-                if (imageUrls.Count == 0)
-                    throw new InvalidOperationException("Failed to upload any ad images.");
-
-                dto.AdImagesBase64 = null;
-                dto.AdImageFileNames = imageUrls;
-
-                _log.LogTrace($"Calling internal deals endpoint with cert: {dto.FlyerName} and {imageUrls.Count} images");
+                _log.LogTrace($"Calling internal deals service with flyer: {dto.FlyerName} and {dto.AdImagesBase64.Count} images");
 
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
@@ -1149,7 +457,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     cancellationToken
                 );
 
-                return new AdCreatedResponseDto { AdId = adId, Title = dto.Title, CreatedAt = DateTime.UtcNow, Message = "Deals Ad created successfully" };
+                return new AdCreatedResponseDto
+                {
+                    AdId = adId,
+                    Title = dto.Title,
+                    CreatedAt = DateTime.UtcNow,
+                    Message = "Deals Ad created successfully"
+                };
             }
             catch (Exception ex)
             {
@@ -1244,7 +558,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 return response;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _log.LogException(ex);
                 throw new InvalidOperationException("Failed to delete Classified Items Ad.", ex);
@@ -1444,6 +758,114 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
+        public async Task<Guid> CreateCategory(CategoryDtos dto, CancellationToken cancellationToken)
+        {
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto), "Category data must not be null.");
+
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                throw new ArgumentException("Category name must not be empty.");
+
+            try
+            {
+                var response = await _dapr.InvokeMethodAsync<CategoryDtos, Guid>(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    "api/classifieds/category", 
+                    dto,
+                    cancellationToken);
+
+                return response;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);             
+                throw new InvalidOperationException("Failed to create category in classified microservice.", ex);
+            }
+        }
+
+        public async Task<List<Categories>> GetChildCategories(Guid parentId, CancellationToken cancellationToken)
+        {
+            if (parentId == Guid.Empty)
+                throw new ArgumentException("Parent category ID must not be empty.");
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<List<Categories>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/category/{parentId}",
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to retrieve child categories from classified microservice.", ex);
+            }
+        }
+
+        public async Task<CategoryTreeDto> GetCategoryTree(Guid categoryId, CancellationToken cancellationToken)
+        {
+            if (categoryId == Guid.Empty)
+                throw new ArgumentException("Category ID must not be empty.");
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<CategoryTreeDto>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/category/tree/{categoryId}",
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to retrieve category hierarchy tree from classified microservice.", ex);
+            }
+        }
+
+        public async Task DeleteCategoryTree(Guid categoryId, CancellationToken cancellationToken)
+        {
+            if (categoryId == Guid.Empty)
+                throw new ArgumentException("Category ID must not be empty.");
+
+            try
+            {
+                await _dapr.InvokeMethodAsync(
+                    HttpMethod.Delete,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/category/{categoryId}/tree", 
+                    cancellationToken);
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to delete category tree from classified microservice.", ex);
+            }
+        }
+
+        public async Task<List<CategoryTreeDto>> GetAllCategoryTrees(CancellationToken cancellationToken)
+        {
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<List<CategoryTreeDto>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    "api/classifieds/category/all-trees", 
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to retrieve category tree list from classified microservice.", ex);
+            }
+        }
 
     }
 }

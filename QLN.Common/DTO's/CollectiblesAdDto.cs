@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static QLN.Common.DTO_s.ClassifiedsIndex;
 
 namespace QLN.Common.DTO_s
 {
@@ -35,7 +36,7 @@ namespace QLN.Common.DTO_s
         public string? FramedBy { get; set; }
         public decimal Price { get; set; }
         public string PriceType { get; set; }                    
-        public List<string> ImageUrls { get; set; } = new();
+        public List<ImageInfo> ImageUrls { get; set; } = new();
         public string PhoneNumber { get; set; }
         public string WhatsAppNumber { get; set; }
         public string ContactEmail { get; set; }

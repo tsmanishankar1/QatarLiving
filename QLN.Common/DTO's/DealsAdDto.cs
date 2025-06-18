@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static QLN.Common.DTO_s.ClassifiedsIndex;
 
 namespace QLN.Common.DTO_s
 {
@@ -12,7 +13,7 @@ namespace QLN.Common.DTO_s
         public string Title { get; set; }
         public string SubVertical { get; set; }
         public string FlyerFile { get; set; }
-        public List<string> ImageUrl { get; set; }
+        public List<ImageInfo> ImageUrl { get; set; }
         public string XMLLink { get; set; }
         public DateTime ExpiryDate { get; set; }
         public string PhoneNumber { get; set; }

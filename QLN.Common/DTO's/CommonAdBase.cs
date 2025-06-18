@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static QLN.Common.DTO_s.ClassifiedsIndex;
 
 namespace QLN.Common.DTO_s
 {
@@ -12,6 +13,7 @@ namespace QLN.Common.DTO_s
         public string SubVertical { get; set; }
         public string Title { get; set; }
         public string? Description { get; set; }
+        public Guid CategoryId { get; set; }
         public string? Category { get; set; }
         public string? SubCategory { get; set; }
         public string? L2Category { get; set; }
@@ -32,9 +34,8 @@ namespace QLN.Common.DTO_s
         public string? Size { get; set; }
         public string? SizeValue { get; set; }        
         public string? CertificateBase64 { get; set; }
-        public string? CertificateFileName { get; set; }
-        public List<string> AdImageFileNames { get; set; } = new();
-        public List<string> AdImagesBase64 { get; set; } = new();
+        public string? CertificateFileName { get; set; }       
+        public IList<ImageInfo> AdImagesBase64 { get; set; } 
         public string PhoneNumber { get; set; }
         public string WhatsAppNumber { get; set; }
         public string? ContactEmail { get; set; }
