@@ -30,9 +30,9 @@ namespace QLN.Common.Infrastructure.IService
         Task<DealsAdListDto> GetUserDealsAds(Guid userId, CancellationToken cancellationToken = default);
         Task<CollectiblesAdListDto> GetUserCollectiblesAds(Guid userId, CancellationToken cancellationToken = default);
         Task<Guid> CreateCategory(CategoryDtos dto, CancellationToken cancellationToken);
-        Task<List<Categories>> GetChildCategories(Guid parentId, CancellationToken cancellationToken);
-        Task<CategoryTreeDto?> GetCategoryTree(Guid categoryId, CancellationToken cancellationToken);
-        Task DeleteCategoryTree(Guid categoryId, CancellationToken cancellationToken);
-        Task<List<CategoryTreeDto>> GetAllCategoryTrees(CancellationToken cancellationToken);
+        Task<List<Categories>> GetChildCategories(string vertical, Guid parentId, CancellationToken cancellationToken);
+        Task<CategoryTreeDto?> GetCategoryTree(string vertical, Guid categoryId, CancellationToken cancellationToken);
+        Task DeleteCategoryTree(string vertical, Guid categoryId, CancellationToken cancellationToken);
+        Task<List<CategoryTreeDto>> GetAllCategoryTrees(string vertical, CancellationToken cancellationToken);
     }
 }

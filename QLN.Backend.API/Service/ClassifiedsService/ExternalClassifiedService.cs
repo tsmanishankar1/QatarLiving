@@ -784,8 +784,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<List<Categories>> GetChildCategories(Guid parentId, CancellationToken cancellationToken)
+        public async Task<List<Categories>> GetChildCategories(string vertical, Guid parentId, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical must be specified.");
+
             if (parentId == Guid.Empty)
                 throw new ArgumentException("Parent category ID must not be empty.");
 
@@ -794,7 +797,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var result = await _dapr.InvokeMethodAsync<List<Categories>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"api/classifieds/category/{parentId}",
+                    $"api/classifieds/category/{vertical}/{parentId}",
                     cancellationToken);
 
                 return result;
@@ -806,8 +809,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<CategoryTreeDto> GetCategoryTree(Guid categoryId, CancellationToken cancellationToken)
+        public async Task<CategoryTreeDto?> GetCategoryTree(string vertical, Guid categoryId, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical must be specified.");
+
             if (categoryId == Guid.Empty)
                 throw new ArgumentException("Category ID must not be empty.");
 
@@ -816,7 +822,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var result = await _dapr.InvokeMethodAsync<CategoryTreeDto>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"api/classifieds/category/tree/{categoryId}",
+                    $"api/classifieds/category/tree/{vertical}/{categoryId}",
                     cancellationToken);
 
                 return result;
@@ -828,8 +834,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task DeleteCategoryTree(Guid categoryId, CancellationToken cancellationToken)
+        public async Task DeleteCategoryTree(string vertical, Guid categoryId, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical must be specified.");
+
             if (categoryId == Guid.Empty)
                 throw new ArgumentException("Category ID must not be empty.");
 
@@ -838,7 +847,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Delete,
                     SERVICE_APP_ID,
-                    $"api/classifieds/category/{categoryId}/tree", 
+                    $"api/classifieds/category/{vertical}/{categoryId}/tree", 
                     cancellationToken);
             }
             catch (InvocationException ex)
@@ -848,14 +857,16 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<List<CategoryTreeDto>> GetAllCategoryTrees(CancellationToken cancellationToken)
+        public async Task<List<CategoryTreeDto>> GetAllCategoryTrees(string vertical, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical must be specified.");
             try
             {
                 var result = await _dapr.InvokeMethodAsync<List<CategoryTreeDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    "api/classifieds/category/all-trees", 
+                    $"api/classifieds/category/{vertical}/all-trees", 
                     cancellationToken);
 
                 return result;

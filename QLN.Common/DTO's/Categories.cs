@@ -22,7 +22,8 @@ namespace QLN.Common.DTO_s
     }
 
     public class CategoryDtos
-    {        
+    {
+        public string Vertical { get; set; }
         public string Name { get; set; } = default!;
         public Guid? ParentId { get; set; }
         public List<CategoryField>? Fields { get; set; } = new();

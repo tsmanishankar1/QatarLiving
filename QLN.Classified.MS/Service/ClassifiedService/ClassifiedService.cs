@@ -34,7 +34,10 @@ namespace QLN.Classified.MS.Service
         private const string PrelovedIndexKey = "preloved-index";
         private const string CollectiblesIndexKey = "collectibles-index";
         private const string DealsIndexKey = "deals-index";
-
+        private const string ItemsCategoryIndexKey = "items-category-index";
+        private const string PrelovedCategoryIndexKey = "preloved-category-index";
+        private const string CollectiblesCategoryIndexKey = "collectibles-category-index";
+        private const string DealsCategoryIndexKey = "deals-category-index";
 
 
         private readonly ILogger<ClassifiedService> _logger;
@@ -1336,6 +1339,8 @@ namespace QLN.Classified.MS.Service
 
         public async Task<Guid> CreateCategory(CategoryDtos dto, CancellationToken cancellationToken)
         {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (string.IsNullOrWhiteSpace(dto.Vertical)) throw new ArgumentException("Vertical must be specified.");
             try
             {
                 var category = new Categories
@@ -1347,11 +1352,21 @@ namespace QLN.Classified.MS.Service
                 };
 
                 var key = $"category-{category.Id}";
-                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+
+                var indexKey = dto.Vertical.Trim().ToLowerInvariant() switch
+                {
+                    "items" => ItemsCategoryIndexKey,
+                    "preloved" => PrelovedCategoryIndexKey,
+                    "collectibles" => CollectiblesCategoryIndexKey,
+                    "deals" => DealsCategoryIndexKey,
+                    _ => throw new ArgumentException($"Unsupported vertical: {dto.Vertical}")
+                };
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, indexKey) ?? new();
                 index.Add(key);
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, category);
-                await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, index);
+                await _dapr.SaveStateAsync(UnifiedStore, indexKey, index);
 
                 return category.Id;
             }
@@ -1361,11 +1376,23 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<List<Categories>> GetChildCategories(Guid parentId, CancellationToken cancellationToken)
+        public async Task<List<Categories>> GetChildCategories(string vertical, Guid parentId, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical must be provided.");
+
             try
             {
-                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+                var indexKey = vertical.Trim().ToLowerInvariant() switch
+                {
+                    "items" => ItemsCategoryIndexKey,
+                    "preloved" => PrelovedCategoryIndexKey,
+                    "collectibles" => CollectiblesCategoryIndexKey,
+                    "deals" => DealsCategoryIndexKey,
+                    _ => throw new ArgumentException($"Unsupported vertical: {vertical}")
+                };
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, indexKey) ?? new();
                 var result = new List<Categories>();
 
                 foreach (var key in index)
@@ -1392,11 +1419,23 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<CategoryTreeDto?> GetCategoryTree(Guid categoryId, CancellationToken cancellationToken)
+        public async Task<CategoryTreeDto?> GetCategoryTree(string vertical, Guid categoryId, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical must be specified.");
+
             try
             {
-                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+                var indexKey = vertical.Trim().ToLowerInvariant() switch
+                {
+                    "items" => ItemsCategoryIndexKey,
+                    "preloved" => PrelovedCategoryIndexKey,
+                    "collectibles" => CollectiblesCategoryIndexKey,
+                    "deals" => DealsCategoryIndexKey,
+                    _ => throw new ArgumentException($"Unsupported vertical: {vertical}")
+                };
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, indexKey) ?? new();
 
                 var rootKey = $"category-{categoryId}";
                 var root = await _dapr.GetStateAsync<Categories>(UnifiedStore, rootKey);
@@ -1422,7 +1461,7 @@ namespace QLN.Classified.MS.Service
                         var child = await _dapr.GetStateAsync<Categories>(UnifiedStore, key);
                         if (child != null && child.ParentId == categoryId)
                         {
-                            var childNode = await GetCategoryTree(child.Id, cancellationToken);
+                            var childNode = await GetCategoryTree(vertical, child.Id, cancellationToken);
                             if (childNode != null)
                             {
                                 rootNode.Children.Add(childNode);
@@ -1443,11 +1482,22 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task DeleteCategoryTree(Guid categoryId, CancellationToken cancellationToken)
+        public async Task DeleteCategoryTree(string vertical, Guid categoryId, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical must be specified.");
             try
             {
-                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+                var indexKey = vertical.Trim().ToLowerInvariant() switch
+                {
+                    "items" => ItemsCategoryIndexKey,
+                    "preloved" => PrelovedCategoryIndexKey,
+                    "collectibles" => CollectiblesCategoryIndexKey,
+                    "deals" => DealsCategoryIndexKey,
+                    _ => throw new ArgumentException($"Unsupported vertical: {vertical}")
+                };
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, indexKey) ?? new();
                 var keysToDelete = new List<string>();
 
                 async Task TraverseAndCollectKeys(Guid parentId)
@@ -1499,7 +1549,7 @@ namespace QLN.Classified.MS.Service
                     }
                 }
 
-                await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, index);
+                await _dapr.SaveStateAsync(UnifiedStore, indexKey, index);
             }
             catch (Exception ex)
             {
@@ -1507,11 +1557,23 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<List<CategoryTreeDto>> GetAllCategoryTrees(CancellationToken cancellationToken)
+        public async Task<List<CategoryTreeDto>> GetAllCategoryTrees(string vertical, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical must be specified.");
+
             try
             {
-                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+                var indexKey = vertical.Trim().ToLowerInvariant() switch
+                {
+                    "items" => ItemsCategoryIndexKey,
+                    "preloved" => PrelovedCategoryIndexKey,
+                    "collectibles" => CollectiblesCategoryIndexKey,
+                    "deals" => DealsCategoryIndexKey,
+                    _ => throw new ArgumentException($"Unsupported vertical: {vertical}")
+                };
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, indexKey) ?? new();
                 var result = new List<CategoryTreeDto>();
 
                 foreach (var key in index)
@@ -1521,7 +1583,7 @@ namespace QLN.Classified.MS.Service
                         var category = await _dapr.GetStateAsync<Categories>(UnifiedStore, key);
                         if (category != null && category.ParentId == Guid.Empty)
                         {
-                            var tree = await GetCategoryTree(category.Id, cancellationToken);
+                            var tree = await GetCategoryTree(vertical, category.Id, cancellationToken);
                             if (tree != null)
                             {
                                 result.Add(tree);

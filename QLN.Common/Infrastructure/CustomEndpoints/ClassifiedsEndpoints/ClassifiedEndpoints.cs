@@ -2406,6 +2406,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     });
                 }
 
+                if (string.IsNullOrWhiteSpace(dto.Vertical))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Vertical must be specified (e.g., items, preloved, collectibles, deals).",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
                 try
                 {
                     var id = await service.CreateCategory(dto, token);
@@ -2451,7 +2460,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .WithName("CreateCategory")
                 .WithTags("Classified")
                 .WithSummary("Create a new category with optional fields")
-                .WithDescription("Creates a new parent or child category with dynamic fields (used in classified ad creation)")
+                .WithDescription("Creates a new parent or child category in the specified vertical (items, preloved, collectibles, deals) with optional dynamic fields.")
                 .Produces<Guid>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
@@ -2459,11 +2468,22 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            group.MapGet("/category/{parentId:guid}", async Task<IResult> (
+            group.MapGet("/category/{vertical}/{parentId:guid}", async Task<IResult> (
+                string vertical,
                 Guid parentId,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
+                if (string.IsNullOrWhiteSpace(vertical))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Vertical must be specified.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
                 if (parentId == Guid.Empty)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
@@ -2476,7 +2496,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.GetChildCategories(parentId, token);
+                    var result = await service.GetChildCategories(vertical, parentId, token);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidOperationException ex)
@@ -2518,8 +2538,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             })
                 .WithName("GetChildCategories")
                 .WithTags("Classified")
-                .WithSummary("Get child categories of a given parent category")
-                .WithDescription("Retrieves a list of subcategories directly under the specified parent category.")
+                .WithSummary("Get child categories of a given parent category for a specific vertical")
+                .WithDescription("Retrieves a list of subcategories under the specified parent category for the given vertical (e.g., items, preloved, collectibles).")
                 .Produces<List<Categories>>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
@@ -2528,11 +2548,22 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
 
 
-            group.MapGet("/category/tree/{categoryId:guid}", async Task<IResult> (
+            group.MapGet("/category/tree/{vertical}/{categoryId:guid}", async Task<IResult> (
+                string vertical,
                 Guid categoryId,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
+                if (string.IsNullOrWhiteSpace(vertical))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Vertical must be specified (e.g., items, preloved, collectibles, deals).",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
                 if (categoryId == Guid.Empty)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
@@ -2545,14 +2576,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var tree = await service.GetCategoryTree(categoryId, token);
+                    var tree = await service.GetCategoryTree(vertical, categoryId, token);
 
                     if (tree == null)
                     {
                         return TypedResults.NotFound(new ProblemDetails
                         {
                             Title = "Category Not Found",
-                            Detail = $"No category found for ID {categoryId}",
+                            Detail = $"No category tree found for ID {categoryId} in vertical '{vertical}'",
                             Status = StatusCodes.Status404NotFound
                         });
                     }
@@ -2598,8 +2629,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             })
                 .WithName("GetCategoryHierarchyTree")
                 .WithTags("Classified")
-                .WithSummary("Returns full recursive category tree")
-                .WithDescription("Fetches the entire nested hierarchy of a given category and its child categories.")
+                .WithSummary("Returns full recursive category tree for a given vertical")
+                .WithDescription("Fetches the entire nested hierarchy of a given category and its child categories within the specified vertical (items, preloved, etc).")
+                .Produces<CategoryTreeDto>(StatusCodes.Status200OK)
                 .Produces<CategoryTreeDto>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
@@ -2607,11 +2639,22 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            group.MapDelete("/category/{categoryId:guid}/tree", async Task<IResult> (
+            group.MapDelete("/category/{vertical}/{categoryId:guid}/tree", async Task<IResult> (
+                string vertical,
                 Guid categoryId,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
+                if (string.IsNullOrWhiteSpace(vertical))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Vertical must be specified (e.g., items, preloved, collectibles, deals).",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
                 if (categoryId == Guid.Empty)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
@@ -2624,11 +2667,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    await service.DeleteCategoryTree(categoryId, token);
+                    await service.DeleteCategoryTree(vertical, categoryId, token);
 
                     return TypedResults.Ok(new
                     {
-                        Message = $"Category tree {categoryId} deleted successfully."
+                        Message = $"Category tree {categoryId} deleted successfully from vertical '{vertical}'."
                     });
                 }
                 catch (InvalidOperationException ex)
@@ -2670,8 +2713,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             })
                 .WithName("DeleteCategoryTree")
                 .WithTags("Classified")
-                .WithSummary("Deletes a category and all of its child categories recursively.")
-                .WithDescription("Performs recursive deletion of a category and all nested children.")
+                .WithSummary("Deletes a category and all of its child categories recursively from a given vertical.")
+                .WithDescription("Performs recursive deletion of a category and all nested children within the specified vertical (items, preloved, etc).")
                 .Produces(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
@@ -2679,20 +2722,31 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            group.MapGet("/category/all-trees", async Task<IResult> (
+            group.MapGet("/category/{vertical}/all-trees", async Task<IResult> (
+                string vertical,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
+                if (string.IsNullOrWhiteSpace(vertical))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Vertical must be specified (e.g., items, preloved, collectibles, deals).",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
                 try
                 {
-                    var result = await service.GetAllCategoryTrees(token);
+                    var result = await service.GetAllCategoryTrees(vertical, token);
 
                     if (result == null || result.Count == 0)
                     {
                         return TypedResults.NotFound(new ProblemDetails
                         {
                             Title = "No Categories Found",
-                            Detail = "No root categories or hierarchies were found.",
+                            Detail = $"No root categories or hierarchies were found for vertical '{vertical}'.",
                             Status = StatusCodes.Status404NotFound
                         });
                     }
@@ -2738,8 +2792,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             })
                 .WithName("GetAllCategoryTrees")
                 .WithTags("Classified")
-                .WithSummary("Returns all root categories with their full hierarchy")
-                .WithDescription("Fetches all top-level categories and recursively includes all nested subcategories and fields.")
+                .WithSummary("Returns all root categories and their full hierarchy for a specific vertical")
+                .WithDescription("Fetches all top-level categories and recursively includes all nested subcategories and fields for the specified vertical (items, preloved, collectibles, deals).")
                 .Produces<List<CategoryTreeDto>>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
