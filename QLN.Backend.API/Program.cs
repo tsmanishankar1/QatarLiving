@@ -25,6 +25,8 @@ using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 
 using Azure.Core.Serialization;
+using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
@@ -190,6 +192,7 @@ builder.Services.CompanyConfiguration(builder.Configuration);
 builder.Services.EventConfiguration(builder.Configuration);
 builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
+builder.Services.ContentConfiguration(builder.Configuration);
 var app = builder.Build();
 
 app.UseResponseCaching();
@@ -235,6 +238,12 @@ app.MapGroup("/api/subscriptions")
     .RequireAuthorization();
 app.MapGroup("/api/PayToPublish")
     .MapPayToPublishEndpoints();
+
+app.MapGroup("/api/v2/content")
+    .MapNewsContentEndpoints();
+
+
+
 app.MapAllBackOfficeEndpoints();
 app.MapLandingPageEndpoints();
 app.UseHttpsRedirection();

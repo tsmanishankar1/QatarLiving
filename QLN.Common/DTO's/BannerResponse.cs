@@ -5,25 +5,23 @@ namespace QLN.Common.Infrastructure.DTO_s
 {
     public class BannerItem
     {
-        [JsonPropertyName("code")]
+        public string Category { get; set; }
         public string Code { get; set; }
-
-        [JsonPropertyName("alt")]
         public string Alt { get; set; }
-
-        [JsonPropertyName("duration")]
         public string Duration { get; set; }
-
-        [JsonPropertyName("image_desktop")]
-        public string ImageDesktop { get; set; }
-
-        [JsonPropertyName("image_mobile")]
-        public string ImageMobile { get; set; }
-
-        [JsonPropertyName("link")]
-        public string? Link { get; set; }
+        public string ImageDesktopUrl { get; set; }
+        public string ImageMobileUrl { get; set; }
+        public string Link { get; set; }
+        public string CreatedBy { get; set; }
+        public string QueueName { get; set; }
+        public string QueueLabel { get; set; }
     }
 
+    public class GroupedBannerResponse
+    {
+        [JsonPropertyName("qln_banners")]
+        public Dictionary<string, BaseQueueResponse<BannerItem>> Queues { get; set; } = new();
+    }
     public class BannerResponse
     {
         // Data in the response that I have attempted to connect to what it appears to be for

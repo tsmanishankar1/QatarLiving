@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Google.Api;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using QLN.Common.Infrastructure.EventLogger;
@@ -6,6 +7,7 @@ using QLN.Common.Infrastructure.IService.IAuthService;
 using QLN.Common.Infrastructure.IService.IEmailService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.ITokenService;
+using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Service.AuthService;
 using QLN.Common.Infrastructure.Service.FileStorage;
