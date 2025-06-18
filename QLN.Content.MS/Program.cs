@@ -1,6 +1,6 @@
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 using QLN.Common.Infrastructure.IService.IContentService;
-using QLN.Content.MS.Service;
+using QLN.Content.MS.Service.EventInternalService;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();

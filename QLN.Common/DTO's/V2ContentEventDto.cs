@@ -30,20 +30,8 @@ namespace QLN.Common.DTO_s
     }
     public class ContentEventDto : ContentBase
     {
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public Guid Id { get; set; }
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public Guid User_id { get; set; }
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-        public bool IsActive { get; set; } = true;
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-        public Guid CreatedBy { get; set; }
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-        public DateTime CreatedAt { get; set; }
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-        public Guid? UpdatedBy { get; set; }
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-        public DateTime? UpdatedAt { get; set; }
         [JsonPropertyName("category_id")]
         public string CategroryId { get; set; }
 
@@ -112,5 +100,10 @@ namespace QLN.Common.DTO_s
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("comments")]
         public List<ContentComment> Comments { get; set; }
+        public bool IsActive { get; set; } = true;
+        public Guid CreatedBy { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public Guid? UpdatedBy { get; set; }
+        public DateTime? UpdatedAt { get; set; }
     }
 }

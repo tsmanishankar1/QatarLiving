@@ -6,7 +6,7 @@ using QLN.Common.Infrastructure.IService.IContentService;
 using System.Text.Json;
 using EventCategory = QLN.Common.DTO_s.EventCategory;
 
-namespace QLN.Content.MS.Service
+namespace QLN.Content.MS.Service.EventInternalService
 {
     public class V2InternalEventService : IV2EventService
     {
@@ -42,7 +42,7 @@ namespace QLN.Content.MS.Service
 
                     var keys = await _dapr.GetStateAsync<List<string>>(
                         ConstantValues.V2Content.ContentStoreName,
-                        ConstantValues.V2Content.ContentIndexKey,
+                        ConstantValues.V2Content.EventIndexKey,
                         cancellationToken: cancellationToken
                     ) ?? new List<string>();
 
@@ -51,7 +51,7 @@ namespace QLN.Content.MS.Service
                         keys.Add(id.ToString());
                         await _dapr.SaveStateAsync(
                             ConstantValues.V2Content.ContentStoreName,
-                            ConstantValues.V2Content.ContentIndexKey,
+                            ConstantValues.V2Content.EventIndexKey,
                             keys,
                             cancellationToken: cancellationToken
                         );
@@ -71,7 +71,7 @@ namespace QLN.Content.MS.Service
             {
                 var keys = await _dapr.GetStateAsync<List<string>>(
                     ConstantValues.V2Content.ContentStoreName,
-                    ConstantValues.V2Content.ContentIndexKey) ?? new();
+                    ConstantValues.V2Content.EventIndexKey) ?? new();
 
                 var items = await _dapr.GetBulkStateAsync(
                     ConstantValues.V2Content.ContentStoreName,
@@ -170,7 +170,7 @@ namespace QLN.Content.MS.Service
         {
             try
             {
-                var items = dto.QlnEvents.FeaturedEvents.Items;
+                var items = dto.QlnEvents?.FeaturedEvents?.Items;
 
                 foreach (var eventItem in items)
                 {
