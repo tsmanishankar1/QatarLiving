@@ -123,11 +123,13 @@
                                         <ChildContent>
                                             @foreach (var nested in nestedProfileMenuItems)
                                             {
-                                                <MudMenuItem OnClick="@(() => NavManager.NavigateTo(nested.Route))" Class="menu-item">
-                                                    <div class="nested-menu-item-list-content">
-                                                        <img src="@nested.ImageSrc" alt="@nested.Text" class="menu-item-icon nested-icon-color" />
-                                                        <span class="menu-item-text">@nested.Text</span>
-                                                    </div>
+                                                <MudMenuItem Class="menu-item">
+                                                    <MudLink Href="@nested.Route" Underline="Underline.None">
+                                                        <div class="nested-menu-item-list-content">
+                                                            <img src="@nested.ImageSrc" alt="@nested.Text" class="menu-item-icon nested-icon-color" />
+                                                            <span class="menu-item-text">@nested.Text</span>
+                                                        </div>
+                                                    </MudLink>
                                                 </MudMenuItem>
                                             }
                                         </ChildContent>
