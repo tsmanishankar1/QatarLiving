@@ -11,6 +11,8 @@ using QLN.Common.Infrastructure.IService.IPayToPublishService;
 using QLN.Common.Infrastructure.IService.ISubscriptionService;
 using System.Security.Claims;
 using Dapr;
+using Dapr.Client;
+using System.Text.RegularExpressions;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
 {
@@ -111,15 +113,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
 
             // Pub/Sub endpoint for subscription expiry - Updated to use CloudEvent
             group.MapPost("/subscription-expiry",
-                [Topic("pubsub", "subscription-expiry")]
+          [Topic("pubsub", "subscription-expiry")]
             async (CloudEvent<SubscriptionExpiryMessage> cloudEvent,
-                       [FromServices] IExternalSubscriptionService subscriptionService,
-                       [FromServices] ILogger<IExternalSubscriptionService> logger,
-                       HttpContext context) =>
-                {
-                    var message = cloudEvent.Data;
+            [FromServices] IExternalSubscriptionService subscriptionService,
+            [FromServices] ILogger<IExternalSubscriptionService> logger,
+             HttpContext context) =>
+            {
+                 var message = cloudEvent.Data;
 
-                    try
+
+              try
                     {
                         logger.LogInformation("=== PUBSUB ENDPOINT === Received expiry CloudEvent from {IP} for user {UserId}, sub {SubId}, tx {TxId}",
                     context.Connection.RemoteIpAddress?.ToString() ?? "Unknown",
@@ -182,8 +185,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
             .AllowAnonymous()
             .ExcludeFromDescription();
 
+
             return group;
         }
+       
+
+
 
         public static RouteGroupBuilder MapProcessPaytoPublishPaymentEndpoint(this RouteGroupBuilder group)
         {
@@ -251,6 +258,61 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            group.MapGet("/yearly-subscription", async (
+                HttpContext context,
+                [FromServices] IExternalSubscriptionService service,
+                [FromServices] ILogger<IExternalSubscriptionService> logger,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    // Extract userId from token
+                    var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)
+                                       ?? context.User.FindFirst("sub")
+                                       ?? context.User.FindFirst("userId");
+
+                    if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+                    {
+                        logger.LogWarning("Unauthorized access attempt - no valid user ID in token");
+                        return Results.Unauthorized();
+                    }
+
+                    logger.LogInformation("Checking yearly subscription status for user {UserId}", userId);
+
+                    var result = await service.CheckYearlySubscriptionAsync(userId, cancellationToken);
+
+                    if (result == null)
+                    {
+                        return Results.NotFound(new
+                        {
+                            Message = "No subscription data found for user",
+                            UserId = userId
+                        });
+                    }
+
+                    logger.LogInformation("Yearly subscription check completed for user {UserId}. IsYearly: {IsYearly}",
+                        userId, result.IsRewardsYearlySubscription);
+
+                    return Results.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Error checking yearly subscription");
+                    return Results.Problem(
+                        title: "Yearly Subscription Check Error",
+                        detail: "An internal error occurred while checking yearly subscription status.",
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("CheckYearlySubscription")
+            .WithTags("Payment")
+            .WithSummary("Check if user has yearly subscription")
+            .WithDescription("Checks if the authenticated user has an active yearly subscription and returns subscription details.")
+            .Produces<YearlySubscriptionResponseDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
     }

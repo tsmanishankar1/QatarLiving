@@ -5,10 +5,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using QLN.Backend.API.ServiceConfiguration;
+using QLN.Classified.MS.Endpoints;
+using QLN.Common.Infrastructure.CustomEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
@@ -16,13 +20,10 @@ using QLN.Common.Infrastructure.DbContext;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Common.Infrastructure.TokenProvider;
+using QLN.SearchService.CustomEndpoints;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
-using QLN.SearchService.CustomEndpoints;
-using QLN.Common.Infrastructure.CustomEndpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
-using QLN.Classified.MS.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -180,6 +181,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
 builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
+builder.Services.AddonConfiguration(builder.Configuration);
 var app = builder.Build();
 
 #region DAPR Subscriptions
@@ -234,6 +236,9 @@ app.MapGroup("/api/payments")
 
 app.MapGroup("/api/paytopublish")
     .MapPayToPublishEndpoints();
+
+app.MapGroup("/api/addon")
+ .MapAddonEndpoints();
 
 
 app.MapAllBackOfficeEndpoints();

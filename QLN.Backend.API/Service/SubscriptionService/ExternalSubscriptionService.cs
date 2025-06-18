@@ -726,6 +726,242 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             new ActorId(id.ToString()),
             "PaymentTransactionActor");
     }
+    public async Task<List<UserPaymentDetailsResponseDto>> GetUserPaymentDetailsAsync(
+    Guid userId,
+    CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Getting payment details for user {UserId}", userId);
+
+            var userPaymentDetails = new List<UserPaymentDetailsResponseDto>();
+            var paymentIds = _paymentTransactionIds.Keys.ToList();
+
+            if (paymentIds.Count == 0)
+            {
+                _logger.LogWarning("No payment transactions found in tracking dictionary");
+                return userPaymentDetails;
+            }
+
+            _logger.LogInformation("Found {Count} payment IDs to check for user {UserId}", paymentIds.Count, userId);
+
+            // Get all payment transactions for the user
+            var userPaymentTasks = paymentIds.Select(async paymentId =>
+            {
+                try
+                {
+                    var paymentActor = GetPaymentTransactionActorProxy(paymentId);
+                    var paymentData = await paymentActor.GetDataAsync(cancellationToken);
+
+                    if (paymentData != null && paymentData.UserId == userId)
+                    {
+                        return paymentData;
+                    }
+                    return null;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error retrieving payment data for ID: {PaymentId}", paymentId);
+                    return null;
+                }
+            });
+
+            var userPayments = (await Task.WhenAll(userPaymentTasks))
+                .Where(p => p != null)
+                .ToList();
+
+            _logger.LogInformation("Found {Count} payments for user {UserId}", userPayments.Count, userId);
+
+            // For each payment, get the corresponding subscription details
+            foreach (var payment in userPayments)
+            {
+                try
+                {
+                    var subscriptionActor = GetActorProxy(payment.SubscriptionId);
+                    var subscriptionData = await subscriptionActor.GetDataAsync(cancellationToken);
+
+                    if (subscriptionData != null)
+                    {
+                        var durationEnum = (DurationType)subscriptionData.Duration;
+                        var isActive = payment.EndDate > DateTime.UtcNow;
+
+                        // Remove from tracking if expired
+                        if (!isActive && _paymentTransactionIds.ContainsKey(payment.Id))
+                        {
+                            _paymentTransactionIds.TryRemove(payment.Id, out _);
+                            _logger.LogInformation("Removed expired payment {PaymentId} from tracking", payment.Id);
+                        }
+
+                        userPaymentDetails.Add(new UserPaymentDetailsResponseDto
+                        {
+                            // Payment Information
+                            PaymentTransactionId = payment.Id,
+                            TransactionDate = payment.TransactionDate,
+                            StartDate = payment.StartDate,
+                            EndDate = payment.EndDate,
+                           
+                            // Subscription Information
+                            SubscriptionId = subscriptionData.Id,
+                            SubscriptionName = subscriptionData.subscriptionName,
+                            Price = subscriptionData.price,
+                            Currency = subscriptionData.currency,
+                            Description = subscriptionData.description,
+                            DurationId = (int)durationEnum,
+                            DurationName = durationEnum.ToString(),
+
+                            // Category and Vertical Information
+                            VerticalTypeId = (int)subscriptionData.VerticalTypeId,
+                            VerticalName = subscriptionData.VerticalTypeId.ToString(),
+                            CategoryId = (int)subscriptionData.CategoryId,
+                            CategoryName = subscriptionData.CategoryId.ToString(),
+
+                            // Budget Information
+                            AdsbudBudget = subscriptionData.adsbudget,
+                            PromoteBudget = subscriptionData.promotebudget,
+                            RefreshBudget = subscriptionData.refreshbudget,
+
+                           
+                         
+                        });
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Subscription data not found for payment {PaymentId}, subscription {SubscriptionId}",
+                            payment.Id, payment.SubscriptionId);
+
+                        // Still add payment info even if subscription is not found
+                        userPaymentDetails.Add(new UserPaymentDetailsResponseDto
+                        {
+                            PaymentTransactionId = payment.Id,
+                            TransactionDate = payment.TransactionDate,
+                            StartDate = payment.StartDate,
+                            EndDate = payment.EndDate,
+                          
+                            CardHolderName = payment.CardHolderName,
+                            SubscriptionId = payment.SubscriptionId,
+                            SubscriptionName = "Subscription Not Found",
+                            VerticalTypeId = payment.VerticalId,
+                            CategoryId = payment.CategoryId
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error retrieving subscription data for payment {PaymentId}, subscription {SubscriptionId}",
+                        payment.Id, payment.SubscriptionId);
+                }
+            }
+
+            // Sort by transaction date (most recent first)
+            userPaymentDetails = userPaymentDetails
+                .OrderByDescending(p => p.TransactionDate)
+                .ToList();
+
+            _logger.LogInformation("Successfully retrieved {Count} payment details for user {UserId}",
+                userPaymentDetails.Count, userId);
+
+            return userPaymentDetails;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting payment details for user {UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task<YearlySubscriptionResponseDto?> CheckYearlySubscriptionAsync(
+      Guid userId,
+      CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Checking yearly subscription for user {UserId}", userId);
+
+            var paymentIds = _paymentTransactionIds.Keys.ToList();
+
+            if (paymentIds.Count == 0)
+            {
+                _logger.LogWarning("No payment transactions found in tracking dictionary");
+                return null;
+            }
+
+            // Get all active payment transactions for the user
+            var userPaymentTasks = paymentIds.Select(async paymentId =>
+            {
+                try
+                {
+                    var paymentActor = GetPaymentTransactionActorProxy(paymentId);
+                    var paymentData = await paymentActor.GetDataAsync(cancellationToken);
+
+                    if (paymentData != null &&
+                        paymentData.UserId == userId &&
+                        paymentData.EndDate > DateTime.UtcNow) // Only active subscriptions
+                    {
+                        return paymentData;
+                    }
+                    return null;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error retrieving payment data for ID: {PaymentId}", paymentId);
+                    return null;
+                }
+            });
+
+            var userActivePayments = (await Task.WhenAll(userPaymentTasks))
+                .Where(p => p != null)
+                .ToList();
+
+            // Check each active payment for yearly subscription
+            foreach (var payment in userActivePayments)
+            {
+                try
+                {
+                    // Calculate if the subscription duration is 1 year
+                    var subscriptionDuration = payment.EndDate - payment.StartDate;
+                    bool isYearlySubscription = subscriptionDuration.TotalDays >= 360 && subscriptionDuration.TotalDays <= 370; // Allow some tolerance
+
+                    if (isYearlySubscription)
+                    {
+                        // Get subscription details
+                        var subscriptionActor = GetActorProxy(payment.SubscriptionId);
+                        var subscriptionData = await subscriptionActor.GetDataAsync(cancellationToken);
+
+                        if (subscriptionData != null)
+                        {
+                            return new YearlySubscriptionResponseDto
+                            {
+                                UserId = userId,
+                                IsRewardsYearlySubscription = true,
+                                Price = subscriptionData.price,
+                                Currency = subscriptionData.currency,
+                                EndDate = payment.EndDate,
+                                PaymentTransactionId = payment.Id,
+                                SubscriptionId = payment.SubscriptionId
+                            };
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error checking yearly subscription for payment {PaymentId}", payment.Id);
+                }
+            }
+
+            // No yearly subscription found
+            return new YearlySubscriptionResponseDto
+            {
+                UserId = userId,
+                IsRewardsYearlySubscription = false
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking yearly subscription for user {UserId}", userId);
+            throw;
+        }
+    }
+
 
 }
 

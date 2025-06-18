@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.IService.IPayToPublishService;
 using QLN.Backend.API.Service.PayToPublishService;
+using QLN.Common.Infrastructure.IService.IAddonService;
+using QLN.Backend.Actor.ActorClass;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +45,7 @@ builder.Services.AddActors(options =>
     options.Actors.RegisterActor<PaymentTransactionActor>();
     options.Actors.RegisterActor<PayToPublishPaymentActor>();
     options.Actors.RegisterActor<PayToPublishActor>();
+    options.Actors.RegisterActor<AddonActor>();
     options.ActorIdleTimeout = TimeSpan.FromMinutes(60);
     options.ActorScanInterval = TimeSpan.FromSeconds(30);
     options.DrainOngoingCallTimeout = TimeSpan.FromSeconds(60);

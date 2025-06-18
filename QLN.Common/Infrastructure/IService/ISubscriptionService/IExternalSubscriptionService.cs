@@ -19,6 +19,8 @@ public interface IExternalSubscriptionService
     Task<bool> IsUserInRoleAsync(Guid userId, string roleName, CancellationToken cancellationToken = default);
     Task<bool> ChangeUserRoleAsync(Guid userId, string newRole, CancellationToken cancellationToken = default);
     Task HandleSubscriptionExpiryAsync(SubscriptionExpiryMessage message, CancellationToken cancellationToken = default);
+    Task<List<UserPaymentDetailsResponseDto>> GetUserPaymentDetailsAsync(   Guid userId,   CancellationToken cancellationToken = default);
+   Task<YearlySubscriptionResponseDto?> CheckYearlySubscriptionAsync(  Guid userId, CancellationToken cancellationToken = default);
 }
 
 

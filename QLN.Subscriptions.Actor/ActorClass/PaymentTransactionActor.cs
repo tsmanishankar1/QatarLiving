@@ -1,4 +1,4 @@
-﻿using Dapr.Actors;
+﻿
 using Dapr.Actors.Runtime;
 using Dapr.Client;
 using QLN.Common.DTOs;
@@ -66,7 +66,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             {
                 var istTimeZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time");
                 var nowIst = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, istTimeZone);
-                var today115Pm = new DateTime(nowIst.Year, nowIst.Month, nowIst.Day, 11, 14, 0);
+                var today115Pm = new DateTime(nowIst.Year, nowIst.Month, nowIst.Day, 15, 18, 0);
                 var next115Pm = nowIst <= today115Pm ? today115Pm : today115Pm.AddDays(1);
                 var next115PmUtc = TimeZoneInfo.ConvertTimeToUtc(next115Pm, istTimeZone);
                 var dueTime = next115PmUtc - DateTime.UtcNow;
