@@ -27,6 +27,9 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         protected bool _isLoading { get; set; } = true;
         private string _authToken;
 
+        protected bool isCompanyLoading;
+        protected CompanyProfileModel? companyProfile;
+
         protected override void OnInitialized()
         {
             breadcrumbItems = new()
@@ -40,33 +43,45 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         {
             if (firstRender)
             {
-                _authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6Ijk3NTQ1NGI1LTAxMmItNGQ1NC1iMTUyLWUzMGYzNmYzNjNlMiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJNVUpBWSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6Im11amF5LmFAa3J5cHRvc2luZm9zeXMuY29tIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbW9iaWxlcGhvbmUiOiIrOTE3NzA4MjA0MDcxIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjpbIlVzZXIiLCJTdWJzY3JpYmVyIl0sIlVzZXJJZCI6Ijk3NTQ1NGI1LTAxMmItNGQ1NC1iMTUyLWUzMGYzNmYzNjNlMiIsIlVzZXJOYW1lIjoiTVVKQVkiLCJFbWFpbCI6Im11amF5LmFAa3J5cHRvc2luZm9zeXMuY29tIiwiUGhvbmVOdW1iZXIiOiIrOTE3NzA4MjA0MDcxIiwiZXhwIjoxNzUwMTYzMTQ0LCJpc3MiOiJRYXRhciBMaXZpbmciLCJhdWQiOiJRYXRhciBMaXZpbmcifQ.1GaSr0ExTNjiuFmS-FIR9OhBc1woPkB5qmqCJ_GAeqI";
-                await LoadSubscriptionDetailsAsync(3);
-                SetHardcodedBusinessProfile();
-                StateHasChanged();
+                _authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6Ijk3NTQ1NGI1LTAxMmItNGQ1NC1iMTUyLWUzMGYzNmYzNjNlMiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJNVUpBWSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6Im11amF5LmFAa3J5cHRvc2luZm9zeXMuY29tIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbW9iaWxlcGhvbmUiOiIrOTE3NzA4MjA0MDcxIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjpbIlVzZXIiLCJTdWJzY3JpYmVyIl0sIlVzZXJJZCI6Ijk3NTQ1NGI1LTAxMmItNGQ1NC1iMTUyLWUzMGYzNmYzNjNlMiIsIlVzZXJOYW1lIjoiTVVKQVkiLCJFbWFpbCI6Im11amF5LmFAa3J5cHRvc2luZm9zeXMuY29tIiwiUGhvbmVOdW1iZXIiOiIrOTE3NzA4MjA0MDcxIiwiZXhwIjoxNzUwMjI3NjU1LCJpc3MiOiJRYXRhciBMaXZpbmciLCJhdWQiOiJRYXRhciBMaXZpbmcifQ.DQ5yncnHhQsEPhBBmjX4XbVz2EZp6kkxF3PzbBE1RSI";
+                //await LoadSubscriptionDetailsAsync(3);
+                ////SetHardcodedBusinessProfile();
+                //await LoadCompanyProfileAsync();
+                //StateHasChanged();
+                var subscriptionTask = LoadSubscriptionDetailsAsync(3);
+                var companyProfileTask = LoadCompanyProfileAsync();
+                await Task.WhenAll(subscriptionTask, companyProfileTask);
 
             }
 
             await base.OnAfterRenderAsync(firstRender);
         }
 
-
-        protected void SetHardcodedBusinessProfile()
+        protected async Task LoadCompanyProfileAsync()
         {
-            _businessProfile = new BusinessProfile
-            {
-                Name = "Luxury Store",
-                CategoryName = "Preloved",
-                Duration = "6 month Plus",
-                ValidFrom = "2025-04-27",
-                ValidTo = "2025-10-27",
-                LogoUrl = "qln-images/subscription/CompanyLogo.svg"
-            };
+            isCompanyLoading = true;
             StateHasChanged();
+
+            try
+            {
+                companyProfile = await ClassfiedDashboardService.GetCompanyProfileAsync(_authToken);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading company profile: {ex.Message}");
+            }
+            finally
+            {
+                isCompanyLoading = false;
+                StateHasChanged();
+            }
         }
+
+
         protected async Task LoadSubscriptionDetailsAsync(int verticalId)
         {
             _isLoading = true;
+            StateHasChanged();
 
             try
             {
@@ -103,6 +118,8 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             finally
             {
                 _isLoading = false;
+                StateHasChanged();
+
 
             }
         }
@@ -112,11 +129,25 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         }
         protected void NavigateToEditProfile()
         {
-            Navigation.NavigateTo("/edit-company");
+            Navigation.NavigateTo("/company/edit");
         }
         protected void NavigateToAdPost()
         {
             Navigation.NavigateTo("/classifieds/createform");
+        }
+
+        protected void SetHardcodedBusinessProfile()
+        {
+            _businessProfile = new BusinessProfile
+            {
+                Name = "Luxury Store",
+                CategoryName = "Preloved",
+                Duration = "6 month Plus",
+                ValidFrom = "2025-04-27",
+                ValidTo = "2025-10-27",
+                LogoUrl = "qln-images/subscription/CompanyLogo.svg"
+            };
+            StateHasChanged();
         }
 
     }

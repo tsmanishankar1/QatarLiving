@@ -21,22 +21,23 @@
         <!-- Your dashboard content would go here -->
         <MudPaper Class="p-4 rounded-xl dashboard-statistics-container">
 
-            @if (_businessProfile is not null)
+            @if (isCompanyLoading)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Medium" Color="Color.Primary" />
+            }
+            else if (companyProfile != null)
             {
                 <MudPaper Class="p-4 dashboard-company-container">
-
-                    <img src="@_businessProfile.LogoUrl" alt="Logo" class="dashboard-company-logo" />
+                    <img src="@companyProfile.CompanyLogo" alt="Logo" class="dashboard-company-logo" />
                     <MudText Typo="Typo.h6" Class="mt-2" Style="color:#004F9A; font-weight: bold;">
-                        @_businessProfile.Name
+                        @companyProfile.BusinessName
                     </MudText>
                     <MudText Typo="Typo.body2" Style="color: #5F6C7B;">
-                        @_businessProfile.CategoryName -
-                        @_businessProfile.Duration
+                        @companyProfile.NatureOfBusiness - Company
                     </MudText>
-                    <MudText Typo="Typo.caption" Class="mt-1" Style="color: #5F6C7B;">Valid from</MudText>
+                    <MudText Typo="Typo.caption" Class="mt-1" Style="color: #5F6C7B;">Created on</MudText>
                     <MudText Typo="Typo.caption" Style="color: #5F6C7B;">
-                        @DateTime.Parse(_businessProfile.ValidFrom).ToString("MMM dd, yyyy") to
-                        @DateTime.Parse(_businessProfile.ValidTo).ToString("MMM dd, yyyy")
+                        @companyProfile.CreatedUtc.ToString("MMM dd, yyyy")
                     </MudText>
                     <MudButton Variant="Variant.Outlined" Class="font-semibold mt-3 dashboard-edit-profile-button"
                                OnClick="@NavigateToEditProfile">
@@ -44,6 +45,7 @@
                     </MudButton>
                 </MudPaper>
             }
+
 
 
             <!-- Summary Cards -->
@@ -180,8 +182,17 @@
                     <!-- First Row (Image + Checkbox) - full width on mobile -->
                     <div class="d-flex align-items-center mb-3 mb-sm-0 mr-sm-4">
                         <MudCheckBox T="bool" @bind-Checked="_isChecked" Class="mr-2 ad-checkbox" />
-                        <img src="/qln-images/subscription/Gucci.png" alt="Ad Image"
-                             style="width: 240px; max-width:100%; height: auto; max-height: 180px; border-radius: 4px;" />
+                      @*   <img src="/qln-images/subscription/Gucci.png" alt="Ad Image"
+                             style="width: 240px; max-width:100%; height: auto; max-height: 180px; border-radius: 4px;" /> *@
+                        @if (ad.ImageUrls != null && ad.ImageUrls.Any())
+                        {
+                            <img src="@ad.ImageUrls.First()" alt="Ad Image" style="width: 240px; max-width:100%; height: auto; max-height: 180px; border-radius: 4px;" />
+                        }
+                        else
+                        {
+                            <img src="/qln-images/subscription/Gucci.png" alt="No Image" style="width: 240px; max-width:100%; height: auto; max-height: 180px; border-radius: 4px;" />
+                        }
+
                     </div>
 
                     <!-- Second Column (Main Content) -->
@@ -231,8 +242,9 @@
                                 <img src="qln-images/subscription/Refresh.svg" alt="Gucci" style="margin-right: 8px;" />
                                 <div>
                                     Refresh
-                                    <div style="font-size: 0.7em; color: #5F6C7B;">(Exp: @ad.ExpiryDate)</div>
-                                </div>
+@*                                     <div style="font-size: 0.7em; color: #5F6C7B;">(Exp: @ad.ExpiryDate)</div>
+ *@                               
+                                   </div>
                             </MudButton>
 
                             @if (ad.IsFeatured)

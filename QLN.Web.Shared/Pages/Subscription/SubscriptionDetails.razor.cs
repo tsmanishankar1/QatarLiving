@@ -230,6 +230,9 @@ namespace QLN.Web.Shared.Pages.Subscription
             [JsonPropertyName("price")]
             public decimal Price { get; set; }
 
+            [JsonPropertyName("priceType")]
+            public string PriceType { get; set; }
+
             [JsonPropertyName("phoneNumber")]
             public string PhoneNumber { get; set; }
 
