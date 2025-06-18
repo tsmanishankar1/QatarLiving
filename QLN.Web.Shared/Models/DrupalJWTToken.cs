@@ -84,7 +84,7 @@ namespace QLN.Web.Shared.Models
         //[JsonPropertyName("showroom_info")]
         //public List<object> ShowroomInfo { get; set; }
 
-        [JsonPropertyName("subscription")]
-        public string? Subscription { get; set; }
+        //[JsonPropertyName("subscription")]
+        //public string? Subscription { get; set; } // temp remove so we dont even try and serialize this
     }
 }

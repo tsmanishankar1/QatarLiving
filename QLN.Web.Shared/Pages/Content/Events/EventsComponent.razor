@@ -2,7 +2,7 @@
 
 @layout ContentLayout
 @using QLN.Common.Infrastructure.DTO_s;
-@using QLN.Web.Shared.Components.BannerSwiper
+@using QLN.Web.Shared.Components.BannerHero
 @using QLN.Web.Shared.Pages.Content.Events.FeaturedEvents
 @using QLN.Web.Shared.Pages.Content.Events.SearchSection
 @using QLN.Web.Shared.Pages.Content.Events
@@ -24,7 +24,7 @@
             }
             else if (DailyHeroBanners?.Any() == true)
             {
-                <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+                  <BannerHero BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
             }
             else
             {
@@ -32,6 +32,7 @@
             }
 
         </div>
+       
     </div>
 
     <div class="featured-events-responsive-container">

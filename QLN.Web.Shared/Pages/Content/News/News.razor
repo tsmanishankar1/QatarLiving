@@ -10,7 +10,7 @@
 @using QLN.Web.Shared.Pages.Content.Daily.DailyNewsLetter
 @using QLN.Web.Shared.Components.AdBanner
 @using QLN.Web.Shared.Components.ViewToggleButtons
-@using QLN.Web.Shared.Components.BannerSwiper
+@using QLN.Web.Shared.Components.BannerHero
 @using QLN.Web.Shared.Pages.Content.Events
 @using QLN.Web.Shared.Components.BannerTakeOver
 @using QLN.Web.Shared.Components.EmptyCard
@@ -31,7 +31,7 @@
             }
             else if (DailyHeroBanners?.Any() == true)
             {
-                <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+                <BannerHero BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
             }
             else
             {

@@ -34,7 +34,7 @@
         <MudVirtualize Context="article" Items="Items" T="ContentEvent">
             <div class="article-entry">
                 <div class="article-content">
-                    <a href="#" @onclick="() => NavigatetoArticle(article)" class="article-title">@(article.Title)</a>
+                    <MudLink OnClick="() => NavigatetoArticle(article)" class="article-title">@(article.Title)</MudLink>
                 </div>
                 @if (!string.IsNullOrWhiteSpace(@article.ImageUrl))
                 {

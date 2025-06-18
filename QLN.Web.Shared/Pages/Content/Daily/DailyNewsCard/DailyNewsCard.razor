@@ -2,20 +2,21 @@
 @inherits DailyNewsCardBase
 @if (!string.IsNullOrEmpty(Item.ImageUrl) || !string.IsNullOrEmpty(Item.Category) || !string.IsNullOrEmpty(Item.Title))
 {
-    <div class="daily-news-card" @onclick="NavigateToDetailPage">
-        <div class="daily-news-card-image-wrapper">
-            <img src="@Item.ImageUrl" alt="img-alt" class="daily-news-card-image" />
-        </div>
-        <div class="daily-news-card-content">
-            <div class="daily-news-category">@Item.Category</div>
-            <div class="daily-news-title">@Item.Title</div>
-        </div>
-    </div>
+
+        <div class="daily-news-card" @onclick="NavigateToDetailPage">
+            <div class="daily-news-card-image-wrapper">
+                <img src="@Item.ImageUrl" alt="img-alt" class="daily-news-card-image" />
+            </div>
+            <div class="daily-news-card-content">
+                <div class="daily-news-category">@Item.Category</div>
+                <div class="daily-news-title">@Item.Title</div>
+            </div>
+        </div>  
 }
-<style>
+
+<style>   
     .daily-news-card {
         display: flex;
-        border-radius: 12px;
         overflow: hidden;
         font-family: 'Public Sans', sans-serif;
         width: 100%;
@@ -40,13 +41,15 @@
         overflow: hidden;
     }
 
+
+
     .daily-news-card-image {
         width: 100%;
         height: 100%;
         object-fit: cover;
         display: block;
+        cursor: pointer;
     }
-
 
 
     .daily-news-card-content {

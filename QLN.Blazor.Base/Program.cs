@@ -216,6 +216,10 @@ builder.Services.AddHttpClient<IEventService, EventService>(client =>
 {
     client.BaseAddress = new Uri(contentVerticalAPIUrl);
 });
+builder.Services.AddHttpClient<IClassifiedsServices, ClassifiedsServices>(client =>
+{
+    client.BaseAddress = new Uri(contentVerticalAPIUrl);
+});
 builder.Services.AddHttpClient<IPostDialogService, PostDialogService>(client =>
 {
     client.BaseAddress = new Uri(qatarLivingAPI);
