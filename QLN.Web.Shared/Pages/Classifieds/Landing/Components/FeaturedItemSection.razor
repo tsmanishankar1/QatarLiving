@@ -40,12 +40,11 @@
                 </div>
 
                 <div class="swiper-wrapper">
-                    @foreach (var item in FeaturedItems)
-                    {
+                         <MudVirtualize Context="item" Items="FeaturedItems">
                         <div class="swiper-slide swiper-slide-Card">
                             <FeaturedItemCard Item="item" OnHeartClick="HandleHeartClick" OnSelect="HandleSelect" />
                         </div>
-                    }
+                        </MudVirtualize>
                 </div>
 
                 <div class="swiper-featured-pagination"></div>

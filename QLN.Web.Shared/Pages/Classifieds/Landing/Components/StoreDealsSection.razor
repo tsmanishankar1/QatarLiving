@@ -41,12 +41,11 @@
         <!-- Swiper with reusable card -->
         <div class="swiper swiper-store">
             <div class="swiper-wrapper @(Stores.Count <= 6 ? "les5swiper-wrapper" : "")">
-                @foreach (var store in Stores)
-                {
+                <MudVirtualize Context="store" Items="Stores">
                     <div class="swiper-slide">
                         <StoreCard StoreData="store" OnShopNow="HandleShopNow" />
                     </div>
-                }
+               </MudVirtualize>
             </div>
         </div>
     </div>

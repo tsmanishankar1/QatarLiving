@@ -34,12 +34,11 @@
                 </div>
 
                 <div class="swiper-wrapper @(FeaturedEvent.Count <= 5 ? "les5swiper-wrapper" : "")">
-                      @foreach (var item in FeaturedEvent)
-                    {
+                      <MudVirtualize Context="item" Items="FeaturedEvent">
                         <div class="swiper-slide swiper-slide-Card">
                             <FeaturedEventCard Item="item" OnClick="HandleCategoryClick" />
                         </div>
-                        }
+                    </MudVirtualize>
                 </div>
             </div>
             <div class="swiper-categories-pagination-wrapper">

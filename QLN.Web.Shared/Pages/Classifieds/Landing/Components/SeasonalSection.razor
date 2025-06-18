@@ -42,12 +42,11 @@
         <!-- Swiper slider -->
         <div class="swiper swiper-seasonal">
             <div class="swiper-wrapper">
-                @foreach (var item in Seasonal)
-                {
+                 <MudVirtualize Context="item" Items="Seasonal">
                     <div class="swiper-slide seasonal-card">
                             <SeasonalCard Item="item" />
                     </div>
-                }
+                </MudVirtualize>
             </div>
         </div>
     </div>
