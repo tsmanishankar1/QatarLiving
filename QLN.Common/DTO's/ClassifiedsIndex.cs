@@ -223,6 +223,12 @@ namespace QLN.Common.DTO_s
         public string? Inclusion { get; set; }
         public IList<ImageInfo>? Images { get; set; }
 
+        // --- STORE --
+        [SimpleField(IsFilterable = true)]
+        public string? StoreId { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? StoreName { get; set; }
         public class ImageInfo
         {
             public string AdImageFileNames { get; set; }

@@ -1,6 +1,9 @@
 ﻿using QLN.Classified.MS.Service;
+using QLN.Classified.MS.Service.BackOfficeService;
 using QLN.Classified.MS.Service.ServicesAdService;
+using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.IBackOfficeService;
 
 
 namespace QLN.Classifieds.MS.ServiceConfiguration
@@ -12,6 +15,7 @@ namespace QLN.Classifieds.MS.ServiceConfiguration
 
             services.AddTransient<IClassifiedService, ClassifiedService>();
             services.AddTransient<IServicesService, ServicesAdService>();
+            services.AddTransient<IBackOfficeService<LandingBackOfficeIndex>, InternalLandingBackOfficeService>();
             return services;
         }
     }

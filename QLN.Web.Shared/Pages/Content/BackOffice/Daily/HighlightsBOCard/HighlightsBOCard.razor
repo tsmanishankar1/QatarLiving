@@ -22,7 +22,7 @@
             var item = ListOfItems[i];
             bool isLast = i == ListOfItems.Take(3).Count() - 1;
             <div class="article-card @(isLast ? "" : "with-divider")" @onclick="() => NavigateToDetailPage(item)">
-                <img class="daily-news-image" src="/qln-images/card1.png" alt="img" />
+                <img class="daily-news-image" src="@item.ImageUrl" alt="img" />
                 <div class="text-content">
                     <p class="tag">@item.Category</p>
                     <h4 class="headline">@item.Title</h4>

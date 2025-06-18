@@ -1,6 +1,8 @@
 @using Microsoft.Extensions.Options
 @using QLN.Web.Shared.Services
+@using QLN.Web.Shared.Models
 @inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
 @inject IOptions<NavigationPath> options
 @{
     var navigationPath = options.Value;
@@ -12,44 +14,78 @@
         <!-- Header -->
         <div class="mobile-menu-header">
             <img src="/qln-images/header/logo_mobile.svg" alt="Logo" class="logo" />
-            <MudIconButton Icon="@Icons.Material.Filled.Close" @onclick="() => OnClose.InvokeAsync()" class="close-btn" />
+            <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="() => OnClose.InvokeAsync()" class="close-btn" />
         </div>
         @if (IsLoggedIn)
         {
-            <div class="user-profile-row">
+            <div class="user-profile-row"  @onclick="ToggleProfileMenu">
 
-                <div class="user-left" @onclick="() => GoToProfile.InvokeAsync()">
+                <div class="user-left" >
                     <img src="/qln-images/header/user_Icons.svg" alt="User" class="user-avatar" />
                     <div class="user-info">
-                        <div class="user-name"> @((Name?.Length > 10) ? Name.Substring(0, 10) + "..." :
+                        <div class="user-name"> @((Name?.Length > 20) ? Name.Substring(0, 20) + "..." :
                                                 Name)</div>
-                                                 <div class="user-email"> @((Email?.Length > 10) ? Email.Substring(0, 10) + "..." :
+                                                 <div class="user-email"> @((Email?.Length > 20) ? Email.Substring(0, 20) + "..." :
                                                 Email)</div>
             </div>
+            
         </div>
         <!-- Right side: Arrow -->
-        <div class="arrow-icon">
-            <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+        <div class="right-arrow-icon">
+            <MudIcon Icon="@(_isProfileMenuOpen ? Icons.Material.Sharp.ArrowBackIosNew : Icons.Material.Sharp.ArrowForwardIos)" Class="arrow-icon-color" />
         </div>
-
             </div>
         }
-
-
 
         <!-- Buttons -->
         <div class="auth-buttons">
             @if (IsLoggedIn)
             {
-                <button class="signup-btn" @onclick="@(() => RedirectTo(navigationPath.Subscription))">Buy Premium</button>
-                <button class="post-btn" @onclick="() => GoToLogout.InvokeAsync()">Logout</button>
+                <MudButton class="signup-btn" OnClick="@(() => RedirectTo(navigationPath.Subscription))">Buy Premium</MudButton>
+                <MudButton class="post-btn" OnClick="() => OnPostAdClicked.InvokeAsync()">Post Ad</MudButton>
             }
             else
             {
-                <button class="signup-btn" @onclick="() => GoToRegister.InvokeAsync()">Sign Up</button>
-                <button class="login-btn" @onclick="() => GoToLogin.InvokeAsync()">Login</button>
+                <MudButton class="signup-btn" OnClick="() => GoToRegister.InvokeAsync()">Sign Up</MudButton>
+                <MudButton class="login-btn" OnClick="() => GoToLogin.InvokeAsync()">Login</MudButton>
             }
         </div>
+        @if (_isProfileMenuOpen)
+        {
+                @foreach (var item in ProfileMenuItems)
+        {
+            var isDashboard = item.Text == "Dashboards";
+
+            if (isDashboard)
+            {
+                <div class="profile-item" @onclick="() => ToggleExpand(item.Text)">
+                    <img src="@item.ImageSrc" alt="icon" class="profile-icon" />
+                    <span class="menu-item-text">@item.Text</span>
+                </div>
+
+                <MudCollapse Expanded="@(_expandedItem == item.Text)">
+                    <div class="nested-items">
+                        @foreach (var nested in NestedProfileMenuItems)
+                        {
+                            <div class="nested-profile-item" @onclick="() => HandleProfileMenuClick.InvokeAsync(nested)">
+                                <img src="@nested.ImageSrc" alt="icon" class="profile-icon nested-icon-color" />
+                                <span  class="menu-item-text">@nested.Text</span>
+                            </div>
+                        }
+                    </div>
+                </MudCollapse>
+            }
+            else
+            {
+                <div class="profile-item" @onclick="() => HandleProfileMenuClick.InvokeAsync(item)">
+                    <img src="@item.ImageSrc" alt="icon" class="profile-icon" />
+                    <span  class="menu-item-text @(item.Text == "Logout" ? "logout-item" : "")">@item.Text</span>
+                </div>
+            }
+        }
+       }
+         @if (!_isProfileMenuOpen)
+        {
         <!-- Main Links -->
         <nav class="menu-links">
             <a class="main-link" href="/" @onclick="HandleLinkClick">Home</a>
@@ -139,7 +175,7 @@
                         src="/qln-images/header/tikTok_icon_mobile.svg" alt="TikTok" /></a>
             </div>
         </footer>
-
+       }
     </div>
 }
 
@@ -151,17 +187,31 @@
     [Parameter] public EventCallback GoToLogin { get; set; }
     [Parameter] public EventCallback GoToLogout { get; set; }
     [Parameter] public EventCallback OnPostAdClicked { get; set; }
+    [Parameter] public List<MenuItem> ProfileMenuItems { get; set; }
+    [Parameter] public List<MenuItem> NestedProfileMenuItems { get; set; }
+    [Parameter] public EventCallback<MenuItem> HandleProfileMenuClick { get; set; }
+
+    private string _expandedItem;
+
+    private bool _isProfileMenuOpen = false;
 
     [Parameter] public bool IsLoggedIn { get; set; }
     [Parameter] public string Name { get; set; }
 
     [Parameter] public string Email { get; set; }
-    void RedirectTo(string url)
+    void ToggleExpand(string itemTitle)
+    {
+        _expandedItem = _expandedItem == itemTitle ? null : itemTitle;
+    }
+    void ToggleProfileMenu()
+    {
+        _isProfileMenuOpen = !_isProfileMenuOpen;
+    }  
+    async void RedirectTo(string url)
     {
         NavigationManager.NavigateTo(url, true); // `true` forces full page reload
+        await HandleLinkClick();
     }
-    [Inject]
-    public NavigationManager NavigationManager { get; set; }
     private async Task HandleLinkClick()
     {
         await OnClose.InvokeAsync();
@@ -257,6 +307,7 @@
         border-radius: 5px;
         font-weight: 600;
         font-size: 14px;
+        text-transform: capitalize;
     }
 
     .login-btn {
@@ -268,6 +319,7 @@
         border-radius: 5px;
         font-weight: 600;
         font-size: 14px;
+        text-transform: capitalize;
     }
 
     .post-btn {
@@ -279,6 +331,7 @@
         border-radius: 5px;
         font-weight: 600;
         font-size: 14px;
+        text-transform: capitalize;
     }
 
 
@@ -357,14 +410,8 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0.75rem 0;
-        border-radius: 8px;
+        padding: 10px 15px 10px 0;
         cursor: pointer;
-        transition: background-color 0.2s ease;
-    }
-
-    .user-profile-row:hover {
-        background-color: #f8f8f8;
     }
 
     .user-left {
@@ -397,7 +444,38 @@
         color: #777;
     }
 
-    .arrow-icon {
-        color: #555;
+  .right-arrow-icon {
+    display: flex;
+    align-items: flex-start;
+}
+  .arrow-icon-color {
+    font-size: 1rem;
+    color: #454545;
+}
+    .profile-item, .nested-profile-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+        }
+    .profile-icon {
+        width: 24px;
+        height: 24px;
+        margin-right: 1rem;
+    }
+    .menu-item-text {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--color-text-heading);
+        flex-grow: 1;
+    }
+   .logout-item {
+    color: #F04438 !important;
+    }
+    .nested-items {
+        padding-left: 2rem;
+    }
+  .nested-icon-color {
+           filter: brightness(0) saturate(100%) invert(38%) sepia(10%) saturate(1192%) hue-rotate(174deg) brightness(91%) contrast(86%);
     }
 </style>

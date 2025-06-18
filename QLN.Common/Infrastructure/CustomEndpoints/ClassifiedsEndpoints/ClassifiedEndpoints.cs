@@ -82,7 +82,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<IEnumerable<ClassifiedsIndex>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
-
+            
+            
             // GET BY ID
             group.MapGet("/{id}", async (
                     [FromRoute] string id,
@@ -2762,8 +2763,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     Top = 100,
                     Filters = new Dictionary<string, object>
                    {
-                        { "IsFeaturedItem",   true },
-                        { "SubVertical", "Items" }
+                        { "IsFeatured",   true },
+                        { "SubVertical", "Item" }
                     }
                 };
 
