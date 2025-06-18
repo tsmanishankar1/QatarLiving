@@ -6,7 +6,7 @@
 @layout ContentLayout
 @using QLN.Web.Shared.Components.BreadCrumb
 @using QLN.Web.Shared.Components.EmptyCard
-@using QLN.Web.Shared.Components.BannerSwiper
+@using QLN.Web.Shared.Components.BannerHero
 @inherits EventDetailsBase
 
 @if (!isLoading && eventDetails != null)
@@ -27,7 +27,7 @@ else
         }
         else if (DailyHeroBanners?.Any() == true)
         {
-            <BannerSwiper BannerItems="DailyHeroBanners" Loading="isLoadingEventBanners" />
+             <BannerHero BannerItems="DailyHeroBanners" Loading="isLoadingEventBanners" />
         }
         else
         {

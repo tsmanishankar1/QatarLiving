@@ -329,11 +329,21 @@ Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
         height: 32px;
     }
 
-    .mud-popover .mud-list {
-        max-height: inherit;
-        overflow-y: auto;
+        /* Target all popover menus that are open and belong to the share menu */
+    .mud-popover:has(.share-icon) .mud-list {
         display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto;
+        gap: 4px;
     }
+
+    .share-popover .mud-list {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto;
+        gap: 4px;
+    }
+
 
     .mud-menu-item {
         padding: 0px 6px 0px 0px !important;

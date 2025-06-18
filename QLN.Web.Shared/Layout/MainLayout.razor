@@ -11,7 +11,7 @@
 @using QLN.Web.Shared.Services
 @inject IOptions<NavigationPath> options;
 
-<MudThemeProvider @ref="@_mudThemeProvider" />
+<MudThemeProvider @ref="@_mudThemeProvider" Theme="@CustomTheme"/>
 <MudDialogProvider />
 <MudPopoverProvider />
 <MudSnackbarProvider Position="SnackbarPosition.BottomLeft" />
@@ -123,11 +123,13 @@
                                         <ChildContent>
                                             @foreach (var nested in nestedProfileMenuItems)
                                             {
-                                                <MudMenuItem OnClick="@(() => NavManager.NavigateTo(nested.Route))" Class="menu-item">
-                                                    <div class="nested-menu-item-list-content">
-                                                        <img src="@nested.ImageSrc" alt="@nested.Text" class="menu-item-icon nested-icon-color" />
-                                                        <span class="menu-item-text">@nested.Text</span>
-                                                    </div>
+                                                <MudMenuItem Class="menu-item">
+                                                    <MudLink Href="@nested.Route" Underline="Underline.None">
+                                                        <div class="nested-menu-item-list-content">
+                                                            <img src="@nested.ImageSrc" alt="@nested.Text" class="menu-item-icon nested-icon-color" />
+                                                            <span class="menu-item-text">@nested.Text</span>
+                                                        </div>
+                                                    </MudLink>
                                                 </MudMenuItem>
                                             }
                                         </ChildContent>
@@ -177,6 +179,7 @@
     private bool showMobileMenu = false;
     public string Name { get; set; } = String.Empty;
     public string Email { get; set; } = String.Empty;
+    public string Alias { get; set; } = String.Empty;
     public bool IsLoggedIn { get; set; } = false;
     public int CurrentUserId { get; set; }
     private bool showDashboards = false;
@@ -192,9 +195,29 @@
     public string MyProfileMenu { get; set; } = string.Empty;
     public string MySavedAdsProfileMenu { get; set; } = string.Empty;
     public string ManageMyAdsProfileMenu { get; set; } = string.Empty;
+    private MudTheme CustomTheme;
+
+    // Menu items with Alias
+    public string ServicesProfileMenu { get; set; } = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
+
+        var customLightPalette = new PaletteLight()
+        {
+            Primary = "#FF7F38"
+        };
+
+        var customDarkPalette = new PaletteDark()
+        {
+            Primary = "#FF7F38"
+        };
+
+        CustomTheme = new MudTheme()
+        {
+            PaletteLight = customLightPalette,
+            PaletteDark = customDarkPalette,
+        };
         navigationPath = options.Value;
 
         var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -205,6 +228,7 @@
             {
                 Name = user.FindFirst(ClaimTypes.Name)?.Value;
                 Email = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value;
+                Alias = user.FindFirst("alias")?.Value;
                 CurrentUserId = int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uid) ? uid : 0;
                 IsLoggedIn = true;
                 SetProfileMenu();
@@ -217,9 +241,9 @@
         new MenuItem { Text = "Properties", ImageSrc = "/qln-images/post-icons/ad_properties.svg", Route = navigationPath.PropertiesProfileMenu },
         new MenuItem { Text = "Vehicles", ImageSrc = "/qln-images/post-icons/ad_vehicles.svg", Route = navigationPath.VehiclesProfileMenu },
         new MenuItem { Text = "Classifieds", ImageSrc = "/qln-images/post-icons/ad_classifieds.svg", Route = ClassifiedsProfileMenuUrl },
-        new MenuItem { Text = "Services", ImageSrc = "/qln-images/post-icons/ad_services.svg", Route = navigationPath.VehiclesProfileMenu }, // Placeholder
+        new MenuItem { Text = "Services", ImageSrc = "/qln-images/post-icons/ad_services.svg", Route = ServicesProfileMenu },
         new MenuItem { Text = "Jobs", ImageSrc = "/qln-images/post-icons/ad_jobs.svg", Route = JobsProfileMenu },
-        new MenuItem { Text = "Rewards", ImageSrc = "/qln-images/post-icons/ad_rewards.svg", Route = navigationPath.Rewards }
+        new MenuItem { Text = "Rewards", ImageSrc = "/qln-images/post-icons/ad_rewards.svg", Route = navigationPath.RewardsProfileMenu }
     };
 
         // Top-level profile items
@@ -253,6 +277,7 @@
             {
                 Name = user.FindFirst(ClaimTypes.Name)?.Value;
                 Email = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value;
+                Alias = user.FindFirst("alias")?.Value;
                 CurrentUserId = int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uid) ? uid : 0;
                 IsLoggedIn = true;
                 SetProfileMenu();
@@ -356,16 +381,25 @@
 
     private void SetProfileMenu()
     {
-        ClassifiedsProfileMenuUrl =  ReplaceUrlWithUserID(navigationPath.ClassifiedsProfileMenu, CurrentUserId);
-        JobsProfileMenu = ReplaceUrlWithUserID(navigationPath.JobsProfileMenu, CurrentUserId);
+        // Replace UserID
         MyProfileMenu = ReplaceUrlWithUserID(navigationPath.MyProfileMenu, CurrentUserId);
         MySavedAdsProfileMenu = ReplaceUrlWithUserID(navigationPath.MySavedAdsProfileMenu, CurrentUserId);
         ManageMyAdsProfileMenu = ReplaceUrlWithUserID(navigationPath.ManageMyAdsProfileMenu, CurrentUserId);
+        JobsProfileMenu = ReplaceUrlWithUserID(navigationPath.JobsProfileMenu, CurrentUserId);
+
+        // Replace Alias
+        ServicesProfileMenu = ReplaceUrlWithAlias(navigationPath.ServicesProfileMenu, Alias);
+        ClassifiedsProfileMenuUrl =  ReplaceUrlWithAlias(navigationPath.ClassifiedsProfileMenu, Alias);
     }
 
     private string ReplaceUrlWithUserID(string url,int userID)
     {
         return url.Replace("<USER_ID>", $"{userID}");
+    }
+
+    private string ReplaceUrlWithAlias(string url, string alias)
+    {
+        return url.Replace("<ALIAS>", $"{alias}");
     }
 }
 

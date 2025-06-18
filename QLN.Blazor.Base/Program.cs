@@ -17,11 +17,14 @@ using QLN.Web.Shared.MockServices;
 using QLN.Web.Shared.Contracts;
 using GoogleAnalytics.Blazor;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.AspNetCore.SignalR;
+using QLN.Web.Shared.Pages.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var contentVerticalAPIUrl = builder.Configuration["ServiceUrlPaths:ContentVerticalAPI"];
 var qatarLivingAPI = builder.Configuration["ServiceUrlPaths:QatarLivingAPI"];
+var baseURL = builder.Configuration["ServiceUrlPaths:BaseURL"];
 
 Console.WriteLine($"ContentVerticalAPI URL: {contentVerticalAPIUrl}");
 
@@ -37,6 +40,11 @@ if (string.IsNullOrWhiteSpace(qatarLivingAPI))
     throw new InvalidOperationException("QatarLivingAPI URL is missing in configuration.");
 }
 
+if (string.IsNullOrWhiteSpace(baseURL))
+{
+    throw new InvalidOperationException("BaseURL URL is missing in configuration.");
+}
+
 builder.Services.AddCors(options =>
 {
 
@@ -44,7 +52,8 @@ builder.Services.AddCors(options =>
     string[] origins = { 
                 // add more as necessary
                 contentVerticalAPIUrl,
-                qatarLivingAPI
+                qatarLivingAPI,
+                baseURL
     };
 
     // filter out distinct URLs
@@ -71,6 +80,8 @@ builder.Services.AddRazorComponents()
     {
         options.ClientTimeoutInterval = TimeSpan.FromSeconds(60);
         options.HandshakeTimeout = TimeSpan.FromSeconds(30);
+        options.MaximumReceiveMessageSize = 1024 * 1024;//To Increase the MaximumReceiveMessageSize via HubOptions 1MB.
+
     });
 
 builder.Services.AddMudServices();
@@ -213,6 +224,10 @@ builder.Services.AddHttpClient<IEventService, EventService>(client =>
 {
     client.BaseAddress = new Uri(contentVerticalAPIUrl);
 });
+builder.Services.AddHttpClient<IClassifiedsServices, ClassifiedsServices>(client =>
+{
+    client.BaseAddress = new Uri(contentVerticalAPIUrl);
+});
 builder.Services.AddHttpClient<IPostDialogService, PostDialogService>(client =>
 {
     client.BaseAddress = new Uri(qatarLivingAPI);
@@ -222,7 +237,16 @@ builder.Services.AddHttpClient<ISearchService, CommunitySearchService>(client =>
 {
     client.BaseAddress = new Uri(qatarLivingAPI);
 });
+builder.Services.AddHttpClient<ApiService>();
+builder.Services.AddHttpClient<ISubscriptionService, SubscriptionService>(client =>
+{
+    client.BaseAddress = new Uri(baseURL);
+});
 
+builder.Services.AddHttpClient<IClassifiedDashboardService, ClassfiedDashboardService>(client =>
+{
+    client.BaseAddress = new Uri(baseURL);
+});
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ISimpleMemoryCache, SimpleMemoryCache>(); // add shared Banner Service
 
