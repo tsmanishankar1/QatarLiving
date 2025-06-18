@@ -21,9 +21,9 @@
                            @onmouseenter="PauseRotation"
                            @onmouseleave="ResumeRotation">
                             <img class="banner-image"
-                                 src="@banner.ImageDesktop"
-                                 data-mobile="@banner.ImageMobile"
-                                 data-desktop="@banner.ImageDesktop"
+                                 src="@banner.ImageDesktopUrl"
+                                 data-mobile="@banner.ImageMobileUrl"
+                                 data-desktop="@banner.ImageDesktopUrl"
                                  alt="@banner.Alt"
                                  @onclick="@(() => TriggerBannerAnalytics(banner, "click"))" />
                         </a>
@@ -31,9 +31,9 @@
                     else
                     {
                         <img class="banner-image"
-                             src="@banner.ImageDesktop"
-                             data-mobile="@banner.ImageMobile"
-                             data-desktop="@banner.ImageDesktop"
+                             src="@banner.ImageDesktopUrl"
+                             data-mobile="@banner.ImageMobileUrl"
+                             data-desktop="@banner.ImageDesktopUrl"
                              alt="@banner.Alt"
                              @onclick="@(() => TriggerBannerAnalytics(banner, "click"))" />
                     }
