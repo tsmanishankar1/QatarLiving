@@ -29,6 +29,7 @@ namespace QLN.Common.Infrastructure.Constants
         public static class EntityTypes
         {
             public const string HeroBanner = "HeroBanner";
+            public const string TakeOverBanner = "TakeOverBanner";
             public const string FeaturedItems = "FeaturedItems";
             public const string FeaturedServices = "FeaturedServices";
             public const string FeaturedCategory = "FeaturedCategory";
@@ -46,6 +47,7 @@ namespace QLN.Common.Infrastructure.Constants
         public static class EntityRoutes
         {
             public const string HeroBanner = "hero-banner";
+            public const string TakeOverBanner = "take-over-banner";
             public const string FeaturedItems = "featured-items";
             public const string FeaturedServices = "featured-services";
             public const string FeaturedCategory = "featured-category";

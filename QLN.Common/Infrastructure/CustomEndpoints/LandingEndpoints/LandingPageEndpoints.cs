@@ -20,7 +20,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                 var vertical = ConstantValues.Verticals.Services;
 
 
-                var bannerTask = FetchSegmentAsync(searchSvc, vertical, ConstantValues.EntityTypes.HeroBanner);
+                var herobannerTask = FetchSegmentAsync(searchSvc, vertical, ConstantValues.EntityTypes.HeroBanner);
+                var takeoverbannerTask = FetchSegmentAsync(searchSvc, vertical, ConstantValues.EntityTypes.TakeOverBanner);
                 var featuredServicesTask = FetchSegmentAsync(searchSvc, vertical, ConstantValues.EntityTypes.FeaturedServices);
                 var featuredCatTask = FetchSegmentAsync(searchSvc, vertical, ConstantValues.EntityTypes.FeaturedCategory);
                 var categoriesTask = FetchSegmentAsync(searchSvc, vertical, ConstantValues.EntityTypes.Category);
@@ -33,7 +34,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                 var popularSearchTask = FetchSegmentAsync(searchSvc, vertical, ConstantValues.EntityTypes.PopularSearch);
 
                 await Task.WhenAll(
-                    bannerTask, featuredServicesTask, featuredCatTask, categoriesTask,
+                    herobannerTask,takeoverbannerTask, featuredServicesTask, featuredCatTask, categoriesTask,
                     seasonalTask, socialPostTask, socialLinksTask, socialVideosTask,
                     faqTask, ctaTask, popularSearchTask
                 );
@@ -47,12 +48,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                 {
                     var detail = await searchSvc.GetByIdAsync<ServicesIndex>(
                         vertical,
-                        ix.AdId ?? throw new InvalidOperationException("AdId missing")
+                        ix.EntityId ?? throw new InvalidOperationException("AdId missing")
                     );
                     if (detail == null) continue;
 
                     featuredServices.Add(new LandingFeaturedItemDto
                     {
+                        Id = detail.Id,
                         Title = detail.Title,
                         Description = detail.Description,
                         Category = detail.Category,
@@ -65,7 +67,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
 
                 var dto = new LandingPageDto
                 {
-                    HeroBanner = await bannerTask,
+                    HeroBanner = await herobannerTask,
+                    TakeOverBanner = await takeoverbannerTask,
                     FeaturedServices = featuredServices,
                     FeaturedCategories = await featuredCatTask,
                     Categories = await categoriesTask,
@@ -75,7 +78,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                     SocialMediaVideos = await socialVideosTask,
                     FaqItems = await faqTask,
                     ReadyToGrow = await ctaTask,
-                    PopularSearches = BuildHierarchy((await popularSearchTask).ToList(), null)
+                    PopularSearches = BuildPopularSearchHierarchy((await popularSearchTask).ToList(), vertical)
                 };
 
                 return TypedResults.Ok(dto);
@@ -89,7 +92,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
             {
                 var vertical = ConstantValues.Verticals.Classifieds;
 
-                var bannerTask = FetchSegmentAsync(searchSvc, vertical, ConstantValues.EntityTypes.HeroBanner);
+                var herobannerTask = FetchSegmentAsync(searchSvc, vertical, ConstantValues.EntityTypes.HeroBanner);
+                var takeoverbannerTask = FetchSegmentAsync(searchSvc, vertical, ConstantValues.EntityTypes.TakeOverBanner);
                 var featuredItemsTask = FetchSegmentAsync(searchSvc, vertical, ConstantValues.EntityTypes.FeaturedItems);
                 var featuredCatTask = FetchSegmentAsync(searchSvc, vertical, ConstantValues.EntityTypes.FeaturedCategory);
                 var featuredStoresTask = FetchSegmentAsync(searchSvc, vertical, ConstantValues.EntityTypes.FeaturedStores);
@@ -103,7 +107,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                 var popularSearchTask = FetchSegmentAsync(searchSvc, vertical, ConstantValues.EntityTypes.PopularSearch);
 
                 await Task.WhenAll(
-                    bannerTask, featuredItemsTask, featuredCatTask, featuredStoresTask,
+                    herobannerTask, takeoverbannerTask, featuredItemsTask, featuredCatTask, featuredStoresTask,
                     categoriesTask, seasonalTask, socialPostTask, socialLinksTask,
                     socialVideosTask, faqTask, ctaTask, popularSearchTask
                 );
@@ -117,12 +121,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                 {
                     var detail = await searchSvc.GetByIdAsync<ClassifiedsIndex>(
                         vertical,
-                        ix.AdId ?? throw new InvalidOperationException("AdId missing")
+                        ix.EntityId ?? throw new InvalidOperationException("AdId missing")
                     );
                     if (detail == null) continue;
 
                     featuredItems.Add(new LandingFeaturedItemDto
                     {
+                        Id = detail.Id,
                         Title = detail.Title,
                         Description = detail.Description,
                         Category = detail.Category,
@@ -137,7 +142,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
 
                 var dto = new LandingPageDto
                 {
-                    HeroBanner = await bannerTask,
+                    HeroBanner = await herobannerTask,
+                    TakeOverBanner = await takeoverbannerTask,
                     FeaturedItems = featuredItems,
                     FeaturedCategories = await featuredCatTask,
                     FeaturedStores = await featuredStoresTask,
@@ -148,7 +154,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                     SocialMediaVideos = await socialVideosTask,
                     FaqItems = await faqTask,
                     ReadyToGrow = await ctaTask,
-                    PopularSearches = BuildHierarchy((await popularSearchTask).ToList(), null)
+                    PopularSearches = BuildPopularSearchHierarchy((await popularSearchTask).ToList(), vertical)
                 };
 
                 return TypedResults.Ok(dto);
@@ -205,27 +211,28 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
             }
         }
 
-        private static IEnumerable<object> BuildHierarchy(
+        private static IEnumerable<PopularSearchDto> BuildPopularSearchHierarchy(
             List<LandingBackOfficeIndex> items,
-            string? parentId)
+            string vertical,
+            string? parentId = null)
         {
             return items
                 .Where(i => i.ParentId == parentId)
                 .OrderBy(i => i.Order)
-                .Select(i => new
+                .Select(i => new PopularSearchDto
                 {
-                    i.Id,
-                    i.Title,
-                    i.ParentId,
-                    i.Vertical,
-                    i.EntityType,
-                    i.Order,
-                    i.RediectUrl,
-                    i.ImageUrl,
-                    i.IsActive,
-                    Children = BuildHierarchy(items, i.Id)
+                    Id = i.Id,
+                    Title = i.Title,
+                    ParentId = i.ParentId,
+                    Vertical = i.Vertical,
+                    EntityType = i.EntityType,
+                    Order = i.Order,
+                    RediectUrl = i.RediectUrl,
+                    ImageUrl = i.ImageUrl,
+                    IsActive = i.IsActive,
+                    Children = BuildPopularSearchHierarchy(items, vertical, i.Id)
                 })
-                .ToList<object>();
+                .ToList();
         }
     }
 }
