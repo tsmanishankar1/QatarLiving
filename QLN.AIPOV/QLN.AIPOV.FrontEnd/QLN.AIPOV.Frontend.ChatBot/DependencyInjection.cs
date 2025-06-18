@@ -19,6 +19,7 @@ namespace QLN.AIPOV.FrontEnd.ChatBot
             var chatBackendUrl = configuration.GetValue<string>("ChatBackend:Endpoint")
                                  ?? throw new InvalidOperationException("ChatBackend:Endpoint is not configured");
             services.AddHttpClient<IChatService, ChatService>(client => { client.BaseAddress = new Uri(chatBackendUrl); });
+            services.AddHttpClient<ISearchService, SearchService>(client => { client.BaseAddress = new Uri(chatBackendUrl); });
             var formRecognizerUrl = configuration.GetValue<string>("FormRecognizer:Endpoint")
                                        ?? throw new InvalidOperationException("FormRecognizer:Endpoint is not configured");
             services.AddHttpClient<ICvAnalyzerService, CVAnalyzerService>(client => { client.BaseAddress = new Uri(formRecognizerUrl); });

@@ -17,7 +17,8 @@ builder.Services.AddOpenApi()
     .AddApiServices()
     .AddHttpClients()
     .AddAzureOpenAIClient(configuration)
-    .AddAzureAISearchClient(configuration);
+    .AddAzureAISearchClient(configuration)
+    .AddSearchServices();
 
 var app = builder.Build();
 

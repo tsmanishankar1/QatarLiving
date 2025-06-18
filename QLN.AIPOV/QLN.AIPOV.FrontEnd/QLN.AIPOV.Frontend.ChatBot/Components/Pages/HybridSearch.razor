@@ -4,7 +4,7 @@
 <MudContainer Class="mt-4">
     <MudCard>
         <MudCardHeader>
-            <MudText Typo="Typo.h5">Hybrid Document Search</MudText>
+            <MudText Typo="Typo.h5">Advanced Document Search</MudText>
         </MudCardHeader>
         <MudCardContent>
             <MudGrid>
@@ -19,6 +19,24 @@
                                  Immediate="true"
                                  FullWidth="true" />
                 </MudItem>
+                
+                <MudItem xs="12">
+                    <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined" Class="mb-3">
+                        <MudButton OnClick='() => SetSearchType("keyword")' 
+                                   Variant="@(SearchType == "keyword" ? Variant.Filled : Variant.Outlined)">
+                            Keyword Search
+                        </MudButton>
+                        <MudButton OnClick='() => SetSearchType("vector")' 
+                                   Variant="@(SearchType == "vector" ? Variant.Filled : Variant.Outlined)">
+                            Vector Search
+                        </MudButton>
+                        <MudButton OnClick='() => SetSearchType("hybrid")' 
+                                   Variant="@(SearchType == "hybrid" ? Variant.Filled : Variant.Outlined)">
+                            Hybrid Search
+                        </MudButton>
+                    </MudButtonGroup>
+                </MudItem>
+                
                 <MudItem xs="12" Class="d-flex justify-end">
                     <MudButton Variant="Variant.Filled" 
                               Color="Color.Primary"
@@ -34,10 +52,10 @@
                         <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
                     </MudItem>
                 }
-                else if (SearchResults.Count > 0)
+                else if (SearchDocuments.Count > 0)
                 {
                     <MudItem xs="12" Class="mt-4">
-                        <MudText Typo="Typo.h6" Class="mb-2">Search Results (@SearchResults.Count)</MudText>
+                        <MudText Typo="Typo.h6" Class="mb-2">Search Results (@SearchDocuments.Count)</MudText>
                         <MudDivider />
                         
                         <MudExpansionPanel>
@@ -45,7 +63,7 @@
                                 <MudText>Debug: View Raw Document Fields</MudText>
                             </TitleContent>
                             <ChildContent>
-                                @foreach (var result in SearchResults)
+                                @foreach (var result in SearchDocuments)
                                 {
                                     <MudPaper Class="pa-2 my-2">
                                         @foreach (var field in result)
@@ -58,7 +76,7 @@
                         </MudExpansionPanel>
                         
                         <MudList Clickable="true" T="SearchDocument">
-                            @foreach (var result in SearchResults)
+                            @foreach (var result in SearchDocuments)
                             {
                                 <MudListItem>
                                     <MudCard Elevation="0" Class="pa-2">
@@ -70,6 +88,10 @@
                                         {
                                             <MudText Typo="Typo.h6">@name</MudText>
                                         }
+                                        else if (result.TryGetValue("FirstName", out var firstName) && result.TryGetValue("LastName", out var lastName))
+                                        {
+                                            <MudText Typo="Typo.h6">@firstName @lastName</MudText>
+                                        }
                                         
                                         @if (result.TryGetValue("content", out var content))
                                         {
@@ -78,6 +100,10 @@
                                         else if (result.TryGetValue("description", out var description))
                                         {
                                             <MudText Typo="Typo.body2" Class="text-truncate">@description</MudText>
+                                        }
+                                        else if (result.TryGetValue("WorkExperience", out var workExperience))
+                                        {
+                                            <MudText Typo="Typo.body2" Class="text-truncate">@workExperience</MudText>
                                         }
                                         
                                         <MudChipSet T="string">

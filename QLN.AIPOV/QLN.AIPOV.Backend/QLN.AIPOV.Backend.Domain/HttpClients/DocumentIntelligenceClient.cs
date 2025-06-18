@@ -15,18 +15,23 @@ namespace QLN.AIPOV.Backend.Domain.HttpClients
         private readonly DocumentAnalysisClient _documentAnalysisClient;
         private readonly DocumentIntelligenceSettingsModel _settings;
         private readonly SearchClient _searchClient;
+        private readonly IEmbeddingService _embeddingService;
 
         public DocumentIntelligenceClient(IOptions<DocumentIntelligenceSettingsModel> settings,
-            SearchClient searchClient)
+            SearchClient searchClient,
+            IEmbeddingService embeddingService)
         {
             _settings = settings.Value;
             _documentAnalysisClient = new DocumentAnalysisClient(
                 new Uri(_settings.Endpoint),
                 new AzureKeyCredential(_settings.ApiKey));
-            _searchClient = searchClient ?? throw new ArgumentNullException(nameof(searchClient), "Search client cannot be null.");
+            _searchClient = searchClient ??
+                            throw new ArgumentNullException(nameof(searchClient), "Search client cannot be null.");
+            _embeddingService = embeddingService;
         }
 
-        public async Task<CVData> ExtractCVDataAsync(Stream documentStream, string contentType, CancellationToken cancellationToken = default)
+        public async Task<CVData> ExtractCVDataAsync(Stream documentStream, string contentType,
+            CancellationToken cancellationToken = default)
         {
             try
             {
@@ -49,11 +54,12 @@ namespace QLN.AIPOV.Backend.Domain.HttpClients
                     cvData.ResumeText = result.Content;
                 }
 
-                if (!result.KeyValuePairs.Any()) return new CVData
-                {
-                    IsSuccessful = false,
-                    ErrorMessage = "No key-value pairs found in the document."
-                };
+                if (!result.KeyValuePairs.Any())
+                    return new CVData
+                    {
+                        IsSuccessful = false,
+                        ErrorMessage = "No key-value pairs found in the document."
+                    };
 
                 // pass extracted data to search index
                 var document = new SearchDocument { { "id", Guid.NewGuid().ToString() } };
@@ -61,7 +67,8 @@ namespace QLN.AIPOV.Backend.Domain.HttpClients
                 {
                     switch (keyValuePair.Key.Content)
                     {
-                        case "Full Name" when keyValuePair.Value != null && !string.IsNullOrEmpty(keyValuePair.Value.Content):
+                        case "Full Name" when keyValuePair.Value != null &&
+                                              !string.IsNullOrEmpty(keyValuePair.Value.Content):
                             {
                                 var fullNameContent = keyValuePair.Value.Content;
                                 if (fullNameContent.Contains(" "))
@@ -72,27 +79,36 @@ namespace QLN.AIPOV.Backend.Domain.HttpClients
                                     cvData.Name = fullNameParts[0];
                                     cvData.Surname = fullNameParts[^1];
                                 }
+
                                 break;
                             }
-                        case "Name" or "First Name" or "FirstName" when keyValuePair.Value != null && !string.IsNullOrEmpty(keyValuePair.Value.Content):
+                        case "Name" or "First Name" or "FirstName" when keyValuePair.Value != null &&
+                                                                        !string.IsNullOrEmpty(
+                                                                            keyValuePair.Value.Content):
                             {
                                 document.Add("FirstName", keyValuePair.Value.Content);
                                 cvData.Name = keyValuePair.Value.Content;
                             }
                             break;
-                        case "LastName" or "Last Name" or "Surname" when keyValuePair.Value != null && !string.IsNullOrEmpty(keyValuePair.Value.Content):
+                        case "LastName" or "Last Name" or "Surname" when keyValuePair.Value != null &&
+                                                                         !string.IsNullOrEmpty(keyValuePair.Value
+                                                                             .Content):
                             {
                                 document.Add("LastName", keyValuePair.Value.Content);
                                 cvData.Surname = keyValuePair.Value.Content;
                             }
                             break;
-                        case "Email" or "Email Address" or "EmailAddress" when keyValuePair.Value != null && !string.IsNullOrEmpty(keyValuePair.Value.Content):
+                        case "Email" or "Email Address" or "EmailAddress" when keyValuePair.Value != null &&
+                                                                               !string.IsNullOrEmpty(keyValuePair.Value
+                                                                                   .Content):
                             {
                                 document.Add("Email", keyValuePair.Value.Content);
                                 cvData.Email = keyValuePair.Value.Content;
                             }
                             break;
-                        case "Mobile Number" or "MobileNumber" or "Cell" or "Cell No" or "CellNo" or "Contact Number" or "ContactNumber" when keyValuePair.Value != null && !string.IsNullOrEmpty(keyValuePair.Value.Content):
+                        case "Mobile Number" or "MobileNumber" or "Cell" or "Cell No" or "CellNo" or "Contact Number"
+                            or "ContactNumber" when keyValuePair.Value != null &&
+                                                    !string.IsNullOrEmpty(keyValuePair.Value.Content):
                             {
                                 document.Add("MobileNumber", keyValuePair.Value.Content);
                                 cvData.ContactNumber = keyValuePair.Value.Content;
@@ -114,8 +130,32 @@ namespace QLN.AIPOV.Backend.Domain.HttpClients
                     document.Add("WorkExperience", workExperience);
                 }
 
+                var resumeText = cvData.ResumeText;
+                var skills = ExtractSkills(result);
+
+                // Generate embeddings for the content
+                //var contentEmbeddings = await _embeddingService.GenerateEmbeddingsAsync(resumeText, cancellationToken);
+                //document.Add("contentVector", contentEmbeddings);
+
+                //if (!string.IsNullOrEmpty(skills))
+                //{
+                //    var skillsEmbeddings = await _embeddingService.GenerateEmbeddingsAsync(skills, cancellationToken);
+                //    document.Add("skillsVector", skillsEmbeddings);
+                //    document.Add("Skills", skills);
+                //}
+
                 var response = await _searchClient.UploadDocumentsAsync(new[] { document }, cancellationToken: cancellationToken);
 
+                if (response.Value.Results.Any(r => r.Succeeded == false))
+                {
+                    return new CVData
+                    {
+                        IsSuccessful = false,
+                        ErrorMessage = $"Error indexing document: {response.Value.Results.First(r => r.Succeeded == false).ErrorMessage}"
+                    };
+                }
+
+                cvData.IsSuccessful = true;
                 return cvData;
             }
             catch (Exception ex)
@@ -145,13 +185,16 @@ namespace QLN.AIPOV.Backend.Domain.HttpClients
                 var content = paragraph.Content.Trim();
 
                 // Check for section headers
-                if (Regex.IsMatch(content, @"^(EMPLOYMENT HISTORY|FULLTIME EMPLOYMENT HISTORY)$", RegexOptions.IgnoreCase))
+                if (Regex.IsMatch(content, @"^(EMPLOYMENT HISTORY|FULLTIME EMPLOYMENT HISTORY)$",
+                        RegexOptions.IgnoreCase))
                 {
                     inWorkHistorySection = true;
                     continue;
                 }
                 // Check for end of work history section
-                else if (inWorkHistorySection && Regex.IsMatch(content, @"^(EDUCATION|OTHER EMPLOYMENT INFORMATION|EDUCATION & TRAINING)$", RegexOptions.IgnoreCase))
+                else if (inWorkHistorySection && Regex.IsMatch(content,
+                             @"^(EDUCATION|OTHER EMPLOYMENT INFORMATION|EDUCATION & TRAINING)$",
+                             RegexOptions.IgnoreCase))
                 {
                     inWorkHistorySection = false;
                     continue;
@@ -231,7 +274,9 @@ namespace QLN.AIPOV.Backend.Domain.HttpClients
                                 nextContent.Equals("Position", StringComparison.OrdinalIgnoreCase) ||
                                 nextContent.Equals("Duties", StringComparison.OrdinalIgnoreCase) ||
                                 nextContent.StartsWith("For a more detailed", StringComparison.OrdinalIgnoreCase) ||
-                                Regex.IsMatch(nextContent, @"^(EDUCATION|OTHER EMPLOYMENT INFORMATION|EDUCATION & TRAINING)$", RegexOptions.IgnoreCase))
+                                Regex.IsMatch(nextContent,
+                                    @"^(EDUCATION|OTHER EMPLOYMENT INFORMATION|EDUCATION & TRAINING)$",
+                                    RegexOptions.IgnoreCase))
                             {
                                 break;
                             }
@@ -258,6 +303,62 @@ namespace QLN.AIPOV.Backend.Domain.HttpClients
             }
 
             return workHistoryList;
+        }
+
+        private string ExtractSkills(AnalyzeResult result)
+        {
+            var skillsList = new List<string>();
+            var inSkillsSection = false;
+
+            if (result.Paragraphs == null) return string.Empty;
+
+            foreach (var paragraph in result.Paragraphs)
+            {
+                if (paragraph.Content == null) continue;
+                var content = paragraph.Content.Trim();
+
+                // Detect skills section headers
+                if (Regex.IsMatch(content,
+                        @"^(SKILLS|PRINCIPLE EXPOSURE & STRENGTHS|APPLICATIONS & LANGUAGES|CORE COMPETENCIES|TECHNICAL SKILLS)$",
+                        RegexOptions.IgnoreCase))
+                {
+                    inSkillsSection = true;
+                    continue;
+                }
+                // End of skills section
+                else if (inSkillsSection && Regex.IsMatch(content,
+                             @"^(EMPLOYMENT|EXPERIENCE|WORK HISTORY|EDUCATION|OTHER EMPLOYMENT INFORMATION|EDUCATION & TRAINING|ADDITIONAL INFORMATION)$",
+                             RegexOptions.IgnoreCase))
+                {
+                    inSkillsSection = false;
+                    continue;
+                }
+
+                if (inSkillsSection && !string.IsNullOrWhiteSpace(content))
+                {
+                    // Clean up bullet points and other markers
+                    content = Regex.Replace(content, @"^[•o\-\*]\s*", "").Trim();
+
+                    // If the content has commas, it might be a comma-separated list of skills
+                    if (content.Contains(','))
+                    {
+                        var skills = content.Split(',')
+                            .Select(s => s.Trim())
+                            .Where(s => !string.IsNullOrEmpty(s));
+                        skillsList.AddRange(skills);
+                    }
+                    else
+                    {
+                        // Otherwise add the whole line as a skill
+                        if (!string.IsNullOrEmpty(content))
+                        {
+                            skillsList.Add(content);
+                        }
+                    }
+                }
+            }
+
+            return string.Join(" | ", skillsList);
         }
     }
 }
