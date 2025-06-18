@@ -8,7 +8,7 @@ using QLN.Web.Shared.Services;
 using System.Runtime.CompilerServices;
 using System.Web;
 
-public class DailyVideoCardsBase : ComponentBase
+public class VideoDisplayCardsBase : ComponentBase
 {
     [Inject] NavigationManager NavigationManager { get; set; }
 
@@ -16,7 +16,7 @@ public class DailyVideoCardsBase : ComponentBase
     [Inject] ILogger<DailyVideoCardsBase> Logger { get; set; }
     [Parameter] public List<ContentVideo> Items { get; set; }
 
-    [Parameter] public ContentVideo SelectedVideo { get; set; }
+   [Parameter] public ContentVideo SelectedVideo { get; set; }
     protected NavigationPath NavigationPath => Options.Value;
 
     protected bool IsVisiblePlayButton { get; set; } = true;
@@ -24,23 +24,26 @@ public class DailyVideoCardsBase : ComponentBase
     [Parameter] public string QueueLabel { get; set; }
 
     protected string YTVideoEmbedURL { get; set; } = string.Empty;
+    [Parameter] public EventCallback<ContentVideo> SelectedVideoChanged { get; set; }
 
     protected override void OnInitialized()
     {
-        SelectedVideo = Items?.FirstOrDefault() ?? new();
+        // SelectedVideo = Items?.FirstOrDefault() ?? new();
 
-        YTVideoEmbedURL = ConvertToEmbedUrl(SelectedVideo.VideoUrl);
+        // YTVideoEmbedURL = ConvertToEmbedUrl(SelectedVideo.VideoUrl);
     }
 
     protected async override Task OnParametersSetAsync()
     {
-
         try
         {
-            SelectedVideo = new();
-            YTVideoEmbedURL = string.Empty;
-            SelectedVideo = Items?.FirstOrDefault() ?? new();
-            YTVideoEmbedURL = ConvertToEmbedUrl(SelectedVideo.VideoUrl);
+            if (SelectedVideo == null && Items?.Any() == true)
+            {
+                Console.WriteLine("SelectedVideo is null, setting to first item.");
+                SelectedVideo = Items.First();
+            }
+            Console.WriteLine("SelectedVideo is not null, setting to first item.");
+            YTVideoEmbedURL = ConvertToEmbedUrl(SelectedVideo?.VideoUrl ?? string.Empty);
         }
         catch (Exception ex)
         {
@@ -48,13 +51,17 @@ public class DailyVideoCardsBase : ComponentBase
         }
     }
 
-    protected void PlayVideo(ContentVideo video)
+    protected async Task PlayVideo(ContentVideo video)
     {
         SelectedVideo = video;
         YTVideoEmbedURL = string.Empty;
         IsVisiblePlayButton = false;
-
         YTVideoEmbedURL = ConvertToEmbedUrl(SelectedVideo.VideoUrl);
+        if (SelectedVideoChanged.HasDelegate)
+        {
+            await SelectedVideoChanged.InvokeAsync(video);
+            
+        }
     }
 
     /// <summary>
