@@ -4,6 +4,8 @@ using System.Text.Json;
 using Dapr.Client;
 using QLN.Common.Infrastructure.Constants;
 using SixLabors.ImageSharp;
+using QLN.Common.DTO_s;
+using System.Text.RegularExpressions;
 
 namespace QLN.Company.MS.Service
 {
@@ -23,9 +25,10 @@ namespace QLN.Company.MS.Service
         {
             try
             {
+                Validate(dto);
                 var id = Guid.NewGuid();
                 var entity = EntityForCreate(dto, id);
-
+                entity.IsVerified = false;
                 await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, id.ToString(), entity);
 
                 var keys = await GetIndex();
@@ -43,7 +46,55 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
+        private static bool IsValidEmail(string email)
+        {
+            return !string.IsNullOrWhiteSpace(email) &&
+                   Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase);
+        }
+        public static void Validate(CompanyProfileDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.BusinessName))
+                throw new ArgumentException("Business name is required.", nameof(dto.BusinessName));
 
+            if (!Enum.IsDefined(typeof(CompanyType), dto.CompanyType))
+                throw new ArgumentException($"Invalid CompanyType: {dto.CompanyType}");
+
+            if (!Enum.IsDefined(typeof(CompanySize), dto.CompanySize))
+                throw new ArgumentException($"Invalid CompanySize: {dto.CompanySize}");
+
+            if (!Enum.IsDefined(typeof(VerticalType), dto.VerticalId))
+                throw new ArgumentException($"Invalid VerticalType: {dto.VerticalId}");
+
+            if (dto.Status.HasValue && !Enum.IsDefined(typeof(CompanyStatus), dto.Status.Value))
+                throw new ArgumentException($"Invalid CompanyStatus: {dto.Status.Value}");
+
+            if (dto.CategoryId.HasValue && !Enum.IsDefined(typeof(CompanyCategory), dto.CategoryId.Value))
+                throw new ArgumentException($"Invalid CompanyCategory: {dto.CategoryId.Value}");
+
+            if (dto.NatureOfBusiness == null || dto.NatureOfBusiness.Count == 0)
+                throw new ArgumentException("NatureOfBusiness list is required and cannot be empty.");
+
+            foreach (var val in dto.NatureOfBusiness)
+            {
+                if (!Enum.IsDefined(typeof(NatureOfBusiness), val))
+                    throw new ArgumentException($"Invalid NatureOfBusiness: {val}");
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.PhoneNumber))
+                throw new ArgumentException("Phone number is required.");
+
+            var phoneRegex = new Regex(@"^(\+?\d{1,3})?[ ]?\d{6,15}$");
+
+            if (!phoneRegex.IsMatch(dto.PhoneNumber))
+                throw new ArgumentException("Invalid phone number format.");
+
+            if (!string.IsNullOrWhiteSpace(dto.WhatsAppNumber) &&
+                !phoneRegex.IsMatch(dto.WhatsAppNumber))
+                throw new ArgumentException("Invalid WhatsApp number format.");
+
+            if (!IsValidEmail(dto.Email))
+                throw new ArgumentException("Invalid email format.");
+        }
         private CompanyProfileDto EntityForCreate(CompanyProfileDto dto, Guid id)
         {
             return new CompanyProfileDto
@@ -121,13 +172,16 @@ namespace QLN.Company.MS.Service
         {
             try
             {
+                Validate(dto);
                 var existing = await _dapr.GetStateAsync<CompanyProfileDto>(ConstantValues.CompanyStoreName, dto.Id.ToString(), cancellationToken: cancellationToken);
-
                 if (existing == null)
                     throw new KeyNotFoundException($"Company with ID {dto.Id} was not found.");
-
+                if ((int)(existing.CategoryId ?? 0) == (int)CompanyCategory.Stores)
+                {
+                    throw new InvalidOperationException("Editing companies in the 'Stores' category is not allowed.");
+                }
                 var entity = EntityForUpdate(dto, existing);
-
+                entity.IsVerified = false;
                 await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, dto.Id.ToString(), entity);
 
                 var keys = await GetIndex();
@@ -219,9 +273,7 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<List<CompanyProfileCompletionStatusDto>> GetCompanyProfileCompletionStatus(
-        Guid userId,
-        VerticalType vertical,
+        public async Task<List<CompanyProfileCompletionStatusDto>> GetCompanyProfileCompletionStatus(Guid userId, VerticalType vertical,
         CancellationToken cancellationToken = default)
         {
             try
@@ -248,7 +300,7 @@ namespace QLN.Company.MS.Service
                         { "EndDay", c => !string.IsNullOrWhiteSpace(c.EndDay) },
                         { "StartHour", c => c.StartHour != TimeSpan.Zero },
                         { "EndHour", c => c.EndHour != TimeSpan.Zero },
-                        { "NatureOfBusiness", c => !string.IsNullOrWhiteSpace(c.NatureOfBusiness) },
+                        { "NatureOfBusiness", c => c.NatureOfBusiness != default},
                         { "CompanySize", c => c.CompanySize != default },
                         { "CompanyType", c => c.CompanyType != default },
                         { "UserDesignation", c => !string.IsNullOrWhiteSpace(c.UserDesignation) },

@@ -46,4 +46,8 @@ namespace QLN.Common.DTO_s
         Stores = 3,
         Services = 4
     }
+    public enum NatureOfBusiness
+    {
+        Hypermarket = 1
+    }
 }

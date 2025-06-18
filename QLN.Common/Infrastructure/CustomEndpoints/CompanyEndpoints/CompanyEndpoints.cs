@@ -118,7 +118,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
             return group;
         }
-
         public static RouteGroupBuilder MapGetCompanyProfile(this RouteGroupBuilder group)
         {
             group.MapGet("/getById", async Task<IResult> (
@@ -187,7 +186,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
-
         public static RouteGroupBuilder MapUpdateCompanyProfile(this RouteGroupBuilder group)
         {
             group.MapPut("/update", async Task<Results<
@@ -309,7 +307,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
             return group;
         }
-
         public static RouteGroupBuilder MapDeleteCompanyProfile(this RouteGroupBuilder group)
         {
             group.MapDelete("/delete", async Task<Results<
@@ -552,7 +549,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
             return group;
         }
-
         public static RouteGroupBuilder MapGetCompanyApprovalInfo(this RouteGroupBuilder group)
         {
             group.MapGet("/getApproval", async Task<Results<
