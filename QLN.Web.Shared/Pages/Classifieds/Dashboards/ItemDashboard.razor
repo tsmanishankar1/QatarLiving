@@ -40,7 +40,7 @@
                         @companyProfile.CreatedUtc.ToString("MMM dd, yyyy")
                     </MudText>
                     <MudButton Variant="Variant.Outlined" Class="font-semibold mt-3 dashboard-edit-profile-button"
-                               OnClick="@NavigateToEditProfile">
+                                         OnClick="@(() => NavigateToEditProfile(companyProfile.Id))">
                         Edit Profile
                     </MudButton>
                 </MudPaper>

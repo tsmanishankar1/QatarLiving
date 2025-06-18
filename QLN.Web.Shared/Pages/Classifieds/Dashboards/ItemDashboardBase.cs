@@ -127,9 +127,9 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         {
             _activeTabIndex = index;
         }
-        protected void NavigateToEditProfile()
+        protected void NavigateToEditProfile(string id)
         {
-            Navigation.NavigateTo("/company/edit");
+            Navigation.NavigateTo($"/qln/dashboard/company/edit/{id}");
         }
         protected void NavigateToAdPost()
         {

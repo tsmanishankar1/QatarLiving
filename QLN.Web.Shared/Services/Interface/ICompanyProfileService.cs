@@ -12,6 +12,7 @@ namespace QLN.Web.Shared.Services.Interface
             IBrowserFile documentFile,
             string authToken);
         Task<CompanyProfileModel?> GetCompanyProfileAsync(string authToken);
+        Task<CompanyProfileModel?> GetCompanyProfileByIdAsync(string id, string authToken);
 
     }
 }
