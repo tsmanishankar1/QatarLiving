@@ -47,33 +47,7 @@ namespace QLN.Web.Shared.Services
             }
         }
 
-        public async Task<CompanyProfileModel?> GetCompanyProfileAsync(string authToken)
-        {
-            try
-            {
-                var request = new HttpRequestMessage(HttpMethod.Get, "api/companyprofile/getByTokenUser");
-                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authToken);
-
-                var response = await _httpClient.SendAsync(request);
-                if (response.IsSuccessStatusCode)
-                {
-                    var json = await response.Content.ReadAsStringAsync();
-                    var list = JsonSerializer.Deserialize<List<CompanyProfileModel>>(json, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
-
-                    return list?.FirstOrDefault();
-                }
-
-                return null;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("GetCompanyProfileAsync Exception: " + ex.Message);
-                return null;
-            }
-        }
+       
 
     }
 }

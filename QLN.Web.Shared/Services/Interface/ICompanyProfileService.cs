@@ -1,10 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components.Forms;
+using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Models.QLN.Web.Shared.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace QLN.Web.Shared.Services.Interface
 {
@@ -15,5 +11,7 @@ namespace QLN.Web.Shared.Services.Interface
             IBrowserFile logoFile,
             IBrowserFile documentFile,
             string authToken);
+        Task<CompanyProfileModel?> GetCompanyProfileAsync(string authToken);
+
     }
 }

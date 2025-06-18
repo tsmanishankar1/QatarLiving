@@ -12,7 +12,7 @@ namespace QLN.Web.Shared.Pages.Company
     {
 
         [Inject] private IJSRuntime _jsRuntime { get; set; }
-        [Inject] private ICompanyProfileService CompanyProfileService { get; set; } = default!;
+        //[Inject] private ICompanyProfileService CompanyProfileService { get; set; } = default!;
 
         private IBrowserFile uploadedLogoFile;
         private MudForm _form;
@@ -65,23 +65,24 @@ namespace QLN.Web.Shared.Pages.Company
 
         private async Task SubmitCompanyAsync()
         {
-            var token = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+            //var token = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
 
-            if (string.IsNullOrWhiteSpace(token))
-            {
-                Console.WriteLine("Auth token is missing.");
-                return;
-            }
+            //if (string.IsNullOrWhiteSpace(token))
+            //{
+            //    Console.WriteLine("Auth token is missing.");
+            //    return;
+            //}
 
-            var success = await CompanyProfileService.CreateCompanyProfileAsync(
-                _model,
-                uploadedLogoFile,
-                uploadedDocumentFile,
-                token);
+            ////var success = await CompanyProfileService.CreateCompanyProfileAsync(
+            //    _model,
+            //    uploadedLogoFile,
+            //    uploadedDocumentFile,
+            //    token);
 
-            if (success)
-            {
-            }
+            //if (success)
+            //{
+            //}
+            throw new NotImplementedException();
         }
 
     }
