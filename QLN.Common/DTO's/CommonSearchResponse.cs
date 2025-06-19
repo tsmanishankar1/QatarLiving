@@ -12,7 +12,7 @@ namespace QLN.Common.DTO_s
         public string VerticalName { get; set; } = string.Empty;
         public List<ClassifiedsIndex>? ClassifiedsItems { get; set; }
         public List<ServicesIndex>? ServicesItems { get; set; }
-        public List<BackofficemasterIndex>? MasterItems { get; set; }
+        public List<LandingBackOfficeIndex>? MasterItems { get; set; }
     }
 
     /// <summary>
@@ -23,6 +23,6 @@ namespace QLN.Common.DTO_s
         public string VerticalName { get; set; } = string.Empty;
         public ClassifiedsIndex? ClassifiedsItem { get; set; }
         public ServicesIndex? ServicesItem { get; set; }
-        public BackofficemasterIndex? MasterItem { get; set; }
+        public LandingBackOfficeIndex? MasterItem { get; set; }
     }
 }

@@ -109,7 +109,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
+            return group;
+        }
+        public static RouteGroupBuilder MapGetAllEventEndpoints(this RouteGroupBuilder group)
+        {
             group.MapGet("/getAll", async Task<Results<Ok<List<V2ContentEventDto>>, ProblemHttpResult>>
             (
                 IV2EventService service,
@@ -132,41 +135,47 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             .WithDescription("Retrieves all events.")
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
+            return group;
+        }
+        public static RouteGroupBuilder MapGetEventEndpoints(this RouteGroupBuilder group)
+        {
             group.MapGet("/getById/{id:guid}", async Task<Results<Ok<V2ContentEventDto>, NotFound<ProblemDetails>, ProblemHttpResult>>
-            (
-                Guid id,
-                IV2EventService service,
-                CancellationToken cancellationToken
-            ) =>
-            {
-                try
+                (
+                    Guid id,
+                    IV2EventService service,
+                    CancellationToken cancellationToken
+                ) =>
                 {
-                    var result = await service.GetEventById(id, cancellationToken);
-                    if (result == null)
+                    try
                     {
-                        return TypedResults.NotFound(new ProblemDetails
+                        var result = await service.GetEventById(id, cancellationToken);
+                        if (result == null)
                         {
-                            Title = "Not Found",
-                            Detail = $"Event with ID '{id}' not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
+                            return TypedResults.NotFound(new ProblemDetails
+                            {
+                                Title = "Not Found",
+                                Detail = $"Event with ID '{id}' not found.",
+                                Status = StatusCodes.Status404NotFound
+                            });
+                        }
+                        return TypedResults.Ok(result);
                     }
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
-                }
-            })
-            .WithName("GetEventById")
-            .WithTags("Event")
-            .WithSummary("Get Event By ID")
-            .WithDescription("Retrieves a single event by its GUID identifier.")
-            .Produces<string>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem("Internal Server Error", ex.Message);
+                    }
+                })
+                .WithName("GetEventById")
+                .WithTags("Event")
+                .WithSummary("Get Event By ID")
+                .WithDescription("Retrieves a single event by its GUID identifier.")
+                .Produces<string>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            return group;
+        }
+        public static RouteGroupBuilder MapUpdateEventEndpoints(this RouteGroupBuilder group)
+        {
             group.MapPut("/update", async Task<Results<Ok<string>,
             ForbidHttpResult,
             BadRequest<ProblemDetails>,
@@ -262,7 +271,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
+            return group;
+        }
+        public static RouteGroupBuilder MapDeleteEventEndpoints(this RouteGroupBuilder group)
+        { 
             group.MapDelete("/delete/{id:guid}", async Task<Results<Ok<string>,NotFound<ProblemDetails>, ProblemHttpResult>>
             (
                 Guid id,

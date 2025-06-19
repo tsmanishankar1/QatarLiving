@@ -1,16 +1,16 @@
 @inherits TopStoryCardBase
 <div class="top-story-list-card">
     <div class="top-story-image-wrapper">
-        <a @onclick="() => NavigateToDetailPage()"> <img src="@Item.ImageUrl" class="top-story-card-img"
-                alt="Top Story Image" /></a>
+        <MudLink OnClick="() => NavigateToDetailPage()"> <img src="@Item.ImageUrl" class="top-story-card-img"
+                alt="Top Story Image" /></MudLink>
     </div>
     <div class="top-story-card-body">
         <div class="top-story-category">Top Story</div>
-        <a @onclick="() => NavigateToDetailPage()">
+        <MudLink OnClick="() => NavigateToDetailPage()">
             <h3 class="top-story-title">
                 @Item.Title
             </h3>
-        </a>
+        </MudLink>
         <div class="top-story-author-wrapper">
             <div class="top-story-main-author">
                 <p class="top-story-main-source">@Item.UserName <img src="/qln-images/tick.svg" alt="Verified"

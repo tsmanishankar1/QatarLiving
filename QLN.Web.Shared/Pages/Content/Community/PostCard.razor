@@ -34,7 +34,7 @@
         <!-- Detail View - Show both image and full body -->
         @if (!string.IsNullOrWhiteSpace(Post.ImageUrl))
         {
-            <img src="@($"{Post.ImageUrl}")" alt="Post Image" class="post-image" />
+            <img src="@($"{Post.ImageUrl}")" alt="Post Image" class="community-post-image" />
         }
         <div class="post-footer">
             <div class="post-footer-left">
@@ -58,7 +58,7 @@
 
                     <img src="@($"qln-images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
                 </div> *@
-                <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight" @onclick:stopPropagation>
+                <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu" AnchorOrimagin="Origin.BottomLeft" TransformOrigin="Origin.TopRight" @onclick:stopPropagation>
                     <ActivatorContent>
                         <img src="qln-images/content/Share.svg" class="icon" />
                     </ActivatorContent>
@@ -107,18 +107,18 @@
         <!-- Listing View - Show either image or preview text -->
         @if (!string.IsNullOrWhiteSpace(Post.ImageUrl))
         {
-            <img src="@($"{Post.ImageUrl}")" alt="Post Image" class="post-image" />
+            <img src="@($"{Post.ImageUrl}")" alt="Post Image" class="community-post-image" />
         }
         else if (!string.IsNullOrWhiteSpace(Post.BodyPreview))
         {
             <div class="post-body-preview">@((MarkupString)Post.BodyPreview)</div>
         }
-        else
+       @*  else
         {
             
             <EmptyCard Title="Data could not be loaded" Subtitle="Please check back later for updates." />
 
-        }
+        } *@
         <div class="post-footer">
             <div class="post-footer-left">
                 <img src="/qln-images/default_logo.svg" alt="User Avatar" class="post-footer-avatar" />
@@ -182,13 +182,23 @@
         height: 32px;
     }
 
-    .mud-popover .mud-list {
-        max-height: inherit;
-        overflow-y: auto;
+         /* Target all popover menus that are open and belong to the share menu */
+    .mud-popover:has(.share-icon) .mud-list {
         display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto;
+        gap: 4px;
     }
 
-    .mud-menu-item{
+    .share-popover .mud-list {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto;
+        gap: 4px;
+    }
+
+
+    .mud-menu-item {
         padding: 0px 6px 0px 0px !important;
     }
 
@@ -254,6 +264,15 @@
         object-fit: cover;
         border-radius: 8px;
         margin-bottom: 10px;
+    }
+
+    .community-post-image {
+        max-height: 421px !important;
+        object-fit: contain !important;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        background-color: #646464;
+        width: 100%;
     }
 
     .post-meta {

@@ -24,6 +24,7 @@ namespace QLN.Common.Infrastructure.Model
         public string? Latitude { get; set; }
         public string? Longitude { get; set; }
         public int? Price { get; set; }
+        public string? PriceType { get; set; }
         public string? PhoneNumber { get; set; }
         public string? WhatsappNumber { get; set; }
         public string? ContactEmail { get; set; }

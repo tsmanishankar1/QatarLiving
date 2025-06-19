@@ -2,31 +2,27 @@
 @inherits SearchBarSectionBase
 @using QLN.Web.Shared.Components.NewCustomSelect
 
-<MudPaper Elevation="0" Class="py-4" Style="background-color: var(--color-secondary-grey-container); border-radius: 0;">
-    <MudContainer MaxWidth="MaxWidth.False">
-        <div class="d-flex flex-column flex-md-row align-items-center px-4">
+        <div class="search-bar">
             <!-- Search Field -->
-            <!-- Search Field -->
-            <div style="flex: 4;">
+            <div class="search-field-container">
                 <div class="search-field search-input">
                     <span class="left-icon">
                         <MudIcon Icon="@Icons.Material.Filled.Search" />
                     </span>
                     <input id="search-input" type="text" placeholder="Search..." class="text-input"
-                        @bind="searchText" />
+                           @bind="searchText" />
                 </div>
             </div>
 
-            <!-- Category Dropdown (custom select already used here, assumed correct) -->
-            <div style="flex: 2.2;">
+            <!-- Category Dropdown -->
+            <div class="category-field-container">
                 <NewCustomSelect TItem="CategoryItem" Items="@categoryOptions" SelectedId="@selectedCategory"
-                    SelectedIdChanged="v => selectedCategory = v" GetLabel="x => x.Label" GetId="x => x.Id"
-                    Label="Category" Placeholder="Choose" Padding="18px 10px" BorderRadius="0px" />
-
+                                 SelectedIdChanged="v => selectedCategory = v" GetLabel="x => x.Label" GetId="x => x.Id"
+                                 Label="Category" Placeholder="Choose" Padding="8px 10px" BorderRadius="0px" />
             </div>
 
             <!-- Search Button -->
-            <div style="flex: 1.2;">
+            <div class="button-container">
                 <button type="button" @onclick="PerformSearch" disabled="@loading" class="search-button">
                     @if (loading)
                     {
@@ -38,20 +34,28 @@
                     }
                 </button>
             </div>
-
         </div>
-    </MudContainer>
-</MudPaper>
 
 <style>
+    .search-bar {
+        gap: 0px;
+        width: 100%;
+        padding: 65px 10px 40px 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: row;
+        background-color: var(--color-secondary-grey-container);
+    }
+
     .search-field {
         display: flex;
         align-items: center;
-        height: 56px;
         border: 1px solid #D0D5DD;
-        border-radius: 5px;
+        border-radius: 6px 0 0 6px;
         padding: 0 12px;
         background-color: white;
+        height: 100%;
     }
 
     .text-input {
@@ -64,13 +68,59 @@
 
     .search-button {
         width: 100%;
-        height: 56px;
         background-color: var(--color-accent);
         color: white;
         border: none;
-        border-radius: 5px;
         font-size: 16px;
         cursor: pointer;
         text-transform: capitalize;
+        height: 100%;
+        border-radius: 0 6px 6px 0;
+    }
+
+    .search-field-container {
+        width: 532px;
+        height: 56px;
+    }
+
+    .category-field-container {
+        width: 220px;
+        height: 56px;
+    }
+
+    .button-container {
+        width: 268px;
+        height: 56px;
+    }
+
+    /* Medium screens (1000px to 1199px) */
+    @@media (max-width: 1199px) and (min-width: 1000px) {
+        .search-field-container {
+            width: 337px;
+        }
+    }
+
+    
+    @@media (max-width: 999px) {
+        .search-bar {
+            gap:5px;
+            flex-direction: column !important;
+            align-items: stretch !important;
+        }
+
+        .search-field-container,
+        .category-field-container,
+        .button-container {
+            width: 100%;
+            height: 56px;
+        }
+
+        .search-field {
+            border-radius: 6px;
+        }
+
+        .search-button {
+            border-radius: 6px;
+        }
     }
 </style>

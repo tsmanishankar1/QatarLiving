@@ -16,7 +16,7 @@ public class DailyVideoCardsBase : ComponentBase
     [Inject] ILogger<DailyVideoCardsBase> Logger { get; set; }
     [Parameter] public List<ContentVideo> Items { get; set; }
 
-    protected ContentVideo SelectedVideo;
+    [Parameter] public ContentVideo SelectedVideo { get; set; }
     protected NavigationPath NavigationPath => Options.Value;
 
     protected bool IsVisiblePlayButton { get; set; } = true;
