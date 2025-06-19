@@ -160,5 +160,49 @@ namespace QLN.Backend.API.Service.V2ContentService
                 return false;
             }
         }
+
+        public async Task<string> CreateNewsCategoryAsync(NewsCategoryDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+
+                var url = "/v2/api/News/createNewsCategory";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2ContentNews.NewsServiceAppId, url);
+                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                response.EnsureSuccessStatusCode();
+
+                var rawJson = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating news");
+                throw;
+            }
+        }
+
+        public async Task<List<NewsCategoryDto>> GetAllNewsCategoriesAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var appId = ConstantValues.V2ContentNews.NewsServiceAppId;
+                var path = "/v2/api/News/getAllnewsCategory";
+
+
+                return await _dapr.InvokeMethodAsync<List<NewsCategoryDto>>(
+                    HttpMethod.Get,
+                    appId,
+                    path,
+                    cancellationToken
+                ) ?? new List<NewsCategoryDto>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all news");
+                throw;
+            }
+        }
     }
 }

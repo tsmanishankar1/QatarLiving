@@ -12,5 +12,10 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         Task<V2ContentNewsDto?> GetNewsById(Guid id, CancellationToken cancellationToken = default);
         Task<string> UpdateNews(V2ContentNewsDto dto, CancellationToken cancellationToken = default);
         Task<bool> DeleteNews(Guid id, CancellationToken cancellationToken = default);
+
+
+        // news category 
+        Task<string> CreateNewsCategoryAsync(NewsCategoryDto dto, CancellationToken cancellationToken = default);
+        Task<List<NewsCategoryDto>> GetAllNewsCategoriesAsync(CancellationToken cancellationToken = default);
     }
 }

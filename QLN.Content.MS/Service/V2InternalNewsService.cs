@@ -31,6 +31,11 @@ namespace QLN.Content.MS.Service
                 dto.Id = id;
                 dto.date_created = DateTime.UtcNow.ToString("o"); // ISO 8601 format
 
+                // Set publishedDate only if the status is Published
+                if (dto.Status == StatusType.Published)
+                {
+                    dto.publishedDate = DateTime.UtcNow.ToString("o");
+                }
                 // Save the news item
                 await _dapr.SaveStateAsync(
                     ConstantValues.V2ContentNews.ContentStoreName,
@@ -128,9 +133,26 @@ namespace QLN.Content.MS.Service
             if (existing == null)
                 throw new InvalidDataException("News not found.");
 
-            await _dapr.SaveStateAsync(V2ContentNews.ContentStoreName, dto.Id.ToString(), dto, cancellationToken: cancellationToken);
+            // Set publishedDate only if status changed to Published
+            if (existing.Status != StatusType.Published && dto.Status == StatusType.Published)
+            {
+                dto.publishedDate = DateTime.UtcNow.ToString("o");
+            }
+            else
+            {
+                dto.publishedDate = existing.publishedDate;
+            }
+
+            await _dapr.SaveStateAsync(
+                V2ContentNews.ContentStoreName,
+                dto.Id.ToString(),
+                dto,
+                cancellationToken: cancellationToken
+            );
+
             return "News updated successfully";
         }
+
 
         public async Task<bool> DeleteNews(Guid id, CancellationToken cancellationToken = default)
         {
@@ -145,6 +167,80 @@ namespace QLN.Content.MS.Service
             await _dapr.SaveStateAsync(V2ContentNews.ContentStoreName, V2ContentNews.NewsIndexKey, keys, cancellationToken: cancellationToken);
 
             return true;
+        }
+
+        public async Task<string> CreateNewsCategoryAsync(NewsCategoryDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var id = Guid.NewGuid();
+                dto.Id = id;
+                foreach(var item in dto.SubCategory)
+                {
+                    item.Id = Guid.NewGuid();
+                }
+
+                // Save the news item
+                await _dapr.SaveStateAsync(
+                    ConstantValues.V2ContentNews.ContentStoreName,
+                    dto.Id.ToString(),
+                    dto,
+                    cancellationToken: cancellationToken
+                );
+
+                // Get or create index list
+                var indexKey = ConstantValues.V2ContentNews.NewsIndexKey;
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.V2ContentNews.ContentStoreName,
+                    indexKey
+                //cancellationToken
+                ) ?? new List<string>();
+
+                if (!keys.Contains(dto.Id.ToString()))
+                {
+                    keys.Add(dto.Id.ToString());
+                    await _dapr.SaveStateAsync(
+                        ConstantValues.V2ContentNews.ContentStoreName,
+                        indexKey,
+                        keys,
+                        cancellationToken: cancellationToken
+                    );
+                }
+
+                return "News Category created successfully";
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error creating Category", ex);
+            }
+        }
+
+        public async Task<List<NewsCategoryDto>> GetAllNewsCategoriesAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var keys = await _dapr.GetStateAsync<List<string>>(ConstantValues.V2ContentNews.ContentStoreName, ConstantValues.V2ContentNews.NewsIndexKey) ?? new();
+
+                _logger.LogInformation("Fetched {Count} keys from index", keys.Count);
+
+                var items = await _dapr.GetBulkStateAsync(ConstantValues.V2ContentNews.ContentStoreName, keys, null, cancellationToken: cancellationToken);
+
+                var News = items
+                    .Select(i => JsonSerializer.Deserialize<NewsCategoryDto>(i.Value, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    }))
+                    .Where(e => e != null)
+                    .ToList();
+
+                _logger.LogInformation("Deserialized {Count} news items", News.Count);
+                return News;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving all news items");
+                throw;
+            }
         }
     }
 }

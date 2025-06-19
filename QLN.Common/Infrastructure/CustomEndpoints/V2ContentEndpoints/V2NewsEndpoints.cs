@@ -33,7 +33,7 @@ public static class V2NewsEndpoints
                     return TypedResults.Forbid();
 
                 dto.UserId = userId.Value;
-                dto.user_name = userName;
+                dto.authorName = userName;
 
                 var result = await service.CreateNews(dto, cancellationToken);
                 return TypedResults.Ok(result);
@@ -75,7 +75,7 @@ public static class V2NewsEndpoints
         {
             try
             {
-                if (dto.UserId == Guid.Empty || string.IsNullOrWhiteSpace(dto.user_name))
+                if (dto.UserId == Guid.Empty || string.IsNullOrWhiteSpace(dto.authorName))
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -191,7 +191,7 @@ public static class V2NewsEndpoints
                     return TypedResults.Forbid();
 
                 dto.UserId = userId.Value;
-                dto.user_name = userName;
+                dto.authorName = userName;
 
                 if (dto.Id == Guid.Empty)
                     return TypedResults.BadRequest(new ProblemDetails
@@ -202,7 +202,7 @@ public static class V2NewsEndpoints
                     });
 
                 dto.UserId = userId.Value;
-                dto.user_name = userName;
+                dto.authorName = userName;
 
                 var result = await service.UpdateNews(dto, cancellationToken);
                 return TypedResults.Ok(result);
@@ -252,7 +252,7 @@ public static class V2NewsEndpoints
         {
             try
             {
-                if (dto.UserId == Guid.Empty || string.IsNullOrWhiteSpace(dto.user_name))
+                if (dto.UserId == Guid.Empty || string.IsNullOrWhiteSpace(dto.authorName))
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -322,6 +322,87 @@ public static class V2NewsEndpoints
         .Produces(StatusCodes.Status204NoContent)
         .Produces(StatusCodes.Status404NotFound)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        //Category
+
+        // CREATE - Authenticated
+        group.MapPost("/createNewsCategory", async Task<Results<
+            Ok<string>,
+            ForbidHttpResult,
+            BadRequest<ProblemDetails>,
+            ProblemHttpResult>>
+        (
+            NewsCategoryDto dto,
+            IV2NewsService service,
+            HttpContext httpContext,
+            CancellationToken cancellationToken
+        ) =>
+        {
+            try
+            {
+            //    Guid? userId = httpContext.User.GetId();
+            //    string userName = httpContext.User.GetName();
+
+            //    if (!userId.HasValue || string.IsNullOrWhiteSpace(userName))
+            //        return TypedResults.Forbid();
+
+            //    //dto.UserId = userId.Value;
+            //    //dto.authorName = userName;
+
+            var result = await service.CreateNewsCategoryAsync(dto, cancellationToken);
+                return TypedResults.Ok(result);
+        }
+            catch (InvalidDataException ex)
+            {
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "Invalid Data",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Internal Server Error", ex.Message);
+            }
+        })
+        .WithName("createNewsCategory")
+        .WithTags("News")
+        .WithSummary("Create News")
+        .WithDescription("Creates a new news createNewsCategory")
+        .Produces<string>(StatusCodes.Status200OK)
+        .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+        .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+        //.RequireAuthorization();
+
+        group.MapGet("/getAllnewsCategory", async Task<Results<
+                 Ok<List<NewsCategoryDto>>,
+                 ProblemHttpResult>>
+             (
+                 IV2NewsService service,
+                  CancellationToken cancellationToken
+             ) =>
+        {
+            try
+            {
+                var events = await service.GetAllNewsCategoriesAsync(cancellationToken);
+                return TypedResults.Ok(events);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Internal Server Error", ex.Message);
+            }
+        })
+             .WithName("getAllnewsCategory")
+             .WithTags("News")
+             .WithSummary("Get All News Category")
+             .WithDescription("Returns all news Category items")
+             .Produces<List<NewsCategoryDto>>(StatusCodes.Status200OK)
+             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
 
         return group;
     }
