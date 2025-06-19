@@ -174,6 +174,8 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<ICompanyProfileService, CompanyProfileService>();
 builder.Services.Configure<ApiSettings>(
     builder.Configuration.GetSection("ApiSettings"));
+    var youtubeApiKey = builder.Configuration["YouTubeAPI:ApiKey"];
+builder.Services.AddScoped(sp => new YouTubeApiService(youtubeApiKey));
 
 builder.Services.Configure<NavigationPath>(
     builder.Configuration.GetSection("NavigationPath"));
