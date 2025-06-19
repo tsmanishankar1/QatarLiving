@@ -10,11 +10,9 @@
     <SearchSectionDeals />
 
     <div style="width: 100%;">
-        <div class="category-banner-wrapper">
-            <img src="/qln-images/Classifieds/deals_banner.svg"
-                 alt="Category Banner"
-                 class="category-banner-image" />
-        </div>
+        <div class="category-banner-wrapper"> 
+            <img src="qln-images/stores/hypermarket.svg" class="blurred-banner" alt="banner" />
+        </div> 
 
         <!-- OVERLAY using translateY -->
         <div class="item-card-wrapper">
@@ -30,9 +28,19 @@
 <style>
    .category-banner-wrapper {
     width: 100%;
+    height: 150px;
     display: flex;
+    overflow: hidden;
     justify-content: center;
     padding: 0px 20px;
+}
+.blurred-banner {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: blur(30px) brightness(1.2);
+    transform: scale(1.8);
+    opacity: 0.8;
 }
 .item-list-container{
     padding-top: 20px; 
