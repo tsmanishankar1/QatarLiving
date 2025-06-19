@@ -8,10 +8,10 @@
 
     <link rel="preload" href="/qln-images/qatar-living-logo-sized.png" as="image" type="image/webp">
 
-    <link rel="stylesheet" href="@Assets["_content/QLN.Web.Shared/bootstrap/bootstrap.min.css"]" />
-    <link rel="stylesheet" href="@Assets["QLN.Blazor.Base.styles.css"]" />
-    <link rel="stylesheet" href="@Assets["_content/QLN.Web.Shared/css/app.css"]" />
-    <link rel="stylesheet" href="@Assets["_content/QLN.Web.Shared/css/site.css"]" />
+    <link rel="stylesheet" href="@Assets["_content/QLN.Web.Shared/bootstrap/bootstrap.min.css"]" as="style" />
+    <link rel="stylesheet" href="@Assets["QLN.Blazor.Base.styles.css"]" as="style" type="text/css" />
+    <link rel="stylesheet" href="@Assets["_content/QLN.Web.Shared/css/app.css"]" as="style" />
+    <link rel="stylesheet" href="@Assets["_content/QLN.Web.Shared/css/site.css"]" as="style" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap"
@@ -21,10 +21,10 @@
 
     @* <link rel="preload" href="fonts/PublicSans.woff2" as="font" type="font/woff2" crossorigin="anonymous"> *@
 
-    <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet" media="print" onload="this.media='all'">
-    <noscript>
-        <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet">
-    </noscript>
+    <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet" media="print" onload="this.media='all'" as="style">
+    @* <noscript>
+        <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet" as="style">
+    </noscript> *@
 
     <link rel="icon" type="image/svg+xml" href="fav-icon.svg">
     <HeadOutlet />
