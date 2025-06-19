@@ -95,19 +95,19 @@ if (string.IsNullOrWhiteSpace(newsLetterSubscriptionAPIUrl))
 }
 
 
-builder.Services.AddResponseCompression(options =>
-{
-    options.EnableForHttps = true;
-    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[]
-    {
-        "application/octet-stream",
-        "application/wasm",
-        "text/css",
-        "application/javascript",
-        "text/html",
-        "application/json"
-    });
-});
+//builder.Services.AddResponseCompression(options =>
+//{
+//    options.EnableForHttps = true;
+//    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[]
+//    {
+//        "application/octet-stream",
+//        "application/wasm",
+//        "text/css",
+//        "application/javascript",
+//        "text/html",
+//        "application/json"
+//    });
+//});
 
 builder.Services.AddAuthentication();
 
@@ -183,6 +183,8 @@ builder.Services.AddScoped<ICompanyProfileService, CompanyProfileService>();
 builder.Services.AddScoped<SearchStateService>();
 builder.Services.Configure<ApiSettings>(
     builder.Configuration.GetSection("ApiSettings"));
+    var youtubeApiKey = builder.Configuration["YouTubeAPI:ApiKey"];
+builder.Services.AddScoped(sp => new YouTubeApiService(youtubeApiKey));
 
 builder.Services.Configure<NavigationPath>(
     builder.Configuration.GetSection("NavigationPath"));
@@ -274,7 +276,7 @@ app.UseRequestLocalization(localizationOptions);
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseResponseCompression();
+    //app.UseResponseCompression();
     // app.UseMigrationsEndPoint();
 }
 else
@@ -286,7 +288,8 @@ else
 
 app.UseHttpsRedirection();
 
-app.UseStaticFiles();
+//app.UseStaticFiles();
+app.MapStaticAssets();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
