@@ -124,11 +124,41 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 copied = await SocialShareHelper.CopyLinkToClipboardAsync(JS, CurrentUrl);
                 if (copied)
                 {
-                    Snackbar.Add("Item link has been copied to the clipboard", Severity.Success);
+                    Snackbar.Add(builder =>
+                    {
+                        builder.OpenElement(0, "div");
+                        
+                        builder.OpenElement(1, "h6");
+                        builder.AddAttribute(2, "style", "margin:0px;color:black;font-weight:bold;");
+                        builder.AddContent(3, "Item Link Copied");
+                        builder.CloseElement();
+
+                        builder.OpenElement(4, "div");
+                        builder.AddAttribute(5, "style", "color:black;");
+                        builder.AddContent(6, "Item link has been copied to the clipboard");
+                        builder.CloseElement();
+
+                        builder.CloseElement();
+                    }, Severity.Success,c => c.SnackbarVariant = Variant.Outlined);
                 }
                 else
                 {
-                    Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
+                    Snackbar.Add(builder =>
+                    {
+                        builder.OpenElement(0, "div");
+
+                        builder.OpenElement(1, "h6");
+                        builder.AddAttribute(2, "style", "margin:0px;color:black;font-weight:bold;");
+                        builder.AddContent(3, "Failed");
+                        builder.CloseElement();
+
+                        builder.OpenElement(4, "div");
+                        builder.AddAttribute(5, "style", "color:black;");
+                        builder.AddContent(6, "Failed to copy link. Please try again.");
+                        builder.CloseElement();
+
+                        builder.CloseElement();
+                    }, Severity.Error,c => c.SnackbarVariant = Variant.Outlined);
                 }
             }
         }
