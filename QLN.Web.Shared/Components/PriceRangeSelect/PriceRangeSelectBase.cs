@@ -13,6 +13,7 @@ namespace QLN.Web.Shared.Components.PriceRangeSelect
         [Parameter] public EventCallback OnResetClicked { get; set; }
         [Parameter] public bool IsDisabled { get; set; }
 
+        protected string WrapperId => "price-range-wrapper";
         protected ElementReference WrapperRef;
         protected DotNetObjectReference<PriceRangeSelectBase>? dotNetRef;
         protected bool IsOpen { get; set; }
@@ -39,11 +40,6 @@ namespace QLN.Web.Shared.Components.PriceRangeSelect
             set => MaxValue = ParseLong(value);
         }
 
-        protected string DisplayText =>
-            (MinValue.HasValue && MaxValue.HasValue)
-            ? $"{FormatShort(MinValue)} - {FormatShort(MaxValue)}"
-            : "Price";
-
         protected override void OnParametersSet()
         {
             MinValue = SelectedMin;
@@ -55,13 +51,13 @@ namespace QLN.Web.Shared.Components.PriceRangeSelect
             if (firstRender)
             {
                 dotNetRef = DotNetObjectReference.Create(this);
-                await JS.InvokeVoidAsync("priceRangeDropdown.init", WrapperRef, dotNetRef);
 
                 windowWidth = await JS.InvokeAsync<int>("getWindowWidth");
                 IsMobile = windowWidth <= MobileBreakpoint;
 
-                await JS.InvokeVoidAsync("toggleBodyScroll", IsMobile);
+                await JS.InvokeVoidAsync("toggleBodyScroll", IsOpen && IsMobile);
                 await JS.InvokeVoidAsync("registerResizeHandler", dotNetRef);
+                await JS.InvokeVoidAsync("registerOutsideClickHandlerPrice", $"#{WrapperId}", dotNetRef);
 
                 _jsInitialized = true;
                 StateHasChanged();
@@ -77,21 +73,50 @@ namespace QLN.Web.Shared.Components.PriceRangeSelect
             if (IsMobile != newIsMobile)
             {
                 IsMobile = newIsMobile;
-                await JS.InvokeVoidAsync("toggleBodyScroll", IsMobile);
+                await JS.InvokeVoidAsync("toggleBodyScroll", IsOpen && IsMobile);
                 StateHasChanged();
             }
         }
 
-        protected void HandleToggleClick()
+        protected async Task HandleToggleClick()
         {
             if (IsDisabled) return;
+
             IsOpen = !IsOpen;
+
+            if (_jsInitialized)
+            {
+                if (IsOpen)
+                {
+                    await JS.InvokeVoidAsync("registerOutsideClickHandlerPrice", $"#{WrapperId}", dotNetRef);
+                }
+                else
+                {
+                    await JS.InvokeVoidAsync("unregisterOutsideClickHandler", $"#{WrapperId}");
+                }
+
+                if (IsMobile)
+                {
+                    await JS.InvokeVoidAsync("toggleBodyScroll", IsOpen);
+                }
+            }
         }
 
         [JSInvokable]
-        public void CloseDropdownFromJs()
+        public async Task CloseDropdownFromJs()
         {
             IsOpen = false;
+
+            if (_jsInitialized)
+            {
+                await JS.InvokeVoidAsync("unregisterOutsideClickHandler", $"#{WrapperId}");
+
+                if (IsMobile)
+                {
+                    await JS.InvokeVoidAsync("toggleBodyScroll", false);
+                }
+            }
+
             StateHasChanged();
         }
 
@@ -126,6 +151,17 @@ namespace QLN.Web.Shared.Components.PriceRangeSelect
             return null;
         }
 
+        public string GetDisplayPriceText()
+        {
+            if (MinValue.HasValue && MaxValue.HasValue)
+                return $"{FormatShort(MinValue)} - {FormatShort(MaxValue)}";
+            if (MinValue.HasValue)
+                return $"{FormatShort(MinValue)}";
+            if (MaxValue.HasValue)
+                return $"{FormatShort(MaxValue)}";
+            return string.Empty;
+        }
+
         private string FormatShort(long? value)
         {
             if (!value.HasValue) return "";
@@ -140,7 +176,11 @@ namespace QLN.Web.Shared.Components.PriceRangeSelect
         public void Dispose()
         {
             dotNetRef?.Dispose();
+
+            if (_jsInitialized)
+            {
+                _ = JS.InvokeVoidAsync("unregisterOutsideClickHandler", $"#{WrapperId}");
+            }
         }
     }
-
 }

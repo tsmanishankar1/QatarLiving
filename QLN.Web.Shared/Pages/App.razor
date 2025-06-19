@@ -191,18 +191,56 @@
             if (element) element.click();
         };
     </script>
-    <script>
-    window.priceRangeDropdown = {
-        init: function (wrapperElement, dotNetHelper) {
-            document.addEventListener('click', function (e) {
-                if (!wrapperElement.contains(e.target)) {
-                    dotNetHelper.invokeMethodAsync('CloseDropdownFromJs');
-                }
-            });
+   
+<script>
+    window.registerOutsideClickHandlerPrice = (panelSelector, dotNetRef) => {
+        function onClick(event) {
+            const panel = document.querySelector(panelSelector);
+            if (panel && !panel.contains(event.target)) {
+                dotNetRef.invokeMethodAsync('CloseDropdownFromJs');
+            }
+        }
+
+        document.addEventListener('mousedown', onClick);
+
+        // Store handler reference globally using the panelSelector as key
+        window._outsideClickHandlers = window._outsideClickHandlers || {};
+        window._outsideClickHandlers[panelSelector] = onClick;
+
+        return {
+            dispose: () => {
+                document.removeEventListener('mousedown', onClick);
+                delete window._outsideClickHandlers[panelSelector];
+            }
+        };
+    };
+
+    window.unregisterOutsideClickHandler = (panelSelector) => {
+        const handler = window._outsideClickHandlers?.[panelSelector];
+        if (handler) {
+            document.removeEventListener('mousedown', handler);
+            delete window._outsideClickHandlers[panelSelector];
         }
     };
 </script>
 
+
+<script>
+     window.registerOutsideClickHandler = (panelSelector, dotNetRef) => {
+    function onClick(event) {
+        const panel = document.querySelector(panelSelector);
+        if (panel && !panel.contains(event.target)) {
+            dotNetRef.invokeMethodAsync('CloseFilters');
+        }
+    }
+
+    document.addEventListener('mousedown', onClick);
+
+    return {
+        dispose: () => document.removeEventListener('mousedown', onClick)
+    };
+};
+</script>
     <script>
         let seasonalSwiperInstance;
         window.initSeasonalSwiper = () => {

@@ -44,7 +44,7 @@ namespace QLN.Web.Shared.Components.CustomSelectCategory
                 windowWidth = await JS.InvokeAsync<int>("getWindowWidth");
                 IsMobile = windowWidth <= MobileBreakpoint;
 
-                await JS.InvokeVoidAsync("toggleBodyScroll", IsMobile);
+                await JS.InvokeVoidAsync("toggleBodyScroll", IsOpen && IsMobile);
 
                 _jsInitialized = true;
                 StateHasChanged();
@@ -60,17 +60,25 @@ namespace QLN.Web.Shared.Components.CustomSelectCategory
             if (IsMobile != newIsMobile)
             {
                 IsMobile = newIsMobile;
-                await JS.InvokeVoidAsync("toggleBodyScroll", IsMobile);
+                await JS.InvokeVoidAsync("toggleBodyScroll", IsOpen && IsMobile);
                 StateHasChanged();
             }
         }
 
-        protected void ToggleDropdown()
+       protected async Task ToggleDropdown()
+    {
+        if (IsDisabled) return;
+
+        IsOpen = !IsOpen;
+
+        if (_jsInitialized && IsMobile)
         {
-            if (IsDisabled) return;
-            IsOpen = !IsOpen;
-            _tempSelectedId = SelectedId;
+            await JS.InvokeVoidAsync("toggleBodyScroll", IsOpen);
         }
+
+        _tempSelectedId = SelectedId;
+    }
+
 
         protected async Task SelectItem(TItem item)
         {
@@ -97,12 +105,19 @@ namespace QLN.Web.Shared.Components.CustomSelectCategory
         }
 
 
-         [JSInvokable]
-        public void CloseBottomSheet()
-        {
-            IsOpen = false;
-            StateHasChanged();
-        }
+        [JSInvokable]
+public async Task CloseBottomSheet()
+{
+    IsOpen = false;
+
+    if (_jsInitialized && IsMobile)
+    {
+        await JS.InvokeVoidAsync("toggleBodyScroll", false);
+    }
+
+    StateHasChanged();
+}
+
 
         protected async Task ApplySelection()
         {

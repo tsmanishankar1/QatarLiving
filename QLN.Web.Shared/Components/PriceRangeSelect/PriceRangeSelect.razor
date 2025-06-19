@@ -1,8 +1,16 @@
 @inherits PriceRangeSelectBase
 
-<div id="price-range-wrapper" @ref="WrapperRef" class="price-range-wrapper" @onclick:stopPropagation>
+<div  id="price-range-wrapper" class="price-range-wrapper" @onclick:stopPropagation>
     <div class="price-select-trigger @(IsDisabled ? "disabled" : "")" @onclick="HandleToggleClick">
-        @DisplayText
+         @if (!string.IsNullOrEmpty(GetDisplayPriceText()))
+    {
+        <span class="price-select-value-selected">@GetDisplayPriceText()</span>
+    }
+    else
+    {
+        <span class="price-select-value-placeholder">Price</span>
+    }
+
         <MudIcon Icon="@(IsOpen? Icons.Material.Filled.KeyboardArrowUp : Icons.Material.Filled.KeyboardArrowDown)"
             Class="arrow-icon-range" />
     </div>
@@ -99,12 +107,25 @@
     border-radius: 4px;
     background: #fff;
     cursor: pointer;
+    font-size: 14px;
+    font-weight: 400;
 }
 .price-select-trigger.disabled {
     background-color: #f5f5f5;
     color: #A1A1A1;
     pointer-events: none;
     opacity: 0.6;
+}
+ .price-select-value-placeholder {
+        color: var(--color-background-grey);
+    }
+   .price-select-value-selected {
+    color: #242424;
+    white-space: nowrap;              
+    overflow: hidden;                 
+    text-overflow: ellipsis;         
+    width: 100%;                
+    display: inline-block;           
 }
 
 .price-dropdown {
