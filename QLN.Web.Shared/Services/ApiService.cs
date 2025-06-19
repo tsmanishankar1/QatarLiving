@@ -5,18 +5,31 @@ using System.Text.Json;
 using QLN.Web.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
+using Microsoft.JSInterop;
+using Microsoft.AspNetCore.Http;
 
 namespace QLN.Web.Shared.Services
 {
     public class ApiService
     {
         private readonly HttpClient _http;
+
         private readonly string _baseUrl;
-          public ApiService(HttpClient http, IOptions<ApiSettings> options)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        private string? _authToken;
+
+        public ApiService(HttpClient http, IOptions<ApiSettings> options, IHttpContextAccessor httpContextAccessor)
         {
             _http = http;
             _baseUrl = options.Value.BaseUrl.TrimEnd('/');
-            Console.WriteLine($"[ApiService] Base URL: {_baseUrl}");
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        private async Task<string?> GetTokenAsync()
+        {
+            _authToken = _httpContextAccessor.HttpContext?.Request.Cookies["qat"];
+            return _authToken;
         }
 
         public async Task<T?> GetAsync<T>(string endpoint)
@@ -59,6 +72,8 @@ namespace QLN.Web.Shared.Services
 
         public async Task<T?> PostAsync<TRequest, T>(string endpoint, TRequest data, string? accessToken = null)
         {
+            var token = await GetTokenAsync();
+
             var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/{endpoint}")
             {
                 Content = JsonContent.Create(data)

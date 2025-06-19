@@ -9,6 +9,7 @@ namespace QLN.Common.DTO_s
 {
     public class LandingFeaturedItemDto
     {
+        public string Id { get; set; }
         public string Title { get; set; } = default!;
         public string? Description { get; set; }
         public string Category { get; set; } = default!;

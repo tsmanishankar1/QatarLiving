@@ -88,7 +88,6 @@ namespace QLN.SearchService.Service
 
         public async Task<string> UploadAsync(CommonIndexRequest request)
         {
-            Console.WriteLine("Uploaded hitted");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 

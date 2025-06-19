@@ -38,11 +38,10 @@
                     <MudGrid GutterSize="10px">
                         
                             <MudItem xs="12" sm="6" md="6">
-                                <TopStoryBOCard  />
+                                <TopStoryBOCard Item="@TopStoryItem" />
                             </MudItem>
                             <MudItem xs="12" sm="6" md="6">
-                                @* <TopEventCard Item="@HighlightedEvent" /> *@
-                                <TopEventBOCard  />
+                                <TopEventBOCard Item="@HighlightedEvent" />
                             </MudItem>
                         
                     </MudGrid>
@@ -50,7 +49,7 @@
 
                 </MudItem>
                 <MudItem xs="12" md="4">
-                        <MoreArticleBOCard />
+                        <MoreArticleBOCard Items="@vMoreArticles" />
                 </MudItem>
             </MudGrid>
 
@@ -58,29 +57,23 @@
                     <!-- Left column: news cards -->
                     <MudItem xs="12" md="9" lg="9">
                         <MudGrid GutterSize="16px">
-                            @* <MudVirtualize Context="item" T="ContentPost" Items="TopStories"> *@
+                            @foreach (var story in TopStories.Take(3))
+                            {
                                 <MudItem xs="12" sm="6" md="4" lg="4">
-                                    <TopStoryBOCard IsMiniCard="true" />
+                                    <TopStoryBOCard Item="@story" />
                                 </MudItem>
-                                <MudItem xs="12" sm="6" md="4" lg="4">
-                                    <TopStoryBOCard IsMiniCard="true" />
-                                </MudItem>
-                                <MudItem xs="12" sm="6" md="4" lg="4">
-                                    <TopStoryBOCard IsMiniCard="true" />
-                                </MudItem>
-                            @* </MudVirtualize> *@
-
+                            }
                         </MudGrid>
                     </MudItem>
                 <!-- Right column: newsletter -->
             </MudGrid> 
 
              <div style="padding: 90px 0px; gap: 30px;">
-             <HighlightsBOCard QueueLabel="FIFA Arab Cup" ListOfItems="Items" />
-             <HighlightsBOCard QueueLabel="Ramadan" ListOfItems="Items" />
-             <HighlightsBOCard QueueLabel="Moving to Qatar" ListOfItems="Items" />
-             <HighlightsBOCard QueueLabel="Moving to Qatar" ListOfItems="Items" />
-             <HighlightsBOCard QueueLabel="Moving to Qatar" ListOfItems="Items" />
+             <HighlightsBOCard QueueLabel="@TopicQueue1Label" ListOfItems="TopicQueue1" />
+             <HighlightsBOCard QueueLabel="@TopicQueue2Label" ListOfItems="TopicQueue2" />
+             <HighlightsBOCard QueueLabel="@TopicQueue3Label" ListOfItems="TopicQueue3" />
+             <HighlightsBOCard QueueLabel="@TopicQueue4Label" ListOfItems="TopicQueue4" />
+             <HighlightsBOCard QueueLabel="@TopicQueue5Label" ListOfItems="TopicQueue5" />
              </div>
            
     

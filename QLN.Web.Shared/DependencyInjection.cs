@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MudBlazor;
 using MudBlazor.Services;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services;
@@ -15,6 +16,7 @@ namespace QLN.Web.Shared
             var section = configuration.GetSection("ApiSettings");
             services.Configure<ApiSettings>(configuration.GetSection("ApiSettings"));
             services.AddHttpClient<ApiService>();
+
 
 
             return services;

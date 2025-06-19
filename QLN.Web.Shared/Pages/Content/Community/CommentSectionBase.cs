@@ -60,9 +60,9 @@ namespace QLN.Web.Shared.Pages.Content.Community
             
         }
 
-        protected override async void OnAfterRender(bool firstRender)
+        protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (!firstRender) return;
+            // if (!firstRender) return;
 
             await GetCommentAsync();
         }
