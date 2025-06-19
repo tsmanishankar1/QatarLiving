@@ -6,7 +6,6 @@ using QLN.Common.Infrastructure.Constants;
 using SixLabors.ImageSharp;
 using QLN.Common.DTO_s;
 using System.Text.RegularExpressions;
-using Ganss.Xss;
 
 namespace QLN.Company.MS.Service
 {
@@ -27,12 +26,20 @@ namespace QLN.Company.MS.Service
             try
             {
                 Validate(dto);
+                var keys = await GetIndex();
+                foreach (var key in keys)
+                {
+                    var existing = await _dapr.GetStateAsync<CompanyProfileDto>(ConstantValues.CompanyStoreName, key, cancellationToken : cancellationToken);
+                    if (existing != null && existing.UserId == dto.UserId)
+                    {
+                        throw new InvalidDataException("A company profile already exists for this user.");
+                    }
+                }
                 var id = Guid.NewGuid();
                 var entity = EntityForCreate(dto, id);
                 entity.IsVerified = false;
                 await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, id.ToString(), entity);
 
-                var keys = await GetIndex();
                 if (!keys.Contains(id.ToString()))
                 {
                     keys.Add(id.ToString());
@@ -41,9 +48,9 @@ namespace QLN.Company.MS.Service
 
                 return "Company Created successfully";
             }
-            catch (ArgumentException)
+            catch (ArgumentException ex)
             {
-                throw new InvalidDataException();
+                throw new InvalidDataException(ex.Message, ex);
             }
             catch (Exception ex)
             {

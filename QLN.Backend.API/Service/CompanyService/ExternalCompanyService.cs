@@ -1,6 +1,6 @@
 ﻿using Dapr.Client;
+using Google.Protobuf;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
@@ -29,46 +29,50 @@ namespace QLN.Backend.API.Service.CompanyService
             _blobStorage = blobStorage;
             _userManager = userManager;
         }
-
         public async Task<string> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
+            string? crBlobFileName = null;
+            string? logoBlobFileName = null;
+
             try
             {
                 if (!string.IsNullOrWhiteSpace(dto.CRDocument))
                 {
-                    var (crExtension, _) = Base64Helper.ParseBase64Image(dto.CRDocument);
-
+                    var (crExtension, crBase64) = Base64Helper.ParseBase64(dto.CRDocument);
                     if (crExtension is not ("pdf" or "png" or "jpg"))
                         throw new ArgumentException("CR Document must be in PDF, PNG, or JPG format.");
 
-                    var crFileName = $"{dto.BusinessName}_{dto.UserId}.{crExtension}";
-                    var crBlobUrl = await _blobStorage.SaveBase64File(dto.CRDocument, crFileName, "crdocument", cancellationToken);
+                    crBlobFileName = $"{dto.BusinessName}_{dto.UserId}.{crExtension}";
+                    var crBlobUrl = await _blobStorage.SaveBase64File(crBase64, crBlobFileName, "crdocument", cancellationToken);
                     dto.CRDocument = crBlobUrl;
                 }
                 if (!string.IsNullOrWhiteSpace(dto.CompanyLogo))
                 {
-                    var (logoExtension, _) = Base64Helper.ParseBase64Image(dto.CompanyLogo);
+                    string logoExtension;
+                    string logoBase64Data;
+
+                    (logoExtension, logoBase64Data) = Base64Helper.ParseBase64(dto.CompanyLogo);
 
                     if (logoExtension is not ("png" or "jpg"))
                         throw new ArgumentException("Company logo must be in PNG or JPG format.");
 
-                    var logoFileName = $"{dto.BusinessName}_{dto.UserId}.{logoExtension}";
-                    var logoBlobUrl = await _blobStorage.SaveBase64File(dto.CompanyLogo, logoFileName, "companylogo", cancellationToken);
+                    logoBlobFileName = $"{dto.BusinessName}_{dto.UserId}.{logoExtension}";
+                    var logoBlobUrl = await _blobStorage.SaveBase64File(logoBase64Data, logoBlobFileName, "companylogo", cancellationToken);
                     dto.CompanyLogo = logoBlobUrl;
                 }
-                var url = "/api/companyprofile/createByUserId";
 
+                var url = "/api/companyprofile/createByUserId";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.CompanyServiceAppId, url);
-                request.Content = new StringContent(
-                    JsonSerializer.Serialize(dto),
-                    Encoding.UTF8,
-                    "application/json");
+                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
                 if (response.StatusCode == HttpStatusCode.BadRequest)
                 {
+                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cancellationToken);
                     throw new InvalidDataException();
                 }
+
                 response.EnsureSuccessStatusCode();
 
                 var rawJson = await response.Content.ReadAsStringAsync();
@@ -76,13 +80,23 @@ namespace QLN.Backend.API.Service.CompanyService
             }
             catch (ArgumentException ex)
             {
+                await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cancellationToken);
                 throw new InvalidDataException(ex.Message, ex);
             }
             catch (Exception ex)
             {
+                await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cancellationToken);
                 _logger.LogError(ex, "Error creating company profile");
                 throw;
             }
+        }
+        private async Task CleanupUploadedFiles(string? crFile, string? logoFile, CancellationToken cancellationToken)
+        {
+            if (!string.IsNullOrWhiteSpace(crFile))
+                await _blobStorage.DeleteFile(crFile, "crdocument", cancellationToken);
+
+            if (!string.IsNullOrWhiteSpace(logoFile))
+                await _blobStorage.DeleteFile(logoFile, "companylogo", cancellationToken);
         }
         public async Task<CompanyProfileDto?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
         {
@@ -125,28 +139,32 @@ namespace QLN.Backend.API.Service.CompanyService
         }
         public async Task<string> UpdateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
+            string? crBlobFileName = null;
+            string? logoBlobFileName = null;
             try
             {
                 if (!string.IsNullOrWhiteSpace(dto.CRDocument))
                 {
-                    var (crExtension, _) = Base64Helper.ParseBase64Image(dto.CRDocument);
-
+                    var (crExtension, crBase64) = Base64Helper.ParseBase64(dto.CRDocument);
                     if (crExtension is not ("pdf" or "png" or "jpg"))
                         throw new ArgumentException("CR Document must be in PDF, PNG, or JPG format.");
 
-                    var crFileName = $"{dto.BusinessName}_{dto.UserId}.{crExtension}";
-                    var crBlobUrl = await _blobStorage.SaveBase64File(dto.CRDocument, crFileName, "crdocument", cancellationToken);
+                    crBlobFileName = $"{dto.BusinessName}_{dto.UserId}.{crExtension}";
+                    var crBlobUrl = await _blobStorage.SaveBase64File(crBase64, crBlobFileName, "crdocument", cancellationToken);
                     dto.CRDocument = crBlobUrl;
                 }
                 if (!string.IsNullOrWhiteSpace(dto.CompanyLogo))
                 {
-                    var (logoExtension, _) = Base64Helper.ParseBase64Image(dto.CompanyLogo);
+                    string logoExtension;
+                    string logoBase64Data;
+
+                    (logoExtension, logoBase64Data) = Base64Helper.ParseBase64(dto.CompanyLogo);
 
                     if (logoExtension is not ("png" or "jpg"))
                         throw new ArgumentException("Company logo must be in PNG or JPG format.");
 
-                    var logoFileName = $"{dto.BusinessName}_{dto.UserId}.{logoExtension}";
-                    var logoBlobUrl = await _blobStorage.SaveBase64File(dto.CompanyLogo, logoFileName, "companylogo", cancellationToken);
+                    logoBlobFileName = $"{dto.BusinessName}_{dto.UserId}.{logoExtension}";
+                    var logoBlobUrl = await _blobStorage.SaveBase64File(logoBase64Data, logoBlobFileName, "companylogo", cancellationToken);
                     dto.CompanyLogo = logoBlobUrl;
                 }
                 var url = $"/api/companyprofile/updateByUserId";
@@ -159,6 +177,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
                 if (response.StatusCode == HttpStatusCode.BadRequest)
                 {
+                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cancellationToken);
                     throw new InvalidDataException();
                 }
                 response.EnsureSuccessStatusCode();
@@ -168,10 +187,12 @@ namespace QLN.Backend.API.Service.CompanyService
             }
             catch (ArgumentException ex)
             {
+                await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cancellationToken);
                 throw new InvalidDataException(ex.Message, ex);
             }
             catch (Exception ex)
             {
+                await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cancellationToken);
                 _logger.LogError(ex, "Error updating company profile");
                 throw;
             }

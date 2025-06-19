@@ -26,6 +26,13 @@ namespace QLN.Common.Infrastructure.Service.FileStorage
         {
             try
             {
+                if (base64Content.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+                {
+                    var parts = base64Content.Split(',', 2);
+                    if (parts.Length != 2)
+                        throw new ArgumentException("Invalid base64 content.");
+                    base64Content = parts[1];
+                }
                 var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
                 await containerClient.CreateIfNotExistsAsync();
 
