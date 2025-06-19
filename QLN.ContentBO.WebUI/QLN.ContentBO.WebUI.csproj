@@ -21,6 +21,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Components\Events\" />
+    <Folder Include="Components\Community\" />
+    <Folder Include="Components\Daily\" />
+    <Folder Include="Components\Report\" />
     <Folder Include="wwwroot\qln-images\" />
   </ItemGroup>
 
