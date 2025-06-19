@@ -1,5 +1,6 @@
+@inherits SubscriptionCardBase
 @using MudBlazor
-@inject NavigationManager Navigation
+@using QLN.Web.Shared.Components.EmptyCard
 
 <div class="subscription-card-container">
     <MudPaper Class="promo-box" Elevation="0" Square="false">
@@ -17,7 +18,22 @@
 
             <!-- Right Section -->
             <MudItem xs="12" md="6" Class="d-flex justify-end align-center">
-                <img src="@ImageSrc" alt="Promo Image" class="promo-image" />
+                @if (ShowEmptyCard)
+                {
+                    <EmptyCard Title="No image found." Subtitle="Please check back later for updates." />
+                }
+                else
+                {
+                    @if (!imageLoaded)
+                    {
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="200px" />
+                    }
+
+                    <img src="@ImageSrc" alt="@Heading" class="promo-image"
+                         style="@(imageLoaded ? "display: block;" : "display: none;")"
+                         @onload="OnImageLoaded"
+                         @onerror="OnImageError" />
+                }
             </MudItem>
         </MudGrid>
     </MudPaper>
@@ -26,8 +42,7 @@
 <style>
     .subscription-card-container {
         width: 100%;
-        margin: 100px 0 0 0;
-        padding: 0 16px;
+        padding: 0;
         box-sizing: border-box;
         font-family: 'Public Sans', sans-serif;
     }
@@ -73,23 +88,3 @@
         height: 200px !important;
     }
 </style>
-
-@code {
-    [Parameter] public string Heading { get; set; } = "Ready to Grow on Qatar Living?";
-    [Parameter] public string Description { get; set; } = "Gain more visibility, attract the right audience, and grow your presence with powerful features built to help you succeed.";
-    [Parameter] public string ButtonText { get; set; } = "Subscribe Now";
-    [Parameter] public string ImageSrc { get; set; } = "qln-images/classifieds/growth_chart.svg";
-    [Parameter] public EventCallback OnClick { get; set; }
-
-    private async Task HandleClick()
-    {
-        if (OnClick.HasDelegate)
-        {
-            await OnClick.InvokeAsync();
-        }
-        else
-        {
-            Navigation.NavigateTo("/subscription-details");
-        }
-    }
-}

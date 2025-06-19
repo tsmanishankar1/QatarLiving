@@ -1,9 +1,48 @@
+@using QLN.Common.DTO_s
 @using QLN.Web.Shared.Components.SubscriptionCard
 @inject NavigationManager Navigation
+@using QLN.Web.Shared.Components.EmptyCard
+@using MudBlazor
 
-<SubscriptionCard
-    Heading="Ready to Grow on Qatar Living?"
-    Description="Gain more visibility, attract the right audience, and grow your presence with powerful features built to help you succeed."
-    ButtonText="Subscribe Now"
-    ImageSrc="qln-images/classifieds/growth_chart.svg"
-    OnClick="@(() => Navigation.NavigateTo("/subscription-details"))" />
+<div class="subscription-card-main">
+@if (Loading)
+{
+    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="207px" Width="100%" />
+}
+else if (Data is null)
+{
+    <EmptyCard Title="No subscription items found." Subtitle="Please check back later or explore other categories." />
+}
+else
+{
+    <SubscriptionCard
+        Heading="@Data.Title"
+        Description="@Data.Description"
+        ButtonText="Subscribe Now"
+        ImageSrc="@Data.ImageUrl"
+        OnClick="@(() => HandleClick(Data.RediectUrl))" />
+}
+</div>
+
+@code {
+    [Parameter] public LandingBackOfficeIndex? Data { get; set; }
+    [Parameter] public bool Loading { get; set; }
+
+    private void HandleClick(string? url)
+    {
+        if (!string.IsNullOrWhiteSpace(url))
+        {
+            if (!url.StartsWith("http"))
+                url = $"https://{url}";
+
+            Navigation.NavigateTo(url!, forceLoad: true);
+        }
+    }
+}
+
+<style>
+    .subscription-card-main {
+        width:100%;
+        padding: 10px;
+    }
+</style>

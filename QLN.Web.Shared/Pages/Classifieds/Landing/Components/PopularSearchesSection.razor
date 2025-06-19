@@ -1,30 +1,53 @@
-@using MudBlazor
+@using QLN.Common.DTO_s
 @using QLN.Web.Shared.Components.PopularSearchList
+@using QLN.Web.Shared.Components.EmptyCard
+@using MudBlazor
 
-<PopularSearchList Title="Popular searches" Items="searchItems" />
+<div class="popular-search-section">
+    <h3 class="popular-search-title">Popular searches</h3>
+
+    @if (Loading)
+    {
+        @for (int i = 0; i < 5; i++)
+        {
+            <div style="margin-bottom: 1rem;">
+                <MudSkeleton Height="45px" Width="100%" />
+            </div>
+        }
+    }
+    else if (PopularSearchList?.Any() != true)
+    {
+        <EmptyCard Title="No Popular searches items found." Subtitle="Please check back later or explore other categories." />
+    }
+    else
+    {
+        <PopularSearchList Items="PopularSearchList" />
+    }
+    
+</div>
 
 @code {
-    private List<PopularSearchList.PopularSearchItem> searchItems = new()
-    {
-        new()
-        {
-            Question = "Search for apartments by location",
-            AnswerList = new()
-            {
-                "Apartments for rent in Doha", "Apartments for rent in Fox Hills", "Apartments for rent in Al Sadd",
-                "Apartments for rent in Lusail", "Apartments for rent in Viva Bahriya", "Apartments for rent in Al aziziyah",
-                "Apartments for rent in Porto Arabia", "Apartments for rent in West Bay", "Apartments for rent in Lusail"
-            }
-        },
-        new()
-        {
-            Question = "Search for villas by location",
-            AnswerList = new() { "Villas in Doha", "Villas in Al Wakrah", "Villas in Lusail" }
-        },
-        new()
-        {
-            Question = "Search for compounds by location",
-            AnswerList = new() { "Compounds in West Bay", "Compounds in Pearl", "Compounds in Lusail" }
-        }
-    };
+    [Parameter] public bool Loading { get; set; }
+    [Parameter] public List<PopularSearchDto>? PopularSearchList { get; set; }
+
 }
+
+<style>
+    .popular-search-section {
+        padding: 2rem 0;
+        font-family: 'Public Sans', sans-serif;
+    }
+    .popular-search-title {
+        font-weight: 600;
+        font-size: 25px;
+        color: var(--color-text-heading);
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    @@media (max-width: 600px) {
+        .popular-search-section {
+            padding: 1rem;
+        }
+    }
+</style>
