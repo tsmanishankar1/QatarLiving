@@ -80,6 +80,8 @@ namespace QLN.Web.Shared.Pages.Company
         {
             try
             {
+               
+
                 isSaving = true;
 
                 if (companyProfile != null)

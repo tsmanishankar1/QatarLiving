@@ -21,6 +21,10 @@
      
      
      <PackageReference Include="MudBlazor" Version="8.6.0" />
+     
+     
+     
+     <PackageReference Include="MudExRichTextEditor" Version="8.5.2" />
 	  
   </ItemGroup>
 
