@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
 
-    <link rel="preload" href="/qln-images/qatar-living-logo-sized.webp" as="image" type="image/webp">
+    <link rel="preload" href="/qln-images/qatar-living-logo-sized.png" as="image" type="image/webp">
 
-    <link rel="stylesheet" href="_content/QLN.Web.Shared/bootstrap/bootstrap.min.css" />
-    <link rel="stylesheet" href="QLN.Blazor.Base.styles.css" />
-    <link rel="stylesheet" href="_content/QLN.Web.Shared/css/app.css" />
-    <link rel="stylesheet" href="_content/QLN.Web.Shared/css/site.css" />
+    <link rel="stylesheet" href="@Assets["_content/QLN.Web.Shared/bootstrap/bootstrap.min.css"]" />
+    <link rel="stylesheet" href="@Assets["QLN.Blazor.Base.styles.css"]" />
+    <link rel="stylesheet" href="@Assets["_content/QLN.Web.Shared/css/app.css"]" />
+    <link rel="stylesheet" href="@Assets["_content/QLN.Web.Shared/css/site.css"]" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap"
@@ -21,13 +21,14 @@
 
     @* <link rel="preload" href="fonts/PublicSans.woff2" as="font" type="font/woff2" crossorigin="anonymous"> *@
 
-    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript>
-        <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet">
+        <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet">
     </noscript>
 
     <link rel="icon" type="image/svg+xml" href="fav-icon.svg">
     <HeadOutlet />
+    <ImportMap />
 </head>
 
 @* <HeadContent>
@@ -63,12 +64,12 @@
 
 <body>
     <Routes @rendermode="InteractiveServer" />
-    <script src="_content/MudBlazor/MudBlazor.min.js?v=8.5.1"></script>
-    <div id="reconnect-modal" style="display: none;"></div>
-    <script src="_framework/blazor.web.js" autostart="false"></script>
-    <script src="js/boot.js"></script>
+    <script src="@Assets["_content/MudBlazor/MudBlazor.min.js?v=8.6.0"]"></script>
+    @* <div id="reconnect-modal" style="display: none;"></div> *@
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+    @* <script src="js/boot.js"></script> *@
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js" defer></script>
-    <script src="_content/GoogleAnalytics.Blazor/googleanalytics.blazor.js" defer></script>
+    <script src="@Assets["_content/GoogleAnalytics.Blazor/googleanalytics.blazor.js"]" defer></script>
     @* 
         Script is MIA, not needed maybe?
         <script src="_content/Extensions.MudBlazor.StaticInput/NavigationObserver.js?v=3.2.0" defer></script> 
