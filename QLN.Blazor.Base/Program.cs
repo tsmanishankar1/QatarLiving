@@ -95,19 +95,19 @@ if (string.IsNullOrWhiteSpace(newsLetterSubscriptionAPIUrl))
 }
 
 
-builder.Services.AddResponseCompression(options =>
-{
-    options.EnableForHttps = true;
-    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[]
-    {
-        "application/octet-stream",
-        "application/wasm",
-        "text/css",
-        "application/javascript",
-        "text/html",
-        "application/json"
-    });
-});
+//builder.Services.AddResponseCompression(options =>
+//{
+//    options.EnableForHttps = true;
+//    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[]
+//    {
+//        "application/octet-stream",
+//        "application/wasm",
+//        "text/css",
+//        "application/javascript",
+//        "text/html",
+//        "application/json"
+//    });
+//});
 
 builder.Services.AddAuthentication();
 
@@ -273,7 +273,7 @@ app.UseRequestLocalization(localizationOptions);
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseResponseCompression();
+    //app.UseResponseCompression();
     // app.UseMigrationsEndPoint();
 }
 else
@@ -285,7 +285,8 @@ else
 
 app.UseHttpsRedirection();
 
-app.UseStaticFiles();
+//app.UseStaticFiles();
+app.MapStaticAssets();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
