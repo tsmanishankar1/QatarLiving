@@ -17,12 +17,12 @@ COPY ["QLN.Common/QLN.Common.csproj", "QLN.Common/"]
 RUN dotnet restore "./QLN.Company.MS/QLN.Company.MS.csproj"
 COPY . .
 WORKDIR "/src/QLN.Company.MS"
-RUN dotnet build "./QLN.Company.MS.csproj" -f net8.0 -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "./QLN.Company.MS.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./QLN.Company.MS.csproj" -f net8.0 -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./QLN.Company.MS.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
 FROM base AS final
