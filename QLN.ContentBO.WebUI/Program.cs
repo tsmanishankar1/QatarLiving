@@ -1,6 +1,8 @@
 using MudBlazor.Services;
 using NLog;
 using NLog.Web;
+using QLN.ContentBO.WebUI.Interfaces;
+using QLN.ContentBO.WebUI.Services;
 
 // Early init of NLog to allow startup and exception logging, before host is built
 var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
@@ -8,11 +10,21 @@ logger.Debug("init main");
 try
 {
     var builder = WebApplication.CreateBuilder(args);
+    var contentBOAPIURL = builder.Configuration["ServiceUrlPaths:ContentBOAPI"];
+    if (string.IsNullOrWhiteSpace(contentBOAPIURL))
+    {
+        throw new InvalidOperationException("Content Back Office API URL is missing in the configuration file.");
+    }
 
     // Add services to the container.
     builder.Services.AddRazorPages();
     builder.Services.AddServerSideBlazor();
     builder.Services.AddMudServices();
+
+    builder.Services.AddHttpClient<INewsService, NewsService>(client =>
+    {
+        client.BaseAddress = new Uri(contentBOAPIURL);
+    });
 
     var app = builder.Build();
 
@@ -26,7 +38,7 @@ try
 
     app.UseHttpsRedirection();
 
-    app.UseStaticFiles();
+    app.MapStaticAssets();
 
     app.UseRouting();
 
@@ -40,9 +52,4 @@ catch (Exception exception)
     // NLog: catch setup errors
     logger.Error(exception, "Stopped program because of exception");
     throw;
-}
-finally
-{
-    // Ensure to flush and stop internal timers/threads before application-exit (Avoid segmentation fault on Linux)
-    LogManager.Shutdown();
 }
