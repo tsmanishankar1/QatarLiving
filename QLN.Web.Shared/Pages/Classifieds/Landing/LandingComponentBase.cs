@@ -21,30 +21,31 @@ public class LandingComponentBase : ComponentBase
     protected IEnumerable<LandingFeaturedItemDto>? FeaturedItemsList { get; set; }
     protected IEnumerable<LandingFeaturedItemDto>? FeaturedServicesList { get; set; }
     protected IEnumerable<LandingBackOfficeIndex>? FeaturedCategoriesList { get; set; }
-    protected IEnumerable<LandingBackOfficeIndex>? ReadyToGrowList { get; set; }
-    protected IEnumerable<LandingBackOfficeIndex>? FeaturedStoresList { get; set; }
+    protected IEnumerable<LandingBackOfficeIndex> ReadyToGrowList { get; set; } = new List<LandingBackOfficeIndex>();
+    protected IEnumerable<LandingBackOfficeIndex>? FeaturedStoresList { get; set; } = new List<LandingBackOfficeIndex>();
     protected IEnumerable<LandingBackOfficeIndex>? CategoriesList { get; set; }
-    protected IEnumerable<LandingBackOfficeIndex>? SeasonalPicksList { get; set; }
+    protected IEnumerable<LandingBackOfficeIndex> SeasonalPicksList { get; set; } = new List<LandingBackOfficeIndex>();
     protected IEnumerable<LandingBackOfficeIndex>? SocialPostDetailList { get; set; }
     protected IEnumerable<LandingBackOfficeIndex>? SocialLinksList { get; set; }
     protected IEnumerable<LandingBackOfficeIndex>? SocialMediaVideosList { get; set; }
-    protected IEnumerable<LandingBackOfficeIndex>? FaqItemsList { get; set; }
+    protected IEnumerable<LandingBackOfficeIndex> FaqItemsList { get; set; }  = new List<LandingBackOfficeIndex>();
+protected IEnumerable<PopularSearchDto> PopularSearchesList { get; set; } = new List<PopularSearchDto>();
 
-    protected override async Task OnInitializedAsync()
+  protected override async Task OnInitializedAsync()
+{
+    try
     {
-        try
-        {
-            var response = await _classifiedsService.GetClassifiedsLPAsync();
+        var response = await _classifiedsService.GetClassifiedsLPAsync();
 
-            if (response != null && response.IsSuccessStatusCode)
-            {
-                var landingData = await response.Content.ReadFromJsonAsync<LandingPageDto>();
+        if (response != null && response.IsSuccessStatusCode)
+        {
+            var landingData = await response.Content.ReadFromJsonAsync<LandingPageDto>();
 
                 if (landingData != null)
                 {
                     HeroBannerList = landingData.HeroBanner ?? new List<LandingBackOfficeIndex>();
-                    FeaturedItemsList = landingData.FeaturedItems ?? new List<LandingFeaturedItemDto>();
-                    FeaturedServicesList = landingData.FeaturedServices ?? new List<LandingFeaturedItemDto>();
+                    FeaturedItemsList = (landingData.FeaturedItems ?? Enumerable.Empty<LandingFeaturedItemDto>()).ToList();
+                    FeaturedServicesList = (landingData.FeaturedServices ?? Enumerable.Empty<LandingFeaturedItemDto>()).ToList();
                     FeaturedCategoriesList = landingData.FeaturedCategories ?? new List<LandingBackOfficeIndex>();
                     ReadyToGrowList = landingData.ReadyToGrow ?? new List<LandingBackOfficeIndex>();
                     FeaturedStoresList = landingData.FeaturedStores ?? new List<LandingBackOfficeIndex>();
@@ -54,21 +55,24 @@ public class LandingComponentBase : ComponentBase
                     SocialLinksList = landingData.SocialLinks ?? new List<LandingBackOfficeIndex>();
                     SocialMediaVideosList = landingData.SocialMediaVideos ?? new List<LandingBackOfficeIndex>();
                     FaqItemsList = landingData.FaqItems ?? new List<LandingBackOfficeIndex>();
-                }
-            }
-            else
-            {
-                ErrorMessage = "Failed to fetch landing page data.";
+                    PopularSearchesList = landingData.PopularSearches ?? Enumerable.Empty<PopularSearchDto>();
+
             }
         }
-        catch (Exception ex)
+        else
         {
-            ErrorMessage = "An error occurred while loading the landing page.";
-            Console.WriteLine($"Error: {ex.Message}");
-        }
-        finally
-        {
-            IsLoading = false;
+            ErrorMessage = "Failed to fetch landing page data.";
         }
     }
+    catch (Exception ex)
+    {
+        ErrorMessage = "An error occurred while loading the landing page.";
+        Console.WriteLine($"Error: {ex.Message}");
+    }
+    finally
+    {
+        IsLoading = false;
+    }
+}
+
 }

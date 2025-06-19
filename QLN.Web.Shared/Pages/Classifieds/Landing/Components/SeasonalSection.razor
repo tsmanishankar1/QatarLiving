@@ -1,52 +1,75 @@
 @using MudBlazor
 @inject IJSRuntime JS
+@inherits SeasonalSectionBase
+@using QLN.Web.Shared.Components.Classifieds.SeasonalCard
+@using QLN.Web.Shared.Components.EmptyCard
 
 <div class="seasonal-wrapper">
-    <MudText Typo="Typo.h6" Align="Align.Center" Class="seasonal-title">
-        Seasonal Picks
-    </MudText>
+      <div class="seasonal-header">
+            <h3 class="seasonal-header-title">Seasonal Picks</h3>
+    </div>
 
+    @if (Loading)
+        {
+           <div class="seasonal-skeleton-scroll">
+            @for (int i = 0; i < 3; i++)
+            {
+                <div class="seasonal-skeleton-item">
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle"
+                                 Height="200px"
+                                 Width="100%"
+                                 Style="border-radius: 12px;" />
+                </div>
+            }
+        </div>
+        }
+        else if (Seasonal?.Any() != true)
+        {
+            <EmptyCard Title="No Seasonal items found." Subtitle="Please check back later or explore other categories." />
+        }
+        else
+        {
     <!-- Parent container for arrows + swiper -->
     <div class="swiper-container">
         <!-- Arrow buttons OUTSIDE .swiper -->
-        <div class="swiper-seasonal-button-prev custom-arrow-button left"></div>
-        <div class="swiper-seasonal-button-next custom-arrow-button right"></div>
+        <div class="swiper-seasonal-button-prev custom-arrow-button seasonalleft">
+            <MudIcon Icon="@Icons.Material.Filled.ChevronLeft" />
+        </div>
+        <div class="swiper-seasonal-button-next custom-arrow-button seasonalright">
+            <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+        </div>
 
         <!-- Swiper slider -->
         <div class="swiper swiper-seasonal">
             <div class="swiper-wrapper">
-                @foreach (var imageUrl in seasonalImages)
-                {
+                 <MudVirtualize Context="item" Items="Seasonal">
                     <div class="swiper-slide seasonal-card">
-                        <img src="@imageUrl" alt="Seasonal Pick" />
+                            <SeasonalCard Item="item" />
                     </div>
-                }
+                </MudVirtualize>
             </div>
         </div>
     </div>
+    }
 </div>
 
-@code {
-    private List<string> seasonalImages = new()
-{
-"/qln-images/seasonal_image1.svg",
-"/qln-images/seasonal_image2.svg",
-"/qln-images/seasonal_image3.svg",
-"/qln-images/seasonal_image1.svg",
-"/qln-images/seasonal_image2.svg",
-"/qln-images/seasonal_image3.svg"
-};
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await JS.InvokeVoidAsync("initSeasonalSwiper");
-        }
-    }
-}
-
 <style>
+    .seasonal-wrapper{
+       width: 100%;
+       padding: 10px;
+       font-family: 'Public Sans', sans-serif;
+    }
+      .seasonal-header {
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .seasonal-header-title {
+        font-weight: 600;
+        font-size: 25px;
+        color: var(--color-text-heading);
+    }
+
     .swiper-container {
         position: relative;
         display: flex;
@@ -65,31 +88,17 @@
         padding: 1rem;
     }
 
-    .seasonal-card {
-        max-width: 350px;
-        border-radius: 12px;
-        overflow: hidden;
-    }
-
-    .seasonal-card img {
-        width: 100%;
-        height: auto;
-        max-height: 200px;
-        object-fit: cover;
-        display: block;
-    }
-
     /* Arrow positioning (now relative to .swiper-container) */
     .custom-arrow-button {
         background-color: var(--color-background);
         border-radius: 10px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         width: 40px;
-        height: 80%;
+        height: 90%;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #000;
+        color: #00426D;
         z-index: 10;
         cursor: pointer;
         position: absolute;
@@ -105,32 +114,42 @@
     }
 
 
-    .left {
+    .seasonalleft {
         left: 0;
         /* Place outside left edge */
     }
 
-    .right {
+    .seasonalright {
         right: 0;
         /* Place outside right edge */
     }
-
-    @@media (max-width: 768px) {
-        .swiper-container {
-            position: relative;
-            width: 100%;
-            padding: 0 10px;
-            /* Creates space for arrows */
-        }
-
-        .swiper {
-            width: 100%;
-            padding: 2rem 1rem;
-        }
-
-        .seasonal-card {
-            width: 238px;
-        }
-
+    .seasonal-skeleton-scroll {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        justify-content: center;
     }
+
+    .seasonal-skeleton-item {
+        flex: 1 1 calc(33.33% - 16px);
+        min-width: 300px;
+    }
+   @@media (max-width: 1000px) {
+    .seasonal-skeleton-scroll {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -ms-overflow-style: none; 
+        scrollbar-width: none; 
+    }
+
+    .seasonal-skeleton-scroll::-webkit-scrollbar {
+        display: none;   
+    }
+
+    .seasonal-skeleton-item {
+        flex: 0 0 auto;
+        width: 80%;
+        max-width: 250px;
+    }
+}
 </style>

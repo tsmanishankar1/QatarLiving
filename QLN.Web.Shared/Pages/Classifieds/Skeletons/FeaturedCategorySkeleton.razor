@@ -1,0 +1,26 @@
+
+@using MudBlazor
+
+<div class="featured-category-skeleton">
+    <div class="skeleton-image-wrapper">
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="252px" Width="100%" />
+    </div>
+</div>
+<style>
+    /* FeaturedCategorySkeleton.razor.css */
+.featured-category-skeleton {
+    flex: 0 0 calc(16.66% - 1rem); /* 6 per row */
+    min-width: 160px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* On smaller screens: scrollable item */
+@@media (max-width: 768px) {
+    .featured-category-skeleton {
+        flex: 0 0 auto;
+        width: 200px;
+    }
+}
+
+</style>

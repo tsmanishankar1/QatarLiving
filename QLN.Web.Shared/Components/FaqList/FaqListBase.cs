@@ -1,23 +1,16 @@
 using Microsoft.AspNetCore.Components;
+using QLN.Common.DTO_s;
 using System.Collections.Generic;
 
 namespace QLN.Web.Shared.Components.FaqList
 {
     public class FaqListBase : ComponentBase
     {
-        [Parameter] public string Title { get; set; } = "FAQ's";
-        [Parameter] public List<FAQItem> Items { get; set; } = new();
+        [Parameter] public List<LandingBackOfficeIndex> Items { get; set; } = new();
 
-        protected void ToggleFaq(FAQItem faq)
+        protected void ToggleFaq(LandingBackOfficeIndex faq)
         {
-            faq.Expanded = !faq.Expanded;
-        }
-
-        public class FAQItem
-        {
-            public string Question { get; set; }
-            public string Answer { get; set; }
-            public bool Expanded { get; set; } = false;
+            faq.IsExpanded = !faq.IsExpanded;
         }
     }
 }

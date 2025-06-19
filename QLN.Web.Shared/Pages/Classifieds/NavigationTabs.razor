@@ -1,0 +1,20 @@
+@inject NavigationManager NavigationManager
+@using QLN.Web.Shared.Components.SubTabs
+
+<SubTabs Tabs="@tabItems" OnTabClick="@OnTabClick" />
+
+@code {
+    private List<SubTabs.TabItem> tabItems = new()
+{
+new() { Text = "Items", Route = "/qln/classifieds/items",ActiveRoutePaths = new List<string> { "/qln/classifieds/items","/qln/classifieds/items/details" }, ImagePath = "/qln-images/classifieds/tab/classifieds_items.svg" },
+new() { Text = "Deals", Route = "/qln/classifieds/deals", ActiveRoutePaths = new List<string> { "/qln/classifieds/deals","/qln/classifieds/deals/details" },ImagePath = "/qln-images/classifieds/tab/classifieds_deals.svg" },
+new() { Text = "Stores", Route = "/qln/classifieds/stores",ActiveRoutePaths = new List<string> { "/qln/classifieds/stores","/qln/classifieds/stores/details" }, ImagePath = "/qln-images/classifieds/tab/classifieds_store.svg" },
+new() { Text = "Preloved", Route = "/qln/classifieds/preloved", ActiveRoutePaths = new List<string> { "/qln/classifieds/preloved","/qln/classifieds/preloved/details" },ImagePath ="/qln-images/classifieds/tab/classifieds_preloved.svg" },
+new() { Text = "Collectibles", Route = "/qln/classifieds/collectibles",ActiveRoutePaths = new List<string> { "/qln/classifieds/collectibles","/qln/classifieds/collectibles/details" }, ImagePath ="/qln-images/classifieds/tab/classifieds_collectibles.svg" },};
+
+    private void OnTabClick(SubTabs.TabItem tab)
+    {
+        NavigationManager.NavigateTo(tab.Route);
+        // You can do additional logic here
+    }
+}

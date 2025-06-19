@@ -1,8 +1,8 @@
 @typeparam TItem
 
-<div class="custom-select-wrapper" @onfocusout="HandleFocusOut" tabindex="0" @onkeydown="HandleKeyDown">
+<div class="custom-select-wrapper @(IsDisabled ? "disabled" : "")" @onfocusout="HandleFocusOut" tabindex="0" @onkeydown="HandleKeyDown">
 
-    <div class="select-display @(IsOpen ? "focused" : "")" @onclick="ToggleDropdown"
+    <div class="select-display @(IsOpen ? "focused" : "")" @onclick="() => { if (!IsDisabled) ToggleDropdown(); }"
         style="@($"border-radius:{BorderRadius}; border-color:{(IsOpen ? "#FF7F38" : "#D0D5DD")}; padding:{Padding};")">
 
 
@@ -30,7 +30,7 @@
 
     </div>
 
-    @if (IsOpen)
+    @if (IsOpen && !IsDisabled)
     {
         <div class="select-dropdown animate-dropdown">
             @if (!string.IsNullOrEmpty(Placeholder))
@@ -40,7 +40,7 @@
 
             @foreach (var item in Items)
             {
-                <div class="dropdown-item" @onclick="() => SelectItem(item)" title="@GetLabel(item)">
+                <div class="dropdown-item-custom" @onclick="() => SelectItem(item)" title="@GetLabel(item)">
                     <span class="dropdown-text">@GetLabel(item)</span>
                     @if (SelectedId == GetId(item))
                     {
@@ -53,7 +53,7 @@
 </div>
 
 @code {
-    [Parameter] public string Label { get; set; } = "Choose";
+    [Parameter] public string Label { get; set; }
     [Parameter] public string Placeholder { get; set; } = "Choose";
     [Parameter] public List<TItem> Items { get; set; } = new();
     [Parameter] public string BorderRadius { get; set; } = "8px";
@@ -61,7 +61,7 @@
     [Parameter] public string Padding { get; set; } = "10px";
     [Parameter] public string SelectedId { get; set; }
     [Parameter] public EventCallback<string> SelectedIdChanged { get; set; }
-
+    [Parameter] public bool IsDisabled { get; set; } = false;
     [Parameter] public Func<TItem, string> GetLabel { get; set; }
     [Parameter] public Func<TItem, string> GetId { get; set; }
 
@@ -100,6 +100,15 @@
         outline: none;
         padding: 0;
         font-family: 'Public Sans', sans-serif;
+    }
+      .custom-select-wrapper.disabled {
+        pointer-events: none;
+        opacity: 0.6;
+    }
+
+    .custom-select-wrapper.disabled .select-display {
+        background-color: var(--color-background-secondary-grey-light);
+        cursor: not-allowed;
     }
 
     .select-label-column {
@@ -197,7 +206,7 @@
     }
 
 
-    .dropdown-item {
+    .dropdown-item-custom {
         padding: 8px;
         font-size: 14px;
         display: flex;
@@ -214,12 +223,12 @@
         -webkit-box-orient: vertical;
     }
 
-    .dropdown-item:hover {
+    .dropdown-item-custom:hover {
         border-radius: 10px;
         background-color: #FAFAFA;
     }
 
-    .dropdown-item.disabled {
+    .dropdown-item-custom.disabled {
         color: #aaa;
         pointer-events: none;
     }
