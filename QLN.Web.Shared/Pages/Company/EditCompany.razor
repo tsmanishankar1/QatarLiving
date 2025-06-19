@@ -24,23 +24,21 @@
                 <!-- Right-side Form Skeleton -->
                 <div class="flex-grow-1">
                     <MudStack Spacing="2">
-                        <MudSkeleton Width="50%" Height="32px" />
-                        <MudSkeleton Width="70%" Height="32px" />
-                        <MudSkeleton Width="40%" Height="32px" />
-                        <MudSkeleton Width="60%" Height="32px" />
-                        <MudSkeleton Width="30%" Height="32px" />
-                        <MudSkeleton Width="80%" Height="32px" />
+                        @for (int i = 0; i < 10; i++)
+                        {
+                            <MudSkeleton Width="80%" Height="32px" />
+                        }
                     </MudStack>
                 </div>
             </MudPaper>
         </div>
     }
- 
+
 
     else if (companyProfile != null)
     {
-        <MudContainer Class="p-6" Style="background-color: #F2F4F7;">
-            <MudGrid>
+        <MudContainer Class="company-profile-container">
+            <MudGrid Class="ml-4">
                 <!-- Contact Information -->
                 <MudItem xs="12">
                     <MudText Class="heading-style mt-2 ml-14">Contact Information</MudText>
@@ -48,24 +46,53 @@
 
                 <!-- Logo Upload -->
                 <MudItem xs="12" sm="3">
-                    @if (!string.IsNullOrEmpty(companyProfile.CompanyLogo))
-                    {
-                        <MudPaper Elevation="1" Class="d-flex align-center justify-center p-2" Style="height: 240px;width:240px;">
-                            <img src="@companyProfile.CompanyLogo" alt="Company Logo" style="max-height: 100%; max-width: 100%; object-fit: contain;" />
-                        </MudPaper>
-                    }
-                    else
-                    {
-                        <MudPaper Elevation="1" Class="d-flex flex-column align-center justify-center p-4" Style="height: 240px;width:240px; border: 2px dashed #ccc;">
-                            <div style="width: 64px; height: 64px; background-color: #E0E0E0; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                <img src="/qln-images/Upload.svg" alt="Upload" style="height: 48px;" />
-                            </div>
-                            <MudText style="margin-top: 8px; color: #FF7F38; font-size: 14px; font-weight: 500;">Upload image</MudText>
-                        </MudPaper>
-                    }
+                    <MudFileUpload T="IBrowserFile" Accept="image/*" FilesChanged="OnLogoFileSelected" MaxFileSize="10485760">
+                        <ActivatorContent>
+                            <MudPaper Elevation="1"
+                                      Class="d-flex flex-column align-center justify-center p-2"
+                                      Style="height: 240px; width:240px; border: 2px dashed #ccc; cursor: pointer;">
+                                @if (!string.IsNullOrEmpty(companyProfile.CompanyLogo))
+                                {
+                                    <img src="@($"data:image/*;base64,{companyProfile.CompanyLogo}")"
+                                         alt="Company Logo"
+                                         style="max-height: 100%; max-width: 100%; object-fit: contain;" />
+                                    <div style="
+                        position: absolute;
+                        bottom: 0;
+color:white;
+width:240px;                        height: 24px;
+                        background-color: #000000CC;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        gap: 8px;">
 
-                    <MudText Typo="Typo.caption" Class="upload-subtitle">Recommended size: 1920×1200 pixels</MudText>
+
+                                        <MudIconButton Icon="@Icons.Material.Outlined.Edit"
+                                                       Style="color: white; padding: 0;" />
+                                        <MudIconButton Icon="@Icons.Material.Outlined.Delete"
+                                                       Style="color: white; padding: 0;"
+                                                       OnClick="ClearLogo" />
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div style="width: 64px; height: 64px; background-color: #E0E0E0; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                        <img src="/qln-images/Upload.svg" alt="Upload" style="height: 48px;" />
+                                    </div>
+                                    <MudText style="margin-top: 8px; color: #FF7F38; font-size: 14px; font-weight: 500;">Upload image</MudText>
+                                }
+
+                            </MudPaper>
+                        </ActivatorContent>
+                    </MudFileUpload>
+
+
+
+                    <MudText Typo="Typo.caption" Class="mt-1">Recommended size: 1920×1200, Max: 10MB</MudText>
                 </MudItem>
+
+
 
                 <MudItem xs="12" sm="9">
                     <MudTextField id="businessName" @bind-Value="companyProfile.BusinessName" Label="Business Name" Required="true" Class="form-input no-underline" />
@@ -81,11 +108,11 @@
 
                     <MudTextField @bind-Value="companyProfile.BranchLocations[0]" Label="Branches" Class="form-input no-underline" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.LocationOn" />
 
-                    <MudTextField @bind-Value="companyProfile.PhoneNumber" Label="Phone Number"  Class="form-input no-underline" Adornment="Adornment.Start" AdornmentText="+974" />
-                    <MudTextField @bind-Value="companyProfile.WhatsAppNumber" Label="WhatsApp Number"  Class="form-input no-underline" Adornment="Adornment.Start" AdornmentText="+974" />
+                    <MudTextField @bind-Value="companyProfile.PhoneNumber" Label="Phone Number" Class="form-input no-underline" Adornment="Adornment.Start" AdornmentText="+974" />
+                    <MudTextField @bind-Value="companyProfile.WhatsAppNumber" Label="WhatsApp Number" Class="form-input no-underline" Adornment="Adornment.Start" AdornmentText="+974" />
                     <MudTextField @bind-Value="companyProfile.Email" Label="Email" Class="form-input no-underline" />
                     <MudTextField @bind-Value="companyProfile.WebsiteUrl" Label="Website URL" Class="form-input no-underline" />
-                    <MudTextField @bind-Value="companyProfile.FacebookUrl" Label="Facebook URL"  Class="form-input no-underline" />
+                    <MudTextField @bind-Value="companyProfile.FacebookUrl" Label="Facebook URL" Class="form-input no-underline" />
                     <MudTextField @bind-Value="companyProfile.InstagramUrl" Label="Instagram URL" Class="form-input no-underline" />
                     <!-- Operating Hours -->
 
@@ -94,7 +121,7 @@
                     <MudGrid class="grid-flex">
                         <div class="row-flex">
 
-                                <MudTextField Class="grid-input no-underline" Label="Start Day" @bind-Value="companyProfile.StartDay" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.CalendarToday" />
+                            <MudTextField Class="grid-input no-underline" Label="Start Day" @bind-Value="companyProfile.StartDay" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.CalendarToday" />
                             <MudTextField Label="End Day" @bind-Value="companyProfile.EndDay" Class="grid-input no-underline" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.CalendarToday" />
                         </div>
                         <div class="row-flex">
@@ -137,20 +164,53 @@
                     <MudText Typo="Typo.h6" Class="heading-style">License & Visibility</MudText>
 
                     <MudTextField T="int" @bind-Value="companyProfile.CrNumber" Label="CR Number" Class="form-input no-underline" />
-                    <MudPaper Class="d-flex align-center mt-2 p-2 form-input no-underline">
-                        <MudText Typo="Typo.body1">CR Document*</MudText>
-                        <MudSpacer />
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                        EndIcon="@Icons.Material.Outlined.CloudUpload" Class="upload-button" >
-                            Upload
-                        </MudButton>
-                    </MudPaper>
-                    <MudText Typo="Typo.caption">Supported file formats: PDF, PNG, JPG. Max: 10MB</MudText>
+                    <MudPaper Class="d-flex align-center mt-2 p-2 doc-input no-underline">
+                        <MudText Typo="Typo.body1">
+                            CR Document*
+                            @if (!string.IsNullOrEmpty(crDocumentBase64))
+                            {
+                                @*           <a href="@($"data:application/pdf;base64,{crDocumentBase64}")" target="_blank">
+                                    <MudText Typo="Typo.caption" Class="ml-2">@crFileName</MudText>
+                                                             </a> *@
 
+                                <MudText Typo="Typo.caption" Class="ml-2">@crFileName</MudText>
+                                <MudIconButton Icon="@Icons.Material.Outlined.Close"
+                                               Size="Size.Small"
+                                               Color="Color.Error"
+                                               OnClick="ClearCrFile" />
+                            }
+
+                        </MudText>
+                        <MudSpacer />
+
+                        <MudFileUpload T="IBrowserFile" Accept=".pdf,.png,.jpg,.jpeg"
+                                       MaxFileSize="10485760" FilesChanged="OnCrFileSelected">
+                            <ActivatorContent>
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Primary"
+                                           EndIcon="@Icons.Material.Outlined.CloudUpload"
+                                           Class="upload-button">
+                                    Upload
+                                </MudButton>
+                            </ActivatorContent>
+                        </MudFileUpload>
+
+
+                    </MudPaper>
+
+                    <MudText Typo="Typo.caption">Supported file formats: PDF, PNG, JPG. Max: 10MB</MudText>
                     <!-- Save Button -->
-                    <MudItem xs="12" Class="mt-4">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" style="width:472px" OnClick="SaveCompanyProfileAsync">Save</MudButton>
+                    <MudItem xs="12" Class="mt-4 button-container">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   Style="width:100%"
+                                   OnClick="SaveCompanyProfileAsync"
+                                   Disabled="@isSaving"
+                                   Loading="@isSaving">
+                            Save
+                        </MudButton>
                     </MudItem>
+
                 </MudItem>
 
 
@@ -165,7 +225,7 @@
 </div>
 
 
- <style>
+<style>
 
     .heading-style {
         font-family: 'Public Sans', sans-serif;
@@ -176,16 +236,20 @@
         margin-top: 14px;
     }
 
-   
+    .company-profile-container {
+        background-color: #F2F4F7;
+    }
+
     .form-input {
         justify-content: center;
         width: 472px;
-        height:60px;
+        height: 60px;
         margin-top: 14px;
         background-color: #FFFFFF;
         border-radius: 6px;
         padding: 10px;
         position: relative;
+        border: 1px solid #D0D5DD;
     }
 
     .select-input {
@@ -195,6 +259,19 @@
         border-radius: 6px;
         padding: 10px;
         position: relative;
+        border: 1px solid #D0D5DD;
+    }
+
+    .doc-input {
+        justify-content: center;
+        width: 472px;
+        height: 60px;
+        margin-top: 14px;
+        background-color: #FFFFFF;
+        border-radius: 6px;
+        padding: 10px;
+        position: relative;
+        border: 1px solid #D0D5DD;
     }
 
     .mud-select {
@@ -203,7 +280,8 @@
         position: relative;
         max-width: 472px !important;
     }
-    .description-input{
+
+    .description-input {
         justify-content: center;
         width: 472px;
         margin-top: 14px;
@@ -211,21 +289,22 @@
         border-radius: 6px;
         padding: 10px;
         position: relative;
+        border: 1px solid #D0D5DD;
     }
 
     .grid-flex {
         display: flex;
         gap: 10px;
-        flex-direction:column;
-        margin-top:10px;
+        flex-direction: column;
+        margin-top: 10px;
         margin-left: 10px;
         width: 472px;
-
     }
+
     .row-flex {
         display: flex;
         gap: 10px;
-        width:100%;
+        width: 100%;
         flex-direction: row;
         justify-content: space-between;
     }
@@ -235,7 +314,8 @@
         background-color: #FFFFFF;
         padding: 14px;
         margin-top: 10px;
-        height:60px;
+        height: 60px;
+        border: 1px solid #D0D5DD;
     }
 
     .upload-subtitle {
@@ -244,9 +324,9 @@
         margin-top: 8px;
     }
 
-        .grid-input .mud-input-slot {
-            border-bottom: none !important;
-        }
+    .grid-input .mud-input-slot {
+        border-bottom: none !important;
+    }
 
     .section-header {
         font-weight: 600;
@@ -254,12 +334,56 @@
         margin: 1.5rem 0 0.75rem 0;
         color: #333;
     }
+
     .upload-button {
         border-radius: 12px;
         text-transform: none;
     }
+
+    .button-container {
+        max-width: 472px;
+    }
+
+
     .no-underline .mud-input-underline::before,
     .no-underline .mud-input-underline::after {
         border-bottom: none !important;
     }
-  </style>
+
+    @@media (max-width: 600px) {
+        .company-profile-container {
+            justify-content: center;
+            align-items: center;
+            display: flex;
+            padding: 10px 8px;
+        }
+
+        .grid-flex {
+            display: flex;
+            gap: 10px;
+            flex-direction: column;
+            margin-top: 10px;
+            margin-left: 10px;
+            width: auto;
+        }
+
+        .row-flex {
+            flex-direction: column;
+            display: flex;
+            gap: 10px;
+            width: auto;
+        }
+
+        .doc-input {
+            justify-content: center;
+            height: 60px;
+            margin-top: 14px;
+            background-color: #FFFFFF;
+            width: auto;
+            border-radius: 6px;
+            padding: 10px;
+            position: relative;
+            border: 1px solid #D0D5DD;
+        }
+    }
+</style>

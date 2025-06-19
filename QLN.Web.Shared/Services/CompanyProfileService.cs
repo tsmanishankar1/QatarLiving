@@ -77,9 +77,18 @@ namespace QLN.Web.Shared.Services
 
         public async Task<bool> UpdateCompanyProfileAsync(CompanyProfileModel model, string authToken)
         {
+            var options = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = true
+            };
+
+            Console.WriteLine("UpdateCompanyProfileAsync called with model:");
+            Console.WriteLine(JsonSerializer.Serialize(model, options));
+
             try
             {
-                var json = JsonSerializer.Serialize(model);
+                var json = JsonSerializer.Serialize(model, options);
                 var request = new HttpRequestMessage(HttpMethod.Put, "api/companyprofile/update")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
@@ -95,6 +104,7 @@ namespace QLN.Web.Shared.Services
                 return false;
             }
         }
+
 
         public async Task<bool> CreateCompanyProfileAsync(
      CompanyModel model,
