@@ -1,7 +1,6 @@
 using MudBlazor.Services;
 using NLog;
 using NLog.Web;
-using QLN.ContentBO.WebUI.Data;
 
 // Early init of NLog to allow startup and exception logging, before host is built
 var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
@@ -13,7 +12,6 @@ try
     // Add services to the container.
     builder.Services.AddRazorPages();
     builder.Services.AddServerSideBlazor();
-    builder.Services.AddSingleton<WeatherForecastService>();
     builder.Services.AddMudServices();
 
     var app = builder.Build();

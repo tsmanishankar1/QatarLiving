@@ -1,23 +1,60 @@
 ﻿@inherits LayoutComponentBase
 
-<PageTitle>QLN.ContentBO.WebUI</PageTitle>
-<MudThemeProvider />
+<PageTitle>Qatar Living Content Back Office</PageTitle>
+<MudThemeProvider Theme="defaultTheme" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="2">
+        <MudDrawerHeader>
+            <MudImage id="logoImage" Src="/qln-images/ql_logo.svg" Alt="Qatar Living" Class="logo-img" />
+        </MudDrawerHeader>
+        <MudPaper Class="py-3" Elevation="0">
+            <MudNavMenu Dense="true" Rounded="true" Margin="Margin.Dense" Color="Color.Secondary" Class="pa-2">
+                <MudNavLink Href="/dashboard" Icon="@Icons.Material.Filled.DocumentScanner">Daily</MudNavLink>
+                <MudNavGroup Title="News" Icon="fas fa-cogs" Expanded="true">
+                    <MudNavLink Href="/news/manage/news" Match="NavLinkMatch.Prefix" Icon="fas fa-users" IconColor="Color.Secondary">News</MudNavLink>
+                    <MudNavLink Href="/news/manage/finance" Icon="fas fa-user-shield" IconColor="Color.Info">Finance</MudNavLink>
+                    <MudNavLink Href="/news/manage/sports" Icon="fas fa-user-shield" IconColor="Color.Info">Sports</MudNavLink>
+                    <MudNavLink Href="/news/manage/lifeStyle" Icon="fas fa-user-shield" IconColor="Color.Info">LifeStyle</MudNavLink>
+                </MudNavGroup>
+                <MudNavLink Icon="@Icons.Material.Filled.CalendarMonth">Events</MudNavLink>
+                <MudNavLink Icon="@Icons.Material.Filled.ChatBubble">Community</MudNavLink>
+                <MudNavLink Icon="@Icons.Material.Filled.Report">Report</MudNavLink>
+            </MudNavMenu>
+        </MudPaper>
+    </MudDrawer>
+    <MudMainContent>
+        @Body
+    </MudMainContent>
+</MudLayout>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
-        </div>
+@code {
+    bool _drawerOpen = true;
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    /// <summary>
+    /// Default Theme MudBlazor color variables.
+    /// https://mudblazor.com/customization/default-theme#mudtheme
+    /// </summary>
+    MudTheme defaultTheme = new MudTheme()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Primary = "#FF7F38",
+            TextPrimary = "#646464",
+            TextSecondary = "#242424",
+        }
+    };
+}
