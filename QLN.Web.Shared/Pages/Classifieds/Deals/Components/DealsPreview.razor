@@ -9,32 +9,63 @@
     <span class="back-text">Back to Deals</span>
 </a>
     <div class="carousel-wrapper">
-    @if (currentIndex > 0)
-    {
-        <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
+        @if (currentIndex > 0)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
                        Class="nav-button-inline"
                        OnClick="@PreviousImage" />
-    }
-    <div style="display: flex; flex-direction: column;">
-        <img src="@imageUrls[currentIndex]"
-         alt="Deal Image"
-         class="carousel-image-inline" />
-            <div class="mobile-store-center-info">
-                <div class="store-location">
-                    Page @(currentIndex + 1) out of @imageUrls.Count
-                </div>
-                <div class="store-location">Al Sadd, West Bay, Dukhan, Mansoura</div>
-            </div>
-    </div>
+        }
 
-    @if (currentIndex < imageUrls.Count - 1)
-    {
-        <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+        <div class="desktop-only">
+            <div style="display: flex; flex-direction: column;">
+                <img src="@imageUrls[currentIndex]"
+                alt="Deal Image"
+                class="carousel-image-inline" />
+
+                <div class="mobile-store-center-info">
+                    <div class="store-location">
+                        Page @(currentIndex + 1) out of @imageUrls.Count
+                    </div>
+                    <div class="store-location">Al Sadd, Wefyfyst Bay, Dukhan, Mansoura</div>
+                </div>
+            </div>
+        </div>
+        @if (currentIndex < imageUrls.Count - 1)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
                        Class="nav-button-inline"
                        OnClick="@NextImage" />
-    }
-</div>
+        }
+    </div>
 
+
+<div class="mobile-only">
+    <MudCarousel 
+    ShowArrows="false"
+    ShowBullets="false"
+    EnableSwipeGesture="true"
+    AutoCycle="false"
+    TData="string"
+    Class="mud-width-full"
+    Style="height: 467px; width: 100%;"
+     ActiveIndex="@currentIndex"
+    ActiveIndexChanged="@OnImageChanged">
+    
+    @foreach (var imageUrl in imageUrls)
+    {
+        <MudCarouselItem>
+            <img src="@imageUrl"
+                 alt="Deal Image"
+                 style="width: 100%; height: 467px;" />
+        </MudCarouselItem>
+    }
+</MudCarousel>
+
+    <div class="mobile-store-center-info mt-1" style="padding-bottom: 100px;">
+        Page @(currentIndex + 1) out of @imageUrls.Count
+        <div class="store-location">Al Sadd, Wefyfyst Bay, Dukhan, Mansoura</div>
+    </div>
+</div>
     <div class="deal-footer">
         <div class="footer-left">
             <img src="qln-images/stores/hypermarket.svg" alt="Store Logo" class="store-logo" />
@@ -44,17 +75,22 @@
             </div>
         </div>
         <div class="store-center-info">
-                 <div class="store-location">Page 1 out of 12</div>
+                <div class="store-location">Page @(currentIndex + 1) out of @imageUrls.Count</div>
                 <div class="store-location">Al Sadd, West Bay, Dukhan, Mansoura</div>
         </div>
 
         <div class="footer-right">
-            <MudButton StartIcon="@Icons.Material.Filled.Public"
+            <MudButton 
                        Variant="Variant.Filled"
                        Color="Color.Primary"
-                       Style="border-radius: 20px;"
+                       Style="border-radius: 20px; text-transform: none; font-size: 14px; 
+           font-family: 'Public Sans', sans-serif;
+           font-weight: 500; "
                        Href="https://luluwebsite.com"
                        Target="_blank">
+                       <StartContent>
+                        <img src="qln-images/classifieds/world_outline.svg" alt="World" style="width: 20px; height: 20px; margin-right: 8px;" />
+                        </StartContent>
                 Visit Website
             </MudButton>
         </div>
@@ -87,10 +123,12 @@
 .carousel-image-inline {
     max-height: 688px;
     object-fit: contain;
-    border-radius: 6px;
     flex-shrink: 1;
     width: 100%;
     max-width: 540px;
+}
+.mobile-only {
+    display: none;
 }
 
 .nav-button-inline {
@@ -112,10 +150,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
-    padding: 16px;
+    padding: 10px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    @* gap: 12px; *@
     border-radius: 6px;
     background-color: #FFFFFF;
 }
@@ -155,7 +191,9 @@
 }
 
 .store-meta {
-    color: var(--mud-palette-text-secondary);
+    font-weight: 400;
+    font-size: 12px;
+    color: var(#242424);
 }
 
 .store-location {
@@ -225,6 +263,12 @@
          display: none;
     }
     @@media (max-width: 768px) {
+        .mobile-only {
+        display: block !important;
+    }
+    .desktop-only {
+        display: none !important;
+    }
     .store-center-info {
         display: none !important;
     }
@@ -233,6 +277,25 @@
         flex-direction: column;
         align-items: center;
         margin-top: 12px;
+    }
+    .store-name {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--color-primary);
+    }
+    .nav-button-inline {
+        display: none !important;
+    }
+    .store-meta {
+        font-weight: 400;
+        font-size: 10px;
+        color: var(#242424);
+    }
+    .deal-max-container {
+    max-width: 1170px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 0;
     }
 }
 
