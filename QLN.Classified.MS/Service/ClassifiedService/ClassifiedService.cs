@@ -28,16 +28,16 @@ namespace QLN.Classified.MS.Service
         private readonly IWebHostEnvironment _env;
         private readonly Dapr.Client.DaprClient _dapr;
 
-        private const string UnifiedStore = "adstore";
-        private const string UnifiedIndexKey = "ad-index";
-        private const string ItemsIndexKey = "items-ad-index";
-        private const string PrelovedIndexKey = "preloved-index";
-        private const string CollectiblesIndexKey = "collectibles-index";
-        private const string DealsIndexKey = "deals-index";
-        private const string ItemsCategoryIndexKey = "items-category-index";
-        private const string PrelovedCategoryIndexKey = "preloved-category-index";
-        private const string CollectiblesCategoryIndexKey = "collectibles-category-index";
-        private const string DealsCategoryIndexKey = "deals-category-index";
+        private const string UnifiedStore = ConstantValues.StateStoreNames.UnifiedStore;
+        private const string UnifiedIndexKey = ConstantValues.StateStoreNames.UnifiedIndexKey;
+        private const string ItemsIndexKey = ConstantValues.StateStoreNames.ItemsIndexKey;
+        private const string PrelovedIndexKey = ConstantValues.StateStoreNames.PrelovedIndexKey;
+        private const string CollectiblesIndexKey = ConstantValues.StateStoreNames.CollectiblesIndexKey;
+        private const string DealsIndexKey = ConstantValues.StateStoreNames.DealsIndexKey;
+        private const string ItemsCategoryIndexKey = ConstantValues.StateStoreNames.ItemsCategoryIndexKey;
+        private const string PrelovedCategoryIndexKey = ConstantValues.StateStoreNames.PrelovedCategoryIndexKey;
+        private const string CollectiblesCategoryIndexKey = ConstantValues.StateStoreNames.CollectiblesCategoryIndexKey;
+        private const string DealsCategoryIndexKey = ConstantValues.StateStoreNames.DealsCategoryIndexKey;
 
 
         private readonly ILogger<ClassifiedService> _logger;
