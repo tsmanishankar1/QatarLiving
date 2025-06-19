@@ -29,6 +29,7 @@ public class LandingComponentBase : ComponentBase
     protected IEnumerable<LandingBackOfficeIndex>? SocialLinksList { get; set; }
     protected IEnumerable<LandingBackOfficeIndex>? SocialMediaVideosList { get; set; }
     protected IEnumerable<LandingBackOfficeIndex> FaqItemsList { get; set; }  = new List<LandingBackOfficeIndex>();
+protected IEnumerable<PopularSearchDto> PopularSearchesList { get; set; } = new List<PopularSearchDto>();
 
   protected override async Task OnInitializedAsync()
 {
@@ -40,20 +41,22 @@ public class LandingComponentBase : ComponentBase
         {
             var landingData = await response.Content.ReadFromJsonAsync<LandingPageDto>();
 
-            if (landingData != null)
-            {
-                HeroBannerList = landingData.HeroBanner ?? new List<LandingBackOfficeIndex>();
-                FeaturedItemsList = (landingData.FeaturedItems ?? Enumerable.Empty<LandingFeaturedItemDto>()).ToList();
-                FeaturedServicesList = (landingData.FeaturedServices ?? Enumerable.Empty<LandingFeaturedItemDto>()).ToList();
-                FeaturedCategoriesList = landingData.FeaturedCategories ?? new List<LandingBackOfficeIndex>();
-                ReadyToGrowList = landingData.ReadyToGrow ?? new List<LandingBackOfficeIndex>();
-                FeaturedStoresList = landingData.FeaturedStores ?? new List<LandingBackOfficeIndex>();
-                CategoriesList = landingData.Categories ?? new List<LandingBackOfficeIndex>();
-                SeasonalPicksList = landingData.SeasonalPicks ?? new List<LandingBackOfficeIndex>();
-                SocialPostDetailList = landingData.SocialPostDetail ?? new List<LandingBackOfficeIndex>();
-                SocialLinksList = landingData.SocialLinks ?? new List<LandingBackOfficeIndex>();
-                SocialMediaVideosList = landingData.SocialMediaVideos ?? new List<LandingBackOfficeIndex>();
-                FaqItemsList = landingData.FaqItems ?? new List<LandingBackOfficeIndex>();
+                if (landingData != null)
+                {
+                    HeroBannerList = landingData.HeroBanner ?? new List<LandingBackOfficeIndex>();
+                    FeaturedItemsList = (landingData.FeaturedItems ?? Enumerable.Empty<LandingFeaturedItemDto>()).ToList();
+                    FeaturedServicesList = (landingData.FeaturedServices ?? Enumerable.Empty<LandingFeaturedItemDto>()).ToList();
+                    FeaturedCategoriesList = landingData.FeaturedCategories ?? new List<LandingBackOfficeIndex>();
+                    ReadyToGrowList = landingData.ReadyToGrow ?? new List<LandingBackOfficeIndex>();
+                    FeaturedStoresList = landingData.FeaturedStores ?? new List<LandingBackOfficeIndex>();
+                    CategoriesList = landingData.Categories ?? new List<LandingBackOfficeIndex>();
+                    SeasonalPicksList = landingData.SeasonalPicks ?? new List<LandingBackOfficeIndex>();
+                    SocialPostDetailList = landingData.SocialPostDetail ?? new List<LandingBackOfficeIndex>();
+                    SocialLinksList = landingData.SocialLinks ?? new List<LandingBackOfficeIndex>();
+                    SocialMediaVideosList = landingData.SocialMediaVideos ?? new List<LandingBackOfficeIndex>();
+                    FaqItemsList = landingData.FaqItems ?? new List<LandingBackOfficeIndex>();
+                    PopularSearchesList = landingData.PopularSearches ?? Enumerable.Empty<PopularSearchDto>();
+
             }
         }
         else
