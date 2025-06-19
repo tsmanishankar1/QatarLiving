@@ -10,6 +10,8 @@ namespace QLN.Common.DTO_s
         [Required, Phone]
         public string PhoneNumber { get; set; } = string.Empty;
         [Required]
+        public string PhoneNumberCountryCode { get; set; } = string.Empty;
+        [Required]
         public string CompanyLogo { get; set; } = string.Empty;
         [Required]
         public CompanyType CompanyType { get; set; }

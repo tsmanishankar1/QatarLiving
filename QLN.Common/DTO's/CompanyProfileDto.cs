@@ -16,6 +16,7 @@ namespace QLN.Common.Infrastructure.DTO_s
         [Required]
         public string City { get; set; } = string.Empty;
         public List<string>? BranchLocations { get; set; }
+        public string? WhatsAppCountryCode { get; set; }
         public string? WhatsAppNumber { get; set; }
         [Required, EmailAddress]
         public string? Email { get; set; }

@@ -1,11 +1,13 @@
 ﻿using Dapr.Client;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IEmailService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.Utilities;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -34,18 +36,26 @@ namespace QLN.Backend.API.Service.CompanyService
             {
                 if (!string.IsNullOrWhiteSpace(dto.CRDocument))
                 {
-                    var crFileName = $"{dto.BusinessName}_{dto.UserId}.pdf"; 
+                    var (crExtension, _) = Base64Helper.ParseBase64Image(dto.CRDocument);
+
+                    if (crExtension is not ("pdf" or "png" or "jpg"))
+                        throw new ArgumentException("CR Document must be in PDF, PNG, or JPG format.");
+
+                    var crFileName = $"{dto.BusinessName}_{dto.UserId}.{crExtension}";
                     var crBlobUrl = await _blobStorage.SaveBase64File(dto.CRDocument, crFileName, "crdocument", cancellationToken);
                     dto.CRDocument = crBlobUrl;
                 }
-
                 if (!string.IsNullOrWhiteSpace(dto.CompanyLogo))
                 {
-                    var logoFileName = $"{dto.BusinessName}_{dto.UserId}.png";
+                    var (logoExtension, _) = Base64Helper.ParseBase64Image(dto.CompanyLogo);
+
+                    if (logoExtension is not ("png" or "jpg"))
+                        throw new ArgumentException("Company logo must be in PNG or JPG format.");
+
+                    var logoFileName = $"{dto.BusinessName}_{dto.UserId}.{logoExtension}";
                     var logoBlobUrl = await _blobStorage.SaveBase64File(dto.CompanyLogo, logoFileName, "companylogo", cancellationToken);
                     dto.CompanyLogo = logoBlobUrl;
                 }
-
                 var url = "/api/companyprofile/createByUserId";
 
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.CompanyServiceAppId, url);
@@ -55,10 +65,18 @@ namespace QLN.Backend.API.Service.CompanyService
                     "application/json");
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                if (response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    throw new InvalidDataException();
+                }
                 response.EnsureSuccessStatusCode();
 
                 var rawJson = await response.Content.ReadAsStringAsync();
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+            }
+            catch (ArgumentException ex)
+            {
+                throw new InvalidDataException(ex.Message, ex);
             }
             catch (Exception ex)
             {
@@ -66,7 +84,6 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-
         public async Task<CompanyProfileDto?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
         {
             try
@@ -112,14 +129,23 @@ namespace QLN.Backend.API.Service.CompanyService
             {
                 if (!string.IsNullOrWhiteSpace(dto.CRDocument))
                 {
-                    var crFileName = $"{dto.BusinessName}_{dto.UserId}.pdf";
+                    var (crExtension, _) = Base64Helper.ParseBase64Image(dto.CRDocument);
+
+                    if (crExtension is not ("pdf" or "png" or "jpg"))
+                        throw new ArgumentException("CR Document must be in PDF, PNG, or JPG format.");
+
+                    var crFileName = $"{dto.BusinessName}_{dto.UserId}.{crExtension}";
                     var crBlobUrl = await _blobStorage.SaveBase64File(dto.CRDocument, crFileName, "crdocument", cancellationToken);
                     dto.CRDocument = crBlobUrl;
                 }
-
                 if (!string.IsNullOrWhiteSpace(dto.CompanyLogo))
                 {
-                    var logoFileName = $"{dto.BusinessName}_{dto.UserId}.png";
+                    var (logoExtension, _) = Base64Helper.ParseBase64Image(dto.CompanyLogo);
+
+                    if (logoExtension is not ("png" or "jpg"))
+                        throw new ArgumentException("Company logo must be in PNG or JPG format.");
+
+                    var logoFileName = $"{dto.BusinessName}_{dto.UserId}.{logoExtension}";
                     var logoBlobUrl = await _blobStorage.SaveBase64File(dto.CompanyLogo, logoFileName, "companylogo", cancellationToken);
                     dto.CompanyLogo = logoBlobUrl;
                 }
@@ -131,10 +157,18 @@ namespace QLN.Backend.API.Service.CompanyService
                     "application/json");
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                if (response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    throw new InvalidDataException();
+                }
                 response.EnsureSuccessStatusCode();
 
                 var rawJson = await response.Content.ReadAsStringAsync();
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+            }
+            catch (ArgumentException ex)
+            {
+                throw new InvalidDataException(ex.Message, ex);
             }
             catch (Exception ex)
             {

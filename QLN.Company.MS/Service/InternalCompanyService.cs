@@ -6,6 +6,7 @@ using QLN.Common.Infrastructure.Constants;
 using SixLabors.ImageSharp;
 using QLN.Common.DTO_s;
 using System.Text.RegularExpressions;
+using Ganss.Xss;
 
 namespace QLN.Company.MS.Service
 {
@@ -39,6 +40,10 @@ namespace QLN.Company.MS.Service
                 }
 
                 return "Company Created successfully";
+            }
+            catch (ArgumentException)
+            {
+                throw new InvalidDataException();
             }
             catch (Exception ex)
             {
@@ -107,6 +112,8 @@ namespace QLN.Company.MS.Service
                 Country = dto.Country,
                 City = dto.City,
                 BranchLocations = dto.BranchLocations,
+                PhoneNumberCountryCode = dto.PhoneNumberCountryCode,
+                WhatsAppCountryCode = dto.WhatsAppCountryCode,
                 PhoneNumber = dto.PhoneNumber,
                 WhatsAppNumber = dto.WhatsAppNumber,
                 Email = dto.Email,
@@ -139,6 +146,8 @@ namespace QLN.Company.MS.Service
                 var result = await _dapr.GetStateAsync<CompanyProfileDto>(ConstantValues.CompanyStoreName, id.ToString(), cancellationToken: cancellationToken);
                 if(result == null)
                     throw new KeyNotFoundException($"Company with id '{id}' was not found.");
+                if (!result.IsActive)
+                    return null;
                 return result;
             }
             catch (Exception ex)
@@ -159,7 +168,7 @@ namespace QLN.Company.MS.Service
                 return items
                     .Where(i => !string.IsNullOrWhiteSpace(i.Value))
                     .Select(i => JsonSerializer.Deserialize<CompanyProfileDto>(i.Value!, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!)
-                    .Where(e => e.Id != Guid.Empty)
+                    .Where(e => e.Id != Guid.Empty && e.IsActive)
                     .ToList();
             }
             catch (Exception ex)
@@ -193,6 +202,10 @@ namespace QLN.Company.MS.Service
 
                 return "Company Profile Updated Successfully";
             }
+            catch (ArgumentException)
+            {
+                throw new InvalidDataException();
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while updating company profile with ID: {Id}", dto.Id);
@@ -212,6 +225,8 @@ namespace QLN.Company.MS.Service
                 City = dto.City,
                 BranchLocations = dto.BranchLocations,
                 PhoneNumber = dto.PhoneNumber,
+                PhoneNumberCountryCode = dto.PhoneNumberCountryCode,
+                WhatsAppCountryCode = dto.WhatsAppCountryCode,
                 WhatsAppNumber = dto.WhatsAppNumber,
                 Email = dto.Email,
                 WebsiteUrl = dto.WebsiteUrl,
