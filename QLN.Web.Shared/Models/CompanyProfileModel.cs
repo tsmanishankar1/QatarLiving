@@ -70,4 +70,27 @@ namespace QLN.Web.Shared.Models
         [Display(Name = "Government")]
         Government = 4
     }
+
+    public enum NatureOfBusiness
+    {
+        [Display(Name = "Retail")]
+        Retail = 1,
+
+        [Display(Name = "Wholesale")]
+        Wholesale = 2,
+
+        [Display(Name = "Manufacturing")]
+        Manufacturing = 3,
+
+        [Display(Name = "IT Services")]
+        ITServices = 4,
+
+        [Display(Name = "Construction")]
+        Construction = 5,
+
+        [Display(Name = "Logistics")]
+        Logistics = 6,
+    }
+
+
 }
