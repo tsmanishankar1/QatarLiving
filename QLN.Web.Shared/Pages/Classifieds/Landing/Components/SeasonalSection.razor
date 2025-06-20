@@ -1,0 +1,155 @@
+@using MudBlazor
+@inject IJSRuntime JS
+@inherits SeasonalSectionBase
+@using QLN.Web.Shared.Components.Classifieds.SeasonalCard
+@using QLN.Web.Shared.Components.EmptyCard
+
+<div class="seasonal-wrapper">
+      <div class="seasonal-header">
+            <h3 class="seasonal-header-title">Seasonal Picks</h3>
+    </div>
+
+    @if (Loading)
+        {
+           <div class="seasonal-skeleton-scroll">
+            @for (int i = 0; i < 3; i++)
+            {
+                <div class="seasonal-skeleton-item">
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle"
+                                 Height="200px"
+                                 Width="100%"
+                                 Style="border-radius: 12px;" />
+                </div>
+            }
+        </div>
+        }
+        else if (Seasonal?.Any() != true)
+        {
+            <EmptyCard Title="No Seasonal items found." Subtitle="Please check back later or explore other categories." />
+        }
+        else
+        {
+    <!-- Parent container for arrows + swiper -->
+    <div class="swiper-container">
+        <!-- Arrow buttons OUTSIDE .swiper -->
+        <div class="swiper-seasonal-button-prev custom-arrow-button seasonalleft">
+            <MudIcon Icon="@Icons.Material.Filled.ChevronLeft" />
+        </div>
+        <div class="swiper-seasonal-button-next custom-arrow-button seasonalright">
+            <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+        </div>
+
+        <!-- Swiper slider -->
+        <div class="swiper swiper-seasonal">
+            <div class="swiper-wrapper">
+                 <MudVirtualize Context="item" Items="Seasonal">
+                    <div class="swiper-slide seasonal-card">
+                            <SeasonalCard Item="item" />
+                    </div>
+                </MudVirtualize>
+            </div>
+        </div>
+    </div>
+    }
+</div>
+
+<style>
+    .seasonal-wrapper{
+       width: 100%;
+       padding: 10px;
+       font-family: 'Public Sans', sans-serif;
+    }
+      .seasonal-header {
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .seasonal-header-title {
+        font-weight: 600;
+        font-size: 25px;
+        color: var(--color-text-heading);
+    }
+
+    .swiper-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 0 40px;
+        /* Creates space for arrows */
+    }
+
+    .swiper-seasonal {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 1rem;
+    }
+
+    /* Arrow positioning (now relative to .swiper-container) */
+    .custom-arrow-button {
+        background-color: var(--color-background);
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        width: 40px;
+        height: 90%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #00426D;
+        z-index: 10;
+        cursor: pointer;
+        position: absolute;
+        /* Positioned relative to .swiper-container */
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .custom-arrow-button::after {
+        font-size: 18px;
+        font-weight: bold;
+        color: black;
+    }
+
+
+    .seasonalleft {
+        left: 0;
+        /* Place outside left edge */
+    }
+
+    .seasonalright {
+        right: 0;
+        /* Place outside right edge */
+    }
+    .seasonal-skeleton-scroll {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        justify-content: center;
+    }
+
+    .seasonal-skeleton-item {
+        flex: 1 1 calc(33.33% - 16px);
+        min-width: 300px;
+    }
+   @@media (max-width: 1000px) {
+    .seasonal-skeleton-scroll {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -ms-overflow-style: none; 
+        scrollbar-width: none; 
+    }
+
+    .seasonal-skeleton-scroll::-webkit-scrollbar {
+        display: none;   
+    }
+
+    .seasonal-skeleton-item {
+        flex: 0 0 auto;
+        width: 80%;
+        max-width: 250px;
+    }
+}
+</style>

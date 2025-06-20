@@ -35,7 +35,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected PostModel? post;
 
         protected bool isLoadingBanners = true;
-        protected List<BannerItem> DailyHeroBanners { get; set; } = new();
+        protected List<BannerItem> ContentCommunityPostHero { get; set; } = new();
         protected List<BannerItem> CommunitySideBanners { get; set; } = new();
 
 
@@ -137,7 +137,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             try
             {
                 var banners = await _simpleCacheService.GetBannerAsync();
-                DailyHeroBanners = banners?.ContentCommunityPostHero ?? new();
+                ContentCommunityPostHero = banners?.ContentCommunityPostHero ?? new();
                 CommunitySideBanners = banners?.ContentCommunityPostSide ?? new (); 
 
             }

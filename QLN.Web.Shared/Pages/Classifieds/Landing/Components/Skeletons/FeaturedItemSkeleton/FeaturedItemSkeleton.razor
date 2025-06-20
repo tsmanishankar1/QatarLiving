@@ -1,0 +1,51 @@
+@using QLN.Web.Shared.Pages.Classifieds.Landing.Components.Skeletons.FeaturedItemSkeleton
+
+<div class="card-container">
+    @for (int i = 0; i < 4; i++) // Replace with your actual item loop
+    {
+        <div class="card-wrapper">
+            <ItemSkeletonCard />
+        </div>
+    }
+</div>
+
+<style>
+    .card-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: space-between;
+    }
+
+    .card-wrapper {
+        flex: 0 0 calc(25% - 7.5px);
+        box-sizing: border-box;
+        flex-shrink: 0;
+    }
+
+
+    /* Mobile: 1 card per row, horizontal scroll with scrollbar hidden */
+    @@media (max-width: 768px) {
+        .card-container {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            -ms-overflow-style: none;
+            /* Hide scrollbar for IE/Edge */
+            scrollbar-width: none;
+            /* Hide scrollbar for Firefox */
+            scroll-snap-type: x mandatory;
+        }
+
+        .card-container::-webkit-scrollbar {
+            display: none;
+            /* Hide scrollbar for Chrome/Safari */
+        }
+
+        .card-wrapper {
+            flex: 0 0 85%;
+            /* Adjust width as needed for mobile */
+            scroll-snap-align: start;
+        }
+    }
+</style>

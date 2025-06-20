@@ -2,23 +2,18 @@
 @inherits QLN.Web.Shared.Components.FaqList.FaqListBase
 
 <div class="faqs-section">
-    @if (!string.IsNullOrWhiteSpace(Title))
-    {
-        <h3 class="faq-title">@Title</h3>
-    }
-
     @foreach (var faq in Items)
     {
-        <MudPaper Class="@($"faq-item {(faq.Expanded ? "expanded" : "")}")" Elevation="0">
-            <MudButton Variant="Variant.Text" FullWidth="true" Class="@($"faq-question {(faq.Expanded ? "expanded" : "")}")"
-                EndIcon="@(faq.Expanded? Icons.Material.Filled.Remove : Icons.Material.Filled.Add)"
+        <MudPaper Class="@($"faq-item {(faq.IsExpanded ? "expanded" : "")}")" Elevation="0">
+            <MudButton Variant="Variant.Text" FullWidth="true" Class="@($"faq-question {(faq.IsExpanded ? "expanded" : "")}")"
+                EndIcon="@(faq.IsExpanded? Icons.Material.Filled.Remove : Icons.Material.Filled.Add)"
                 OnClick="@(() => ToggleFaq(faq))">
-                <h4 class="faq-question-text">@faq.Question</h4>
+                <h4 class="faq-question-text">@faq.Title</h4>
             </MudButton>
 
-            <MudCollapse Expanded="@faq.Expanded">
+            <MudCollapse Expanded="@faq.IsExpanded">
                 <MudPaper Class="faq-answer" Elevation="0">
-                    <h4 class="faq-answer-text">@faq.Answer</h4>
+                    <h4 class="faq-answer-text">@faq.Description</h4>
                 </MudPaper>
             </MudCollapse>
         </MudPaper>
@@ -27,17 +22,9 @@
 
 <style>
     .faqs-section {
-        padding: 2rem;
-        font-family: 'Public Sans', sans-serif;
+        width: 100%;
     }
 
-    .faq-title {
-        font-weight: 600;
-        font-size: 25px;
-        color: var(--color-text-heading);
-        margin-bottom: 2rem;
-        text-align: center;
-    }
 
     .faq-item {
         margin-bottom: 8px;
@@ -91,10 +78,6 @@
     }
 
     @@media (max-width: 600px) {
-        .faqs-section {
-            padding: 0 0.5rem;
-        }
-
         .faq-question {
             padding: 0.75rem;
         }

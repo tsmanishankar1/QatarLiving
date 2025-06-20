@@ -1,6 +1,6 @@
 @using MudBlazor
 @using QLN.Web.Shared.Components.FeaturedEventCard
-@using QLN.Web.Shared.Pages.Classifieds.Components.Landing.Components.Skeletons.FeaturedCategorySkeleton
+@using QLN.Web.Shared.Pages.Classifieds.Landing.Components.Skeletons.FeaturedCategorySkeleton
 @using QLN.Common.Infrastructure.DTO_s;
 @using QLN.Web.Shared.Components.EmptyCard
 @inject NavigationManager Navigation
@@ -34,7 +34,7 @@
                 </div>
 
                 <div class="swiper-wrapper @(FeaturedEvent.Count <= 5 ? "les5swiper-wrapper" : "")">
-                    <MudVirtualize Context="item" Items="FeaturedEvent">
+                      <MudVirtualize Context="item" Items="FeaturedEvent">
                         <div class="swiper-slide swiper-slide-Card">
                             <FeaturedEventCard Item="item" OnClick="HandleCategoryClick" />
                         </div>

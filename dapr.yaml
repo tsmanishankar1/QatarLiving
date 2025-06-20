@@ -48,3 +48,9 @@ apps:
     command:
       - dotnet
       - run
+  - appID: qln-content-ms
+    appDirPath: QLN.Content.MS
+    appPort: 5112
+    command:
+      - dotnet
+      - run

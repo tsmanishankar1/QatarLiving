@@ -14,9 +14,9 @@
     <div class="Top-event-card-body">
         <div class="Top-event-category">Highlighted Event</div>
 
-        <a @onclick="() => NavigateToEventDetail()">
+        <MudLink OnClick="() => NavigateToEventDetail()">
             <h3 class="Top-event-title">@Item.Title</h3>
-        </a>
+        </MudLink>
 
         <p class="Top-event-description" style="text-overflow:ellipsis;">
             @HtmlHelper.StripHTML(Item.Description ?? "")

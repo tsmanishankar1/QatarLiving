@@ -108,7 +108,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints;
                     object? result = vertical.ToLowerInvariant() switch
                     {
                         "classifieds" => await svc.GetByIdAsync<ClassifiedsIndex>(vertical, id),
-                        "backofficemaster" => await svc.GetByIdAsync<BackofficemasterIndex>(vertical, id),
+                        "backofficemaster" => await svc.GetByIdAsync<LandingBackOfficeIndex>(vertical, id),
                         // add other verticals here...
                         _ => throw new NotSupportedException($"Unknown vertical '{vertical}'")
                     };

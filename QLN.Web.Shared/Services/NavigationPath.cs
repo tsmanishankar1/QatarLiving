@@ -24,17 +24,19 @@
         public string eShops { get; set; } = "https://www.qatarliving.com/eshops";
         public string GoogleStore { get; set; } = "https://play.google.com/store/apps/details?id=com.qatarliving.classifieds&hl=en";
         public string AppleStore { get; set; } = "https://apps.apple.com/us/app/qatar-living/id961568535";
+        public string Advertise { get; set; } = "https://www.qatarliving.com/advertise";
         public string AdvertisingTerms { get; set; } = "https://www.qatarliving.com/advertisingterms";
+        public string RefundPolicy { get; set; } = "https://www.qatarliving.com/refund-policy";
         public string TermsOfUse { get; set; } = "https://www.qatarliving.com/terms-of-use";
         public string PostingRules { get; set; } = "https://www.qatarliving.com/rules-advertising";
         public string HelpLink { get; set; } = "https://www.qatarliving.com/help";
         public string SocialFacebook { get; set; } = "https://www.facebook.com/QatarLiving";
         public string SocialTwitter { get; set; } = "https://twitter.com/qatarliving/";
-        public string SocialInstagram { get; set; } = "https://www.instagram.com/qatarliving/#";
+        public string SocialInstagram { get; set; } = "https://www.instagram.com/qatarliving/";
         public string SocialSnapChat { get; set; } = "https://www.snapchat.com/add/qatar_living";
         public string SocialLinkedIn { get; set; } = "https://www.linkedin.com/company/qatarliving-com";
         public string SocialYouTube { get; set; } = "https://www.youtube.com/channel/UCcsJRinZg4qYGLRDkFiVHcQ";
-        public string SocialTikTok { get; set; } = "https://www.tiktok.com/notfound";
+        public string SocialTikTok { get; set; } = "https://www.tiktok.com/@qatarliving";
         public string Base { get; set; } = "https://www.qatarliving.com/";
         public string AllVideos { get; set; } = "https://www.youtube.com/@QatarLivingOfficial/videos";
 
@@ -64,6 +66,20 @@
         public string CleaningServices { get; set; } = "https://www.qatarliving.com/services/cleaning-services";
 
         public string ComputerServices { get; set; } = "https://www.qatarliving.com/services/computer-services";
+
+        public string PropertiesProfileMenu { get; set; } = "https://qlp.qatarliving.com/en/properties/dashboard?status=published";
+        public string VehiclesProfileMenu { get; set; } = "https://qlv.qatarliving.com/en/vehicles/dashboard";
+        public string RewardsProfileMenu { get; set; } = "https://qlr.qatarliving.com/en/rewards/dashboard";
+        public string MySavedSearchesProfileMenu { get; set; } =  "https://qlv.qatarliving.com/en/vehicles/favourites?tab=saved-searches";
+
+        public string ClassifiedsProfileMenu { get; set; } = "https://www.qatarliving.com/classifieds/dashboard/<ALIAS>";
+        public string ServicesProfileMenu { get; set; } = "https://www.qatarliving.com/services/dashboard/<ALIAS>";
+        public string JobsProfileMenu { get; set; } = "https://www.qatarliving.com/user/<USER_ID>/listings";
+        public string MyProfileMenu { get; set; } = "https://www.qatarliving.com/user/<USER_ID>";
+        public string MySavedAdsProfileMenu { get; set; } = "https://www.qatarliving.com/user/<USER_ID>/wishlist";
+        public string ManageMyAdsProfileMenu { get; set; } = "https://www.qatarliving.com/user/<USER_ID>/classifieds";
+
+        public string WishlistBase { get; set; } = "https://www.qatarliving.com/user/<USER_ID>/wishlist";
 
     }
 }

@@ -1,25 +1,21 @@
 @using MudBlazor
 
 <div class="ps-section">
-    @if (!string.IsNullOrWhiteSpace(Title))
-    {
-        <h3 class="ps-title">@Title</h3>
-    }
-
+ 
     @foreach (var item in Items)
     {
-        <MudPaper Class="@($"ps-item {(item.Expanded ? "expanded" : "")}")" Elevation="0">
-            <MudButton Variant="Variant.Text" FullWidth="true" Class="@($"ps-question {(item.Expanded ? "expanded" : "")}")"
-                EndIcon="@(item.Expanded? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
+        <MudPaper Class="@($"ps-item {(item.IsExpanded ? "expanded" : "")}")" Elevation="0">
+            <MudButton Variant="Variant.Text" FullWidth="true" Class="@($"ps-question {(item.IsExpanded ? "expanded" : "")}")"
+                EndIcon="@(item.IsExpanded? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
                 OnClick="@(() => Toggle(item))">
-                <h4 class="ps-question-text">@item.Question</h4>
+                <h4 class="ps-question-text">@item.Title</h4>
             </MudButton>
 
-            <MudCollapse Expanded="@item.Expanded">
+            <MudCollapse Expanded="@item.IsExpanded">
                 <div class="ps-columns">
-                    @foreach (var location in item.AnswerList)
+                     @foreach (var child in item.Children)
                     {
-                        <h4 class="ps-link-text"><a href="#">@location</a></h4>
+                        <h4 class="ps-link-text">@child.Title</h4>
                     }
                 </div>
             </MudCollapse>
@@ -29,7 +25,7 @@
 
 <style>
     .ps-section {
-        padding: 2rem;
+        padding: 2rem 0;
         background-color: var(--color-secondary-background);
     }
 
