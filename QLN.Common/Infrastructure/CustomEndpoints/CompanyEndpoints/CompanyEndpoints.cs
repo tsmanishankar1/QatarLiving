@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
+using System.ComponentModel.Design;
 using System.Security.Claims;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
@@ -468,9 +469,19 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
                     if (!Guid.TryParse(userId, out var userGuid))
                         return TypedResults.Forbid();
-
+                    if (dto == null)
+                        throw new KeyNotFoundException($"Company with ID '{dto.CompanyId}' not found.");
                     await service.ApproveCompany(userGuid, dto, cancellationToken);
                     return Results.Ok(new { message = "Company approved successfully." });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
                 }
                 catch (InvalidDataException ex)
                 {
@@ -496,11 +507,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" })
             .Produces(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPut("/approveByUserId", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
+                NotFound<ProblemDetails>,
                 ProblemHttpResult>>
             (
                 CompanyApproveDto dto,
@@ -520,6 +533,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
                     var result = await service.ApproveCompany(userId, dto, cancellationToken);
                     return TypedResults.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
                 }
                 catch (InvalidDataException ex)
                 {
@@ -545,6 +567,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .ExcludeFromDescription()
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;

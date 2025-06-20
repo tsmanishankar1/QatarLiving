@@ -302,6 +302,7 @@ namespace QLN.Company.MS.Service
             {
                 var allCompanies = await GetAllCompanies(cancellationToken);
                 var companies = allCompanies
+                    .Where(c => c.IsActive)
                     .Where(c => Enum.IsDefined(typeof(VerticalType), c.VerticalId) &&
                                 (VerticalType)c.VerticalId == vertical)
                     .ToList();
@@ -367,7 +368,10 @@ namespace QLN.Company.MS.Service
                         );
                 if (company == null)
                     throw new KeyNotFoundException($"Company with ID {dto.CompanyId} not found.");
-
+                if (!company.IsActive)
+                    throw new InvalidOperationException("Cannot approve an inactive company profile.");
+                if (company.IsVerified == true)
+                    throw new InvalidOperationException("This company is already approved.");
                 var wasPreviouslyVerified = company.IsVerified;
                 company.IsVerified = dto.IsVerified ?? false;
                 company.Status = dto.Status;
@@ -383,19 +387,26 @@ namespace QLN.Company.MS.Service
 
                 return "Company Profile Approved Successfully";
             }
+            catch (KeyNotFoundException ex)
+            {
+                throw new InvalidDataException(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidDataException(ex.Message);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error approving company with ID {CompanyId}", dto.CompanyId);
                 throw;
             }
         }
-
         public async Task<CompanyApprovalResponseDto?> GetCompanyApprovalInfo(Guid companyId, CancellationToken cancellationToken = default)
         {
             try
             {
                 var allCompanies = await GetAllCompanies(cancellationToken);
-                var company = allCompanies.FirstOrDefault(c => c.Id == companyId);
+                var company = allCompanies.FirstOrDefault(c => c.Id == companyId && c.IsActive);
 
                 if (company == null) return null;
 
@@ -422,6 +433,7 @@ namespace QLN.Company.MS.Service
                 var allCompanies = await GetAllCompanies(cancellationToken);
 
                 var filtered = allCompanies
+                    .Where(c => c.IsActive)
                     .Where(c => c.IsVerified == isVerified && c.VerticalId == vertical)
                     .Select(c => new CompanyProfileVerificationStatusDto
                     {
@@ -447,7 +459,7 @@ namespace QLN.Company.MS.Service
             {
                 var all = await GetAllCompanies(cancellationToken);
                 return all
-                    .Where(c => c.UserId == userId)
+                    .Where(c => c.UserId == userId && c.IsActive)
                     .ToList();
             }
             catch(Exception)

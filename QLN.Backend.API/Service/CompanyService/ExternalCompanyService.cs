@@ -8,6 +8,7 @@ using QLN.Common.Infrastructure.IService.IEmailService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Utilities;
+using System.ComponentModel.Design;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -268,6 +269,13 @@ namespace QLN.Backend.API.Service.CompanyService
                 if (company == null)
                     throw new KeyNotFoundException($"Company with ID {dto.CompanyId} not found.");
 
+                var user = await _userManager.FindByIdAsync(company.UserId.ToString());
+                if (user == null)
+                    throw new KeyNotFoundException($"User with ID {company.UserId} not found.");
+
+                if (user.IsCompany == true && company.IsVerified == true)
+                    throw new InvalidDataException("Company is already marked as approved.");
+
                 var wasNotVerified = !company.IsVerified.GetValueOrDefault(false);
                 var isNowVerified = dto.IsVerified.GetValueOrDefault(false);
                 var shouldSendEmail = wasNotVerified && isNowVerified && !string.IsNullOrWhiteSpace(company.Email);
@@ -281,37 +289,47 @@ namespace QLN.Backend.API.Service.CompanyService
 
                 var url = $"/api/companyprofile/approveByUserId?userId={userId}";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.CompanyServiceAppId, url);
-                request.Content = new StringContent(
-                    JsonSerializer.Serialize(requestDto),
-                    Encoding.UTF8,
-                    "application/json");
+                request.Content = new StringContent(JsonSerializer.Serialize(requestDto), Encoding.UTF8, "application/json");
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                if (response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync();
+
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+
+                    throw new InvalidDataException(errorMessage);
+                }
                 response.EnsureSuccessStatusCode();
+
+                if (isNowVerified)
+                {
+                    user.IsCompany = true;
+                    user.UpdatedAt = DateTime.UtcNow;
+                    var updateResult = await _userManager.UpdateAsync(user);
+                }
 
                 if (shouldSendEmail)
                 {
                     var subject = "Company Profile Approved - Qatar Living";
                     var htmlBody = _emailSender.GetApprovalEmailTemplate(company.BusinessName);
                     await _emailSender.SendEmail(company.Email, subject, htmlBody);
-                    _logger.LogInformation("Approval email sent to {Email}", company.Email);
-                }
-                if (isNowVerified)
-                {
-                    var companyOwnerId = company.UserId.ToString();
-                    if (!string.IsNullOrWhiteSpace(companyOwnerId))
-                    {
-                        var user = await _userManager.FindByIdAsync(companyOwnerId);
-                        if (user != null)
-                        {
-                            user.IsCompany = true;
-                            user.UpdatedAt = DateTime.UtcNow;
-                            var updateResult = await _userManager.UpdateAsync(user);
-                        }
-                    }
                 }
                 var rawJson = await response.Content.ReadAsStringAsync();
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+            }
+            catch (KeyNotFoundException ex)
+            {
+                throw new KeyNotFoundException(ex.Message);
             }
             catch (Exception ex)
             {
