@@ -1,49 +1,91 @@
-﻿@page "/manage/news/add/article"
+﻿@page "/manage/news/addarticle"
 @inherits AddArticleBase
 
 <MudContainer MaxWidth="MaxWidth.False">
-    <h3>AddArticleComponent</h3>
-    <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
-        <DataAnnotationsValidator />
-        <MudGrid>
-            <MudItem xs="12" sm="7">
-                <MudCard>
-                    <MudCardContent>
-                        <MudTextField Label="First name" HelperText="Max. 8 characters"
-                                      @bind-Value="model.Username" For="@(() => model.Username)" />
-                        <MudTextField Label="Email" Class="mt-3"
-                                      @bind-Value="model.Email" For="@(() => model.Email)" />
-                        <MudTextField Label="Password" HelperText="Choose a strong password" Class="mt-3"
-                                      @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
-                        <MudTextField Label="Password" HelperText="Repeat the password" Class="mt-3"
-                                      @bind-Value="model.Password2" For="@(() => model.Password2)" InputType="InputType.Password" />
-                    </MudCardContent>
-                    <MudCardActions>
-                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Register</MudButton>
-                    </MudCardActions>
-                </MudCard>
+<EditForm Model="@article" OnValidSubmit="HandleValidSubmit">
+    <MudPaper Class="p-6" Style="border: 1px solid #E0E0E0; border-radius: 8px;">
+        <MudGrid GutterSize="24px">
+            <!-- Left Column -->
+            <MudItem xs="12" md="7">
+                <MudText Typo="Typo.h6" Class="mb-4">Article Form</MudText>
+
+                <MudGrid GutterSize="16px">
+                    <MudItem xs="4">
+                        <MudSelect T="string" Label="Category" Dense @bind-Value="article.CategoryName" Class="w-100">
+                            @foreach (var item in Categories)
+                            {
+                                <MudSelectItem Value="@item">@item</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="4">
+                        <MudSelect T="string" Label="Subcategory" Dense @bind-Value="article.CategoryName" Class="w-100">
+                            @foreach (var item in Subcategories)
+                            {
+                                <MudSelectItem Value="@item">@item</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="3">
+                        <MudSelect T="string" Label="Slot" Dense @bind-Value="article.authorName" Class="w-100">
+                            @foreach (var item in Slots)
+                            {
+                                <MudSelectItem Value="@item">@item</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="1" Class="d-flex align-center">
+                        <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Primary" Size="Size.Medium" />
+                    </MudItem>
+                </MudGrid>
+
+                <MudSelect Label="Writer" Dense Class="mt-4 w-100" @bind-Value="article.WriterTag">
+                    @foreach (var item in Writers)
+                    {
+                        <MudSelectItem Value="@item">@item</MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudTextField Label="Article Title" Dense Class="mt-4 w-100" @bind-Value="article.title" />
+
+                <MudText Typo="Typo.body2" Class="mt-4 mb-1">Article content</MudText>
+                    <MudExRichTextEdit @ref="@Editor"
+                                       Height="444"
+                                       Class="m-2"
+                                       Placeholder="Edit html">
+
+                    </MudExRichTextEdit>
+                <MudText Typo="Typo.caption" Class="mt-2">Start Typing</MudText>
+
+                <MudStack Row Class="mt-6">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="@Cancel">Cancel</MudButton>
+                    <MudButton Type="Submit" Color="Color.Primary" Class="ml-2">Save</MudButton>
+                </MudStack>
             </MudItem>
-            <MudItem xs="12" sm="5">
-                <MudPaper Class="pa-4 mud-height-full">
-                    <MudText Typo="Typo.subtitle2">Validation Summary</MudText>
-                    @if (success)
-                    {
-                        <MudText Color="Color.Success">Success</MudText>
-                    }
-                    else
-                    {
-                        <MudText Color="@Color.Error">
-                            <ValidationSummary />
-                        </MudText>
-                    }
+
+            <!-- Right Column -->
+            <MudItem xs="12" md="5">
+                <MudText Typo="Typo.h6" Class="mb-4">Images</MudText>
+
+                <!-- Cover Image Upload -->
+                <MudPaper Class="pa-6 d-flex flex-column align-center justify-center" Style="min-height: 200px; border: 1px dashed #ccc; cursor: pointer;" OnClick="TriggerCoverUpload">
+                    <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Size="Size.Large" Color="Color.Primary" />
+                    <div class="mt-2" style="color: #ff5722;">Cover Image</div>
+                    <MudText Typo="Typo.caption" Class="mt-2">Recommended image size: 1600 x 900 pixels</MudText>
                 </MudPaper>
-            </MudItem>
-            <MudItem xs="12">
-                <MudText Typo="Typo.body2" Align="Align.Center">
-                    Fill out the form correctly to see the success message.
-                </MudText>
+                <InputFile id="cover-upload" OnChange="HandleCoverImageChange" style="display:none" />
+
+                <!-- Inline Images Upload -->
+                <MudButton Class="mt-6" Color="Color.Primary" OnClick="TriggerInlineImageUpload">
+                    Upload Inline Images
+                </MudButton>
+                <InputFile id="inline-upload" OnChange="HandleInlineImagesChange" multiple style="display:none" />
             </MudItem>
         </MudGrid>
-    </EditForm>
+    </MudPaper>
+</EditForm>
 </MudContainer>
 

@@ -1,38 +1,66 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using System.ComponentModel.DataAnnotations;
+using Microsoft.JSInterop;
+using MudExRichTextEditor;
+using QLN.ContentBO.WebUI.Interfaces;
+using QLN.ContentBO.WebUI.Models;
 
 namespace QLN.ContentBO.WebUI.Components.News
 {
     public class AddArticleBase : ComponentBase
     {
-        protected RegisterAccountForm model = new RegisterAccountForm();
-        protected  bool success;
+        [Inject] INewsService newsService { get; set; }
+        [Inject] ILogger Logger { get; set; }
+        [Inject] IJSRuntime JS { get; set; }
+        protected V2ContentNewsDto article { get; set; } = new();
 
-        public class RegisterAccountForm
+        protected List<string> Categories = [];
+        protected List<string> Subcategories = [];
+        protected List<string> Slots = [];
+        protected List<string> Writers = [];
+
+        protected MudExRichTextEdit Editor;
+
+        protected override async Task OnInitializedAsync()
         {
-            [Required]
-            [StringLength(8, ErrorMessage = "Name length can't be more than 8.")]
-            public string Username { get; set; }
-
-            [Required]
-            [EmailAddress]
-            public string Email { get; set; }
-
-            [Required]
-            [StringLength(30, ErrorMessage = "Password must be at least 8 characters long.", MinimumLength = 8)]
-            public string Password { get; set; }
-
-            [Required]
-            [Compare(nameof(Password))]
-            public string Password2 { get; set; }
 
         }
 
-        protected void OnValidSubmit(EditContext context)
+        protected async Task HandleValidSubmit()
         {
-            success = true;
-            StateHasChanged();
+            try
+            {
+                var response = await newsService.CreateArticle(article);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "HandleValidSubmit");
+            }
+        }
+
+        protected void HandleCoverImageChange(InputFileChangeEventArgs e)
+        {
+
+        }
+
+        protected void HandleInlineImagesChange(InputFileChangeEventArgs e)
+        {
+
+        }
+
+        protected async Task TriggerCoverUpload()
+        {
+            await JS.InvokeVoidAsync("document.getElementById", "cover-upload").AsTask();
+        }
+
+        protected async Task TriggerInlineImageUpload()
+        {
+            await JS.InvokeVoidAsync("document.getElementById", "inline-upload").AsTask();
+        }
+
+        protected void Cancel()
+        {
+
         }
     }
 }
