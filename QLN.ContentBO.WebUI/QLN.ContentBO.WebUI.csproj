@@ -28,4 +28,8 @@
     <Folder Include="wwwroot\qln-images\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\QLN.Common\QLN.Common.csproj" />
+  </ItemGroup>
+
 </Project>
