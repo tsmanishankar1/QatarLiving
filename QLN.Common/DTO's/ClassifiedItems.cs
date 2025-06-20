@@ -8,7 +8,8 @@ namespace QLN.Common.DTO_s
 {
     public class ClassifiedItems : CommonAdBase
     {        
-        public Guid Id { get; set; }
-        public string? Inclusion { get; set; }
+        public Guid Id { get; set; }        
+        public string AcceptsOffers { get; set; }
+        public string? MakeType { get; set; }
     }
 }
