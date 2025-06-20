@@ -1,5 +1,5 @@
 @using MudBlazor
-@using QLN.Web.Shared.Models
+@using QLN.Common.DTO_s
 @using QLN.Web.Shared.Components.Classifieds.ItemDetailsImage
 @using QLN.Web.Shared.Pages.Classifieds.Items.Components.IteamdetailsSection
 @using QLN.Web.Shared.Components.BreadCrumb
@@ -7,8 +7,10 @@
 
 <Breadcrumb Items="breadcrumbItems" />
 
-<div class="main-layout">
-    <div class="row-container">
+   
+   <MudGrid Class="py-4" GutterSize="16px">
+    <!-- Main Content -->
+     <div class="row-container">
         <MudText Typo="Typo.h5">@Item?.Title</MudText>
         <div class="icon-label-container">
             <div class="icon-label">
@@ -21,9 +23,8 @@
             </div>
         </div>
     </div>
-    <MudGrid AlignItems="Center" Justify="Justify.FlexStart" GutterSize="GutterSize.Small">
-        <MudItem xs="12" md="8">
-            <ItemDetailsImage Images="Item?.ImageUrls" SelectedImageIndex="selectedImageIndex"
+    <MudItem xs="12" md="8">
+            <ItemDetailsImage ImagesUrl="Item" SelectedImageIndex="selectedImageIndex"
                 OnImageSelected="SelectImage" OnPrevSlide="PrevSlide" OnNextSlide="NextSlide" />
 
 
@@ -31,11 +32,11 @@
             <DescriptionBox />
         </MudItem>
 
-        <MudItem xs="12" md="4" Style="max-width: 450px;">
+         <MudItem xs="12" md="4">
             <div
                 style="display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap; justify-content: flex-start;">
                 <MudPaper Elevation="1" Class="custom-card">
-                    <MudText Typo="Typo.caption" Class="status-text">Brand New</MudText>
+                    <MudText Typo="Typo.caption" Class="status-text">@Item?.Status</MudText>
 
                     <MudText Typo="Typo.h6" Class="title-text">@Item?.Title</MudText>
 
@@ -63,7 +64,7 @@
                             <div class="user-info">
                                 <img src="/qln-images/classifieds/personIcon.svg" class="person-icon" />
                                 <div class="user-text">
-                                    <div class="username">@Item?.Company</div>
+                                    @* <div class="username">@Item?.Company</div> *@
                                     <div class="updated-time">Updated 1 hour ago</div>
                                 </div>
                             </div>
@@ -82,14 +83,11 @@
         </MudItem>
     </MudGrid>
 
-</div>
-
-
 @code {
     private bool isSaved = false;
     private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
     private int _startIndex = 0;
-    [Parameter] public PromotedItem? Item { get; set; }
+    [Parameter] public ClassifiedsIndex Item { get; set; } = new();
     protected override void OnParametersSet()
     {
         if (Item == null)
@@ -102,24 +100,13 @@
 
     protected override void OnInitialized()
     {
-        var uri = new Uri(NavigationManager.Uri);
-        var segments = uri.AbsolutePath.Split("/", StringSplitOptions.RemoveEmptyEntries);
-        if (segments.Length >= 2)
-            categorySegment = segments[1];
-
-        string displayName = categorySegment switch
-        {
-            "items" => "Items",
-            "preloved" => "Preloved",
-            "collectibles" => "Collectibles",
-            _ => "Items"
-        };
+      
 
         breadcrumbItems = new()
 {
 new() { Label = "Classifieds", Url = "/classifieds" },
-new() { Label = displayName, Url = $"/classifieds/{categorySegment}" },
-new() { Label = Item?.Title ?? "Details", Url = NavigationManager.Uri, IsLast = true }
+new() { Label = "Items", Url = $"/classifieds/Items" },
+new() { Label = Item?.Title ?? "Details", Url = "/qln/classifieds/items/details", IsLast = true }
 };
     }
     private void PrevSlide()
@@ -130,21 +117,21 @@ new() { Label = Item?.Title ?? "Details", Url = NavigationManager.Uri, IsLast = 
 
     private void NextSlide()
     {
-        if (selectedImageIndex < Item.ImageUrls.Count - 1)
+        if (selectedImageIndex < Item.Images.Count - 1)
             selectedImageIndex++;
     }
 
     private void SelectImage(int index)
     {
         Console.WriteLine($"Selected image index: {index}");
-        if (Item?.ImageUrls != null && index >= 0 && index < Item.ImageUrls.Count)
+        if (Item?.Images != null && index >= 0 && index < Item.Images.Count)
         {
             selectedImageIndex = index;
         }
     }
 
     private bool IsFirstSlide => selectedImageIndex == 0;
-    private bool IsLastSlide => selectedImageIndex == Item.ImageUrls.Count - 1;
+    private bool IsLastSlide => selectedImageIndex == Item.Images.Count - 1;
 
     private string TrackOffset => $"translateX(-{selectedImageIndex * 144}px)";
     private void OnSaveClicked()

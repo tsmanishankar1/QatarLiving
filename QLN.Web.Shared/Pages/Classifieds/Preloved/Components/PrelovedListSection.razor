@@ -2,12 +2,11 @@
 @using QLN.Web.Shared.Components.Classifieds.PromotedItemCards
 @using QLN.Web.Shared.Pages.Classifieds.Landing.Components.Skeletons.FeaturedItemSkeleton
 @using QLN.Web.Shared.Components.EmptyCard
-@using QLN.Web.Shared.Models
 @using QLN.Web.Shared.Components.BreadCrumb
 @using QLN.Web.Shared.Components.PaginationFooter
 @using QLN.Web.Shared.Components.CustomSelect
-@implements IDisposable
 @inject NavigationManager NavigationManager
+@inherits PrelovedListSectionBase
 
 <Breadcrumb Items="breadcrumbItems" />
 <div class="item-list">
@@ -78,95 +77,6 @@
 
 
 </div>
-
-@code {
-    [Parameter] public string ViewMode { get; set; } = "grid";
-    [Parameter] public bool Loading { get; set; } = false;
-    [Parameter] public List<PromotedItem> Items { get; set; } = new();
-    private IEnumerable<PromotedItem> PagedItems =>
-    Items.Skip((currentPage - 1) * pageSize).Take(pageSize);
-
-    private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
-    private string selectedSort = "default";
-
-    private int currentPage = 1;
-    private int pageSize = 12;
-
-    private void HandlePageChange(int newPage)
-    {
-        currentPage = newPage;
-        StateHasChanged();
-    }
-
-    private void HandlePageSizeChange(int newSize)
-    {
-        pageSize = newSize;
-        currentPage = 1;
-        StateHasChanged();
-    }
-
-
-
-
-    private bool IsFirstPage => currentPage == 1;
-    private bool IsLastPage => currentPage * pageSize >= Items.Count;
-    protected override void OnInitialized()
-    {
-        NavigationManager.LocationChanged += OnLocationChanged;
-        UpdateBreadcrumb(NavigationManager.Uri);
-    }
-
-    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
-    {
-        UpdateBreadcrumb(e.Location);
-        StateHasChanged(); // Force UI to refresh after breadcrumb change
-    }
-    private void OnFilterChanged(string filterName, string? value)
-    {
-        if (filterName == nameof(selectedSort))
-        {
-            selectedSort = value ?? "default";
-            currentPage = 1;
-            StateHasChanged();
-            // Optional: Apply sorting logic here if needed
-        }
-    }
-
-
-    private void UpdateBreadcrumb(string uri)
-    {
-        var lowerUri = uri.ToLower();
-
-        string routeSegment = lowerUri switch
-        {
-            var x when x.Contains("/classifieds/preloved") => "Preloved",
-            var x when x.Contains("/classifieds/collectibles") => "Collectibles",
-            _ => "Items"
-        };
-
-        string routeUrl = routeSegment.ToLower();
-
-        breadcrumbItems = new()
-{
-new() { Label = "Classifieds", Url = "/classifieds" },
-new() { Label = routeSegment, Url = $"/classifieds/{routeUrl}", IsLast = true }
-};
-    }
-
-    public void Dispose()
-    {
-        NavigationManager.LocationChanged -= OnLocationChanged;
-    }
-
-    private List<KeyValuePair<string, string>> sortOptions = new()
-{
-new("default", "Default"),
-new("priceLow", "Price: Low to High"),
-new("priceHigh", "Price: High to Low")
-};
-
-
-}
 
 <style>
     .footer-pagination-container {

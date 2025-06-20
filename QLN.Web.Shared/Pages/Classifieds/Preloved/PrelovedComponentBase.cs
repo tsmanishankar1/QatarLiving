@@ -1,15 +1,11 @@
 using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
-using System.Text.Json;
 
-public class ItemsComponentBase : ComponentBase
+public class PrelovedComponentBase : ComponentBase
 {
     [Inject] private IClassifiedsServices _classifiedsService { get; set; } = default!;
-    [Inject] private ILogger<ItemsComponentBase> Logger { get; set; } = default!;
-
     protected string currentViewMode = "grid";
     protected bool IsLoading { get; set; } = true;
     protected string? ErrorMessage { get; set; }
@@ -25,19 +21,15 @@ public class ItemsComponentBase : ComponentBase
     {
         try
         {
-            var payload = new Dictionary<string, object>
+               var payload = new Dictionary<string, object>
         {
             ["filters"] = new Dictionary<string, string>
             {
-                { "SubVertical", "Items" }
+                { "SubVertical", "Preloved" }
             }
         };
 
-  // Log the payload
-            var payloadJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
-            Logger.LogInformation("Sending payload to SearchClassifiedsAsync: {Payload}", payloadJson);
             var responses = await _classifiedsService.SearchClassifiedsAsync(payload);
-            
             var firstResponse = responses.FirstOrDefault();
 
             if (firstResponse is { IsSuccessStatusCode: true })

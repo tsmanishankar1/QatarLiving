@@ -1,6 +1,5 @@
 @page "/qln/classifieds/items"
 @using MudBlazor
-@using QLN.Web.Shared.Models
 @inherits ItemsComponentBase
 @inject SearchStateService SearchState
 @using QLN.Web.Shared.Pages.Classifieds.Items.Components
@@ -20,7 +19,7 @@
         </div>
 
 
-        <IteamListSection ViewMode="@currentViewMode"  Loading="IsLoading" />
+        <IteamListSection ViewMode="@currentViewMode" Items="SearchResults" Loading="IsLoading" />
 
  </div>
 </div>

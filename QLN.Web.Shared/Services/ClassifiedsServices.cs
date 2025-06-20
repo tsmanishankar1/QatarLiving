@@ -44,5 +44,19 @@ namespace QLN.Web.Shared.Services
                 return responses;
             }
         }
+          /// <inheritdoc />
+        public async Task<HttpResponseMessage?> GetClassifiedsByIdAsync(string ClassifiedId)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"/api/classified/{ClassifiedId}");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("GetClassifiedsByIdAsync" + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
     }
 }
