@@ -10,7 +10,7 @@ namespace QLN.ContentBO.WebUI.Components.News
     public class AddArticleBase : ComponentBase
     {
         [Inject] INewsService newsService { get; set; }
-        [Inject] ILogger Logger { get; set; }
+        [Inject] ILogger<AddArticleBase> Logger { get; set; }
         [Inject] IJSRuntime JS { get; set; }
         protected V2ContentNewsDto article { get; set; } = new();
 
