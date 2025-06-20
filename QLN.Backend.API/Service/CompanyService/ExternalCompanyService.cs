@@ -1,6 +1,6 @@
 ﻿using Dapr.Client;
-using Google.Protobuf;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
@@ -69,19 +69,26 @@ namespace QLN.Backend.API.Service.CompanyService
 
                 if (response.StatusCode == HttpStatusCode.BadRequest)
                 {
-                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cancellationToken);
-                    throw new InvalidDataException();
-                }
+                    var errorJson = await response.Content.ReadAsStringAsync();
 
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+
+                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cancellationToken);
+                    throw new InvalidDataException(errorMessage);
+                }
                 response.EnsureSuccessStatusCode();
 
                 var rawJson = await response.Content.ReadAsStringAsync();
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
-            }
-            catch (ArgumentException ex)
-            {
-                await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cancellationToken);
-                throw new InvalidDataException(ex.Message, ex);
             }
             catch (Exception ex)
             {
@@ -177,18 +184,26 @@ namespace QLN.Backend.API.Service.CompanyService
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
                 if (response.StatusCode == HttpStatusCode.BadRequest)
                 {
+                    var errorJson = await response.Content.ReadAsStringAsync();
+
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+
                     await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cancellationToken);
-                    throw new InvalidDataException();
+                    throw new InvalidDataException(errorMessage);
                 }
                 response.EnsureSuccessStatusCode();
 
                 var rawJson = await response.Content.ReadAsStringAsync();
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
-            }
-            catch (ArgumentException ex)
-            {
-                await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cancellationToken);
-                throw new InvalidDataException(ex.Message, ex);
             }
             catch (Exception ex)
             {
@@ -384,6 +399,5 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-
     }
 }

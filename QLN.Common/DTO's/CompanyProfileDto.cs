@@ -1,5 +1,5 @@
 ﻿using QLN.Common.DTO_s;
-using QLN.Common.Infrastructure.Service;
+using QLN.Common.Infrastructure.Service.TimeSpanConverter;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 

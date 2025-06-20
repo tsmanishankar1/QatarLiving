@@ -95,7 +95,7 @@ namespace QLN.Company.MS.Service
             if (string.IsNullOrWhiteSpace(dto.PhoneNumber))
                 throw new ArgumentException("Phone number is required.");
 
-            var phoneRegex = new Regex(@"^(\+?\d{1,3})?[ ]?\d{6,15}$");
+            var phoneRegex = new Regex(@"^\d{6,15}$");
 
             if (!phoneRegex.IsMatch(dto.PhoneNumber))
                 throw new ArgumentException("Invalid phone number format.");
@@ -209,9 +209,9 @@ namespace QLN.Company.MS.Service
 
                 return "Company Profile Updated Successfully";
             }
-            catch (ArgumentException)
+            catch (ArgumentException ex)
             {
-                throw new InvalidDataException();
+                throw new InvalidDataException(ex.Message, ex);
             }
             catch (Exception ex)
             {
