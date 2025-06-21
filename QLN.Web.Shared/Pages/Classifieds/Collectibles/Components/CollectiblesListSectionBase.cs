@@ -11,7 +11,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Collectibles.Components
     {
         [Parameter] public string ViewMode { get; set; } = "grid";
         [Parameter] public bool Loading { get; set; } = false;
-
+       [Inject] NavigationManager NavigationManager { get; set; }
        [Parameter] public List<ClassifiedsIndex> Items { get; set; } = new();
 
         protected IEnumerable<ClassifiedsIndex> PagedItems =>
@@ -50,7 +50,11 @@ namespace QLN.Web.Shared.Pages.Classifieds.Collectibles.Components
             }
         }
 
-        protected void UpdateBreadcrumb(string uri)
+       protected void OnClickCardItem(ClassifiedsIndex item)
+        {
+            NavigationManager.NavigateTo($"/qln/classifieds/collectibles/details/{item.Id}");
+        }
+        protected override void OnInitialized()
         {
             breadcrumbItems = new()
             {
@@ -58,12 +62,25 @@ namespace QLN.Web.Shared.Pages.Classifieds.Collectibles.Components
                 new() { Label = "Collectibles", Url = "/qln/classifieds/collectibles", IsLast = true }
             };
         }
+    protected async Task OnSortChanged(string newSortId)
+    {
+        selectedSort = newSortId;
+        currentPage = 1;
+        // Optionally do sorting logic
+        await InvokeAsync(StateHasChanged);
+    }
 
-        protected List<KeyValuePair<string, string>> sortOptions = new()
-        {
-            new("default", "Default"),
-            new("priceLow", "Price: Low to High"),
-            new("priceHigh", "Price: High to Low")
-        };
+       public class SortOption
+{
+    public string Id { get; set; }
+    public string Label { get; set; }
+}
+protected List<SortOption> sortOptions = new()
+{
+    new() { Id = "default", Label = "Default" },
+    new() { Id = "priceLow", Label = "Price: Low to High" },
+    new() { Id = "priceHigh", Label = "Price: High to Low" }
+};
+
     }
 }

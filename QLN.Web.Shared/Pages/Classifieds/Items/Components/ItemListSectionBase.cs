@@ -62,13 +62,13 @@ namespace QLN.Web.Shared.Pages.Classifieds.Items.Components
                 new() { Label = "Items", Url = "/qln/classifieds/items", IsLast = true }
             };
         }
-protected async Task OnSortChanged(string newSortId)
-{
-    selectedSort = newSortId;
-    currentPage = 1;
-    // Optionally do sorting logic
-    await InvokeAsync(StateHasChanged);
-}
+    protected async Task OnSortChanged(string newSortId)
+    {
+        selectedSort = newSortId;
+        currentPage = 1;
+        // Optionally do sorting logic
+        await InvokeAsync(StateHasChanged);
+    }
 
        public class SortOption
 {
