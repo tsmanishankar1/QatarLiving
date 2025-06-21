@@ -12,9 +12,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
         private const string DailyTimerName = "paytopublish-daily-timer";
         private const string SpecificTimerName = "paytopublish-specific-timer";
         private readonly ILogger<PayToPublishPaymentActor> _logger;
-       
-        // Configuration for daily check time (make this configurable via appsettings)
-        private static readonly TimeSpan DailyCheckTime = new TimeSpan(13, 03, 0); 
+        private static readonly TimeSpan DailyCheckTime = new TimeSpan(15, 31, 0); 
         private static readonly string TimeZoneId = "India Standard Time";
 
         public PayToPublishPaymentActor(ActorHost host, ILogger<PayToPublishPaymentActor> logger) : base(host)
@@ -180,12 +178,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
             await StateManager.SaveStateAsync();
 
             _logger.LogInformation("[PaymentActor {ActorId}] Marked payment as expired for user {UserId}", Id, paymentData.UserId);
-
-            // Handle the expiry through service
-            //await HandleExpiredPayToPublishAsync(paymentData.UserId, paymentData.Id);
-
-            // Clean up all timers since subscription is expired
-            await CleanupTimersAsync();
 
             _logger.LogInformation("[PaymentActor {ActorId}] Cleaned up timers for expired pay-to-publish", Id);
         }

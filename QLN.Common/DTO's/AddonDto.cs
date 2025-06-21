@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using QLN.Common.Infrastructure.Subscriptions;
+using System.ComponentModel.DataAnnotations;
 using static QLN.Common.DTO_s.AddonDto;
 
 namespace QLN.Common.DTO_s
@@ -12,7 +13,7 @@ namespace QLN.Common.DTO_s
             public string QuantitiesName { get; set; }
             public DateTime CreatedAt { get; set; }
         }
-
+         
         public class Currency
         {
             [Key]
@@ -66,6 +67,8 @@ namespace QLN.Common.DTO_s
     {
         public Guid QuantityId { get; set; }
         public Guid CurrencyId { get; set; }
+
+        public Vertical VerticalTypeId { get; set; }
     }
     public class UnitCurrencyResponse
     {

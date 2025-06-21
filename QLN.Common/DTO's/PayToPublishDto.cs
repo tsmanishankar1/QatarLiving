@@ -15,6 +15,14 @@ namespace QLN.Common.DTO_s
         OneYear = 3,
         TwoMinutes=4
     }
+    public enum BasicPrice
+    {
+        [Display(Name="200")]
+        BasicPrice_200 = 1,
+        [Display(Name = "50")]
+        BasicPrice_50 = 2,
+       
+    }
 
     public class PayToPublishDto
     {
@@ -24,6 +32,7 @@ namespace QLN.Common.DTO_s
         public DurationType Duration { get; set; } // Updated
         public decimal Price { get; set; }
         public int TotalCount { get; set; }
+        public BasicPrice BasicPrice { get; set; }
         public string Currency { get; set; } = string.Empty;
         public Vertical VerticalTypeId { get; set; }
         public SubscriptionCategory CategoryId { get; set; }
@@ -41,7 +50,9 @@ namespace QLN.Common.DTO_s
         [Required]
         public string Description { get; set; } = string.Empty;
         [Required]
-        public DurationType DurationId { get; set; } 
+        public DurationType DurationId { get; set; }
+
+        public BasicPrice BasicPriceId { get; set; }
         [Required]
         public decimal Price { get; set; }
         [Required]
@@ -57,6 +68,8 @@ namespace QLN.Common.DTO_s
     {
         public Guid Id { get; set; }
         public string PlanName { get; set; } = string.Empty;
+        public int BasicPriceId { get; set; }
+        public decimal BasicPriceName { get; set; }
         public decimal Price { get; set; }
         public string Currency { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -81,6 +94,8 @@ namespace QLN.Common.DTO_s
         public Guid Id { get; set; }
         public Guid PayToPublishId { get; set; }
         public int VerticalId { get; set; }
+        public decimal BasicPriceName { get; set; }
+        public int BasicPriceId { get; set; }
         public int CategoryId { get; set; }
         public Guid UserId { get; set; }
         public DateTime StartDate { get; set; }
@@ -102,6 +117,7 @@ namespace QLN.Common.DTO_s
 
         [Required]
         public int CategoryId { get; set; }
+        public int BasicPriceId { get; set; }
 
         [Required]
         public Guid PayToPublishId { get; set; }

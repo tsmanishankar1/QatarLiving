@@ -263,29 +263,40 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
     }
 
     public async Task<Guid> CreatePaymentAsync(
-        PaymentTransactionRequestDto request,
-        Guid userId,
-        CancellationToken cancellationToken = default)
+     PaymentTransactionRequestDto request,
+     Guid userId,
+     CancellationToken cancellationToken = default)
     {
         if (request == null) throw new ArgumentNullException(nameof(request));
 
-        // Check for existing active subscriptions
+        var id = Guid.NewGuid();
+        var startDate = DateTime.UtcNow;
+
+        // Check for existing records with same userId
+        DateTime? existingEndDate = null;
         foreach (var existingId in _paymentTransactionIds.Keys)
         {
             var existingActor = GetPaymentTransactionActorProxy(existingId);
             var existingPayment = await existingActor.GetDataAsync(cancellationToken);
 
-            if (existingPayment != null &&
-                existingPayment.SubscriptionId == request.SubscriptionId &&
-                existingPayment.UserId == userId &&
-                existingPayment.EndDate > DateTime.UtcNow)
+            if (existingPayment != null && existingPayment.UserId == userId)
             {
-                throw new InvalidOperationException("You already have an active subscription for this package.");
+                // Found existing record with same userId
+                // Use the latest end date from all existing records for this user
+                if (existingEndDate == null || existingPayment.EndDate > existingEndDate)
+                {
+                    existingEndDate = existingPayment.EndDate;
+                }
             }
         }
 
-        var id = Guid.NewGuid();
-        var startDate = DateTime.UtcNow;
+        // If existing record found, use its latest end date as new start date
+        if (existingEndDate.HasValue)
+        {
+            startDate = existingEndDate.Value;
+            _logger.LogInformation("Found existing records for userId {UserId}. New subscription will start on {StartDate}",
+                userId, startDate);
+        }
 
         var subscriptionActor = GetActorProxy(request.SubscriptionId);
         var subscriptionData = await subscriptionActor.GetDataAsync(cancellationToken);
@@ -322,10 +333,19 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             throw new Exception("Payment transaction creation failed.");
 
         _paymentTransactionIds.TryAdd(dto.Id, 0);
-        _logger.LogInformation("Payment transaction created with ID: {TransactionId}", dto.Id);
+        _logger.LogInformation("Payment transaction created with ID: {TransactionId}, Start Date: {StartDate}, End Date: {EndDate}",
+            dto.Id, dto.StartDate, dto.EndDate);
 
-        // Assign subscriber role immediately upon successful payment
-        await AssignSubscriberRoleAsync(userId);
+        // Only assign subscriber role immediately if the subscription starts now (no existing record)
+        if (!existingEndDate.HasValue)
+        {
+            await AssignSubscriberRoleAsync(userId);
+            _logger.LogInformation("Assigned subscriber role immediately for user {UserId} as this is their first subscription", userId);
+        }
+        else
+        {
+            _logger.LogInformation("Subscription extended for user {UserId}. Role assignment will continue from existing subscription", userId);
+        }
 
         return dto.Id;
     }

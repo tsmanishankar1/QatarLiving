@@ -5,6 +5,8 @@ using QLN.Common.Infrastructure.IService.IPayToPublicActor;
 using System.Collections.Concurrent;
 using QLN.Common.Infrastructure.IService.IPayToPublishService;
 using QLN.Common.Infrastructure.Subscriptions;
+using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 
 namespace QLN.Backend.API.Service.PayToPublishService
 {
@@ -34,6 +36,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 PlanName = request.PlanName,
                 TotalCount = request.TotalCount,
                 Description = request.Description,
+                BasicPrice=request.BasicPriceId,
                 Duration = request.DurationId,
                 Price = request.Price,
                 Currency = request.Currency,
@@ -83,6 +86,8 @@ namespace QLN.Backend.API.Service.PayToPublishService
                         PlanName = data.PlanName,
                         Price = data.Price,
                         Currency = data.Currency,
+                        BasicPriceId = (int)data.BasicPrice,
+                        BasicPriceName = decimal.Parse(GetDisplayName((BasicPrice)data.BasicPrice)),
                         Description = data.Description,
                         DurationId = (int)data.Duration,
                         DurationName = data.Duration.ToString()
@@ -99,7 +104,14 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 PayToPublish = resultList
             };
         }
-
+        public static string GetDisplayName(Enum value)
+        {
+            return value.GetType()
+                        .GetMember(value.ToString())
+                        .First()
+                        .GetCustomAttribute<DisplayAttribute>()?
+                        .Name ?? value.ToString();
+        }
 
         public async Task<List<PayToPublishResponseDto>> GetAllPlansAsync(CancellationToken cancellationToken = default)
         {
@@ -114,6 +126,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 if (data != null && data.StatusId != Status.Expired)
                 {
                     var durationEnum = (DurationType)data.Duration;
+                         var basicpriceEnum = (BasicPrice)data.BasicPrice;
 
                     plans.Add(new PayToPublishResponseDto
                     {
@@ -121,6 +134,8 @@ namespace QLN.Backend.API.Service.PayToPublishService
                         PlanName = data.PlanName,
                         Price = data.Price,
                         Currency = data.Currency,
+                        BasicPriceId = (int)basicpriceEnum,
+                        BasicPriceName = decimal.Parse(GetDisplayName(basicpriceEnum)),
                         Description = data.Description,
                         DurationId = (int)durationEnum,
                         DurationName = durationEnum.ToString()
@@ -146,6 +161,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
             existingData.Description = request.Description;
             existingData.Duration = request.DurationId;
             existingData.Price = request.Price;
+            existingData.BasicPrice= request.BasicPriceId;
             existingData.TotalCount = request.TotalCount;
             existingData.Currency = request.Currency;
             existingData.VerticalTypeId = request.VerticalTypeId;
@@ -191,6 +207,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 Id = id,
                 PayToPublishId = request.PayToPublishId,
                 VerticalId = request.VerticalId,
+                BasicPriceId=request.BasicPriceId,
                 CategoryId = request.CategoryId,
                 CardNumber = request.CardDetails.CardNumber,
                 ExpiryMonth = request.CardDetails.ExpiryMonth,
@@ -228,9 +245,6 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 _ => throw new ArgumentException($"Unsupported DurationType: {duration}")
             };
         }
-
-
-
         private IPaymentActor GetPaymentActorProxy(Guid id)
         {
             if (id == Guid.Empty)
