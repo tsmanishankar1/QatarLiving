@@ -692,6 +692,24 @@
             }
         }
     </script>
+<script>
+    window.blazorResize = {
+        callbacks: [],
+        registerResizeCallback: function (dotnetHelper) {
+            function resizeHandler() {
+                dotnetHelper.invokeMethodAsync('UpdateWindowWidth', window.innerWidth);
+            }
+
+            // Initial call
+            resizeHandler();
+
+            // Listen to resize
+            window.addEventListener("resize", resizeHandler);
+        },
+        getWidth: () => window.innerWidth
+    };
+</script>
+
 
 </body>
 

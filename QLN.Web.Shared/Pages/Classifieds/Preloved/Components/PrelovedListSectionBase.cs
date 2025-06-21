@@ -11,7 +11,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Preloved.Components
     {
         [Parameter] public string ViewMode { get; set; } = "grid";
         [Parameter] public bool Loading { get; set; } = false;
-
+       [Inject] NavigationManager NavigationManager { get; set; }
        [Parameter] public List<ClassifiedsIndex> Items { get; set; } = new();
 
         protected IEnumerable<ClassifiedsIndex> PagedItems =>
@@ -50,20 +50,37 @@ namespace QLN.Web.Shared.Pages.Classifieds.Preloved.Components
             }
         }
 
-        protected void UpdateBreadcrumb(string uri)
+       protected void OnClickCardItem(ClassifiedsIndex item)
+        {
+            NavigationManager.NavigateTo($"/qln/classifieds/Preloved/details/{item.Id}");
+        }
+        protected override void OnInitialized()
         {
             breadcrumbItems = new()
             {
-                new() { Label = "preloved", Url = "/qln/preloved" },
-                new() { Label = "Preloved", Url = "/qln/classifieds/preloved", IsLast = true }
+                new() { Label = "Classifieds", Url = "/qln/classifieds" },
+                new() { Label = "Preloved", Url = "/qln/preloved/items", IsLast = true }
             };
         }
-
-        protected List<KeyValuePair<string, string>> sortOptions = new()
+        protected async Task OnSortChanged(string newSortId)
         {
-            new("default", "Default"),
-            new("priceLow", "Price: Low to High"),
-            new("priceHigh", "Price: High to Low")
-        };
+            selectedSort = newSortId;
+            currentPage = 1;
+            // Optionally do sorting logic
+            await InvokeAsync(StateHasChanged);
+        }
+
+       public class SortOption
+{
+    public string Id { get; set; }
+    public string Label { get; set; }
+}
+protected List<SortOption> sortOptions = new()
+{
+    new() { Id = "default", Label = "Default" },
+    new() { Id = "priceLow", Label = "Price: Low to High" },
+    new() { Id = "priceHigh", Label = "Price: High to Low" }
+};
+
     }
 }

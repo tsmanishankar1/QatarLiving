@@ -9,7 +9,7 @@
             <span class="currency">QAR</span>
         </div>
 
-    <div class="button-group">
+    <div class="button-group responsive-buttons">
         <div class="button-wrapper">
             <button class="custom-btn call-btn"@onclick="ShowCall">
                 <img src="/qln-images/classifieds/call.svg" class="btn-icon" />
@@ -23,28 +23,53 @@
             </button>
         </div>
     </div>
- @if (ShowContactType == "call" && !string.IsNullOrEmpty(Item?.PhoneNumber))
-    {
-       <div class="contact-info-box">
-        <div class="icon-label-row">
-            <img src="/qln-images/classifieds/call.svg" class="contact-icon" />
-            <strong>Call:</strong>
+    @if (!IsMobile && ShowContactType == "call" && !string.IsNullOrEmpty(Item?.PhoneNumber))
+        {
+        <div class="contact-info-box">
+            <div class="icon-label-row">
+                <img src="/qln-images/classifieds/call.svg" class="contact-icon" />
+                <strong>Call:</strong>
+            </div>
+            <a href="tel:@Item.PhoneNumber" class="contact-link">@Item.PhoneNumber</a>
         </div>
-        <a href="tel:@Item.PhoneNumber" class="contact-link">@Item.PhoneNumber</a>
-    </div>
-    }
-    else if (ShowContactType == "whatsapp" && !string.IsNullOrEmpty(Item?.WhatsappNumber))
-    {
-         <div class="contact-info-box">
-        <div class="icon-label-row">
-            <img src="/qln-images/classifieds/whatsapp.svg" class="contact-icon" />
-            <strong>WhatsApp:</strong>
+        }
+        else if (!IsMobile && ShowContactType == "whatsapp" && !string.IsNullOrEmpty(Item?.WhatsappNumber))
+        {
+            <div class="contact-info-box">
+            <div class="icon-label-row">
+                <img src="/qln-images/classifieds/whatsapp.svg" class="contact-icon" />
+                <strong>WhatsApp:</strong>
+            </div>
+            <a href="@GetWhatsAppLink(Item.WhatsappNumber)"
+            target="_blank"
+            class="contact-link">@Item.WhatsappNumber</a>
         </div>
-        <a href="https://wa.me/@(Item.WhatsappNumber.Replace("+", "").Replace("-", ""))"
-           target="_blank"
-           class="contact-link">@Item.WhatsappNumber</a>
-    </div>
+        }
+        @if (IsMobile && ShowContactType != null)
+    {
+        <div class="bottom-sheet-overlay" @onclick="CloseContact">
+            <div class="bottom-sheet-item" @onclick:stopPropagation="true">
+                @if (ShowContactType == "call")
+                {
+                    <div class="contact-option">
+                        <img src="/qln-images/classifieds/call.svg" class="contact-icon" />
+                        <span>Call @Item?.PhoneNumber</span>
+                    </div>
+                    <a href="tel:@Item?.PhoneNumber" class="contact-action">Call</a>
+                }
+                else if (ShowContactType == "whatsapp")
+                {
+                    <div class="contact-option">
+                        <img src="/qln-images/classifieds/whatsapp.svg" class="contact-icon" />
+                        <span>WhatsApp @Item?.WhatsappNumber</span>
+                    </div>
+                    <a href="https://wa.me/@(Item.WhatsappNumber?.Replace("+", "").Replace("-", ""))" target="_blank" class="contact-action">Open WhatsApp</a>
+                }
+                <button class="cancel-btn" @onclick="CloseContact">Cancel</button>
+            </div>
+        </div>
     }
+
     <hr class="divider" />
     <div class="posted-by-container">
         <div class="posted-label">Posted by:</div>
@@ -64,32 +89,65 @@
     </div>
 </div>
 
+
 @code {
     [Parameter] public ClassifiedsIndex Item { get; set; } = new();
 
     private string? ShowContactType;
 
-    private void ShowCall()
+    private void ShowCall() => ShowContactType = "call";
+    private void ShowWhatsApp() => ShowContactType = "whatsapp";
+    private void CloseContact() => ShowContactType = null;
+   [Inject] IJSRuntime JSRuntime { get; set; } = default!;
+    private int WindowWidth;
+    private DotNetObjectReference<ItemInfo>? _dotNetRef;
+
+    private bool IsMobile => WindowWidth < 770;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        ShowContactType = "call";
+        if (firstRender)
+        {
+            WindowWidth = await JSRuntime.InvokeAsync<int>("blazorResize.getWidth");
+
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("blazorResize.registerResizeCallback", _dotNetRef);
+            StateHasChanged();
+        }
     }
 
-    private void ShowWhatsApp()
+    [JSInvokable]
+    public void UpdateWindowWidth(int width)
     {
-        ShowContactType = "whatsapp";
+        WindowWidth = width;
+        StateHasChanged();
+    }
+
+    private string GetWhatsAppLink(string number)
+    {
+        var clean = number.Replace("+", "").Replace("-", "").Replace(" ", "");
+        return IsMobile
+            ? $"https://wa.me/{clean}"
+            : $"https://web.whatsapp.com/send?phone={clean}";
+    }
+
+    public void Dispose()
+    {
+        _dotNetRef?.Dispose();
     }
 }
 <style>
     .custom-card {
         padding: 16px;
         border-radius: 6px;
-        width: 300px;
+        width: 100%;
+        max-width: 300px;
         display: flex;
         flex-direction: column;
         box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.05);
         background-color: var(--color-background);
         border: 1px solid var(--color-secondary-grey-container);
-        gap: 5px;
+        gap: 10px;
     }
 
     .status-text {
@@ -282,4 +340,85 @@
         opacity: 1;
     }
 }
+    @@media (max-width: 770px) {
+        .custom-card {
+            width: 100%;
+            max-width: 100%;
+        }
+        .responsive-buttons {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 16px;
+            background: white;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            gap: 16px;
+            box-sizing: border-box;
+            font-family: 'Public Sans', sans-serif;
+        }
+    }
+
+.bottom-sheet-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    z-index: 2000;
+}
+
+.bottom-sheet-item {
+    width: 100%;
+    background: white;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    padding: 16px;
+    box-sizing: border-box;
+    animation: slideUpFadeIn 0.3s ease-out;
+}
+
+.contact-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.contact-action {
+    display: block;
+    width: 100%;
+    background: var(--color-accent);
+    color: white;
+    padding: 8px;
+    font-weight: 500;
+    text-align: center;
+    border-radius: 8px;
+    font-weight: bold;
+    text-decoration: none;
+     font-family: 'Public Sans', sans-serif;
+}
+
+.cancel-btn {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+    background: transparent;
+    border: none;
+    padding: 8px;
+    font-size: 16px;
+    border-radius: 8px;
+    font-weight: 500;
+    color: var(--color-text-heading);
+    border: 1px solid var(--color-secondary-grey-container);
+    text-align: center;
+    font-weight: bold;
+    font-family: 'Public Sans', sans-serif;
+    cursor: pointer;
+}
+
 </style>

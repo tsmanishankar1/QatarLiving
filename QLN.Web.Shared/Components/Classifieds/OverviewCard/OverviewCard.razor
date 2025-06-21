@@ -1,0 +1,90 @@
+@using QLN.Common.DTO_s
+@using MudBlazor
+
+<div class="overview-card-main">
+    <h3 class="overview-heading">Overview</h3>
+
+    <MudGrid GutterSize="16px">
+        @foreach (var item in OverviewData.Where(x => !string.IsNullOrWhiteSpace(x.Label) && !x.Label.Contains("Unknown") && !x.Label.Contains("Not specified") && !x.Label.Contains("N/A") && !x.Label.Contains("No Warranty")))
+        {
+            <MudItem xs="6" sm="6" md="4">
+                <div class="overview-custom-mudpaper">
+                    <img src="@item.Icon" class="icon-img" />
+                    <h3 class="overview-text">@item.Label</h3>
+                </div>
+            </MudItem>
+        }
+    </MudGrid>
+</div>
+
+
+@code {
+    [Parameter] public ClassifiedsIndex Item { get; set; } = new();
+
+    private record OverviewItem(string Icon, string Label);
+    private List<OverviewItem> OverviewData = new();
+
+    protected override void OnParametersSet()
+    {
+        if (Item == null)
+        {
+            OverviewData.Clear();
+            return;
+        }
+
+        string? Format(string label, string? value, string fallback)
+            => string.IsNullOrWhiteSpace(value) ? fallback : $"{label}: {value}";
+
+        OverviewData = new()
+        {
+            new("/qln-images/classifieds/brand_icons.svg", Format("Brand", Item.Brand, "Not specified")),
+            new("/qln-images/classifieds/model_icons.svg", Format("Model", Item.Model, "Unknown")),
+            new("/qln-images/classifieds/colour_icon.svg", Format("Colour", Item.Colour, "N/A")),
+            new("/qln-images/classifieds/storage_icon.svg", Format("Storage", Item.Storage, "N/A")),
+            new("/qln-images/classifieds/battery_icons.svg", Item.BatteryPercentage > 0 ? $"Battery: {Item.BatteryPercentage}%" : "Unknown"),
+            new("/qln-images/classifieds/chip_icons.svg", Format("Chip", Item.Processor, "Not mentioned")),
+            new("/qln-images/classifieds/wireless_icon.svg", "Wireless Charging"), // Always shown
+            new("/qln-images/classifieds/warranty_icon.svg", Format("Warranty", Item.Coverage, "No Warranty")),
+        };
+    }
+}
+
+<style>
+    .overview-card-main{
+        width: 100%;
+        padding: 10px;
+        font-family: 'Public Sans', sans-serif ;
+    }
+    .overview-custom-mudpaper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        gap: 10px;
+        background: var(--color-background);
+        padding: 16px 10px;
+        border-radius: 8px;
+    }
+
+    .icon-img {
+        width: 24px;
+        height: 24px;
+        object-fit: cover;
+    }
+
+    .overview-text {
+        font-family: 'Public Sans', sans-serif ;
+        font-size: 14px ;
+        font-weight: 600 ;
+        color: var(--color-text-heading) ;
+        text-align: center;
+        margin: 0;
+    }
+
+    .overview-heading {
+        font-family: 'Public Sans', sans-serif ;
+        font-size: 25px ;
+        font-weight: 600 ;
+        color: var(--color-text-heading) ;
+    }
+</style>
