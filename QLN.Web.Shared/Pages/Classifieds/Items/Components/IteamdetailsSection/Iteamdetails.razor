@@ -24,10 +24,7 @@
         </div>
     </div>
     <MudItem xs="12" md="8">
-            <ItemDetailsImage ImagesUrl="Item" SelectedImageIndex="selectedImageIndex"
-                OnImageSelected="SelectImage" OnPrevSlide="PrevSlide" OnNextSlide="NextSlide" />
-
-
+            <ItemDetailsImage Item="Item" />
             <OverviewCard Item="Item" />
             <DescriptionBox />
         </MudItem>
@@ -83,6 +80,7 @@
         </MudItem>
     </MudGrid>
 
+
 @code {
     private bool isSaved = false;
     private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
@@ -109,31 +107,10 @@ new() { Label = "Items", Url = $"/classifieds/Items" },
 new() { Label = Item?.Title ?? "Details", Url = "/qln/classifieds/items/details", IsLast = true }
 };
     }
-    private void PrevSlide()
-    {
-        if (selectedImageIndex > 0)
-            selectedImageIndex--;
-    }
 
-    private void NextSlide()
-    {
-        if (selectedImageIndex < Item.Images.Count - 1)
-            selectedImageIndex++;
-    }
+   
 
-    private void SelectImage(int index)
-    {
-        Console.WriteLine($"Selected image index: {index}");
-        if (Item?.Images != null && index >= 0 && index < Item.Images.Count)
-        {
-            selectedImageIndex = index;
-        }
-    }
 
-    private bool IsFirstSlide => selectedImageIndex == 0;
-    private bool IsLastSlide => selectedImageIndex == Item.Images.Count - 1;
-
-    private string TrackOffset => $"translateX(-{selectedImageIndex * 144}px)";
     private void OnSaveClicked()
     {
         isSaved = !isSaved;

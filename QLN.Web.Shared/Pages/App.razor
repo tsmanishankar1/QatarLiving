@@ -117,6 +117,47 @@
             });
         };
     </script>
+ <script>
+    window.carouselUtils = {
+        checkOverflow: (viewportSelector, trackSelector) => {
+            const viewport = document.querySelector(viewportSelector);
+            const track = document.querySelector(trackSelector);
+            if (!viewport || !track) return { canScrollLeft: false, canScrollRight: false };
+
+            const canScrollLeft = viewport.scrollLeft > 0;
+            const canScrollRight = track.scrollWidth > viewport.clientWidth + viewport.scrollLeft;
+
+            return {
+                canScrollLeft,
+                canScrollRight
+            };
+        },
+
+        scrollLeft: (selector) => {
+            const el = document.querySelector(selector);
+            if (el) el.scrollBy({ left: -150, behavior: 'smooth' });
+        },
+
+        scrollRight: (selector) => {
+            const el = document.querySelector(selector);
+            if (el) el.scrollBy({ left: 150, behavior: 'smooth' });
+        },
+
+        scrollImageIntoView: (index) => {
+            const cards = document.querySelectorAll('.item-image-card');
+            if (cards[index]) {
+                cards[index].scrollIntoView({ behavior: 'smooth', inline: 'center' });
+            }
+        },
+
+        registerResizeHandler: (dotNetHelper) => {
+            window.addEventListener('resize', () => {
+                dotNetHelper.invokeMethodAsync('UpdateWindowWidth', window.innerWidth);
+            });
+        }
+    };
+</script>
+
     <script>
         function updateBannerImagesForScreen() {
             const isMobile = window.innerWidth <= 768;
@@ -243,6 +284,105 @@
 };
 </script>
     <script>
+    let mainSwiperInstance;
+    let thumbsSwiperInstance;
+
+    window.initializeSwiperGallery = (dotNetRef) => {
+        if (mainSwiperInstance) mainSwiperInstance.destroy(true, true);
+        if (thumbsSwiperInstance) thumbsSwiperInstance.destroy(true, true);
+
+        const thumbSlides = document.querySelectorAll('.swiper-thumbs .swiper-slide');
+        const thumbCount = thumbSlides.length;
+
+        const thumbsConfig = {
+            spaceBetween: 10,
+            navigation: {
+                nextEl: ".thumbs-next",
+                prevEl: ".thumbs-prev",
+            },
+            breakpoints: {
+                380: {
+                    slidesPerView: 2.6,
+                },
+                450: {
+                    slidesPerView: 3,
+                },
+                640: {
+                    slidesPerView: 4,
+                },
+                768: {
+                    slidesPerView: 5,
+                },
+                1024: {
+                    slidesPerView: 5,
+                }
+            }
+        };
+
+        // If 5 or fewer thumbnails, adjust behavior
+    if (thumbCount <= 5) {
+        thumbsConfig.slidesPerView = thumbCount;
+        thumbsConfig.loop = false;
+
+        // Add a helper class for small thumb sets
+        document.querySelector(".swiper-thumbs .swiper-wrapper").classList.add("few-thumbs");
+
+        document.querySelector(".thumbs-prev").style.display = "none";
+        document.querySelector(".thumbs-next").style.display = "none";
+    }
+    else {
+            thumbsConfig.slidesPerView = "auto";
+        }
+
+        // Initialize thumbnail swiper
+        thumbsSwiperInstance = new Swiper(".swiper-thumbs", thumbsConfig);
+
+        // Main Swiper
+        mainSwiperInstance = new Swiper(".swiper-main", {
+            spaceBetween: 10,
+            pagination: {
+                el: ".swiper-pagination",
+                clickable: true,
+                dynamicBullets: true,
+                dynamicMainBullets: 4,
+            },
+            thumbs: {
+                swiper: thumbsSwiperInstance,
+            },
+            on: {
+                slideChange: function () {
+                    dotNetRef.invokeMethodAsync("UpdateActiveIndex", this.realIndex);
+                }
+            }
+        });
+
+        // Click on thumbnail directly
+        thumbsSwiperInstance.on('click', function (swiper) {
+            if (typeof swiper.clickedIndex !== 'undefined') {
+                mainSwiperInstance.slideTo(swiper.clickedIndex);
+            }
+        });
+
+        // Arrow controls (manually advance main swiper)
+        document.querySelector(".thumbs-next").addEventListener("click", () => {
+            const currentIndex = mainSwiperInstance.realIndex;
+            const nextIndex = Math.min(currentIndex + 1, mainSwiperInstance.slides.length - 1);
+            mainSwiperInstance.slideTo(nextIndex);
+        });
+
+        document.querySelector(".thumbs-prev").addEventListener("click", () => {
+            const currentIndex = mainSwiperInstance.realIndex;
+            const prevIndex = Math.max(currentIndex - 1, 0);
+            mainSwiperInstance.slideTo(prevIndex);
+        });
+        window.goToSlide = (index) => {
+        if (mainSwiperInstance && typeof index === 'number') {
+            mainSwiperInstance.slideTo(index);
+        }
+    };
+    };
+
+
         let seasonalSwiperInstance;
         window.initSeasonalSwiper = () => {
             if (seasonalSwiperInstance) {
