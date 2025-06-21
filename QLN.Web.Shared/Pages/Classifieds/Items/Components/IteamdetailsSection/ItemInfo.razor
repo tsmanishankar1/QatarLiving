@@ -1,0 +1,285 @@
+@using QLN.Common.DTO_s
+@using MudBlazor
+
+<div  class="custom-card">
+    <span class="status-text">@Item?.Status</span>
+    <h3  class="title-text">@Item?.Title</h3>
+       <div class="item-detail-price-text">
+            <span>@Item.Price</span>
+            <span class="currency">QAR</span>
+        </div>
+
+    <div class="button-group">
+        <div class="button-wrapper">
+            <button class="custom-btn call-btn"@onclick="ShowCall">
+                <img src="/qln-images/classifieds/call.svg" class="btn-icon" />
+                Call
+            </button>
+        </div>
+        <div class="button-wrapper">
+            <button class="custom-btn whatsapp-btn" @onclick="ShowWhatsApp">
+                <img src="/qln-images/classifieds/whatsapp.svg" class="btn-icon" />
+                WhatsApp
+            </button>
+        </div>
+    </div>
+ @if (ShowContactType == "call" && !string.IsNullOrEmpty(Item?.PhoneNumber))
+    {
+       <div class="contact-info-box">
+        <div class="icon-label-row">
+            <img src="/qln-images/classifieds/call.svg" class="contact-icon" />
+            <strong>Call:</strong>
+        </div>
+        <a href="tel:@Item.PhoneNumber" class="contact-link">@Item.PhoneNumber</a>
+    </div>
+    }
+    else if (ShowContactType == "whatsapp" && !string.IsNullOrEmpty(Item?.WhatsappNumber))
+    {
+         <div class="contact-info-box">
+        <div class="icon-label-row">
+            <img src="/qln-images/classifieds/whatsapp.svg" class="contact-icon" />
+            <strong>WhatsApp:</strong>
+        </div>
+        <a href="https://wa.me/@(Item.WhatsappNumber.Replace("+", "").Replace("-", ""))"
+           target="_blank"
+           class="contact-link">@Item.WhatsappNumber</a>
+    </div>
+    }
+    <hr class="divider" />
+    <div class="posted-by-container">
+        <div class="posted-label">Posted by:</div>
+        <div class="posted-details">
+            <div class="user-info">
+                <img src="/qln-images/classifieds/personIcon.svg" class="person-icon" />
+                <div class="user-text">
+                    <div class="username">Rashid_qatar</div>
+                    <div class="updated-time">Updated 1 hour ago</div>
+                </div>
+            </div>
+            <div class="location-info">
+                <img src="/qln-images/classifieds/location.svg" class="location-icon" />
+                <span class="location-text">@Item?.Location</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public ClassifiedsIndex Item { get; set; } = new();
+
+    private string? ShowContactType;
+
+    private void ShowCall()
+    {
+        ShowContactType = "call";
+    }
+
+    private void ShowWhatsApp()
+    {
+        ShowContactType = "whatsapp";
+    }
+}
+<style>
+    .custom-card {
+        padding: 16px;
+        border-radius: 6px;
+        width: 300px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.05);
+        background-color: var(--color-background);
+        border: 1px solid var(--color-secondary-grey-container);
+        gap: 5px;
+    }
+
+    .status-text {
+        display: inline-block;
+        color: var(--color-category-text);
+        font-weight: 500;
+        font-size: 12px;
+        padding: 2px 6px;
+        border-radius: 3px;
+        width: auto;
+        max-width: none;
+        border: 1px solid #E8F2FE;
+        white-space: nowrap;
+    }
+
+    .title-text {
+        font-size: 18px ;
+        font-weight: 500;
+        color: var(--color-text-heading);
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .item-detail-price-text {
+        margin: 0;
+        font-size: 25px;
+        font-weight: 600;
+        color: var(--color-text-heading);
+    }
+
+    .item-detail-price-text .currency {
+        font-size: 14px;
+        font-weight: 500;
+        margin-left: 2px;
+        color: var(--color-text-heading);
+    }
+
+    .button-group {
+        display: flex;
+        gap: 12px;
+    }
+
+    .button-wrapper {
+        flex: 1;
+    }
+
+    .custom-btn {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px solid transparent;
+        background-color: transparent;
+        box-sizing: border-box;
+    }
+
+    .call-btn {
+        border-color: var(--color-accent);
+        color: var(--color-accent);
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .whatsapp-btn {
+        border-color: var(--color-whatsapp-outline);
+        color: var(--color-whatsapp-outline);
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .btn-icon {
+        width: 20px;
+        height: 20px;
+    }
+   .contact-info-box {
+        background-color: #f9f9f9;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        padding: 12px;
+        margin-top: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        animation: slideUpFadeIn 0.3s ease-out;
+
+    }
+
+    .icon-label-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 16px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    .contact-icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    .contact-link {
+        font-size: 16px;
+        color: #00457C;
+        font-weight: 500;
+        text-decoration: none;
+    }
+
+    .divider {
+        border: none;
+        border-top: 1px solid #E0E0E0;
+        margin: 8px 0;
+    }
+
+    .posted-by-container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .posted-label {
+        font-weight: 500;
+        color: var(--color-text-heading);
+        font-size: 12px !important;
+    }
+
+    .posted-details {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 8px;
+    }
+
+    .person-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .username {
+        color: #007bff;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .updated-time {
+        font-weight: 400;
+        color: var(--color-text-description);
+        font-size: 11px;
+    }
+
+    .location-info {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .location-icon {
+        width: 14px;
+        height: 14px;
+    }
+
+    .location-text {
+        color: var(--color-accent);
+        font-weight: 500;
+        font-size: 14px !important;
+    }
+    @@keyframes slideUpFadeIn {
+    0% {
+        transform: translateY(10px);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+</style>
