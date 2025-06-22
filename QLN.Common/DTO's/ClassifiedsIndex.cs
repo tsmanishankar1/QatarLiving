@@ -18,9 +18,6 @@ namespace QLN.Common.DTO_s
         public string? SubVertical { get; set; }
 
         [SimpleField(IsFilterable = true)]
-        public string? UserId { get; set; }
-
-        [SimpleField(IsFilterable = true)]
         public string? SubscriptionId { get; set; }
 
         [SearchableField(IsFilterable = true, IsFacetable = true)]
@@ -233,6 +230,17 @@ namespace QLN.Common.DTO_s
 
         [SearchableField(IsFilterable = true)]
         public string? StoreName { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public string StoreLogoUrl { get; set; } = string.Empty;
+
+        // --- PUBLISHER DETAILS ---
+        [SimpleField(IsFilterable = true)]
+        public string? UserId { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? UserName { get; set; }
+
         public class ImageInfo
         {
             public string AdImageFileNames { get; set; }
