@@ -4,7 +4,7 @@ namespace QLN.Common.DTO_s
 {
     public class BaseCompanyDto
     {
-        public Guid Id { get; set; }
+        public Guid? Id { get; set; }
         [Required]
         public string BusinessName { get; set; } = string.Empty;
         [Required, Phone]

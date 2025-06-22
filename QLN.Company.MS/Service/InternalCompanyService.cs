@@ -30,9 +30,9 @@ namespace QLN.Company.MS.Service
                 foreach (var key in keys)
                 {
                     var existing = await _dapr.GetStateAsync<CompanyProfileDto>(ConstantValues.CompanyStoreName, key, cancellationToken : cancellationToken);
-                    if (existing != null && existing.UserId == dto.UserId)
+                    if (existing != null && existing.UserId == dto.UserId && existing.SubVertical == dto.SubVertical)
                     {
-                        throw new InvalidDataException("A company profile already exists for this user.");
+                        throw new InvalidDataException("A company profile already exists for this user under the same subvertical.");
                     }
                 }
                 var id = Guid.NewGuid();
@@ -74,14 +74,14 @@ namespace QLN.Company.MS.Service
             if (!Enum.IsDefined(typeof(CompanySize), dto.CompanySize))
                 throw new ArgumentException($"Invalid CompanySize: {dto.CompanySize}");
 
-            if (!Enum.IsDefined(typeof(VerticalType), dto.VerticalId))
-                throw new ArgumentException($"Invalid VerticalType: {dto.VerticalId}");
+            if (!Enum.IsDefined(typeof(VerticalType), dto.Vertical))
+                throw new ArgumentException($"Invalid VerticalType: {dto.Vertical}");
 
             if (dto.Status.HasValue && !Enum.IsDefined(typeof(CompanyStatus), dto.Status.Value))
                 throw new ArgumentException($"Invalid CompanyStatus: {dto.Status.Value}");
 
-            if (dto.CategoryId.HasValue && !Enum.IsDefined(typeof(CompanyCategory), dto.CategoryId.Value))
-                throw new ArgumentException($"Invalid CompanyCategory: {dto.CategoryId.Value}");
+            if (dto.SubVertical.HasValue && !Enum.IsDefined(typeof(SubVertical), dto.SubVertical.Value))
+                throw new ArgumentException($"Invalid CompanyCategory: {dto.SubVertical.Value}");
 
             if (dto.NatureOfBusiness == null || dto.NatureOfBusiness.Count == 0)
                 throw new ArgumentException("NatureOfBusiness list is required and cannot be empty.");
@@ -112,8 +112,8 @@ namespace QLN.Company.MS.Service
             return new CompanyProfileDto
             {
                 Id = id,
-                VerticalId = dto.VerticalId,
-                CategoryId = dto.CategoryId,
+                Vertical = dto.Vertical,
+                SubVertical = dto.SubVertical,
                 UserId = dto.UserId,
                 BusinessName = dto.BusinessName,
                 Country = dto.Country,
@@ -141,7 +141,7 @@ namespace QLN.Company.MS.Service
                 CRDocument = dto.CRDocument,
                 IsVerified = dto.IsVerified,
                 Status = dto.Status,
-                CreatedBy = dto.UserId,
+                CreatedBy = (Guid)dto.UserId,
                 CreatedUtc = DateTime.UtcNow,
                 IsActive = true
             };
@@ -192,7 +192,7 @@ namespace QLN.Company.MS.Service
                 var existing = await _dapr.GetStateAsync<CompanyProfileDto>(ConstantValues.CompanyStoreName, dto.Id.ToString(), cancellationToken: cancellationToken);
                 if (existing == null)
                     throw new KeyNotFoundException($"Company with ID {dto.Id} was not found.");
-                if ((int)(existing.CategoryId ?? 0) == (int)CompanyCategory.Stores)
+                if ((int)(existing.SubVertical ?? 0) == (int)SubVertical.Stores)
                 {
                     throw new InvalidOperationException("Editing companies in the 'Stores' category is not allowed.");
                 }
@@ -224,8 +224,8 @@ namespace QLN.Company.MS.Service
             return new CompanyProfileDto
             {
                 Id = dto.Id,
-                VerticalId = dto.VerticalId,
-                CategoryId = dto.CategoryId,
+                Vertical = dto.Vertical,
+                SubVertical = dto.SubVertical,
                 UserId = dto.UserId,
                 BusinessName = dto.BusinessName,
                 Country = dto.Country,
@@ -265,12 +265,14 @@ namespace QLN.Company.MS.Service
             try
             {
                 var entity = await _dapr.GetStateAsync<CompanyProfileDto>(ConstantValues.CompanyStoreName, id.ToString(), cancellationToken: cancellationToken);
-
                 if (entity == null)
                 {
                     throw new KeyNotFoundException($"Company with ID {id} not found.");
                 }
-
+                if (!entity.IsActive)
+                {
+                    throw new InvalidDataException("Company already soft deleted.");
+                }
                 entity.IsActive = false;
 
                 await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, id.ToString(), entity, cancellationToken: cancellationToken);
@@ -303,8 +305,8 @@ namespace QLN.Company.MS.Service
                 var allCompanies = await GetAllCompanies(cancellationToken);
                 var companies = allCompanies
                     .Where(c => c.IsActive)
-                    .Where(c => Enum.IsDefined(typeof(VerticalType), c.VerticalId) &&
-                                (VerticalType)c.VerticalId == vertical)
+                    .Where(c => Enum.IsDefined(typeof(VerticalType), c.Vertical) &&
+                                (VerticalType)c.Vertical == vertical)
                     .ToList();
 
                 var list = new List<CompanyProfileCompletionStatusDto>();
@@ -329,7 +331,7 @@ namespace QLN.Company.MS.Service
                         { "UserDesignation", c => !string.IsNullOrWhiteSpace(c.UserDesignation) },
                         { "BusinessDescription", c => !string.IsNullOrWhiteSpace(c.BusinessDescription) },
                         { "CRNumber", c => c.CRNumber > 0 },
-                        { "VerticalId", c => c.VerticalId > 0 },
+                        { "VerticalId", c => c.Vertical > 0 },
                         { "CRDocument", c => !string.IsNullOrWhiteSpace(c.CRDocument) },
                     };
 
@@ -434,12 +436,12 @@ namespace QLN.Company.MS.Service
 
                 var filtered = allCompanies
                     .Where(c => c.IsActive)
-                    .Where(c => c.IsVerified == isVerified && c.VerticalId == vertical)
+                    .Where(c => c.IsVerified == isVerified && c.Vertical == vertical)
                     .Select(c => new CompanyProfileVerificationStatusDto
                     {
                         CompanyId = c.Id,
                         BusinessName = c.BusinessName,
-                        VerticalId = c.VerticalId,
+                        Vertical = c.Vertical,
                         IsVerified = c.IsVerified,
                         Status = c.Status
                     })
