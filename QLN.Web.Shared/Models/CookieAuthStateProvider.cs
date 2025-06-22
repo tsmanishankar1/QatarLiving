@@ -133,6 +133,8 @@ namespace QLN.Web.Shared.Models
                             // this should only happen even if deserialization is successful, else anyone you pass this
                             // to may also fail
                             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", jwt);
+
+                            // this appears to only work if we have a common httpclient
                         }
                         else
                         {

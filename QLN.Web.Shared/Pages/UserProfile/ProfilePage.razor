@@ -239,7 +239,7 @@
             try
             {
                  @* _authToken = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "authToken"); *@
-                user = await Api.GetAsyncWithToken<QLN.Web.Shared.Models.UserProfile>("auth/manage/info");
+            user = await Api.GetAsyncWithToken<QLN.Web.Shared.Models.UserProfile>("auth/manage/info", _authToken);
             }
             catch (HttpRequestException ex)
             {

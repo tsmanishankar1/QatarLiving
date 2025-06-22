@@ -171,6 +171,8 @@ builder.Services.AddSingleton<DaprClient>(_ =>
     return new DaprClientBuilder()
         .Build();
 });
+
+builder.Services.AddDaprClient();
 #endregion
 builder.Services.AddActors(options =>
 {
@@ -187,7 +189,8 @@ builder.Services.AddResponseCompression(options =>
         options.EnableForHttps = true;
         options.MimeTypes = new[] { "text/css", "application/javascript", "text/html", "application/json" };
     });
-builder.Services.AddDaprClient();
+
+
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
 builder.Services.SearchServicesConfiguration(builder.Configuration);
@@ -200,6 +203,7 @@ builder.Services.EventConfiguration(builder.Configuration);
 builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
 builder.Services.ContentConfiguration(builder.Configuration);
+
 var app = builder.Build();
 
 app.UseResponseCaching();
@@ -269,6 +273,21 @@ app.MapGet("/testauth", (HttpContext context) =>
     return Results.Ok(new { Message = "Authenticated", Claims = claims });
     })
     .WithName("TestAuth")
+    .WithTags("AAAAuthentication")
+    .WithDescription("Test authentication endpoint to verify JWT token claims.")
+    .RequireAuthorization();
+
+app.MapPost("/testauth", (HttpContext context) =>
+{
+    var user = context.User;
+    if (user == null || !user.Identity.IsAuthenticated)
+    {
+        return Results.Unauthorized();
+    }
+    var claims = user.Claims.Select(c => new { c.Type, c.Value }).ToList();
+    return Results.Ok(new { Message = "Authenticated", Claims = claims });
+})
+    .WithName("TestPostAuth")
     .WithTags("AAAAuthentication")
     .WithDescription("Test authentication endpoint to verify JWT token claims.")
     .RequireAuthorization();
