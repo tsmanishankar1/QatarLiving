@@ -12,7 +12,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
 
 public static class PayToPublishEndpoints
 {
-   public static RouteGroupBuilder MapCreatePayToPublishEndpoints(this RouteGroupBuilder group)
+    public static RouteGroupBuilder MapCreatePayToPublishEndpoints(this RouteGroupBuilder group)
     {
         group.MapPost("/add", async Task<Results<
             Ok<string>,
@@ -57,6 +57,7 @@ public static class PayToPublishEndpoints
 
         return group;
     }
+
     public static RouteGroupBuilder MapGetPayToPublishEndpoints(this RouteGroupBuilder group)
     {
         group.MapGet("/getpaytopublish", async Task<IResult> (
@@ -82,18 +83,17 @@ public static class PayToPublishEndpoints
             {
                 return TypedResults.Problem("Internal Server Error", ex.Message, StatusCodes.Status500InternalServerError);
             }
-           })
+        })
         .WithName("GetPayToPublish")
         .WithTags("PayToPublish")
         .WithSummary("Get a PayToPublish by Vertical and Category")
-        .WithDescription("Get a new PayToPublish with the provided details.")
-        .Produces<string>(StatusCodes.Status200OK)
-        .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+        .WithDescription("Get a PayToPublish with the provided details.")
+        .Produces<PayToPublishListResponseDto>(StatusCodes.Status200OK)
+        .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         return group;
     }
-
 
     public static RouteGroupBuilder MapGetAllPayToPublishEndpoints(this RouteGroupBuilder group)
     {
@@ -114,13 +114,13 @@ public static class PayToPublishEndpoints
         .WithName("GetAllPayToPublishPlans")
         .WithTags("PayToPublish")
         .WithSummary("Get All PayToPublish Details")
-        .WithDescription("Get All  new PayToPublish with the provided details.")
-        .Produces<string>(StatusCodes.Status200OK)
-        .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+        .WithDescription("Get all PayToPublish plans.")
+        .Produces<List<PayToPublishResponseDto>>(StatusCodes.Status200OK)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         return group;
     }
+
     public static RouteGroupBuilder MapUpatePayToPublishEndpoints(this RouteGroupBuilder group)
     {
         group.MapPut("/update", async Task<Results<
@@ -156,16 +156,18 @@ public static class PayToPublishEndpoints
                 return TypedResults.Problem("Internal Server Error", ex.Message, StatusCodes.Status500InternalServerError);
             }
         })
-       .WithName("UpdatePayToPublishPlans")
+        .WithName("UpdatePayToPublishPlans")
         .WithTags("PayToPublish")
-        .WithSummary("Update a new PayToPublish")
-        .WithDescription("Update a new PayToPublish with the provided details.")
+        .WithSummary("Update a PayToPublish")
+        .WithDescription("Update a PayToPublish with the provided details.")
         .Produces<string>(StatusCodes.Status200OK)
+        .Produces<string>(StatusCodes.Status404NotFound)
         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         return group;
     }
+
     public static RouteGroupBuilder MapDeletePayToPublishEndpoints(this RouteGroupBuilder group)
     {
         group.MapDelete("/delete", async Task<IResult> (
@@ -188,14 +190,15 @@ public static class PayToPublishEndpoints
         })
         .WithName("DeletePayToPublishPlan")
         .WithTags("PayToPublish")
-        .WithSummary("Delete  a PayToPublish ")
-        .WithDescription("Deletes a new PayToPublish with the provided details.")
+        .WithSummary("Delete a PayToPublish")
+        .WithDescription("Deletes a PayToPublish with the provided details.")
         .Produces<string>(StatusCodes.Status200OK)
-        .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+        .Produces<string>(StatusCodes.Status404NotFound)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         return group;
     }
+
     public static RouteGroupBuilder MapGetPayToPublishPaymentsByUserEndpoint(this RouteGroupBuilder group)
     {
         group.MapGet("/paytopublish/user", async (
@@ -226,17 +229,16 @@ public static class PayToPublishEndpoints
                 );
             }
         })
+        .RequireAuthorization()
         .WithName("GetPayToPublishPaymentsByUser")
         .WithTags("PayToPublish")
         .WithSummary("Get PayToPublish payments by user")
-        .Produces(StatusCodes.Status200OK)
+        .Produces<List<PaymentDto>>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status401Unauthorized)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         return group;
     }
-
-    // 4. Alternative endpoint with explicit userId parameter:
 
     public static RouteGroupBuilder MapGetPayToPublishPaymentsByUserIdEndpoint(this RouteGroupBuilder group)
     {
@@ -262,10 +264,87 @@ public static class PayToPublishEndpoints
         .WithName("GetPayToPublishPaymentsByUserId")
         .WithTags("PayToPublish")
         .WithSummary("Get PayToPublish payments by userId")
-        .Produces(StatusCodes.Status200OK)
+        .Produces<List<PaymentDto>>(StatusCodes.Status200OK)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         return group;
     }
 
+    public static RouteGroupBuilder MapCreateBasicPriceEndpoints(this RouteGroupBuilder group)
+    {
+        group.MapPost("/basicprice/add", async Task<Results<
+            Ok<string>,
+            BadRequest<ProblemDetails>,
+            ProblemHttpResult>>
+        (
+            BasicPriceRequestDto request,
+            IPayToPublishService service,
+            CancellationToken cancellationToken = default) =>
+        {
+            try
+            {
+                await service.CreateBasicPriceAsync(request, cancellationToken);
+                return TypedResults.Ok("Basic price created successfully.");
+            }
+            catch (InvalidDataException ex)
+            {
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "Invalid Data",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem(
+                    title: "Internal Server Error",
+                    detail: ex.Message,
+                    statusCode: StatusCodes.Status500InternalServerError
+                );
+            }
+        })
+        .RequireAuthorization(policy => policy.RequireRole("Admin"))
+        .WithName("CreateBasicPrice")
+        .WithTags("PayToPublish")
+        .WithSummary("Create a new Basic Price")
+        .WithDescription("Creates a new basic price configuration with the provided details.")
+        .Produces<string>(StatusCodes.Status200OK)
+        .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        group.MapGet("/basicprice/getbasicprice", async Task<IResult> (
+        [FromQuery] int verticalTypeId,
+        [FromQuery] int categoryId,
+        [FromServices] IPayToPublishService service,
+        CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var result = await service.GetBasicPricesByVerticalAndCategoryAsync(verticalTypeId, categoryId, cancellationToken);
+                if (result == null || !result.Any())
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = $"Basic price with VerticalTypeId '{verticalTypeId}' and CategoryId '{categoryId}' not found.",
+                        Status = StatusCodes.Status404NotFound
+                    });
+
+                return TypedResults.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Internal Server Error", ex.Message, StatusCodes.Status500InternalServerError);
+            }
+        })
+        .WithName("GetBasicPriceByVerticalAndCategory")
+        .WithTags("PayToPublish")
+        .WithSummary("Get Basic Prices by Vertical and Category")
+        .WithDescription("Retrieves basic prices filtered by vertical type and category.")
+        .Produces<List<BasicPriceResponseDto>>(StatusCodes.Status200OK)
+        .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        return group;
+    }
 }

@@ -32,14 +32,41 @@ namespace QLN.Common.DTO_s
         public DurationType Duration { get; set; } // Updated
         public decimal Price { get; set; }
         public int TotalCount { get; set; }
-        public BasicPrice BasicPrice { get; set; }
+    // public BasicPrice BasicPriceId { get; set; }
         public string Currency { get; set; } = string.Empty;
         public Vertical VerticalTypeId { get; set; }
         public SubscriptionCategory CategoryId { get; set; }
         public Status StatusId { get; set; }
         public DateTime LastUpdated { get; set; }
     }
+    public class BasicPriceDto
+    {
+        public Guid Id { get; set; }
+        public Vertical VerticalTypeId { get; set; }
+        public SubscriptionCategory CategoryId { get; set; }
+        public BasicPrice BasicPriceId { get; set; }
+        public DateTime LastUpdated { get; set; }
 
+    }
+    public class BasicPriceRequestDto
+    {
+        public Vertical VerticalTypeId { get; set; }
+        public SubscriptionCategory CategoryId { get; set; }
+        public BasicPrice BasicPriceId { get; set; }
+    }
+
+    public class BasicPriceResponseDto
+    {
+        public Guid Id { get; set; }
+        public int VerticalTypeId { get; set; }
+        public string VerticalTypeName { get; set; }
+        public int CategoryId { get; set; }
+        public string CategoryName { get; set; }
+        public int BasicPriceId { get; set; }
+        public string BasicPriceName { get; set; }
+        public DateTime LastUpdated { get; set; }
+
+    }
 
     public class PayToPublishRequestDto
     {
@@ -52,7 +79,7 @@ namespace QLN.Common.DTO_s
         [Required]
         public DurationType DurationId { get; set; }
 
-        public BasicPrice BasicPriceId { get; set; }
+   
         [Required]
         public decimal Price { get; set; }
         [Required]
@@ -68,8 +95,7 @@ namespace QLN.Common.DTO_s
     {
         public Guid Id { get; set; }
         public string PlanName { get; set; } = string.Empty;
-        public int BasicPriceId { get; set; }
-        public decimal BasicPriceName { get; set; }
+     
         public decimal Price { get; set; }
         public string Currency { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -94,8 +120,7 @@ namespace QLN.Common.DTO_s
         public Guid Id { get; set; }
         public Guid PayToPublishId { get; set; }
         public int VerticalId { get; set; }
-        public decimal BasicPriceName { get; set; }
-        public int BasicPriceId { get; set; }
+      
         public int CategoryId { get; set; }
         public Guid UserId { get; set; }
         public DateTime StartDate { get; set; }
@@ -117,8 +142,7 @@ namespace QLN.Common.DTO_s
 
         [Required]
         public int CategoryId { get; set; }
-        public int BasicPriceId { get; set; }
-
+ 
         [Required]
         public Guid PayToPublishId { get; set; }
 

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IAddonService;
+using static QLN.Common.DTO_s.AddonDto;
 
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint
@@ -159,29 +160,27 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint
 
         public static RouteGroupBuilder MapUnitCurrenciesEndpoints(this RouteGroupBuilder group)
         {
-        
-     
+
+
 
             // Get unit currencies by unit ID
             group.MapGet("/quantites-currencies/by-quantites/{quantityId:Guid}", async Task<IResult> (
-                Guid unitId,
-                [FromServices] IAddonService service,
-                [FromServices] ILogger<IAddonService> logger,
-                CancellationToken cancellationToken = default) =>
+     Guid quantityId, // ✅ Fixed
+     [FromServices] IAddonService service,
+     [FromServices] ILogger<IAddonService> logger,
+     CancellationToken cancellationToken = default) =>
             {
                 try
                 {
-                  
-
-                    logger.LogInformation("Retrieving unit currencies for unit ID: {UnitId}", unitId);
-                    var unitCurrencies = await service.GetByquantityIdAsync(unitId);
+                    logger.LogInformation("Retrieving unit currencies for unit ID: {UnitId}", quantityId);
+                    var unitCurrencies = await service.GetByquantityIdAsync(quantityId);
 
                     if (unitCurrencies == null || !unitCurrencies.Any())
                     {
                         return TypedResults.NotFound(new ProblemDetails
                         {
                             Title = "Not Found",
-                            Detail = $"No unit currencies found for UnitId '{unitId}'.",
+                            Detail = $"No unit currencies found for UnitId '{quantityId}'.",
                             Status = StatusCodes.Status404NotFound
                         });
                     }
@@ -190,7 +189,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Error retrieving unit currencies for unit ID: {UnitId}", unitId);
+                    logger.LogError(ex, "Error retrieving unit currencies for unit ID: {UnitId}", quantityId);
                     return TypedResults.Problem(
                         title: "Internal Server Error",
                         detail: "An error occurred while retrieving unit currencies.",
@@ -198,14 +197,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint
                     );
                 }
             })
-            .WithName("GetquantitiesCurrenciesByUnitId")
-            .WithTags("Addons")
-            .WithSummary("Get quantities currencies by unit ID")
-            .WithDescription("Retrieves all unit currency mappings for a specific unit ID.")
-            .Produces<IEnumerable<AddonDto.UnitCurrency>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+ .WithName("GetquantitiesCurrenciesByUnitId")
+ .WithTags("Addons")
+ .WithSummary("Get quantities currencies by unit ID")
+ .WithDescription("Retrieves all unit currency mappings for a specific unit ID.")
+ .Produces<IEnumerable<AddonDto.UnitCurrency>>(StatusCodes.Status200OK)
+ .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+ .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+ .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
             // Create unit currency
             group.MapPost("/quantities-currencies", async Task<Results<

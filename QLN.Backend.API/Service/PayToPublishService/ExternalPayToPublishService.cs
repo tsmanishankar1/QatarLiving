@@ -15,6 +15,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
         private readonly ILogger<ExternalPayToPublishService> _logger;
         private static readonly ConcurrentDictionary<Guid, byte> _payToPublishIds = new();
         private static readonly ConcurrentDictionary<Guid, byte> _paymentIds = new();
+        private static readonly ConcurrentDictionary<Guid, byte> _basicPriceIds = new();
 
         public ExternalPayToPublishService(ILogger<ExternalPayToPublishService> logger)
         {
@@ -24,6 +25,115 @@ namespace QLN.Backend.API.Service.PayToPublishService
         private IPayToPublishActor GetActorProxy(Guid id)
         {
             return ActorProxy.Create<IPayToPublishActor>(new ActorId(id.ToString()), "PayToPublishActor");
+        }
+
+        public async Task CreateBasicPriceAsync(BasicPriceRequestDto request, CancellationToken cancellationToken = default)
+        {
+            var id = Guid.NewGuid();
+
+            var dto = new BasicPriceDto
+            {
+                Id = id,
+                VerticalTypeId = request.VerticalTypeId,
+                CategoryId = request.CategoryId,
+                BasicPriceId = request.BasicPriceId,
+                LastUpdated = DateTime.UtcNow
+            };
+
+            var actor = GetActorProxy(id);
+
+            try
+            {
+                var result = await actor.SetDatasAsync(dto, cancellationToken);
+
+                if (result)
+                {
+                    _basicPriceIds.TryAdd(id, 0);
+                    _logger.LogInformation("Basic price created with ID: {BasicPriceId}", id);
+                }
+                else
+                {
+                    _logger.LogError("Actor returned false when creating basic price. ID: {Id}", id);
+                    throw new Exception("Basic price creation failed.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Actor call failed in CreateBasicPriceAsync");
+                throw;
+            }
+        }
+
+        public async Task<List<BasicPriceResponseDto>> GetBasicPricesByVerticalAndCategoryAsync(
+            int verticalTypeId,
+            int categoryId,
+            CancellationToken cancellationToken = default)
+        {
+            var resultList = new List<BasicPriceResponseDto>();
+            var ids = _basicPriceIds.Keys.ToList();
+
+            // Check if the enum values are valid
+            if (!Enum.IsDefined(typeof(Vertical), verticalTypeId))
+            {
+                _logger.LogWarning("Invalid VerticalTypeId: {VerticalTypeId}", verticalTypeId);
+                return resultList;
+            }
+
+            if (!Enum.IsDefined(typeof(SubscriptionCategory), categoryId))
+            {
+                _logger.LogWarning("Invalid CategoryId: {CategoryId}", categoryId);
+                return resultList;
+            }
+
+            var verticalEnum = (Vertical)verticalTypeId;
+            var categoryEnum = (SubscriptionCategory)categoryId;
+
+            _logger.LogInformation("Searching for basic prices with Vertical: {Vertical} ({VerticalId}), Category: {Category} ({CategoryId})",
+                verticalEnum, verticalTypeId, categoryEnum, categoryId);
+
+            foreach (var id in ids)
+            {
+                try
+                {
+                    var actor = GetActorProxy(id);
+                    var data = await actor.GetDatasAsync(cancellationToken);
+
+                    if (data != null)
+                    {
+                        _logger.LogDebug("Found basic price: ID={Id}, Vertical={Vertical}, Category={Category}",
+                            data.Id, data.VerticalTypeId, data.CategoryId);
+
+                        if (data.VerticalTypeId == verticalEnum && data.CategoryId == categoryEnum)
+                        {
+                            resultList.Add(new BasicPriceResponseDto
+                            {
+                                Id = data.Id,
+                                VerticalTypeId = (int)data.VerticalTypeId,
+                                VerticalTypeName = GetEnumDisplayName(data.VerticalTypeId),
+                                CategoryId = (int)data.CategoryId,
+                                CategoryName = GetEnumDisplayName(data.CategoryId),
+                                BasicPriceId = (int)data.BasicPriceId,
+                                BasicPriceName = GetEnumDisplayName(data.BasicPriceId),
+                                LastUpdated = data.LastUpdated
+                            });
+
+                            _logger.LogInformation("Added basic price to results: ID={Id}", data.Id);
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogWarning("No data found for BasicPrice ID: {Id}", id);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error retrieving data for BasicPrice ID: {Id}", id);
+                    // Continue processing other items
+                }
+            }
+
+            _logger.LogInformation("Found {Count} basic prices matching criteria", resultList.Count);
+            return resultList;
         }
 
         public async Task CreatePlanAsync(PayToPublishRequestDto request, CancellationToken cancellationToken = default)
@@ -36,7 +146,6 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 PlanName = request.PlanName,
                 TotalCount = request.TotalCount,
                 Description = request.Description,
-                BasicPrice=request.BasicPriceId,
                 Duration = request.DurationId,
                 Price = request.Price,
                 Currency = request.Currency,
@@ -46,71 +155,178 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 LastUpdated = DateTime.UtcNow
             };
 
-            var actor = GetActorProxy(id);
-            var result = await actor.SetDataAsync(dto, cancellationToken);
+            try
+            {
+                var actor = GetActorProxy(id);
+                var result = await actor.SetDataAsync(dto, cancellationToken);
 
-            if (result)
-            {
-                _payToPublishIds.TryAdd(id, 0);
+                if (result)
+                {
+                    _payToPublishIds.TryAdd(id, 0);
+                    _logger.LogInformation("PayToPublish plan created with ID: {PlanId}, Vertical: {Vertical}, Category: {Category}",
+                        id, dto.VerticalTypeId, dto.CategoryId);
+                }
+                else
+                {
+                    _logger.LogError("Actor returned false when creating plan. ID: {Id}", id);
+                    throw new Exception("Pay to publish plan creation failed.");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                throw new Exception("Pay to publish plan creation failed.");
+                _logger.LogError(ex, "Actor call failed in CreatePlanAsync for ID: {Id}", id);
+                throw;
             }
         }
-
         public async Task<PayToPublishListResponseDto> GetPlansByVerticalAndCategoryAsync(
-      int verticalTypeId,
-      int categoryId,
-      CancellationToken cancellationToken = default)
+            int verticalTypeId,
+            int categoryId,
+            CancellationToken cancellationToken = default)
         {
             var resultList = new List<PayToPublishResponseDto>();
             var ids = _payToPublishIds.Keys.ToList();
 
-            var verticalEnum = (Vertical)verticalTypeId;
-            var categoryEnum = (SubscriptionCategory)categoryId;
+            // Validate enum values first
+            if (!Enum.IsDefined(typeof(Vertical), verticalTypeId))
+            {
+                _logger.LogWarning("Invalid VerticalTypeId: {VerticalTypeId}", verticalTypeId);
+                return new PayToPublishListResponseDto
+                {
+                    VerticalId = verticalTypeId,
+                    VerticalName = "Invalid",
+                    CategoryId = categoryId,
+                    CategoryName = "Invalid",
+                    PayToPublish = new List<PayToPublishResponseDto>()
+                };
+            }
+
+            if (!Enum.IsDefined(typeof(SubscriptionCategory), categoryId))
+            {
+                _logger.LogWarning("Invalid CategoryId: {CategoryId}", categoryId);
+                return new PayToPublishListResponseDto
+                {
+                    VerticalId = verticalTypeId,
+                    VerticalName = "Invalid",
+                    CategoryId = categoryId,
+                    CategoryName = "Invalid",
+                    PayToPublish = new List<PayToPublishResponseDto>()
+                };
+            }
+
+            // Convert input parameters to enums
+            var targetVertical = (Vertical)verticalTypeId;
+            var targetCategory = (SubscriptionCategory)categoryId;
+
+            _logger.LogInformation("Searching for plans with Vertical: {Vertical} ({VerticalId}), Category: {Category} ({CategoryId}). Total plans in memory: {TotalPlans}",
+                targetVertical, verticalTypeId, targetCategory, categoryId, ids.Count);
+
+            // Check if we have any plans stored
+            if (!ids.Any())
+            {
+                _logger.LogWarning("No plans found in memory. Make sure plans are created before trying to retrieve them.");
+                return new PayToPublishListResponseDto
+                {
+                    VerticalId = verticalTypeId,
+                    VerticalName = GetEnumDisplayName(targetVertical),
+                    CategoryId = categoryId,
+                    CategoryName = GetEnumDisplayName(targetCategory),
+                    PayToPublish = new List<PayToPublishResponseDto>()
+                };
+            }
 
             foreach (var id in ids)
             {
-                var actor = GetActorProxy(id);
-                var data = await actor.GetDataAsync(cancellationToken);
-
-                if (data != null &&
-                    data.VerticalTypeId == verticalEnum &&
-                    data.CategoryId == categoryEnum &&
-                    data.StatusId != Status.Expired)
+                try
                 {
-                    resultList.Add(new PayToPublishResponseDto
+                    var actor = GetActorProxy(id);
+
+                    // Add timeout to prevent hanging
+                    using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                    using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+
+                    var data = await actor.GetDataAsync(combinedCts.Token);
+
+                    if (data != null)
                     {
-                        Id = data.Id,
-                        PlanName = data.PlanName,
-                        Price = data.Price,
-                        Currency = data.Currency,
-                        BasicPriceId = (int)data.BasicPrice,
-                        BasicPriceName = decimal.Parse(GetDisplayName((BasicPrice)data.BasicPrice)),
-                        Description = data.Description,
-                        DurationId = (int)data.Duration,
-                        DurationName = data.Duration.ToString()
-                    });
+                        _logger.LogDebug("Retrieved plan data: ID={Id}, PlanName={PlanName}, Vertical={Vertical} ({VerticalInt}), Category={Category} ({CategoryInt}), Status={Status}",
+                            data.Id, data.PlanName, data.VerticalTypeId, (int)data.VerticalTypeId, data.CategoryId, (int)data.CategoryId, data.StatusId);
+
+                        // Direct enum comparison
+                        if (data.VerticalTypeId == targetVertical &&
+                            data.CategoryId == targetCategory &&
+                            data.StatusId != Status.Expired)
+                        {
+                            resultList.Add(new PayToPublishResponseDto
+                            {
+                                Id = data.Id,
+                                PlanName = data.PlanName,
+                                Price = data.Price,
+                                Currency = data.Currency,
+                                Description = data.Description,
+                                DurationId = (int)data.Duration,
+                                DurationName = GetEnumDisplayName(data.Duration)
+                            });
+
+                            _logger.LogInformation("Added plan to results: {PlanName} (ID: {Id})", data.PlanName, data.Id);
+                        }
+                        else
+                        {
+                            _logger.LogDebug("Plan doesn't match criteria - Vertical match: {VerticalMatch}, Category match: {CategoryMatch}, Not expired: {NotExpired}",
+                                data.VerticalTypeId == targetVertical,
+                                data.CategoryId == targetCategory,
+                                data.StatusId != Status.Expired);
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Actor returned null data for PayToPublish ID: {Id}", id);
+
+                        // Try to remove this ID from our tracking if it's invalid
+                        _payToPublishIds.TryRemove(id, out _);
+                    }
+                }
+                catch (TimeoutException)
+                {
+                    _logger.LogError("Timeout occurred while retrieving data for PayToPublish ID: {Id}", id);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error retrieving data for PayToPublish ID: {Id}. Exception type: {ExceptionType}", id, ex.GetType().Name);
+
+                    // Log the full exception details for debugging
+                    _logger.LogDebug("Full exception details: {Exception}", ex);
                 }
             }
+
+            _logger.LogInformation("Found {Count} plans matching criteria out of {TotalIds} total plans", resultList.Count, ids.Count);
+
+            // Get display names for enums
+            var verticalName = GetEnumDisplayName(targetVertical);
+            var categoryName = GetEnumDisplayName(targetCategory);
 
             return new PayToPublishListResponseDto
             {
                 VerticalId = verticalTypeId,
-                VerticalName = verticalEnum.ToString(),
+                VerticalName = verticalName,
                 CategoryId = categoryId,
-                CategoryName = categoryEnum.ToString(),
+                CategoryName = categoryName,
                 PayToPublish = resultList
             };
         }
-        public static string GetDisplayName(Enum value)
+        private string GetEnumDisplayName<T>(T enumValue) where T : Enum
         {
-            return value.GetType()
-                        .GetMember(value.ToString())
-                        .First()
-                        .GetCustomAttribute<DisplayAttribute>()?
-                        .Name ?? value.ToString();
+            try
+            {
+                return enumValue.GetType()
+                               .GetMember(enumValue.ToString())
+                               .FirstOrDefault()?
+                               .GetCustomAttribute<DisplayAttribute>()?
+                               .Name ?? enumValue.ToString();
+            }
+            catch
+            {
+                return enumValue.ToString();
+            }
         }
 
         public async Task<List<PayToPublishResponseDto>> GetAllPlansAsync(CancellationToken cancellationToken = default)
@@ -120,32 +336,33 @@ namespace QLN.Backend.API.Service.PayToPublishService
 
             foreach (var id in ids)
             {
-                var actor = GetActorProxy(id);
-                var data = await actor.GetDataAsync(cancellationToken);
-
-                if (data != null && data.StatusId != Status.Expired)
+                try
                 {
-                    var durationEnum = (DurationType)data.Duration;
-                         var basicpriceEnum = (BasicPrice)data.BasicPrice;
+                    var actor = GetActorProxy(id);
+                    var data = await actor.GetDataAsync(cancellationToken);
 
-                    plans.Add(new PayToPublishResponseDto
+                    if (data != null && data.StatusId != Status.Expired)
                     {
-                        Id = data.Id,
-                        PlanName = data.PlanName,
-                        Price = data.Price,
-                        Currency = data.Currency,
-                        BasicPriceId = (int)basicpriceEnum,
-                        BasicPriceName = decimal.Parse(GetDisplayName(basicpriceEnum)),
-                        Description = data.Description,
-                        DurationId = (int)durationEnum,
-                        DurationName = durationEnum.ToString()
-                    });
+                        plans.Add(new PayToPublishResponseDto
+                        {
+                            Id = data.Id,
+                            PlanName = data.PlanName,
+                            Price = data.Price,
+                            Currency = data.Currency,
+                            Description = data.Description,
+                            DurationId = (int)data.Duration,
+                            DurationName = GetEnumDisplayName(data.Duration)
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error retrieving data for plan ID: {Id}", id);
                 }
             }
 
             return plans;
         }
-
 
         public async Task<bool> UpdatePlanAsync(Guid id, PayToPublishRequestDto request, CancellationToken cancellationToken = default)
         {
@@ -161,7 +378,6 @@ namespace QLN.Backend.API.Service.PayToPublishService
             existingData.Description = request.Description;
             existingData.Duration = request.DurationId;
             existingData.Price = request.Price;
-            existingData.BasicPrice= request.BasicPriceId;
             existingData.TotalCount = request.TotalCount;
             existingData.Currency = request.Currency;
             existingData.VerticalTypeId = request.VerticalTypeId;
@@ -201,13 +417,11 @@ namespace QLN.Backend.API.Service.PayToPublishService
 
             var endDate = GetEndDateByDurationEnum(startDate, payToPublishData.Duration);
 
-
             var dto = new PaymentDto
             {
                 Id = id,
                 PayToPublishId = request.PayToPublishId,
                 VerticalId = request.VerticalId,
-                BasicPriceId=request.BasicPriceId,
                 CategoryId = request.CategoryId,
                 CardNumber = request.CardDetails.CardNumber,
                 ExpiryMonth = request.CardDetails.ExpiryMonth,
@@ -233,7 +447,6 @@ namespace QLN.Backend.API.Service.PayToPublishService
             throw new Exception("Payment transaction creation failed.");
         }
 
-
         private DateTime GetEndDateByDurationEnum(DateTime startDate, DurationType duration)
         {
             return duration switch
@@ -241,10 +454,11 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 DurationType.ThreeMonths => startDate.AddMonths(3),
                 DurationType.SixMonths => startDate.AddMonths(6),
                 DurationType.OneYear => startDate.AddYears(1),
-                DurationType.TwoMinutes=>startDate.AddMinutes(2),
+                DurationType.TwoMinutes => startDate.AddMinutes(2),
                 _ => throw new ArgumentException($"Unsupported DurationType: {duration}")
             };
         }
+
         private IPaymentActor GetPaymentActorProxy(Guid id)
         {
             if (id == Guid.Empty)
@@ -303,13 +517,13 @@ namespace QLN.Backend.API.Service.PayToPublishService
 
             return expiredPayments;
         }
+
         public async Task<bool> HandlePaytopyblishExpiryAsync(Guid userId, Guid paymentId, CancellationToken cancellationToken = default)
         {
             try
             {
                 _logger.LogInformation("Processing payment expiry for user {UserId}, payment {PaymentId}", userId, paymentId);
                 _logger.LogInformation("Successfully processed payment expiry for user {UserId}, payment {PaymentId}", userId, paymentId);
-
                 return true;
             }
             catch (Exception ex)
@@ -318,6 +532,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 return false;
             }
         }
+
         public async Task<List<PaymentDto>> GetPaymentsByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
         {
             var userPayments = new List<PaymentDto>();
@@ -338,12 +553,12 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error retrieving payment data for paymentId {PaymentId}", paymentId);
-                    // Continue processing other payments even if one fails
                 }
             }
 
             return userPayments.OrderByDescending(p => p.LastUpdated).ToList();
         }
+
         public async Task<bool> HandlePaytopyblishExpiryAsync(Guid userId, CancellationToken cancellationToken = default)
         {
             try

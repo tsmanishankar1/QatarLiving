@@ -1,9 +1,11 @@
-﻿using QLN.Common.DTO_s;
-using QLN.Common.Infrastructure.IService.IAddonService;
-using static QLN.Common.DTO_s.AddonDto;
-using Dapr.Actors;
+﻿using Dapr.Actors;
 using Dapr.Actors.Client;
+using Google.Protobuf.WellKnownTypes;
+using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.IService.IAddonService;
+using QLN.Common.Infrastructure.IService.IPayToPublicActor;
 using System.Collections.Concurrent;
+using static QLN.Common.DTO_s.AddonDto;
 
 namespace QLN.Backend.API.Service.AddonService
 {
@@ -13,7 +15,7 @@ namespace QLN.Backend.API.Service.AddonService
 
         // Dictionary to store consistent actor ID
         private static readonly ConcurrentDictionary<string, Guid> _addonIds = new();
-
+        private readonly ConcurrentDictionary<Guid, byte> _addonPaymentIds = new();
         public ExternalAddonService(ILogger<ExternalAddonService> logger)
         {
             _logger = logger;
@@ -139,6 +141,7 @@ namespace QLN.Backend.API.Service.AddonService
                 Id = Guid.NewGuid(),
                 QuantityId = request.QuantityId,
                 CurrencyId = request.CurrencyId,
+                Duration = (DurationType)request.durationId,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -165,12 +168,97 @@ namespace QLN.Backend.API.Service.AddonService
                     QuantityId = uc.QuantityId,
                     QuantityName = data.Quantities.FirstOrDefault(q => q.QuantitiesId == uc.QuantityId)?.QuantitiesName,
                     CurrencyId = uc.CurrencyId,
-                    CurrencyName = data.Currencies.FirstOrDefault(c => c.CurrencyId == uc.CurrencyId)?.CurrencyName
+                    CurrencyName = data.Currencies.FirstOrDefault(c => c.CurrencyId == uc.CurrencyId)?.CurrencyName,
+                    durationId =  (int)uc.Duration,
+                    durationName = System.Enum.GetName(typeof(DurationType), uc.Duration) ?? "Unknown"
                 }).ToList() ?? new List<UnitCurrencyResponse>();
 
             _logger.LogInformation("Retrieved {Count} unit currencies for unit ID: {UnitId}", result.Count, unitId);
 
             return result;
+        }
+
+        public async Task<Guid> CreateAddonPaymentsAsync(
+     PaymentAddonRequestDto request,
+     Guid userId,
+     CancellationToken cancellationToken = default)
+        {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+
+            var id = Guid.NewGuid();
+            var startDate = DateTime.UtcNow;
+
+            // Get addon data from the default actor (not from request.AddonId)
+            var addonData = await GetOrCreateAddonDataAsync(cancellationToken);
+
+            // Find the UnitCurrency that matches the given AddonId
+            var unitCurrency = addonData.QuantitiesCurrencies
+                .FirstOrDefault(x => x.Id == request.AddonId);
+
+            if (unitCurrency == null)
+                throw new Exception($"UnitCurrency not found for Addon ID: {request.AddonId}");
+
+            // Calculate end date using duration
+            var endDate = GetEndDateByAddonDuration(startDate, unitCurrency.Duration);
+
+            var dto = new AddonPaymentDto
+            {
+                Id = id,
+                AddonId = request.AddonId,
+                VerticalId = request.VerticalId,
+                CardNumber = request.CardDetails.CardNumber,
+                ExpiryMonth = request.CardDetails.ExpiryMonth,
+                ExpiryYear = request.CardDetails.ExpiryYear,
+                Cvv = request.CardDetails.Cvv,
+                CardHolderName = request.CardDetails.CardHolderName,
+                UserId = userId,
+                StartDate = startDate,
+                EndDate = endDate,
+                LastUpdated = DateTime.UtcNow,
+                IsExpired = false
+            };
+
+            var actor = GetAddonPaymentActorProxy(dto.Id);
+            var result = await actor.FastSetDataAsync(dto, cancellationToken);
+
+            if (result)
+            {
+                _addonPaymentIds.TryAdd(dto.Id, 0);
+                _logger.LogInformation("Addon payment transaction created with ID: {TransactionId}", dto.Id);
+                return dto.Id;
+            }
+
+            throw new Exception("Addon payment transaction creation failed.");
+        }
+
+        private async Task<AddonDataDto?> GetAddonDataAsync(Guid addonId)
+        {
+            var actor = ActorProxy.Create<IAddonActor>(new ActorId(addonId.ToString()), "AddonActor");
+            return await actor.GetAddonDataAsync(); 
+        }
+
+
+
+        private DateTime GetEndDateByAddonDuration(DateTime startDate, DurationType duration)
+        {
+            return duration switch
+            {
+                DurationType.ThreeMonths => startDate.AddMonths(3),
+                DurationType.SixMonths => startDate.AddMonths(6),
+                DurationType.OneYear => startDate.AddYears(1),
+                DurationType.TwoMinutes => startDate.AddMinutes(2),
+                _ => throw new ArgumentException($"Unsupported DurationType: {duration}")
+            };
+        }
+
+        private IAddonPaymentActor GetAddonPaymentActorProxy(Guid id)
+        {
+            if (id == Guid.Empty)
+                throw new ArgumentException("Actor ID cannot be empty", nameof(id));
+
+            return ActorProxy.Create<IAddonPaymentActor>(
+                new ActorId(id.ToString()),
+                "AddonPaymentActor");
         }
 
 

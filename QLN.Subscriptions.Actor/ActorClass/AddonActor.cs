@@ -1,6 +1,7 @@
 ﻿using Dapr.Actors.Runtime;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IAddonService;
+using static QLN.Common.DTO_s.AddonDto;
 
 
 namespace QLN.Backend.Actor.ActorClass

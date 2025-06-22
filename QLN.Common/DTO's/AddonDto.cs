@@ -13,7 +13,7 @@ namespace QLN.Common.DTO_s
             public string QuantitiesName { get; set; }
             public DateTime CreatedAt { get; set; }
         }
-         
+
         public class Currency
         {
             [Key]
@@ -28,56 +28,111 @@ namespace QLN.Common.DTO_s
             public Guid Id { get; set; }
             public Guid QuantityId { get; set; }
             public Guid CurrencyId { get; set; }
+            public DurationType Duration { get; set; }
             public DateTime CreatedAt { get; set; }
         }
-    }
-    public class AddonDataDto
-    {
-        public Guid Id { get; set; }
-        public List<Quantities> Quantities { get; set; } = new List<Quantities>();
-        public List<Currency> Currencies { get; set; } = new List<Currency>();
-        public List<UnitCurrency> QuantitiesCurrencies { get; set; } = new List<UnitCurrency>();
-        public Guid NextId { get; set; }
-        public DateTime LastUpdated { get; set; }
-    }
 
-    // Request DTOs
-    public class CreateQuantityRequest
-    {
-        public string QuantitiesName { get; set; }
-    }
-    public class CurrencyResponse
-    {
-        public Guid CurrencyId { get; set; }
-        public string CurrencyName { get; set; }
-    }
-    public class QuantityResponse
-    {
-        public Guid QuantitiesId { get; set; }
-        public string QuantitiesName { get; set; }
-    }
+        public class AddonDataDto
+        {
+            public Guid Id { get; set; }
+            public List<Quantities> Quantities { get; set; } = new List<Quantities>();
+            public List<Currency> Currencies { get; set; } = new List<Currency>();
+            public List<AddonDto.UnitCurrency> QuantitiesCurrencies { get; set; } = new();
+            public Guid NextId { get; set; }
+            public DateTime LastUpdated { get; set; }
+        }
 
-
-    public class CreateCurrencyRequest
-    {
-        public string CurrencyName { get; set; }
-    }
-
-    public class CreateUnitCurrencyRequest
-    {
-        public Guid QuantityId { get; set; }
-        public Guid CurrencyId { get; set; }
-
-        public Vertical VerticalTypeId { get; set; }
-    }
-    public class UnitCurrencyResponse
-    {
-        public Guid Id { get; set; }
-        public Guid QuantityId { get; set; }
-        public string QuantityName { get; set; }
-        public Guid CurrencyId { get; set; }
-        public string CurrencyName { get; set; }
-    }
+        // Request DTOs
+        public class CreateQuantityRequest
+        {
+            public string QuantitiesName { get; set; }
+        }
+        public class CurrencyResponse
+        {
+            public Guid CurrencyId { get; set; }
+            public string CurrencyName { get; set; }
+        }
+        public class QuantityResponse
+        {
+            public Guid QuantitiesId { get; set; }
+            public string QuantitiesName { get; set; }
+        }
 
 
+        public class CreateCurrencyRequest
+        {
+            public string CurrencyName { get; set; }
+        }
+
+        public class CreateUnitCurrencyRequest
+        {
+            public Guid QuantityId { get; set; }
+            public Guid CurrencyId { get; set; }
+            public DurationType durationId { get; set; }
+
+        }
+        public class UnitCurrencyResponse
+        {
+            public Guid Id { get; set; }
+            public Guid QuantityId { get; set; }
+            public string QuantityName { get; set; }
+            public Guid CurrencyId { get; set; }
+            public string CurrencyName { get; set; }
+            public int durationId { get; set; }
+            public string durationName { get; set; }
+        }
+        public class AddonPaymentDto
+        {
+            public Guid Id { get; set; }
+            public Guid AddonId { get; set; }
+            public int VerticalId { get; set; }
+            public Guid UserId { get; set; }
+            public DateTime StartDate { get; set; }
+            public DateTime EndDate { get; set; }
+            public string CardNumber { get; set; } = string.Empty;
+            public string ExpiryMonth { get; set; } = string.Empty;
+            public string ExpiryYear { get; set; } = string.Empty;
+            public string Cvv { get; set; } = string.Empty;
+            public string CardHolderName { get; set; } = string.Empty;
+            public bool IsExpired { get; set; } = false;
+
+            public DateTime LastUpdated { get; set; }
+
+        }
+        public class PaymentAddonRequestDto
+        {
+            [Required]
+            public int VerticalId { get; set; }
+
+            [Required]
+            public Guid AddonId { get; set; }
+
+
+            public CardDetailAddonPaymentDto CardDetails { get; set; } = new();
+        }
+
+        public class CardDetailAddonPaymentDto
+        {
+            [Required]
+
+            public string CardNumber { get; set; } = string.Empty;
+
+            [Required]
+
+            public string ExpiryMonth { get; set; } = string.Empty;
+
+            [Required]
+
+            public string ExpiryYear { get; set; } = string.Empty;
+
+            [Required]
+
+            public string Cvv { get; set; } = string.Empty;
+
+            [Required]
+
+            public string CardHolderName { get; set; } = string.Empty;
+        }
+    }
 }
+
