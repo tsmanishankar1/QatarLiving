@@ -26,11 +26,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using QLN.Common.Infrastructure.CustomEndpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
-
-using Azure.Core.Serialization;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
 
 using QLN.Common.Infrastructure.CustomEndpoints.Wishlist;
@@ -133,6 +129,8 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
 })
 .AddEntityFrameworkStores<QatarlivingDevContext>()
 .AddDefaultTokenProviders();
+
+WebApplicationBuilder builder1 = builder;
 #endregion
 
 #region Authentication - New JWT Bearer configuration
@@ -145,88 +143,21 @@ builder.Services.AddAuthentication(options =>
 {
     options.RequireHttpsMetadata = true;
 
-    //options.Events = new JwtBearerEvents
-    //{
-    //    OnMessageReceived = context =>
-    //    {
-    //        // Expect JWT in Authorization header as Bearer token
-    //        var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
-    //        if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-    //        {
-    //            context.Token = authHeader.Substring("Bearer ".Length).Trim();
-    //        }
-    //        return Task.CompletedTask;
-    //    },
-    //    OnTokenValidated = async context =>
-    //    {
-            
-    //        var jwt = context.SecurityToken as JwtSecurityToken;
-    //        var tokenString = context.Request.Headers["Authorization"].FirstOrDefault()?.Substring("Bearer ".Length).Trim();
-
-    //        if (!string.IsNullOrEmpty(tokenString))
-    //        {
-    //            var principal = ValidateTokenFromDrupal(tokenString);
-    //            context.Principal = principal;
-    //        }
-    //        await Task.CompletedTask;
-    //    }
-    //};
-
-
-    // Add this section before or inside AddJwtBearer to ignore signature validation
     options.TokenValidationParameters = new TokenValidationParameters
     {
-        ValidateIssuer = false,
-        ValidateAudience = false,
-        ValidateLifetime = false,
-        RequireSignedTokens = false,
-        ValidateIssuerSigningKey = false, // Do not validate the signature
-        // Bypass signature validation for demo purposes
-        // Instead of creating a new JwtSecurityToken (which does not validate the signature),
-        // just parse the token string and return the JwtSecurityToken instance.
-        // This will allow the token to pass signature validation if all other checks are disabled.
-        SignatureValidator = (token, paramater) =>
-        {
-            return new JwtSecurityToken(token);
-        },
-        //SignatureValidator = (token, parameters) =>
-        //{
-        //    var principal = ValidateTokenFromDrupal(token);
-        //    return principal?.Identity is ClaimsIdentity identity && identity.IsAuthenticated
-        //        ? CreateJwtSecurityTokenFromPrincipal(principal)
-        //        : CreateJwtSecurityTokenFromPrincipal(principal); // Return null if validation fails
-        //},
-        //ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        //ValidAudience = builder.Configuration["Jwt:Audience"],
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
         RoleClaimType = ClaimTypes.Role,
         NameClaimType = ClaimTypes.Name
     };
 
     options.MapInboundClaims = false;
 });
-
-//// Helper method to create a JwtSecurityToken from a ClaimsPrincipal
-//    static SecurityToken CreateJwtSecurityTokenFromPrincipal(ClaimsPrincipal principal)
-//    {
-//        var identity = principal.Identity as ClaimsIdentity;
-//        var claims = identity?.Claims ?? Enumerable.Empty<Claim>();
-
-//        // You may want to set issuer, audience, and expiration as needed
-//        var token = new JwtSecurityToken(
-//            issuer: null,
-//            audience: null,
-//            claims: claims,
-//            notBefore: DateTime.UtcNow,
-//            expires: DateTime.UtcNow.AddDays(7),
-
-//            signingCredentials: new SigningCredentials(
-//                    new SymmetricSecurityKey(Encoding.UTF8.GetBytes("this is a long string to test this")),
-//                    SecurityAlgorithms.HmacSha256
-//                )
-//        );
-
-//        return token;
-//    }
 
 #endregion
 
@@ -327,10 +258,9 @@ app.MapGroup("/api/v2/content")
 app.MapAllBackOfficeEndpoints();
 app.MapLandingPageEndpoints();
 
-app.MapGet("/testauth", () =>
+app.MapGet("/testauth", (HttpContext context) =>
 {
-    // return a list of clamis from the jwt token
-    var user = ClaimsPrincipal.Current;
+    var user = context.User;
     if (user == null || !user.Identity.IsAuthenticated)
     {
         return Results.Unauthorized();
@@ -339,88 +269,8 @@ app.MapGet("/testauth", () =>
     return Results.Ok(new { Message = "Authenticated", Claims = claims });
     })
     .WithName("TestAuth")
-    .WithTags("Authentication")
+    .WithTags("AAAAuthentication")
     .WithDescription("Test authentication endpoint to verify JWT token claims.")
     .RequireAuthorization();
 
-
-
 app.Run();
-//static ClaimsPrincipal ValidateTokenFromDrupal(string tokenString)
-//{
-//    var tokenHandler = new JwtSecurityTokenHandler();
-
-//    var validationParameters = new TokenValidationParameters
-//    {
-//        ValidateIssuer = false,
-//        ValidateAudience = false,
-//        ValidateLifetime = false,
-//        ValidateIssuerSigningKey = false,
-//        SignatureValidator = (token, parameters) =>
-//        {
-//            // Bypass signature validation for demo purposes
-//            return new JwtSecurityToken(token);
-//        },
-//        //ValidIssuer = builder.Configuration["Jwt:Issuer"],
-//        //ValidAudience = builder.Configuration["Jwt:Audience"],
-//        RoleClaimType = ClaimTypes.Role,
-//        NameClaimType = ClaimTypes.Name
-//    };
-
-//    try
-//    {
-//        SecurityToken validatedToken;
-//        var validatedPrincipal = tokenHandler.ValidateToken(tokenString, validationParameters, out validatedToken);
-
-//        if (validatedToken.ValidTo > DateTime.UtcNow)
-//        {
-//            var decodedToken = tokenHandler.ReadJwtToken(tokenString);
-//            var identity = (ClaimsIdentity)validatedPrincipal.Identity!;
-
-//            // Example: extract custom claims from JWT payload
-//            // (Replace with your own logic as needed)
-//            if (decodedToken.Payload.TryGetValue("drupal_user", out var drupalUserObj) && drupalUserObj is JsonElement drupalUser)
-//            {
-//                if (drupalUser.TryGetProperty("uid", out var uid) && uid.ValueKind == JsonValueKind.String)
-//                    identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, uid.GetString()!));
-//                if (drupalUser.TryGetProperty("name", out var name) && name.ValueKind == JsonValueKind.String)
-//                    identity.AddClaim(new Claim(ClaimTypes.Name, name.GetString()!));
-//                if (drupalUser.TryGetProperty("email", out var email) && email.ValueKind == JsonValueKind.String)
-//                    identity.AddClaim(new Claim(ClaimTypes.Email, email.GetString()!));
-//                if (drupalUser.TryGetProperty("is_admin", out var isAdmin))
-//                    identity.AddClaim(new Claim("is_admin", isAdmin.ToString()));
-//                if (drupalUser.TryGetProperty("qlnext_user_id", out var qlnextUserId) && qlnextUserId.ValueKind == JsonValueKind.String)
-//                    identity.AddClaim(new Claim("qlnext_user_id", qlnextUserId.GetString()!));
-//                if (drupalUser.TryGetProperty("alias", out var alias) && alias.ValueKind == JsonValueKind.String)
-//                    identity.AddClaim(new Claim("alias", alias.GetString()!));
-//                if (drupalUser.TryGetProperty("image", out var image) && image.ValueKind == JsonValueKind.String)
-//                    identity.AddClaim(new Claim("image", image.GetString()!));
-//                if (drupalUser.TryGetProperty("status", out var status) && status.ValueKind == JsonValueKind.String)
-//                    identity.AddClaim(new Claim("status", status.GetString()!));
-//                if (drupalUser.TryGetProperty("permissions", out var permissions) && permissions.ValueKind == JsonValueKind.Array)
-//                {
-//                    foreach (var perm in permissions.EnumerateArray())
-//                        if (perm.ValueKind == JsonValueKind.String)
-//                            identity.AddClaim(new Claim("permission", perm.GetString()!));
-//                }
-//                if (drupalUser.TryGetProperty("roles", out var roles) && roles.ValueKind == JsonValueKind.Array)
-//                {
-//                    foreach (var role in roles.EnumerateArray())
-//                        if (role.ValueKind == JsonValueKind.String)
-//                            identity.AddClaim(new Claim(ClaimTypes.Role, role.GetString()!));
-//                }
-//            }
-
-//            return new ClaimsPrincipal(identity);
-//        }
-//        else
-//        {
-//            return validatedPrincipal;
-//        }
-//    }
-//    catch
-//    {
-//        return new ClaimsPrincipal(new ClaimsIdentity());
-        
-//    }
-//}
