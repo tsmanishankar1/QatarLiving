@@ -19,7 +19,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         protected int _activeTabIndex;
         protected bool _isChecked = false;
         protected int _selectedAdsTab = 0;
-
+        protected bool showCreateButton = true;
         protected string? _errorMessage;
         protected BusinessProfile? _businessProfile;
         protected List<AdModal> publishedAds = new();

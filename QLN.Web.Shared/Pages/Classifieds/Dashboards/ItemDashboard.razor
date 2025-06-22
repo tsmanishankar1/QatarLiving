@@ -13,14 +13,21 @@
             <MudIcon Icon="@Icons.Material.Filled.ArrowDropDown" Class="dropdown-icon" />
         </div>
 
-        <div class="dashboard-title-container">
-            <MudText class="dashboard-title">
-                Items Dashboard
-            </MudText>
-             <MudButton Variant="Variant.Outlined" Class="font-semibold mt-3 dashboard-edit-profile-button"
-                       OnClick="NavigateToCreateProfile">
-                        Edit Profile
+        <div class="dashboard-header">
+            <div class="dashboard-title-container">
+                <MudText class="dashboard-title">
+                    Items Dashboard
+                </MudText>
+            </div>
+            @if (showCreateButton)
+            {
+                <div class="dashboard-button-container">
+                    <MudButton Variant="Variant.Outlined" Class="font-semibold dashboard-edit-profile-button"
+                               OnClick="NavigateToCreateProfile">
+                        Create Profile
                     </MudButton>
+                </div>
+            }
         </div>
 
         <!-- Your dashboard content would go here -->
@@ -346,12 +353,17 @@
         font-size: 24px;
     }
 
-    .dashboard-title-container {
+    .dashboard-header {
         display: flex;
-        justify-content: center;
+        justify-content: space-between;
         align-items: center;
-        text-align: center;
         margin-top: 24px;
+        width: 100%;
+    }
+
+    .dashboard-title-container {
+        flex: 1;
+        text-align: center;
     }
 
     .dashboard-title {
@@ -360,6 +372,14 @@
         font-size: 25px;
         line-height: 26px;
         color: #242424;
+    }
+
+    .dashboard-button-container {
+        margin-left: auto;
+    }
+
+    .dashboard-edit-profile-button {
+        margin-top: 12px;
     }
     .dashboard-statistics-container {
         padding: 16px;
