@@ -31,52 +31,88 @@ namespace QLN.SearchService.Service
             if (string.IsNullOrWhiteSpace(vertical))
                 throw new ArgumentException("Vertical is required.", nameof(vertical));
 
+            bool hasPaging = req.PageNumber > 0 && req.PageSize > 0;
+
             var opts = new SearchOptions
             {
-                Size = req.Top > 0 ? req.Top : 50,
-                SearchMode = SearchMode.All
+                IncludeTotalCount = true,
+                SearchMode = SearchMode.All,
+                Skip = hasPaging ? (req.PageNumber - 1) * req.PageSize : 0,
+                Size = hasPaging ? req.PageSize : int.MaxValue
             };
 
-            if (req.Filters != null && req.Filters.Any())
+            if (req.Filters?.Any() == true)
             {
                 var clauses = req.Filters
-                    .Select(kv => BuildClause<object>(kv.Key, kv.Value)) 
-                    .ToList();
+                    .Select(kv => BuildClause<object>(kv.Key, kv.Value));
                 opts.Filter = string.Join(" and ", clauses);
                 _logger.LogInformation("Applied filter: {Filter}", opts.Filter);
             }
 
-            if (!string.IsNullOrWhiteSpace(req.OrderBy))
-            {
-                var orderExpr = ParseOrderBy<object>(req.OrderBy);     
-                opts.OrderBy.Add(orderExpr);
-                _logger.LogInformation("Applied OrderBy: {OrderBy}", orderExpr);
-            }
-
-            var response = new CommonSearchResponse
-            {
-                VerticalName = vertical
-            };
+            var response = new CommonSearchResponse { VerticalName = vertical };
 
             switch (vertical.Trim().ToLowerInvariant())
             {
                 case "classifieds":
-                    var classifieds = await _repo.SearchAsync<ClassifiedsIndex>(
-                        vertical, opts, req.Text);
-                    response.ClassifiedsItems = classifieds.ToList();
-                    break;
+                    {
+                        opts.OrderBy.Clear();
+                        if (!string.IsNullOrWhiteSpace(req.OrderBy))
+                        {
+                            var expr = ParseOrderBy<object>(req.OrderBy);
+                            opts.OrderBy.Add(expr);
+                            _logger.LogInformation("Appended client sort for classifieds: {OrderBy}", expr);
+                        }
+                        opts.OrderBy.Add("IsPromoted desc");
+                        opts.OrderBy.Add("PromotedExpiryDate desc");
+                        opts.OrderBy.Add("IsRefreshed desc");
+                        opts.OrderBy.Add("RefreshExpiryDate desc");
+                        opts.OrderBy.Add("IsFeatured desc");
+                        opts.OrderBy.Add("FeatureExpiryDate desc");
+                        opts.OrderBy.Add("CreatedDate desc");
+                        var pageCls = await _repo.SearchAsync<ClassifiedsIndex>(vertical, opts, req.Text);
+                        response.TotalCount = pageCls.TotalCount;
+                        response.ClassifiedsItems = pageCls.Items.ToList();
+                        break;
+                    }
 
                 case "services":
-                    var services = await _repo.SearchAsync<ServicesIndex>(
-                        vertical, opts, req.Text);
-                    response.ServicesItems = services.ToList();
-                    break;
+                    {
+                        opts.OrderBy.Clear();
+                        if (!string.IsNullOrWhiteSpace(req.OrderBy))
+                        {
+                            var expr = ParseOrderBy<object>(req.OrderBy);
+                            opts.OrderBy.Add(expr);
+                            _logger.LogInformation("Appended client sort for classifieds: {OrderBy}", expr);
+                        }
+                        opts.OrderBy.Add("IsPromoted desc");
+                        opts.OrderBy.Add("PromotedExpiryDate desc");
+                        opts.OrderBy.Add("IsRefreshed desc");
+                        opts.OrderBy.Add("RefreshExpiryDate desc");
+                        opts.OrderBy.Add("IsFeatured desc");
+                        opts.OrderBy.Add("FeatureExpiryDate desc");
+                        opts.OrderBy.Add("CreatedDate desc");
+
+                        var pageSvc = await _repo.SearchAsync<ServicesIndex>(vertical, opts, req.Text);
+                        response.TotalCount = pageSvc.TotalCount;
+                        response.ServicesItems = pageSvc.Items.ToList();
+                        break;
+                    }
 
                 case "landingbackoffice":
-                    var masters = await _repo.SearchAsync<LandingBackOfficeIndex>(
-                        vertical, opts, req.Text);
-                    response.MasterItems = masters.ToList();
-                    break;
+                    {
+                        opts.OrderBy.Clear();
+                        if (!string.IsNullOrWhiteSpace(req.OrderBy))
+                        {
+                            var expr = ParseOrderBy<object>(req.OrderBy);
+                            opts.OrderBy.Add(expr);
+                            _logger.LogInformation("Applied client sort for backoffice: {OrderBy}", expr);
+                        }
+
+                        var pageBo = await _repo.SearchAsync<LandingBackOfficeIndex>(vertical, opts, req.Text);
+                        response.TotalCount = pageBo.TotalCount;
+                        response.MasterItems = pageBo.Items.ToList();
+                        break;
+                    }
 
                 default:
                     throw new NotSupportedException($"Unknown vertical '{vertical}'");

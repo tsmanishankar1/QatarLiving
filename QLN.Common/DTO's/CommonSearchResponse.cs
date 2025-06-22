@@ -10,6 +10,7 @@ namespace QLN.Common.DTO_s
     public class CommonSearchResponse
     {
         public string VerticalName { get; set; } = string.Empty;
+        public long? TotalCount { get; set; }
         public List<ClassifiedsIndex>? ClassifiedsItems { get; set; }
         public List<ServicesIndex>? ServicesItems { get; set; }
         public List<LandingBackOfficeIndex>? MasterItems { get; set; }

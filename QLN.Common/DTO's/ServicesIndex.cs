@@ -28,6 +28,24 @@ namespace QLN.Common.DTO_s
         [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string? SubCategory { get; set; } = string.Empty;
 
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public bool? IsFeatured { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public DateTime? FeatureExpiryDate { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public bool? IsPromoted { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public DateTime? PromotedExpiryDate { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public bool? IsRefreshed { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public DateTime? RefreshExpiryDate { get; set; }
+
         [SimpleField(IsFilterable = true, IsSortable = true, IsFacetable = true)]
         [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
         public double? Price { get; set; }
@@ -77,20 +95,5 @@ namespace QLN.Common.DTO_s
 
         [SimpleField(IsFilterable = true, IsFacetable = true)]
         public string? Status { get; set; }
-
-        [SimpleField(IsFilterable = true, IsSortable = true)]
-        public bool? IsFeatured { get; set; }
-
-        [SimpleField(IsFilterable = true, IsSortable = true)]
-        public bool? IsPromoted { get; set; }
-
-        [SimpleField(IsFilterable = true, IsSortable = true)]
-        public DateTime? RefreshExpiry { get; set; }
-
-        [SimpleField(IsFilterable = true, IsSortable = true)]
-        public int? RemainingRefreshes { get; set; }
-
-        [SimpleField(IsFilterable = true, IsSortable = true)]
-        public int? TotalAllowedRefreshes { get; set; }
     }
 }
