@@ -5,6 +5,7 @@ using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace QLN.Web.Shared.Services
 {
@@ -83,9 +84,6 @@ namespace QLN.Web.Shared.Services
                 WriteIndented = true
             };
 
-            Console.WriteLine("UpdateCompanyProfileAsync called with model:");
-            Console.WriteLine(JsonSerializer.Serialize(model, options));
-
             try
             {
                 var json = JsonSerializer.Serialize(model, options);
@@ -105,15 +103,38 @@ namespace QLN.Web.Shared.Services
             }
         }
 
-
-        public async Task<bool> CreateCompanyProfileAsync(
-     CompanyModel model,
-     IBrowserFile logoFile,
-     IBrowserFile documentFile,
-     string authToken)
+        public async Task<bool> CreateCompanyProfileAsync(CompanyProfileModel model, string authToken)
         {
-            throw new NotImplementedException();
+            var options = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = true,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+
+            };
+
+            Console.WriteLine("CreateCompanyProfileAsync called with model:");
+            Console.WriteLine(JsonSerializer.Serialize(model, options));
+
+            try
+            {
+                var json = JsonSerializer.Serialize(model, options);
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/companyprofile/create")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("CreateCompanyProfileAsync Exception: " + ex.Message);
+                return false;
+            }
         }
+
 
     }
 }
