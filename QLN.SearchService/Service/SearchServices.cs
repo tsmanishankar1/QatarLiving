@@ -10,6 +10,7 @@ using Azure.Search.Documents;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IRepository.ISearchServiceRepository;
+using System.Reflection;
 
 namespace QLN.SearchService.Service
 {
@@ -32,7 +33,6 @@ namespace QLN.SearchService.Service
                 throw new ArgumentException("Vertical is required.", nameof(vertical));
 
             bool hasPaging = req.PageNumber > 0 && req.PageSize > 0;
-
             var opts = new SearchOptions
             {
                 IncludeTotalCount = true,
@@ -41,24 +41,25 @@ namespace QLN.SearchService.Service
                 Size = hasPaging ? req.PageSize : int.MaxValue
             };
 
-            if (req.Filters?.Any() == true)
-            {
-                var clauses = req.Filters
-                    .Select(kv => BuildClause<object>(kv.Key, kv.Value));
-                opts.Filter = string.Join(" and ", clauses);
-                _logger.LogInformation("Applied filter: {Filter}", opts.Filter);
-            }
-
             var response = new CommonSearchResponse { VerticalName = vertical };
 
             switch (vertical.Trim().ToLowerInvariant())
             {
                 case "classifieds":
                     {
+                        // --- apply filters with the correct generic type ---
+                        if (req.Filters?.Any() == true)
+                        {
+                            var clauses = req.Filters
+                                .Select(kv => BuildClause<ClassifiedsIndex>(kv.Key, kv.Value));
+                            opts.Filter = string.Join(" and ", clauses);
+                            _logger.LogInformation("Applied filter for classifieds: {Filter}", opts.Filter);
+                        }
+
                         opts.OrderBy.Clear();
                         if (!string.IsNullOrWhiteSpace(req.OrderBy))
                         {
-                            var expr = ParseOrderBy<object>(req.OrderBy);
+                            var expr = ParseOrderBy<ClassifiedsIndex>(req.OrderBy);
                             opts.OrderBy.Add(expr);
                             _logger.LogInformation("Appended client sort for classifieds: {OrderBy}", expr);
                         }
@@ -69,6 +70,7 @@ namespace QLN.SearchService.Service
                         opts.OrderBy.Add("IsFeatured desc");
                         opts.OrderBy.Add("FeatureExpiryDate desc");
                         opts.OrderBy.Add("CreatedDate desc");
+
                         var pageCls = await _repo.SearchAsync<ClassifiedsIndex>(vertical, opts, req.Text);
                         response.TotalCount = pageCls.TotalCount;
                         response.ClassifiedsItems = pageCls.Items.ToList();
@@ -77,12 +79,20 @@ namespace QLN.SearchService.Service
 
                 case "services":
                     {
+                        if (req.Filters?.Any() == true)
+                        {
+                            var clauses = req.Filters
+                                .Select(kv => BuildClause<ServicesIndex>(kv.Key, kv.Value));
+                            opts.Filter = string.Join(" and ", clauses);
+                            _logger.LogInformation("Applied filter for services: {Filter}", opts.Filter);
+                        }
+
                         opts.OrderBy.Clear();
                         if (!string.IsNullOrWhiteSpace(req.OrderBy))
                         {
-                            var expr = ParseOrderBy<object>(req.OrderBy);
+                            var expr = ParseOrderBy<ServicesIndex>(req.OrderBy);
                             opts.OrderBy.Add(expr);
-                            _logger.LogInformation("Appended client sort for classifieds: {OrderBy}", expr);
+                            _logger.LogInformation("Appended client sort for services: {OrderBy}", expr);
                         }
                         opts.OrderBy.Add("IsPromoted desc");
                         opts.OrderBy.Add("PromotedExpiryDate desc");
@@ -100,10 +110,18 @@ namespace QLN.SearchService.Service
 
                 case "landingbackoffice":
                     {
+                        if (req.Filters?.Any() == true)
+                        {
+                            var clauses = req.Filters
+                                .Select(kv => BuildClause<LandingBackOfficeIndex>(kv.Key, kv.Value));
+                            opts.Filter = string.Join(" and ", clauses);
+                            _logger.LogInformation("Applied filter for backoffice: {Filter}", opts.Filter);
+                        }
+
                         opts.OrderBy.Clear();
                         if (!string.IsNullOrWhiteSpace(req.OrderBy))
                         {
-                            var expr = ParseOrderBy<object>(req.OrderBy);
+                            var expr = ParseOrderBy<LandingBackOfficeIndex>(req.OrderBy);
                             opts.OrderBy.Add(expr);
                             _logger.LogInformation("Applied client sort for backoffice: {OrderBy}", expr);
                         }
@@ -120,7 +138,6 @@ namespace QLN.SearchService.Service
 
             return response;
         }
-
 
         public async Task<string> UploadAsync(CommonIndexRequest request)
         {
@@ -166,14 +183,27 @@ namespace QLN.SearchService.Service
 
         private string BuildClause<T>(string key, object val)
         {
+            if (val is System.Collections.IEnumerable ie && val is not string)
+            {
+                var parts = new List<string>();
+                foreach (var item in ie)
+                    parts.Add(BuildClause<T>(key, item!));
+                return "(" + string.Join(" or ", parts) + ")";
+            }
+            if (val is JsonElement jeArr && jeArr.ValueKind == JsonValueKind.Array)
+            {
+                var parts = jeArr.EnumerateArray()
+                                 .Select(elem => BuildClause<T>(key, elem))
+                                 .ToArray();
+                return "(" + string.Join(" or ", parts) + ")";
+            }
+
             var isMin = key.Equals("minPrice", StringComparison.OrdinalIgnoreCase);
             var isMax = key.Equals("maxPrice", StringComparison.OrdinalIgnoreCase);
-
             var prop = typeof(T)
                 .GetProperties()
                 .FirstOrDefault(p => p.Name.Equals(key, StringComparison.OrdinalIgnoreCase));
             var field = prop?.Name ?? key;
-
             if (isMin || isMax)
             {
                 var raw = FormatRawValue(val);
@@ -219,12 +249,10 @@ namespace QLN.SearchService.Service
             var parts = orderBy.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             var key = parts[0];
             var dir = parts.Length > 1 ? parts[1] : null;
-
             var prop = typeof(T)
                 .GetProperties()
                 .FirstOrDefault(p => p.Name.Equals(key, StringComparison.OrdinalIgnoreCase));
             var field = prop?.Name ?? key;
-
             return dir != null
                 ? $"{field} {dir}"
                 : field;
@@ -262,6 +290,65 @@ namespace QLN.SearchService.Service
                 _logger.LogError(ex, "Unexpected error in DeleteAsync: vertical={Vertical}, key={Key}", vertical, key);
                 throw;
             }
+        }
+        public async Task<GetWithSimilarResponse<T>> GetByIdWithSimilarAsync<T>(
+           string vertical,
+           string key,
+           int similarPageSize = 10
+       ) where T : class
+        {
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical is required.", nameof(vertical));
+            if (string.IsNullOrWhiteSpace(key))
+                throw new ArgumentException("Key is required.", nameof(key));
+
+            // 1) fetch the primary document
+            var detail = await _repo.GetByIdAsync<T>(vertical, key)
+                         ?? throw new KeyNotFoundException($"No '{key}' in '{vertical}'.");
+
+            // 2) reflect out L2Category or fallback to L1Category
+            var type = typeof(T);
+            var propL2 = type.GetProperty("L2Category", BindingFlags.Public | BindingFlags.Instance);
+            var propL1 = type.GetProperty("L1Category", BindingFlags.Public | BindingFlags.Instance);
+            var l2Value = propL2?.GetValue(detail)?.ToString();
+            var l1Value = propL1?.GetValue(detail)?.ToString();
+
+            var useL2 = !string.IsNullOrWhiteSpace(l2Value);
+            var filterField = useL2 ? "L2Category" : "L1Category";
+            var filterValue = useL2 ? l2Value! : l1Value;
+
+            // if no category at all, return detail only
+            if (string.IsNullOrWhiteSpace(filterValue))
+            {
+                return new GetWithSimilarResponse<T> { Detail = detail };
+            }
+
+            // 3) build a small search to fetch “similar” items
+            var opts = new SearchOptions
+            {
+                SearchMode = SearchMode.All,
+                IncludeTotalCount = false,
+                Size = similarPageSize
+            };
+            opts.Filter = $"{filterField} eq '{filterValue.Replace("'", "''")}'";
+
+            var simResults = await _repo.SearchAsync<T>(vertical, opts, "*");
+
+            // 4) exclude the original item
+            var idProp = type.GetProperty("Id", BindingFlags.Public | BindingFlags.Instance);
+            var similar = simResults.Items
+                .Where(item =>
+                {
+                    var idVal = idProp?.GetValue(item)?.ToString();
+                    return idVal != key;
+                })
+                .ToList();
+
+            return new GetWithSimilarResponse<T>
+            {
+                Detail = detail,
+                Similar = similar
+            };
         }
     }
 }
