@@ -7,12 +7,20 @@ namespace QLN.Web.Shared.Models
         public int VerticalId { get; set; }
         public int CategoryId { get; set; }
         public string UserId { get; set; }
+        [Required(ErrorMessage = "Country is required")]
         public string Country { get; set; }
+        [Required(ErrorMessage = "City is required")]
         public string City { get; set; }
         public List<string> BranchLocations { get; set; }
         public string WhatsAppNumber { get; set; }
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Invalid email format")]
         public string Email { get; set; }
+
+        [Url(ErrorMessage = "Invalid website URL format")]
         public string WebsiteUrl { get; set; }
+
+        [Url(ErrorMessage = "Invalid Facebook URL format")]
         public string FacebookUrl { get; set; }
         public string InstagramUrl { get; set; }
         public string StartDay { get; set; }
@@ -23,7 +31,12 @@ namespace QLN.Web.Shared.Models
         public string CrDocument { get; set; }
         public string Id { get; set; }
         public string BusinessName { get; set; }
+
+        [Required(ErrorMessage = "Phone number is required")]
+        [Phone(ErrorMessage = "Invalid phone number format")]
         public string PhoneNumber { get; set; }
+
+        [Required(ErrorMessage = "Company Logo is required")]
         public string CompanyLogo { get; set; }
         public int CompanyType { get; set; }
         public int CompanySize { get; set; }

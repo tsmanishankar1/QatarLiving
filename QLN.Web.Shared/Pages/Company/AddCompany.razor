@@ -18,9 +18,12 @@
             <MudItem xs="12">
                 <MudText Class="heading-style mt-2 ml-14">Contact Information</MudText>
             </MudItem>
+            <EditForm Model="@companyProfile" OnValidSubmit="@SaveCompanyProfileAsync" >
+    <DataAnnotationsValidator />
+    <ValidationSummary />
 
             <!-- Logo Upload -->
-            <MudItem xs="12" sm="3">
+            <MudItem xs="12" sm="3" Class="company-profile-logo-container">
                 <MudFileUpload T="IBrowserFile" Accept="image/*" FilesChanged="OnLogoFileSelected" MaxFileSize="10485760">
                     <ActivatorContent>
                         <MudPaper Elevation="1"
@@ -70,8 +73,8 @@ width:240px;                        height: 24px;
 
 
             <MudItem xs="12" sm="9">
-                <MudTextField id="businessName" @bind-Value="companyProfile.BusinessName" Label="Business Name" Required="true" Class="form-input no-underline" />
-                <MudSelect T="string" Label="Country*" @bind-Value="companyProfile.Country" Class="select-input no-underline">
+                    <MudTextField id="businessName" @bind-Value="companyProfile.BusinessName" Label="Business Name" Required="true" Class="form-input no-underline" For="@(() => companyProfile.BusinessName)" />
+                <MudSelect T="string" Label="Country*" @bind-Value="companyProfile.Country" Class="select-input no-underline" For="@(() => companyProfile.Country)">
                     <MudSelectItem Value="@("Qatar")">Qatar</MudSelectItem>
                     <MudSelectItem Value="@("UAE")">UAE</MudSelectItem>
                 </MudSelect>
@@ -81,7 +84,7 @@ width:240px;                        height: 24px;
                     <MudSelectItem Value="@("Dubai")">Dubai</MudSelectItem>
                 </MudSelect>
 
-                <MudTextField @bind-Value="companyProfile.BranchLocations[0]" Label="Branches" Class="form-input no-underline" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.LocationOn" />
+                <MudTextField @bind-Value="companyProfile.BranchLocations[0]" Label="Branches" Class="form-input no-underline" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.LocationOn" AdornmentColor="Color.Primary" AdornmentIconStyle="color: #FF7F38;" />
 
                 <MudTextField @bind-Value="companyProfile.PhoneNumber" Label="Phone Number" Class="form-input no-underline" Adornment="Adornment.Start" AdornmentText="+974" />
                 <MudTextField @bind-Value="companyProfile.WhatsAppNumber" Label="WhatsApp Number" Class="form-input no-underline" Adornment="Adornment.Start" AdornmentText="+974" />
@@ -200,7 +203,7 @@ width:240px;                        height: 24px;
 
             </MudItem>
 
-
+            </EditForm>
         </MudGrid>
     </MudContainer>
 
@@ -246,7 +249,7 @@ width:240px;                        height: 24px;
 
     .doc-input {
         justify-content: center;
-        width: 472px;
+        max-width: 472px;
         height: 60px;
         margin-top: 14px;
         background-color: #FFFFFF;
@@ -294,7 +297,7 @@ width:240px;                        height: 24px;
     .grid-input {
         width: 232px !important;
         background-color: #FFFFFF;
-        padding: 14px;
+        padding: 0px 10px;
         margin-top: 10px;
         height: 60px;
         border: 1px solid #D0D5DD;
@@ -339,7 +342,12 @@ width:240px;                        height: 24px;
             display: flex;
             padding: 10px 8px;
         }
-
+        .company-profile-logo-container{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
         .grid-flex {
             display: flex;
             gap: 10px;
@@ -361,10 +369,18 @@ width:240px;                        height: 24px;
             height: 60px;
             margin-top: 14px;
             background-color: #FFFFFF;
-            width: auto;
             border-radius: 6px;
             padding: 10px;
             position: relative;
+            border: 1px solid #D0D5DD;
+        }
+
+        .grid-input {
+            width: 100% !important;
+            background-color: #FFFFFF;
+            padding: 0px 10px;
+            margin-top: 10px;
+            height: 60px;
             border: 1px solid #D0D5DD;
         }
     }
