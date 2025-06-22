@@ -19,6 +19,7 @@ using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Service.FileStorage;
 using static Dapr.Client.Autogen.Grpc.v1.Dapr;
+using static QLN.Common.DTO_s.ClassifiedsIndex;
 
 namespace QLN.Classified.MS.Service
 {
@@ -27,8 +28,18 @@ namespace QLN.Classified.MS.Service
         private readonly IWebHostEnvironment _env;
         private readonly Dapr.Client.DaprClient _dapr;
 
-        private const string UnifiedStore = "adstore";
-        private const string UnifiedIndexKey = "ad-index";
+        private const string UnifiedStore = ConstantValues.StateStoreNames.UnifiedStore;
+        private const string UnifiedIndexKey = ConstantValues.StateStoreNames.UnifiedIndexKey;
+        private const string ItemsIndexKey = ConstantValues.StateStoreNames.ItemsIndexKey;
+        private const string PrelovedIndexKey = ConstantValues.StateStoreNames.PrelovedIndexKey;
+        private const string CollectiblesIndexKey = ConstantValues.StateStoreNames.CollectiblesIndexKey;
+        private const string DealsIndexKey = ConstantValues.StateStoreNames.DealsIndexKey;
+        private const string ItemsCategoryIndexKey = ConstantValues.StateStoreNames.ItemsCategoryIndexKey;
+        private const string PrelovedCategoryIndexKey = ConstantValues.StateStoreNames.PrelovedCategoryIndexKey;
+        private const string CollectiblesCategoryIndexKey = ConstantValues.StateStoreNames.CollectiblesCategoryIndexKey;
+        private const string DealsCategoryIndexKey = ConstantValues.StateStoreNames.DealsCategoryIndexKey;
+
+
         private readonly ILogger<ClassifiedService> _logger;
         private readonly string itemJsonPath = Path.Combine("ClassifiedMockData", "itemsAdsMock.json");
         private readonly string prelovedJsonPath = Path.Combine("ClassifiedMockData", "prelovedAdsMock.json");
@@ -39,1318 +50,7 @@ namespace QLN.Classified.MS.Service
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _env = env;
         }
-        private async Task<Category> AddItem(Category item)
-        {
-            if (item == null)
-                throw new ArgumentNullException(nameof(item), "Category item cannot be null.");
-
-            if (string.IsNullOrWhiteSpace(item.TypePrefix))
-                throw new ArgumentException("TypePrefix is required for the category item.", nameof(item.TypePrefix));
-
-            try
-            {
-                item.Id = Guid.NewGuid();
-                var key = $"{item.TypePrefix.ToLowerInvariant()}-{item.Id}";
-
-                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
-                index.Add(key);
-
-                await _dapr.SaveStateAsync(UnifiedStore, key, item);
-                await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, index);
-
-                return item;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException(
-                    $"Error while saving category item '{item?.Name}' to Dapr state store. KeyPrefix: {item?.TypePrefix}",
-                    ex
-                );
-            }
-        }
-
-        private async Task<List<Category>> GetItemsByType(string typePrefix)
-        {
-            if (string.IsNullOrWhiteSpace(typePrefix))
-                throw new ArgumentException("typePrefix cannot be null or empty.", nameof(typePrefix));
-
-            try
-            {
-                var keys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
-                var result = new List<Category>();
-
-                foreach (var key in keys)
-                {
-                    if (!key.StartsWith($"{typePrefix.ToLowerInvariant()}-")) continue;
-
-                    var item = await _dapr.GetStateAsync<Category>(UnifiedStore, key);
-
-                    if (item == null) continue;
-
-                    if (item.TypePrefix.Equals(typePrefix, StringComparison.OrdinalIgnoreCase))
-                    {
-                        result.Add(item);
-                    }
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Error while retrieving categories of type '{typePrefix}' from state store.", ex);
-            }
-        }
-
-        private string GetTypePrefix(AdInformation type)
-        {
-            try
-            {
-                var prefix = type.ToString().ToLowerInvariant();
-
-                if (string.IsNullOrWhiteSpace(prefix))
-                    throw new InvalidOperationException("Converted typePrefix is empty.");
-
-                return prefix;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Failed to convert AdInformation enum value '{type}' to type prefix.", ex);
-            }
-        }
-
-        public async Task<Category> AddCategory(string categoryName, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(categoryName))
-                throw new ArgumentException("Category name cannot be null or empty.", nameof(categoryName));
-
-            try
-            {
-                var category = new Category
-                {
-                    Name = categoryName.Trim(),
-                    TypePrefix = GetTypePrefix(AdInformation.Category),
-                    ParentId = Guid.Empty,
-                    IsActive = true
-                };
-
-                return await AddItem(category);
-            }
-            catch (ArgumentException argEx)
-            {
-                throw;
-            }
-            catch (InvalidOperationException logicEx)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error while adding a new category.", ex);
-            }
-        }
-        
-        public async Task<List<CategoriesDto>> GetAllCategories(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var items = await GetItemsByType(GetTypePrefix(AdInformation.Category));
-
-                if (items == null || items.Count == 0)
-                    return new List<CategoriesDto>();
-
-                return items
-                    .Where(i => i != null)
-                    .Select(i => new CategoriesDto
-                    {
-                        Id = i.Id,
-                        Name = i.Name
-                    })
-                    .ToList();
-            }
-            catch (InvalidOperationException logicEx)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error while retrieving all categories.", ex);
-            }
-        }
-
-        public async Task<Category> AddSubCategory(string name, Guid categoryId, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Subcategory name cannot be null or empty.", nameof(name));
-
-            if (categoryId == Guid.Empty)
-                throw new ArgumentException("Parent Category ID is required.", nameof(categoryId));
-
-            try
-            {
-                var subcategory = new Category
-                {
-                    Name = name.Trim(),
-                    ParentId = categoryId,
-                    TypePrefix = GetTypePrefix(AdInformation.SubCategory),
-                    IsActive = true
-                };
-
-                return await AddItem(subcategory);
-            }
-            catch (ArgumentException)
-            {
-                throw;
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error while adding subcategory.", ex);
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllSubCategories(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var typePrefix = GetTypePrefix(AdInformation.SubCategory);
-                var items = await GetItemsByType(typePrefix);
-
-                if (items == null || items.Count == 0)
-                    return new List<CategoriesDto>();
-
-                return items
-                    .Where(i => i != null)
-                    .Select(i => new CategoriesDto
-                    {
-                        Id = i.Id,
-                        Name = i.Name
-                    })
-                    .ToList();
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error while retrieving subcategories.", ex);
-            }
-        }
-
-        public async Task<CategoryDto?> GetCategoryWithSubCategories(Guid categoryId, CancellationToken cancellationToken = default)
-        {
-            if (categoryId == Guid.Empty)
-                throw new ArgumentException("Invalid category ID.", nameof(categoryId));
-
-            try
-            {
-                var categoryKeyPrefix = GetTypePrefix(AdInformation.Category);
-                var subCategoryKeyPrefix = GetTypePrefix(AdInformation.SubCategory);
-
-                var allKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
-
-                Category? selectedCategory = null;
-                var subcategories = new List<CategoriesDto>();
-
-                foreach (var key in allKeys)
-                {
-                    if (!key.StartsWith(categoryKeyPrefix) && !key.StartsWith(subCategoryKeyPrefix))
-                        continue;
-
-                    var item = await _dapr.GetStateAsync<Category>(UnifiedStore, key);
-                    if (item == null) continue;
-
-                    if (item.TypePrefix == categoryKeyPrefix && item.Id == categoryId)
-                    {
-                        selectedCategory = item;
-                    }
-                    else if (item.TypePrefix == subCategoryKeyPrefix && item.ParentId == categoryId)
-                    {
-                        subcategories.Add(new CategoriesDto
-                        {
-                            Id = item.Id,
-                            Name = item.Name
-                        });
-                    }
-                }
-
-                if (selectedCategory == null)
-                    throw new KeyNotFoundException($"Category with ID '{categoryId}' not found.");
-
-                return new CategoryDto
-                {
-                    Id = selectedCategory.Id,
-                    Name = selectedCategory.Name,
-                    SubCategories = subcategories
-                };
-            }
-            catch (ArgumentException)
-            {
-                throw;
-            }
-            catch (KeyNotFoundException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error while loading category with its subcategories.", ex);
-            }
-        }
-
-        public async Task<Category> AddBrand(string name, Guid subCategoryId, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Brand name cannot be null or empty.", nameof(name));
-
-            if (subCategoryId == Guid.Empty)
-                throw new ArgumentException("SubCategoryId must be a valid non-empty GUID.", nameof(subCategoryId));
-
-            try
-            {
-                var brand = new Category
-                {
-                    Name = name.Trim(),
-                    ParentId = subCategoryId,
-                    TypePrefix = GetTypePrefix(AdInformation.Brand),
-                    IsActive = true
-                };
-
-                return await AddItem(brand);
-            }
-            catch (ArgumentException)
-            {
-                throw;
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error while adding brand.", ex);
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllBrands(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var items = await GetItemsByType(GetTypePrefix(AdInformation.Brand));
-
-                if (items == null || items.Count == 0)
-                    return new List<CategoriesDto>();
-
-                return items
-                    .Where(i => i != null)
-                    .Select(i => new CategoriesDto { Id = i.Id, Name = i.Name })
-                    .ToList();
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error while retrieving brand list.", ex);
-            }
-        }
-
-        public async Task<SubCategoryWithBrandsDto> GetSubCategoryWithBrands(Guid subCategoryId, CancellationToken cancellationToken = default)
-        {
-            if (subCategoryId == Guid.Empty)
-                throw new ArgumentException("SubCategoryId must be a valid non-empty GUID.", nameof(subCategoryId));
-
-            try
-            {
-                var subCategoryKeyPrefix = GetTypePrefix(AdInformation.SubCategory);
-                var brandKeyPrefix = GetTypePrefix(AdInformation.Brand);
-
-                var allKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
-
-                Category? selectedSubCategory = null;
-                var brandList = new List<BrandDto>();
-
-                foreach (var key in allKeys)
-                {
-                    if (!key.StartsWith(subCategoryKeyPrefix) && !key.StartsWith(brandKeyPrefix))
-                        continue;
-
-                    var item = await _dapr.GetStateAsync<Category>(UnifiedStore, key);
-                    if (item == null) continue;
-
-                    if (item.TypePrefix == subCategoryKeyPrefix && item.Id == subCategoryId)
-                    {
-                        selectedSubCategory = item;
-                    }
-                    else if (item.TypePrefix == brandKeyPrefix && item.ParentId == subCategoryId)
-                    {
-                        brandList.Add(new BrandDto
-                        {
-                            Id = item.Id,
-                            Name = item.Name
-                        });
-                    }
-                }
-
-                if (selectedSubCategory == null)
-                    throw new KeyNotFoundException($"Subcategory with ID '{subCategoryId}' was not found.");
-
-                return new SubCategoryWithBrandsDto
-                {
-                    Id = selectedSubCategory.Id,
-                    Name = selectedSubCategory.Name,
-                    Brands = brandList
-                };
-            }
-            catch (ArgumentException)
-            {
-                throw;
-            }
-            catch (KeyNotFoundException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error while loading subcategory with its brands.", ex);
-            }
-        }
-
-        public async Task<Category> AddModel(string name, Guid brandId, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Model name cannot be null or empty.", nameof(name));
-
-            if (brandId == Guid.Empty)
-                throw new ArgumentException("Brand ID must be a valid non-empty GUID.", nameof(brandId));
-
-            try
-            {
-                var model = new Category
-                {
-                    Name = name.Trim(),
-                    ParentId = brandId,
-                    TypePrefix = GetTypePrefix(AdInformation.Model),
-                    IsActive = true
-                };
-
-                return await AddItem(model);
-            }
-            catch (ArgumentException)
-            {
-                throw;
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error occurred while adding model.", ex);
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllModels(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var items = await GetItemsByType(GetTypePrefix(AdInformation.Model));
-
-                if (items == null || items.Count == 0)
-                    return new List<CategoriesDto>();
-
-                return items
-                    .Where(i => i != null)
-                    .Select(i => new CategoriesDto
-                    {
-                        Id = i.Id,
-                        Name = i.Name
-                    })
-                    .ToList();
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Error while retrieving model list.", ex);
-            }
-        }
-
-        public async Task<BrandWithModelsDto> GetBrandWithModels(Guid brandId, CancellationToken cancellationToken = default)
-        {
-            if (brandId == Guid.Empty)
-                throw new ArgumentException("Brand ID must be a valid non-empty GUID.", nameof(brandId));
-
-            try
-            {
-                var brandPrefix = GetTypePrefix(AdInformation.Brand);
-                var modelPrefix = GetTypePrefix(AdInformation.Model);
-
-                var allKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
-
-                Category? selectedBrand = null;
-                var models = new List<ModelDto>();
-
-                foreach (var key in allKeys)
-                {
-                    if (!key.StartsWith(brandPrefix) && !key.StartsWith(modelPrefix))
-                        continue;
-
-                    var item = await _dapr.GetStateAsync<Category>(UnifiedStore, key);
-                    if (item == null) continue;
-
-                    if (item.TypePrefix == brandPrefix && item.Id == brandId)
-                    {
-                        selectedBrand = item;
-                    }
-                    else if (item.TypePrefix == modelPrefix && item.ParentId == brandId)
-                    {
-                        models.Add(new ModelDto
-                        {
-                            Id = item.Id,
-                            Name = item.Name
-                        });
-                    }
-                }
-
-                if (selectedBrand == null)
-                    throw new KeyNotFoundException($"Brand with ID '{brandId}' not found.");
-
-                return new BrandWithModelsDto
-                {
-                    Id = selectedBrand.Id,
-                    Name = selectedBrand.Name,
-                    Models = models
-                };
-            }
-            catch (ArgumentException)
-            {
-                throw;
-            }
-            catch (KeyNotFoundException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error while loading brand with its models.", ex);
-            }
-        }
-
-        public async Task<Category> AddCondition(string name, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Condition name cannot be null or empty.", nameof(name));
-
-            try
-            {
-                var condition = new Category
-                {
-                    Name = name.Trim(),
-                    TypePrefix = GetTypePrefix(AdInformation.Condition),
-                    ParentId = Guid.Empty,
-                    IsActive = true
-                };
-
-                return await AddItem(condition);
-            }
-            catch (ArgumentException)
-            {
-                throw;
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error occurred while adding condition.", ex);
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllConditions(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var items = await GetItemsByType(GetTypePrefix(AdInformation.Condition));
-
-                if (items == null || items.Count == 0)
-                    return new List<CategoriesDto>();
-
-                return items
-                    .Where(i => i != null)
-                    .Select(i => new CategoriesDto { Id = i.Id, Name = i.Name })
-                    .ToList();
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error while retrieving conditions.", ex);
-            }
-        }
-
-        public async Task<Category> AddColor(string name, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Color name cannot be null or empty.", nameof(name));
-
-            try
-            {
-                var color = new Category
-                {
-                    Name = name.Trim(),
-                    TypePrefix = GetTypePrefix(AdInformation.Color),
-                    ParentId = Guid.Empty,
-                    IsActive = true
-                };
-
-                return await AddItem(color);
-            }
-            catch (ArgumentException)
-            {
-                throw;
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error occurred while adding color.", ex);
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllColors(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var items = await GetItemsByType(GetTypePrefix(AdInformation.Color));
-
-                if (items == null || items.Count == 0)
-                    return new List<CategoriesDto>();
-
-                return items
-                    .Where(i => i != null)
-                    .Select(i => new CategoriesDto
-                    {
-                        Id = i.Id,
-                        Name = i.Name
-                    })
-                    .ToList();
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error while retrieving colors.", ex);
-            }
-        }
-
-        public async Task<Category> AddCapacity(string name, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Capacity name cannot be null or empty.", nameof(name));
-
-            try
-            {
-                var capacity = new Category
-                {
-                    Name = name.Trim(),
-                    TypePrefix = GetTypePrefix(AdInformation.Capacity),
-                    ParentId = Guid.Empty,
-                    IsActive = true
-                };
-
-                return await AddItem(capacity);
-            }
-            catch (ArgumentException)
-            {
-                throw;
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error occurred while adding capacity.", ex);
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllCapacities(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var items = await GetItemsByType(GetTypePrefix(AdInformation.Capacity));
-
-                if (items == null || items.Count == 0)
-                    return new List<CategoriesDto>();
-
-                return items
-                    .Where(i => i != null)
-                    .Select(i => new CategoriesDto
-                    {
-                        Id = i.Id,
-                        Name = i.Name
-                    })
-                    .ToList();
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error while retrieving capacity list.", ex);
-            }
-        }
-
-        public async Task<Category> AddProcessor(string name, Guid modelId, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Processor name cannot be null or empty.", nameof(name));
-
-            if (modelId == Guid.Empty)
-                throw new ArgumentException("Model ID must be a valid non-empty GUID.", nameof(modelId));
-
-            try
-            {
-                var processor = new Category
-                {
-                    Name = name.Trim(),
-                    ParentId = modelId,
-                    TypePrefix = GetTypePrefix(AdInformation.Processor),
-                    IsActive = true
-                };
-
-                return await AddItem(processor);
-            }
-            catch (ArgumentException)
-            {
-                throw;
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error occurred while adding processor.", ex);
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllProcessors(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var items = await GetItemsByType(GetTypePrefix(AdInformation.Processor));
-
-                if (items == null || items.Count == 0)
-                    return new List<CategoriesDto>();
-
-                return items
-                    .Where(i => i != null)
-                    .Select(i => new CategoriesDto
-                    {
-                        Id = i.Id,
-                        Name = i.Name
-                    })
-                    .ToList();
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error while retrieving processors.", ex);
-            }
-        }
-
-        public async Task<ModelWithProcessorsDto?> GetModelWithProcessors(Guid modelId, CancellationToken cancellationToken = default)
-        {
-            if (modelId == Guid.Empty)
-                throw new ArgumentException("Model ID must be a valid non-empty GUID.", nameof(modelId));
-
-            try
-            {
-                var modelPrefix = GetTypePrefix(AdInformation.Model);
-                var processorPrefix = GetTypePrefix(AdInformation.Processor);
-
-                var keys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
-
-                Category? selectedModel = null;
-                var processors = new List<ProcessorDto>();
-
-                foreach (var key in keys)
-                {
-                    if (!key.StartsWith(modelPrefix) && !key.StartsWith(processorPrefix))
-                        continue;
-
-                    var item = await _dapr.GetStateAsync<Category>(UnifiedStore, key);
-                    if (item == null) continue;
-
-                    if (item.TypePrefix == modelPrefix && item.Id == modelId)
-                        selectedModel = item;
-
-                    if (item.TypePrefix == processorPrefix && item.ParentId == modelId)
-                    {
-                        processors.Add(new ProcessorDto
-                        {
-                            Id = item.Id,
-                            Name = item.Name
-                        });
-                    }
-                }
-
-                if (selectedModel == null)
-                    throw new KeyNotFoundException($"Model with ID '{modelId}' not found.");
-
-                return new ModelWithProcessorsDto
-                {
-                    Id = selectedModel.Id,
-                    Name = selectedModel.Name,
-                    Processors = processors
-                };
-            }
-            catch (ArgumentException)
-            {
-                throw;
-            }
-            catch (KeyNotFoundException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error while loading model with processors.", ex);
-            }
-        }
-
-        public async Task<Category> AddCoverage(string name, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Coverage name cannot be null or empty.", nameof(name));
-
-            try
-            {
-                var coverage = new Category
-                {
-                    Name = name.Trim(),
-                    TypePrefix = GetTypePrefix(AdInformation.Coverage),
-                    ParentId = Guid.Empty,
-                    IsActive = true
-                };
-
-                return await AddItem(coverage);
-            }
-            catch (ArgumentException)
-            {
-                throw;
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error occurred while adding coverage.", ex);
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllCoverages(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var items = await GetItemsByType(GetTypePrefix(AdInformation.Coverage));
-
-                if (items == null || items.Count == 0)
-                    return new List<CategoriesDto>();
-
-                return items
-                    .Where(i => i != null)
-                    .Select(i => new CategoriesDto
-                    {
-                        Id = i.Id,
-                        Name = i.Name
-                    })
-                    .ToList();
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error while retrieving coverage list.", ex);
-            }
-        }
-
-        public async Task<Category> AddRam(string name, Guid modelId, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("RAM name cannot be null or empty.", nameof(name));
-
-            if (modelId == Guid.Empty)
-                throw new ArgumentException("Model ID must be a valid non-empty GUID.", nameof(modelId));
-
-            try
-            {
-                var ram = new Category
-                {
-                    Name = name.Trim(),
-                    ParentId = modelId,
-                    TypePrefix = GetTypePrefix(AdInformation.Ram),
-                    IsActive = true
-                };
-
-                return await AddItem(ram);
-            }
-            catch (ArgumentException)
-            {
-                throw;
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error occurred while adding RAM.", ex);
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllRams(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var items = await GetItemsByType(GetTypePrefix(AdInformation.Ram));
-
-                if (items == null || items.Count == 0)
-                    return new List<CategoriesDto>();
-
-                return items
-                    .Where(i => i != null)
-                    .Select(i => new CategoriesDto { Id = i.Id, Name = i.Name })
-                    .ToList();
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error while retrieving RAM options.", ex);
-            }
-        }
-
-        public async Task<ModelWithRamDto?> GetModelWithRam(Guid modelId, CancellationToken cancellationToken = default)
-        {
-            if (modelId == Guid.Empty)
-                throw new ArgumentException("Model ID must be a valid non-empty GUID.", nameof(modelId));
-
-            try
-            {
-                var modelPrefix = GetTypePrefix(AdInformation.Model);
-                var ramPrefix = GetTypePrefix(AdInformation.Ram);
-
-                var allKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
-
-                Category? selectedModel = null;
-                var ramList = new List<CategoriesDto>();
-
-                foreach (var key in allKeys)
-                {
-                    if (!key.StartsWith(modelPrefix) && !key.StartsWith(ramPrefix))
-                        continue;
-
-                    var item = await _dapr.GetStateAsync<Category>(UnifiedStore, key);
-                    if (item == null) continue;
-
-                    if (item.TypePrefix == modelPrefix && item.Id == modelId)
-                        selectedModel = item;
-
-                    if (item.TypePrefix == ramPrefix && item.ParentId == modelId)
-                    {
-                        ramList.Add(new CategoriesDto
-                        {
-                            Id = item.Id,
-                            Name = item.Name
-                        });
-                    }
-                }
-
-                if (selectedModel == null)
-                    throw new KeyNotFoundException($"Model with ID '{modelId}' not found.");
-
-                return new ModelWithRamDto
-                {
-                    Id = selectedModel.Id,
-                    Name = selectedModel.Name,
-                    RamOptions = ramList
-                };
-            }
-            catch (ArgumentException)
-            {
-                throw;
-            }
-            catch (KeyNotFoundException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Error while loading RAM linked to the selected model.", ex);
-            }
-        }
-
-        public async Task<Category> AddResolution(string name, Guid modelId, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Resolution name cannot be null or empty.", nameof(name));
-
-            if (modelId == Guid.Empty)
-                throw new ArgumentException("Model ID must be a valid non-empty GUID.", nameof(modelId));
-
-            try
-            {
-                var resolution = new Category
-                {
-                    Name = name.Trim(),
-                    TypePrefix = GetTypePrefix(AdInformation.Resolution),
-                    ParentId = modelId,
-                    IsActive = true
-                };
-
-                return await AddItem(resolution);
-            }
-            catch (ArgumentException)
-            {
-                throw;
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error occurred while adding resolution.", ex);
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllResolutions(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var items = await GetItemsByType(GetTypePrefix(AdInformation.Resolution));
-
-                if (items == null || items.Count == 0)
-                    return new List<CategoriesDto>();
-
-                return items
-                    .Where(i => i != null)
-                    .Select(i => new CategoriesDto { Id = i.Id, Name = i.Name })
-                    .ToList();
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error while retrieving resolution list.", ex);
-            }
-        }
-
-        public async Task<ModelWithResolutionsDto?> GetModelWithResolutions(Guid modelId, CancellationToken cancellationToken = default)
-        {
-            if (modelId == Guid.Empty)
-                throw new ArgumentException("Model ID must be a valid non-empty GUID.", nameof(modelId));
-
-            try
-            {
-                var modelPrefix = GetTypePrefix(AdInformation.Model);
-                var resolutionPrefix = GetTypePrefix(AdInformation.Resolution);
-
-                var allKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
-
-                Category? selectedModel = null;
-                var resolutions = new List<CategoriesDto>();
-
-                foreach (var key in allKeys)
-                {
-                    if (!key.StartsWith(modelPrefix) && !key.StartsWith(resolutionPrefix))
-                        continue;
-
-                    var item = await _dapr.GetStateAsync<Category>(UnifiedStore, key);
-                    if (item == null) continue;
-
-                    if (item.TypePrefix == modelPrefix && item.Id == modelId)
-                        selectedModel = item;
-
-                    if (item.TypePrefix == resolutionPrefix && item.ParentId == modelId)
-                    {
-                        resolutions.Add(new CategoriesDto
-                        {
-                            Id = item.Id,
-                            Name = item.Name
-                        });
-                    }
-                }
-
-                if (selectedModel == null)
-                    throw new KeyNotFoundException($"Model with ID '{modelId}' not found.");
-
-                return new ModelWithResolutionsDto
-                {
-                    Id = selectedModel.Id,
-                    Name = selectedModel.Name,
-                    Resolutions = resolutions
-                };
-            }
-            catch (ArgumentException)
-            {
-                throw;
-            }
-            catch (KeyNotFoundException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Error while loading model with resolutions.", ex);
-            }
-        }
-
-        public async Task<Category> AddSizeType(string name, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Size type name cannot be null or empty.", nameof(name));
-
-            try
-            {
-                var sizeType = new Category
-                {
-                    Name = name.Trim(),
-                    TypePrefix = GetTypePrefix(AdInformation.SizeType),
-                    ParentId = Guid.Empty,
-                    IsActive = true
-                };
-
-                return await AddItem(sizeType);
-            }
-            catch (ArgumentException)
-            {
-                throw;
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error occurred while adding size type.", ex);
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllSizeTypes(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var items = await GetItemsByType(GetTypePrefix(AdInformation.SizeType));
-                if (items == null || items.Count == 0)
-                    return new List<CategoriesDto>();
-
-                return items
-                    .Where(i => i != null)
-                    .Select(i => new CategoriesDto { Id = i.Id, Name = i.Name })
-                    .ToList();
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error occurred while retrieving all size types.", ex);
-            }
-        }
-
-        public async Task<Category> AddZone(string name, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Zone name cannot be null or empty.", nameof(name));
-
-            try
-            {
-                var zone = new Category
-                {
-                    Name = name.Trim(),
-                    TypePrefix = GetTypePrefix(AdInformation.Zone),
-                    ParentId = Guid.Empty,
-                    IsActive = true
-                };
-
-                return await AddItem(zone);
-            }
-            catch (ArgumentException)
-            {
-                throw;
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error occurred while adding zone.", ex);
-            }
-        }
-
-        public async Task<List<CategoriesDto>> GetAllZones(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var items = await GetItemsByType(GetTypePrefix(AdInformation.Zone));
-                if (items == null || items.Count == 0)
-                    return new List<CategoriesDto>();
-
-                return items
-                    .Where(i => i != null)
-                    .Select(i => new CategoriesDto { Id = i.Id, Name = i.Name })
-                    .ToList();
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error occurred while retrieving all zones.", ex);
-            }
-        }
-
-        public async Task<NestedCategoryDto> GetCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
-        {
-            if (categoryId == Guid.Empty)
-                throw new ArgumentException("Invalid category ID.", nameof(categoryId));
-
-            try
-            {
-                var allKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
-
-                
-                var allCategories = new List<Category>();
-
-                foreach (var key in allKeys)
-                {
-                    var item = await _dapr.GetStateAsync<Category>(UnifiedStore, key);
-                    if (item != null)
-                        allCategories.Add(item);
-                }
-
-                
-                var catPrefix = GetTypePrefix(AdInformation.Category);
-                var subCatPrefix = GetTypePrefix(AdInformation.SubCategory);
-                var brandPrefix = GetTypePrefix(AdInformation.Brand);
-                var modelPrefix = GetTypePrefix(AdInformation.Model);
-                var ramPrefix = GetTypePrefix(AdInformation.Ram);
-                var procPrefix = GetTypePrefix(AdInformation.Processor);
-                var resoPrefix = GetTypePrefix(AdInformation.Resolution);
-
-                // Root category
-                var rootCategory = allCategories.FirstOrDefault(c => c.Id == categoryId && c.TypePrefix == catPrefix);
-                if (rootCategory == null)
-                    throw new KeyNotFoundException($"Category with ID '{categoryId}' not found.");
-
-                // Filter related levels
-                var subCategories = allCategories
-                    .Where(c => c.TypePrefix == subCatPrefix && c.ParentId == categoryId)
-                    .ToList();
-
-                var result = new NestedCategoryDto
-                {
-                    Id = rootCategory.Id,
-                    Name = rootCategory.Name,
-                    SubCategories = subCategories.Select(sc =>
-                    {
-                        var brands = allCategories
-                            .Where(b => b.TypePrefix == brandPrefix && b.ParentId == sc.Id)
-                            .ToList();
-
-                        return new NestedSubCategoryDto
-                        {
-                            Id = sc.Id,
-                            Name = sc.Name,
-                            Brands = brands.Select(b =>
-                            {
-                                var models = allCategories
-                                    .Where(m => m.TypePrefix == modelPrefix && m.ParentId == b.Id)
-                                    .ToList();
-
-                                return new NestedBrandDto
-                                {
-                                    Id = b.Id,
-                                    Name = b.Name,
-                                    Models = models.Select(m =>
-                                    {
-                                        var rams = allCategories
-                                            .Where(r => r.TypePrefix == ramPrefix && r.ParentId == m.Id)
-                                            .Select(r => new CategoriesDto { Id = r.Id, Name = r.Name })
-                                            .ToList();
-
-                                        var processors = allCategories
-                                            .Where(p => p.TypePrefix == procPrefix && p.ParentId == m.Id)
-                                            .Select(p => new CategoriesDto { Id = p.Id, Name = p.Name })
-                                            .ToList();
-
-                                        var resolutions = allCategories
-                                            .Where(res => res.TypePrefix == resoPrefix && res.ParentId == m.Id)
-                                            .Select(res => new CategoriesDto { Id = res.Id, Name = res.Name })
-                                            .ToList();
-
-                                        return new NestedModelDto
-                                        {
-                                            Id = m.Id,
-                                            Name = m.Name,
-                                            Rams = rams,
-                                            Processors = processors,
-                                            Resolutions = resolutions
-                                        };
-                                    }).ToList()
-                                };
-                            }).ToList()
-                        };
-                    }).ToList()
-                };
-
-                return result;
-            }
-            catch (ArgumentException)
-            {
-                throw;
-            }
-            catch (KeyNotFoundException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Unexpected error occurred while retrieving the category hierarchy.", ex);
-            }
-        }
-
+                       
         public async Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default)
         {
             if (dto == null)
@@ -1510,7 +210,6 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-
         private async Task<List<PrelovedAd>> ReadAllPrelovedAdsFromFile()
         {
             try
@@ -1602,88 +301,9 @@ namespace QLN.Classified.MS.Service
                 Console.WriteLine($"Error reading collectibles: {ex.Message}");
                 throw;
             }
-        }
-
-        public async Task<bool> DeleteCategoryHierarchy(Guid categoryId, CancellationToken cancellationToken = default)
-        {
-            if (categoryId == Guid.Empty)
-                throw new ArgumentException("Invalid category ID.", nameof(categoryId));
-
-            try
-            {
-                var allKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
-                var allEntities = new Dictionary<string, Category>();
-
-                // Load all category-related objects
-                foreach (var key in allKeys)
-                {
-                    var entity = await _dapr.GetStateAsync<Category>(UnifiedStore, key);
-                    if (entity != null)
-                        allEntities[key] = entity;
-                }
-
-                // Define the prefix hierarchy
-                var prefixMap = new Dictionary<AdInformation, string>
-        {
-            { AdInformation.Category, GetTypePrefix(AdInformation.Category) },
-            { AdInformation.SubCategory, GetTypePrefix(AdInformation.SubCategory) },
-            { AdInformation.Brand, GetTypePrefix(AdInformation.Brand) },
-            { AdInformation.Model, GetTypePrefix(AdInformation.Model) },
-            { AdInformation.Ram, GetTypePrefix(AdInformation.Ram) },
-            { AdInformation.Processor, GetTypePrefix(AdInformation.Processor) },
-            { AdInformation.Resolution, GetTypePrefix(AdInformation.Resolution) }
-        };
-
-                // Find the root category key
-                var rootKey = allKeys.FirstOrDefault(k =>
-                    k.StartsWith(prefixMap[AdInformation.Category]) &&
-                    allEntities.TryGetValue(k, out var entity) &&
-                    entity.Id == categoryId);
-
-                if (string.IsNullOrWhiteSpace(rootKey))
-                    throw new KeyNotFoundException($"Category with ID '{categoryId}' not found.");
-
-                var keysToDelete = new List<string> { rootKey };
-
-                // Recursive delete logic
-                void TraverseAndCollect(Guid parentId, List<string> prefixesToSearch)
-                {
-                    foreach (var kvp in allEntities)
-                    {
-                        var item = kvp.Value;
-                        if (item.ParentId == parentId && prefixesToSearch.Contains(item.TypePrefix))
-                        {
-                            keysToDelete.Add(kvp.Key);
-
-                            // Drill down deeper
-                            TraverseAndCollect(item.Id, prefixesToSearch);
-                        }
-                    }
-                }
-
-                TraverseAndCollect(categoryId, prefixMap.Values.ToList());
-
-                // Delete from Dapr
-                foreach (var key in keysToDelete)
-                {
-                    await _dapr.DeleteStateAsync(UnifiedStore, key);
-                    allKeys.Remove(key); // remove from index
-                }
-
-                // Update index
-                await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, allKeys);
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while deleting category and its hierarchy for ID: {CategoryId}", categoryId);
-                throw new InvalidOperationException("Failed to delete category hierarchy.", ex);
-            }
-        }
-
-        // itemsAd post
-        public async Task<ItemsAdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default)
+        }     
+        
+        public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
@@ -1691,13 +311,14 @@ namespace QLN.Classified.MS.Service
 
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
-            if (dto.AdImageFileNames == null || dto.AdImageFileNames.Count == 0)
+            if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
                 throw new ArgumentException("Image URLs must be provided.");
 
             if (string.IsNullOrWhiteSpace(dto.CertificateFileName))
                 throw new ArgumentException("Certificate URL must be provided.");
 
-            var adId = Guid.NewGuid();
+            var adId = dto.Id != Guid.Empty ? dto.Id : throw new ArgumentException("Id must be provided");
+
             var key = $"ad-{adId}";
 
             try
@@ -1716,22 +337,26 @@ namespace QLN.Classified.MS.Service
                     dto.Description,
                     dto.Category,
                     dto.SubCategory,
+                    dto.L2Category,
                     dto.Brand,
                     dto.Model,
                     dto.Price,
+                    dto.PriceType,
                     dto.Condition,
                     dto.Color,
+                    dto.AcceptsOffers,
+                    dto.MakeType,
                     dto.Capacity,
                     dto.Processor,
                     dto.Coverage,
                     dto.Ram,
                     dto.Resolution,
                     dto.BatteryPercentage,
-                    dto.SizeType,
+                    dto.Size,
                     dto.SizeValue,
                     dto.Gender,
                     CertificateUrl = dto.CertificateFileName,
-                    ImageUrls = dto.AdImageFileNames,
+                    ImageUrls = dto.AdImagesBase64,
                     dto.PhoneNumber,
                     dto.WhatsAppNumber,
                     dto.Zone,
@@ -1739,31 +364,32 @@ namespace QLN.Classified.MS.Service
                     dto.BuildingNumber,
                     dto.Latitude,
                     dto.Longitude,
-                    dto.UserId,
+                    dto.UserId,   
+                    dto.IsFeatured,
+                    dto.IsPromoted,
+                    dto.TearmsAndCondition,
                     CreatedAt = DateTime.UtcNow,
                     Status = AdStatus.Draft
                 };
                 
-                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, UnifiedIndexKey) ?? new();
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, ItemsIndexKey) ?? new();
                 index.Add(key);
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
-                await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, index);
+                await _dapr.SaveStateAsync(UnifiedStore, ItemsIndexKey, index);
 
-                return new ItemsAdCreatedResponseDto
+                return new AdCreatedResponseDto
                 {
                     AdId = adId,
                     Title = dto.Title,
-                    Description = dto.Description,
-                    CertificateUrl = dto.CertificateFileName,
-                    ImageUrls = dto.AdImageFileNames,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    Message = "Items Ad created successfully"
                 };
             }
             catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
             {
                 _logger.LogWarning(ex, "Duplicate ad insert attempt.");
-                throw new InvalidOperationException("Ad already exists. Conflict occurred during ad creation.", ex);
+                throw new InvalidOperationException("Ad already exists. Conflict occurred during Items ad creation.", ex);
             }
             catch (ArgumentException ex)
             {
@@ -1772,15 +398,1210 @@ namespace QLN.Classified.MS.Service
             }
             catch (InvalidOperationException ex)
             {
-                _logger.LogError(ex, "Operation error while creating classified ad.");
+                _logger.LogError(ex, "Operation error while creating classified Items ad.");
                 throw;
             }
             catch (Exception ex)
             {
                 _logger.LogCritical(ex, "Unhandled error occurred during ad creation.");
-                throw new InvalidOperationException("An unexpected error occurred while creating the ad. Please try again later.", ex);
+                throw new InvalidOperationException("An unexpected error occurred while creating the Items ad. Please try again later.", ex);
             }
         }
 
+        public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+
+            if (dto.UserId == Guid.Empty) throw new ArgumentException("UserId is required.");
+
+            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+
+            if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
+                throw new ArgumentException("Image URLs must be provided.");
+
+            if (string.IsNullOrWhiteSpace(dto.CertificateFileName))
+                throw new ArgumentException("Certificate URL must be provided.");
+
+            var adId = dto.Id != Guid.Empty ? dto.Id : throw new ArgumentException("Id must be provided");
+
+            var key = $"ad-{adId}";
+            try
+            {
+                var existing = await _dapr.GetStateAsync<object>(UnifiedStore, key);
+                if (existing != null)
+                {
+                    throw new InvalidOperationException($"Ad with key {key} already exists.");
+                }
+                var adItem = new
+                {
+                    Id = adId,
+                    dto.SubVertical,
+                    dto.Title,
+                    dto.Description,
+                    dto.Category,
+                    dto.SubCategory,
+                    dto.Brand,
+                    dto.Model,
+                    dto.Price,
+                    dto.PriceType,
+                    dto.Condition,
+                    dto.Color,                    
+                    dto.Capacity,
+                    dto.Processor,
+                    dto.Coverage,
+                    dto.Ram,
+                    dto.Resolution,
+                    dto.BatteryPercentage,
+                    dto.Size,
+                    dto.SizeValue,
+                    dto.Gender,
+                    CertificateUrl = dto.CertificateFileName,
+                    ImageUrls = dto.AdImagesBase64,
+                    dto.PhoneNumber,
+                    dto.WhatsAppNumber,
+                    dto.Zone,
+                    dto.StreetNumber,
+                    dto.BuildingNumber,
+                    dto.Latitude,
+                    dto.Longitude,
+                    dto.UserId,
+                    dto.IsFeatured,
+                    dto.IsPromoted,
+                    CreatedAt = DateTime.UtcNow,
+                    Status = AdStatus.Draft
+                };
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, PrelovedIndexKey) ?? new();
+                index.Add(key);
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
+                await _dapr.SaveStateAsync(UnifiedStore, PrelovedIndexKey, index);
+
+                return new AdCreatedResponseDto
+                {
+                    AdId = adId,
+                    Title = dto.Title,
+                    CreatedAt = DateTime.UtcNow,
+                    Message = "Preloved Ad created successfully"
+                };
+
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
+            {
+                _logger.LogWarning(ex, "Duplicate ad insert attempt.");
+                throw new InvalidOperationException("Ad already exists. Conflict occurred during Preloved ad creation.", ex);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation failed in CreateClassifiedPrelovedAd");
+                throw;
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Operation error while creating classified Preloved ad.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Unhandled error occurred during ad creation.");
+                throw new InvalidOperationException("An unexpected error occurred while creating the Preloved ad. Please try again later.", ex);
+            }        
+        }
+
+        public async Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(ClassifiedCollectibles dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+
+            if (dto.UserId == Guid.Empty) throw new ArgumentException("UserId is required.");
+
+            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+
+            if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
+                throw new ArgumentException("Image URLs must be provided.");
+
+            if (string.IsNullOrWhiteSpace(dto.CertificateFileName))
+                throw new ArgumentException("Certificate URL must be provided.");
+
+            var adId = dto.Id != Guid.Empty ? dto.Id : throw new ArgumentException("Id must be provided.");
+            var key = $"ad-{adId}";
+
+            try
+            {
+                var existing = await _dapr.GetStateAsync<object>(UnifiedStore, key);
+                if (existing != null)
+                    throw new InvalidOperationException($"Ad with key {key} already exists.");
+
+                var adItem = new
+                {
+                    Id = adId,
+                    dto.SubVertical,
+                    dto.Title,
+                    dto.Description,
+                    dto.Category,
+                    dto.SubCategory,
+                    dto.L2Category,
+                    dto.Brand,
+                    dto.Price,
+                    dto.PriceType,
+                    dto.Condition,
+                    dto.CountryOfOrigin,
+                    dto.Language,
+                    dto.HasAuthenticityCertificate,
+                    CertificateUrl = dto.CertificateFileName,
+                    dto.YearOrEra,
+                    dto.Rarity,
+                    dto.Package,
+                    dto.IsGraded,
+                    dto.GradingCompany,
+                    dto.Grades,
+                    dto.Material,
+                    dto.Scale,
+                    dto.SerialNumber,
+                    dto.Signed,
+                    dto.SignedBy,
+                    dto.FramedBy,
+                    ImageUrls = dto.AdImagesBase64,
+                    dto.PhoneNumber,
+                    dto.WhatsAppNumber,
+                    dto.ContactEmail,
+                    dto.Location,
+                    dto.StreetNumber,
+                    dto.BuildingNumber,
+                    dto.HasWarranty,
+                    dto.IsHandmade,
+                    dto.TearmsAndCondition,
+                    dto.UserId,
+                    dto.IsFeatured,
+                    dto.IsPromoted,
+                    CreatedAt = DateTime.UtcNow,
+                    Status = AdStatus.Draft
+                };
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, CollectiblesIndexKey) ?? new();
+                index.Add(key);
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
+                await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, index);
+
+                return new AdCreatedResponseDto
+                {
+                    AdId = adId,
+                    Title = dto.Title,
+                    CreatedAt = DateTime.UtcNow,
+                    Message = "Collectibles Ad created successfully"
+                };
+
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
+            {
+                _logger.LogWarning(ex, "Duplicate ad insert attempt.");
+                throw new InvalidOperationException("Ad already exists. Conflict occurred during Collectibles ad creation.", ex);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation failed in CreateClassifiedCollectiblesAd");
+                throw;
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Operation error while creating classified Collectibles ad.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Unhandled error occurred during Collectibles ad creation.");
+                throw new InvalidOperationException("An unexpected error occurred while creating the Collectibles ad. Please try again later.", ex);
+            }
+        }
+
+        public async Task<AdCreatedResponseDto> CreateClassifiedDealsAd(ClassifiedDeals dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+
+            if (dto.UserId == Guid.Empty) throw new ArgumentException("UserId is required.");
+
+            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+
+            if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
+                throw new ArgumentException("Image URLs must be provided.");
+
+            if (string.IsNullOrWhiteSpace(dto.FlyerName))
+                throw new ArgumentException("Flyer URL must be provided.");
+
+            var adId = dto.Id != Guid.Empty ? dto.Id : throw new ArgumentException("Id must be provided");
+
+            var key = $"ad-{adId}";
+            try
+            {
+                var existing = await _dapr.GetStateAsync<object>(UnifiedStore, key);
+                if (existing != null)
+                {
+                    throw new InvalidOperationException($"Ad with key {key} already exists.");
+                }
+                var adItem = new
+                {
+                    Id = adId,
+                    dto.SubVertical,
+                    dto.Title,
+                    FlyerFile = dto.FlyerName,
+                    ImageUrl = dto.AdImagesBase64,
+                    dto.XMLLink,
+                    dto.ExpiryDate,
+                    dto.PhoneNumber,
+                    dto.WhatsAppNumber,
+                    dto.Location,
+                    dto.UserId,
+                    dto.IsFeatured,
+                    dto.IsPromoted,
+                    CreatedAt = DateTime.UtcNow,
+                    Status = AdStatus.Draft
+                };
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, DealsIndexKey) ?? new();
+                index.Add(key);
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
+                await _dapr.SaveStateAsync(UnifiedStore, DealsIndexKey, index);
+
+
+                return new AdCreatedResponseDto
+                {
+                    AdId = adId,
+                    Title = dto.Title,
+                    CreatedAt = DateTime.UtcNow,
+                    Message = "Deals Ad created successfully"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Unhandled error occurred during ad creation.");
+                throw new InvalidOperationException("An unexpected error occurred while creating the Deals ad. Please try again later.", ex);
+            }
+        }
+
+        public async Task<DeleteAdResponseDto> DeleteClassifiedItemsAd(Guid adId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var key = $"ad-{adId}";
+
+                var adObject = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
+
+                if (adObject.ValueKind != JsonValueKind.Object)
+                    throw new KeyNotFoundException($"Ad with ID {adId} not found.");
+
+                var subVertical = adObject.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
+                if (!string.Equals(subVertical, "Items", StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException($"Ad ID {adId} does not belong to the Items subvertical. Found: {subVertical}");
+
+                _logger.LogInformation("Fetched ad object: {Json}", adObject.ToString());
+
+                var blobNames = new List<string>();
+
+                if (adObject.TryGetProperty("certificateUrl", out var certProp) && certProp.ValueKind == JsonValueKind.String)
+                {
+                    var certUrl = certProp.GetString();
+                    var certBlobName = ExtractBlobName(certUrl);
+                    if (!string.IsNullOrEmpty(certBlobName))
+                        blobNames.Add(certBlobName);
+                }
+
+                if (adObject.TryGetProperty("imageUrls", out var imagesProp) && imagesProp.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var img in imagesProp.EnumerateArray())
+                    {
+                        if (img.TryGetProperty("url", out var urlProp) && urlProp.ValueKind == JsonValueKind.String)
+                        {
+                            var imgUrl = urlProp.GetString();
+                            var imgBlobName = ExtractBlobName(imgUrl);
+                            if (!string.IsNullOrEmpty(imgBlobName))
+                                blobNames.Add(imgBlobName);
+                        }
+                    }
+
+                }
+
+                _logger.LogInformation("Extracted blob names: {Blobs}", string.Join(", ", blobNames));
+
+                await _dapr.DeleteStateAsync(UnifiedStore, key, cancellationToken: cancellationToken);
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, ItemsIndexKey, cancellationToken: cancellationToken) ?? new();
+                if (index.Contains(key))
+                {
+                    index.Remove(key);
+                    await _dapr.SaveStateAsync(UnifiedStore, ItemsIndexKey, index, cancellationToken: cancellationToken);
+                }
+
+                return new DeleteAdResponseDto
+                {
+                    Message = "Ad deleted successfully",
+                    DeletedImages = blobNames
+                };
+            }
+            catch (JsonException jex)
+            {
+                _logger.LogError(jex, "JSON parsing failed for ad ID: {AdId}", adId);
+                throw new InvalidOperationException("Failed to parse ad JSON. Invalid format.", jex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while deleting classified items ad with ID: {AdId}", adId);
+                throw new InvalidOperationException("An unexpected error occurred while deleting the classified items ad.", ex);
+            }
+        }
+
+        public async Task<DeleteAdResponseDto> DeleteClassifiedPrelovedAd(Guid adId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var key = $"ad-{adId}";
+
+                var adObject = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
+
+                if (adObject.ValueKind != JsonValueKind.Object)
+                    throw new KeyNotFoundException($"Preloved Ad with ID {adId} not found.");
+
+                var subVertical = adObject.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
+                if (!string.Equals(subVertical, "Preloved", StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException($"Ad ID {adId} does not belong to the Preloved subvertical. Found: {subVertical}");
+
+                _logger.LogInformation("Fetched Preloved ad object: {Json}", adObject.ToString());
+
+                var blobNames = new List<string>();
+
+                if (adObject.TryGetProperty("certificateUrl", out var certProp) && certProp.ValueKind == JsonValueKind.String)
+                {
+                    var certUrl = certProp.GetString();
+                    var certBlobName = ExtractBlobName(certUrl);
+                    if (!string.IsNullOrEmpty(certBlobName))
+                        blobNames.Add(certBlobName);
+                }
+
+                if (adObject.TryGetProperty("imageUrls", out var imagesProp) && imagesProp.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var img in imagesProp.EnumerateArray())
+                    {
+                        if (img.TryGetProperty("url", out var urlProp) && urlProp.ValueKind == JsonValueKind.String)
+                        {
+                            var imgUrl = urlProp.GetString();
+                            var imgBlobName = ExtractBlobName(imgUrl);
+                            if (!string.IsNullOrEmpty(imgBlobName)) blobNames.Add(imgBlobName);
+                        }
+                    }
+                }
+
+                _logger.LogInformation("Extracted blob names for Preloved ad: {Blobs}", string.Join(", ", blobNames));
+
+                await _dapr.DeleteStateAsync(UnifiedStore, key, cancellationToken: cancellationToken);
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, PrelovedIndexKey, cancellationToken: cancellationToken) ?? new();
+                if (index.Contains(key))
+                {
+                    index.Remove(key);
+                    await _dapr.SaveStateAsync(UnifiedStore, PrelovedIndexKey, index, cancellationToken: cancellationToken);
+                }
+
+                return new DeleteAdResponseDto
+                {
+                    Message = "Preloved Ad deleted successfully",
+                    DeletedImages = blobNames
+                };
+
+            }
+            catch (JsonException jex)
+            {
+                _logger.LogError(jex, "JSON parsing failed for Preloved ad ID: {AdId}", adId);
+                throw new InvalidOperationException("Failed to parse Preloved ad JSON. Invalid format.", jex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while deleting classified preloved ad with ID: {AdId}", adId);
+                throw new InvalidOperationException("An unexpected error occurred while deleting the classified preloved ad.", ex);
+            }
+        }
+
+        public async Task<DeleteAdResponseDto> DeleteClassifiedCollectiblesAd(Guid adId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var key = $"ad-{adId}";
+
+                var adObject = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
+
+                if (adObject.ValueKind != JsonValueKind.Object)
+                    throw new KeyNotFoundException($"Collectibles Ad with ID {adId} not found.");
+
+                var subVertical = adObject.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
+                if (!string.Equals(subVertical, "Collectibles", StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException($"Ad ID {adId} does not belong to the Collectibles subvertical. Found: {subVertical}");
+
+                _logger.LogInformation("Fetched Collectibles ad object: {Json}", adObject.ToString());
+
+                var blobNames = new List<string>();
+
+                if (adObject.TryGetProperty("certificateUrl", out var certProp) && certProp.ValueKind == JsonValueKind.String)
+                {
+                    var certUrl = certProp.GetString();
+                    var certBlobName = ExtractBlobName(certUrl);
+                    if (!string.IsNullOrEmpty(certBlobName))
+                        blobNames.Add(certBlobName);
+                }
+
+                if (adObject.TryGetProperty("imageUrls", out var imagesProp) && imagesProp.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var img in imagesProp.EnumerateArray())
+                    {
+                        if (img.TryGetProperty("url", out var urlProp) && urlProp.ValueKind == JsonValueKind.String)
+                        {
+                            var imgUrl = urlProp.GetString();
+                            var imgBlobName = ExtractBlobName(imgUrl);
+                            if (!string.IsNullOrEmpty(imgBlobName)) blobNames.Add(imgBlobName);
+                        }
+                    }
+                }
+
+                _logger.LogInformation("Extracted blob names for Collectibles ad: {Blobs}", string.Join(", ", blobNames));
+
+                await _dapr.DeleteStateAsync(UnifiedStore, key, cancellationToken: cancellationToken);
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, CollectiblesIndexKey, cancellationToken: cancellationToken) ?? new();
+                if (index.Contains(key))
+                {
+                    index.Remove(key);
+                    await _dapr.SaveStateAsync(UnifiedStore, CollectiblesIndexKey, index, cancellationToken: cancellationToken);
+                }
+
+                return new DeleteAdResponseDto
+                {
+                    Message = "Collectibles Ad deleted successfully",
+                    DeletedImages = blobNames
+                };
+            }
+            catch (JsonException jex)
+            {
+                _logger.LogError(jex, "JSON parsing failed for Collectibles ad ID: {AdId}", adId);
+                throw new InvalidOperationException("Failed to parse Collectibles ad JSON. Invalid format.", jex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while deleting classified collectibles ad with ID: {AdId}", adId);
+                throw new InvalidOperationException("An unexpected error occurred while deleting the classified collectibles ad.", ex);
+            }
+        }
+
+        public async Task<DeleteAdResponseDto> DeleteClassifiedDealsAd(Guid adId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var key = $"ad-{adId}";
+
+                var adObject = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
+
+                var subVertical = adObject.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
+                if (!string.Equals(subVertical, "Deals", StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException($"Ad ID {adId} does not belong to the Deals subvertical. Found: {subVertical}");
+
+                if (adObject.ValueKind != JsonValueKind.Object)
+                    throw new KeyNotFoundException($"Ad with ID {adId} not found.");
+
+                _logger.LogInformation("Fetched deals ad object: {Json}", adObject.ToString());
+
+                var blobNames = new List<string>();
+
+                if (adObject.TryGetProperty("flyerFile", out var flyerProp) && flyerProp.ValueKind == JsonValueKind.String)
+                {
+                    var flyerUrl = flyerProp.GetString();
+                    var flyerBlobName = ExtractBlobName(flyerUrl);
+                    if (!string.IsNullOrEmpty(flyerBlobName))
+                        blobNames.Add(flyerBlobName);
+                }
+
+                if (adObject.TryGetProperty("ImageUrl", out var imageUrlsProp) && imageUrlsProp.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var img in imageUrlsProp.EnumerateArray())
+                    {
+                        if (img.TryGetProperty("url", out var urlProp) && urlProp.ValueKind == JsonValueKind.String)
+                        {
+                            var imgUrl = urlProp.GetString();
+                            var imgBlobName = ExtractBlobName(imgUrl);
+                            if (!string.IsNullOrEmpty(imgBlobName)) blobNames.Add(imgBlobName);
+                        }
+                    }
+                }
+                _logger.LogInformation("Extracted blob names for deals ad: {Blobs}", string.Join(", ", blobNames));
+
+                await _dapr.DeleteStateAsync(UnifiedStore, key, cancellationToken: cancellationToken);
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, DealsIndexKey, cancellationToken: cancellationToken) ?? new();
+
+                if (index.Contains(key))
+                {
+                    index.Remove(key);
+                    await _dapr.SaveStateAsync(UnifiedStore, DealsIndexKey, index, cancellationToken: cancellationToken);
+                }
+
+                return new DeleteAdResponseDto
+                {
+                    Message = "Deals Ad deleted successfully",
+                    DeletedImages = blobNames
+                };
+            }
+            catch (JsonException jex)
+            {
+                _logger.LogError(jex, "JSON parsing failed for Deals ad ID: {AdId}", adId);
+                throw new InvalidOperationException("Failed to parse Deals ad JSON. Invalid format.", jex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while deleting classified deals ad with ID: {AdId}", adId);
+                throw new InvalidOperationException("An unexpected error occurred while deleting the classified deals ad.", ex);
+            }
+        }
+
+        private static string ExtractBlobName(string? url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+                return null;
+
+            try
+            {
+                return new Uri(url).Segments.LastOrDefault()?.Trim('/');
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public async Task<ItemAdListDto> GetUserItemsAd(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, ItemsIndexKey) ?? new();
+
+                var list = new ItemAdListDto();
+
+                foreach (var key in index)
+                {
+                    try
+                    {
+                        var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
+
+                        if (state.ValueKind != JsonValueKind.Object) continue;
+
+                        var subVertical = state.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
+                        var adUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+
+                        if (!string.Equals(subVertical, "Items", StringComparison.OrdinalIgnoreCase) || adUserId != userId)
+                            continue;
+
+                        var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var statusInt)
+                            ? (AdStatus)statusInt : AdStatus.Draft;
+
+                        var ad = new ItemAdDto
+                        {
+                            Id = state.GetProperty("id").GetGuid(),
+                            Title = state.GetProperty("title").GetString(),
+                            SubVertical = subVertical,
+                            Description = state.GetProperty("description").GetString(),
+                            Category = state.GetProperty("category").GetString(),
+                            SubCategory = state.GetProperty("subCategory").GetString(),
+                            L2Category = state.TryGetProperty("l2Category", out var l2c) ? l2c.GetString() ?? "" : "",
+                            Brand = state.GetProperty("brand").GetString(),
+                            Model = state.GetProperty("model").GetString(),
+                            Price = state.GetProperty("price").GetDecimal(),
+                            PriceType = state.GetProperty("priceType").GetString(),
+                            Condition = state.GetProperty("condition").GetString(),
+                            Color = state.GetProperty("color").GetString(),
+                            AcceptsOffers = state.TryGetProperty("acceptsOffers", out var offers) ? offers.GetString() ?? "" : "",
+                            MakeType = state.TryGetProperty("makeType", out var make) ? make.GetString() ?? "" : "",
+                            Capacity = state.TryGetProperty("capacity", out var capacity) ? capacity.GetString() ?? "" : "",
+                            Processor = state.TryGetProperty("processor", out var processor) ? processor.GetString() ?? "" : "",
+                            Coverage = state.TryGetProperty("coverage", out var coverage) ? coverage.GetString() ?? "" : "",
+                            Ram = state.TryGetProperty("ram", out var ram) ? ram.GetString() ?? "" : "",
+                            Resolution = state.TryGetProperty("resolution", out var res) ? res.GetString() ?? "" : "",
+                            BatteryPercentage = state.TryGetProperty("batteryPercentage", out var battery) ? battery.GetRawText() : "",
+                            Size = state.TryGetProperty("size", out var size) ? size.GetString() ?? "" : "",
+                            SizeValue = state.TryGetProperty("sizeValue", out var sizeVal) ? sizeVal.GetString() ?? "" : "",
+                            Gender = state.TryGetProperty("gender", out var gender) ? gender.GetString() ?? "" : "",
+                            CertificateUrl = state.GetProperty("certificateUrl").GetString(),
+                            ImageUrls = state.TryGetProperty("imageUrls", out var imgs) && imgs.ValueKind == JsonValueKind.Array
+                            ? imgs.EnumerateArray().Select(img =>
+                            {
+                                var imageInfo = new ImageInfo
+                                {
+                                    AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() ?? "" : "",
+                                    Url = img.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "",
+                                    Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
+                                };
+                                return imageInfo;
+                            }).Where(i => !string.IsNullOrEmpty(i.Url)).ToList()
+                            : new(),
+                            Phone = state.TryGetProperty("phoneNumber", out var phone) ? phone.GetString() ?? "" : "",
+                            WhatsAppNumber = state.TryGetProperty("whatsAppNumber", out var whatsapp) ? whatsapp.GetString() ?? "" : "",
+                            Zone = state.TryGetProperty("zone", out var zone) ? zone.GetString() ?? "" : "",
+                            StreetName = state.TryGetProperty("streetNumber", out var street) ? street.GetString() ?? "" : "",
+                            BuildingNumber = state.TryGetProperty("buildingNumber", out var building) ? building.GetString() ?? "" : "",
+                            Latitude = state.TryGetProperty("latitude", out var lat) ? lat.GetRawText() : "",
+                            Longitude = state.TryGetProperty("longitude", out var lng) ? lng.GetRawText() : "",
+                            CreatedAt = state.GetProperty("createdAt").GetDateTime(),
+                            IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
+                            IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
+                            Status = status,
+                            UserId = adUserId
+                        };
+
+                        if (status == AdStatus.Published || status == AdStatus.Approved)
+                            list.PublishedAds.Add(ad);
+                        else
+                            list.UnpublishedAds.Add(ad);
+                    }
+                    catch(Exception ex)
+                    {
+                        _logger.LogError(ex, "Error processing ad from key: {Key}", key);
+                    }
+                }
+
+                return list;
+            }
+            catch(Exception ex)
+            {
+                throw new InvalidOperationException("Failed to retrieve user items ads", ex);
+            }
+        }
+
+        public async Task<PrelovedAdListDto> GetUserPrelovedAds(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, PrelovedIndexKey) ?? new();
+                var list = new PrelovedAdListDto();
+
+                foreach (var key in index)
+                {
+                    try
+                    {
+                        var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
+                        if (state.ValueKind != JsonValueKind.Object) continue;
+
+                        var subVertical = state.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
+                        var adUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+
+                        if (!string.Equals(subVertical, "Preloved", StringComparison.OrdinalIgnoreCase) || adUserId != userId)
+                            continue;
+
+                        var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var statusInt)
+                            ? (AdStatus)statusInt : AdStatus.Draft;
+
+                        var ad = new PrelovedAdDto
+                        {
+                            Id = state.GetProperty("id").GetGuid(),
+                            Title = state.GetProperty("title").GetString(),
+                            SubVertical = subVertical,
+                            Description = state.GetProperty("description").GetString(),
+                            Category = state.GetProperty("category").GetString(),
+                            SubCategory = state.GetProperty("subCategory").GetString(),
+                            Brand = state.GetProperty("brand").GetString(),
+                            Model = state.GetProperty("model").GetString(),
+                            Price = state.GetProperty("price").GetDecimal(),
+                            PriceType = state.GetProperty("priceType").GetString(),
+                            Condition = state.GetProperty("condition").GetString(),
+                            Color = state.GetProperty("color").GetString(),
+                            Capacity = state.TryGetProperty("capacity", out var capacity) ? capacity.GetString() ?? "" : "",
+                            Processor = state.TryGetProperty("processor", out var processor) ? processor.GetString() ?? "" : "",
+                            Coverage = state.TryGetProperty("coverage", out var coverage) ? coverage.GetString() ?? "" : "",
+                            Ram = state.TryGetProperty("ram", out var ram) ? ram.GetString() ?? "" : "",
+                            Resolution = state.TryGetProperty("resolution", out var resolution) ? resolution.GetString() ?? "" : "",
+                            BatteryPercentage = state.TryGetProperty("batteryPercentage", out var battery) ? battery.GetRawText() : "",
+                            Size = state.TryGetProperty("size", out var size) ? size.GetString() ?? "" : "",
+                            SizeValue = state.TryGetProperty("sizeValue", out var sizeVal) ? sizeVal.GetString() ?? "" : "",
+                            Gender = state.TryGetProperty("gender", out var gender) ? gender.GetString() ?? "" : "",
+                            CertificateUrl = state.GetProperty("certificateUrl").GetString(),
+                            ImageUrls = state.TryGetProperty("imageUrls", out var imgs) && imgs.ValueKind == JsonValueKind.Array
+                            ? imgs.EnumerateArray().Select(img =>
+                            {
+                                var imageInfo = new ImageInfo
+                                {
+                                    AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() ?? "" : "",
+                                    Url = img.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "",
+                                    Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
+                                };
+                                return imageInfo;
+                            }).Where(i => !string.IsNullOrWhiteSpace(i.Url)).ToList(): new(),
+                            PhoneNumber = state.TryGetProperty("phoneNumber", out var phone) ? phone.GetString() ?? "" : "",
+                            WhatsAppNumber = state.TryGetProperty("whatsAppNumber", out var whatsapp) ? whatsapp.GetString() ?? "" : "",
+                            Zone = state.TryGetProperty("zone", out var zone) ? zone.GetString() ?? "" : "",
+                            StreetNumber = state.TryGetProperty("streetNumber", out var street) ? street.GetString() ?? "" : "",
+                            BuildingNumber = state.TryGetProperty("buildingNumber", out var building) ? building.GetString() ?? "" : "",
+                            Latitude = state.TryGetProperty("latitude", out var lat) ? lat.GetRawText() : "",
+                            Longitude = state.TryGetProperty("longitude", out var lng) ? lng.GetRawText() : "",
+                            CreatedAt = state.GetProperty("createdAt").GetDateTime(),
+                            IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
+                            IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
+                            Status = status,
+                            UserId = adUserId
+                        };
+
+                        if (status == AdStatus.Published || status == AdStatus.Approved)
+                            list.PublishedAds.Add(ad);
+                        else
+                            list.UnpublishedAds.Add(ad);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error processing ad from key: {Key}", key); 
+                    }
+                    
+                }
+
+                return list;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to retrieve user Preloved ads", ex);
+            }
+        }
+
+        public async Task<DealsAdListDto> GetUserDealsAds(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, DealsIndexKey) ?? new();
+                var list = new DealsAdListDto();
+
+                foreach (var key in index)
+                {
+                    try
+                    {
+                        var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key);
+                        if (state.ValueKind != JsonValueKind.Object) continue;
+
+                        var subVertical = state.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
+                        var adUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+
+                        if (!string.Equals(subVertical, "Deals", StringComparison.OrdinalIgnoreCase) || adUserId != userId)
+                            continue;
+
+                        var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var statusInt)
+                            ? (AdStatus)statusInt : AdStatus.Draft;
+
+                        var ad = new DealsAdDto
+                        {
+                            Id = state.GetProperty("id").GetGuid(),
+                            Title = state.GetProperty("title").GetString(),
+                            SubVertical = subVertical ?? "Deals",
+                            FlyerFile = state.TryGetProperty("flyerFile", out var flyer) ? flyer.GetString() ?? "" : "",
+                            ImageUrl = state.TryGetProperty("imageUrl", out var imgs) && imgs.ValueKind == JsonValueKind.Array
+                            ? imgs.EnumerateArray().Select(img =>
+                            {
+                                return new ImageInfo
+                                {
+                                    AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() ?? "" : "",
+                                    Url = img.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "",
+                                    Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
+                                };
+                            }).Where(i => !string.IsNullOrWhiteSpace(i.Url)).ToList(): new(),
+                            XMLLink = state.TryGetProperty("xmlLink", out var xml) ? xml.GetString() ?? "" : "",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiry) && expiry.ValueKind == JsonValueKind.String
+                                ? expiry.GetDateTime()
+                                : DateTime.MinValue,
+                            PhoneNumber = state.TryGetProperty("phoneNumber", out var phone) ? phone.GetString() ?? "" : "",
+                            WhatsAppNumber = state.TryGetProperty("whatsAppNumber", out var whatsapp) ? whatsapp.GetString() ?? "" : "",
+                            Location = state.TryGetProperty("location", out var loc) && loc.ValueKind == JsonValueKind.Array
+                                ? loc.EnumerateArray().Select(x => x.GetString()).Where(x => !string.IsNullOrEmpty(x)).ToList()
+                                : new(),
+                            UserId = adUserId,
+                            IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
+                            IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
+                            CreatedAt = state.TryGetProperty("createdAt", out var created) && created.ValueKind == JsonValueKind.String
+                                ? created.GetDateTime()
+                                : DateTime.UtcNow,
+                            Status = status
+                        };
+
+                        if (status == AdStatus.Published || status == AdStatus.Approved)
+                            list.PublishedAds.Add(ad);
+                        else
+                            list.UnpublishedAds.Add(ad);
+                    }
+                    catch(Exception ex)
+                    {
+                        _logger.LogError(ex, "Error processing ad from key: {Key}", key);
+                    }
+                }
+
+                return list;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to retrieve user Deals ads", ex);
+            }
+        }
+
+        public async Task<CollectiblesAdListDto> GetUserCollectiblesAds(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, CollectiblesIndexKey) ?? new();
+                var list = new CollectiblesAdListDto();
+
+                foreach (var key in index)
+                {
+                    try
+                    {
+                        var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key);
+                        if (state.ValueKind != JsonValueKind.Object) continue;
+
+                        var subVertical = state.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
+                        var adUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+
+                        if (!string.Equals(subVertical, "Collectibles", StringComparison.OrdinalIgnoreCase) || adUserId != userId)
+                            continue;
+
+                        var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var statusInt)
+                            ? (AdStatus)statusInt : AdStatus.Draft;
+
+                        var ad = new CollectiblesAdDto
+                        {
+                            Id = state.GetProperty("id").GetGuid(),
+                            Title = state.GetProperty("title").GetString(),
+                            Description = state.GetProperty("description").GetString(),
+                            SubVertical = subVertical,
+                            Category = state.GetProperty("category").GetString(),
+                            SubCategory = state.GetProperty("subCategory").GetString(),
+                            L2Category = state.TryGetProperty("l2Category", out var l2) ? l2.GetString() : null,
+                            Brand = state.TryGetProperty("brand", out var brand) ? brand.GetString() : null,
+                            Price = state.GetProperty("price").GetDecimal(),
+                            PriceType = state.GetProperty("priceType").GetString(),
+                            Condition = state.GetProperty("condition").GetString(),
+                            CountryOfOrigin = state.TryGetProperty("countryOfOrigin", out var origin) ? origin.GetString() : null,
+                            Language = state.TryGetProperty("language", out var lang) ? lang.GetString() : null,
+                            HasAuthenticityCertificate = state.TryGetProperty("hasAuthenticityCertificate", out var hasCert) && hasCert.GetBoolean(),
+                            AuthenticityCertificateUrl = state.TryGetProperty("certificateUrl", out var certUrl) ? certUrl.GetString() ?? "" : "",
+                            YearOrEra = state.TryGetProperty("yearOrEra", out var era) ? era.GetString() : null,
+                            Rarity = state.TryGetProperty("rarity", out var rarity) ? rarity.GetString() : null,
+                            Package = state.TryGetProperty("package", out var pkg) ? pkg.GetString() : null,
+                            IsGraded = state.TryGetProperty("isGraded", out var graded) ? graded.GetBoolean() : null,
+                            GradingCompany = state.TryGetProperty("gradingCompany", out var gradeCo) ? gradeCo.GetString() : null,
+                            Grades = state.TryGetProperty("grades", out var grades) ? grades.GetString() : null,
+                            Material = state.TryGetProperty("material", out var material) ? material.GetString() : null,
+                            Scale = state.TryGetProperty("scale", out var scale) ? scale.GetString() : null,
+                            SerialNumber = state.TryGetProperty("serialNumber", out var serial) ? serial.GetString() ?? "" : "",
+                            Signed = state.TryGetProperty("signed", out var signed) ? signed.GetBoolean() : null,
+                            SignedBy = state.TryGetProperty("signedBy", out var signedBy) ? signedBy.GetString() : null,
+                            FramedBy = state.TryGetProperty("framedBy", out var framedBy) ? framedBy.GetString() : null,
+                            ImageUrls = state.TryGetProperty("imageUrls", out var imgs) && imgs.ValueKind == JsonValueKind.Array
+                            ? imgs.EnumerateArray().Select(img =>
+                            {
+                                return new ImageInfo
+                                {
+                                    AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() ?? "" : "",
+                                    Url = img.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "",
+                                    Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
+                                };
+                            }).Where(i => !string.IsNullOrWhiteSpace(i.Url)).ToList(): new(),
+                            PhoneNumber = state.TryGetProperty("phoneNumber", out var phone) ? phone.GetString() ?? "" : "",
+                            WhatsAppNumber = state.TryGetProperty("whatsAppNumber", out var whatsapp) ? whatsapp.GetString() ?? "" : "",
+                            ContactEmail = state.TryGetProperty("contactEmail", out var email) ? email.GetString() : "",
+                            Location = state.TryGetProperty("location", out var loc) && loc.ValueKind == JsonValueKind.Array
+                            ? loc.EnumerateArray().Select(x => x.GetString()).Where(x => !string.IsNullOrEmpty(x)).ToList()
+                            : new(),
+                            StreetNumber = state.TryGetProperty("streetNumber", out var street) ? street.GetString() ?? "" : "",
+                            BuildingNumber = state.TryGetProperty("buildingNumber", out var building) ? building.GetString() : null,
+                            HasWarranty = state.TryGetProperty("hasWarranty", out var warranty) && warranty.GetBoolean(),
+                            IsHandmade = state.TryGetProperty("isHandmade", out var handmade) && handmade.GetBoolean(),
+                            TearmsAndCondition = state.TryGetProperty("tearmsAndCondition", out var terms) && terms.GetBoolean(),
+                            UserId = adUserId,
+                            IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
+                            IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
+                            CreatedAt = state.GetProperty("createdAt").GetDateTime(),
+                            Status = status
+                        };
+
+                        if (status == AdStatus.Published || status == AdStatus.Approved)
+                            list.PublishedAds.Add(ad);
+                        else
+                            list.UnpublishedAds.Add(ad);
+                    }
+                    catch (Exception adEx)
+                    {
+                        _logger.LogError(adEx, "Error processing ad from key: {Key}", key);
+                    }
+                }
+
+                return list;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to retrieve user Collectibles ads", ex);
+            }
+        }
+
+        public async Task<Guid> CreateCategory(CategoryDtos dto, CancellationToken cancellationToken)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (string.IsNullOrWhiteSpace(dto.Vertical)) throw new ArgumentException("Vertical must be specified.");
+            try
+            {
+                var category = new Categories
+                {
+                    Id = Guid.NewGuid(),
+                    Name = dto.Name,
+                    ParentId = dto.ParentId ?? Guid.Empty,
+                    Fields = dto.Fields
+                };
+
+                var key = $"category-{category.Id}";
+
+                var indexKey = dto.Vertical.Trim().ToLowerInvariant() switch
+                {
+                    "items" => ItemsCategoryIndexKey,
+                    "preloved" => PrelovedCategoryIndexKey,
+                    "collectibles" => CollectiblesCategoryIndexKey,
+                    "deals" => DealsCategoryIndexKey,
+                    _ => throw new ArgumentException($"Unsupported vertical: {dto.Vertical}")
+                };
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, indexKey) ?? new();
+                index.Add(key);
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, category);
+                await _dapr.SaveStateAsync(UnifiedStore, indexKey, index);
+
+                return category.Id;
+            }
+            catch (Exception ex)
+            {                
+                throw new InvalidOperationException("Failed to create category internally", ex);
+            }
+        }
+
+        public async Task<List<Categories>> GetChildCategories(string vertical, Guid parentId, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical must be provided.");
+
+            try
+            {
+                var indexKey = vertical.Trim().ToLowerInvariant() switch
+                {
+                    "items" => ItemsCategoryIndexKey,
+                    "preloved" => PrelovedCategoryIndexKey,
+                    "collectibles" => CollectiblesCategoryIndexKey,
+                    "deals" => DealsCategoryIndexKey,
+                    _ => throw new ArgumentException($"Unsupported vertical: {vertical}")
+                };
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, indexKey) ?? new();
+                var result = new List<Categories>();
+
+                foreach (var key in index)
+                {
+                    try
+                    {
+                        var cat = await _dapr.GetStateAsync<Categories>(UnifiedStore, key);
+                        if (cat != null && cat.ParentId == parentId)
+                        {
+                            result.Add(cat);
+                        }
+                    }
+                    catch (Exception catEx)
+                    {                        
+                        _logger.LogError(catEx, "Failed to retrieve or process category from key: {Key}", key);
+                    }
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to retrieve child categories", ex);
+            }
+        }
+
+        public async Task<CategoryTreeDto?> GetCategoryTree(string vertical, Guid categoryId, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical must be specified.");
+
+            try
+            {
+                var indexKey = vertical.Trim().ToLowerInvariant() switch
+                {
+                    "items" => ItemsCategoryIndexKey,
+                    "preloved" => PrelovedCategoryIndexKey,
+                    "collectibles" => CollectiblesCategoryIndexKey,
+                    "deals" => DealsCategoryIndexKey,
+                    _ => throw new ArgumentException($"Unsupported vertical: {vertical}")
+                };
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, indexKey) ?? new();
+
+                var rootKey = $"category-{categoryId}";
+                var root = await _dapr.GetStateAsync<Categories>(UnifiedStore, rootKey);
+
+                if (root == null)
+                {
+                    _logger.LogWarning("Root category not found for ID: {CategoryId}", categoryId);
+                    return null;
+                }
+
+                var rootNode = new CategoryTreeDto
+                {
+                    Id = root.Id,
+                    Name = root.Name,
+                    Fields = root.Fields ?? new(),
+                    Children = new()
+                };
+
+                foreach (var key in index)
+                {
+                    try
+                    {
+                        var child = await _dapr.GetStateAsync<Categories>(UnifiedStore, key);
+                        if (child != null && child.ParentId == categoryId)
+                        {
+                            var childNode = await GetCategoryTree(vertical, child.Id, cancellationToken);
+                            if (childNode != null)
+                            {
+                                rootNode.Children.Add(childNode);
+                            }
+                        }
+                    }
+                    catch (Exception childEx)
+                    {
+                        _logger.LogError(childEx, "Error processing child category from key: {Key}", key);
+                    }
+                }
+
+                return rootNode;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to build category tree for categoryId {categoryId}", ex);
+            }
+        }
+
+        public async Task DeleteCategoryTree(string vertical, Guid categoryId, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical must be specified.");
+            try
+            {
+                var indexKey = vertical.Trim().ToLowerInvariant() switch
+                {
+                    "items" => ItemsCategoryIndexKey,
+                    "preloved" => PrelovedCategoryIndexKey,
+                    "collectibles" => CollectiblesCategoryIndexKey,
+                    "deals" => DealsCategoryIndexKey,
+                    _ => throw new ArgumentException($"Unsupported vertical: {vertical}")
+                };
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, indexKey) ?? new();
+                var keysToDelete = new List<string>();
+
+                async Task TraverseAndCollectKeys(Guid parentId)
+                {
+                    try
+                    {
+                        var parentKey = $"category-{parentId}";
+                        var category = await _dapr.GetStateAsync<Categories>(UnifiedStore, parentKey);
+                        if (category != null)
+                        {
+                            keysToDelete.Add(parentKey);
+                        }
+
+                        foreach (var key in index.ToList())
+                        {
+                            try
+                            {
+                                var child = await _dapr.GetStateAsync<Categories>(UnifiedStore, key);
+                                if (child != null && child.ParentId == parentId)
+                                {
+                                    await TraverseAndCollectKeys(child.Id);
+                                }
+                            }
+                            catch (Exception childEx)
+                            {
+                                _logger.LogError(childEx, "Failed to fetch or traverse child category for key: {Key}", key);
+                            }
+                        }
+                    }
+                    catch (Exception traverseEx)
+                    {
+                        _logger.LogError(traverseEx, "Failed while traversing parentId: {ParentId}", parentId);
+                        throw;
+                    }
+                }
+
+                await TraverseAndCollectKeys(categoryId);
+
+                foreach (var key in keysToDelete)
+                {
+                    try
+                    {
+                        await _dapr.DeleteStateAsync(UnifiedStore, key);
+                        index.Remove(key);
+                    }
+                    catch (Exception deleteEx)
+                    {
+                        _logger.LogError(deleteEx, "Failed to delete key: {Key}", key);
+                    }
+                }
+
+                await _dapr.SaveStateAsync(UnifiedStore, indexKey, index);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to delete category tree for ID {categoryId}", ex);
+            }
+        }
+
+        public async Task<List<CategoryTreeDto>> GetAllCategoryTrees(string vertical, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical must be specified.");
+
+            try
+            {
+                var indexKey = vertical.Trim().ToLowerInvariant() switch
+                {
+                    "items" => ItemsCategoryIndexKey,
+                    "preloved" => PrelovedCategoryIndexKey,
+                    "collectibles" => CollectiblesCategoryIndexKey,
+                    "deals" => DealsCategoryIndexKey,
+                    _ => throw new ArgumentException($"Unsupported vertical: {vertical}")
+                };
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, indexKey) ?? new();
+                var result = new List<CategoryTreeDto>();
+
+                foreach (var key in index)
+                {
+                    try
+                    {
+                        var category = await _dapr.GetStateAsync<Categories>(UnifiedStore, key);
+                        if (category != null && category.ParentId == Guid.Empty)
+                        {
+                            var tree = await GetCategoryTree(vertical, category.Id, cancellationToken);
+                            if (tree != null)
+                            {
+                                result.Add(tree);
+                            }
+                        }
+                    }
+                    catch (Exception catEx)
+                    {
+                        _logger.LogError(catEx, "Error processing category tree for key: {Key}", key);
+                    }
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to retrieve all category trees", ex);
+            }
+        }
     }
 }

@@ -1,7 +1,7 @@
 @inherits TopStoryBOCardBase
 <div class="@($"top-story-list-card {(IsMiniCard ? "mini-card" : "")}")">
     <div class="top-story-image-wrapper" style="position: relative; display: inline-block;">
-       <img src="/qln-images/card1.png" class="top-story-card-img"
+       <img src="@Item.ImageUrl" class="top-story-card-img"
                 alt="Top Story Image" />
                  <MudButton StartIcon="@Icons.Material.Filled.Edit"
                Variant="Variant.Filled"
@@ -11,10 +11,7 @@
     </div>
     <div class="top-story-card-body">
             <h3 class="top-story-title">
-                What's New In Qatar
-            </h3>
-            <h3 class="top-story-title">
-                Fresh in Qatar
+                @Item.Title
             </h3>
     </div>
 </div>

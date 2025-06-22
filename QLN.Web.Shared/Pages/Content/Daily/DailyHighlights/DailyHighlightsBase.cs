@@ -16,7 +16,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily.DailyHighlights
         {
             if (item.NodeType.Contains("post") && !string.IsNullOrWhiteSpace(item.Slug))
             {
-                NavigationManager.NavigateTo($"/content/article/details/{item.Slug}");
+                NavigationManager.NavigateTo($"/content/daily/article/details/{item.Slug}");
             }
             else if (item.NodeType.Contains("event") && !string.IsNullOrWhiteSpace(item.Slug))
             {

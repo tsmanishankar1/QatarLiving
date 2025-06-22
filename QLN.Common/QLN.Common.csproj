@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
@@ -13,6 +13,10 @@
     <EmbeddedResource Remove="Infrastructure\Repository\**" />
     <None Remove="Infrastructure\RepositoryConfiguration\**" />
     <None Remove="Infrastructure\Repository\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="DTO%27s\ContnetDaily.cs" />
   </ItemGroup>
 
   <ItemGroup>

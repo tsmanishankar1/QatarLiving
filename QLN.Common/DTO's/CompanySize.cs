@@ -39,11 +39,15 @@ namespace QLN.Common.DTO_s
         Suspended = 3,
         Unblocked = 4
     }
-    public enum CompanyCategory
+    public enum SubVertical
     {
         Preloved = 1,
         Deals = 2,
         Stores = 3,
         Services = 4
+    }
+    public enum NatureOfBusiness
+    {
+        Hypermarket = 1
     }
 }

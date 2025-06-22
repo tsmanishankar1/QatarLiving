@@ -44,7 +44,7 @@ else
     }
     else
     {
-        @if (Comment.Comments == null || !Comment.Comments.Any())
+        @if (Comments == null || !Comments.Any())
         {
             <div class="comment-section-empty">
                 <div class="comment-title">Comments</div>
@@ -104,7 +104,7 @@ else
 
 
 
-                @foreach (var c in CommentList.Comments)
+                @foreach (var c in Comments)
                 {
                     <div class="comment-item @(c.IsByCurrentUser ? "my-comment" : "other-comment")">
                         <img src="@("/qln-images/default_logo.svg")" alt="User Avatar" class="post-footer-comment-avatar" />
@@ -113,7 +113,7 @@ else
                             <div class="comment-header">
                                 <div class="comment-meta">
                                     <span class="created-by">@c.CreatedBy</span>  •
-                                    <span class="created-at">@c.CreatedAt.ToString("g")</span>
+                                    <span class="created-at">@c.CreatedAt.ToString("MMMM d, yyyy - HH:mm")</span>
                                 </div>
 
                                 <MudMenu Dense="true" AnchorOrigin="Origin.BottomLeft"
@@ -141,7 +141,7 @@ else
                     <div class="comment-divider"></div>
 
                 }
-                @if (CommentList?.Comments?.Any() == true)
+                @if (Comments?.Any() == true)
                 {
                 <div class="pagination-container">
                     <PaginationFooter TotalItems="@TotalCount"
@@ -303,7 +303,7 @@ else
 
     .created-at {
         font-family: 'Public Sans', sans-serif;
-        font-weight: 400;
+        font-weight: 500;
         font-size: 12px;
         line-height: 18px;
         letter-spacing: 0;
@@ -316,6 +316,8 @@ else
         font-size: 16px;
         margin-top: -6px;
         color: #242424;
+        word-break: break-word;
+        white-space: pre-wrap;
     }
 
     .comment-title {

@@ -161,7 +161,7 @@ public class ArticleBase : ComponentBase
                 new() { Label = "Daily", Url = "/content/daily"},
                 // new() { Label = SelectedPost.Category, Url = $"/content/news"},
 
-                new() { Label = newsArticle.Title, Url = $"/content/article/details/{slug}", IsLast = true },
+                new() { Label = newsArticle.Title, Url = $"/content/daily/article/details/{slug}", IsLast = true },
                 };
                 moreArticleList = null;
                 LandingContent = await _simpleCacheService.GetContentLandingAsync() ?? new();
