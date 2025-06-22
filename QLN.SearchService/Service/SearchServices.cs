@@ -64,10 +64,10 @@ namespace QLN.SearchService.Service
                         }
                         opts.OrderBy.Add("IsPromoted desc");
                         opts.OrderBy.Add("PromotedExpiryDate desc");
-                        opts.OrderBy.Add("IsFeatured desc");
-                        opts.OrderBy.Add("FeatureExpiryDate desc");
                         opts.OrderBy.Add("IsRefreshed desc");
                         opts.OrderBy.Add("RefreshExpiryDate desc");
+                        opts.OrderBy.Add("IsFeatured desc");
+                        opts.OrderBy.Add("FeatureExpiryDate desc");
                         opts.OrderBy.Add("CreatedDate desc");
                         var pageCls = await _repo.SearchAsync<ClassifiedsIndex>(vertical, opts, req.Text);
                         response.TotalCount = pageCls.TotalCount;
@@ -86,10 +86,10 @@ namespace QLN.SearchService.Service
                         }
                         opts.OrderBy.Add("IsPromoted desc");
                         opts.OrderBy.Add("PromotedExpiryDate desc");
-                        opts.OrderBy.Add("IsFeatured desc");
-                        opts.OrderBy.Add("FeatureExpiryDate desc");
                         opts.OrderBy.Add("IsRefreshed desc");
                         opts.OrderBy.Add("RefreshExpiryDate desc");
+                        opts.OrderBy.Add("IsFeatured desc");
+                        opts.OrderBy.Add("FeatureExpiryDate desc");
                         opts.OrderBy.Add("CreatedDate desc");
 
                         var pageSvc = await _repo.SearchAsync<ServicesIndex>(vertical, opts, req.Text);
