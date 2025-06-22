@@ -88,7 +88,7 @@ namespace QLN.Common.Infrastructure.Constants
         public static class Verticals
         {
             public const string Classifieds = "classifieds";
-            public const string Services = "Services";
+            public const string Services = "services";
         }
         public static class V2ContentEvents
         {
