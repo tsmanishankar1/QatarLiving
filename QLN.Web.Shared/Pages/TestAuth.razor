@@ -1,0 +1,63 @@
+@page "/testauth"
+@using System.Security.Claims
+@using QLN.Web.Shared.Services
+
+@inject CookieAuthStateProvider CookieAuthenticationStateProvider;
+
+@inject ApiService apiService;
+
+
+<h3>Test Auth</h3>
+
+@{
+    if (user.Identity.IsAuthenticated)
+    {
+        <p>User @(user.Identity.Name) is authenticated.</p>
+
+        <button onclick="@DoSomething">Click Me</button>
+
+        if (apiResult != null)
+        {
+            <p>@(apiResult)</p>
+        }
+    }
+    else
+    {
+        <p>User is NOT authenticated.</p>
+    }
+}
+
+
+@code {
+    private ClaimsPrincipal user;
+
+    private dynamic apiResult;
+
+    private async Task DoSomething()
+    {
+        try
+        {
+            var result = await apiService.GetAsyncWithToken<dynamic>("testauth");
+
+            if(result != null)
+            {
+                apiResult = result;
+            }
+        }
+        catch (Exception)
+        {
+            
+            throw;
+        }
+        
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState != null)
+        {
+            user = authState.User;
+        }
+    }
+}

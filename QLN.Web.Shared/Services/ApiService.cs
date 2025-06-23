@@ -50,10 +50,12 @@ namespace QLN.Web.Shared.Services
         }
 
 
-        public async Task<T?> GetAsyncWithToken<T>(string endpoint, string authToken)
+        public async Task<T?> GetAsyncWithToken<T>(string endpoint)
         {
+            var token = await GetTokenAsync();
+
             var request = new HttpRequestMessage(HttpMethod.Get, $"{_baseUrl}/{endpoint}");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             var response = await _http.SendAsync(request);
             var responseContent = await response.Content.ReadAsStringAsync();
