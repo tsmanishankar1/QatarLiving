@@ -11,33 +11,74 @@ public class ItemsComponentBase : ComponentBase
     [Inject] private ILogger<ItemsComponentBase> Logger { get; set; } = default!;
 
     protected string currentViewMode = "grid";
-    protected bool IsLoading { get; set; } = true;
+
+    protected bool IsLoadingSearch { get; set; } = true;
+    protected bool IsLoadingCategories { get; set; } = true;
+
     protected string? ErrorMessage { get; set; }
 
     protected List<ClassifiedsIndex> SearchResults { get; set; } = new();
+    protected List<CategoryTreeDto> CategoryTrees { get; set; } = new();
 
     protected void HandleViewModeChange(string newMode)
     {
         currentViewMode = newMode;
     }
+     protected void ClearSearch()
+    {
+        // Example reset logic:
+        SearchResults.Clear();
+        StateHasChanged();
 
+    }
     protected override async Task OnInitializedAsync()
+    {
+        await LoadCategoryTreesAsync();
+        await LoadSearchResultsAsync();
+    }
+
+    private async Task LoadCategoryTreesAsync()
+    {
+        try
+        {
+            var response = await _classifiedsService.GetAllCategoryTreesAsync("Items");
+
+            if (response is { IsSuccessStatusCode: true })
+            {
+                var result = await response.Content.ReadFromJsonAsync<List<CategoryTreeDto>>();
+                CategoryTrees = result ?? new();
+            }
+            else
+            {
+                ErrorMessage = $"Failed to load category trees. Status: {response?.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Error loading category trees.";
+            Logger.LogError(ex, ErrorMessage);
+        }
+        finally
+        {
+            IsLoadingCategories = false;
+        }
+    }
+
+    private async Task LoadSearchResultsAsync()
     {
         try
         {
             var payload = new Dictionary<string, object>
-        {
-            ["filters"] = new Dictionary<string, string>
             {
-                { "SubVertical", "Items" }
-            }
-        };
+                ["filters"] = new Dictionary<string, string>
+                {
+                    { "SubVertical", "Items" }
+                }
+            };
 
-  // Log the payload
             var payloadJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
-            Logger.LogInformation("Sending payload to SearchClassifiedsAsync: {Payload}", payloadJson);
+
             var responses = await _classifiedsService.SearchClassifiedsAsync(payload);
-            
             var firstResponse = responses.FirstOrDefault();
 
             if (firstResponse is { IsSuccessStatusCode: true })
@@ -52,12 +93,11 @@ public class ItemsComponentBase : ComponentBase
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Search Init Error: " + ex);
             ErrorMessage = "Error loading classifieds.";
         }
         finally
         {
-            IsLoading = false;
+            IsLoadingSearch = false;
         }
     }
 }

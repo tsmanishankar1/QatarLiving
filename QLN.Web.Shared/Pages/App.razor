@@ -266,7 +266,31 @@
     };
 </script>
 
+<script>
+    window.registerOutsideClickHandlerOut = function (selector, dotnetHelper) {
+    const handler = (event) => {
+        const panel = document.querySelector(selector);
+        const toggleButton = document.querySelector(".filter-toggle-button");
 
+        // If click is outside panel and not on the toggle button
+        if (
+            panel && !panel.contains(event.target) &&
+            toggleButton && !toggleButton.contains(event.target)
+        ) {
+            dotnetHelper.invokeMethodAsync("CloseFilters");
+        }
+    };
+
+    document.addEventListener("click", handler);
+
+    return {
+        dispose: () => {
+            document.removeEventListener("click", handler);
+        }
+    };
+};
+
+</script>
 <script>
      window.registerOutsideClickHandler = (panelSelector, dotNetRef) => {
     function onClick(event) {

@@ -18,5 +18,13 @@ namespace QLN.Web.Shared.Services.Interface
         /// <param name="ClassifiedId">Classifieds Id</param>
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetClassifiedsByIdAsync(string ClassifiedId);
+
+        /// <summary>
+        /// Gets Classifieds by IdCategoryTrees.
+        /// </summary>
+        /// <param name="vertical">Classifieds CategoryTrees</param>
+        /// <returns>HttpResponseMessage</returns>
+        Task<HttpResponseMessage?> GetAllCategoryTreesAsync(string vertical);
+        
     }
 }

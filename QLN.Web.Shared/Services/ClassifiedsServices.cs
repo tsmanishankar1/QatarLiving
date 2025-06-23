@@ -44,7 +44,7 @@ namespace QLN.Web.Shared.Services
                 return responses;
             }
         }
-          /// <inheritdoc />
+        /// <inheritdoc />
         public async Task<HttpResponseMessage?> GetClassifiedsByIdAsync(string ClassifiedId)
         {
             try
@@ -58,5 +58,17 @@ namespace QLN.Web.Shared.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+         public async Task<HttpResponseMessage?> GetAllCategoryTreesAsync(string vertical)
+            {
+                try
+                {
+                    return await _httpClient.GetAsync($"/api/classified/category/{vertical}/all-trees");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("GetAllCategoryTreesAsync Error: " + ex);
+                    return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+                }
+            }
     }
 }

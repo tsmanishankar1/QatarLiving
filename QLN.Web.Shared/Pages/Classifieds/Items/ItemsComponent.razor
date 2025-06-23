@@ -8,15 +8,15 @@
 <div style="width: 100%; background-color: var(--color-secondary-background);">
     <div class="search-section-container">
     <div class="max-container">
-        <SearchSection 
-            OnViewModeChanged="HandleViewModeChange" />
+        
+        <SearchSection CategoryTrees="CategoryTrees" OnViewModeChanged="HandleViewModeChange" />
     </div>
  </div>
   <div class="max-container">
         <div class="category-banner-wrapper">
             <img src="/qln-images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
         </div>
-        <ItemListSection ViewMode="@currentViewMode" Items="SearchResults" Loading="IsLoading" />
+        <ItemListSection ViewMode="@currentViewMode" Items="SearchResults" Loading="IsLoadingSearch" />
  </div>
 </div>
 

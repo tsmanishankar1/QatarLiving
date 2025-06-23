@@ -10,6 +10,7 @@
 @inherits ItemListSectionBase
 
 <Breadcrumb Items="breadcrumbItems" />
+
 <div class="item-list">
      <div class="item-list-header">
         <h1 class="item-list-header-title">@($"Items in Qatar ({Items.Count} results)")</h1>
@@ -28,10 +29,10 @@
             </div>
         </div>
 </div>
-    
+<div class="max-width-List">
     @if (Loading)
     {
-        <MudGrid GutterSize="16px" Class="max-width-List">
+        <MudGrid GutterSize="3" >
             @for (int i = 0; i < 9; i++)
             {
                 <MudItem xs="12" sm="6" md="4">
@@ -50,7 +51,7 @@
     {
         @if (ViewMode == "grid")
         {
-            <MudGrid GutterSize="16px" Class="max-width-List">
+             <MudGrid GutterSize="3" >
                 @foreach (var item in PagedItems)
                 {
                     <MudItem xs="12" sm="6" md="4">
@@ -81,6 +82,7 @@
 
     }
 
+    </div>
 
 </div>
 
@@ -103,7 +105,7 @@
     }
 
     .pagination-center {
-        display: flex;
+        display: flex;  
         flex-direction: column;
         align-items: center;
     }
@@ -188,5 +190,21 @@
 
     .pagination-container {
         margin-top: 24px;
+    }
+     @@media (max-width: 1160px) {
+        .item-list {
+          padding: 5px;
+        }
+    }
+     @@media (max-width: 770px) {
+        .item-list {
+          padding: 5px;
+        }
+        .item-list-header-sort-label{
+            display: none;
+        }
+        .item-list-header-title{
+            font-size: 14px;
+        }
     }
 </style>

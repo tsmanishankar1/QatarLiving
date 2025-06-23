@@ -1,0 +1,81 @@
+@using Microsoft.AspNetCore.Components
+
+<div class="search-empty-state-card">
+    <img src="@ImageSrc" alt="Empty Icon" class="search-empty-icon" />
+
+    <h3 class="search-empty-title">@Title</h3>
+
+    @if (!string.IsNullOrWhiteSpace(Subtitle))
+    {
+        <p class="search-empty-subtitle">@Subtitle</p>
+    }
+
+    <button class="clear-search-button" @onclick="OnClearSearchClicked">@ButtonText</button>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "No results found";
+    [Parameter] public string Subtitle { get; set; } = "";
+    [Parameter] public string ImageSrc { get; set; } = "/qln-images/classifieds/search_not_found_icon.svg";
+    [Parameter] public string ButtonText { get; set; } = "Clear Search";
+    [Parameter] public EventCallback OnClearSearch { get; set; }
+
+    private async Task OnClearSearchClicked()
+    {
+        if (OnClearSearch.HasDelegate)
+        {
+            await OnClearSearch.InvokeAsync();
+        }
+    }
+}
+
+<style>
+    .search-empty-state-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 40px 20px;
+        border-radius: 8px;
+        max-width: 400px;
+        gap: 5px;
+        margin: auto;
+    }
+
+    .search-empty-icon {
+        width: 50px;
+        height: 50px;
+        margin-bottom: 10px;
+    }
+
+    .search-empty-title {
+        font-size: 15px;
+        font-weight: 500;
+        color: var(-- --color-text-heading);
+        margin-bottom: 8px;
+    }
+
+    .search-empty-subtitle {
+        font-size: 14px;
+        font-weight: 400;
+        color: var(--color-text-descripton);
+        max-width: 320px;
+    }
+    .clear-search-button {
+        padding: 8px 20px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--color-accent);
+        background-color: transparent;
+        border: 1px solid var(--color-accent);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .clear-search-button:hover {
+        color: var(--color-text-white);
+        background-color: var(--color-accent);
+    }
+</style>
