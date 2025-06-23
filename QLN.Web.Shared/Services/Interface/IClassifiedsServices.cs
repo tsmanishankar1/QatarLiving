@@ -25,6 +25,8 @@ namespace QLN.Web.Shared.Services.Interface
         /// <param name="vertical">Classifieds CategoryTrees</param>
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetAllCategoryTreesAsync(string vertical);
+
+       Task<HttpResponseMessage?> PostClassifiedItemAsync(string vertical, object payload);
         
     }
 }

@@ -58,17 +58,33 @@ namespace QLN.Web.Shared.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-         public async Task<HttpResponseMessage?> GetAllCategoryTreesAsync(string vertical)
+        public async Task<HttpResponseMessage?> GetAllCategoryTreesAsync(string vertical)
+        {
+            try
+            {
+                return await _httpClient.GetAsync($"/api/classified/category/{vertical}/all-trees");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("GetAllCategoryTreesAsync Error: " + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+            
+            public async Task<HttpResponseMessage?> PostClassifiedItemAsync(string vertical, object payload)
             {
                 try
                 {
-                    return await _httpClient.GetAsync($"/api/classified/category/{vertical}/all-trees");
+                    var endpoint = $"/api/classified/{vertical}/post";
+                    var response = await _httpClient.PostAsJsonAsync(endpoint, payload);
+                    return response;
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("GetAllCategoryTreesAsync Error: " + ex);
+                    Console.WriteLine($"PostClassifiedItemAsync Error for {vertical}: " + ex);
                     return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
                 }
             }
+
     }
 }

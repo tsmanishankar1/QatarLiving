@@ -733,6 +733,26 @@
         getWidth: () => window.innerWidth
     };
 </script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<script>
+  window.initSortable = (elementId, dotNetHelper) => {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+
+    new Sortable(el, {
+        animation: 150,
+        onEnd: function (evt) {
+            const oldIndex = evt.oldIndex;
+            const newIndex = evt.newIndex;
+
+            // Call Blazor C# method
+            dotNetHelper.invokeMethodAsync('OnReorder', oldIndex, newIndex);
+        }
+    });
+};
+
+</script>
 
 
 </body>

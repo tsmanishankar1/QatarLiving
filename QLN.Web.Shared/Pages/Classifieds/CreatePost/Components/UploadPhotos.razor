@@ -1,33 +1,33 @@
 @using MudBlazor
 @using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.Extensions.Logging;
+@inject IJSRuntime JS
 
-<h3 Class="Upload-heder">Upload Photos</h3>
+<h3 class="Upload-heder">Upload Photos</h3>
 
-<div Class="Upload-container">
+<div class="Upload-container">
     <div class="d-flex align-items-center mb-2">
         <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2 info-icon" />
         <span class="photo-guidelines">
-            Upload at least 4 photos (maximum 9 photos) to attract shoppers to your offer. Use landscape orientation
-            (horizontal) for optimal photo display.
-            <MudLink href="#">View Photo Suggestions</MudLink>.
+            Upload at least 4 photos (maximum 9 photos) to attract shoppers to your offer. Use landscape orientation (horizontal) for optimal photo display.
+            <MudLink href="#">View Photo Suggestions</MudLink>
         </span>
-
     </div>
 
-    <MudText Typo="Typo.body2" Class="mb-3">
-        Hold and drag to reorder.
-    </MudText>
+    <MudText Typo="Typo.body2" Class="mb-3">Hold and drag to reorder.</MudText>
 
-    <div class="photo-grid">
+    <div id="sortable-grid" class="photo-grid">
         @for (int i = 0; i < photoUrls.Count; i++)
         {
             var currentIndex = i;
             <div class="photo-box @(string.IsNullOrEmpty(photoUrls[currentIndex]) ? "" : "has-image")">
                 @if (!string.IsNullOrEmpty(photoUrls[currentIndex]))
                 {
+                    <div>
                     <img src="@photoUrls[currentIndex]" class="uploaded-image" />
                     <MudIconButton Icon="@Icons.Material.Rounded.DeleteOutline" Class="delete-icon"
-                        OnClick="@(() => RemovePhoto(currentIndex))" />
+                                   OnClick="@(() => RemovePhoto(currentIndex))" />
+                                   </div>
                 }
                 else
                 {
@@ -37,15 +37,12 @@
                             <div class="upload-icon-box">
                                 <MudIcon Icon="@Icons.Material.Filled.Add" Class="upload-icon" />
                             </div>
-                            <div class="upload-text">Upload</div>
+                            <div class="upload-text">Upload (@currentIndex)</div>
                         </div>
                     </label>
                 }
 
-                @if (i == 0)
-                {
-                    <div class="cover-label">Cover Photo</div>
-                }
+              
             </div>
         }
 
@@ -65,6 +62,41 @@
 
 @code {
     private List<string> photoUrls = new() { "", "", "", "", "", "" };
+    [Inject] private ILogger<UploadPhotos> Logger { get; set; } = default!;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("initSortable", "sortable-grid", DotNetObjectReference.Create(this));
+        }
+    }
+    private bool IsCoverPhoto(int index)
+{
+    for (int i = 0; i < photoUrls.Count; i++)
+    {
+        if (!string.IsNullOrEmpty(photoUrls[i]))
+            return i == index;
+    }
+    return false;
+}
+
+
+    /// <summary>
+    /// Returns only valid images in proper format for backend submission.
+    /// </summary>
+    public List<object> GetAdImagesForApi()
+    {
+        return photoUrls
+            .Where(url => !string.IsNullOrEmpty(url))
+            .Take(9)
+            .Select((url, index) => new
+            {
+                adImageFileNames = $"image_{index + 1}.png",
+                url,
+                order = index
+            })
+            .ToList<object>();
+    }
 
     public List<string> GetPhotoUrls() => photoUrls.Where(url => !string.IsNullOrEmpty(url)).ToList();
 
@@ -104,6 +136,27 @@
         photoUrls[index] = "";
         StateHasChanged();
     }
+[JSInvokable]
+public void OnReorder(int oldIndex, int newIndex)
+{
+    if (oldIndex == newIndex || oldIndex < 0 || newIndex < 0 || oldIndex >= photoUrls.Count || newIndex >= photoUrls.Count)
+        return;
+
+    // Swap items instead of remove + insert
+    var temp = photoUrls[oldIndex];
+    photoUrls[oldIndex] = photoUrls[newIndex];
+    photoUrls[newIndex] = temp;
+
+    Logger.LogInformation("Reordered photoUrls:");
+    for (int i = 0; i < photoUrls.Count; i++)
+    {
+        var shortUrl = string.IsNullOrEmpty(photoUrls[i]) ? "EMPTY" : photoUrls[i].Substring(0, Math.Min(30, photoUrls[i].Length)) + "...";
+        Logger.LogInformation($"Index {i}: {shortUrl}");
+    }
+
+    StateHasChanged();
+}
+
 }
 
 <style>
@@ -115,6 +168,7 @@
         font-family: 'Public Sans', sans-serif;
         boder: 1px solid var(--color-background-secondary-grey-medium);
     }
+    
 
     .photo-grid {
         display: grid;
