@@ -10,26 +10,26 @@
 
                 <MudGrid GutterSize="16px">
                     <MudItem xs="4">
-                        <MudSelect T="string" Class="w-100" Variant="Variant.Filled" Label="Category" Placeholder="Choose" @bind-Value="article.CategoryName">
+                        <MudSelect T="string" Class="w-100" Variant="Variant.Filled" Label="Category" Placeholder="Choose" @bind-Value="article.Title">
                             @foreach (var item in Categories)
                             {
-                                <MudSelectItem Value="@item">@item</MudSelectItem>
+                                <MudSelectItem Value="@item.Id">@item.CategoryName</MudSelectItem>
                             }
                         </MudSelect>
                     </MudItem>
 
                     <MudItem xs="4">
-                        <MudSelect T="string" Class="w-100" Variant="Variant.Filled" Label="Subcategory" Placeholder="Choose" @bind-Value="article.CategoryName">
-                            @foreach (var item in Subcategories)
+                        <MudSelect T="string" Class="w-100" Variant="Variant.Filled" Label="Subcategory" Placeholder="Choose" @bind-Value="article.Content">
+                            @foreach (var item in Categories)
                             {
-                                <MudSelectItem Value="@item">@item</MudSelectItem>
+                                <MudSelectItem Value="@item.Id">@item.CategoryName</MudSelectItem>
                             }
                         </MudSelect>
                     </MudItem>
 
                     <MudItem xs="3">
 
-                        <MudSelect T="string" Class="w-100" Variant="Variant.Filled" Placeholder="Slot" @bind-Value="article.authorName">
+                        <MudSelect T="string" Class="w-100" Variant="Variant.Filled" Placeholder="Slot">
                             @foreach (var item in Slots)
                             {
                                 <MudSelectItem Value="@item">@item</MudSelectItem>
@@ -45,13 +45,13 @@
                 </MudGrid>
 
                 <MudSelect Label="Writer" Variant="Variant.Filled" Placeholder="Choose" Class="mt-4 w-100" @bind-Value="article.WriterTag">
-                    @foreach (var item in Writers)
+                    @foreach (var item in WriterTags)
                     {
                         <MudSelectItem Value="@item">@item</MudSelectItem>
                     }
                 </MudSelect>
 
-                <MudTextField Label="Article Title" Variant="Variant.Filled" Class="mt-4 w-100" @bind-Value="article.title" />
+                <MudTextField Label="Article Title" Variant="Variant.Filled" Class="mt-4 w-100" @bind-Value="article.Title" />
 
                 <MudText Typo="Typo.body2" Class="mt-4 mb-1">Article content</MudText>
                 <MudExRichTextEdit @ref="@Editor"
