@@ -250,6 +250,10 @@ builder.Services.AddHttpClient<IClassifiedDashboardService, ClassfiedDashboardSe
 {
     client.BaseAddress = new Uri(baseURL);
 });
+builder.Services.AddHttpClient<ICompanyProfileService,CompanyProfileService>(client =>
+{
+    client.BaseAddress = new Uri(baseURL);
+});
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ISimpleMemoryCache, SimpleMemoryCache>(); // add shared Banner Service
 
