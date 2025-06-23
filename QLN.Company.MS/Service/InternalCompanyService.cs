@@ -4,6 +4,8 @@ using System.Text.Json;
 using Dapr.Client;
 using QLN.Common.Infrastructure.Constants;
 using SixLabors.ImageSharp;
+using QLN.Common.DTO_s;
+using System.Text.RegularExpressions;
 
 namespace QLN.Company.MS.Service
 {
@@ -23,12 +25,21 @@ namespace QLN.Company.MS.Service
         {
             try
             {
+                Validate(dto);
+                var keys = await GetIndex();
+                foreach (var key in keys)
+                {
+                    var existing = await _dapr.GetStateAsync<CompanyProfileDto>(ConstantValues.CompanyStoreName, key, cancellationToken : cancellationToken);
+                    if (existing != null && existing.UserId == dto.UserId && existing.SubVertical == dto.SubVertical)
+                    {
+                        throw new InvalidDataException("A company profile already exists for this user under the same subvertical.");
+                    }
+                }
                 var id = Guid.NewGuid();
                 var entity = EntityForCreate(dto, id);
-
+                entity.IsVerified = false;
                 await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, id.ToString(), entity);
 
-                var keys = await GetIndex();
                 if (!keys.Contains(id.ToString()))
                 {
                     keys.Add(id.ToString());
@@ -37,25 +48,79 @@ namespace QLN.Company.MS.Service
 
                 return "Company Created successfully";
             }
+            catch (ArgumentException ex)
+            {
+                throw new InvalidDataException(ex.Message, ex);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while creating company profile for user ID: {UserId}", dto.UserId);
                 throw;
             }
         }
+        private static bool IsValidEmail(string email)
+        {
+            return !string.IsNullOrWhiteSpace(email) &&
+                   Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase);
+        }
+        public static void Validate(CompanyProfileDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.BusinessName))
+                throw new ArgumentException("Business name is required.", nameof(dto.BusinessName));
 
+            if (!Enum.IsDefined(typeof(CompanyType), dto.CompanyType))
+                throw new ArgumentException($"Invalid CompanyType: {dto.CompanyType}");
+
+            if (!Enum.IsDefined(typeof(CompanySize), dto.CompanySize))
+                throw new ArgumentException($"Invalid CompanySize: {dto.CompanySize}");
+
+            if (!Enum.IsDefined(typeof(VerticalType), dto.Vertical))
+                throw new ArgumentException($"Invalid VerticalType: {dto.Vertical}");
+
+            if (dto.Status.HasValue && !Enum.IsDefined(typeof(CompanyStatus), dto.Status.Value))
+                throw new ArgumentException($"Invalid CompanyStatus: {dto.Status.Value}");
+
+            if (dto.SubVertical.HasValue && !Enum.IsDefined(typeof(SubVertical), dto.SubVertical.Value))
+                throw new ArgumentException($"Invalid CompanyCategory: {dto.SubVertical.Value}");
+
+            if (dto.NatureOfBusiness == null || dto.NatureOfBusiness.Count == 0)
+                throw new ArgumentException("NatureOfBusiness list is required and cannot be empty.");
+
+            foreach (var val in dto.NatureOfBusiness)
+            {
+                if (!Enum.IsDefined(typeof(NatureOfBusiness), val))
+                    throw new ArgumentException($"Invalid NatureOfBusiness: {val}");
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.PhoneNumber))
+                throw new ArgumentException("Phone number is required.");
+
+            var phoneRegex = new Regex(@"^\d{6,15}$");
+
+            if (!phoneRegex.IsMatch(dto.PhoneNumber))
+                throw new ArgumentException("Invalid phone number format.");
+
+            if (!string.IsNullOrWhiteSpace(dto.WhatsAppNumber) &&
+                !phoneRegex.IsMatch(dto.WhatsAppNumber))
+                throw new ArgumentException("Invalid WhatsApp number format.");
+
+            if (!IsValidEmail(dto.Email))
+                throw new ArgumentException("Invalid email format.");
+        }
         private CompanyProfileDto EntityForCreate(CompanyProfileDto dto, Guid id)
         {
             return new CompanyProfileDto
             {
                 Id = id,
-                VerticalId = dto.VerticalId,
-                CategoryId = dto.CategoryId,
+                Vertical = dto.Vertical,
+                SubVertical = dto.SubVertical,
                 UserId = dto.UserId,
                 BusinessName = dto.BusinessName,
                 Country = dto.Country,
                 City = dto.City,
                 BranchLocations = dto.BranchLocations,
+                PhoneNumberCountryCode = dto.PhoneNumberCountryCode,
+                WhatsAppCountryCode = dto.WhatsAppCountryCode,
                 PhoneNumber = dto.PhoneNumber,
                 WhatsAppNumber = dto.WhatsAppNumber,
                 Email = dto.Email,
@@ -76,7 +141,7 @@ namespace QLN.Company.MS.Service
                 CRDocument = dto.CRDocument,
                 IsVerified = dto.IsVerified,
                 Status = dto.Status,
-                CreatedBy = dto.UserId,
+                CreatedBy = (Guid)dto.UserId,
                 CreatedUtc = DateTime.UtcNow,
                 IsActive = true
             };
@@ -88,6 +153,8 @@ namespace QLN.Company.MS.Service
                 var result = await _dapr.GetStateAsync<CompanyProfileDto>(ConstantValues.CompanyStoreName, id.ToString(), cancellationToken: cancellationToken);
                 if(result == null)
                     throw new KeyNotFoundException($"Company with id '{id}' was not found.");
+                if (!result.IsActive)
+                    return null;
                 return result;
             }
             catch (Exception ex)
@@ -108,7 +175,7 @@ namespace QLN.Company.MS.Service
                 return items
                     .Where(i => !string.IsNullOrWhiteSpace(i.Value))
                     .Select(i => JsonSerializer.Deserialize<CompanyProfileDto>(i.Value!, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!)
-                    .Where(e => e.Id != Guid.Empty)
+                    .Where(e => e.Id != Guid.Empty && e.IsActive)
                     .ToList();
             }
             catch (Exception ex)
@@ -121,13 +188,16 @@ namespace QLN.Company.MS.Service
         {
             try
             {
+                Validate(dto);
                 var existing = await _dapr.GetStateAsync<CompanyProfileDto>(ConstantValues.CompanyStoreName, dto.Id.ToString(), cancellationToken: cancellationToken);
-
                 if (existing == null)
                     throw new KeyNotFoundException($"Company with ID {dto.Id} was not found.");
-
+                if ((int)(existing.SubVertical ?? 0) == (int)SubVertical.Stores)
+                {
+                    throw new InvalidOperationException("Editing companies in the 'Stores' category is not allowed.");
+                }
                 var entity = EntityForUpdate(dto, existing);
-
+                entity.IsVerified = false;
                 await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, dto.Id.ToString(), entity);
 
                 var keys = await GetIndex();
@@ -138,6 +208,10 @@ namespace QLN.Company.MS.Service
                 }
 
                 return "Company Profile Updated Successfully";
+            }
+            catch (ArgumentException ex)
+            {
+                throw new InvalidDataException(ex.Message, ex);
             }
             catch (Exception ex)
             {
@@ -150,14 +224,16 @@ namespace QLN.Company.MS.Service
             return new CompanyProfileDto
             {
                 Id = dto.Id,
-                VerticalId = dto.VerticalId,
-                CategoryId = dto.CategoryId,
+                Vertical = dto.Vertical,
+                SubVertical = dto.SubVertical,
                 UserId = dto.UserId,
                 BusinessName = dto.BusinessName,
                 Country = dto.Country,
                 City = dto.City,
                 BranchLocations = dto.BranchLocations,
                 PhoneNumber = dto.PhoneNumber,
+                PhoneNumberCountryCode = dto.PhoneNumberCountryCode,
+                WhatsAppCountryCode = dto.WhatsAppCountryCode,
                 WhatsAppNumber = dto.WhatsAppNumber,
                 Email = dto.Email,
                 WebsiteUrl = dto.WebsiteUrl,
@@ -189,12 +265,14 @@ namespace QLN.Company.MS.Service
             try
             {
                 var entity = await _dapr.GetStateAsync<CompanyProfileDto>(ConstantValues.CompanyStoreName, id.ToString(), cancellationToken: cancellationToken);
-
                 if (entity == null)
                 {
                     throw new KeyNotFoundException($"Company with ID {id} not found.");
                 }
-
+                if (!entity.IsActive)
+                {
+                    throw new InvalidDataException("Company already soft deleted.");
+                }
                 entity.IsActive = false;
 
                 await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, id.ToString(), entity, cancellationToken: cancellationToken);
@@ -219,17 +297,16 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<List<CompanyProfileCompletionStatusDto>> GetCompanyProfileCompletionStatus(
-        Guid userId,
-        VerticalType vertical,
+        public async Task<List<CompanyProfileCompletionStatusDto>> GetCompanyProfileCompletionStatus(Guid userId, VerticalType vertical,
         CancellationToken cancellationToken = default)
         {
             try
             {
                 var allCompanies = await GetAllCompanies(cancellationToken);
                 var companies = allCompanies
-                    .Where(c => Enum.IsDefined(typeof(VerticalType), c.VerticalId) &&
-                                (VerticalType)c.VerticalId == vertical)
+                    .Where(c => c.IsActive)
+                    .Where(c => Enum.IsDefined(typeof(VerticalType), c.Vertical) &&
+                                (VerticalType)c.Vertical == vertical)
                     .ToList();
 
                 var list = new List<CompanyProfileCompletionStatusDto>();
@@ -248,13 +325,13 @@ namespace QLN.Company.MS.Service
                         { "EndDay", c => !string.IsNullOrWhiteSpace(c.EndDay) },
                         { "StartHour", c => c.StartHour != TimeSpan.Zero },
                         { "EndHour", c => c.EndHour != TimeSpan.Zero },
-                        { "NatureOfBusiness", c => !string.IsNullOrWhiteSpace(c.NatureOfBusiness) },
+                        { "NatureOfBusiness", c => c.NatureOfBusiness != default},
                         { "CompanySize", c => c.CompanySize != default },
                         { "CompanyType", c => c.CompanyType != default },
                         { "UserDesignation", c => !string.IsNullOrWhiteSpace(c.UserDesignation) },
                         { "BusinessDescription", c => !string.IsNullOrWhiteSpace(c.BusinessDescription) },
                         { "CRNumber", c => c.CRNumber > 0 },
-                        { "VerticalId", c => c.VerticalId > 0 },
+                        { "VerticalId", c => c.Vertical > 0 },
                         { "CRDocument", c => !string.IsNullOrWhiteSpace(c.CRDocument) },
                     };
 
@@ -293,7 +370,10 @@ namespace QLN.Company.MS.Service
                         );
                 if (company == null)
                     throw new KeyNotFoundException($"Company with ID {dto.CompanyId} not found.");
-
+                if (!company.IsActive)
+                    throw new InvalidOperationException("Cannot approve an inactive company profile.");
+                if (company.IsVerified == true)
+                    throw new InvalidOperationException("This company is already approved.");
                 var wasPreviouslyVerified = company.IsVerified;
                 company.IsVerified = dto.IsVerified ?? false;
                 company.Status = dto.Status;
@@ -309,19 +389,26 @@ namespace QLN.Company.MS.Service
 
                 return "Company Profile Approved Successfully";
             }
+            catch (KeyNotFoundException ex)
+            {
+                throw new InvalidDataException(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidDataException(ex.Message);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error approving company with ID {CompanyId}", dto.CompanyId);
                 throw;
             }
         }
-
         public async Task<CompanyApprovalResponseDto?> GetCompanyApprovalInfo(Guid companyId, CancellationToken cancellationToken = default)
         {
             try
             {
                 var allCompanies = await GetAllCompanies(cancellationToken);
-                var company = allCompanies.FirstOrDefault(c => c.Id == companyId);
+                var company = allCompanies.FirstOrDefault(c => c.Id == companyId && c.IsActive);
 
                 if (company == null) return null;
 
@@ -348,12 +435,13 @@ namespace QLN.Company.MS.Service
                 var allCompanies = await GetAllCompanies(cancellationToken);
 
                 var filtered = allCompanies
-                    .Where(c => c.IsVerified == isVerified && c.VerticalId == vertical)
+                    .Where(c => c.IsActive)
+                    .Where(c => c.IsVerified == isVerified && c.Vertical == vertical)
                     .Select(c => new CompanyProfileVerificationStatusDto
                     {
                         CompanyId = c.Id,
                         BusinessName = c.BusinessName,
-                        VerticalId = c.VerticalId,
+                        Vertical = c.Vertical,
                         IsVerified = c.IsVerified,
                         Status = c.Status
                     })
@@ -373,7 +461,7 @@ namespace QLN.Company.MS.Service
             {
                 var all = await GetAllCompanies(cancellationToken);
                 return all
-                    .Where(c => c.UserId == userId)
+                    .Where(c => c.UserId == userId && c.IsActive)
                     .ToList();
             }
             catch(Exception)

@@ -172,7 +172,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
                 var logger = loggerFactory.CreateLogger("BackOfficeEndpoints");
                 var searchReq = new CommonSearchRequest
                 {
-                    Top = 500,
                     Filters = new Dictionary<string, object> {
                         { "Vertical",   vertical },
                         { "EntityType", entityType }
