@@ -103,7 +103,7 @@ namespace QLN.Web.Shared.Services
             }
         }
 
-        public async Task<bool> CreateCompanyProfileAsync(CompanyProfileModel model, string authToken)
+        public async Task<bool> CreateCompanyProfileAsync(CompanyProfileModelDto model, string authToken)
         {
             var options = new JsonSerializerOptions
             {

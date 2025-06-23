@@ -28,7 +28,10 @@ namespace QLN.Web.Shared.Models
         public string StartHour { get; set; }
         public string EndHour { get; set; }
         public string UserDesignation { get; set; }
+
+        [Required(ErrorMessage = "CR Document is required")]
         public string CrDocument { get; set; }
+
         public string Id { get; set; }
         [Required(ErrorMessage = "Business Name is required")]
         public string BusinessName { get; set; }
@@ -51,6 +54,58 @@ namespace QLN.Web.Shared.Models
         public DateTime CreatedUtc { get; set; }
 
     }
+    public class CompanyProfileModelDto
+    {
+        public int Vertical { get; set; }
+        public int SubVertical { get; set; }
+        [Required(ErrorMessage = "Country is required")]
+        public string Country { get; set; }
+        [Required(ErrorMessage = "City is required")]
+        public string City { get; set; }
+        public List<string> BranchLocations { get; set; }
+        public string WhatsAppNumber { get; set; }
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Invalid email format")]
+        public string Email { get; set; }
+
+        [Url(ErrorMessage = "Invalid website URL format")]
+        public string WebsiteUrl { get; set; }
+
+        [Url(ErrorMessage = "Invalid Facebook URL format")]
+        public string FacebookUrl { get; set; }
+        public string InstagramUrl { get; set; }
+        public string StartDay { get; set; }
+        public string EndDay { get; set; }
+        public TimeSpan? StartHour { get; set; }
+        public TimeSpan? EndHour { get; set; }
+        public string UserDesignation { get; set; }
+
+        [Required(ErrorMessage = "CR Document is required")]
+        public string CrDocument { get; set; }
+
+        public string Id { get; set; }
+        [Required(ErrorMessage = "Business Name is required")]
+        public string BusinessName { get; set; }
+
+        [Required(ErrorMessage = "Phone number is required")]
+        [Phone(ErrorMessage = "Invalid phone number format")]
+        public string PhoneNumber { get; set; }
+
+        [Required(ErrorMessage = "Company Logo is required")]
+        public string CompanyLogo { get; set; }
+        public int CompanyType { get; set; }
+        public int CompanySize { get; set; }
+        public List<int> NatureOfBusiness { get; set; } = new();
+        public string BusinessDescription { get; set; }
+        public int Status { get; set; }
+        public int CrNumber { get; set; }
+        public bool IsVerified { get; set; }
+        public bool IsActive { get; set; }
+        public string CreatedBy { get; set; }
+        public DateTime CreatedUtc { get; set; }
+
+    }
+
 
     public enum CompanySize
     {
@@ -104,6 +159,16 @@ namespace QLN.Web.Shared.Models
 
         [Display(Name = "Logistics")]
         Logistics = 6,
+    }
+    public enum DaysOfWeek
+    {
+        Sunday,
+        Monday,
+        Tuesday,
+        Wednesday,
+        Thursday,
+        Friday,
+        Saturday
     }
 
 
