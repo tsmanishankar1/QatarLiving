@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Services;
+using Microsoft.JSInterop;
+using QLN.Web.Shared.Services.Interface;
 using System.Runtime.CompilerServices;
 using System.Web;
 
@@ -13,7 +15,9 @@ public class VideoDisplayCardsBase : ComponentBase
     [Inject] NavigationManager NavigationManager { get; set; }
 
     [Inject] IOptions<NavigationPath> Options { get; set; }
+    [Inject] IJSRuntime JS { get; set; }
     [Inject] ILogger<DailyVideoCardsBase> Logger { get; set; }
+    [Inject] YouTubeApiService YouTubeService { get; set; }
     [Parameter] public List<ContentVideo> Items { get; set; }
 
    [Parameter] public ContentVideo SelectedVideo { get; set; }
@@ -25,6 +29,8 @@ public class VideoDisplayCardsBase : ComponentBase
 
     protected string YTVideoEmbedURL { get; set; } = string.Empty;
     [Parameter] public EventCallback<ContentVideo> SelectedVideoChanged { get; set; }
+    protected string mainVideoViewCount { get; set; } = string.Empty;
+    protected string publishedDate { get; set; } = string.Empty;
 
     protected override void OnInitialized()
     {
@@ -39,10 +45,9 @@ public class VideoDisplayCardsBase : ComponentBase
         {
             if (SelectedVideo == null && Items?.Any() == true)
             {
-                Console.WriteLine("SelectedVideo is null, setting to first item.");
                 SelectedVideo = Items.First();
             }
-            Console.WriteLine("SelectedVideo is not null, setting to first item.");
+            await LoadVideoDetailsAsync(SelectedVideo.VideoUrl);
             YTVideoEmbedURL = ConvertToEmbedUrl(SelectedVideo?.VideoUrl ?? string.Empty);
         }
         catch (Exception ex)
@@ -56,13 +61,28 @@ public class VideoDisplayCardsBase : ComponentBase
         SelectedVideo = video;
         YTVideoEmbedURL = string.Empty;
         IsVisiblePlayButton = false;
+       await LoadVideoDetailsAsync(SelectedVideo.VideoUrl);
         YTVideoEmbedURL = ConvertToEmbedUrl(SelectedVideo.VideoUrl);
         if (SelectedVideoChanged.HasDelegate)
         {
             await SelectedVideoChanged.InvokeAsync(video);
-            
         }
     }
+    private async Task LoadVideoDetailsAsync(string videoUrl)
+{
+    var result = await YouTubeService.GetVideoDetailsFromUrlAsync(videoUrl);
+    
+    if (result != null)
+    {
+        mainVideoViewCount = result.Statistics?.ViewCount?.ToString() ?? "0";
+        publishedDate = result.Snippet?.PublishedAt?.ToString("yyyy-MM-dd") ?? string.Empty;
+    }
+    else
+    {
+        mainVideoViewCount = "N/A";
+        publishedDate = string.Empty;
+    }
+}
 
     /// <summary>
     /// Converts Youtube Shorts or Video as a Embed URL.

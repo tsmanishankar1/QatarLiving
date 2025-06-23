@@ -3,10 +3,19 @@
 
 <div class="watch-section">
     <!-- Main Video -->
-    <div class="main-video-wrapper video-card">
+    <div class="main-video-wrapper video-card" style="display: flex; flex-direction: column;">
         <iframe width="100%" height="100%" muted loop style="object-fit: cover; border-radius: 6px;"
             src="@YTVideoEmbedURL">
         </iframe>
+        <div class="video-meta mt-2 d-flex justify-between align-center">
+            <div class="d-flex align-center gap-2">
+                <MudIcon Icon="@Icons.Material.Filled.Visibility" Style="font-size: 18px;" />
+                <span>@mainVideoViewCount views</span>
+            </div>
+            <div>
+            <span>Uploaded on @publishedDate</span>
+            </div>
+        </div>
     </div>
 
     <!-- Video List -->
@@ -293,6 +302,18 @@
     .video-list {
         height: 416px;
     }
+    .video-meta {
+    font-size: 18px;
+    color:var(--color-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    }
+
+.video-meta .dot-separator {
+    font-weight: bold;
+    margin: 0 4px;
+}
 
 
     @@media (max-width: 768px) {

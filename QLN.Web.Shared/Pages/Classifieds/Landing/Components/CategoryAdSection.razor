@@ -1,41 +1,56 @@
-@using MudBlazor
+@inherits CategoryAdSectionBase
+@using QLN.Web.Shared.Components.EmptyCard
 @using QLN.Web.Shared.Components.Classifieds.CategoryAdCard
 
-<div class="category-wrapper">
-    <MudGrid GutterSize="GutterSize.Medium">
-        @foreach (var category in Categories)
-        {
-            <MudItem xs="12" sm="6">
-                <CategoryAdCard Item="@category" OnClick="HandleClick" />
-            </MudItem>
-        }
-    </MudGrid>
+<div class="category-ad-wrapper-container">
+    @if (Loading)
+    {
+          <div class="category-ad-wrapper">
+            <MudGrid GutterSize="GutterSize.Medium">
+            @foreach (var _ in Enumerable.Range(0, Categories?.Count > 0 ? Categories.Count : 6))
+            {
+                <MudItem xs="12" sm="6">
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="100px" Width="100%" Style="border-radius: 8px;" />
+                </MudItem>
+            }
+          </MudGrid>
+    </div>
+    }
+    else if (Categories == null || !Categories.Any())
+    {
+        <EmptyCard Title="No Categories items found." Subtitle="Please check back later or explore other categories." />
+    }
+    else
+    {
+        <div class="category-ad-wrapper">
+            <MudGrid GutterSize="GutterSize.Medium">
+                <MudVirtualize Context="category" Items="Categories">
+                    <MudItem xs="12" sm="6">
+                        <CategoryAdCard Item="@category" OnClick="HandleClick" />
+                    </MudItem>
+                </MudVirtualize>
+            </MudGrid>
+    </div>
+}
 </div>
 
-@code {
-    [Parameter]
-    public List<CategoryAdCard.CategoryItem> Categories { get; set; } = new();
-
-    [Parameter]
-    public EventCallback<CategoryAdCard.CategoryItem> OnCategoryClick { get; set; }
-
-    private Task HandleClick(CategoryAdCard.CategoryItem item)
-    {
-        return OnCategoryClick.InvokeAsync(item);
-    }
-}
-
-
 <style>
-    .category-wrapper {
-        padding: 4rem 2rem;
-        font-family: 'Public Sans', sans-serif;
-
+    .category-ad-wrapper-container {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        padding: 20px 0;
+    }
+    .category-skeleton-item {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
+    }
+    .category-ad-wrapper {
+        max-width: 766px;
+        width: 100%;
+        padding: 0; 
     }
 
-    @@media (max-width: 600px) {
-
-        .category-wrapper {
-            padding: 1rem;
-        }
 </style>

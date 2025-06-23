@@ -18,9 +18,6 @@ namespace QLN.Common.DTO_s
         public string? SubVertical { get; set; }
 
         [SimpleField(IsFilterable = true)]
-        public string? UserId { get; set; }
-
-        [SimpleField(IsFilterable = true)]
         public string? SubscriptionId { get; set; }
 
         [SearchableField(IsFilterable = true, IsFacetable = true)]
@@ -29,11 +26,26 @@ namespace QLN.Common.DTO_s
         [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string? Description { get; set; }
 
-        [SimpleField(IsFilterable = true)]
+        [SimpleField(IsFilterable = true, IsSortable = true)]
         public bool? IsFeatured { get; set; }
 
-        [SimpleField(IsFilterable = true)]
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public DateTime? FeatureExpiryDate { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
         public bool? IsPromoted { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public DateTime? PromotedExpiryDate { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public bool? IsRefreshed { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public DateTime? RefreshExpiryDate { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public string? AdType { get; set; }
 
         [SimpleField(IsFilterable = true)]
         public string? Status { get; set; }
@@ -42,8 +54,11 @@ namespace QLN.Common.DTO_s
         [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
         public double? Price { get; set; }
 
+        [SimpleField(IsFilterable = true)]
+        public string? PriceType { get; set; }
+
         // --- CATEGORIES ---
-        [SimpleField(IsFilterable = true, IsSortable = true)]
+        [SimpleField(IsFilterable = true)]
         public string? CategoryId { get; set; }
 
         [SearchableField(IsFilterable = true, IsFacetable = true)]
@@ -73,12 +88,6 @@ namespace QLN.Common.DTO_s
         public string? Zone { get; set; }
 
         [SearchableField(IsFilterable = true)]
-        public string? Latitude { get; set; }
-
-        [SearchableField(IsFilterable = true)]
-        public string? Longitude { get; set; }
-
-        [SearchableField(IsFilterable = true)]
         public string? PhoneNumber { get; set; }
 
         [SearchableField(IsFilterable = true)]
@@ -94,17 +103,9 @@ namespace QLN.Common.DTO_s
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public DateTime? ModifiedDate { get; set; }
 
-        [SimpleField(IsFilterable = true)]
+        [SimpleField(IsFilterable = true, IsSortable = true)]
         public DateTime? ExpiryDate { get; set; }
 
-        [SimpleField(IsFilterable = true)]
-        public DateTime? RefreshExpiry { get; set; }
-
-        [SimpleField(IsFilterable = true)]
-        public int? RemainingRefreshes { get; set; }
-
-        [SimpleField(IsFilterable = true)]
-        public int? TotalAllowedRefreshes { get; set; }
 
         // --- ITEM-AD SPECIFIC ---
 
@@ -229,6 +230,17 @@ namespace QLN.Common.DTO_s
 
         [SearchableField(IsFilterable = true)]
         public string? StoreName { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public string StoreLogoUrl { get; set; } = string.Empty;
+
+        // --- PUBLISHER DETAILS ---
+        [SimpleField(IsFilterable = true)]
+        public string? UserId { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? UserName { get; set; }
+
         public class ImageInfo
         {
             public string AdImageFileNames { get; set; }
