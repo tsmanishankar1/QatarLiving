@@ -30,6 +30,7 @@ namespace QLN.Web.Shared.Models
         public string UserDesignation { get; set; }
         public string CrDocument { get; set; }
         public string Id { get; set; }
+        [Required(ErrorMessage = "Business Name is required")]
         public string BusinessName { get; set; }
 
         [Required(ErrorMessage = "Phone number is required")]

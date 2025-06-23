@@ -14,6 +14,8 @@ namespace QLN.Web.Shared.Pages.Company
         [Inject] private ICompanyProfileService CompanyProfileService { get; set; }
         [Inject] protected ISnackbar Snackbar { get; set; }
 
+        private EditForm? editForm;
+
         [Parameter]
         public int VerticalId { get; set; }
 
@@ -51,7 +53,7 @@ namespace QLN.Web.Shared.Pages.Company
         {
             if (firstRender)
             {
-                _authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6Ijk3NTQ1NGI1LTAxMmItNGQ1NC1iMTUyLWUzMGYzNmYzNjNlMiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJNVUpBWSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6Im11amF5LmFAa3J5cHRvc2luZm9zeXMuY29tIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbW9iaWxlcGhvbmUiOiIrOTE3NzA4MjA0MDcxIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjpbIlVzZXIiLCJTdWJzY3JpYmVyIl0sIlVzZXJJZCI6Ijk3NTQ1NGI1LTAxMmItNGQ1NC1iMTUyLWUzMGYzNmYzNjNlMiIsIlVzZXJOYW1lIjoiTVVKQVkiLCJFbWFpbCI6Im11amF5LmFAa3J5cHRvc2luZm9zeXMuY29tIiwiUGhvbmVOdW1iZXIiOiIrOTE3NzA4MjA0MDcxIiwiZXhwIjoxNzUwNTcyNzc2LCJpc3MiOiJRYXRhciBMaXZpbmciLCJhdWQiOiJRYXRhciBMaXZpbmcifQ.MH0ILfIgf0Pt1oaRfmakGuxQ3KUN2mKLw_LK_TcFbFk";
+                _authToken = "";
                 StateHasChanged();
 
 
@@ -63,10 +65,21 @@ namespace QLN.Web.Shared.Pages.Company
 
         private async Task SaveCompanyProfileAsync()
         {
+           
+
+            if (string.IsNullOrEmpty(companyProfile.CompanyLogo))
+            {
+                Snackbar.Add("Company logo is required", Severity.Error);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(crDocumentBase64))
+            {
+                Snackbar.Add("CR document is required", Severity.Error);
+                return;
+            }
             try
             {
-
-
                 isSaving = true;
 
                 if (companyProfile != null)
