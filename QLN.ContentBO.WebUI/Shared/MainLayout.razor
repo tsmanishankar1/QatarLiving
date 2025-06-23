@@ -16,19 +16,56 @@
         <MudDrawerHeader>
             <MudImage id="logoImage" Src="/qln-images/ql_logo.svg" Alt="Qatar Living" Class="logo-img" />
         </MudDrawerHeader>
-        <MudPaper Class="py-3" Elevation="0">
-            <MudNavMenu Dense="true" Rounded="true" Margin="Margin.Dense" Color="Color.Secondary" Class="pa-2">
-                <MudNavLink Href="/dashboard" Icon="@Icons.Material.Filled.DocumentScanner">Daily</MudNavLink>
-                <MudNavGroup Title="News" Icon="fas fa-cogs" Expanded="true">
-                    <MudNavLink Href="/manage/news" Match="NavLinkMatch.Prefix" Icon="fas fa-users" IconColor="Color.Secondary">News</MudNavLink>
-                    <MudNavLink Href="/manage/finance" Icon="fas fa-user-shield" IconColor="Color.Info">Finance</MudNavLink>
-                    <MudNavLink Href="/manage/sports" Icon="fas fa-user-shield" IconColor="Color.Info">Sports</MudNavLink>
-                    <MudNavLink Href="/manage/lifeStyle" Icon="fas fa-user-shield" IconColor="Color.Info">LifeStyle</MudNavLink>
+        <MudPaper Class="py-3 sidebar-container" Elevation="0">
+            <div class="menu-content">
+                <MudNavMenu Dense="true" Rounded="true" Margin="Margin.Dense" Color="Color.Secondary" Class="pa-2">
+                <MudTextField @bind-Value="@searchText"
+                Placeholder="Search"
+                Variant="Variant.Outlined"
+                Adornment="Adornment.Start"
+                AdornmentIcon="@Icons.Material.Filled.Search"
+                Class="px-2 py-2"/>
+                <MudNavLink Href="/dashboard">
+                <img src="/qln-images/daily_icon.svg" alt="DailyLiving" style="width:24px; height:24px; margin-right:8px;" />
+                <span class="nav-item">Daily Living</span>
+                </MudNavLink>
+               <MudNavGroup Icon=" " Expanded="true">
+                    <TitleContent>
+                    <span class="nav-item">News</span>
+                    </TitleContent>
+                    <ChildContent>
+                        <MudNavLink Href="/manage/news" Class="nav-item" Match="NavLinkMatch.Prefix" Icon="fas fa-users" IconColor="Color.Secondary">News</MudNavLink>
+                        <MudNavLink Href="/manage/finance" Class="nav-item" Icon="fas fa-user-shield" IconColor="Color.Info">Finance</MudNavLink>
+                        <MudNavLink Href="/manage/sports" Class="nav-item" Icon="fas fa-user-shield" IconColor="Color.Info">Sports</MudNavLink>
+                        <MudNavLink Href="/manage/lifeStyle" Class="nav-item" Icon="fas fa-user-shield" IconColor="Color.Info">LifeStyle</MudNavLink>
+                    </ChildContent>
                 </MudNavGroup>
-                <MudNavLink Icon="@Icons.Material.Filled.CalendarMonth">Events</MudNavLink>
-                <MudNavLink Icon="@Icons.Material.Filled.ChatBubble">Community</MudNavLink>
-                <MudNavLink Icon="@Icons.Material.Filled.Report">Report</MudNavLink>
-            </MudNavMenu>
+                 <MudNavLink Href="/content/events/create" Class="nav-item">
+                <img src="/qln-images/community_icon.svg" alt="Community" style="width:24px; height:24px; margin-right:8px;" />
+                <span class="nav-item">Community</span>
+                </MudNavLink>
+                <MudNavLink Href="/content/events/create" Class="nav-item">
+                <img src="/qln-images/event_icon.svg" alt="Events" style="width:24px; height:24px; margin-right:8px;" />
+                <span class="nav-item">Events</span>
+                </MudNavLink>
+                <MudNavLink Href="/content/events/create" Class="nav-item">
+                <img src="/qln-images/report_icon.svg" alt="Report" style="width:24px; height:24px; margin-right:8px;" />
+                <span class="nav-item">Report</span>
+                </MudNavLink>
+                </MudNavMenu>
+                <MudPaper Class="user-card" Elevation="0">
+                    <MudDivider DividerType="DividerType.Inset" />
+                    <MudGrid AlignItems="Center" Justify="Justify.SpaceBetween" Class="pa-3">
+                        <MudItem xs="10">
+                            <MudText  Class="user-name-style">Ismat Nesir</MudText>
+                            <MudText Class="user-email-style" >olivia@untitledui.com</MudText>
+                        </MudItem>
+                        <MudItem xs="2" Class="text-end">
+                             <img src="/qln-images/logout.svg" alt="search" style="height: 30px; width: 30px;"/>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            </div>
         </MudPaper>
     </MudDrawer>
     <MudMainContent>
@@ -36,8 +73,79 @@
     </MudMainContent>
 </MudLayout>
 
+<style>
+    .custom-news-icon .mud-nav-link-icon {
+        background-image: url('/qln-images/news_icon.svg'); 
+        background-size: contain;
+        background-repeat: no-repeat;
+        width: 24px;
+        height: 24px;
+        display: inline-block;
+    }
+    .sidebar-container {
+        height: 100vh; 
+        display: flex;
+        flex-direction: column;
+    }
+    .nav-item {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 16px;
+        font-weight: 600 !important;
+        color: #646464;
+    }
+    .bottom-container {
+        padding: 16px 0;
+        text-align: center;
+        color: #888;
+    }
+    .menu-content {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
+    }
+    .user-card {
+        border-top: 1px solid #E0E0E0; 
+        background-color: #fff;
+        border-radius: 0 ! important;
+    }
+    .user-name-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        font-weight: 600 !important;
+        color: #414651;
+    }
+     .user-email-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        font-weight: 400 !important;
+        color: #535862;
+    }
+   .mud-navmenu.mud-navmenu-secondary .mud-nav-link.active:not(.mud-nav-link-disabled) {
+        color: white;
+        --mud-ripple-color: #FF7F38;
+        background-color: #FF7F38;
+    }
+    .mud-navmenu.mud-navmenu-secondary .mud-nav-link-expand-icon.mud-transform {
+        fill: var(#646464) !important; 
+    }
+    .mud-nav-link-active {
+        border-radius: 8px;
+        font-weight: 600;
+        color: #FF7F38 !important; 
+    }
+    .mud-nav-link-active .nav-item {
+    color: white !important;
+    font-weight: 600;
+}
+
+
+
+</style>
+
 @code {
     bool _drawerOpen = true;
+    private string searchText;
 
     void DrawerToggle()
     {
