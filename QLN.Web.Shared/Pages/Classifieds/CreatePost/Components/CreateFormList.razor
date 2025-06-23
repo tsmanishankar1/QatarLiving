@@ -2,7 +2,7 @@
 @using QLN.Web.Shared.Components.NewCustomSelect
 @using QLN.Web.Shared.Components.CustomInput
 @using QLN.Common.DTO_s;
-
+@using MudExRichTextEditor
 @typeparam TItem
 
 <div class="form-section">
@@ -100,6 +100,10 @@
         <div class="form-group">
             <CustomInput TItem="string" Placeholder="Battery Percentage" @bind-Value="batteryPercentage" TextRight="%" />
         </div>
+         <MudExRichTextEdit @bind-Value="itemDescription"
+                                       Height="300"
+                                       Class="description-input no-underline"
+                                       Placeholder="Write your business description..." />
     </div>
 
     <div class="form-section">
@@ -160,6 +164,7 @@
     [Parameter] public EventCallback<string> CategoryChanged { get; set; }
 
  private bool isAgreed;
+ private string itemDescription;
    private async Task OnVerticalChanged(string newValue)
 {
     selectedVertical = newValue;
