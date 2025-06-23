@@ -324,6 +324,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             CardHolderName = request.CardDetails.CardHolderName,
             TransactionDate = DateTime.UtcNow,
             LastUpdated = DateTime.UtcNow,
+            IsExpired=false
         };
 
         var actor = GetPaymentTransactionActorProxy(dto.Id);

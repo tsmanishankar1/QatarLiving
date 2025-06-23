@@ -205,6 +205,7 @@ namespace QLN.Common.DTOs
         public string CardHolderName { get; set; } = string.Empty;
         public DateTime TransactionDate { get; set; }
         public DateTime LastUpdated { get; set; }
+        public bool IsExpired { get; set; } = false;
     }
 
 

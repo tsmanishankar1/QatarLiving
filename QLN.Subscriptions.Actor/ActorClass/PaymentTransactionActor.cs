@@ -1,4 +1,4 @@
-﻿
+﻿using Dapr.Actors;
 using Dapr.Actors.Runtime;
 using Dapr.Client;
 using QLN.Common.DTOs;
@@ -6,9 +6,10 @@ using QLN.Common.Infrastructure.IService.ISubscriptionService;
 
 namespace QLN.Subscriptions.Actor.ActorClass
 {
-    public class PaymentTransactionActor : Dapr.Actors.Runtime.Actor, IPaymentTransactionActor
+    public class PaymentTransactionActor : Dapr.Actors.Runtime.Actor, IPaymentTransactionActor, IRemindable
     {
         private const string StateKey = "payment-transaction-data";
+        private const string BackupStateKey = "transaction-data";
         private const string TimerName = "subscription-expiry-timer";
         private const string ReminderName = "subscription-expiry-reminder";
         private const string PubSubName = "pubsub";
@@ -21,7 +22,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            // Create DaprClient directly instead of using DI
+            // Create DaprClient directly
             var daprClientBuilder = new DaprClientBuilder();
             _daprClient = daprClientBuilder.Build();
         }
@@ -32,13 +33,25 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             _logger.LogInformation("[PaymentActor {ActorId}] SetDataAsync called", Id);
 
-            await StateManager.SetStateAsync(StateKey, data, cancellationToken);
-            await StateManager.SaveStateAsync(cancellationToken);
+            try
+            {
+                // Update timestamp
+                data.LastUpdated = DateTime.UtcNow;
 
-            // Schedule both timer and reminder when payment data is set
-            await ScheduleExpiryCheckAsync();
+                // Store in both primary and backup state keys
+                await StoreInPrimaryStateAsync(data, cancellationToken);
+                await StoreInBackupStateAsync(data, cancellationToken);
 
-            return true;
+                // Schedule both timer and reminder when payment data is set
+                await ScheduleExpiryCheckAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[PaymentActor {ActorId}] Error in SetDataAsync", Id);
+                throw;
+            }
         }
 
         public async Task<bool> FastSetDataAsync(PaymentTransactionDto data, CancellationToken cancellationToken = default)
@@ -50,14 +63,168 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             _logger.LogInformation("[PaymentActor {ActorId}] GetDataAsync called", Id);
 
-            var conditionalValue = await StateManager.TryGetStateAsync<PaymentTransactionDto>(StateKey, cancellationToken);
-
-            if (conditionalValue.HasValue)
+            try
             {
-                return conditionalValue.Value;
-            }
+                // Try to get from primary state first
+                var primaryStateValue = await GetFromPrimaryStateAsync(cancellationToken);
+                if (primaryStateValue != null)
+                {
+                    return primaryStateValue;
+                }
 
-            return null;
+                // If not found in primary state, try backup state
+                var backupStateValue = await GetFromBackupStateAsync(cancellationToken);
+                if (backupStateValue != null)
+                {
+                    // If found in backup state, also update primary state for consistency
+                    await StoreInPrimaryStateAsync(backupStateValue, cancellationToken);
+                    return backupStateValue;
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[PaymentActor {ActorId}] Error in GetDataAsync", Id);
+                throw;
+            }
+        }
+
+        private async Task StoreInPrimaryStateAsync(PaymentTransactionDto data, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await StateManager.SetStateAsync(StateKey, data, cancellationToken);
+                await StateManager.SaveStateAsync(cancellationToken);
+                _logger.LogInformation("[PaymentActor {ActorId}] Stored data in primary state key '{StateKey}'", Id, StateKey);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[PaymentActor {ActorId}] Error storing in primary state key '{StateKey}'", Id, StateKey);
+                throw;
+            }
+        }
+
+        private async Task StoreInBackupStateAsync(PaymentTransactionDto data, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await StateManager.SetStateAsync(BackupStateKey, data, cancellationToken);
+                await StateManager.SaveStateAsync(cancellationToken);
+                _logger.LogInformation("[PaymentActor {ActorId}] Stored data in backup state key '{StateKey}'", Id, BackupStateKey);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[PaymentActor {ActorId}] Error storing in backup state key '{StateKey}'", Id, BackupStateKey);
+                throw;
+            }
+        }
+
+        private async Task<PaymentTransactionDto?> GetFromPrimaryStateAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                var conditionalValue = await StateManager.TryGetStateAsync<PaymentTransactionDto>(StateKey, cancellationToken);
+                if (conditionalValue.HasValue)
+                {
+                    _logger.LogInformation("[PaymentActor {ActorId}] Retrieved data from primary state key '{StateKey}'", Id, StateKey);
+                    return conditionalValue.Value;
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[PaymentActor {ActorId}] Error retrieving from primary state key '{StateKey}'", Id, StateKey);
+                throw;
+            }
+        }
+
+        private async Task<PaymentTransactionDto?> GetFromBackupStateAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                var conditionalValue = await StateManager.TryGetStateAsync<PaymentTransactionDto>(BackupStateKey, cancellationToken);
+                if (conditionalValue.HasValue)
+                {
+                    _logger.LogInformation("[PaymentActor {ActorId}] Retrieved data from backup state key '{StateKey}'", Id, BackupStateKey);
+                    return conditionalValue.Value;
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[PaymentActor {ActorId}] Error retrieving from backup state key '{StateKey}'", Id, BackupStateKey);
+                throw;
+            }
+        }
+
+        public async Task<bool> DeleteDataAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("[PaymentActor {ActorId}] DeleteDataAsync called", Id);
+
+                // Delete from both state keys
+                await StateManager.TryRemoveStateAsync(StateKey, cancellationToken);
+                await StateManager.TryRemoveStateAsync(BackupStateKey, cancellationToken);
+                await StateManager.SaveStateAsync(cancellationToken);
+
+                // Clean up timers and reminders
+                await CleanupTimersAndRemindersAsync();
+
+                _logger.LogInformation("[PaymentActor {ActorId}] Deleted data from both state keys and cleaned up timers", Id);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[PaymentActor {ActorId}] Error in DeleteDataAsync", Id);
+                throw;
+            }
+        }
+
+        public async Task<bool> SyncStateKeysAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("[PaymentActor {ActorId}] SyncStateKeysAsync called", Id);
+
+                var primaryData = await GetFromPrimaryStateAsync(cancellationToken);
+                var backupData = await GetFromBackupStateAsync(cancellationToken);
+
+                // If data exists in primary but not in backup, sync to backup
+                if (primaryData != null && backupData == null)
+                {
+                    await StoreInBackupStateAsync(primaryData, cancellationToken);
+                    _logger.LogInformation("[PaymentActor {ActorId}] Synced data from primary to backup state key", Id);
+                }
+                // If data exists in backup but not in primary, sync to primary
+                else if (backupData != null && primaryData == null)
+                {
+                    await StoreInPrimaryStateAsync(backupData, cancellationToken);
+                    _logger.LogInformation("[PaymentActor {ActorId}] Synced data from backup to primary state key", Id);
+                }
+                // If both exist, use the most recently updated one
+                else if (primaryData != null && backupData != null)
+                {
+                    if (primaryData.LastUpdated > backupData.LastUpdated)
+                    {
+                        await StoreInBackupStateAsync(primaryData, cancellationToken);
+                        _logger.LogInformation("[PaymentActor {ActorId}] Synced newer data from primary to backup state key", Id);
+                    }
+                    else if (backupData.LastUpdated > primaryData.LastUpdated)
+                    {
+                        await StoreInPrimaryStateAsync(backupData, cancellationToken);
+                        _logger.LogInformation("[PaymentActor {ActorId}] Synced newer data from backup to primary state key", Id);
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[PaymentActor {ActorId}] Error in SyncStateKeysAsync", Id);
+                throw;
+            }
         }
 
         private async Task ScheduleExpiryCheckAsync()
@@ -79,15 +246,18 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 _logger.LogInformation("[PaymentActor {ActorId}] Scheduling expiry check for {NextCheck} IST (in {DueTime})",
                     Id, next115Pm, dueTime);
 
+                // Unregister existing timers/reminders first
+                await CleanupTimersAndRemindersAsync();
+
                 // Register Timer for regular checks
                 await RegisterTimerAsync(
                     TimerName,
                     nameof(CheckSubscriptionExpiryAsync),
-                    null, // state parameter
+                    null,
                     dueTime,
-                    TimeSpan.FromDays(1)); // period - repeats daily
+                    TimeSpan.FromDays(1));
 
-                // Register Reminder as backup (persists across actor deactivation/reactivation)
+                // Register Reminder as backup
                 var reminderData = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(new
                 {
                     ScheduledTime = next115PmUtc,
@@ -98,7 +268,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     ReminderName,
                     reminderData,
                     dueTime,
-                    TimeSpan.FromDays(1)); // period - repeats daily
+                    TimeSpan.FromDays(1));
 
                 _logger.LogInformation("[PaymentActor {ActorId}] Registered both timer and reminder for expiry checks", Id);
             }
@@ -108,13 +278,11 @@ namespace QLN.Subscriptions.Actor.ActorClass
             }
         }
 
-        // Timer callback method
         public async Task CheckSubscriptionExpiryAsync()
         {
             await PerformExpiryCheckAsync("Timer");
         }
 
-        // Reminder callback method (must be public and implement IRemindable interface pattern)
         public async Task ReceiveReminderAsync(string reminderName, byte[] state, TimeSpan dueTime, TimeSpan period)
         {
             _logger.LogInformation("[PaymentActor {ActorId}] Reminder '{ReminderName}' triggered", Id, reminderName);
@@ -144,19 +312,20 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     _logger.LogInformation("[PaymentActor {ActorId}] Subscription expired for user {UserId}. EndDate: {EndDate}",
                         Id, paymentData.UserId, paymentData.EndDate);
 
-                    // Publish subscription expiry message with retry logic
                     var published = await PublishSubscriptionExpiryWithRetryAsync(paymentData);
 
                     if (published)
                     {
-                        // Update state to mark as processed only if publish succeeded
+                        // Set IsExpiry to true and update LastUpdated when scheduler finishes
+                        paymentData.IsExpired = true;
                         paymentData.LastUpdated = DateTime.UtcNow;
-                        await StateManager.SetStateAsync(StateKey, paymentData);
-                        await StateManager.SaveStateAsync();
 
-                        // Unregister both timer and reminder as subscription has expired
+                        await StoreInPrimaryStateAsync(paymentData, default);
+                        await StoreInBackupStateAsync(paymentData, default);
+
                         await CleanupTimersAndRemindersAsync();
-                        _logger.LogInformation("[PaymentActor {ActorId}] Cleaned up timers and reminders for expired subscription", Id);
+                        _logger.LogInformation("[PaymentActor {ActorId}] Marked subscription as expired (IsExpiry=true) and cleaned up timers for user {UserId}",
+                            Id, paymentData.UserId);
                     }
                     else
                     {
@@ -179,7 +348,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             try
             {
-                // Unregister timer
                 await UnregisterTimerAsync(TimerName);
                 _logger.LogInformation("[PaymentActor {ActorId}] Unregistered timer '{TimerName}'", Id, TimerName);
             }
@@ -190,7 +358,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
-                // Unregister reminder
                 await UnregisterReminderAsync(ReminderName);
                 _logger.LogInformation("[PaymentActor {ActorId}] Unregistered reminder '{ReminderName}'", Id, ReminderName);
             }
@@ -234,9 +401,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             try
             {
-                // Check if pubsub component is available
-                var healthResponse = await _daprClient.CheckHealthAsync();
-
                 var expiryMessage = new SubscriptionExpiryMessage
                 {
                     UserId = paymentData.UserId,
@@ -265,16 +429,15 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
+                await SyncStateKeysAsync();
+
                 var paymentData = await GetDataAsync();
                 if (paymentData != null && paymentData.EndDate > DateTime.UtcNow)
                 {
-                    // Check if we already have reminders registered
-                    // If not, schedule new ones (this handles actor reactivation scenarios)
                     await ScheduleExpiryCheckAsync();
                 }
                 else if (paymentData != null && paymentData.EndDate <= DateTime.UtcNow)
                 {
-                    // Clean up any existing timers/reminders for expired subscriptions
                     await CleanupTimersAndRemindersAsync();
                 }
             }
@@ -292,7 +455,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
-                // Only unregister timer on deactivation (reminder will persist)
                 await UnregisterTimerAsync(TimerName);
                 _logger.LogInformation("[PaymentActor {ActorId}] Unregistered timer on deactivation (reminder persists)", Id);
             }
@@ -301,7 +463,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 _logger.LogWarning(ex, "[PaymentActor {ActorId}] Error unregistering timer during deactivation", Id);
             }
 
-            // Dispose DaprClient
             _daprClient?.Dispose();
             await base.OnDeactivateAsync();
         }
