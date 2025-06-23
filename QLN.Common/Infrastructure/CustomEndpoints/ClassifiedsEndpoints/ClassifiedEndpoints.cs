@@ -3530,6 +3530,588 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .ExcludeFromDescription();
 
+            group.MapPost("/preloved/user-ads/publish", async Task<IResult> (
+                HttpContext context,
+                List<Guid> adIds,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                var userId = context.User.GetId();
+                if (userId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Authenticated user ID is missing or does not match request.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                try
+                {
+                    var result = await service.BulkPublishPrelovedAds(userId, adIds, token);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Publish Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+                .WithName("BulkPublishPrelovedAds")
+                .WithTags("Classified")
+                .WithSummary("Publish multiple preloved ads")
+                .WithDescription("Publishes draft/unpublished preloved ads for the authenticated user.")
+                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .RequireAuthorization();
+
+            group.MapPost("/preloved/user-ads-by-id/{userId:guid}/publish", async Task<IResult> (
+                Guid userId,
+                List<Guid> adIds,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                if (userId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "User ID is required.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                try
+                {
+                    var result = await service.BulkPublishPrelovedAds(userId, adIds, token);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Publish Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+                .WithName("BulkPublishPrelovedAdsById")
+                .WithTags("Classified")
+                .WithSummary("Publish multiple preloved ads by user ID")
+                .WithDescription("Publishes selected unpublished preloved ads for a specific user (admin use).")
+                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .ExcludeFromDescription();
+
+            group.MapPost("/preloved/user-ads/unpublish", async Task<IResult> (
+                HttpContext context,
+                List<Guid> adIds,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                var userId = context.User.GetId();
+                if (userId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Authenticated user ID is missing or does not match request.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                try
+                {
+                    var result = await service.BulkUnpublishPrelovedAds(userId, adIds, token);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Unpublish Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+                .WithName("BulkUnpublishPrelovedAds")
+                .WithTags("Classified")
+                .WithSummary("Unpublish multiple preloved ads")
+                .WithDescription("Unpublishes active preloved ads for the authenticated user.")
+                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .RequireAuthorization();
+
+            group.MapPost("/preloved/user-ads-by-id/{userId:guid}/unpublish", async Task<IResult> (
+                Guid userId,
+                List<Guid> adIds,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                if (userId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "User ID is required.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                try
+                {
+                    var result = await service.BulkUnpublishPrelovedAds(userId, adIds, token);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Unpublish Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+                .WithName("BulkUnpublishPrelovedAdsById")
+                .WithTags("Classified")
+                .WithSummary("Unpublish multiple preloved ads by user ID")
+                .WithDescription("Unpublishes published preloved ads for a specific user (admin use).")
+                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .ExcludeFromDescription();
+
+            group.MapPost("/deals/user-ads/publish", async Task<IResult> (
+                HttpContext context,
+                List<Guid> adIds,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                var userId = context.User.GetId();
+                if (userId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Authenticated user ID is missing or does not match request.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                try
+                {
+                    var result = await service.BulkPublishDealsAds(userId, adIds, token);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Publish Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+                .WithName("BulkPublishDealsAds")
+                .WithTags("Classified")
+                .WithSummary("Publish multiple deals ads")
+                .WithDescription("Publishes draft/unpublished deals ads for the authenticated user.")
+                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .RequireAuthorization();
+
+            group.MapPost("/deals/user-ads-by-id/{userId:guid}/publish", async Task<IResult> (
+                Guid userId,
+                List<Guid> adIds,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                if (userId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "User ID is required.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                try
+                {
+                    var result = await service.BulkPublishDealsAds(userId, adIds, token);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Publish Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+                .WithName("BulkPublishDealsAdsById")
+                .WithTags("Classified")
+                .WithSummary("Publish multiple deals ads by user ID")
+                .WithDescription("Publishes selected unpublished deals ads for a specific user (admin use).")
+                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .ExcludeFromDescription();
+
+            group.MapPost("/deals/user-ads/unpublish", async Task<IResult> (
+                HttpContext context,
+                List<Guid> adIds,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                var userId = context.User.GetId();
+                if (userId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Authenticated user ID is missing or invalid.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                try
+                {
+                    var result = await service.BulkUnpublishDealsAds(userId, adIds, token);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Unpublish Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+                .WithName("BulkUnpublishDealsAds")
+                .WithTags("Classified")
+                .WithSummary("Unpublish multiple deals ads")
+                .WithDescription("Unpublishes published deals ads for the authenticated user.")
+                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .RequireAuthorization();
+
+            group.MapPost("/deals/user-ads-by-id/{userId:guid}/unpublish", async Task<IResult> (
+                Guid userId,
+                List<Guid> adIds,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                if (userId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "User ID is required.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                try
+                {
+                    var result = await service.BulkUnpublishDealsAds(userId, adIds, token);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Unpublish Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+                .WithName("BulkUnpublishDealsAdsById")
+                .WithTags("Classified")
+                .WithSummary("Unpublish multiple deals ads by user ID")
+                .WithDescription("Unpublishes selected published deals ads for a specific user (admin use).")
+                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .ExcludeFromDescription();
+
+            group.MapPost("/collectibles/user-ads/publish", async Task<IResult> (
+                HttpContext context,
+                List<Guid> adIds,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                var userId = context.User.GetId();
+                if (userId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Authenticated user ID is missing or does not match request.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                try
+                {
+                    var result = await service.BulkPublishCollectiblesAds(userId, adIds, token);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Publish Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+                .WithName("BulkPublishCollectiblesAds")
+                .WithTags("Classified")
+                .WithSummary("Publish multiple collectibles ads")
+                .WithDescription("Publishes draft/unpublished collectibles ads for the authenticated user.")
+                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .RequireAuthorization();
+
+            group.MapPost("/collectibles/user-ads-by-id/{userId:guid}/publish", async Task<IResult> (
+                Guid userId,
+                List<Guid> adIds,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                if (userId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "User ID is required.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                try
+                {
+                    var result = await service.BulkPublishCollectiblesAds(userId, adIds, token);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Publish Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+                .WithName("BulkPublishCollectiblesAdsById")
+                .WithTags("Classified")
+                .WithSummary("Publish multiple collectibles ads by user ID")
+                .WithDescription("Publishes selected unpublished collectibles ads for a specific user (admin use).")
+                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .ExcludeFromDescription();
+
+            group.MapPost("/collectibles/user-ads/unpublish", async Task<IResult> (
+                HttpContext context,
+                List<Guid> adIds,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                var userId = context.User.GetId();
+                if (userId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Authenticated user ID is missing or does not match request.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                try
+                {
+                    var result = await service.BulkUnpublishCollectiblesAds(userId, adIds, token);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Unpublish Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+                .WithName("BulkUnpublishCollectiblesAds")
+                .WithTags("Classified")
+                .WithSummary("Unpublish multiple collectibles ads")
+                .WithDescription("Unpublishes published collectibles ads for the authenticated user.")
+                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .RequireAuthorization();
+
+            group.MapPost("/collectibles/user-ads-by-id/{userId:guid}/unpublish", async Task<IResult> (
+                Guid userId,
+                List<Guid> adIds,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                if (userId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "User ID is required.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                try
+                {
+                    var result = await service.BulkUnpublishCollectiblesAds(userId, adIds, token);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Unpublish Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+                .WithName("BulkUnpublishCollectiblesAdsById")
+                .WithTags("Classified")
+                .WithSummary("Unpublish multiple collectibles ads by user ID")
+                .WithDescription("Unpublishes selected published collectibles ads for a specific user (admin use).")
+                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .ExcludeFromDescription();
+
 
             return group;
         }

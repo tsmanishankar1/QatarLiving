@@ -97,8 +97,8 @@ namespace QLN.Content.MS.Service
                 if (dto.Code != null) banner.Code = dto.Code;
                 if (dto.Duration != null) banner.Duration = dto.Duration;
                 if (dto.Link != null) banner.Link = dto.Link;
-                if (dto.ImageDesktopBase64 != null) banner.ImageDesktop = dto.ImageDesktopBase64;
-                if (dto.ImageMobileBase64 != null) banner.ImageMobile = dto.ImageMobileBase64;
+                //if (dto.ImageDesktopBase64 != null) banner.ImageDesktop = dto.ImageDesktopBase64;
+                //if (dto.ImageMobileBase64 != null) banner.ImageMobile = dto.ImageMobileBase64;
 
                 await _daprClient.SaveStateAsync(StateStore, key, banners, cancellationToken: ct);
 

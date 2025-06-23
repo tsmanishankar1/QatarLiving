@@ -1569,6 +1569,142 @@ namespace QLN.Classified.MS.Service
             }
         }
 
+        public async Task<BulkAdActionResponse> BulkPublishPrelovedAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, PrelovedIndexKey) ?? new();
+                var failedAds = new List<Guid>();
+
+                foreach (var adId in adIds)
+                {
+                    var key = $"ad-{adId}";
+                    if (!index.Contains(key))
+                    {
+                        failedAds.Add(adId);
+                        continue;
+                    }
+
+                    var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key);
+                    if (state.ValueKind != JsonValueKind.Object)
+                    {
+                        failedAds.Add(adId);
+                        continue;
+                    }
+
+                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+                    var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var val) ? (AdStatus)val : AdStatus.Draft;
+
+                    if (storedUserId != userId || (status != AdStatus.Unpublished && status != AdStatus.Draft))
+                    {
+                        failedAds.Add(adId);
+                    }
+                }
+
+                if (failedAds.Count > 0)
+                {
+                    return new BulkAdActionResponse
+                    {
+                        SuccessCount = 0,
+                        FailedAdIds = failedAds,
+                        Message = "Publish failed. Some ads are invalid."
+                    };
+                }
+
+                int successCount = 0;
+                foreach (var adId in adIds)
+                {
+                    var key = $"ad-{adId}";
+                    var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key);
+                    var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(state.ToString()!)!;
+                    dict["status"] = (int)AdStatus.Published;
+
+                    await _dapr.SaveStateAsync(UnifiedStore, key, dict, cancellationToken: cancellationToken);
+                    successCount++;
+                }
+
+                return new BulkAdActionResponse
+                {
+                    SuccessCount = successCount,
+                    FailedAdIds = new(),
+                    Message = $"{successCount} ad(s) published successfully."
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while bulk publishing preloved ads.");
+                throw new InvalidOperationException("An unexpected error occurred while bulk publishing preloved ads.", ex);
+            }
+        }
+
+        public async Task<BulkAdActionResponse> BulkUnpublishPrelovedAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, PrelovedIndexKey) ?? new();
+                var failedAds = new List<Guid>();
+
+                foreach (var adId in adIds)
+                {
+                    var key = $"ad-{adId}";
+                    if (!index.Contains(key))
+                    {
+                        failedAds.Add(adId);
+                        continue;
+                    }
+
+                    var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key);
+                    if (state.ValueKind != JsonValueKind.Object)
+                    {
+                        failedAds.Add(adId);
+                        continue;
+                    }
+
+                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+                    var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var val) ? (AdStatus)val : AdStatus.Draft;
+
+                    if (storedUserId != userId || status != AdStatus.Published)
+                    {
+                        failedAds.Add(adId);
+                    }
+                }
+
+                if (failedAds.Count > 0)
+                {
+                    return new BulkAdActionResponse
+                    {
+                        SuccessCount = 0,
+                        FailedAdIds = failedAds,
+                        Message = "Unpublish failed. Some ads are invalid."
+                    };
+                }
+
+                int successCount = 0;
+                foreach (var adId in adIds)
+                {
+                    var key = $"ad-{adId}";
+                    var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key);
+                    var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(state.ToString()!)!;
+                    dict["status"] = (int)AdStatus.Unpublished;
+
+                    await _dapr.SaveStateAsync(UnifiedStore, key, dict, cancellationToken: cancellationToken);
+                    successCount++;
+                }
+
+                return new BulkAdActionResponse
+                {
+                    SuccessCount = successCount,
+                    FailedAdIds = new(),
+                    Message = $"{successCount} ad(s) unpublished successfully."
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while bulk unpublishing preloved ads.");
+                throw new InvalidOperationException("An unexpected error occurred while bulk unpublishing preloved ads.", ex);
+            }
+        }
+
         public async Task<PaginatedDealsAdResponseDto> GetUserPublishedDealsAds(Guid userId, int? page, int? pageSize, CancellationToken cancellationToken = default)
         {
             try
@@ -1749,6 +1885,142 @@ namespace QLN.Classified.MS.Service
             catch (Exception ex)
             {
                 throw new InvalidOperationException("Failed to retrieve user Deals ads", ex);
+            }
+        }
+
+        public async Task<BulkAdActionResponse> BulkPublishDealsAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, DealsIndexKey) ?? new();
+                var failedAds = new List<Guid>();
+
+                foreach (var adId in adIds)
+                {                    
+                    var key = $"ad-{adId}";
+                    if (!index.Contains(key))
+                    {
+                        failedAds.Add(adId);
+                        continue;
+                    }
+
+                    var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key);
+                    if (state.ValueKind != JsonValueKind.Object)
+                    {
+                        failedAds.Add(adId);
+                        continue;
+                    }
+
+                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+                    var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var val) ? (AdStatus)val : AdStatus.Draft;
+
+                    if (storedUserId != userId || (status != AdStatus.Unpublished && status != AdStatus.Draft))
+                    {
+                        failedAds.Add(adId);
+                    }
+                }
+
+                if (failedAds.Count > 0)
+                {
+                    return new BulkAdActionResponse
+                    {
+                        SuccessCount = 0,
+                        FailedAdIds = failedAds,
+                        Message = "Publish failed. Some ads are invalid."
+                    };
+                }
+
+                int successCount = 0;
+                foreach (var adId in adIds)
+                {
+                    var key = $"ad-{adId}";
+                    var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key);
+                    var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(state.ToString()!)!;
+                    dict["status"] = (int)AdStatus.Published;
+
+                    await _dapr.SaveStateAsync(UnifiedStore, key, dict, cancellationToken: cancellationToken);
+                    successCount++;
+                }
+
+                return new BulkAdActionResponse
+                {
+                    SuccessCount = successCount,
+                    FailedAdIds = new(),
+                    Message = $"{successCount} ad(s) published successfully."
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while bulk publishing deals ads.");
+                throw new InvalidOperationException("An unexpected error occurred while bulk publishing deals ads.", ex);
+            }
+        }
+
+        public async Task<BulkAdActionResponse> BulkUnpublishDealsAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, DealsIndexKey) ?? new();
+                var failedAds = new List<Guid>();
+
+                foreach (var adId in adIds)
+                {
+                    var key = $"ad-{adId}";
+                    if (!index.Contains(key))
+                    {
+                        failedAds.Add(adId);
+                        continue;
+                    }
+
+                    var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key);
+                    if (state.ValueKind != JsonValueKind.Object)
+                    {
+                        failedAds.Add(adId);
+                        continue;
+                    }
+
+                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+                    var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var val) ? (AdStatus)val : AdStatus.Draft;
+
+                    if (storedUserId != userId || status != AdStatus.Published)
+                    {
+                        failedAds.Add(adId);
+                    }
+                }
+
+                if (failedAds.Count > 0)
+                {
+                    return new BulkAdActionResponse
+                    {
+                        SuccessCount = 0,
+                        FailedAdIds = failedAds,
+                        Message = "Unpublish failed. Some ads are invalid."
+                    };
+                }
+
+                int successCount = 0;
+                foreach (var adId in adIds)
+                {
+                    var key = $"ad-{adId}";
+                    var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key);
+                    var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(state.ToString()!)!;
+                    dict["status"] = (int)AdStatus.Unpublished;
+
+                    await _dapr.SaveStateAsync(UnifiedStore, key, dict, cancellationToken: cancellationToken);
+                    successCount++;
+                }
+
+                return new BulkAdActionResponse
+                {
+                    SuccessCount = successCount,
+                    FailedAdIds = new(),
+                    Message = $"{successCount} ad(s) unpublished successfully."
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while bulk unpublishing deals ads.");
+                throw new InvalidOperationException("An unexpected error occurred while bulk unpublishing deals ads.", ex);
             }
         }
 
@@ -1975,6 +2247,142 @@ namespace QLN.Classified.MS.Service
             catch (Exception ex)
             {
                 throw new InvalidOperationException("Failed to retrieve user Collectibles ads", ex);
+            }
+        }
+
+        public async Task<BulkAdActionResponse> BulkPublishCollectiblesAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, CollectiblesIndexKey) ?? new();
+                var failedAds = new List<Guid>();
+
+                foreach (var adId in adIds)
+                {
+                    var key = $"ad-{adId}";
+                    if (!index.Contains(key))
+                    {
+                        failedAds.Add(adId);
+                        continue;
+                    }
+
+                    var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key);
+                    if (state.ValueKind != JsonValueKind.Object)
+                    {
+                        failedAds.Add(adId);
+                        continue;
+                    }
+
+                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+                    var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var val) ? (AdStatus)val : AdStatus.Draft;
+
+                    if (storedUserId != userId || (status != AdStatus.Unpublished && status != AdStatus.Draft))
+                    {
+                        failedAds.Add(adId);
+                    }
+                }
+
+                if (failedAds.Count > 0)
+                {
+                    return new BulkAdActionResponse
+                    {
+                        SuccessCount = 0,
+                        FailedAdIds = failedAds,
+                        Message = "Publish failed. Some ads are invalid."
+                    };
+                }
+
+                int successCount = 0;
+                foreach (var adId in adIds)
+                {
+                    var key = $"ad-{adId}";
+                    var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key);
+                    var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(state.ToString()!)!;
+                    dict["status"] = (int)AdStatus.Published;
+
+                    await _dapr.SaveStateAsync(UnifiedStore, key, dict, cancellationToken: cancellationToken);
+                    successCount++;
+                }
+
+                return new BulkAdActionResponse
+                {
+                    SuccessCount = successCount,
+                    FailedAdIds = new(),
+                    Message = $"{successCount} ad(s) published successfully."
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while bulk publishing collectibles ads.");
+                throw new InvalidOperationException("An unexpected error occurred while bulk publishing collectibles ads.", ex);
+            }
+        }
+
+        public async Task<BulkAdActionResponse> BulkUnpublishCollectiblesAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, CollectiblesIndexKey) ?? new();
+                var failedAds = new List<Guid>();
+
+                foreach (var adId in adIds)
+                {
+                    var key = $"ad-{adId}";
+                    if (!index.Contains(key))
+                    {
+                        failedAds.Add(adId);
+                        continue;
+                    }
+
+                    var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key);
+                    if (state.ValueKind != JsonValueKind.Object)
+                    {
+                        failedAds.Add(adId);
+                        continue;
+                    }
+
+                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+                    var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var val) ? (AdStatus)val : AdStatus.Draft;
+
+                    if (storedUserId != userId || status != AdStatus.Published)
+                    {
+                        failedAds.Add(adId);
+                    }
+                }
+
+                if (failedAds.Count > 0)
+                {
+                    return new BulkAdActionResponse
+                    {
+                        SuccessCount = 0,
+                        FailedAdIds = failedAds,
+                        Message = "Unpublish failed. Some ads are invalid."
+                    };
+                }
+
+                int successCount = 0;
+                foreach (var adId in adIds)
+                {
+                    var key = $"ad-{adId}";
+                    var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key);
+                    var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(state.ToString()!)!;
+                    dict["status"] = (int)AdStatus.Unpublished;
+
+                    await _dapr.SaveStateAsync(UnifiedStore, key, dict, cancellationToken: cancellationToken);
+                    successCount++;
+                }
+
+                return new BulkAdActionResponse
+                {
+                    SuccessCount = successCount,
+                    FailedAdIds = new(),
+                    Message = $"{successCount} ad(s) unpublished successfully."
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while bulk unpublishing collectibles ads.");
+                throw new InvalidOperationException("An unexpected error occurred while bulk unpublishing collectibles ads.", ex);
             }
         }
 

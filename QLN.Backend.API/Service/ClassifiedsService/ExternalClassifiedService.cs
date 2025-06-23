@@ -1084,7 +1084,143 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
+        public async Task<BulkAdActionResponse> BulkPublishPrelovedAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default)
+        {
+            if (userId == Guid.Empty || adIds == null || adIds.Count == 0)
+                throw new ArgumentException("Invalid bulk publish request.");
 
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<List<Guid>, BulkAdActionResponse>(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/preloved/user-ads-by-id/{userId}/publish",
+                    adIds,
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to publish preloved ads to classified microservice.", ex);
+            }
+        }
+
+        public async Task<BulkAdActionResponse> BulkUnpublishPrelovedAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default)
+        {
+            if (userId == Guid.Empty || adIds == null || adIds.Count == 0)
+                throw new ArgumentException("Invalid bulk unpublish request.");
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<List<Guid>, BulkAdActionResponse>(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/preloved/user-ads-by-id/{userId}/unpublish",
+                    adIds,
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to unpublish preloved ads from classified microservice.", ex);
+            }
+        }
+
+        public async Task<BulkAdActionResponse> BulkPublishDealsAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default)
+        {
+            if (userId == Guid.Empty || adIds == null || adIds.Count == 0)
+                throw new ArgumentException("Invalid bulk publish request.");
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<List<Guid>, BulkAdActionResponse>(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/deals/user-ads-by-id/{userId}/publish",
+                    adIds,
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to publish deals ads to classified microservice.", ex);
+            }
+        }
+
+        public async Task<BulkAdActionResponse> BulkUnpublishDealsAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default)
+        {
+            if (userId == Guid.Empty || adIds == null || adIds.Count == 0)
+                throw new ArgumentException("Invalid bulk unpublish request.");
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<List<Guid>, BulkAdActionResponse>(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/deals/user-ads-by-id/{userId}/unpublish",
+                    adIds,
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to unpublish deals ads from classified microservice.", ex);
+            }
+        }
+
+        public async Task<BulkAdActionResponse> BulkPublishCollectiblesAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default)
+        {
+            if (userId == Guid.Empty || adIds == null || adIds.Count == 0)
+                throw new ArgumentException("Invalid bulk publish request.");
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<List<Guid>, BulkAdActionResponse>(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/collectibles/user-ads-by-id/{userId}/publish",
+                    adIds,
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to publish collectibles ads to classified microservice.", ex);
+            }
+        }
+
+        public async Task<BulkAdActionResponse> BulkUnpublishCollectiblesAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default)
+        {
+            if (userId == Guid.Empty || adIds == null || adIds.Count == 0)
+                throw new ArgumentException("Invalid bulk unpublish request.");
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<List<Guid>, BulkAdActionResponse>(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/collectibles/user-ads-by-id/{userId}/unpublish",
+                    adIds,
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to unpublish collectibles ads from classified microservice.", ex);
+            }
+        }
     }
 }
 
