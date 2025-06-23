@@ -8,9 +8,15 @@ public class DailyNewsCardBase : ComponentBase
     [Parameter]
     public bool IsHorizontal { get; set; } = false;
 
-    protected void NavigateToEventDetail()
+    protected void NavigateToDetailPage()
     {
-        NavigationManager.NavigateTo($"/content/events/details/{Item.Slug}");
+        if (Item.NodeType.Contains("post") && !string.IsNullOrWhiteSpace(Item.Slug))
+        {
+            NavigationManager.NavigateTo($"/content/daily/article/details/{Item.Slug}");
+        }
+        else if (Item.NodeType.Contains("event") && !string.IsNullOrWhiteSpace(Item.Slug))
+        {
+            NavigationManager.NavigateTo($"/content/events/details/{Item.Slug}");
+        }
     }
-
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Dapr;
@@ -14,7 +15,7 @@ namespace QLN.Backend.API.Service.SearchService
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<ExternalSearchService> _logger;
-        private readonly string SERVICE_APP_ID = ConstantValues.SearchServiceApp;
+        private readonly string SERVICE_APP_ID = ConstantValues.ServiceAppIds.SearchServiceApp;
 
         public ExternalSearchService(
             DaprClient dapr,
@@ -33,10 +34,10 @@ namespace QLN.Backend.API.Service.SearchService
                 throw new ArgumentException("Vertical is required.", nameof(vertical));
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
-
+            
             try
             {
-                var methodName = $"api/{vertical}/search";
+                var methodName = $"/api/{vertical}/search";
                 var commonResp = await _dapr.InvokeMethodAsync<CommonSearchRequest, CommonSearchResponse>(
                     HttpMethod.Post,
                     appId: SERVICE_APP_ID,
@@ -74,7 +75,7 @@ namespace QLN.Backend.API.Service.SearchService
             try
             {
                 var vertical = request.VerticalName;
-                var methodName = $"api/{vertical}/upload";
+                var methodName = $"/api/{vertical}/upload";
                 var result = await _dapr.InvokeMethodAsync<CommonIndexRequest, string>(
                     HttpMethod.Post,
                     appId: SERVICE_APP_ID,
@@ -113,7 +114,7 @@ namespace QLN.Backend.API.Service.SearchService
 
             try
             {
-                var methodName = $"api/{vertical}/{key}";
+                var methodName = $"/api/{vertical}/{key}";
                 var doc = await _dapr.InvokeMethodAsync<T?>(
                     HttpMethod.Get,
                     appId: SERVICE_APP_ID,
@@ -129,6 +130,11 @@ namespace QLN.Backend.API.Service.SearchService
             }
             catch (DaprException ex)
             {
+                if (ex.InnerException is HttpRequestException httpEx && httpEx.StatusCode == HttpStatusCode.NotFound)
+                {
+                    _logger.LogWarning("Remote returned 404 for {Vertical}/{Key}", vertical, key);
+                    throw new KeyNotFoundException($"Document '{key}' not found in '{vertical}'.");
+                }
                 _logger.LogError(ex, "Dapr invocation failed in GetByIdAsync: vertical={Vertical}, key={Key}", vertical, key);
                 throw;
             }
@@ -151,7 +157,7 @@ namespace QLN.Backend.API.Service.SearchService
 
             try
             {
-                var methodName = $"api/{vertical}/{key}";
+                var methodName = $"/api/{vertical}/{key}";
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Delete,
                     appId: SERVICE_APP_ID,
@@ -175,5 +181,54 @@ namespace QLN.Backend.API.Service.SearchService
                 throw;
             }
         }
+        /// <summary>
+        /// Calls SearchService’s GET /api/{vertical}/details/{key}?similarPageSize={n}
+        /// </summary>
+
+        /// <summary>  
+        /// Calls SearchService’s GET /api/{vertical}/details/{key}?similarPageSize={n}  
+        /// </summary>  
+        public async Task<GetWithSimilarResponse<T>> GetByIdWithSimilarAsync<T>(
+            string vertical,
+            string key,
+            int similarPageSize = 10
+        ) where T : class
+        {
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical is required.", nameof(vertical));
+            if (string.IsNullOrWhiteSpace(key))
+                throw new ArgumentException("Key is required.", nameof(key));
+
+            try
+            {
+                var methodName = $"/api/{vertical}/details/{key}?similarPageSize={similarPageSize}";
+                return await _dapr.InvokeMethodAsync<GetWithSimilarResponse<T>>(
+                    HttpMethod.Get,
+                    appId: SERVICE_APP_ID,
+                    methodName: methodName
+                );
+            }
+            catch (DaprException ex)
+            {
+                if (ex.InnerException is HttpRequestException httpEx && httpEx.StatusCode == HttpStatusCode.NotFound)
+                {
+                    _logger.LogWarning("Remote returned 404 for {Vertical}/{Key}", vertical, key);
+                    throw new KeyNotFoundException($"Document '{key}' not found in '{vertical}'.");
+                }
+                _logger.LogError(ex, "Dapr invocation failed in GetByIdWithSimilarAsync: vertical={Vertical}, key={Key}", vertical, key);
+                throw;
+            }
+            catch (ArgumentNullException ex)
+            {
+                _logger.LogWarning(ex, "GetByIdWithSimilarAsync called with null argument");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in GetByIdWithSimilarAsync: vertical={Vertical}, key={Key}", vertical, key);
+                throw;
+            }
+        }
+
     }
 }

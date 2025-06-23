@@ -1,6 +1,8 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
 @using QLN.Common.Infrastructure.DTO_s
+@using QLN.Web.Shared.Components.AdBanner
 @using QLN.Web.Shared.Helpers
 
 <MudGrid Class="py-4" GutterSize="16px">
@@ -33,16 +35,26 @@
 
                     <div class="icons">
                         @* <MudIconButton Icon="@Icons.Material.Filled.FavoriteBorder" Class="icons-color" /> *@
-                        <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu">
+                        <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu"
+                            AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight">
                             <ActivatorContent>
                                 <MudIconButton Icon="@Icons.Material.Filled.Share" Class="icons-color" />
                             </ActivatorContent>
                             <ChildContent>
                                 @foreach (var item in shareMenuItems)
                                 {
-                                    <MudMenuItem Href="@item.Route" Target="@(item.OpenInNewTab ? "_blank" : "_self")">
-                                        <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
-                                    </MudMenuItem>
+                                    if (item.OnClick != null)
+                                    {
+                                        <MudMenuItem OnClick="@item.OnClick">
+                                            <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                        </MudMenuItem>
+                                    }
+                                    else
+                                    {
+                                        <MudMenuItem Href="@item.Route" Target="@(item.OpenInNewTab ? "_blank" : "_self")">
+                                            <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                        </MudMenuItem>
+                                    }
                                 }
                             </ChildContent>
                         </MudMenu>
@@ -57,7 +69,7 @@
                 @EventInfoBlock()
 
                 @* Register/Calendar Buttons *@
-                @* @ActionButtons() *@
+                @ActionButtons()
             </div>
 
             @if (!string.IsNullOrWhiteSpace(Item?.Description))
@@ -84,7 +96,7 @@
                                 }
 
                 @EventInfoBlock()
-                @* @ActionButtons() *@
+                @ActionButtons()
             </div>
 
             <!-- Always visible map & ad -->
@@ -98,12 +110,17 @@
                     </iframe>
                 }
             </div>
-            <img src="/qln-images/classifieds/detail_ad.svg" alt="Ad" class="ad-banner" />
+            <div class="Ad_banner">
+                <AdBanner BannerItems="EventSideBanners" />
+            </div>
         </div>
     </MudItem>
 </MudGrid>
 
 @code {
+    [Parameter] public ContentEvent Item { get; set; }
+    [Parameter] public List<BannerItem> EventSideBanners { get; set; }
+
     private bool IsModalOpen { get; set; } = false;
     protected bool imageLoaded = false;
     protected override void OnParametersSet()
@@ -122,7 +139,6 @@
         imageLoaded = true; // stop skeleton on error
         StateHasChanged();
     }
-    [Parameter] public ContentEvent Item { get; set; }
     private List<MenuItem> shareMenuItems => new()
 {
 new MenuItem {
@@ -131,9 +147,46 @@ Route = SocialShareHelper.GetFacebookUrl(CurrentUrl),
 OpenInNewTab = true
 },
 new MenuItem {
+ImageSrc = "/qln-images/instagram_share_icon.svg",
+Route = SocialShareHelper.GetInstagramUrl(CurrentUrl),
+OpenInNewTab = true
+},
+new MenuItem {
 ImageSrc = "/qln-images/whatsApp_share_icon.svg",
 Route = SocialShareHelper.GetWhatsAppUrl(CurrentUrl),
 OpenInNewTab = true
+},
+new MenuItem {
+ImageSrc = "/qln-images/tiktok_share_icon.svg",
+Route = SocialShareHelper.GetTikTokUrl(CurrentUrl),
+OpenInNewTab = true
+},
+new MenuItem {
+ImageSrc = "/qln-images/x_share_icon.svg",
+Route = SocialShareHelper.GetXUrl(CurrentUrl, Item?.Title ?? ""),
+OpenInNewTab = true
+},
+new MenuItem {
+ImageSrc = "/qln-images/linkedin_share_icon.svg",
+Route = SocialShareHelper.GetLinkedInUrl(CurrentUrl, Item?.Title ?? "", Item?.Description ?? ""),
+OpenInNewTab = true
+},
+new MenuItem
+{
+ImageSrc = "/qln-images/copy_link_icon.svg",
+OnClick = async () =>
+{
+bool copied = false;
+copied = await SocialShareHelper.CopyLinkToClipboardAsync(JSRuntime, CurrentUrl);
+if (copied)
+{
+Snackbar.Add("Item link has been copied to the clipboard", Severity.Success);
+}
+else
+{
+Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
+}
+}
 }
 };
     public class MenuItem
@@ -142,6 +195,7 @@ OpenInNewTab = true
         public string ImageSrc { get; set; }
         public string Route { get; set; }
         public bool OpenInNewTab { get; set; } = false;
+        public Func<Task> OnClick { get; set; }
     }
 
     private string CurrentUrl => Navigation.ToAbsoluteUri(Navigation.Uri).ToString();
@@ -194,18 +248,59 @@ OpenInNewTab = true
 
     };
 
+    private async Task OnCalendarConfirmed(string calendarId)
+    {
+        // Use the Item object for event data
+        var title = Uri.EscapeDataString(Item?.Title ?? "");
+        var description = Uri.EscapeDataString(Item?.Description ?? "");
+        var location = Uri.EscapeDataString(Item?.EventVenue ?? "");
+
+        // Parse start and end dates from Item
+        DateTime startDate = DateTime.TryParse(Item?.EventStart, out var dtStart) ? dtStart : DateTime.Now;
+        DateTime endDate = DateTime.TryParse(Item?.EventEnd, out var dtEnd) ? dtEnd : startDate.AddHours(2);
+
+        string startUtc = startDate.ToUniversalTime().ToString("yyyyMMddTHHmmssZ");
+        string endUtc = endDate.ToUniversalTime().ToString("yyyyMMddTHHmmssZ");
+
+        string url = "";
+
+        switch (calendarId)
+        {
+            case "google":
+                url =
+                $"https://calendar.google.com/calendar/render?action=TEMPLATE&text={title}&dates={startUtc}/{endUtc}&details={description}&location={location}";
+                break;
+            case "outlook":
+                url =
+                $"https://outlook.live.com/calendar/0/deeplink/compose?subject={title}&body={description}&startdt={startDate:yyyy-MM-ddTHH:mm:ss}&enddt={endDate:yyyy-MM-ddTHH:mm:ss}&location={location}";
+                break;
+            case "webapp":
+                url =
+                $"https://outlook.office.com/calendar/0/deeplink/compose?subject={title}&body={description}&startdt={startDate:yyyy-MM-ddTHH:mm:ss}&enddt={endDate:yyyy-MM-ddTHH:mm:ss}&location={location}";
+                break;
+            case "yahoo":
+                url = $"https://calendar.yahoo.com/?v=60&title={title}&st={startUtc}&et={endUtc}&desc={description}&in_loc={location}";
+                break;
+            default:
+                return;
+        }
+
+        await JSRuntime.InvokeVoidAsync("window.open", url, "_blank");
+    }
+
     RenderFragment ActionButtons() => __builder =>
     {
-        <button class="register-button">
+        @* <button class="register-button">
             Register Now
             <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowRight" Style="margin-right: 6px; color:white" />
-        </button>
+        </button> *@
         <button class="calendar-button" @onclick="() => IsModalOpen = true">
             Add to Calendar
-            <MudIcon Icon="@Icons.Material.Filled.Event" Style="margin-right: 6px;" />
+            <img src="/qln-images/add_to_calendar_Icons.svg" alt="Date Icon" class="add-to-info-icon" />
         </button>
 
-        <AddToCalendarDialog @bind-IsVisible="IsModalOpen" Message="You will be notified 1 day ahead of this event" />
+        <AddToCalendarDialog @bind-IsVisible="IsModalOpen" Message="You will be notified 1 day ahead of this event"
+            OnConfirm="OnCalendarConfirmed" />
     };
 }
 
@@ -216,7 +311,7 @@ OpenInNewTab = true
         border-radius: 6px;
         padding: 24px;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-        font-family: 'Public Sans';
+        font-family: 'Public Sans', sans-serif;
     }
 
     .custom-share-menu .mud-popover {
@@ -224,12 +319,42 @@ OpenInNewTab = true
         overflow: hidden;
     }
 
+    .Ad_banner {
+        margin-top: 10px;
+    }
 
     .share-icon {
         margin: 0;
-        width: 20px;
-        height: 20px;
-        margin-right: 8px;
+        width: 32px;
+        height: 32px;
+    }
+
+        /* Target all popover menus that are open and belong to the share menu */
+    .mud-popover:has(.share-icon) .mud-list {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto;
+        gap: 4px;
+    }
+
+    .share-popover .mud-list {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto;
+        gap: 4px;
+    }
+
+
+    .mud-menu-item {
+        padding: 0px 6px 0px 0px !important;
+    }
+
+    .mud-menu-list {
+        padding-left: 6px;
+    }
+
+    .mud-menu-item .mud-menu-item-text {
+        margin: 4px 0px 0px 0px !important;
     }
 
     .event-title {
@@ -275,6 +400,13 @@ OpenInNewTab = true
         width: 20px;
         height: 20px;
         margin-right: 8px;
+        vertical-align: middle;
+    }
+
+    .add-to-info-icon {
+        width: 20px;
+        height: 20px;
+        margin-right: 6px;
         vertical-align: middle;
     }
 
@@ -351,7 +483,7 @@ OpenInNewTab = true
         border-radius: 6px;
         padding: 24px;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-        font-family: 'Public Sans';
+        font-family: 'Public Sans', sans-serif;
     }
 
     .card-desktop-only {
@@ -446,6 +578,8 @@ OpenInNewTab = true
 
     .calendar-button {
         background-color: transparent;
+        font-weight: 600;
+        font-size: 14px;
         color: var(--color-accent);
         border: 1px solid var(--color-accent);
     }
@@ -459,11 +593,6 @@ OpenInNewTab = true
         height: 200px;
         border: none;
         border-radius: 8px;
-    }
-
-    .ad-banner {
-        margin-top: 24px;
-        width: 100%;
     }
 
     /* Responsive styles */

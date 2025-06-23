@@ -10,7 +10,7 @@
     <div class="daily-category-group">
         @foreach (var item in DailyCategories)
         {
-            <button class="daily-category-btn" @onclick="() => OnClickCommunityCateg(item.QLCategLink)">
+            <button class="daily-category-btn" @onclick="() => OnClickCommunityCateg(item)">
                 <img src="@item.Icon" alt="@item.Label" class="btn-icon" />
                 @item.Label
             </button>
@@ -32,7 +32,7 @@
         flex-direction: column;
         width: 100%;
         padding: 20px 0;
-        font-family: 'Public Sans';
+        font-family: 'Public Sans', sans-serif;
     }
 
     .daily-title {

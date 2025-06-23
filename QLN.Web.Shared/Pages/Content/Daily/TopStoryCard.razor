@@ -1,24 +1,21 @@
 @inherits TopStoryCardBase
 <div class="top-story-list-card">
     <div class="top-story-image-wrapper">
-        <a @onclick="() => NavigateToEventDetail()"> <img src="@Item.ImageUrl" class="top-story-card-img" alt="Top Story Image" /></a>
+        <MudLink OnClick="() => NavigateToDetailPage()"> <img src="@Item.ImageUrl" class="top-story-card-img"
+                alt="Top Story Image" /></MudLink>
     </div>
     <div class="top-story-card-body">
         <div class="top-story-category">Top Story</div>
-        <a @onclick="() => NavigateToEventDetail()">
+        <MudLink OnClick="() => NavigateToDetailPage()">
             <h3 class="top-story-title">
                 @Item.Title
             </h3>
-        </a>
+        </MudLink>
         <div class="top-story-author-wrapper">
             <div class="top-story-main-author">
-                Ismat Zerin •
-                <a href="#" class="top-story-main-source">Qatar Living</a>
-                <img src="/qln-images/tick.svg" alt="Verified" class="top-story-tick-icon" />
-            </div>
-            <div class="top-story-comment-badge">
-                <img src="/qln-images/comment_icon.svg" alt="Comments" class="top-story-comment-icon" />
-                <span class="top-story-count">12</span>
+                <p class="top-story-main-source">@Item.UserName <img src="/qln-images/tick.svg" alt="Verified"
+                        class="top-story-tick-icon" /></p>
+
             </div>
         </div>
     </div>
@@ -32,17 +29,17 @@
         flex-direction: column;
         background: #ffffff;
         border: 1px solid #F0F0F0;
-        font-family: 'Public Sans';
+        font-family: 'Public Sans', sans-serif;
         max-width: 374px;
         height: 368px;
         cursor: pointer;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
-        .top-story-list-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-        }
+    .top-story-list-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
 
     .top-story-image-wrapper {
         width: 100%;

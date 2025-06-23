@@ -15,7 +15,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint
     {
         public static RouteGroupBuilder MapQuantitiesEndpoints(this RouteGroupBuilder group)
         {
-            // Get all quantities
+            
             group.MapGet("/quantities", async Task<IResult> (
                 [FromServices] IAddonService service,
                 [FromServices] ILogger<IAddonService> logger,
@@ -44,7 +44,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint
             .Produces<IEnumerable<AddonDto.Quantities>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            // Create quantity
+            
             group.MapPost("/quantities", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
@@ -163,7 +163,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint
 
 
 
-            // Get unit currencies by unit ID
+            
             group.MapGet("/quantites-currencies/by-quantites/{quantityId:Guid}", async Task<IResult> (
      Guid quantityId, // ✅ Fixed
      [FromServices] IAddonService service,
@@ -200,7 +200,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint
  .WithName("GetquantitiesCurrenciesByUnitId")
  .WithTags("Addons")
  .WithSummary("Get quantities currencies by unit ID")
- .WithDescription("Retrieves all unit currency mappings for a specific unit ID.")
+ .WithDescription("Retrieves all quantity currency mappings for a specific unit ID.")
  .Produces<IEnumerable<AddonDto.UnitCurrency>>(StatusCodes.Status200OK)
  .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
  .Produces<ProblemDetails>(StatusCodes.Status404NotFound)

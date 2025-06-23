@@ -1,16 +1,15 @@
 ﻿using Azure;
 using Azure.Search.Documents.Indexes;
 using Microsoft.Extensions.Options;
+using QLN.Common.Infrastructure.CustomEndpoints;
 using QLN.SearchService;
 using QLN.SearchService.CustomEndpoints;
 using QLN.SearchService.IndexModels;
-using QLN.SearchService.Repository;
-using QLN.SearchService.Service;
 using QLN.SearchService.ServiceConfiguration;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
-
+builder.Services.AddDaprClient();
 builder.Services.Configure<AzureSearchSettings>(
     builder.Configuration.GetSection("AzureSearch"));
 
@@ -43,11 +42,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.MapSubscribeHandler();
 var common = app.MapGroup("/api/{vertical}");
 common.MapCommonIndexingEndpoints();
 app.MapGroup("/api/analytics")
    .MapAnalyticsEndpoints();
-
+app.MapIndexSubscriberEndpoints();
 app.UseHttpsRedirection();
 app.Run();

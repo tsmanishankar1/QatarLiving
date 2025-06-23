@@ -4,17 +4,22 @@
 <div class="news-card @(IsHorizontal ? "horizontal" : "")" @onclick="() => OnClick.InvokeAsync(news)">
     @if (string.IsNullOrEmpty(news.ImageUrl))
     {
-        @* <EmptyCard Title="No Image Available" Subtitle="" /> *@
         <div class="image-placeholder">
             No image available
         </div>
     }
     else
     {
-        <img src="@news.ImageUrl" alt="News Image" class="daily-news-image" />
+        @if (!imageLoaded)
+        {
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Class="daily-news-image" />
+        }
+        <img src="@news.ImageUrl" alt="@news.Title" class="daily-news-image"
+            style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded" @onerror="OnImageError"
+            key="@news.ImageUrl" />
     }
     <div class="daily-news-content @(IsHorizontal ? "ishorizontal" : "")">
-        <div class="daily-news-title">@news.Title</div>
+        <div class="daily-news-title @(IsHorizontal ? "isTexthorizontal" : "")">@news.Title</div>
     </div>
 </div>
 
@@ -23,15 +28,25 @@
         display: flex;
         border-radius: 6px;
         overflow: hidden;
-        font-family: 'Public Sans';
+        font-family: 'Public Sans', sans-serif;
         width: 100%;
+        /* Always take full parent width */
+        max-width: 100%;
+        /* Prevent overflow */
         flex-direction: column;
+        box-sizing: border-box;
     }
 
     .news-card.horizontal {
+        display: flex;
         flex-direction: row;
-        height: 100%;
-        width: 100%;
+        align-items: center;
+        justify-content: flex-start;
+        flex: 1 1 calc(33.333% - 1rem);
+        max-width: 100%;
+        height: 130px;
+        padding: 10px;
+        gap: 10px;
     }
 
     .image-placeholder {
@@ -68,22 +83,23 @@
 
     .daily-news-image {
         width: 100%;
-        height: 140px;
+        height: 121px;
         border-radius: 6px;
         object-fit: cover;
     }
 
     .news-card.horizontal .daily-news-image {
+        width: 50%;
         width: 177px;
-        height: 100px;
+        /* Adjust as needed */
+        height: 100%;
         border-radius: 6px;
-        flex-shrink: 0;
         object-fit: cover;
     }
 
     .news-card.horizontal .daily-news-content {
-        flex: 1;
-        min-width: 0;
+        @* flex: 1;
+        min-width: 0; *@
     }
 
     .daily-news-content {
@@ -93,6 +109,15 @@
         justify-content: center;
         flex: 1;
         min-width: 0;
+    }
+
+    .daily-news-content.ishorizontal {
+        width: 50%;
+        padding: 0;
+        gap: 5px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
 
     .daily-news-title {
@@ -105,6 +130,41 @@
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    .daily-news-title:hover {
+        text-decoration: underline;
+        color: var(--color-primary);
+        cursor: pointer;
+    }
+
+    .daily-news-title.isTexthorizontal {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+        line-height: 26px;
+        letter-spacing: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
+
+        scrollbar-width: none;
+        /* Hide scrollbar in Firefox */
+    }
+
+    .daily-news-title::-webkit-scrollbar {
+        display: none;
+        /* Hide scrollbar in Webkit browsers */
+    }
+
+    .daily-news-title:visited,
+    .daily-news-title:hover,
+    .daily-news-title:active {
+        color: var(--color-text-heading);
+        text-decoration: none;
     }
 
     /* Media Queries */
@@ -129,23 +189,24 @@
 
     @@media (max-width: 425px) {
         .news-card {
-            @* flex-direction: row;
+            display: flex;
+            flex-direction: row;
             width: 100%;
-            margin-bottom: 5px; *@
-             display: flex; /* Ensure flex layout is applied */
-    flex-direction: row;
-    width: 100%; /* Occupy all available horizontal space */
-    margin-bottom: 5px;
-    box-sizing: border-box; /* Prevent padding/border from overflowing */
+            max-width: 100% !important;
+            margin-bottom: 5px;
+            box-sizing: border-box;
+            align-items: center;
+            /* Ensure vertical alignment */
         }
-        
 
         .daily-news-image {
-            width: 40%;
-            max-width: 140px;
-            height: auto;
-            aspect-ratio: 16 / 9;
+            height: 100px;
+            width: auto;
+            max-width: 50%;
             object-fit: cover;
+            border-radius: 6px;
+            flex-shrink: 0;
+            aspect-ratio: 16/9;
         }
 
         .daily-news-content {
@@ -153,6 +214,60 @@
             padding: 8px;
             flex: 1;
             min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            /* Vertically center text */
+            height: 100px;
+            /* Match image height */
+            box-sizing: border-box;
+        }
+
+        .daily-news-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--color-text-heading);
+            line-height: 26px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            /* Show up to 3 lines */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            /* Hide overflow and scrollbars */
+            text-overflow: ellipsis;
+            text-align: left;
+            /* Center the text */
+            white-space: normal;
+            /* Allow wrapping */
+            scrollbar-width: none;
+            /* Hide scrollbar in Firefox */
+        }
+
+        .daily-news-title::-webkit-scrollbar {
+            display: none;
+            /* Hide scrollbar in Webkit browsers */
+        }
+    }
+
+    @@media (max-width: 430px) {
+        .news-card {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            margin-bottom: 5px;
+            box-sizing: border-box;
+            max-width: 100% !important;
+        }
+    }
+
+    @@media (max-width: 518px) {
+        .news-card {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            margin-bottom: 5px;
+            box-sizing: border-box;
+            max-width: 100% !important;
         }
     }
 </style>

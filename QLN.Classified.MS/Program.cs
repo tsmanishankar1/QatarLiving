@@ -12,8 +12,8 @@ using Microsoft.AspNetCore.Identity;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.ServiceConfiguration;
-using QLN.Classified.MS.Endpoints;
 using QLN.Classifieds.MS.ServiceConfiguration;
+using QLN.Common.Infrastructure.CustomEndpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,5 +63,9 @@ app.UseHttpsRedirection();
 
 app.MapGroup("/api/classifieds")
    .MapClassifiedEndpoints();
+
+var servicesGroup = app.MapGroup("/api/services");
+servicesGroup.MapServicesEndpoints();
+app.MapAllBackOfficeEndpoints();
 
 app.Run();

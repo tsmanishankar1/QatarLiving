@@ -71,8 +71,6 @@ namespace QLN.Backend.API.Service.PayToPublishService
         {
             var resultList = new List<BasicPriceResponseDto>();
             var ids = _basicPriceIds.Keys.ToList();
-
-            // Check if the enum values are valid
             if (!Enum.IsDefined(typeof(Vertical), verticalTypeId))
             {
                 _logger.LogWarning("Invalid VerticalTypeId: {VerticalTypeId}", verticalTypeId);
@@ -128,7 +126,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error retrieving data for BasicPrice ID: {Id}", id);
-                    // Continue processing other items
+                    
                 }
             }
 
@@ -186,7 +184,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
             var resultList = new List<PayToPublishResponseDto>();
             var ids = _payToPublishIds.Keys.ToList();
 
-            // Validate enum values first
+            
             if (!Enum.IsDefined(typeof(Vertical), verticalTypeId))
             {
                 _logger.LogWarning("Invalid VerticalTypeId: {VerticalTypeId}", verticalTypeId);
@@ -213,14 +211,12 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 };
             }
 
-            // Convert input parameters to enums
+            
             var targetVertical = (Vertical)verticalTypeId;
             var targetCategory = (SubscriptionCategory)categoryId;
 
             _logger.LogInformation("Searching for plans with Vertical: {Vertical} ({VerticalId}), Category: {Category} ({CategoryId}). Total plans in memory: {TotalPlans}",
                 targetVertical, verticalTypeId, targetCategory, categoryId, ids.Count);
-
-            // Check if we have any plans stored
             if (!ids.Any())
             {
                 _logger.LogWarning("No plans found in memory. Make sure plans are created before trying to retrieve them.");
@@ -239,8 +235,6 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 try
                 {
                     var actor = GetActorProxy(id);
-
-                    // Add timeout to prevent hanging
                     using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
                     using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
 
@@ -251,7 +245,6 @@ namespace QLN.Backend.API.Service.PayToPublishService
                         _logger.LogDebug("Retrieved plan data: ID={Id}, PlanName={PlanName}, Vertical={Vertical} ({VerticalInt}), Category={Category} ({CategoryInt}), Status={Status}",
                             data.Id, data.PlanName, data.VerticalTypeId, (int)data.VerticalTypeId, data.CategoryId, (int)data.CategoryId, data.StatusId);
 
-                        // Direct enum comparison
                         if (data.VerticalTypeId == targetVertical &&
                             data.CategoryId == targetCategory &&
                             data.StatusId != Status.Expired)
@@ -280,8 +273,6 @@ namespace QLN.Backend.API.Service.PayToPublishService
                     else
                     {
                         _logger.LogWarning("Actor returned null data for PayToPublish ID: {Id}", id);
-
-                        // Try to remove this ID from our tracking if it's invalid
                         _payToPublishIds.TryRemove(id, out _);
                     }
                 }
@@ -292,15 +283,11 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error retrieving data for PayToPublish ID: {Id}. Exception type: {ExceptionType}", id, ex.GetType().Name);
-
-                    // Log the full exception details for debugging
                     _logger.LogDebug("Full exception details: {Exception}", ex);
                 }
             }
 
             _logger.LogInformation("Found {Count} plans matching criteria out of {TotalIds} total plans", resultList.Count, ids.Count);
-
-            // Get display names for enums
             var verticalName = GetEnumDisplayName(targetVertical);
             var categoryName = GetEnumDisplayName(targetCategory);
 

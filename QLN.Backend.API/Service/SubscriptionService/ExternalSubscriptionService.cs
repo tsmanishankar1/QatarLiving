@@ -271,8 +271,6 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
         var id = Guid.NewGuid();
         var startDate = DateTime.UtcNow;
-
-        // Check for existing records with same userId
         DateTime? existingEndDate = null;
         foreach (var existingId in _paymentTransactionIds.Keys)
         {
@@ -281,8 +279,6 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
             if (existingPayment != null && existingPayment.UserId == userId)
             {
-                // Found existing record with same userId
-                // Use the latest end date from all existing records for this user
                 if (existingEndDate == null || existingPayment.EndDate > existingEndDate)
                 {
                     existingEndDate = existingPayment.EndDate;
@@ -290,7 +286,6 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             }
         }
 
-        // If existing record found, use its latest end date as new start date
         if (existingEndDate.HasValue)
         {
             startDate = existingEndDate.Value;
@@ -337,7 +332,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         _logger.LogInformation("Payment transaction created with ID: {TransactionId}, Start Date: {StartDate}, End Date: {EndDate}",
             dto.Id, dto.StartDate, dto.EndDate);
 
-        // Only assign subscriber role immediately if the subscription starts now (no existing record)
+       
         if (!existingEndDate.HasValue)
         {
             await AssignSubscriberRoleAsync(userId);
@@ -392,8 +387,6 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 throw new Exception("Failed to add user to Subscriber role.");
         }
     }
-
-    // Role management methods
     public async Task<string[]> GetUserRolesAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         try
@@ -505,7 +498,6 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             var result = await _userManager.IsInRoleAsync(user, roleName);
             _logger.LogInformation("=== ROLE CHECK === User {UserId} in role {Role}: {Result}", userId, roleName, result);
 
-            // Also log all current roles for debugging
             var allRoles = await _userManager.GetRolesAsync(user);
             _logger.LogInformation("=== ROLE CHECK === User {UserId} all current roles: [{Roles}]", userId, string.Join(", ", allRoles));
 
@@ -587,7 +579,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         }
     }
 
-    // Handler for subscription expiry pub/sub messages from PaymentTransactionActor
+   
     public async Task HandleSubscriptionExpiryAsync(SubscriptionExpiryMessage message, CancellationToken cancellationToken = default)
     {
         try
@@ -689,7 +681,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         }
     }
 
-    // Method to manually trigger role change for expired subscriptions (if needed)
+   
     public async Task ProcessExpiredSubscriptionsAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -709,7 +701,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                     {
                         expiredPaymentIds.Add(paymentId);
 
-                        // Create expiry message and handle it
+                       
                         var expiryMessage = new SubscriptionExpiryMessage
                         {
                             UserId = paymentData.UserId,
@@ -766,7 +758,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
             _logger.LogInformation("Found {Count} payment IDs to check for user {UserId}", paymentIds.Count, userId);
 
-            // Get all payment transactions for the user
+           
             var userPaymentTasks = paymentIds.Select(async paymentId =>
             {
                 try
@@ -793,7 +785,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
             _logger.LogInformation("Found {Count} payments for user {UserId}", userPayments.Count, userId);
 
-            // For each payment, get the corresponding subscription details
+            
             foreach (var payment in userPayments)
             {
                 try
@@ -815,13 +807,13 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
                         userPaymentDetails.Add(new UserPaymentDetailsResponseDto
                         {
-                            // Payment Information
+                           
                             PaymentTransactionId = payment.Id,
                             TransactionDate = payment.TransactionDate,
                             StartDate = payment.StartDate,
                             EndDate = payment.EndDate,
                            
-                            // Subscription Information
+                           
                             SubscriptionId = subscriptionData.Id,
                             SubscriptionName = subscriptionData.subscriptionName,
                             Price = subscriptionData.price,
@@ -830,13 +822,13 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                             DurationId = (int)durationEnum,
                             DurationName = durationEnum.ToString(),
 
-                            // Category and Vertical Information
+                          
                             VerticalTypeId = (int)subscriptionData.VerticalTypeId,
                             VerticalName = subscriptionData.VerticalTypeId.ToString(),
                             CategoryId = (int)subscriptionData.CategoryId,
                             CategoryName = subscriptionData.CategoryId.ToString(),
 
-                            // Budget Information
+                           
                             AdsbudBudget = subscriptionData.adsbudget,
                             PromoteBudget = subscriptionData.promotebudget,
                             RefreshBudget = subscriptionData.refreshbudget,
@@ -873,7 +865,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 }
             }
 
-            // Sort by transaction date (most recent first)
+           
             userPaymentDetails = userPaymentDetails
                 .OrderByDescending(p => p.TransactionDate)
                 .ToList();
@@ -906,7 +898,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 return null;
             }
 
-            // Get all active payment transactions for the user
+           
             var userPaymentTasks = paymentIds.Select(async paymentId =>
             {
                 try
@@ -916,7 +908,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
                     if (paymentData != null &&
                         paymentData.UserId == userId &&
-                        paymentData.EndDate > DateTime.UtcNow) // Only active subscriptions
+                        paymentData.EndDate > DateTime.UtcNow) 
                     {
                         return paymentData;
                     }
@@ -933,18 +925,18 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 .Where(p => p != null)
                 .ToList();
 
-            // Check each active payment for yearly subscription
+           
             foreach (var payment in userActivePayments)
             {
                 try
                 {
-                    // Calculate if the subscription duration is 1 year
+                   
                     var subscriptionDuration = payment.EndDate - payment.StartDate;
                     bool isYearlySubscription = subscriptionDuration.TotalDays >= 360 && subscriptionDuration.TotalDays <= 370; // Allow some tolerance
 
                     if (isYearlySubscription)
                     {
-                        // Get subscription details
+                        
                         var subscriptionActor = GetActorProxy(payment.SubscriptionId);
                         var subscriptionData = await subscriptionActor.GetDataAsync(cancellationToken);
 
@@ -969,7 +961,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 }
             }
 
-            // No yearly subscription found
+            
             return new YearlySubscriptionResponseDto
             {
                 UserId = userId,

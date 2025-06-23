@@ -1,11 +1,13 @@
-﻿using System.Linq;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using System.Web;
 using Microsoft.AspNetCore.Components;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Logging;
+using Microsoft.JSInterop;
 using MudBlazor;
 using QLN.Common.Infrastructure.DTO_s;
-using QLN.Common.Infrastructure.Model;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Models;
@@ -21,11 +23,17 @@ namespace QLN.Web.Shared.Pages.Content.Community
         [Inject]
         public IDialogService DialogService { get; set; }
 
+        [Inject]
+        public ISimpleMemoryCache _simpleCacheService{ get; set; }
+
         [Inject] private ILogger<CommunityBase> Logger { get; set; }
         [Inject] private ICommunityService CommunityService { get; set; }
         [Inject] private IContentService _contentService { get; set; }
 
-        [Inject] private INewsLetterSubscription NewsLetterSubscriptionService { get; set; }
+
+        [Inject] INewsLetterSubscription newsLetterSubscriptionService { get; set; }
+        [Inject] protected IJSRuntime JS { get; set; }
+        [Inject] public HttpClient Http { get; set; }
         [Inject] private IAdService AdService { get; set; }
         protected string search = string.Empty;
         protected string sortOption = "Default";
@@ -46,49 +54,65 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected bool IsSubscribingToNewsletter { get; set; } = false;
 
 
-        protected List<PostModel> PostList { get; set; } = [];
+        protected List<PostModel>? PostList { get; set; } = [];
         //Ad
-        protected AdModel Ad { get; set; } = null;
+        //protected AdModel Ad { get; set; } = null;
 
         protected MudForm _form;
 
         //sort option
         protected string selectedCategory;
-        protected string SelectedCategoryId { get; set; }
-        protected List<SelectOption> CategorySelectOptions { get; set; }
+        protected string SelectedCategoryId { get; set; } = "Default";
+        protected List<SelectOption> CategorySelectOptions { get; set; } = new List<SelectOption>
+              {
+                 new () { Id = "Default", Label = "Default" },
+                 new () { Id = "desc", Label = "Date : Recent First" },
+                 new() { Id = "asc", Label = "Date : Oldest First" },
+            };
         protected string SelectedForumId;
 
         protected bool isLoadingBanners = true;
         protected List<BannerItem> DailyHeroBanners { get; set; } = new();
+        protected List<BannerItem> CommunitySideBanners { get; set; } = new();
 
         [Parameter]
         [SupplyParameterFromQuery]
         public string? categoryId { get; set; }
-
-
-       
-        protected async override Task OnInitializedAsync()
+        protected string _newComment;
+        protected string newComment
         {
-            CategorySelectOptions = new List<SelectOption>
-              {
-                 new() { Id = "Default", Label = "Default" },
-                 new() { Id = "desc", Label = "Date : Recent First" },
-                 new() { Id = "asc", Label = "Date : Oldest First" },
-            };
-            SelectedCategoryId = "Default";
+            get => _newComment;
+            set
+            {
+                _newComment = value;
+                StateHasChanged();
+            }
+        }
+
+        protected async override Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (!firstRender) return;
 
             try
             {
-                PostList = await GetPostListAsync();
-                await LoadBanners();
-
-                Ad = await GetAdAsync();
-
+                await Task.WhenAll(
+                    LoadPosts(),
+                    LoadBanners()
+                    //GetAdAsync()
+                );
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "OnInitializedAsync");
+                Logger.LogError(ex, "OnAfterRenderAsync");
             }
+        }
+
+        private async Task LoadPosts()
+        {
+            var (posts, totalCount) = await GetPostListAsync();
+            PostList = posts;
+            TotalPosts = totalCount;
+            StateHasChanged();
         }
 
         protected override async Task OnParametersSetAsync()
@@ -97,81 +121,69 @@ namespace QLN.Web.Shared.Pages.Content.Community
             if (!string.IsNullOrEmpty(categoryId))
             {
                 SelectedForumId = categoryId;
+                await HandleCategoryChanged(categoryId);
+
             }
             else
             {
-                SelectedForumId = null; 
+                SelectedForumId = null;
             }
 
-            try
-            {
-                PostList = await GetPostListAsync();
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Failed to load posts");
-                HasError = true;
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-        private async Task<BannerResponse?> FetchBannerData()
-        {
-            try
-            {
-                var response = await _contentService.GetBannerAsync();
-                if (response.IsSuccessStatusCode && response.Content != null)
-                {
-                    return await response.Content.ReadFromJsonAsync<BannerResponse>();
-                }
-                return null;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"FetchBannerData error: {ex.Message}");
-                return null;
-            }
+            //try
+            //{
+            //    var (posts, totalCount) = await GetPostListAsync();
+            //    PostList = posts;
+            //    TotalPosts = totalCount;
+            //}
+            //catch (Exception ex)
+            //{
+            //    Logger.LogError(ex, "Failed to load posts");
+            //    HasError = true;
+            //}
+            //finally
+            //{
+            //    IsLoading = false;
+            //}
         }
 
         protected async Task HandleCategoryChanged(string forumId)
         {
             SelectedForumId = forumId;
             CurrentPage = 1;
-            PostList = await GetPostListAsync();
+            await LoadPosts();
         }
 
         protected async Task HandleSearchResults()
         {
             Console.WriteLine("Search completed.");
+            await Task.CompletedTask;
         }
 
-        protected async Task<List<PostModel>> GetPostListAsync()
+        protected async Task<(List<PostModel>? Posts, int TotalCount)> GetPostListAsync()
         {
             try
             {
                 IsLoading = true;
                 HasError = false;
-                StateHasChanged();
+                //StateHasChanged(); // dont need to run this here it can cause a rerender
 
                 int? forumId = int.TryParse(SelectedForumId, out var parsedId) ? parsedId : null;
                 Console.WriteLine("current page in GetPostListAsync", CurrentPage);
 
-                var dtoList = await CommunityService.GetPostsAsync(
-                    forumId: forumId,
-                    order: GetOrderFromSortOption(),
-                    page: CurrentPage,
-                    pageSize: PageSize
-                );
-                if (dtoList == null || !dtoList.Posts.Any())
+                var (dtoList, totalCount) = await CommunityService.GetPostsAsync(
+             forumId: forumId,
+             order: GetOrderFromSortOption(),
+             page: CurrentPage,
+             pageSize: PageSize
+         );
+                if (dtoList == null || !dtoList.Any())
                 {
                     HasError = true;
-                    return null;
+                    return (null, 0);
                 }
 
 
-                var postModelList = dtoList.Posts.Select(dto => new PostModel
+                var postModelList = dtoList.Select(dto => new PostModel
                 {
                     Id = dto.nid,
                     Category = dto.forum_category,
@@ -179,40 +191,39 @@ namespace QLN.Web.Shared.Pages.Content.Community
                     BodyPreview = dto.description,
                     Author = dto.user_name,
                     Time = DateTime.TryParse(dto.date_created, out var parsedDate) ? parsedDate : DateTime.MinValue,
-                    LikeCount = int.TryParse(dto.like_count, out var like_result) ? like_result : 0,
-                    CommentCount = int.TryParse(dto.comment_count, out var comment_result) ? comment_result : 0,
-                    isCommented = comment_result > 0,
+                    LikeCount = 0,
+                    CommentCount = 0,
+                    isCommented = false,
                     ImageUrl = dto.image_url,
                     Slug = dto.slug,
                 }).ToList();
-                TotalPosts = int.TryParse(dtoList.Total, out var total_result) ? total_result : 0;
+                //TotalPosts = postModelList.TotalCount;
 
-                return postModelList;
+                return (postModelList, totalCount);
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Get Community Post Async");
                 HasError = true;
-                return null;
+                return (null, 0);
             }
             finally
             {
                 IsLoading = false;
-                StateHasChanged();
             }
         }
 
         private string GetOrderFromSortOption()
         {
             Logger.LogInformation($"SelectedCategoryId: {SelectedCategoryId}");
-           Console.WriteLine($"SelectedCategoryId: {SelectedCategoryId}");
+            Console.WriteLine($"SelectedCategoryId: {SelectedCategoryId}");
             //return SelectedCategoryId == "Default" ? null : SelectedCategoryId;
 
             return SelectedCategoryId switch
             {
-                "desc" => "desc", 
-                "asc" => "asc",   
-                _ => null        
+                "desc" => "desc",
+                "asc" => "asc",
+                _ => "desc" // default to descending for this one is actually newest items first
             };
         }
 
@@ -222,14 +233,15 @@ namespace QLN.Web.Shared.Pages.Content.Community
             Console.WriteLine($"Sort changed to: {newSortId}");
             SelectedCategoryId = newSortId;
             CurrentPage = 1;
-            PostList =await GetPostListAsync();
+            await LoadPosts();
             StateHasChanged();
         }
         protected async Task HandlePageSizeChange(int newPageSize)
         {
             PageSize = newPageSize;
             CurrentPage = 1;
-            await GetPostListAsync();
+            await LoadPosts();
+            StateHasChanged();
         }
 
         protected async Task HandlePageChange(int newPage)
@@ -238,54 +250,15 @@ namespace QLN.Web.Shared.Pages.Content.Community
             Console.WriteLine("current page", CurrentPage);
             Logger.LogInformation($"Page changed to: {CurrentPage}");
 
-            PostList = await GetPostListAsync() ?? new List<PostModel>();
+            await LoadPosts();
             StateHasChanged();
         }
 
-        protected async Task SubscribeAsync()
-        {
-            IsSubscribingToNewsletter = true;
-            await _form.Validate();
-
-            if (_form.IsValid)
-            {
-                try
-                {
-                    var success = await NewsLetterSubscriptionService.SubscribeAsync(SubscriptionModel);
-                    SubscriptionStatusMessage = success ? "Subscribed successfully!" : "Failed to subscribe.";
-                    if (success)
-                    {
-                        Snackbar.Add("Subscription successful!", Severity.Success);
-                    }
-                    else
-                    {
-                        Snackbar.Add("Failed to subscribe. Please try again later.", Severity.Error);
-                    }
-
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, "Newsletter subscription failed.");
-                    SubscriptionStatusMessage = "An error occurred while subscribing.";
-                    Snackbar.Add($"Failed to subscribe: {ex.Message}", Severity.Error);
-
-                }
-                finally
-                {
-                    IsSubscribingToNewsletter = false;
-                }
-            }
-            else
-            {
-                Snackbar.Add("Failed to subscribe. Please try again later.", Severity.Error);
-
-            }
-        }
-        private async Task<AdModel> GetAdAsync()
-        {
-            var response = await AdService.GetAdDetail();
-            return response.FirstOrDefault();
-        }
+        //private async Task GetAdAsync()
+        //{
+        //    var response = await AdService.GetAdDetail();
+        //    Ad = response.FirstOrDefault();
+        //}
 
         protected bool _isCreatePostDialogOpen = false;
 
@@ -313,8 +286,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected async Task OnCategoryChange(string newId)
         {
             SelectedCategoryId = newId;
-            CurrentPage = 1;  
-            PostList = await GetPostListAsync();
+            CurrentPage = 1;
+            var (PostList, TotalPosts) = await GetPostListAsync(); // use one object update rather than a temporary object we reinject in
         }
 
         protected async Task LoadBanners()
@@ -322,8 +295,13 @@ namespace QLN.Web.Shared.Pages.Content.Community
             isLoadingBanners = true;
             try
             {
-                var banners = await FetchBannerData();
-                DailyHeroBanners = banners?.DailyHero ?? new();
+                // Delay a tiny bit to avoid LightHouse LCP penalties
+                // Grant: I can't find evidence of how this helps ?
+                //await Task.Delay(800);
+
+                var banners = await _simpleCacheService.GetBannerAsync();
+                DailyHeroBanners = banners?.ContentCommunityHero ?? new();
+                CommunitySideBanners = banners?.ContentCommunitySide ?? new();
 
             }
             catch (Exception ex)
@@ -334,6 +312,102 @@ namespace QLN.Web.Shared.Pages.Content.Community
             {
                 isLoadingBanners = false;
             }
+        }
+
+        
+        protected async Task SubscribeAsync()
+        {
+            if (string.IsNullOrWhiteSpace(SubscriptionModel?.Email))
+            {
+                Snackbar.Add("Email is required.", Severity.Warning);
+                return;
+            }
+
+            var emailAttribute = new EmailAddressAttribute();
+            if (!emailAttribute.IsValid(SubscriptionModel.Email))
+            {
+                Snackbar.Add("Please enter a valid email address.", Severity.Warning);
+                return;
+            }
+            IsSubscribingToNewsletter = true;
+          
+                try
+                {
+                    string baseUrl = "https://qatarliving.us9.list-manage.com/subscribe/post-json";
+                    string u = "3ab0436d22c64716e67a03f64";
+                    string id = "94198fac96";
+                    string email = SubscriptionModel.Email;
+                    string callback = $"jQuery{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+                    string botField = "";
+                    string subscribe = "Subscribe";
+                    string cacheBuster = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
+
+                    var query = HttpUtility.ParseQueryString(string.Empty);
+                    query["u"] = u;
+                    query["id"] = id;
+                    query["c"] = callback;
+                    query["EMAIL"] = email;
+                    query["b_3ab0436d22c64716e67a03f64_94198fac96"] = botField;
+                    query["subscribe"] = subscribe;
+                    query["_"] = cacheBuster;
+
+                    string url = $"{baseUrl}?{query}";
+
+                    var request = new HttpRequestMessage(HttpMethod.Post, url);
+                    request.Headers.Add("User-Agent", "Mozilla/5.0");
+                    request.Headers.Add("Referer", "https://qatarliving.com/");
+                    request.Headers.Add("Origin", "https://qatarliving.com");
+                    var response = await Http.SendAsync(request);
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var successPatteren = "Thank you for subscribing!";
+
+                    var matches = Regex.Matches(responseContent, @"\((\{.*?\})\)");
+                    string msg = "";
+                    foreach (Match match in matches)
+                    {
+                        string json = match.Groups[1].Value;
+                        using var doc = JsonDocument.Parse(json);
+
+                        if (doc.RootElement.TryGetProperty("msg", out var msgElement))
+                        {
+                            msg = msgElement.GetString();
+                        }
+                        else if (doc.RootElement.TryGetProperty("errors", out var errorsElement) && errorsElement.ValueKind != JsonValueKind.Null)
+                        {
+                            msg = errorsElement.ToString();
+                        }
+                    }
+
+                    if (response.IsSuccessStatusCode && successPatteren.Equals(msg, StringComparison.OrdinalIgnoreCase))
+
+                    {
+                        Snackbar.Add($"Subscription submitted: {msg}", Severity.Success);
+                        SubscriptionStatusMessage = $"Subscription submitted: {msg}";
+                    }
+                    else if (response.IsSuccessStatusCode && !string.IsNullOrWhiteSpace(msg))
+                    {
+                        Snackbar.Add($"{msg}", Severity.Warning);
+                        SubscriptionStatusMessage = $"{msg}";
+                    }
+                    else
+                    {
+                        Snackbar.Add("Failed to subscribe. Please try again.", Severity.Error);
+                        SubscriptionStatusMessage = "Failed to subscribe. Please try again.";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"{ex.Message} Newsletter subscription failed.");
+                    SubscriptionStatusMessage = "An error occurred while subscribing.";
+                    Snackbar.Add($"Failed to subscribe: {ex.Message}", Severity.Error);
+                }
+                finally
+                {
+                    IsSubscribingToNewsletter = false;
+                StateHasChanged();
+                }
+            
+           
         }
     }
 }

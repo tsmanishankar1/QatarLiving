@@ -1,0 +1,85 @@
+
+@inherits SelectionDialogBase
+<MudDialog>
+    <DialogContent>
+
+        <!-- Title -->
+        <MudText Class="mb-2 topic-style">
+            Topic 1 - Selection
+        </MudText>
+
+        <!-- Current Content Box -->
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; margin-bottom: 8px; border: 1px solid #ddd; border-radius: 6px; background-color: #F6F6F6;">
+            <div>
+                <MudText Class="selection-heading-style" >Current Content</MudText>
+                <MudText Class="description-style">What's New In Qatar (ID: 1000001321)</MudText>
+            </div>
+            <MudButton  Style="text-transform: none; background-color: var(--color-accent); color: white;">
+                Edit
+            </MudButton>
+        </div>
+
+        <!-- Existing Search -->
+        <MudText Class="mb-1 existing-style">Existing</MudText>
+       <MudTextField T="string" Placeholder="Search"
+                Variant="Variant.Outlined"
+              Adornment="Adornment.Start"
+              AdornmentIcon="@Icons.Material.Filled.Search"
+              Class="mb-4" />
+
+        <!-- Existing Items -->
+        @foreach (var item in ExistingItems)
+        {
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; margin-bottom: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                <div>
+                    <MudText Class="selection-heading-style">@item.Title</MudText>
+                    <MudText Class="description-style">
+                        ID: @item.Id • Last updated: @item.LastUpdated.ToString("MMM d, yyyy")
+                    </MudText>
+                </div>
+                <MudButton Variant="Variant.Filled"  Style="text-transform: none; background-color: var(--color-accent); color: white;">
+                    Select
+                </MudButton>
+             </div>
+        }
+
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Class="custom-cancel-button" Variant="Variant.Outlined"  Style="text-transform: none;">Cancel</MudButton>
+        <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Style="text-transform: none; background-color: var(--color-accent); color: white; padding-right: 20px;">
+            New Topic
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+<style>
+    .topic-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--color-primary);
+    }
+    .selection-heading-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        font-weight: 400;
+        color: var(--color-primary);
+    }
+    .description-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        font-weight: 400;
+        color: #242424;
+    }
+    .existing-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--color-primary);
+    }
+    .custom-cancel-button {
+        border-color: var(--color-accent);
+        color: var(--color-accent);
+        text-transform: none;
+    }
+</style>

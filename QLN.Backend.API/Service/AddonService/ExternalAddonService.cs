@@ -12,15 +12,11 @@ namespace QLN.Backend.API.Service.AddonService
     public class ExternalAddonService : IAddonService
     {
         private readonly ILogger<ExternalAddonService> _logger;
-
-        // Dictionary to store consistent actor ID
         private static readonly ConcurrentDictionary<string, Guid> _addonIds = new();
         private readonly ConcurrentDictionary<Guid, byte> _addonPaymentIds = new();
         public ExternalAddonService(ILogger<ExternalAddonService> logger)
         {
             _logger = logger;
-
-            // Ensure at least one consistent addon ID is registered
             _addonIds.TryAdd("default", Guid.Parse("00000000-0000-0000-0000-000000000001"));
         }
 
@@ -59,9 +55,6 @@ namespace QLN.Backend.API.Service.AddonService
             await actor.SetAddonDataAsync(data, cancellationToken);
             _logger.LogDebug("Saved addon data with ID: {AddonId}", data.Id);
         }
-
-        // Quantities methods
-      
        public async Task<IEnumerable<QuantityResponse>> GetAllQuantitiesAsync()
         {
             var data = await GetOrCreateAddonDataAsync();
@@ -101,10 +94,6 @@ namespace QLN.Backend.API.Service.AddonService
 
             return quantity;
         }
-
-        // Currencies methods
-      
-
         public async Task<Currency> CreateCurrencyAsync(CreateCurrencyRequest request)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
@@ -128,8 +117,6 @@ namespace QLN.Backend.API.Service.AddonService
 
             return currency;
         }
-
-        // UnitCurrency methods
         public async Task<UnitCurrency> CreatequantityCurrencyAsync(CreateUnitCurrencyRequest request)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
@@ -178,27 +165,18 @@ namespace QLN.Backend.API.Service.AddonService
             return result;
         }
 
-        public async Task<Guid> CreateAddonPaymentsAsync(
-     PaymentAddonRequestDto request,
-     Guid userId,
-     CancellationToken cancellationToken = default)
+        public async Task<Guid> CreateAddonPaymentsAsync(PaymentAddonRequestDto request,Guid userId,CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
 
             var id = Guid.NewGuid();
             var startDate = DateTime.UtcNow;
-
-            // Get addon data from the default actor (not from request.AddonId)
             var addonData = await GetOrCreateAddonDataAsync(cancellationToken);
-
-            // Find the UnitCurrency that matches the given AddonId
             var unitCurrency = addonData.QuantitiesCurrencies
                 .FirstOrDefault(x => x.Id == request.AddonId);
 
             if (unitCurrency == null)
                 throw new Exception($"UnitCurrency not found for Addon ID: {request.AddonId}");
-
-            // Calculate end date using duration
             var endDate = GetEndDateByAddonDuration(startDate, unitCurrency.Duration);
 
             var dto = new AddonPaymentDto
@@ -230,15 +208,6 @@ namespace QLN.Backend.API.Service.AddonService
 
             throw new Exception("Addon payment transaction creation failed.");
         }
-
-        private async Task<AddonDataDto?> GetAddonDataAsync(Guid addonId)
-        {
-            var actor = ActorProxy.Create<IAddonActor>(new ActorId(addonId.ToString()), "AddonActor");
-            return await actor.GetAddonDataAsync(); 
-        }
-
-
-
         private DateTime GetEndDateByAddonDuration(DateTime startDate, DurationType duration)
         {
             return duration switch

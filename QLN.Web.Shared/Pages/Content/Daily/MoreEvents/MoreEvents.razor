@@ -8,12 +8,12 @@
     <div class="daily-more-category-group">
         @foreach (var item in DailyCategories)
         {
-            <button class="daily-category-btn" @onclick="NavigatetoAllEvents">
+            <button class="daily-category-btn" @onclick="@(() => NavigatetoAllEvents(item))">
                 @item.Label
             </button>
         }
 
-        <button class="view-all-btn" @onclick="NavigatetoAllEvents">
+        <button class="view-all-btn" @onclick="@(() => NavigatetoAllEvents(null))">
             View all
             <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowRight" class="arrow-icon" />
         </button>
@@ -25,23 +25,35 @@
 
     private List<CategoryItem> DailyCategories = new()
 {
-new CategoryItem { Label = "Concerts" },
-new CategoryItem { Label = "Workshops" },
-new CategoryItem { Label = "Sports" },
-new CategoryItem { Label = "Festivals" },
-new CategoryItem { Label = "Exhibitions" },
+new CategoryItem { Label = "Music",Id="106691" },
+new CategoryItem { Label = "Workshops", Id = "106666" },
+new CategoryItem { Label = "Sports", Id = "106706" },
+new CategoryItem { Label = "Festivals", Id = "106676" },
+new CategoryItem { Label = "Entertainment", Id = "126205" },
+new CategoryItem { Label = "Exhibitions" ,Id = "114741"}
 };
+
 
 
     public class CategoryItem
     {
         public string Label { get; set; }
+        public string Id { get; set; } // ← Add this
     }
 
-    protected void NavigatetoAllEvents()
+    protected void NavigatetoAllEvents(CategoryItem item)
     {
-        NavigationManager.NavigateTo("content/events");
+        if (item != null && !string.IsNullOrEmpty(item.Id))
+        {
+            NavigationManager.NavigateTo($"/content/events?perselect={item.Id}");
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/content/events");
+        }
     }
+
+
 }
 <style>
     .daily-more-section {
@@ -50,7 +62,7 @@ new CategoryItem { Label = "Exhibitions" },
         justify-content: center;
         flex-direction: column;
         width: 100%;
-        font-family: 'Public Sans';
+        font-family: 'Public Sans', sans-serif;
         padding: 20px 0;
     }
 
@@ -94,11 +106,11 @@ new CategoryItem { Label = "Exhibitions" },
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
-        .daily-category-btn:hover,
-        .view-all-btn:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-        }
+    .daily-category-btn:hover,
+    .view-all-btn:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
 
     .btn-icon {
         width: 20px;

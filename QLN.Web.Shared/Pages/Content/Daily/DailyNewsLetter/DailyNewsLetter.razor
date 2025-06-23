@@ -1,17 +1,25 @@
 @inherits NewsLetterBase
 @using QLN.Web.Shared.Components.CustomButton
 
-
 <div class="newsletter-container">
-    <h3 class="newsletter-container-name">Get The QL newsletter. Sign up to receive the top stories you need to know
-        right now.</h3>
+    <h3 class="newsletter-container-name">
+        Get The QL newsletter. Sign up to receive the top stories you need to know
+        right now.
+    </h3>
     <MudForm @ref="_form">
-        <input type="email" placeholder="Enter your email" class="email-input" @bind="SubscriptionModel.Email"
-               @bind:event="oninput" required />
-        <MudButton Variant="Variant.Filled"
-                   Class="reset-button"
-                   Disabled="@IsSubscribingToNewsletter"
-                   OnClick="SubscribeAsync" Style="background-color: #FF7F38;color: white;">
+         <MudTextField @bind-Value="SubscriptionModel.Email"
+                  Placeholder="Enter your email"
+                  Variant="Variant.Outlined"
+                  For="@(() => SubscriptionModel.Email)"
+                  Required="true"
+                  RequiredError="Email is required"
+                  InputType="InputType.Email"
+                  Immediate="true"
+                  Margin="Margin.Dense"
+                  />
+
+        <MudButton Variant="Variant.Filled" Class="reset-button" Disabled="@IsSubscribingToNewsletter"
+            OnClick="SubscribeAsync" Style="background-color: #FF7F38;color: white;text-transform: capitalize;margin-top: 10px;">
             @if (IsSubscribingToNewsletter)
             {
                 <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" />
@@ -44,7 +52,7 @@
     }
 
     .newsletter-text {
-        font-family: 'Public Sans',sans-serif;
+        font-family: 'Public Sans', sans-serif;
         font-weight: 500;
         font-size: 14px;
         line-height: 24px;
@@ -60,9 +68,9 @@
         border-radius: 6px;
     }
 
-        .newsletter-input::placeholder {
-            padding-left: 14px;
-        }
+    .newsletter-input::placeholder {
+        padding-left: 14px;
+    }
 
     .newsletter-html-input:focus {
         border-color: #FF7F38;
@@ -93,7 +101,7 @@
         border: 1px solid var(--color-background-secondary-grey-medium);
         border-radius: 6px;
         background-color: #fff;
-        font-family: sans-serif;
+        font-family: 'Public Sans', sans-serif;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -119,23 +127,5 @@
         font-size: 13px;
         margin-bottom: 10px;
     }
-
-
-    .email-input {
-        width: 100%;
-        padding: 8px 10px;
-        font-size: 15px;
-        border: 1px solid #D0D5DD;
-        border-radius: 6px;
-        margin-bottom: 10px;
-        box-sizing: border-box;
-    }
-
-        .email-input:focus {
-            border-color: #ff7f38;
-            outline: none;
-        }
-
-
 
 </style>

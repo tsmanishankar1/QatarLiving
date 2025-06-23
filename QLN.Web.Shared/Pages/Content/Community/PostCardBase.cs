@@ -3,6 +3,8 @@ using Microsoft.JSInterop;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Models;
+using QLN.Web.Shared.Helpers;
+using MudBlazor;
 
 namespace QLN.Web.Shared.Pages.Content.Community
 {
@@ -11,6 +13,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
         [Inject]
         protected NavigationManager Navigation { get; set; }
         [Inject] protected IJSRuntime JS { get; set; }
+
+        [Inject] protected ISnackbar Snackbar { get; set; }
 
         [Inject] protected IPostInteractionService PostInteractionService { get; set; }
 
@@ -26,6 +30,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             isMenuOpen = open;
             StateHasChanged();
         }
+
         protected void OnReport()
         {
             Console.WriteLine($"Reporting post: {Post.Title}");
@@ -56,14 +61,108 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 Post.LikeCount += IsDisliked ? -1 : 1;
             }
         }
-        protected void SharePost()
-        {
-            var postUrl = $"{Navigation.BaseUri.TrimEnd('/')}/content/community/post/detail/{Post.Id}";
-            var request = new ShareRequest { UrlToShare = postUrl };
-            var shareUrl = ShareService.GetShareUrl(request);
 
-            JS.InvokeVoidAsync("open", shareUrl, "_blank");
+        public class MenuItem
+    {
+        public string Text { get; set; }
+        public string ImageSrc { get; set; }
+        public string Route { get; set; }
+        public bool OpenInNewTab { get; set; } = false;
+        public Func<Task> OnClick { get; set; }
+    }
+
+        private string CurrentUrl =>
+    IsDetailView
+        ? Navigation.Uri  
+        : $"{Navigation.BaseUri.TrimEnd('/')}/content/community/post/detail/{Post.Slug}";
+
+        //private string CurrentUrl => $"{Navigation.BaseUri.TrimEnd('/')}/content/community/post/detail/{Post.Slug}";
+        protected List<MenuItem> shareMenuItems => new()
+    {
+        new MenuItem
+        {
+            ImageSrc = "/qln-images/facebook_share_icon.svg",
+            Route = SocialShareHelper.GetFacebookUrl(CurrentUrl),
+            OpenInNewTab = true
+        },
+        new MenuItem
+        {
+            ImageSrc = "/qln-images/instagram_share_icon.svg",
+            Route = SocialShareHelper.GetInstagramUrl(CurrentUrl),
+            OpenInNewTab = true
+        },
+        new MenuItem
+        {
+            ImageSrc = "/qln-images/whatsApp_share_icon.svg",
+            Route = SocialShareHelper.GetWhatsAppUrl(CurrentUrl),
+            OpenInNewTab = true
+        },
+        new MenuItem
+        {
+            ImageSrc = "/qln-images/tiktok_share_icon.svg",
+            Route = SocialShareHelper.GetTikTokUrl(CurrentUrl),
+            OpenInNewTab = true
+        },
+        new MenuItem
+        {
+            ImageSrc = "/qln-images/x_share_icon.svg",
+            Route = SocialShareHelper.GetXUrl(CurrentUrl, Post?.Title ?? ""),
+            OpenInNewTab = true
+        },
+        new MenuItem
+        {
+            ImageSrc = "/qln-images/linkedin_share_icon.svg",
+            Route = SocialShareHelper.GetLinkedInUrl(CurrentUrl, Post?.Title ?? ""),
+            OpenInNewTab = true
+        },
+        new MenuItem
+        {
+            ImageSrc = "/qln-images/copy_link_icon.svg",
+            OnClick = async () =>
+            {
+                bool copied = false;
+                copied = await SocialShareHelper.CopyLinkToClipboardAsync(JS, CurrentUrl);
+                if (copied)
+                {
+                    Snackbar.Add(builder =>
+                    {
+                        builder.OpenElement(0, "div");
+                        
+                        builder.OpenElement(1, "h6");
+                        builder.AddAttribute(2, "style", "margin:0px;color:black;font-weight:bold;");
+                        builder.AddContent(3, "Item Link Copied");
+                        builder.CloseElement();
+
+                        builder.OpenElement(4, "div");
+                        builder.AddAttribute(5, "style", "color:black;");
+                        builder.AddContent(6, "Item link has been copied to the clipboard");
+                        builder.CloseElement();
+
+                        builder.CloseElement();
+                    }, Severity.Success,c => c.SnackbarVariant = Variant.Outlined);
+                }
+                else
+                {
+                    Snackbar.Add(builder =>
+                    {
+                        builder.OpenElement(0, "div");
+
+                        builder.OpenElement(1, "h6");
+                        builder.AddAttribute(2, "style", "margin:0px;color:black;font-weight:bold;");
+                        builder.AddContent(3, "Failed");
+                        builder.CloseElement();
+
+                        builder.OpenElement(4, "div");
+                        builder.AddAttribute(5, "style", "color:black;");
+                        builder.AddContent(6, "Failed to copy link. Please try again.");
+                        builder.CloseElement();
+
+                        builder.CloseElement();
+                    }, Severity.Error,c => c.SnackbarVariant = Variant.Outlined);
+                }
+            }
         }
+    };
         protected async Task OnReportClick()
         {
             isMenuOpen = true;

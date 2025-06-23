@@ -1,4 +1,6 @@
-﻿using QLN.Web.Shared.Services.Interface;
+﻿using Microsoft.Extensions.Caching.Memory;
+using QLN.Common.Infrastructure.Constants;
+using QLN.Web.Shared.Services.Interface;
 using System.Net;
 
 namespace QLN.Web.Shared.Services
@@ -7,17 +9,34 @@ namespace QLN.Web.Shared.Services
     {
         private readonly HttpClient _httpClient;
 
+        private readonly IMemoryCache _memoryCache;
+        private const string BannerCacheKey = "BannerResponseCacheKey";
+
         public EventService(HttpClient httpClient) : base(httpClient)
         {
             _httpClient = httpClient;
         }
 
         /// <inheritdoc />
-        public async Task<HttpResponseMessage?> GetAllEventsAsync()
+        public async Task<HttpResponseMessage?> GetAllEventsAsync(string? category_id = null, string? location_id = null, string? from = null, string? to = null, int? page = 1, int? page_size = 20, string? order = "desc")
         {
+
+            string requestUri = $"api/content/events?page={page}&page_size={page_size}&order={order}";
+            if (!string.IsNullOrEmpty(category_id))
+                requestUri += $"&category_id={category_id}";
+
+            if (!string.IsNullOrEmpty(location_id))
+                requestUri += $"&location_id={location_id}";
+
+            if (!string.IsNullOrEmpty(from))
+                requestUri += $"&from={from}";
+
+            if (!string.IsNullOrEmpty(to))
+                requestUri += $"&to={to}";
+
             try
             {
-                var response = await _httpClient.GetAsync("api/content/events");
+                var response = await _httpClient.GetAsync(requestUri);
                 return response;
             }
             catch (Exception ex)
@@ -60,7 +79,7 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync("api/content/qln_contents_daily/landing");
+                var response = await _httpClient.GetAsync("api/content/qln_events/landing");
                 return response;
             }
             catch (Exception ex)
@@ -70,18 +89,18 @@ namespace QLN.Web.Shared.Services
             }
         }
         public async Task<HttpResponseMessage?> GetBannerAsync()
-{
-    try
-    {
-        var response = await _httpClient.GetAsync("api/banner");
-        return response;
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine("GetBannerAsync: " + ex);
-        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
-    }
-}
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync("api/banner");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("GetBannerAsync: " + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
 
     }
 }

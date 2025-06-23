@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using QLN.Backend.API.ServiceConfiguration;
-using QLN.Classified.MS.Endpoints;
 using QLN.Common.Infrastructure.CustomEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
@@ -14,17 +13,25 @@ using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
+using Microsoft.AspNetCore.Authorization;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
 using QLN.Common.Infrastructure.DbContext;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Common.Infrastructure.TokenProvider;
-using QLN.SearchService.CustomEndpoints;
+
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
+using QLN.Common.Infrastructure.CustomEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 
+using Azure.Core.Serialization;
+using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
+
+using QLN.Common.Infrastructure.CustomEndpoints.Wishlist;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
@@ -162,25 +169,35 @@ builder.Services.AddSingleton<DaprClient>(_ =>
     return new DaprClientBuilder()
         .Build();
 });
+#endregion
 builder.Services.AddActors(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
+builder.Services.ConfigureHttpJsonOptions(opts =>
+{
+    opts.SerializerOptions.Converters
+        .Add(new MicrosoftSpatialGeoJsonConverter());
+});
+builder.Services.AddResponseCaching();
+builder.Services.AddResponseCompression(options =>
+    {
+        options.EnableForHttps = true;
+        options.MimeTypes = new[] { "text/css", "application/javascript", "text/html", "application/json" };
+    });
 builder.Services.AddDaprClient();
-#endregion
-
-builder.Services.AddResponseCaching();   
-
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
 builder.Services.SearchServicesConfiguration(builder.Configuration);
 builder.Services.ContentServicesConfiguration(builder.Configuration);
-builder.Services.BannerServicesConfiguration(builder.Configuration);
 builder.Services.AnalyticsServicesConfiguration(builder.Configuration);
+builder.Services.BannerServicesConfiguration(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
+builder.Services.EventConfiguration(builder.Configuration);
 builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
+builder.Services.ContentConfiguration(builder.Configuration);
 builder.Services.AddonConfiguration(builder.Configuration);
 var app = builder.Build();
 
@@ -194,6 +211,11 @@ app.MapSubscribeHandler();
 
 app.UseResponseCaching();                
 
+if (!app.Environment.IsDevelopment())
+{
+    app.UseResponseCompression();
+}
+
 if (builder.Configuration.GetValue<bool>("EnableSwagger"))
 {
     app.UseSwagger();
@@ -205,28 +227,26 @@ if (builder.Configuration.GetValue<bool>("EnableSwagger"))
     });
 }
 
-
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
-
+var wishlistgroup = app.MapGroup("/api/wishlist");
+wishlistgroup.MapWishlist();
 var companyGroup = app.MapGroup("/api/companyprofile");
 companyGroup.MapCompanyEndpoints()
     .RequireAuthorization();
 var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedsEndpoints();
-
 var servicesGroup = app.MapGroup("/api/services");
 servicesGroup.MapServicesEndpoints();
-
+var eventGroup = app.MapGroup("v2/api/event");
+eventGroup.MapEventEndpoints()
+    .RequireAuthorization();
 var contentGroup = app.MapGroup("/api/content");
 contentGroup.MapContentLandingEndpoints();
-
 var bannerGroup = app.MapGroup("/api/banner");
 bannerGroup.MapBannerEndpoints();
-
 var analyticGroup = app.MapGroup("/api/analytics");
 analyticGroup.MapAnalyticsEndpoints();
-
 app.MapGroup("/api/subscriptions")
    .MapSubscriptionEndpoints();
 
@@ -237,13 +257,16 @@ app.MapGroup("/api/payments")
 app.MapGroup("/api/paytopublish")
     .MapPayToPublishEndpoints();
 
+app.MapGroup("/api/v2/content")
+    .MapNewsContentEndpoints();
+
+
 app.MapGroup("/api/addon")
  .MapAddonEndpoints();
 
 
 app.MapAllBackOfficeEndpoints();
 app.MapLandingPageEndpoints();
-
 app.UseHttpsRedirection();
 app.UseAuthorization();
 

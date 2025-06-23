@@ -5,12 +5,10 @@
 <div class="footer-pagination-container">
     <div class="pagination-row">
         <!-- Previous Button -->
-        <MudButton Variant="Variant.Outlined" Disabled="@IsFirstPage" OnClick="@GoToPreviousPage"
-            Class="pagination-button">
+           <button @onclick="GoToPreviousPage" disabled="@IsFirstPage" class="pagination-button">
             <MudIcon Icon="@Icons.Material.Filled.ArrowBack" Class="me-1 pagination-icon" />
             <span class="pagination-text">Previous</span>
-
-        </MudButton>
+        </button>
 
         <!-- Custom Pagination -->
         <CustomPagination TotalItems="TotalItems" PageSize="PageSize" CurrentPage="CurrentPage"
@@ -18,10 +16,10 @@
 
 
         <!-- Next Button -->
-        <MudButton Variant="Variant.Outlined" Disabled="@IsLastPage" OnClick="@GoToNextPage" Class="pagination-button">
+        <button @onclick="GoToNextPage" disabled="@IsLastPage" class="pagination-button">
             <span class="pagination-text">Next</span>
             <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Class="ms-1 pagination-icon" />
-        </MudButton>
+        </button>
     </div>
 
  
@@ -105,15 +103,21 @@
         gap: 20px;
     }
 
-    .pagination-button {
+     .pagination-button {
         background-color: white;
-        color: #667085;
+        color: #475467;
         text-transform: capitalize;
         border-radius: 8px;
         min-height: 40px;
         min-width: 100px;
         box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
         transition: background-color 0.2s ease;
+        border: 1px solid #D0D5DD;
+        /* you may add this if you want border like MudButton */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
     }
 
     .pagination-button:hover {
@@ -121,12 +125,22 @@
         color: #344054;
     }
 
+    .pagination-button {
+        cursor: pointer;
+        font-weight: 500;
+    }
+
+    .pagination-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+
 
     .pagination-icon {
-        font-size: 20px;
         color: #475467;
-
     }
+
 
 
     .custom-pagination .mud-button {
