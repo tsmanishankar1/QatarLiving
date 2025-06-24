@@ -1,15 +1,14 @@
-@using MudBlazor
-
 <div class="search-section">
-    <div class="search-input-wrapper">
-        <MudTextField @bind-Value="searchText" Placeholder="Search" Adornment="Adornment.Start"
-            style="background-color: var(--color-background)" AdornmentIcon="@Icons.Material.Filled.Search"
-            Variant="Variant.Outlined" Class="search-input" HideSpinButtons="true" Immediate="true" />
+    <div class="search-input-group">
+        <span class="left-icon">
+            <img src="/qln-images/content/Search.svg" alt="search icon" class="left-search-icon" width="23" height="23" />
+        </span>
+        <input type="text" class="search-input" placeholder="Search..." @bind="searchText" />
     </div>
 
-    <MudButton Variant="Variant.Filled" Class="search-button" OnClick="OnSearch">
+    <button class="search-button" @onclick="OnSearch">
         Search
-    </MudButton>
+    </button>
 </div>
 
 @code {
@@ -17,38 +16,84 @@
 
     private void OnSearch()
     {
-        // You can emit an event or handle search logic here
         Console.WriteLine($"Searching for: {searchText}");
     }
 }
 
 <style>
-    .search-section {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        max-width: 100%;
-        padding: 12px 40px;
-        background-color: var(--color-background-secondary-grey-medium);
-        font-family: 'Public Sans', sans-serif;
-    }
+ .search-section {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 12px;
+  padding: 10px 0;
+  background-color: var(--color-background-secondary-grey-medium);
+  font-family: 'Public Sans', sans-serif;
+ flex-wrap: nowrap;
+  width: 100%;
+}
 
-    .search-input-wrapper {
-        flex: 1;
-    }
+.search-input-group {
+  flex: 1 1 83%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 48px;
+  background-color: var(--color-background);
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  gap: 10px;
+  transition: border-color 0.2s ease;
+}
 
-    .search-input input {
-        padding-left: 36px !important;
-        /* space for icon */
-    }
+.search-input-group:focus-within {
+  border-color: var(--color-accent);
+}
 
-    .search-button {
-        min-width: 160px;
-        height: 56px;
-        color: var(--color-text-white);
-        border-radius: 5px;
-        background-color: var(--color-accent);
-        text-transform: capitalize;
-        font-weight: 600;
-    }
-</style>
+.search-input {
+  flex: 1;
+  height: 100%;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  background-color: transparent;
+}
+
+.left-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-button {
+  flex: 1 1 17%;
+  height: 48px;
+  background-color: var(--color-accent);
+  color: var(--color-text-white);
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: capitalize;
+  cursor: pointer;
+}
+
+/* Responsive */
+@@media (max-width: 770px) {
+  .search-section {
+    padding: 10px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-input-group,
+  .search-button {
+    width: 100%;
+    flex: none;
+  }
+}
+
+
+    </style>
