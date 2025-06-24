@@ -1,30 +1,32 @@
-﻿using Dapr.Client;
+﻿using Azure.Core.Serialization;
+using Dapr.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using QLN.Backend.API.ServiceConfiguration;
+using QLN.Common.Infrastructure.CustomEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
-using Microsoft.AspNetCore.Authorization;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
 using QLN.Common.Infrastructure.DbContext;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Common.Infrastructure.TokenProvider;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
-using QLN.Common.Infrastructure.CustomEndpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
-
-using Azure.Core.Serialization;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
 
 using QLN.Common.Infrastructure.CustomEndpoints.Wishlist;
@@ -129,6 +131,8 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
 })
 .AddEntityFrameworkStores<QatarlivingDevContext>()
 .AddDefaultTokenProviders();
+
+WebApplicationBuilder builder1 = builder;
 #endregion
 
 #region Authentication - New JWT Bearer configuration
@@ -147,14 +151,16 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
-        RoleClaimType = ClaimTypes.Role, 
+        RoleClaimType = ClaimTypes.Role,
+        NameClaimType = ClaimTypes.Name
     };
 
     options.MapInboundClaims = false;
 });
+
 #endregion
 
 builder.Services.AddAuthorization();
@@ -167,6 +173,8 @@ builder.Services.AddSingleton<DaprClient>(_ =>
     return new DaprClientBuilder()
         .Build();
 });
+
+builder.Services.AddDaprClient();
 #endregion
 builder.Services.AddActors(options =>
 {
@@ -183,7 +191,8 @@ builder.Services.AddResponseCompression(options =>
         options.EnableForHttps = true;
         options.MimeTypes = new[] { "text/css", "application/javascript", "text/html", "application/json" };
     });
-builder.Services.AddDaprClient();
+
+
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
 builder.Services.SearchServicesConfiguration(builder.Configuration);
@@ -217,6 +226,8 @@ if (builder.Configuration.GetValue<bool>("EnableSwagger"))
         options.DocumentTitle = "Qatar Management API";
     });
 }
+app.UseHttpsRedirection();
+app.UseAuthorization();
 
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
@@ -256,6 +267,35 @@ newsGroup.MapNewsEndpoints()
      .RequireAuthorization();
 app.MapAllBackOfficeEndpoints();
 app.MapLandingPageEndpoints();
-app.UseHttpsRedirection();
-app.UseAuthorization();
+
+app.MapGet("/testauth", (HttpContext context) =>
+{
+    var user = context.User;
+    if (user == null || !user.Identity.IsAuthenticated)
+    {
+        return Results.Unauthorized();
+    }
+    var claims = user.Claims.Select(c => new { c.Type, c.Value }).ToList();
+    return Results.Ok(new { Message = "Authenticated", Claims = claims });
+    })
+    .WithName("TestAuth")
+    .WithTags("AAAAuthentication")
+    .WithDescription("Test authentication endpoint to verify JWT token claims.")
+    .RequireAuthorization();
+
+app.MapPost("/testauth", (HttpContext context) =>
+{
+    var user = context.User;
+    if (user == null || !user.Identity.IsAuthenticated)
+    {
+        return Results.Unauthorized();
+    }
+    var claims = user.Claims.Select(c => new { c.Type, c.Value }).ToList();
+    return Results.Ok(new { Message = "Authenticated", Claims = claims });
+})
+    .WithName("TestPostAuth")
+    .WithTags("AAAAuthentication")
+    .WithDescription("Test authentication endpoint to verify JWT token claims.")
+    .RequireAuthorization();
+
 app.Run();

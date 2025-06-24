@@ -1,0 +1,22 @@
+@using MudBlazor
+
+<div class="store-skeleton-card">
+    <!-- Circle Skeleton for Logo -->
+    <MudSkeleton Width="100px" Height="100px" SkeletonType="SkeletonType.Circle" />
+
+    <!-- Store name line -->
+    <MudSkeleton Width="70%" Height="18px" Style="margin-top: 8px;" />
+
+    <!-- Item count line -->
+    <MudSkeleton Width="50%" Height="14px" Style="margin-top: 6px;" />
+</div>
+
+<style>
+    .store-skeleton-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+}
+
+</style>

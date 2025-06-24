@@ -1,0 +1,252 @@
+@typeparam TItem
+@inherits CustomSelectCategoryBase<TItem>
+
+<div class="custom-select-wrapper-category @(IsDisabled ? "disabled" : "")" 
+     @onfocusout="HandleFocusOut" tabindex="0" @onkeydown="HandleKeyDown">
+    
+    <div class="select-display-category @(IsOpen ? "focused" : "")" 
+         @onclick="() => { if (!IsDisabled) ToggleDropdown(); }"
+         style="@($"border-radius:{BorderRadius}; border-color:{(IsOpen ? FocusBorderColor : "#D0D5DD")}; padding:{Padding};")">
+
+        <div class="select-label-column">
+            @if (!string.IsNullOrEmpty(Label))
+            {
+                <label class="select-label-custom">@Label</label>
+            }
+
+            @if (Items != null && Items.FirstOrDefault(x => GetId(x) == SelectedId) is TItem selected)
+            {
+                <span class="select-value-selected">@GetLabel(selected)</span>
+            }
+            else
+            {
+                <span class="select-value-placeholder">@Placeholder</span>
+            }
+        </div>
+
+        <MudIcon Icon="@(IsOpen ? Icons.Material.Filled.KeyboardArrowUp : Icons.Material.Filled.KeyboardArrowDown)" 
+                 Class="arrow-icon" />
+    </div>
+
+    @if (IsOpen && !IsDisabled && !IsMobile)
+    {
+        <div class="select-dropdown animate-dropdown">
+            @if (!string.IsNullOrEmpty(Placeholder))
+            {
+                <div class="dropdown-item disabled">@Placeholder</div>
+            }
+
+            @foreach (var item in Items)
+            {
+                <div class="dropdown-item-custom" @onclick="() => SelectItem(item)" title="@GetLabel(item)">
+                    <span class="dropdown-text">@GetLabel(item)</span>
+                    @if (SelectedId == GetId(item))
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Check" Class="check-icon" />
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@if (IsMobile && IsOpen)
+{
+    <div class="mobile-sheet-overlay" @onclick="CloseBottomSheet"></div>
+
+    <div class="footer-sheet-container" @onclick:stopPropagation>
+        <div class="footer-sheet-header">
+            <h3>Category</h3>
+        </div>
+    <div class="footer-sheet-content">
+        <MudRadioGroup T="string" @bind-Value="_tempSelectedId" Name="category" Row="false" Class="footer-radio-group">
+            @foreach (var item in Items)
+            {
+                <MudRadio T="string" Value="@GetId(item)"  Color="Color.Primary" Class="footer-radio-item">
+                    @GetLabel(item)
+                </MudRadio>
+            }
+        </MudRadioGroup>
+    </div>
+
+
+
+        <div class="footer-sheet-actions">
+            <button class="footer-cancel-btn" @onclick="CloseBottomSheet">Cancel</button>
+            <button class="footer-apply-btn" @onclick="ApplySelection">Apply</button>
+        </div>
+    </div>
+}
+
+
+<style>
+    .custom-select-wrapper-category {
+        position: relative;
+        width: 100%;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .custom-select-wrapper-category.disabled {
+        pointer-events: none;
+        opacity: 0.6;
+    }
+
+    .select-display-category {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        background: white;
+        border: 1px solid #ccc;
+        cursor: pointer;
+    }
+
+    .select-display-category.focused {
+        border-color: #FF7F38;
+    }
+
+    .select-label-column {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .select-label-custom {
+        font-size: 12px;
+        font-weight: 500;
+        color: #646464;
+        margin-bottom: 2px;
+    }
+
+    .select-value-placeholder {
+        color: var(--color-background-grey);
+    }
+
+    .select-value-selected {
+        color: #242424;
+    }
+
+    .arrow-icon {
+        color: #475467;
+        margin-left: 8px;
+    }
+
+    .select-dropdown {
+        position: absolute;
+        width: 100%;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        margin-top: 4px;
+        z-index: 1000;
+        padding: 10px 5px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .dropdown-item-custom {
+        padding: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .dropdown-item-custom:hover {
+        border-radius: 10px;
+        background-color: #FAFAFA;
+    }
+
+    .check-icon {
+        color: #242424;
+    }
+
+   .footer-sheet-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 80%;
+    background: #fff;
+    border-top: 1px solid #E0E0E0;
+    border-radius: 6px 6px 0 0 ;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1001;
+    padding: 16px;
+    animation: slideUp 0.3s ease-out;
+    font-family: 'Public Sans', sans-serif;
+}
+
+.footer-sheet-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-text-heading);
+    padding-bottom: 12px;
+    border-bottom: 1px solid #F1F1F1;
+}
+
+.footer-sheet-content {
+     width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.footer-radio-group.mud-input-control.mud-input-control-boolean-input .mud-radio-group {
+    display: inherit;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+
+.footer-radio-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    padding: 8px 0;
+    color: #242424;
+    border-bottom: 1px solid #F5F5F5;
+}
+
+.footer-sheet-actions {
+    display: flex;
+    gap: 10px;
+    border-top: 1px solid #F1F1F1;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    padding: 15px 0;
+}
+
+.footer-cancel-btn,
+.footer-apply-btn {
+    flex: 1;
+    padding: 10px;
+    font-size: 14px;
+    border-radius: 8px;
+    font-weight: 600;
+    border: none;
+}
+
+.footer-cancel-btn {
+    background: var(--color-background);
+    border: 1px solid var(--color-secondary-grey-container);
+    color: var(--color-text-heading);
+}
+
+.footer-apply-btn {
+    background: var(--color-accent);
+    color: var(--color-background);
+}
+
+
+    @@keyframes slideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+</style>

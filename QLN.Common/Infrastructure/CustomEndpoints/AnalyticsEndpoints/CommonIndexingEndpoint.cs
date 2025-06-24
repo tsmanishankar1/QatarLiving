@@ -11,6 +11,7 @@ using QLN.Common.DTOs;
 using QLN.Common.DTO_s;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.AspNetCore.Builder;
+using QLN.Common.Infrastructure.Constants;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints;
 
@@ -201,7 +202,75 @@ namespace QLN.Common.Infrastructure.CustomEndpoints;
            .WithSummary("Delete a document by vertical and id")
            .WithDescription("Deletes the document from the specified vertical/index");
 
-            return group;
+            group.MapGet("/details/{id}", async (
+                [FromRoute] string vertical,
+                [FromRoute] string id,
+                [FromQuery] int similarPageSize,
+                [FromServices] ISearchService svc,
+                [FromServices] ILoggerFactory logFac
+            ) =>
+                {
+                    var logger = logFac.CreateLogger("CommonIndexing");
+                    try
+                    {
+                        object result = vertical.ToLowerInvariant() switch
+                        {
+                            ConstantValues.Verticals.Classifieds => await svc.GetByIdWithSimilarAsync<ClassifiedsIndex>(vertical, id, similarPageSize),
+                            ConstantValues.Verticals.Services => await svc.GetByIdWithSimilarAsync<ServicesIndex>(vertical, id, similarPageSize),
+                            _ => throw new NotSupportedException($"Details not supported for '{vertical}'")
+                        };
+                        return Results.Ok(result);
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                        return Results.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"No '{id}' in '{vertical}'",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        logger.LogWarning(ex, "Bad request {Vertical}/{Id}", vertical, id);
+                        return Results.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Argument",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    catch (NotSupportedException ex)
+                    {
+                        logger.LogWarning(ex, ex.Message);
+                        return Results.BadRequest(new ProblemDetails
+                        {
+                            Title = "Not Supported",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    catch (RequestFailedException ex)
+                    {
+                        logger.LogError(ex, "Azure Search failure on details for {Vertical}/{Id}", vertical, id);
+                        return Results.Problem(
+                            title: "Search Error",
+                            detail: ex.Message,
+                            statusCode: StatusCodes.Status502BadGateway
+                        );
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Unexpected error on details for {Vertical}/{Id}", vertical, id);
+                        return Results.Problem("Lookup Error", ex.Message, StatusCodes.Status500InternalServerError);
+                    }
+                })
+        .WithName("CommonGetDetailsWithSimilar")
+        .WithTags("Indexing")
+        .WithSummary("Get an item plus similar items in the same L2/L1 category")
+        .WithDescription("Uses ISearchService.GetByIdWithSimilarAsync<T> to return the requested document and up to `similarPageSize` others sharing its category.");
+
+        return group;
         }
 
     }

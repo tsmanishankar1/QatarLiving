@@ -21,6 +21,7 @@ namespace QLN.Common.DTO_s
 
         [MaxLength(2000)]
         public string description { get; set; }
+
         public List<string> WriterTag { get; set; }
         public Guid CategoryId { get; set; }
         public string CategoryName { get; set; }
@@ -65,7 +66,7 @@ namespace QLN.Common.DTO_s
         public string Content { get; set; }
 
         [Required]
-        public List<string> WriterTag { get; set; }
+        public string WriterTag { get; set; }
 
         public string? CoverImageUrl { get; set; }
 

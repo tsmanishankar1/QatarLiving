@@ -1,5 +1,5 @@
 ﻿using QLN.Common.DTO_s;
-using QLN.Common.Infrastructure.Service;
+using QLN.Common.Infrastructure.Service.TimeSpanConverter;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
@@ -8,14 +8,15 @@ namespace QLN.Common.Infrastructure.DTO_s
     public class CompanyProfileDto : BaseCompanyDto
     {
         [Required]
-        public VerticalType VerticalId { get; set; }
-        public CompanyCategory? CategoryId { get; set; }
-        public Guid UserId { get; set; }
+        public VerticalType Vertical { get; set; }
+        public SubVertical? SubVertical { get; set; }
+        public Guid? UserId { get; set; }
         [Required]
         public string Country { get; set; } = string.Empty;
         [Required]
         public string City { get; set; } = string.Empty;
         public List<string>? BranchLocations { get; set; }
+        public string? WhatsAppCountryCode { get; set; }
         public string? WhatsAppNumber { get; set; }
         [Required, EmailAddress]
         public string? Email { get; set; }
@@ -40,28 +41,28 @@ namespace QLN.Common.Infrastructure.DTO_s
     }
     public class CompanyProfileCompletionStatusDto
     {
-        public Guid CompanyId { get; set; }
+        public Guid? CompanyId { get; set; }
         public string BusinessName { get; set; } = string.Empty;
         public int CompletionPercentage { get; set; }
         public List<string> PendingFields { get; set; } = new();
     }
     public class CompanyProfileVerificationStatusDto
     {
-        public Guid CompanyId { get; set; }
+        public Guid? CompanyId { get; set; }
         public string BusinessName { get; set; } = string.Empty;
-        public VerticalType VerticalId { get; set; }
+        public VerticalType Vertical { get; set; }
         public bool? IsVerified { get; set; }
         public CompanyStatus? Status { get; set; } 
     }
     public class CompanyApproveDto
     {
-        public Guid CompanyId { get; set; }
+        public Guid? CompanyId { get; set; }
         public bool? IsVerified { get; set; }
         public CompanyStatus? Status { get; set; }
     }
     public class CompanyApprovalResponseDto
     {
-        public Guid CompanyId { get; set; }
+        public Guid? CompanyId { get; set; }
         public string Name { get; set; } = string.Empty;
         public bool? IsVerified { get; set; }
         public CompanyStatus? StatusId { get; set; }

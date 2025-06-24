@@ -70,6 +70,16 @@ namespace QLN.Common.Infrastructure.Constants
         {
             public const string LandingBackOfficeStore = "landingbackofficestore";
             public const string LandingBackOfficeKey = "landing-backoffice-keys";
+            public const string UnifiedStore = "adstore";
+            public const string UnifiedIndexKey = "ad-index";
+            public const string ItemsIndexKey = "items-ad-index";
+            public const string PrelovedIndexKey = "preloved-index";
+            public const string CollectiblesIndexKey = "collectibles-index";
+            public const string DealsIndexKey = "deals-index";
+            public const string ItemsCategoryIndexKey = "items-category-index";
+            public const string PrelovedCategoryIndexKey = "preloved-category-index";
+            public const string CollectiblesCategoryIndexKey = "collectibles-category-index";
+            public const string DealsCategoryIndexKey = "deals-category-index";
         }
         public static class PubSubTopics
         {
@@ -78,7 +88,7 @@ namespace QLN.Common.Infrastructure.Constants
         public static class Verticals
         {
             public const string Classifieds = "classifieds";
-            public const string Services = "Services";
+            public const string Services = "services";
         }
         public static class V2ContentEvents
         {
