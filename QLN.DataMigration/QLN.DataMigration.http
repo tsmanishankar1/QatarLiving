@@ -4,18 +4,25 @@
 GET {{QLN.DataMigration_HostAddress}}/migrate_categories?environment=dev
 Accept: application/json
 
-### Migrate Categrories
+###
+GET {{QLN.DataMigration_HostAddress}}/migrate_items?environment=dev&category_id=7216&sort_field=price&sort_order=desc&keywords=wardrobes&page_size=30&page=1
+Accept: application/json
+
+### Migrate Categories
 POST http://ql-migrate.westeurope.cloudapp.azure.com/qlnext-v2/items-categories.php
 Content-Type: application/x-www-form-urlencoded
 
 env=dev
 
 ### Migrate Ads
-GET http://ql-migrate.westeurope.cloudapp.azure.com/qlnext-v2/items.php?env=prod&category_id=7216&&sort_field=price&sort_order=desc&keywords=wardrobes&page_size=30&page=1
-
-### Migrate Ads
 POST http://ql-migrate.westeurope.cloudapp.azure.com/qlnext-v2/items.php
 Content-Type: application/x-www-form-urlencoded
 
-env=prod&category_id=7216&&sort_field=price&sort_order=desc&keywords=wardrobes&page_size=30&page=1
+env=dev
+&category_id=7216
+&sort_field=price
+&sort_order=desc
+&keywords=wardrobes
+&page_size=30
+&page=1
 
