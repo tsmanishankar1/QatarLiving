@@ -4,7 +4,6 @@ using Microsoft.JSInterop;
 using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
-using System.Runtime.InteropServices;
 
 namespace QLN.ContentBO.WebUI.Components.News
 {

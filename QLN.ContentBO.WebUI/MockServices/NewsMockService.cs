@@ -1,13 +1,20 @@
 ﻿using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
+using QLN.ContentBO.WebUI.Services.Base;
 using System.Net;
 using System.Text;
 using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.MockServices
 {
-    public class NewsMockService : INewsService
+    public class NewsMockService : ServiceBase<NewsMockService>, INewsService
     {
+        public NewsMockService(HttpClient httpClientDI, ILogger<NewsMockService> Logger)
+           : base(httpClientDI, Logger)
+        {
+
+        }
+
         private List<NewsArticleDTO> newsArticles =
         [
         new()
@@ -15,7 +22,7 @@ namespace QLN.ContentBO.WebUI.MockServices
             Id = Guid.NewGuid(),
             Title = "Qatar Hosts Global Climate Summit",
             Content = "<p>Qatar welcomed leaders from around the world to discuss urgent climate goals...</p>",
-            WriterTag = new() { "Amal.Hassan", "Dr.Green" },
+            WriterTag = "Amal.Hassan",
             CoverImageUrl = "https://cdn.example.com/images/climate-summit.jpg",
             InlineImageUrls = new()
             {
@@ -39,7 +46,7 @@ namespace QLN.ContentBO.WebUI.MockServices
             Id = Guid.NewGuid(),
             Title = "Startup Investment Rises in Asia",
             Content = "<p>Asian startups raised record-breaking funding this quarter...</p>",
-            WriterTag = new() { "Ravi.Patel" },
+            WriterTag = "Ravi.Patel",
             CoverImageUrl = "https://cdn.example.com/images/startup.jpg",
             InlineImageUrls = new()
             {
@@ -61,7 +68,7 @@ namespace QLN.ContentBO.WebUI.MockServices
             Id = Guid.NewGuid(),
             Title = "Football World Cup 2030: Host Countries Announced",
             Content = "<p>FIFA has officially confirmed the hosts for the 2030 World Cup...</p>",
-            WriterTag = new() { "Sports.Desk" },
+            WriterTag = "Sports.Desk",
             CoverImageUrl = "https://cdn.example.com/images/world-cup.jpg",
             InlineImageUrls = new()
             {
@@ -83,7 +90,7 @@ namespace QLN.ContentBO.WebUI.MockServices
             Id = Guid.NewGuid(),
             Title = "AI Trends in 2025: What's Next?",
             Content = "<p>Experts predict major breakthroughs in generative AI and robotics...</p>",
-            WriterTag = new() { "Tech.Journal", "AI.Thinker" },
+            WriterTag = "Tech.Journal",
             CoverImageUrl = "https://cdn.example.com/images/ai-future.jpg",
             InlineImageUrls = new()
             {
@@ -107,7 +114,7 @@ namespace QLN.ContentBO.WebUI.MockServices
             Id = Guid.NewGuid(),
             Title = "Wellness Retreats Booming in 2025",
             Content = "<p>The wellness tourism industry is experiencing a significant rise post-pandemic...</p>",
-            WriterTag = new() { "Maya.Wellness" },
+            WriterTag = "Maya.Wellness",
             CoverImageUrl = "https://cdn.example.com/images/spa.jpg",
             InlineImageUrls = new()
             {
