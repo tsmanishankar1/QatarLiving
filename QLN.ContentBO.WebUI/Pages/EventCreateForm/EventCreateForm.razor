@@ -1,0 +1,144 @@
+@page "/content/events/create"
+@inherits EventCreateFormBase;
+<MudGrid Style="padding-top: 0">
+    <!-- Left Form Section -->
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4" Elevation="0" Style="background-color: #FAFAFA; gap: 16px">
+            <MudText Class="form-title">Event Form</MudText>
+            <MudSelect Variant="Variant.Outlined" T="string" Label="Category" Placeholder="Choose" @bind-Value="@Category" Class="my-2 custom-textfield">
+            @foreach (var category in Categories)
+            {
+                <MudSelectItem Value="@category">@category</MudSelectItem>
+            }
+            </MudSelect>
+            <MudTextField Variant="Variant.Outlined" Label="Event Title" Placeholder="Event Title" Class="my-2 custom-textfield" @bind-Value="@EventTitle"/>
+            <MudRadioGroup T="string" @bind-SelectedOption="@AccessType" Class="my-2">
+            <MudRadio T="string" Option="Free Access">Free Access</MudRadio>
+            <MudRadio T="string" Option="Open Registrations">Open Registrations</MudRadio>
+            <MudRadio T="string" Option="Fees">Fees</MudRadio>
+            </MudRadioGroup>
+            <MudTextField  Variant="Variant.Outlined" Label="Price" Placeholder="Price" Class="my-2 price-field-style" @bind-Value="@Price" Adornment="Adornment.End" AdornmentText="QAR" Disabled="true"/>
+            <MudTextField  Variant="Variant.Outlined" Label="Redirection Link" Placeholder="Redirection Link" Class="my-2 custom-textfield" @bind-Value="@RedirectionLink"/>
+            <MudTextField  Variant="Variant.Outlined" Label="Location" Placeholder="Location" Class="my-2 custom-textfield location-textfield" @bind-Value="@Location"
+            Adornment="Adornment.End"
+            AdornmentIcon="@Icons.Material.Filled.LocationOn"/>
+            <MudTextField  Variant="Variant.Outlined" Label="Venu" Placeholder="Venu" Class="my-2" @bind-Value="@Venue" />
+            <iframe
+            frameborder="0"
+            scrolling="no"
+            marginheight="0"
+            marginwidth="0"
+            class="map-frame"
+            style="width: 100%; height: 220px;"
+            src="https://www.openstreetmap.org/export/embed.html?bbox=@EventLong,@EventLat,@EventLong,@EventLat&layer=mapnik&marker=@EventLat,@EventLong">
+            </iframe>
+            <MudDatePicker  Variant="Variant.Outlined" Label="Date" Placeholder="Date" Class="my-2" @bind-Date="@EventDate" />
+            <MudRadioGroup T="string" @bind-SelectedOption="@AccessType" Class="my-2">
+            <MudRadio T="string" Option="Free Access">Generic</MudRadio>
+            <MudRadio T="string" Option="Open Registrations">Specific Time</MudRadio>
+            </MudRadioGroup>
+            <MudTimePicker Variant="Variant.Outlined" Label="Time" Class="my-2" @bind-Time="@EventTime" />
+            <MudExRichTextEdit @ref="@Editor"
+                                   Height="444"
+                                   Class="m-2"
+                                   Placeholder="Start Typing">
+            </MudExRichTextEdit>
+            <MudStack Row Class="mt-4" Justify="Justify.SpaceBetween">
+                <MudButton FullWidth=true Variant="Variant.Outlined" Class="custom-close">Cancel</MudButton>
+                <MudButton FullWidth=true Variant="Variant.Filled"   Class="custom-add" OnClick="@OpenDialogAsync">Save</MudButton>
+            </MudStack>
+
+        </MudPaper>
+    </MudItem>
+
+    <!-- Right Cover Image Section -->
+    <MudItem xs="12" md="6">
+    <MudPaper Class="pa-4" Elevation="0" Style="background-color: #FAFAFA;">
+        <MudText Class="mb-2 form-title">Cover Image</MudText>
+        <MudPaper Outlined Class="d-flex align-center justify-center" Style="background-color: #FFFFFF; height: 174px; display: flex; 
+        flex-direction: column;">
+            <div class="d-flex flex-column align-center justify-center text-center" style="width: 100%; height: 170px;">
+                 @if (uploadedImage is null)
+                {
+                        <MudFileUpload T="IBrowserFile"
+                        Accept=".png,.jpg"
+                        FilesChanged="@(async f => await UploadFiles(f))"
+                        MaximumFileCount="1">
+                        <ActivatorContent>
+                        <div class="d-flex flex-column align-center">
+                        <img src="/qln-images/upload_icon.svg"
+                        alt="Upload"
+                        style="width: 24px; height: 24px;" />
+                        <div class="mt-1" style="color: #FF7F38;">Cover Image</div>
+                        </div>
+                        </ActivatorContent>
+                        </MudFileUpload>
+                }
+                else
+                {
+                    <div style="width: 201px; height: 113px; overflow: hidden; border-radius: 8px; background-color: gray;">
+                    <img src="@uploadedImage"
+                    alt="Cover"
+                    style="width: 100%; object-fit: cover;" />
+                    </div>
+                }
+            </div>
+            <MudPaper Elevation="0" Class="image-picker-style">
+            <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
+                <MudButton 
+                OnClick="@EditImage">
+                <img src="/qln-images/edit_icon.svg" alt="Edit" style="width: 20px; height: 20px;" />
+                </MudButton>
+                <MudButton 
+                OnClick="@EditImage">
+                <img src="/qln-images/delete_icon.svg" alt="delete" style="width: 20px; height: 20px;" />
+                </MudButton>
+            </div>
+        </MudPaper>
+        </MudPaper>
+    </MudPaper>
+</MudItem>
+</MudGrid>
+
+
+
+<style>
+    .form-title{
+        font-family: 'Public Sans', sans-serif;
+        font-size: 18px;
+        font-weight: 600;
+        color: #00426D;
+        text-transform: none;
+    }
+    .custom-add {
+        background-color: #FF7F38;
+        font-family: 'Public Sans', sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        color: white;
+        text-transform: none;
+    }
+    .custom-close {
+        border-color: #D5D7DA;
+        color: #242424;
+        text-transform: none;
+    }
+    .image-picker-style {
+        background-color: #000000CC; 
+        width: 100%; 
+        height: 39px; 
+    }
+    .custom-textfield{
+        background-color: #FFFFFF;
+        border-radius: 6px; 
+    }
+    .price-field-style{
+        background-color: #F2F4F7;
+        border-radius: 6px;
+    }
+    
+    .location-textfield .mud-input-adornment .mud-icon-root.mud-svg-icon {
+        fill: #FF7F38 !important;
+    }
+</style>
+
