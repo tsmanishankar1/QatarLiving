@@ -1,12 +1,13 @@
 @inherits CollectiblesSearchSectionBase
-@inject SearchStateService SearchState
 @using MudBlazor
 @using QLN.Web.Shared.Components.ViewToggleButtons
 @using QLN.Web.Shared.Components.NewCustomSelect
+@using QLN.Web.Shared.Components.SaveSearchPopup
 @using QLN.Web.Shared.Components.CustomSelectCategory
 @using QLN.Web.Shared.Components.PriceRangeSelect
 @using QLN.Web.Shared.Pages.Classifieds.Items.Components
 @using QLN.Web.Shared.Helpers
+@using QLN.Common.DTO_s;
 
 <div class="search-container">
     <div class="search-row">
@@ -22,9 +23,9 @@
                     </div>
                 }
 
-                <input id="itemSearch" type="text" class="search-input" placeholder="Search..." @bind="_searchText" @bind:event="oninput" />
+                <input id="itemSearch" type="text" class="search-input" placeholder="Search..." @bind="SearchState.CollectiblesSearchText" @bind:event="oninput" />
 
-                @if (!string.IsNullOrWhiteSpace(_searchText))
+                @if (!string.IsNullOrWhiteSpace(SearchState.CollectiblesSearchText))
                 {
                     <div class="search-actions">
                         <MudIconButton OnClick="PerformSearch" Class="search-action-btn search-btn">
@@ -47,12 +48,12 @@
         {
             <!-- Category -->
             <div class="short-select">
-                <CustomSelectCategory TItem="CategoryItem"
-                    Items="@_categories"
-                    SelectedId="@_category"
-                    SelectedIdChanged="value => OnFilterChanged(nameof(_category), value)"
-                    GetId="x => x.Id"
-                    GetLabel="x => x.Label"
+                <CustomSelectCategory TItem="CategoryTreeDto"
+                    Items="@CategoryTrees"
+                    SelectedId="@SearchState.CollectiblesCategory"
+                    SelectedIdChanged="v => OnFilterChanged(nameof(SearchState.CollectiblesCategory), v)"
+                    GetId="x => x.Name"
+                    GetLabel="x => x.Name"
                     Placeholder="Category"
                     BorderRadius="4px"
                     Padding="13px 10px" />
@@ -65,47 +66,60 @@
             <!-- SECOND ROW: Brand + Price + More + Save Search -->
             <div class="second-row">
                 <!-- Brand -->
-                <div class="short-select">
+                <div class="brand-select">
                     <NewCustomSelect TItem="BrandItem"
                         Items="@_brands"
-                        SelectedId="@_brand"
-                        SelectedIdChanged="value => OnFilterChanged(nameof(_brand), value)"
+                         SelectedId="@SearchState.CollectiblesBrand"
+                         SelectedIdChanged="v => OnFilterChanged(nameof(SearchState.CollectiblesBrand), v)"
                         GetId="x => x.Id"
                         GetLabel="x => x.Label"
                         Placeholder="Brand"
                         Padding="13px 10px"
                         BorderRadius="4px"
-                        IsDisabled="@string.IsNullOrWhiteSpace(_category)" />
+                        IsDisabled="@string.IsNullOrWhiteSpace(SearchState.CollectiblesCategory)" />
                 </div>
 
                 <!-- Price -->
                 <div class="price-short-select">
-                    <PriceRangeSelect SelectedMin="@SelectedMin" SelectedMax="@SelectedMax"
-                        SelectedMinChanged="@((value) => SelectedMin = value)"
-                        SelectedMaxChanged="@((value) => SelectedMax = value)"
-                        OnApplyClicked="@ApplyPriceFilter"
-                        OnResetClicked="@ResetPriceFilter"
-                        IsDisabled="@string.IsNullOrWhiteSpace(_category)" />
+                   <PriceRangeSelect SelectedMin="SearchState.CollectiblesMinPrice"
+                        SelectedMax="SearchState.CollectiblesMaxPrice"
+                        SelectedMinChanged="v => SearchState.CollectiblesMinPrice = v"
+                        SelectedMaxChanged="v => SearchState.CollectiblesMaxPrice = v"
+                        OnApplyClicked="PerformSearch"
+                        IsDisabled="@string.IsNullOrWhiteSpace(SearchState.CollectiblesCategory)"
+                        OnResetClicked="() => { SearchState.CollectiblesMinPrice = null; SearchState.CollectiblesMaxPrice = null; PerformSearch(); }" />
                 </div>
 
                 <!-- More -->
-                <div class="short-select">
-                    <MoreFiltersList />
+                <div class="price-short-select">
+                        <MoreFiltersList  />
                 </div>
 
                 <!-- Save Search -->
                 <div class="save-search">
-                    <button class="save-search-btn">Save Search</button>
+                    <button class="save-search-btn" @onclick="() => ShowSaveSearchPopup = true">Save Search</button>
                 </div>
             </div>
         }
 
         <!-- View Toggle Buttons (Hidden on Mobile) -->
         <div class="right-actions">
-            <ViewToggleButtons Items="@_viewOptions" Height="48px" SelectedValue="@_selectedView" OnSelected="SetViewMode" />
+            <ViewToggleButtons Items="@_viewOptions" Height="48px" SelectedValue="@SearchState.CollectiblesViewMode" OnSelected="SetViewMode" />
         </div>
 
     </div>
+    @if (ShowSaveSearchPopup)
+{
+    <SaveSearchPopup 
+        ShowTextField="true"
+        Title="Save this Search"
+        Description="Give a name to your search and access it anytime"
+        PrimaryButtonText="Save Search"
+        SecondaryButtonText="Cancel"
+        OnPrimaryClick="HandleSaveSearch"
+        OnSecondaryClick="CloseSaveSearchPopup" />
+}
+
 </div>
 
 <style>
@@ -214,10 +228,14 @@
         .save-search {
             width: 100%;
         }
+        .brand-select{
+            width: 100%;
+            max-width: 180px;
+        }
         .price-short-select {
              width: 100%;
-             max-width: 100px;
-        }
+             max-width: 110px;
+         }
 
         .save-search {
         display: flex;

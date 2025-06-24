@@ -14,9 +14,9 @@ namespace QLN.Web.Shared.Pages.Classifieds.Collectibles
         [Parameter] public string Id { get; set; }
 
         protected string viewAllUrl => $"/classifieds";
-        protected bool IsLoading { get; set; } = true;
-
-        protected ClassifiedsIndex CollectiblesDetails { get; set; } = new();
+        protected bool IsLoading { get; set; } = true;  
+        protected ClassifiedsIndex? CollectiblesDetails { get; set; } = null;
+        protected List<ClassifiedsIndex> CollectiblesDetailsSimler { get; set; } = new();
         protected List<string> carouselImages = new()
         {
             "/images/banner_image.svg",
@@ -25,33 +25,39 @@ namespace QLN.Web.Shared.Pages.Classifieds.Collectibles
         };
 
 
+
         protected override async Task OnInitializedAsync()
         {
             try
             {
                 IsLoading = true;
 
-                var response = await _classifiedsService.GetClassifiedsByIdAsync(Id);
+                var response = await _classifiedsService.GetClassifiedWithSimilarAsync(Id, 4); // 4 is page size
 
                 if (response != null && response.IsSuccessStatusCode)
                 {
-                    CollectiblesDetails = await response.Content.ReadFromJsonAsync<ClassifiedsIndex>();
+                    var data = await response.Content.ReadFromJsonAsync<ClassifiedWithSimilarResponse>();
+                    if (data != null)
+                    {
+                        CollectiblesDetails = data.Detail;
+                        CollectiblesDetailsSimler = data.Similar ?? new();
+                    }
                 }
                 else
                 {
-                    Logger.LogWarning($"Failed to fetch event details for slug: {Id}. StatusCode: {response?.StatusCode}");
+                    Logger.LogWarning($"Failed to fetch classified details with similar items for Id: {Id}. StatusCode: {response?.StatusCode}");
                 }
-
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, $"Exception in GetEventBySlugAsync for slug: {Id}");
+                Logger.LogError(ex, $"Exception in GetClassifiedWithSimilarAsync for Id: {Id}");
             }
             finally
             {
                 IsLoading = false;
             }
         }
+
 
     }
 }

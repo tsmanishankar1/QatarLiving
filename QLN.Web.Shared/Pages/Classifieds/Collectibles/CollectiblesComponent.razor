@@ -8,15 +8,14 @@
 <div style="width: 100%; background-color: var(--color-secondary-background);">
     <div class="search-section-container">
     <div class="max-container">
-        <CollectiblesSearchSection 
-            OnViewModeChanged="HandleViewModeChange" />
+        <CollectiblesSearchSection OnSearch="OnSearchTriggered"   OnViewModeChanged="HandleViewModeChange" />
     </div>
  </div>
   <div class="max-container">
         <div class="category-banner-wrapper">
             <img src="/qln-images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
         </div>
-        <CollectiblesListSection  ViewMode="@currentViewMode" Items="SearchResults" Loading="IsLoading" />
+        <CollectiblesListSection  ViewMode="@SearchState.CollectiblesViewMode" Items="SearchResults" Loading="IsLoadingSearch" IsSearchPerformed="@SearchState.IsCollectiblesSearchActive" OnSearch="OnSearchTriggered" />
  </div>
 </div>
 

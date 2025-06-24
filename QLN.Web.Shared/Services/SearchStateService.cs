@@ -27,4 +27,22 @@ public class SearchStateService
     ItemMinPrice.HasValue ||
     ItemMaxPrice.HasValue;
 
+
+
+    public string CollectiblesSearchText { get; set; }
+    public string CollectiblesCategory { get; set; }
+    public string CollectiblesBrand { get; set; }
+    public long? CollectiblesMinPrice { get; set; }
+    public long? CollectiblesMaxPrice { get; set; }
+    public string CollectiblesViewMode { get; set; } = "grid";
+    public List<CategoryTreeDto> CollectiblesCategoryTrees { get; set; } = new();
+
+    public string? CollectiblesSortBy { get; set; }
+    public bool IsCollectiblesSearchActive =>
+    !string.IsNullOrWhiteSpace(CollectiblesSearchText) ||
+    !string.IsNullOrWhiteSpace(CollectiblesCategory) ||
+    !string.IsNullOrWhiteSpace(CollectiblesBrand) ||
+    CollectiblesMinPrice.HasValue ||
+    CollectiblesMaxPrice.HasValue;
+
 }
