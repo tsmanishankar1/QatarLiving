@@ -1,0 +1,86 @@
+@page "/dashboard"
+@inherits DailyLivingBase
+<MudGrid Style="padding-top: 18px">
+    <!-- Left Form Section -->
+    <MudItem xs="12" md="12">
+            <MudText Class="daily-style">Daily Living</MudText>
+            <MudTabs @bind-ActivePanelIndex="@activeIndex" Rounded="false" Centered="false" Class="custom-tabs" Style="background-color: #FAFAFA;" DisableSlideAnimation="true">
+                <MudTabPanel Text="Top Section" />
+                <MudTabPanel Text="Featured Events" />
+                <MudTabPanel Text="Everything Qatar" />
+                <MudTabPanel Text="Lifestyle" />
+                <MudTabPanel Text="Sports News" />
+                <MudTabPanel Text="QL Exclusive" />
+                <MudTabPanel Text="Advice & Help" />
+            </MudTabs>
+            @if (activeIndex != 0 && activeIndex != 1) {
+                <MudGrid AlignItems="Center" Class="padding-top:16px">
+                    <MudItem xs="12" md="12">
+                        <div class="button-container">
+                            <MudButton StartIcon="@Icons.Material.Outlined.Add" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button">
+                                Add Item
+                            </MudButton>
+                            <MudButton StartIcon="@Icons.Material.Outlined.Edit" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button">
+                                Rename Topic
+                            </MudButton>
+                            <MudButton StartIcon="@Icons.Material.Outlined.VisibilityOff" Style="background-color: #F04438; color: white; text-transform: none;" Class="compact-button">
+                                Unpublish
+                            </MudButton>
+                        </div>
+                    </MudItem>
+                </MudGrid>
+            }
+    </MudItem>
+</MudGrid>
+
+<style>
+    .daily-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 30px;
+        font-weight: 600;
+        color: #242424;
+        text-transform: none;
+        padding-bottom: 32px;
+    }
+    .custom-tabs {
+        background-color: #FAFAFA !important;
+        border-bottom: 1px solid #f0f0f0;
+        margin-bottom: 8px;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .custom-tabs .mud-tab {
+        font-weight: 600;
+        font-size: 14px;
+        color: #A1A1A1;
+        text-transform: none;
+        padding: 12px 20px;
+    }
+
+    .custom-tabs .mud-tab.mud-tab-active {
+        color: #FF7F38 !important; 
+        font-weight: 600;
+        border-bottom: 3px solid #FF7F38;
+    }
+
+    .custom-tabs .mud-tabs-toolbar {
+        border-bottom: none; 
+    }
+    .custom-tabs .mud-tab {
+        transition: color 0.3s ease, border-bottom 0.3s ease;
+    }
+    .button-container {
+        display: flex;
+        gap: 16px; 
+        align-items: center;
+        padding-top: 16px;
+    }
+    .compact-button {
+        min-width: unset !important;
+        width: auto !important;
+        padding: 6px 16px; 
+        white-space: nowrap; 
+        height: 44px;
+    }
+    
+</style>

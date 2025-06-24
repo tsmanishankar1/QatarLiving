@@ -1,0 +1,35 @@
+@page "/manage/community"
+@inherits CommunityBase
+<MudGrid Style="padding-top: 18px">
+    <!-- Left Form Section -->
+    <MudItem xs="12" md="12">
+            <MudText Class="community-style">Community</MudText>
+            <MudTextField @bind-Value="@searchText"
+                Placeholder="Search for Posts"
+                Variant="Variant.Outlined"
+                Adornment="Adornment.Start"
+                AdornmentIcon="@Icons.Material.Filled.Search"
+                Class="community-content-style custom-search-field"/>
+       @* Date grid within mud paper *@
+    </MudItem>
+</MudGrid>
+
+<style>
+    .community-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 30px;
+        font-weight: 600;
+        color: #242424;
+        text-transform: none;
+        padding-bottom: 32px;
+    }
+    .community-content-style {
+        background-color: #FFFFFF;
+        border-radius: 4px; 
+        width: 400px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);  
+    }
+    .custom-search-field .mud-input-adornment {
+        color: #A1A1A1 !important;
+    }
+</style>
