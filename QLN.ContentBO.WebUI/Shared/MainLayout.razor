@@ -12,7 +12,7 @@
         <MudSpacer />
         <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
     </MudAppBar> *@
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="2" >
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="2" Variant="DrawerVariant.Persistent" Breakpoint="Breakpoint.None">
         <MudDrawerHeader Class="drawer-style">
             <MudImage id="logoImage" Src="/qln-images/ql_logo.svg" Alt="Qatar Living" Class="logo-img" />
         </MudDrawerHeader>
@@ -26,7 +26,7 @@
                 AdornmentIcon="@Icons.Material.Filled.Search"
                 Class="px-2 py-2"/>
                 <MudNavLink Href="/dashboard">
-                <img src="/qln-images/daily_icon.svg" alt="DailyLiving" style="width:24px; height:24px; margin-right:8px;" />
+                <img src="/qln-images/daily_icon.svg" alt="DailyLiving" class="nav-icon-style" />
                 <span class="nav-item">Daily Living</span>
                 </MudNavLink>
                <MudNavGroup Icon=" " Expanded="true">
@@ -41,15 +41,15 @@
                     </ChildContent>
                 </MudNavGroup>
                  <MudNavLink Href="/content/events/create" Class="nav-item">
-                <img src="/qln-images/community_icon.svg" alt="Community" style="width:24px; height:24px; margin-right:8px;" />
+                <img src="/qln-images/community_icon.svg" alt="Community" class="nav-icon-style" />
                 <span class="nav-item">Community</span>
                 </MudNavLink>
                 <MudNavLink Href="/content/events/create" Class="nav-item">
-                <img src="/qln-images/event_icon.svg" alt="Events" style="width:24px; height:24px; margin-right:8px;" />
+                <img src="/qln-images/event_icon.svg" alt="Events" class="nav-icon-style" />
                 <span class="nav-item">Events</span>
                 </MudNavLink>
                 <MudNavLink Href="/content/events/create" Class="nav-item">
-                <img src="/qln-images/report_icon.svg" alt="Report" style="width:24px; height:24px; margin-right:8px;" />
+                <img src="/qln-images/report_icon.svg" alt="Report" class="nav-icon-style" />
                 <span class="nav-item">Report</span>
                 </MudNavLink>
                 </MudNavMenu>
@@ -61,14 +61,14 @@
                             <MudText Class="user-email-style" >olivia@untitledui.com</MudText>
                         </MudItem>
                         <MudItem xs="2" Class="text-end">
-                             <img src="/qln-images/logout.svg" alt="search" style="height: 30px; width: 30px;"/>
+                             <img src="/qln-images/logout.svg" alt="search" class="logout-image-style"/>
                         </MudItem>
                     </MudGrid>
                 </MudPaper>
             </div>
         </MudPaper>
     </MudDrawer>
-    <MudMainContent Style="background-color: #FAFAFA; padding: 10px 25px 25px 25px">
+    <MudMainContent class="main-content-style">
         @Body
     </MudMainContent>
 </MudLayout>
@@ -141,6 +141,19 @@
     .drawer-style{
         padding-top: 30px;
     }
+    .nav-icon-style{
+        width:24px; 
+        height:24px; 
+        margin-right:8px;
+    }
+    .main-content-style {
+        background-color: #FAFAFA; 
+        padding: 10px 25px 25px 25px;
+    }
+    .logout-image-style {
+        height: 30px; 
+        width: 30px;
+    }
 
 
 </style>
@@ -149,10 +162,10 @@
     bool _drawerOpen = true;
     private string searchText;
 
-    void DrawerToggle()
+    @* void DrawerToggle()
     {
         _drawerOpen = !_drawerOpen;
-    }
+    } *@
 
     /// <summary>
     /// Default Theme MudBlazor color variables.
