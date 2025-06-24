@@ -1,85 +1,141 @@
 ﻿using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.Extensions.Options;
-using MudBlazor;
-using QLN.Web.Shared.Helpers;
+using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Models.QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace QLN.Web.Shared.Services
 {
-    public class CompanyProfileService : ICompanyProfileService
+    public class CompanyProfileService : ServiceBase<CompanyProfileService>, ICompanyProfileService
     {
-        private readonly HttpClient _http;
-        private readonly ISnackbar _snackbar;
-        private readonly string _baseUrl;
+        private readonly HttpClient _httpClient;
 
-        public CompanyProfileService(HttpClient http, ISnackbar snackbar, IOptions<ApiSettings> options)
+
+        public CompanyProfileService(HttpClient httpClient) : base(httpClient)
         {
-            _http = http;
-            _snackbar = snackbar;
-            _baseUrl = options.Value.BaseUrl.TrimEnd('/');
+            _httpClient = httpClient;
         }
+     
 
-        public async Task<bool> CreateCompanyProfileAsync(
-     CompanyModel model,
-     IBrowserFile logoFile,
-     IBrowserFile documentFile,
-     string authToken)
+        public async Task<CompanyProfileModel?> GetCompanyProfileAsync(string authToken)
         {
             try
             {
-                if (logoFile != null)
-                {
-                    var logoBuffer = new byte[logoFile.Size];
-                    await logoFile.OpenReadStream(10 * 1024 * 1024).ReadAsync(logoBuffer);
-                    model.LogoBase64 = $"data:{logoFile.ContentType};base64,{Convert.ToBase64String(logoBuffer)}";
-                }
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/companyprofile/getByTokenUser");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authToken);
 
-                if (documentFile != null)
-                {
-                    var docBuffer = new byte[documentFile.Size];
-                    await documentFile.OpenReadStream(10 * 1024 * 1024).ReadAsync(docBuffer);
-                    model.DocumentBase64 = $"data:{documentFile.ContentType};base64,{Convert.ToBase64String(docBuffer)}";
-                }
-
-                model.VerticalId = 3; // Make sure this is included in your model
-
-                var json = System.Text.Json.JsonSerializer.Serialize(model);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/api/companyprofile/create")
-                {
-                    Content = content
-                };
-
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
-
-                var response = await _http.SendAsync(request);
-
+                var response = await _httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode)
                 {
-                    _snackbar.Add("Business Profile created!", Severity.Success);
-                    return true;
+                    var json = await response.Content.ReadAsStringAsync();
+                    var list = JsonSerializer.Deserialize<List<CompanyProfileModel>>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    return list?.FirstOrDefault();
                 }
-                else
-                {
-                    var error = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine("Upload failed: " + error);
-                    _snackbar.Add("Failed to create business profile.", Severity.Error);
-                    return false;
-                }
+
+                return null;
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex)
             {
-                HttpErrorHelper.HandleHttpException(ex, _snackbar);
+                Console.WriteLine("GetCompanyProfileAsync Exception: " + ex.Message);
+                return null;
+            }
+        }
+
+        public async Task<CompanyProfileModel?> GetCompanyProfileByIdAsync(string id, string authToken)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/companyprofile/getById?id={id}");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authToken);
+
+                var response = await _httpClient.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    var model = JsonSerializer.Deserialize<CompanyProfileModel>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    return model;
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("GetCompanyProfileByIdAsync Exception: " + ex.Message);
+                return null;
+            }
+        }
+
+        public async Task<bool> UpdateCompanyProfileAsync(CompanyProfileModel model, string authToken)
+        {
+            var options = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = true
+            };
+            Console.WriteLine("CreateCompanyProfileAsync called with model:");
+            Console.WriteLine(JsonSerializer.Serialize(model, options));
+            try
+            {
+                var json = JsonSerializer.Serialize(model, options);
+                var request = new HttpRequestMessage(HttpMethod.Put, "api/companyprofile/update")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("UpdateCompanyProfileAsync Exception: " + ex.Message);
                 return false;
             }
         }
+
+        public async Task<bool> CreateCompanyProfileAsync(CompanyProfileModelDto model, string authToken)
+        {
+            var options = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = true,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+
+            };
+
+            Console.WriteLine("CreateCompanyProfileAsync called with model:");
+            Console.WriteLine(JsonSerializer.Serialize(model, options));
+
+            try
+            {
+                var json = JsonSerializer.Serialize(model, options);
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/companyprofile/create")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("CreateCompanyProfileAsync Exception: " + ex.Message);
+                return false;
+            }
+        }
+
 
     }
 }
