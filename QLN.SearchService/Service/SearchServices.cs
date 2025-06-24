@@ -47,7 +47,6 @@ namespace QLN.SearchService.Service
             {
                 case "classifieds":
                     {
-                        // --- apply filters with the correct generic type ---
                         if (req.Filters?.Any() == true)
                         {
                             var clauses = req.Filters
@@ -74,6 +73,10 @@ namespace QLN.SearchService.Service
                         var pageCls = await _repo.SearchAsync<ClassifiedsIndex>(vertical, opts, req.Text);
                         response.TotalCount = pageCls.TotalCount;
                         response.ClassifiedsItems = pageCls.Items.ToList();
+                        response.SubVertical = response.ClassifiedsItems
+                                                    .FirstOrDefault()?
+                                                    .SubVertical
+                                                    ?? string.Empty;
                         break;
                     }
 
