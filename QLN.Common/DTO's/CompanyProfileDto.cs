@@ -70,7 +70,7 @@ namespace QLN.Common.Infrastructure.DTO_s
         public string StatusName { get; set; } = string.Empty;
         public DateTime? UpdatedUtc { get; set; }
     }
-    public class CompanySummaryDto
+    public class ProfileStatus
     {
         public Guid? CompanyId { get; set; }
         public Guid? UserId { get; set; }

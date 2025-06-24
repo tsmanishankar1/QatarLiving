@@ -478,7 +478,7 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<List<CompanySummaryDto>> GetStatusByTokenUser(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<List<ProfileStatus>> GetStatusByTokenUser(Guid userId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -501,7 +501,7 @@ namespace QLN.Company.MS.Service
                         PropertyNameCaseInsensitive = true
                     }))
                     .Where(c => c != null && c.UserId == userId)
-                    .Select(c => new CompanySummaryDto
+                    .Select(c => new ProfileStatus
                     {
                         CompanyId = c.Id,
                         UserId = c.UserId,

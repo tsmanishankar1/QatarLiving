@@ -874,7 +874,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .WithTags("Company")
             .WithSummary("Get filtered company profiles for token user")
             .WithDescription("Returns company profiles matching vertical and subvertical for the current user.")
-            .Produces<List<CompanySummaryDto>>(StatusCodes.Status200OK)
+            .Produces<List<ProfileStatus>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
@@ -921,7 +921,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .WithSummary("Get all company profiles for given userId")
             .WithDescription("Used for internal filtering of user companies")
             .ExcludeFromDescription()
-            .Produces<List<CompanySummaryDto>>(StatusCodes.Status200OK)
+            .Produces<List<ProfileStatus>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);

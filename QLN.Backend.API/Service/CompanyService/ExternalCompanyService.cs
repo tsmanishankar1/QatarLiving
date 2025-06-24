@@ -419,13 +419,13 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<List<CompanySummaryDto>> GetStatusByTokenUser(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<List<ProfileStatus>> GetStatusByTokenUser(Guid userId, CancellationToken cancellationToken = default)
         {
             try
             {
                 var url = $"/api/companyprofile/statusByUserId?userId={userId}";
 
-                var companies = await _dapr.InvokeMethodAsync<List<CompanySummaryDto>>(
+                var companies = await _dapr.InvokeMethodAsync<List<ProfileStatus>>(
                     HttpMethod.Get,
                     ConstantValues.CompanyServiceAppId,
                     url,
