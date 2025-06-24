@@ -83,7 +83,8 @@ namespace QLN.Web.Shared.Services
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 WriteIndented = true
             };
-
+            Console.WriteLine("CreateCompanyProfileAsync called with model:");
+            Console.WriteLine(JsonSerializer.Serialize(model, options));
             try
             {
                 var json = JsonSerializer.Serialize(model, options);
