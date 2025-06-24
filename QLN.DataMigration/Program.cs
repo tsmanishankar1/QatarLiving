@@ -88,6 +88,9 @@ app.MapGet("/migrate_items", async (
 
     Console.WriteLine($"Completed Items Migration @ {DateTime.UtcNow}");
 
+    // require a collection of the various sub items to be commonly stored such as locations, zones, offers, categories etc.
+    // that data should contain and store the english and Arabic names for each item etc
+
     var migrationItems = (MigrationItems)drupalItems;
 
     await migrationService.SaveMigrationItemsAsync(migrationItems);
