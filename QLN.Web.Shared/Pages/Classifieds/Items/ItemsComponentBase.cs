@@ -7,10 +7,9 @@ using System.Text.Json;
 
 public class ItemsComponentBase : ComponentBase
 {
+    [Inject] protected SearchStateService SearchState { get; set; }
     [Inject] private IClassifiedsServices _classifiedsService { get; set; } = default!;
     [Inject] private ILogger<ItemsComponentBase> Logger { get; set; } = default!;
-
-    protected string currentViewMode = "grid";
 
     protected bool IsLoadingSearch { get; set; } = true;
     protected bool IsLoadingCategories { get; set; } = true;
@@ -22,7 +21,7 @@ public class ItemsComponentBase : ComponentBase
 
     protected void HandleViewModeChange(string newMode)
     {
-        currentViewMode = newMode;
+        SearchState.ItemViewMode = newMode;
     }
      protected void ClearSearch()
     {

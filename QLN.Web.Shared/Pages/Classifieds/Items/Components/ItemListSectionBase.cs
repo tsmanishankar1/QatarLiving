@@ -1,15 +1,13 @@
 using Microsoft.AspNetCore.Components;
-using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Components.BreadCrumb;
-using System.Collections.Generic;
-using System.Linq;
 using QLN.Common.DTO_s;
+using Microsoft.JSInterop;
 
 namespace QLN.Web.Shared.Pages.Classifieds.Items.Components
 {
     public class ItemListSectionBase : ComponentBase
     {
-        [Parameter] public string ViewMode { get; set; } = "grid";
+        [Parameter] public string ViewMode { get; set; }
         [Parameter] public bool Loading { get; set; } = false;
        [Inject] NavigationManager NavigationManager { get; set; }
        [Parameter] public List<ClassifiedsIndex> Items { get; set; } = new();
@@ -54,6 +52,37 @@ namespace QLN.Web.Shared.Pages.Classifieds.Items.Components
         {
             NavigationManager.NavigateTo($"/qln/classifieds/items/details/{item.Id}");
         }
+          protected int WindowWidth { get; set; }
+
+        [Inject] protected IJSRuntime JS { get; set; } = default!;
+        private DotNetObjectReference<ItemListSectionBase>? _objectRef;
+
+        [JSInvokable]
+        public void UpdateWindowWidth(int width)
+        {
+            WindowWidth = width;
+            StateHasChanged();
+           if (WindowWidth <= 992 && ViewMode != "grid")
+            {
+                ViewMode = "grid";
+                StateHasChanged();
+            }
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                _objectRef = DotNetObjectReference.Create(this);
+                await JS.InvokeVoidAsync("blazorResize.registerResizeCallback", _objectRef);
+            }
+        }
+
+        public void Dispose()
+        {
+            _objectRef?.Dispose();
+        }
+
         protected override void OnInitialized()
         {
             breadcrumbItems = new()

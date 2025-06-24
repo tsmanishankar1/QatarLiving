@@ -44,25 +44,23 @@
             Color="@(isFavorite? Color.Error: Color.Inherit)" OnClick="@(() => ToggleFavorite(Item))"
             Class="@heartIconListClass" />
 
-        <div class="list-card-promoted">
-            <MudIcon Icon="@Icons.Material.Filled.FlashOn" Size="Size.Small" />
-            Promoted
-        </div>
-  @if (Item?.IsPromoted == true)
+    <div class="list-card-promoted-badge-column">
+        @if (Item?.IsPromoted == true)
         {
-            <div class="list-card-promoted">
+            <div class="list-card-promoted-badge">
                 <img src="/qln-images/classifieds/featured_tag_icon.svg" alt="Promoted" class="list-card-Promoted-badge-icon" />
                 <span>Promoted</span>
             </div>
         }
+        @if (Item?.IsFeatured == true)
+        {
+            <div class="list-card-promoted-badge">
+                <img src="/qln-images/classifieds/featured_tag_icon.svg" alt="Featured" class="list-card-Promoted-badge-icon" />
+                <span>Featured</span>
+            </div>
+        }
+    </div>
 
-            @if (Item.IsFeatured == true)
-            {
-                <div class="list-card-Featured">
-                    <img src="/qln-images/classifieds/featured_tag_icon.svg" alt="Featured" class="list-card-Promoted-badge-icon" />
-                    <span>Featured</span>
-                </div>
-            }
 
         @if (Item.Images != null && Item.Images.Count > 0 || !string.IsNullOrEmpty(Item.Status))
 {
@@ -134,16 +132,16 @@
             <span class="currency">QAR</span>
         </div>
 
-        @* <div class="list-card-company">
-            <img src="@(!string.IsNullOrEmpty(Item.CompanyLogoUrl) ? Item.CompanyLogoUrl : "/qln-images/classifieds/item_logo.svg")"
+        <div class="list-card-company">
+            <img class="list-card-company-logo" src="@(!string.IsNullOrEmpty(Item.StoreLogoUrl) ? Item.StoreLogoUrl : "/qln-images/classifieds/item_logo.svg")"
                 <div>
-            <div class="list-card-company-name">@Item.Company</div>
+            <div class="list-card-company-name">@(@Item.StoreName ?? "Rashid Electronics")</div>
             <div class="list-card-location">
                 <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" />
                 @Item.Location
             </div>
         </div>
-    </div> *@
+    </div>
 </div>
 </div>
 
@@ -261,40 +259,33 @@
         padding: 2px 8px;
         font-weight: 500;
     }
-    .list-card-promoted {
+    .list-card-promoted-badge-column {
         position: absolute;
-        top: 8px;
+        top: 10px;
         left: 0;
-        width:80px;
-        height: 20px;
-        background-color: var(--color-accent);
-        color: white;
-        padding: 4px 6px;
-        font-size: 12px;
         display: flex;
-        align-items: center;
-        gap: 4px;
+        flex-direction: column;
+        gap: 6px;
         z-index: 2;
     }
-     .list-card-Featured {
-        position: absolute;
-        top: 40px;
-        left: 0;
-        width:80px;
-        height: 20px;
-        background-color: var(--color-accent);
+
+    .list-card-promoted-badge {
+        background-color: #FF7F38;
         color: white;
         padding: 4px 6px;
-        font-size: 12px;
+        font-size: 11px;
+        font-weight: 500;
         display: flex;
         align-items: center;
-        gap: 4px;
-        z-index: 2;
+        gap: 2px;
+        border-radius: 0 2px 2px 0;
     }
-    .list-card-Promoted-badge-icon{
+
+    .list-card-Promoted-badge-icon {
         width: 12px;
         height: 12px;
     }
+
 
     .heart-icon-fav {
         position: absolute;
@@ -400,10 +391,10 @@
     }
 
     .list-card-company-logo {
-        width: 36px;
-        height: 36px;
-        object-fit: contain;
-        border-radius: 4px;
+        width: 40px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 1px;
     }
 
     .list-card-company-name {

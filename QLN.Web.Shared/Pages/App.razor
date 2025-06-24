@@ -16,8 +16,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap"
         rel="stylesheet" as="style">
-    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" media="print"
-        onload="this.media='all'">
+   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.css" media="print"
+        onload="this.media='all'" />
 
     @* <link rel="preload" href="fonts/PublicSans.woff2" as="font" type="font/woff2" crossorigin="anonymous"> *@
 
@@ -68,7 +68,7 @@
     @* <div id="reconnect-modal" style="display: none;"></div> *@
     <script src="@Assets["_framework/blazor.web.js"]"></script>
     @* <script src="js/boot.js"></script> *@
-    <script src="https://unpkg.com/swiper/swiper-bundle.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.js" defer></script>
     <script src="@Assets["_content/GoogleAnalytics.Blazor/googleanalytics.blazor.js"]" defer></script>
     @* 
         Script is MIA, not needed maybe?
@@ -308,64 +308,69 @@
 };
 </script>
     <script>
-    let mainSwiperInstance;
+   let mainSwiperInstance;
     let thumbsSwiperInstance;
 
-    window.initializeSwiperGallery = (dotNetRef) => {
-        if (mainSwiperInstance) mainSwiperInstance.destroy(true, true);
-        if (thumbsSwiperInstance) thumbsSwiperInstance.destroy(true, true);
+    window.initializeSwiperGallery = (dotNetRef, uniqueId) => {
+        const container = document.getElementById(uniqueId);
+        if (!container) {
+            console.warn("Swiper container not found:", uniqueId);
+            return;
+        }
 
-        const thumbSlides = document.querySelectorAll('.swiper-thumbs .swiper-slide');
+        // Destroy previous Swiper instances if they exist
+        if (mainSwiperInstance) {
+            mainSwiperInstance.destroy(true, true);
+            mainSwiperInstance = null;
+        }
+        if (thumbsSwiperInstance) {
+            thumbsSwiperInstance.destroy(true, true);
+            thumbsSwiperInstance = null;
+        }
+
+        const thumbSlides = container.querySelectorAll('.swiper-thumbs .swiper-slide');
         const thumbCount = thumbSlides.length;
 
+        const thumbsWrapper = container.querySelector(".swiper-thumbs .swiper-wrapper");
+        const thumbsPrev = container.querySelector(".thumbs-prev");
+        const thumbsNext = container.querySelector(".thumbs-next");
+
+        // Base config
         const thumbsConfig = {
             spaceBetween: 10,
             navigation: {
-                nextEl: ".thumbs-next",
-                prevEl: ".thumbs-prev",
+                nextEl: thumbsNext,
+                prevEl: thumbsPrev,
             },
             breakpoints: {
-                380: {
-                    slidesPerView: 2.6,
-                },
-                450: {
-                    slidesPerView: 3,
-                },
-                640: {
-                    slidesPerView: 4,
-                },
-                768: {
-                    slidesPerView: 5,
-                },
-                1024: {
-                    slidesPerView: 5,
-                }
+                380: { slidesPerView: 2.6 },
+                450: { slidesPerView: 3 },
+                640: { slidesPerView: 4 },
+                768: { slidesPerView: 5 },
+                1024: { slidesPerView: 5 }
             }
         };
 
-        // If 5 or fewer thumbnails, adjust behavior
-    if (thumbCount <= 5) {
-        thumbsConfig.slidesPerView = thumbCount;
-        thumbsConfig.loop = false;
+        if (thumbCount <= 5) {
+            thumbsConfig.slidesPerView = thumbCount;
+            thumbsConfig.loop = false;
 
-        // Add a helper class for small thumb sets
-        document.querySelector(".swiper-thumbs .swiper-wrapper").classList.add("few-thumbs");
-
-        document.querySelector(".thumbs-prev").style.display = "none";
-        document.querySelector(".thumbs-next").style.display = "none";
-    }
-    else {
+            // Add helper class and hide arrows
+            thumbsWrapper?.classList.add("few-thumbs");
+            if (thumbsPrev) thumbsPrev.style.display = "none";
+            if (thumbsNext) thumbsNext.style.display = "none";
+        } else {
             thumbsConfig.slidesPerView = "auto";
         }
 
         // Initialize thumbnail swiper
-        thumbsSwiperInstance = new Swiper(".swiper-thumbs", thumbsConfig);
+        thumbsSwiperInstance = new Swiper(container.querySelector(".swiper-thumbs"), thumbsConfig);
 
-        // Main Swiper
-        mainSwiperInstance = new Swiper(".swiper-main", {
+        // Initialize main swiper
+        mainSwiperInstance = new Swiper(container.querySelector(".swiper-main"), {
             spaceBetween: 10,
             pagination: {
-                el: ".swiper-pagination",
+                el: container.querySelector(".swiper-pagination"),
                 clickable: true,
                 dynamicBullets: true,
                 dynamicMainBullets: 4,
@@ -375,37 +380,127 @@
             },
             on: {
                 slideChange: function () {
-                    dotNetRef.invokeMethodAsync("UpdateActiveIndex", this.realIndex);
+                    dotNetRef?.invokeMethodAsync("UpdateActiveIndex", this.realIndex);
                 }
             }
         });
 
-        // Click on thumbnail directly
-        thumbsSwiperInstance.on('click', function (swiper) {
-            if (typeof swiper.clickedIndex !== 'undefined') {
+        // Thumbnail click = main slider move
+        thumbsSwiperInstance.on("click", function (swiper) {
+            if (typeof swiper.clickedIndex !== "undefined") {
                 mainSwiperInstance.slideTo(swiper.clickedIndex);
             }
         });
 
-        // Arrow controls (manually advance main swiper)
-        document.querySelector(".thumbs-next").addEventListener("click", () => {
-            const currentIndex = mainSwiperInstance.realIndex;
-            const nextIndex = Math.min(currentIndex + 1, mainSwiperInstance.slides.length - 1);
+        // Manual next/prev using thumbs buttons
+        thumbsNext?.addEventListener("click", () => {
+            const nextIndex = Math.min(mainSwiperInstance.realIndex + 1, mainSwiperInstance.slides.length - 1);
             mainSwiperInstance.slideTo(nextIndex);
         });
 
-        document.querySelector(".thumbs-prev").addEventListener("click", () => {
-            const currentIndex = mainSwiperInstance.realIndex;
-            const prevIndex = Math.max(currentIndex - 1, 0);
+        thumbsPrev?.addEventListener("click", () => {
+            const prevIndex = Math.max(mainSwiperInstance.realIndex - 1, 0);
             mainSwiperInstance.slideTo(prevIndex);
         });
+
+        // Allow external control
         window.goToSlide = (index) => {
-        if (mainSwiperInstance && typeof index === 'number') {
-            mainSwiperInstance.slideTo(index);
-        }
-    };
+            if (mainSwiperInstance && typeof index === "number") {
+                mainSwiperInstance.slideTo(index);
+            }
+        };
     };
 
+    let mainImagePreviewSwiperInstance;
+    let thumbsImagePreviewSwiperInstance;
+
+    window.initializeSwiperImagePreview = (dotNetRef, uniqueId) => {
+        const container = document.getElementById(uniqueId);
+        if (!container) {
+            console.warn("Swiper Image Preview container not found:", uniqueId);
+            return;
+        }
+
+        if (mainImagePreviewSwiperInstance) mainImagePreviewSwiperInstance.destroy(true, true);
+        if (thumbsImagePreviewSwiperInstance) thumbsImagePreviewSwiperInstance.destroy(true, true);
+
+        const thumbSlides = container.querySelectorAll('.swiper-thumbs-preview .swiper-slide');
+        const thumbCount = thumbSlides.length;
+
+        const thumbsConfig = {
+            spaceBetween: 10,
+            navigation: {
+                nextEl: container.querySelector(".thumbs-next-preview"),
+                prevEl: container.querySelector(".thumbs-prev-preview"),
+            },
+            breakpoints: {
+                380: { slidesPerView: 2.6 },
+                450: { slidesPerView: 3 },
+                640: { slidesPerView: 4 },
+                768: { slidesPerView: 5 },
+                1024: { slidesPerView: 5 },
+            }
+        };
+
+        if (thumbCount <= 5) {
+            thumbsConfig.slidesPerView = thumbCount;
+            thumbsConfig.loop = false;
+
+            container.querySelector(".swiper-thumbs-preview .swiper-wrapper")?.classList.add("few-thumbs");
+
+            container.querySelector(".thumbs-prev-preview").style.display = "none";
+            container.querySelector(".thumbs-next-preview").style.display = "none";
+        } else {
+            thumbsConfig.slidesPerView = "auto";
+        }
+
+        // Initialize thumbnail swiper
+        thumbsImagePreviewSwiperInstance = new Swiper(container.querySelector(".swiper-thumbs-preview"), thumbsConfig);
+
+        // Initialize main swiper
+        mainImagePreviewSwiperInstance = new Swiper(container.querySelector(".swiper-main-preview"), {
+            spaceBetween: 10,
+            pagination: {
+                el: container.querySelector(".swiper-pagination-preview"),
+                clickable: true,
+                dynamicBullets: true,
+                dynamicMainBullets: 4,
+            },
+            thumbs: {
+                swiper: thumbsImagePreviewSwiperInstance,
+            },
+            on: {
+                slideChange: function () {
+                    dotNetRef?.invokeMethodAsync("UpdateActiveIndex", this.realIndex);
+                }
+            }
+        });
+
+        thumbsImagePreviewSwiperInstance.on('click', function (swiper) {
+            if (typeof swiper.clickedIndex !== 'undefined') {
+                mainImagePreviewSwiperInstance.slideTo(swiper.clickedIndex);
+            }
+        });
+
+        container.querySelector(".thumbs-next-preview")?.addEventListener("click", () => {
+            const currentIndex = mainImagePreviewSwiperInstance.realIndex;
+            const nextIndex = Math.min(currentIndex + 1, mainImagePreviewSwiperInstance.slides.length - 1);
+            mainImagePreviewSwiperInstance.slideTo(nextIndex);
+        });
+
+        container.querySelector(".thumbs-prev-preview")?.addEventListener("click", () => {
+            const currentIndex = mainImagePreviewSwiperInstance.realIndex;
+            const prevIndex = Math.max(currentIndex - 1, 0);
+            mainImagePreviewSwiperInstance.slideTo(prevIndex);
+        });
+
+        // External control
+        window.goToImagePreviewSlide = (index) => {
+            if (mainImagePreviewSwiperInstance && typeof index === 'number') {
+                mainImagePreviewSwiperInstance.slideTo(index);
+            }
+        };
+    };
 
         let seasonalSwiperInstance;
         window.initSeasonalSwiper = () => {
@@ -581,7 +676,6 @@
                         }
             });
         };
-
     </script>
 
         <script>

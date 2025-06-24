@@ -65,7 +65,7 @@
             <!-- SECOND ROW: Brand + Price + More + Save Search -->
             <div class="second-row">
                 <!-- Brand -->
-                <div class="short-select">
+                <div class="brand-select">
                     <NewCustomSelect TItem="BrandItem"
                         Items="@_brands"
                          SelectedId="@SearchState.ItemBrand"
@@ -85,12 +85,12 @@
                         SelectedMinChanged="v => SearchState.ItemMinPrice = v"
                         SelectedMaxChanged="v => SearchState.ItemMaxPrice = v"
                         OnApplyClicked="PerformSearch"
+                        IsDisabled="@string.IsNullOrWhiteSpace(SearchState.ItemCategory)"
                         OnResetClicked="() => { SearchState.ItemMinPrice = null; SearchState.ItemMaxPrice = null; PerformSearch(); }" />
                 </div>
 
                 <!-- More -->
-                <div class="short-select">
-      
+                <div class="price-short-select">
                         <MoreFiltersList  />
                 </div>
 
@@ -215,10 +215,14 @@
         .save-search {
             width: 100%;
         }
+        .brand-select{
+            width: 100%;
+            max-width: 180px;
+        }
         .price-short-select {
              width: 100%;
-             max-width: 100px;
-        }
+             max-width: 110px;
+         }
 
         .save-search {
         display: flex;

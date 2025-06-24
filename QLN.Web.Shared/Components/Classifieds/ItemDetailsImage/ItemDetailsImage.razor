@@ -1,8 +1,9 @@
 @inherits ItemDetailsImageBase
 @using QLN.Web.Shared.Components.EmptyCard
+@using QLN.Web.Shared.Components.Classifieds.ImagePreview
 @using MudBlazor
 
-<div class="gallery-container">
+<div class="gallery-container" id="@_uniqueId">
     <div class="swiper swiper-main">
          <div class="header-Promoted-item">
   @if (Item?.IsPromoted == true)
@@ -20,11 +21,55 @@
                 </div>
                 }
         </div>
+        @if (WindowWidth <= 770)
+    {
+        <div class="mobile-image-actions">
+              <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu"
+                    AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight">
+                <ActivatorContent>
+                    <MudButton Variant="Variant.Text" Size="Size.Small" Class="mobile-action-btn">
+                        <MudIcon Icon="@Icons.Material.Filled.Share" />
+                    </MudButton>
+                </ActivatorContent>
+                <ChildContent>
+                    @foreach (var item in ShareMenuItems)
+                    {
+                        if (item.OnClick != null)
+                        {
+                            <MudMenuItem OnClick="@item.OnClick">
+                                <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                            </MudMenuItem>
+                        }
+                        else
+                        {
+                            <MudMenuItem Href="@item.Route" Target="@(item.OpenInNewTab ? "_blank" : "_self")">
+                                <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                            </MudMenuItem>
+                        }
+                    }
+                </ChildContent>
+            </MudMenu>
+           <MudButton Variant="Variant.Text" Size="Size.Small" Class="mobile-action-btn" @onclick="ToggleFavorite">
+            <MudIcon Icon="@(IsFavorited ? Icons.Material.Filled.Favorite : Icons.Material.Filled.FavoriteBorder)" />
+        </MudButton>
 
+        </div>
+    }
+     
      <div class="swiper-wrapper">
+           @if (Item?.Images == null || !Item.Images.Any())
+    {
+        <div class="swiper-slide">
+            <div class="main-image-emty">
+                <EmptyCard Title="No image found." Subtitle="Please check back later for updates." />
+            </div>
+        </div>
+    }
+    else
+    {
         @foreach (var img in Item.Images)
         {
-            <div class="swiper-slide">
+            <div class="swiper-slide"  @onclick="HandleMainImageClick">
                 @if (imageFailedMap.TryGetValue(img.Url, out var failed) && failed)
                 {
                     <div class="main-image-emty">
@@ -53,16 +98,24 @@
                 }
             </div>
         }
+        }
     </div>
         <div class="image-gallery-footer">
             <div class="image-count">@($"{CurrentIndex + 1}/{Item.Images?.Count ?? 0}")</div>
             <div class="swiper-pagination"></div>
-            <div class="view-all">
+            <div class="view-all" @onclick="HandleViewAllClick">
                 <img src="/qln-images/classifieds/view_all_icon.svg" alt="View All" class="view-all-icon" />
                 <span class="view-all-text">View all</span>
             </div>
         </div>
     </div>
+     @if (ShowImageModal)
+    {
+        <ImagePreview 
+            Item="Item"
+            ShowImageModal="ShowImageModal" 
+            CloseGallery="CloseGallery" />
+    }
 
     <div class="thumbs-container">
         <div class="thumbs-prev">
@@ -70,7 +123,7 @@
         </div>
         <div class="swiper swiper-thumbs">
         <div class="swiper-wrapper">
-            @if (Item?.Images != null)
+            @if (Item?.Images != null && Item.Images.Any())
             {
                 @for (int i = 0; i < Item.Images.Count; i++)
                 {
@@ -174,7 +227,6 @@
         align-items: center;
         padding: 0 12px;
         z-index: 2;
-        pointer-events: none; 
 }
     .image-count {
     background: rgba(0,0,0,0.6);
@@ -273,5 +325,61 @@
   z-index: 10;
   cursor: pointer;
 }
+.mobile-image-actions {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 20;
+    display: flex;
+    gap: 8px;
+}
+
+.mobile-action-btn {
+    background-color: rgba(255, 255, 255, 0.8) !important;
+    color: var(--color-accent) !important;
+    min-width: 32px !important;
+    height: 32px;
+    padding: 4px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+  .custom-share-menu .mud-popover {
+        border-radius: 40px !important;
+        overflow: hidden;
+    }
+        /* Target all popover menus that are open and belong to the share menu */
+    .mud-popover:has(.share-icon) .mud-list {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto;
+        gap: 4px;
+    }
+
+    .share-popover .mud-list {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto;
+        gap: 4px;
+    }
+
+
+    .mud-menu-item {
+        padding: 0px 6px 0px 0px !important;
+    }
+
+    .mud-menu-list {
+        padding-left: 6px;
+    }
+
+    .mud-menu-item .mud-menu-item-text {
+        margin: 4px 0px 0px 0px !important;
+    }
+@@media (max-width: 770px) {
+ .view-all {
+        display: none;
+    }
+    }
 
 </style>

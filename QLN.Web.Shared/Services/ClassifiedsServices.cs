@@ -85,6 +85,20 @@ namespace QLN.Web.Shared.Services
                     return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
                 }
             }
+       public async Task<HttpResponseMessage?> GetClassifiedWithSimilarAsync(string classifiedId, int similarPageSize)
+        {
+            try
+            {
+                var url = $"/api/classified/details/{classifiedId}?similarPageSize={similarPageSize}";
+                var response = await _httpClient.GetAsync(url);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"GetClassifiedWithSimilarAsync Error: {ex}");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
 
     }
 }

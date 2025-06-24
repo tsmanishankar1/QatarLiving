@@ -5,22 +5,22 @@
 
 <div class="card">
   
-      @if (Item?.IsPromoted == true)
-        {
-            <div class="Promoted-badge">
-                <img src="/qln-images/classifieds/featured_tag_icon.svg" alt="Promoted" class="Promoted-badge-icon" />
-                <span>Promoted</span>
-            </div>
-            }
-
-            @if (Item.IsFeatured == true)
-            {
-                <div class="Featured-badge">
-                    <img src="/qln-images/classifieds/featured_tag_icon.svg" alt="Featured" class="Promoted-badge-icon" />
-                    <span>Featured</span>
-                </div>
-        }
-
+ <div class="badge-column">
+    @if (Item?.IsPromoted == true)
+    {
+        <div class="badge">
+            <img src="/qln-images/classifieds/featured_tag_icon.svg" alt="Promoted" class="badge-icon" />
+            <span>Promoted</span>
+        </div>
+    }
+    @if (Item?.IsFeatured == true)
+    {
+        <div class="badge">
+            <img src="/qln-images/classifieds/featured_tag_icon.svg" alt="Featured" class="badge-icon" />
+            <span>Featured</span>
+        </div>
+    }
+</div>
 
 
     <MudIconButton Icon="@(isFavorite? Icons.Material.Filled.Favorite : Icons.Material.Outlined.FavoriteBorder)"
@@ -103,10 +103,10 @@
         }
     </div>
 
-    <div id="@Item.Id" class="card-content" @onclick="HandleSelect">
-        <div class="category">@Item.Category</div>
-        <h3 class="title">@Item.Title</h3>
-        <div class="features">
+    <div id="@Item.Id" class="card-content-grid" @onclick="HandleSelect">
+        <div class="grid-category">@Item.Category</div>
+        <h3 class="grid-title">@Item.Title</h3>
+        <div class="grid-features">
             @if (!string.IsNullOrEmpty(Item.Colour))
             {
                 <div class="feature-item">
@@ -118,7 +118,7 @@
 
             @if (!string.IsNullOrEmpty(Item.Storage))
             {
-                <div class="feature-item">
+                <div class="grid-feature-item">
                     <img src="/qln-images/classifieds/storage_icon.svg" alt="Storage" class="feature-icon" />
                     <span class="feature-name">@Item.Storage</span>
                 </div>
@@ -127,7 +127,7 @@
 
             @if (Item.BatteryPercentage.HasValue)
             {
-                <div class="feature-item">
+                <div class="grid-feature-item">
                     <img src="/qln-images/classifieds/battery_icons.svg" alt="Battery" class="feature-icon" />
                     <span class="feature-name">@($"{Item.BatteryPercentage}%")</span>
                 </div>
@@ -136,7 +136,7 @@
 
             @if (!string.IsNullOrEmpty(Item.Processor))
             {
-                <div class="feature-item">
+                <div class="grid-feature-item">
                     <img src="/qln-images/classifieds/chip_icons.svg" alt="Processor" class="feature-icon" />
                     <span class="feature-name">@Item.Processor</span>
                 </div>
@@ -148,17 +148,19 @@
             <span>@Item.Price</span>
             <span class="currency">QAR</span>
         </div>
-        @* <div class="company-details">
-            <img src="@(!string.IsNullOrEmpty(Item.CompanyLogoUrl) ? Item.CompanyLogoUrl : "/qln-images/classifieds/item_logo.svg")"
+        <div class="company-details">
+            <img src="@(!string.IsNullOrEmpty(Item.StoreLogoUrl) ? Item.StoreLogoUrl : "/qln-images/classifieds/item_logo.svg")"
                 alt="logo" class="company-logo" />
             <div class="company-info">
-                <span class="company-name">@Item.Company</span>
+                <div>
+                <span class="company-name">@(@Item.StoreName ?? "Rashid Electronics")</span>
+                </div>
                 <div class="location">
                     <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" />
                     @Item.Location
                 </div>
             </div>
-        </div> *@
+        </div>
     </div>
 </div>
 
@@ -184,36 +186,33 @@
         z-index: 2;
     }
 
-    .Promoted-badge {
+    .badge-column {
         position: absolute;
         top: 10px;
         left: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        z-index: 2;
+    }
+
+    .badge {
         background-color: #FF7F38;
         color: white;
         padding: 4px 6px;
         font-size: 11px;
         font-weight: 500;
-        z-index: 2;
         display: flex;
         align-items: center;
         gap: 2px;
         border-radius: 0 2px 2px 0;
     }
-     .Featured-badge {
-        position: absolute;
-        top: 40px;
-        left: 0;
-        background-color: #FF7F38;
-        color: white;
-        padding: 4px 6px;
-        font-size: 11px;
-        font-weight: 500;
-        z-index: 2;
-        display: flex;
-        align-items: center;
-        gap: 2px;
-        border-radius: 0 2px 2px 0;
+
+    .badge-icon {
+        width: 12px;
+        height: 12px;
     }
+
     .Promoted-badge-icon{
         width: 12px;
         height: 12px;
@@ -294,12 +293,15 @@
         font-weight: 500;
     }
 
-    .card-content {
+    .card-content-grid {
+        display: flex;
+        flex-direction: column;
         padding: 12px 15px;
         cursor: pointer;
+        gap: 4px;
     }
 
-    .category {
+    .grid-category {
         font-size: 11px;
         font-weight: 500;
         color: var(--color-text-descripton);
@@ -310,10 +312,10 @@
         text-overflow: ellipsis;
     }
 
-    .title {
+    .grid-title {
         font-size: 18px;
-        margin: 8px 0;
         font-weight: 600;
+        margin: 0;
         line-height: 1.3;
         display: -webkit-box;
         -webkit-line-clamp: 1;
@@ -323,7 +325,7 @@
         color: var(--color-text-heading);
     }
 
-    .features {
+    .grid-features {
         display: flex;
         align-items: center;
         gap: 12px;
@@ -336,7 +338,7 @@
 
     }
 
-    .feature-item {
+    .grid-feature-item {
         display: flex;
         align-items: center;
         gap: 4px;
@@ -364,7 +366,6 @@
         font-size: 25px;
         font-weight: 600;
         color: var(--color-text-heading);
-        margin-top: 2px;
     }
 
     .grid-card-price .currency {
@@ -378,7 +379,6 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        margin-top: 8px;
     }
 
     .company-logo {
@@ -391,7 +391,7 @@
     .company-info {
         display: flex;
         flex-direction: column;
-        align-items: center;
+        align-items: flex-start;
         justify-content: center;
     }
 
