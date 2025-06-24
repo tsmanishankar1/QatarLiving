@@ -86,8 +86,9 @@
         font-size: 1rem;
     }
     .image-container {
-        width: 124px;
-        height: 70px;
+        width: 100%;
+        max-width: 124px;
+        aspect-ratio: 16 / 9;
         border-radius: 4px;
         overflow: hidden;
         background-color: #f3f3f3; 
@@ -178,6 +179,10 @@
     border-radius: 4px;
     object-fit: cover; 
 }
+
+    more-article-image:hover {
+        cursor: pointer;
+    }
 
 .image-hidden {
     display: none;
