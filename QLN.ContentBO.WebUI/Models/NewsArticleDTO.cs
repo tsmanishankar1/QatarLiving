@@ -13,7 +13,7 @@ namespace QLN.ContentBO.WebUI.Models
         public string Content { get; set; }
 
         [Required]
-        public List<string> WriterTag { get; set; }
+        public string WriterTag { get; set; }
        
         public string? CoverImageUrl { get; set; }
         
