@@ -25,7 +25,7 @@ namespace QLN.Common.Infrastructure.IService
         Task<DeleteAdResponseDto> DeleteClassifiedPrelovedAd(Guid adId, CancellationToken cancellationToken = default);
         Task<DeleteAdResponseDto> DeleteClassifiedCollectiblesAd(Guid adId, CancellationToken cancellationToken = default);
         Task<DeleteAdResponseDto> DeleteClassifiedDealsAd(Guid adId, CancellationToken cancellationToken = default);
-        Task<PaginatedAdResponseDto> GetUserPublishedItemsAds(Guid userId, int? page, int? pageSize, CancellationToken cancellationToken = default);
+        Task<PaginatedAdResponseDto> GetUserPublishedItemsAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default);
         Task<PaginatedAdResponseDto> GetUserUnPublishedItemsAds(Guid userId, int? page, int? pageSize, CancellationToken cancellationToken = default);
         Task<PaginatedPrelovedAdResponseDto> GetUserPublishedPrelovedAds(Guid userId, int? page, int? pageSize, CancellationToken cancellationToken = default);
         Task<PaginatedPrelovedAdResponseDto> GetUserUnPublishedPrelovedAds(Guid userId, int? page, int? pageSize, CancellationToken cancellationToken = default);

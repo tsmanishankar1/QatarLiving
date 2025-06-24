@@ -670,7 +670,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<PaginatedAdResponseDto> GetUserPublishedItemsAds(Guid userId, int? page, int? pageSize, CancellationToken cancellationToken = default)
+        public async Task<PaginatedAdResponseDto> GetUserPublishedItemsAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             if (userId == Guid.Empty)
                 throw new ArgumentException("User ID must not be empty.");
@@ -684,6 +684,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 if (pageSize.HasValue)
                     queryParams.Add("pageSize", pageSize.Value.ToString());
+
+                if (sortOption.HasValue)
+                    queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))

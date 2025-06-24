@@ -983,7 +983,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<PaginatedAdResponseDto> GetUserPublishedItemsAds(Guid userId, int? page, int? pageSize, CancellationToken cancellationToken = default)
+        public async Task<PaginatedAdResponseDto> GetUserPublishedItemsAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -1014,6 +1014,11 @@ namespace QLN.Classified.MS.Service
 
                         if (status != AdStatus.Published && status != AdStatus.Approved)
                             continue;
+
+                        var title = state.GetProperty("title").GetString();
+                        if (!string.IsNullOrWhiteSpace(search) && !title.Contains(search, StringComparison.OrdinalIgnoreCase))
+                            continue;
+
 
                         var ad = new ItemAdDto
                         {
@@ -1075,6 +1080,15 @@ namespace QLN.Classified.MS.Service
                         _logger.LogError(ex, "Error processing ad from key: {Key}", key);
                     }                   
                 }
+
+                publishedAds = sortOption switch
+                {
+                    AdSortOption.CreationDateOldest => publishedAds.OrderBy(a => a.CreatedAt).ToList(),
+                    AdSortOption.CreationDateRecent => publishedAds.OrderByDescending(a => a.CreatedAt).ToList(),
+                    AdSortOption.PriceHighToLow => publishedAds.OrderByDescending(a => a.Price).ToList(),
+                    AdSortOption.PriceLowToHigh => publishedAds.OrderBy(a => a.Price).ToList(),
+                    _ => publishedAds.OrderByDescending(a => a.CreatedAt).ToList(),
+                };
 
                 var total = publishedAds.Count;
 

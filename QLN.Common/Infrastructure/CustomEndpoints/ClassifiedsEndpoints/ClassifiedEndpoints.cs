@@ -1941,6 +1941,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext context,
                 [FromQuery] int? page,
                 [FromQuery] int? pageSize,
+                [FromQuery] AdSortOption? sortOption,
+                [FromQuery] string? search,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -1957,18 +1959,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.GetUserPublishedItemsAds(userId, page, pageSize, token);
+                    var result = await service.GetUserPublishedItemsAds(userId, page, pageSize, sortOption, search, token);
                     return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Data Retrieval Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
+                }                
                 catch (Exception ex)
                 {
                     if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
@@ -2013,6 +2006,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 Guid userId,
                 [FromQuery] int? page,
                 [FromQuery] int? pageSize,
+                [FromQuery] AdSortOption? sortOption,
+                [FromQuery] string? search,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -2028,18 +2023,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.GetUserPublishedItemsAds(userId, page, pageSize, token);
+                    var result = await service.GetUserPublishedItemsAds(userId, page, pageSize, sortOption, search, token);
                     return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Data Retrieval Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
+                }               
                 catch (Exception ex)
                 {
                     if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
@@ -2073,7 +2059,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .WithDescription("Retrieves only published item ads for the specified user with pagination (admin or service use).")
                 .Produces<PaginatedAdResponseDto>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .ExcludeFromDescription();
 
