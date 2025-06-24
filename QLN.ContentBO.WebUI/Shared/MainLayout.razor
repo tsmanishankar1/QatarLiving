@@ -38,9 +38,9 @@
                 <img src="/qln-images/community_icon.svg" alt="Community" class="nav-icon-style @(NavManager.Uri.Contains("/manage/community") ? "active-orange" : "default-gray")" />
                 <span class="nav-item @(NavManager.Uri.Contains("/manage/community") ? "active-orange" : "default-gray")">Community</span>
                 </MudNavLink>
-                <MudNavLink Href="/content/events/create" Class="nav-item">
-                <img src="/qln-images/event_icon.svg" alt="Events" class="nav-icon-style @(NavManager.Uri.Contains("/content/events/create") ? "active-orange" : "default-gray")" />
-                <span class="nav-item @(NavManager.Uri.Contains("/content/events/create") ? "active-orange" : "default-gray")">Events</span>
+                <MudNavLink Href="/manage/events" Class="nav-item">
+                <img src="/qln-images/event_icon.svg" alt="Events" class="nav-icon-style @(NavManager.Uri.Contains("/manage/events") ? "active-orange" : "default-gray")" />
+                <span class="nav-item @(NavManager.Uri.Contains("/manage/events") ? "active-orange" : "default-gray")">Events</span>
                 </MudNavLink>
                 <MudNavGroup  @bind-Expanded="_isReportGroupExpanded">
                     <TitleContent>

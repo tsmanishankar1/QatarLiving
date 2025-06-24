@@ -4,20 +4,29 @@
     <!-- Left Form Section -->
     <MudItem xs="12" md="12">
             <MudText Class="daily-style">Daily Living</MudText>
-            <MudTabs @bind-ActivePanelIndex="@activeIndex" Rounded="false" Centered="false" Class="custom-tabs" Style="background-color: #FAFAFA;" DisableSlideAnimation="true">
-                <MudTabPanel Text="Top Section" />
-                <MudTabPanel Text="Featured Events" />
-                <MudTabPanel Text="Everything Qatar" />
-                <MudTabPanel Text="Lifestyle" />
-                <MudTabPanel Text="Sports News" />
-                <MudTabPanel Text="QL Exclusive" />
-                <MudTabPanel Text="Advice & Help" />
+            <MudTabs @bind-ActivePanelIndex="@activeIndex"
+            Rounded="false"
+            Centered="false"
+            ScrollButtons="ScrollButtons.Auto"
+            Scrollable="true"
+            Class="custom-tabs"
+            Style="background-color: #FAFAFA;"
+            DisableSlideAnimation="true">
+
+            <MudTabPanel Text="Top Section" />
+            <MudTabPanel Text="Featured Events" />
+            <MudTabPanel Text="Everything Qatar" />
+            <MudTabPanel Text="Lifestyle" />
+            <MudTabPanel Text="Sports News" />
+            <MudTabPanel Text="QL Exclusive" />
+            <MudTabPanel Text="Advice & Help" />
+
             </MudTabs>
             @if (activeIndex != 0 && activeIndex != 1) {
                 <MudGrid AlignItems="Center" Class="padding-top:16px">
                     <MudItem xs="12" md="12">
                         <div class="button-container">
-                            <MudButton StartIcon="@Icons.Material.Outlined.Add" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button">
+                            <MudButton StartIcon="@Icons.Material.Outlined.Add" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button" OnClick="@OpenDialogAsync">
                                 Add Item
                             </MudButton>
                             <MudButton StartIcon="@Icons.Material.Outlined.Edit" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button">
