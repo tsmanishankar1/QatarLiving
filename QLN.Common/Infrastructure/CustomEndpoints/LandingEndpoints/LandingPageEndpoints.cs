@@ -172,7 +172,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
         {
             var sr = new CommonSearchRequest
             {
-                Top = 100,
                 Filters = new Dictionary<string, object>
                 {
                     { "Vertical",   vertical },

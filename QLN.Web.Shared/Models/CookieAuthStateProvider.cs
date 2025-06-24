@@ -1,9 +1,11 @@
 using Google.Api;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
@@ -15,11 +17,13 @@ namespace QLN.Web.Shared.Models
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IConfiguration _configuration;
+        private readonly HttpClient _httpClient;
 
-        public CookieAuthStateProvider(IHttpContextAccessor httpContextAccessor, IConfiguration configuration)
+        public CookieAuthStateProvider(IHttpContextAccessor httpContextAccessor, IConfiguration configuration, HttpClient httpClient)
         {
             _httpContextAccessor = httpContextAccessor;
             _configuration = configuration;
+            _httpClient = httpClient;
         }
 
         public override Task<AuthenticationState> GetAuthenticationStateAsync()
@@ -63,7 +67,6 @@ namespace QLN.Web.Shared.Models
 
                     if (validatedToken.ValidTo > DateTime.UtcNow)
                     {
-
                         var decodedTokenParts = tokenHandler.ReadJwtToken(jwt).ToString().Split('.');
                         var decodedToken = decodedTokenParts.Length > 1
                             ? string.Join(".", decodedTokenParts.Skip(1))
@@ -124,6 +127,14 @@ namespace QLN.Web.Shared.Models
                                 Console.WriteLine("Extracting token from cookie failed: {0}", ex.Message);
                             }
 
+
+
+                            // set the httpclient default headers to the value value of the jwt so we can pass it around -
+                            // this should only happen even if deserialization is successful, else anyone you pass this
+                            // to may also fail
+                            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", jwt);
+
+                            // this appears to only work if we have a common httpclient
                         }
                         else
                         {

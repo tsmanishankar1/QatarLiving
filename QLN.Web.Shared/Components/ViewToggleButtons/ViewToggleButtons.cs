@@ -7,7 +7,9 @@ namespace QLN.Web.Shared.Components.ViewToggleButtons
         [Parameter] 
         public List<ViewToggleOption> Items { get; set; }
         [Parameter] public string? TextClass { get; set; }
-
+   
+        [Parameter]
+        public string? Height { get; set; } = "60px"; 
         [Parameter] 
         public string SelectedValue { get; set; }
 

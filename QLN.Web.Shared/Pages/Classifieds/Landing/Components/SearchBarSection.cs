@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using QLN.Common.DTO_s;
 using QLN.Web.Shared.Components.Classifieds.FeaturedItemCard;
 using QLN.Web.Shared.Services;
 using static QLN.Web.Shared.Helpers.HttpErrorHelper;
@@ -8,7 +9,7 @@ public class SearchBarSectionBase : ComponentBase
 {
     [Inject] protected ISnackbar Snackbar { get; set; }
 
-    [Parameter] public EventCallback<List<FeaturedItemCard.FeaturedItem>> OnSearchCompleted { get; set; }
+    [Parameter] public EventCallback<LandingFeaturedItemDto> OnSearchCompleted { get; set; }
 
     protected string searchText;
     protected string selectedCategory;
