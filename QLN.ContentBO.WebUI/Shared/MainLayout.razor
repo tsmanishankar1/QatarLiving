@@ -7,13 +7,13 @@
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="1">
+    @* <MudAppBar Elevation="1">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
         <MudSpacer />
         <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
-    </MudAppBar>
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="2">
-        <MudDrawerHeader>
+    </MudAppBar> *@
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="2" >
+        <MudDrawerHeader Class="drawer-style">
             <MudImage id="logoImage" Src="/qln-images/ql_logo.svg" Alt="Qatar Living" Class="logo-img" />
         </MudDrawerHeader>
         <MudPaper Class="py-3 sidebar-container" Elevation="0">
@@ -68,7 +68,7 @@
             </div>
         </MudPaper>
     </MudDrawer>
-    <MudMainContent>
+    <MudMainContent Style="background-color: #FAFAFA; padding: 10px 25px 25px 25px">
         @Body
     </MudMainContent>
 </MudLayout>
@@ -137,8 +137,10 @@
     .mud-nav-link-active .nav-item {
     color: white !important;
     font-weight: 600;
-}
-
+    }
+    .drawer-style{
+        padding-top: 30px;
+    }
 
 
 </style>
