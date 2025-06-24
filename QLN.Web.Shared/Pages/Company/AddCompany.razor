@@ -62,27 +62,42 @@
                     <MudTextField id="businessName" @bind-Value="companyProfile.BusinessName" Label="Business Name *" Class="form-input no-underline" Immediate="true"
                                   For="@(() => companyProfile.BusinessName)" />
                     <ValidationMessage For="@(() => companyProfile.BusinessName)" />
-
-                    <MudSelect T="string" Label="Country *" @bind-Value="companyProfile.Country" Class="select-input no-underline"
+                    <MudSelect T="string"
+                               Label="Country *"
+                               Value="companyProfile.Country"
+                               ValueChanged="OnCountryChanged"
+                               Class="select-input no-underline"
                                Immediate="true">
-                        <MudSelectItem Value="@("Qatar")">Qatar</MudSelectItem>
-                        <MudSelectItem Value="@("UAE")">UAE</MudSelectItem>
+                        @foreach (var item in CountryCityList)
+                        {
+                            <MudSelectItem Value="@item.Country">@item.Country</MudSelectItem>
+                        }
                     </MudSelect>
                     <ValidationMessage For="@(() => companyProfile.Country)" />
 
-                    <MudSelect T="string" Label="City *" @bind-Value="companyProfile.City" Class="select-input no-underline" Immediate="true">
-                        <MudSelectItem Value="@("Doha")">Doha</MudSelectItem>
-                        <MudSelectItem Value="@("Dubai")">Dubai</MudSelectItem>
+                    <MudSelect T="string"
+                               Label="City *"
+                               @bind-Value="companyProfile.City"
+                               Class="select-input no-underline"
+                               Immediate="true"
+                               Disabled="@(!AvailableCities.Any())">
+                        @foreach (var city in AvailableCities)
+                        {
+                            <MudSelectItem Value="@city">@city</MudSelectItem>
+                        }
                     </MudSelect>
+                    <ValidationMessage For="@(() => companyProfile.City)" />
+
                     <ValidationMessage For="@(() => companyProfile.City)" />
 
                     <MudTextField @bind-Value="companyProfile.BranchLocations[0]" Label="Branches" Class="form-input no-underline" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.LocationOn" AdornmentColor="Color.Primary" AdornmentIconStyle="color: #FF7F38;" />
 
                     <MudTextField @bind-Value="companyProfile.PhoneNumber" Label="Phone Number *" For="@(() => companyProfile.PhoneNumber)"
-                                  Class="form-input no-underline" Adornment="Adornment.Start" AdornmentText="+974" Immediate="true" />
+                                  Class="form-input no-underline" Adornment="Adornment.Start" AdornmentText="@companyProfile.PhoneNumberCountryCode"
+                                  Immediate="true" />
                     <ValidationMessage For="@(() => companyProfile.PhoneNumber)" />
 
-                    <MudTextField @bind-Value="companyProfile.WhatsAppNumber" Label="WhatsApp Number" Class="form-input no-underline" Adornment="Adornment.Start" AdornmentText="+974" />
+                    <MudTextField @bind-Value="companyProfile.WhatsAppNumber" Label="WhatsApp Number" Class="form-input no-underline" Adornment="Adornment.Start" AdornmentText="@companyProfile.WhatsAppCountryCode" />
                     <MudTextField @bind-Value="companyProfile.Email" Label="Email *" Class="form-input no-underline" For="@(() => companyProfile.Email)" HelperTextOnError="true" />
                     <ValidationMessage For="@(() => companyProfile.Email)" />
 

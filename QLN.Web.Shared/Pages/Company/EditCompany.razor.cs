@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Http;
 using MudBlazor;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
@@ -7,12 +8,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace QLN.Web.Shared.Pages.Company
 {
-    public  partial class EditCompany : ComponentBase
+    public partial class EditCompany : ComponentBase
     {
 
         [Inject] private ICompanyProfileService CompanyProfileService { get; set; }
         [Inject] protected ISnackbar Snackbar { get; set; }
-
+        [Inject] private IHttpContextAccessor HttpContextAccessor { get; set; }
         [Parameter] public string id { get; set; } = string.Empty;
 
         protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
@@ -21,7 +22,7 @@ namespace QLN.Web.Shared.Pages.Company
         private bool isSaving = false;
 
         private string _authToken;
-   
+
         protected CompanyProfileModel? companyProfile;
 
         protected override void OnInitialized()
@@ -39,10 +40,11 @@ namespace QLN.Web.Shared.Pages.Company
         {
             if (firstRender)
             {
-                _authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6Ijk3NTQ1NGI1LTAxMmItNGQ1NC1iMTUyLWUzMGYzNmYzNjNlMiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJNVUpBWSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6Im11amF5LmFAa3J5cHRvc2luZm9zeXMuY29tIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbW9iaWxlcGhvbmUiOiIrOTE3NzA4MjA0MDcxIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjpbIkNvbXBhbnkiLCJTdWJzY3JpYmVyIl0sIlVzZXJJZCI6Ijk3NTQ1NGI1LTAxMmItNGQ1NC1iMTUyLWUzMGYzNmYzNjNlMiIsIlVzZXJOYW1lIjoiTVVKQVkiLCJFbWFpbCI6Im11amF5LmFAa3J5cHRvc2luZm9zeXMuY29tIiwiUGhvbmVOdW1iZXIiOiIrOTE3NzA4MjA0MDcxIiwiZXhwIjoxNzUwNTk2Njg3LCJpc3MiOiJRYXRhciBMaXZpbmciLCJhdWQiOiJRYXRhciBMaXZpbmcifQ.yR3NTs7yVNFZPS_qbDU9vmclI7rEKxlJ5fC5zq7llEo";
-               await LoadCompanyProfileAsync(id, _authToken);
+                var cookie = HttpContextAccessor.HttpContext?.Request.Cookies["qat"];
+                _authToken = cookie;
+                await LoadCompanyProfileAsync(id, _authToken);
                 StateHasChanged();
-       
+
 
             }
 
@@ -57,7 +59,7 @@ namespace QLN.Web.Shared.Pages.Company
 
             try
             {
-                companyProfile = await CompanyProfileService.GetCompanyProfileByIdAsync(id,authToken);
+                companyProfile = await CompanyProfileService.GetCompanyProfileByIdAsync(id, authToken);
                 if (companyProfile == null)
                 {
                     Snackbar.Add("Company profile not found", Severity.Warning);
@@ -80,14 +82,12 @@ namespace QLN.Web.Shared.Pages.Company
         {
             try
             {
-               
 
                 isSaving = true;
 
                 if (companyProfile != null)
                 {
                     Console.WriteLine($"Saving Company Profile: {companyProfile}");
-                    // You may need to include CR or logo/document files if applicable
                     var updated = await CompanyProfileService.UpdateCompanyProfileAsync(companyProfile, _authToken);
                     if (updated)
                     {
@@ -170,7 +170,30 @@ namespace QLN.Web.Shared.Pages.Company
             return displayAttr?.Name ?? enumValue.ToString();
         }
 
-       
+
+        private List<CountryCityModel> CountryCityList = new()
+{
+    new CountryCityModel { Country = "Qatar", Cities = new() { "Doha", "Al Wakrah", "Al Rayyan", "Lusail", "Umm Salal" }, CountryCode = "+974" },
+    new CountryCityModel { Country = "UAE", Cities = new() { "Dubai", "Abu Dhabi", "Sharjah", "Ajman", "Fujairah" }, CountryCode = "+971" },
+    new CountryCityModel { Country = "India", Cities = new() { "Mumbai", "Delhi", "Bangalore", "Chennai", "Hyderabad" }, CountryCode = "+91" },
+    new CountryCityModel { Country = "USA", Cities = new() { "New York", "Los Angeles", "Chicago", "Houston", "Phoenix" }, CountryCode = "+1" },
+    new CountryCityModel { Country = "UK", Cities = new() { "London", "Manchester", "Birmingham", "Leeds", "Liverpool" }, CountryCode = "+44" }
+};
+
+        private List<string> AvailableCities = new();
+
+        private void OnCountryChanged(string selectedCountry)
+        {
+            companyProfile.Country = selectedCountry;
+
+            var match = CountryCityList.FirstOrDefault(c => c.Country == selectedCountry);
+            AvailableCities = match?.Cities ?? new();
+            companyProfile.PhoneNumberCountryCode = match?.CountryCode ?? "";
+            companyProfile.WhatsAppCountryCode = match?.CountryCode ?? "";
+
+            companyProfile.City = AvailableCities.FirstOrDefault();
+        }
+
 
     }
 

@@ -39,34 +39,26 @@
     else if (companyProfile != null)
     {
         <MudContainer Class="company-profile-container">
-            <MudGrid Class="ml-4">
-                <!-- Contact Information -->
-                <MudItem xs="12">
-                    <MudText Class="heading-style mt-2 ml-14">Contact Information</MudText>
-                </MudItem>
+            <MudGrid GutterSize="24px" class="ml-3 mt-4">
+             
 
                 <!-- Logo Upload -->
-                <MudItem xs="12" sm="3">
+                <MudItem xs="12" md="3" Class="company-profile-logo-container">
+                    <!-- Contact Information -->
+
+                    <MudText Class="heading-style mt-2 ml-14">Contact Information</MudText>
+
                     <MudFileUpload T="IBrowserFile" Accept="image/*" FilesChanged="OnLogoFileSelected" MaxFileSize="10485760">
                         <ActivatorContent>
                             <MudPaper Elevation="1"
-                                      Class="d-flex flex-column align-center justify-center p-2"
+                                      Class="d-flex flex-column align-center justify-center mt-4 p-2"
                                       Style="height: 240px; width:240px; border: 2px dashed #ccc; cursor: pointer;">
                                 @if (!string.IsNullOrEmpty(companyProfile.CompanyLogo))
                                 {
                                     <img src="@($"data:image/*;base64,{companyProfile.CompanyLogo}")"
                                          alt="Company Logo"
                                          style="max-height: 100%; max-width: 100%; object-fit: contain;" />
-                                    <div style="
-                        position: absolute;
-                        bottom: 0;
-color:white;
-width:240px;                        height: 24px;
-                        background-color: #000000CC;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        gap: 8px;">
+                                    <div style=" position: absolute; bottom: 0;color:white;width:240px; height: 24px;background-color: #000000CC; display: flex; justify-content: center; align-items: center;gap: 8px;">
 
 
                                         <MudIconButton Icon="@Icons.Material.Outlined.Edit"
@@ -95,51 +87,115 @@ width:240px;                        height: 24px;
 
 
 
-                <MudItem xs="12" sm="9">
-                    <MudTextField id="businessName" @bind-Value="companyProfile.BusinessName" Label="Business Name" Required="true" Class="form-input no-underline" />
-                    <MudSelect T="string" Label="Country*" @bind-Value="companyProfile.Country" Class="select-input no-underline">
-                        <MudSelectItem Value="@("Qatar")">Qatar</MudSelectItem>
-                        <MudSelectItem Value="@("UAE")">UAE</MudSelectItem>
-                    </MudSelect>
+                <MudItem xs="12" md="9" Class="company-profile-form-section">
+                    <EditForm Model="@companyProfile" OnValidSubmit="SaveCompanyProfileAsync">
+                        <DataAnnotationsValidator />
 
-                    <MudSelect T="string" Label="City*" @bind-Value="companyProfile.City" Class="select-input no-underline">
-                        <MudSelectItem Value="@("Doha")">Doha</MudSelectItem>
-                        <MudSelectItem Value="@("Dubai")">Dubai</MudSelectItem>
-                    </MudSelect>
+                        <MudTextField id="businessName" @bind-Value="companyProfile.BusinessName" Label="Business Name" Required="true" Class="form-input no-underline" Immediate="true"
+                                      For="@(() => companyProfile.BusinessName)" />
+                        <ValidationMessage For="@(() => companyProfile.BusinessName)" />
+
+                        <MudSelect T="string"
+                                   Label="Country *"
+                                   Value="companyProfile.Country"
+                                   ValueChanged="OnCountryChanged"
+                                   Class="select-input no-underline"
+                                   Immediate="true">
+                            @foreach (var item in CountryCityList)
+                            {
+                                <MudSelectItem Value="@item.Country">@item.Country</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <ValidationMessage For="@(() => companyProfile.Country)" />
+
+                        <MudSelect T="string"
+                                   Label="City *"
+                                   @bind-Value="companyProfile.City"
+                                   Class="select-input no-underline"
+                                   Immediate="true"
+                                   Disabled="@(!AvailableCities.Any())">
+                            @foreach (var city in AvailableCities)
+                            {
+                                <MudSelectItem Value="@city">@city</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <ValidationMessage For="@(() => companyProfile.City)" />
+
 
                     <MudTextField @bind-Value="companyProfile.BranchLocations[0]" Label="Branches" Class="form-input no-underline" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.LocationOn" />
 
-                    <MudTextField @bind-Value="companyProfile.PhoneNumber" Label="Phone Number" Class="form-input no-underline" Adornment="Adornment.Start" AdornmentText="+974" />
-                    <MudTextField @bind-Value="companyProfile.WhatsAppNumber" Label="WhatsApp Number" Class="form-input no-underline" Adornment="Adornment.Start" AdornmentText="+974" />
+                        <MudTextField @bind-Value="companyProfile.PhoneNumber" Label="Phone Number" Class="form-input no-underline" Adornment="Adornment.Start" AdornmentText="@companyProfile.PhoneNumberCountryCode" />
+                        <MudTextField @bind-Value="companyProfile.WhatsAppNumber" Label="WhatsApp Number" Class="form-input no-underline" Adornment="Adornment.Start" AdornmentText="@companyProfile.WhatsAppCountryCode" />
+                        <ValidationMessage For="@(() => companyProfile.WebsiteUrl)" Immediate="true" />
+
                     <MudTextField @bind-Value="companyProfile.Email" Label="Email" Class="form-input no-underline" />
+                        <ValidationMessage For="@(() => companyProfile.Email)" />
+
                     <MudTextField @bind-Value="companyProfile.WebsiteUrl" Label="Website URL" Class="form-input no-underline" />
+                        <ValidationMessage For="@(() => companyProfile.WebsiteUrl)" Immediate="true" />
+
                     <MudTextField @bind-Value="companyProfile.FacebookUrl" Label="Facebook URL" Class="form-input no-underline" />
+                        <ValidationMessage For="@(() => companyProfile.FacebookUrl)" />
+
                     <MudTextField @bind-Value="companyProfile.InstagramUrl" Label="Instagram URL" Class="form-input no-underline" />
+                        <ValidationMessage For="@(() => companyProfile.InstagramUrl)" />
+
                     <!-- Operating Hours -->
 
                     <MudText Typo="Typo.h6" Class="section-header">Operating Hours</MudText>
 
                     <MudGrid class="grid-flex">
                         <div class="row-flex">
+                            <MudSelect T="string" Label="Start Day *"
+                                       @bind-Value="companyProfile.StartDay"
+                                       Class="select-input no-underline"
+                                       Immediate="true">
+                                @foreach (var day in Enum.GetValues<DaysOfWeek>())
+                                {
+                                    <MudSelectItem T="string" Value="@day.ToString()">@day</MudSelectItem>
+                                }
+                            </MudSelect>
 
-                            <MudTextField Class="grid-input no-underline" Label="Start Day" @bind-Value="companyProfile.StartDay" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.CalendarToday" />
-                            <MudTextField Label="End Day" @bind-Value="companyProfile.EndDay" Class="grid-input no-underline" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.CalendarToday" />
+                            <MudSelect T="string" Label="End Day *"
+                                       @bind-Value="companyProfile.EndDay"
+                                       Class="select-input no-underline"
+                                       Immediate="true">
+                                @foreach (var day in Enum.GetValues<DaysOfWeek>())
+                                {
+                                    <MudSelectItem T="string" Value="@day.ToString()">@day</MudSelectItem>
+                                }
+                            </MudSelect>
+                        
                         </div>
                         <div class="row-flex">
 
-                            <MudTextField Label="Start Hour" @bind-Value="companyProfile.StartHour" Class="grid-input no-underline" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.AccessTime" />
+                            <MudTimePicker @bind-Time="companyProfile.StartHour"
+                                           Label="Start Hour"
+                                           Class="grid-input no-underline"
+                                           Adornment="Adornment.End"
+                                           AdornmentIcon="@Icons.Material.Outlined.AccessTime" />
 
-                            <MudTextField Label="End Hour" @bind-Value="companyProfile.EndHour" Class="grid-input no-underline" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.AccessTime" />
+                            <MudTimePicker @bind-Time="companyProfile.EndHour"
+                                           Label="End Hour"
+                                           Class="grid-input no-underline"
+                                           Adornment="Adornment.End"
+                                           AdornmentIcon="@Icons.Material.Outlined.AccessTime" />
+
                         </div>
                     </MudGrid>
 
                     <!-- Company Profile -->
                     <MudText Typo="Typo.h6" Class="heading-style">Company Profile</MudText>
-
-                    <MudSelect T="string" Label="Nature of Business*" @bind-Value="companyProfile.NatureOfBusiness" Class="select-input no-underline">
+                    <MudSelect T="int"
+                               Label="Nature of Business *"
+                               SelectedValues="@companyProfile.NatureOfBusiness"
+                               SelectedValuesChanged="@((IEnumerable<int> values) => { companyProfile.NatureOfBusiness = values.ToList(); })"
+                               MultiSelection="true"
+                               ToStringFunc="@(value => GetDisplayName((NatureOfBusiness)value))"
+                               Class="select-input no-underline">
                         @foreach (var item in Enum.GetValues<NatureOfBusiness>())
                         {
-                            <MudSelectItem T="string" Value="@item.ToString()">@GetDisplayName(item)</MudSelectItem>
+                            <MudSelectItem Value="@(Convert.ToInt32(item))">@GetDisplayName(item)</MudSelectItem>
                         }
                     </MudSelect>
 
@@ -214,16 +270,16 @@ width:240px;                        height: 24px;
                     <MudText Typo="Typo.caption">Supported file formats: PDF, PNG, JPG. Max: 10MB</MudText>
                     <!-- Save Button -->
                     <MudItem xs="12" Class="mt-4 button-container">
-                        <MudButton Variant="Variant.Filled"
-                                   Color="Color.Primary"
-                                   Style="width:100%"
-                                   OnClick="SaveCompanyProfileAsync"
-                                   Disabled="@isSaving"
-                                   Loading="@isSaving">
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       Style="width:100%"
+                                       Disabled="@isSaving"
+                                       Loading="@isSaving"
+                                       ButtonType="ButtonType.Submit">
                             Save
                         </MudButton>
                     </MudItem>
-
+                   </EditForm>
                 </MudItem>
 
 
@@ -236,7 +292,6 @@ width:240px;                        height: 24px;
         <EmptyCard Title="Company Profile Not Found" Subtitle="The company profile you are trying to edit does not exist." />
     }
 </div>
-
 
 <style>
 
@@ -277,7 +332,7 @@ width:240px;                        height: 24px;
 
     .doc-input {
         justify-content: center;
-        width: 472px;
+        max-width: 472px;
         height: 60px;
         margin-top: 14px;
         background-color: #FFFFFF;
@@ -325,7 +380,7 @@ width:240px;                        height: 24px;
     .grid-input {
         width: 232px !important;
         background-color: #FFFFFF;
-        padding: 14px;
+        padding: 0px 10px;
         margin-top: 10px;
         height: 60px;
         border: 1px solid #D0D5DD;
@@ -371,6 +426,13 @@ width:240px;                        height: 24px;
             padding: 10px 8px;
         }
 
+        .company-profile-logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
         .grid-flex {
             display: flex;
             gap: 10px;
@@ -392,11 +454,78 @@ width:240px;                        height: 24px;
             height: 60px;
             margin-top: 14px;
             background-color: #FFFFFF;
-            width: auto;
             border-radius: 6px;
             padding: 10px;
             position: relative;
             border: 1px solid #D0D5DD;
         }
+
+        .grid-input {
+            width: 100% !important;
+            background-color: #FFFFFF;
+            padding: 0px 10px;
+            margin-top: 10px;
+            height: 60px;
+            border: 1px solid #D0D5DD;
+        }
+    }
+
+    @@media (min-width: 601px) and (max-width: 1110px) {
+        .company-profile-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px 8px;
+        }
+
+        .company-profile-logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .company-profile-form-section {
+            justify-content: center;
+            display: flex;
+        }
+
+        .grid-flex {
+            display: flex;
+            gap: 10px;
+            flex-direction: column;
+            margin-top: 10px;
+            margin-left: 10px;
+            max-width: auto !important;
+        }
+
+        .row-flex {
+            flex-direction: column;
+            display: flex;
+            gap: 10px;
+            width: auto;
+        }
+
+        .doc-input {
+            justify-content: center;
+            height: 60px;
+            margin-top: 14px;
+            background-color: #FFFFFF;
+            border-radius: 6px;
+            padding: 10px;
+            position: relative;
+            border: 1px solid #D0D5DD;
+        }
+
+        .grid-input {
+            width: 100% !important;
+            background-color: #FFFFFF;
+            padding: 0px 10px;
+            margin-top: 10px;
+            height: 60px;
+            border: 1px solid #D0D5DD;
+        }
+    }
+
     }
 </style>
