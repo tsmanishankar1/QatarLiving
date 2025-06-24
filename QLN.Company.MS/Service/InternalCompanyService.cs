@@ -85,11 +85,17 @@ namespace QLN.Company.MS.Service
 
             if (dto.NatureOfBusiness == null || dto.NatureOfBusiness.Count == 0)
                 throw new ArgumentException("NatureOfBusiness list is required and cannot be empty.");
-
             foreach (var val in dto.NatureOfBusiness)
             {
                 if (!Enum.IsDefined(typeof(NatureOfBusiness), val))
                     throw new ArgumentException($"Invalid NatureOfBusiness: {val}");
+            }
+            if (!string.IsNullOrWhiteSpace(dto.BusinessDescription))
+            {
+                var wordCount = Regex.Matches(dto.BusinessDescription, @"\b\w+\b").Count;
+
+                if (wordCount > 300)
+                    throw new ArgumentException("Business description should not exceed 300 words.");
             }
 
             if (string.IsNullOrWhiteSpace(dto.PhoneNumber))
@@ -466,6 +472,48 @@ namespace QLN.Company.MS.Service
             }
             catch(Exception)
             {
+                throw;
+            }
+        }
+        public async Task<List<CompanySummaryDto>> GetStatusByTokenUser(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.CompanyStoreName,
+                    ConstantValues.CompanyIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new();
+
+                var items = await _dapr.GetBulkStateAsync(
+                    ConstantValues.CompanyStoreName,
+                    keys,
+                    null,
+                    cancellationToken: cancellationToken
+                );
+
+                var companies = items
+                    .Select(i => JsonSerializer.Deserialize<CompanyProfileDto>(i.Value, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    }))
+                    .Where(c => c != null && c.UserId == userId)
+                    .Select(c => new CompanySummaryDto
+                    {
+                        CompanyId = c.Id,
+                        UserId = c.UserId,
+                        BusinessName = c.BusinessName,
+                        Vertical = c.Vertical,
+                        SubVertical = c.SubVertical ?? SubVertical.Items,   
+                        IsActive = c.IsActive
+                    })
+                    .ToList();
+
+                return companies;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch company summaries for user {UserId}", userId);
                 throw;
             }
         }

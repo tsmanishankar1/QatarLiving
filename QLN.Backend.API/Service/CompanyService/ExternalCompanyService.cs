@@ -43,7 +43,7 @@ namespace QLN.Backend.API.Service.CompanyService
                     if (crExtension is not ("pdf" or "png" or "jpg"))
                         throw new ArgumentException("CR Document must be in PDF, PNG, or JPG format.");
 
-                    crBlobFileName = $"{dto.BusinessName}_{dto.UserId}.{crExtension}";
+                    crBlobFileName = $"{dto.BusinessName}_{dto.Id}.{crExtension}";
                     var crBlobUrl = await _blobStorage.SaveBase64File(crBase64, crBlobFileName, "crdocument", cancellationToken);
                     dto.CRDocument = crBlobUrl;
                 }
@@ -57,7 +57,7 @@ namespace QLN.Backend.API.Service.CompanyService
                     if (logoExtension is not ("png" or "jpg"))
                         throw new ArgumentException("Company logo must be in PNG or JPG format.");
 
-                    logoBlobFileName = $"{dto.BusinessName}_{dto.UserId}.{logoExtension}";
+                    logoBlobFileName = $"{dto.BusinessName}_{dto.Id}.{logoExtension}";
                     var logoBlobUrl = await _blobStorage.SaveBase64File(logoBase64Data, logoBlobFileName, "companylogo", cancellationToken);
                     dto.CompanyLogo = logoBlobUrl;
                 }
@@ -157,7 +157,7 @@ namespace QLN.Backend.API.Service.CompanyService
                     if (crExtension is not ("pdf" or "png" or "jpg"))
                         throw new ArgumentException("CR Document must be in PDF, PNG, or JPG format.");
 
-                    crBlobFileName = $"{dto.BusinessName}_{dto.UserId}.{crExtension}";
+                    crBlobFileName = $"{dto.BusinessName}_{dto.Id}.{crExtension}";
                     var crBlobUrl = await _blobStorage.SaveBase64File(crBase64, crBlobFileName, "crdocument", cancellationToken);
                     dto.CRDocument = crBlobUrl;
                 }
@@ -171,7 +171,7 @@ namespace QLN.Backend.API.Service.CompanyService
                     if (logoExtension is not ("png" or "jpg"))
                         throw new ArgumentException("Company logo must be in PNG or JPG format.");
 
-                    logoBlobFileName = $"{dto.BusinessName}_{dto.UserId}.{logoExtension}";
+                    logoBlobFileName = $"{dto.BusinessName}_{dto.Id}.{logoExtension}";
                     var logoBlobUrl = await _blobStorage.SaveBase64File(logoBase64Data, logoBlobFileName, "companylogo", cancellationToken);
                     dto.CompanyLogo = logoBlobUrl;
                 }
@@ -414,6 +414,27 @@ namespace QLN.Backend.API.Service.CompanyService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving companies for token user");
+                throw;
+            }
+        }
+        public async Task<List<CompanySummaryDto>> GetStatusByTokenUser(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/companyprofile/statusByUserId?userId={userId}";
+
+                var companies = await _dapr.InvokeMethodAsync<List<CompanySummaryDto>>(
+                    HttpMethod.Get,
+                    ConstantValues.CompanyServiceAppId,
+                    url,
+                    cancellationToken
+                );
+
+                return companies ?? new();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get status by token user");
                 throw;
             }
         }
