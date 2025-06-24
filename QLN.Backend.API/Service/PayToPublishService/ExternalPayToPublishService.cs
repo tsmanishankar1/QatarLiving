@@ -64,75 +64,75 @@ namespace QLN.Backend.API.Service.PayToPublishService
             }
         }
 
-        public async Task<List<BasicPriceResponseDto>> GetBasicPricesByVerticalAndCategoryAsync(
-            int verticalTypeId,
-            int categoryId,
-            CancellationToken cancellationToken = default)
-        {
-            var resultList = new List<BasicPriceResponseDto>();
-            var ids = _basicPriceIds.Keys.ToList();
-            if (!Enum.IsDefined(typeof(Vertical), verticalTypeId))
-            {
-                _logger.LogWarning("Invalid VerticalTypeId: {VerticalTypeId}", verticalTypeId);
-                return resultList;
-            }
+        //public async Task<List<BasicPriceResponseDto>> GetBasicPricesByVerticalAndCategoryAsync(
+        //    int verticalTypeId,
+        //    int categoryId,
+        //    CancellationToken cancellationToken = default)
+        //{
+        //    var resultList = new List<BasicPriceResponseDto>();
+        //    var ids = _basicPriceIds.Keys.ToList();
+        //    if (!Enum.IsDefined(typeof(Vertical), verticalTypeId))
+        //    {
+        //        _logger.LogWarning("Invalid VerticalTypeId: {VerticalTypeId}", verticalTypeId);
+        //        return resultList;
+        //    }
 
-            if (!Enum.IsDefined(typeof(SubscriptionCategory), categoryId))
-            {
-                _logger.LogWarning("Invalid CategoryId: {CategoryId}", categoryId);
-                return resultList;
-            }
+        //    if (!Enum.IsDefined(typeof(SubscriptionCategory), categoryId))
+        //    {
+        //        _logger.LogWarning("Invalid CategoryId: {CategoryId}", categoryId);
+        //        return resultList;
+        //    }
 
-            var verticalEnum = (Vertical)verticalTypeId;
-            var categoryEnum = (SubscriptionCategory)categoryId;
+        //    var verticalEnum = (Vertical)verticalTypeId;
+        //    var categoryEnum = (SubscriptionCategory)categoryId;
 
-            _logger.LogInformation("Searching for basic prices with Vertical: {Vertical} ({VerticalId}), Category: {Category} ({CategoryId})",
-                verticalEnum, verticalTypeId, categoryEnum, categoryId);
+        //    _logger.LogInformation("Searching for basic prices with Vertical: {Vertical} ({VerticalId}), Category: {Category} ({CategoryId})",
+        //        verticalEnum, verticalTypeId, categoryEnum, categoryId);
 
-            foreach (var id in ids)
-            {
-                try
-                {
-                    var actor = GetActorProxy(id);
-                    var data = await actor.GetDatasAsync(cancellationToken);
+        //    foreach (var id in ids)
+        //    {
+        //        try
+        //        {
+        //            var actor = GetActorProxy(id);
+        //            var data = await actor.GetDatasAsync(cancellationToken);
 
-                    if (data != null)
-                    {
-                        _logger.LogDebug("Found basic price: ID={Id}, Vertical={Vertical}, Category={Category}",
-                            data.Id, data.VerticalTypeId, data.CategoryId);
+        //            if (data != null)
+        //            {
+        //                _logger.LogDebug("Found basic price: ID={Id}, Vertical={Vertical}, Category={Category}",
+        //                    data.Id, data.VerticalTypeId, data.CategoryId);
 
-                        if (data.VerticalTypeId == verticalEnum && data.CategoryId == categoryEnum)
-                        {
-                            resultList.Add(new BasicPriceResponseDto
-                            {
-                                Id = data.Id,
-                                VerticalTypeId = (int)data.VerticalTypeId,
-                                VerticalTypeName = GetEnumDisplayName(data.VerticalTypeId),
-                                CategoryId = (int)data.CategoryId,
-                                CategoryName = GetEnumDisplayName(data.CategoryId),
-                                BasicPriceId = (int)data.BasicPriceId,
-                                BasicPriceName = GetEnumDisplayName(data.BasicPriceId),
-                                LastUpdated = data.LastUpdated
-                            });
+        //                if (data.VerticalTypeId == verticalEnum && data.CategoryId == categoryEnum)
+        //                {
+        //                    resultList.Add(new BasicPriceResponseDto
+        //                    {
+        //                        Id = data.Id,
+        //                        VerticalTypeId = (int)data.VerticalTypeId,
+        //                        VerticalTypeName = GetEnumDisplayName(data.VerticalTypeId),
+        //                        CategoryId = (int)data.CategoryId,
+        //                        CategoryName = GetEnumDisplayName(data.CategoryId),
+        //                        BasicPriceId = (int)data.BasicPriceId,
+        //                        BasicPriceName = GetEnumDisplayName(data.BasicPriceId),
+        //                        LastUpdated = data.LastUpdated
+        //                    });
 
-                            _logger.LogInformation("Added basic price to results: ID={Id}", data.Id);
-                        }
-                    }
-                    else
-                    {
-                        _logger.LogWarning("No data found for BasicPrice ID: {Id}", id);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error retrieving data for BasicPrice ID: {Id}", id);
+        //                    _logger.LogInformation("Added basic price to results: ID={Id}", data.Id);
+        //                }
+        //            }
+        //            else
+        //            {
+        //                _logger.LogWarning("No data found for BasicPrice ID: {Id}", id);
+        //            }
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            _logger.LogError(ex, "Error retrieving data for BasicPrice ID: {Id}", id);
                     
-                }
-            }
+        //        }
+        //    }
 
-            _logger.LogInformation("Found {Count} basic prices matching criteria", resultList.Count);
-            return resultList;
-        }
+        //    _logger.LogInformation("Found {Count} basic prices matching criteria", resultList.Count);
+        //    return resultList;
+        //}
 
         public async Task CreatePlanAsync(PayToPublishRequestDto request, CancellationToken cancellationToken = default)
         {
@@ -150,6 +150,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 VerticalTypeId = request.VerticalTypeId,
                 CategoryId = request.CategoryId,
                 StatusId = request.StatusId,
+                IsFreeAd =request.IsFreeAd,
                 LastUpdated = DateTime.UtcNow
             };
 
@@ -176,129 +177,142 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 throw;
             }
         }
-        public async Task<PayToPublishListResponseDto> GetPlansByVerticalAndCategoryAsync(
-            int verticalTypeId,
-            int categoryId,
-            CancellationToken cancellationToken = default)
+        public async Task<List<PayToPublishWithBasicPriceResponseDto>> GetPlansByVerticalAndCategoryWithBasicPriceAsync(
+      int verticalTypeId,
+      int categoryId,
+      CancellationToken cancellationToken = default)
         {
-            var resultList = new List<PayToPublishResponseDto>();
-            var ids = _payToPublishIds.Keys.ToList();
+            var resultList = new List<PayToPublishWithBasicPriceResponseDto>();
+            var planIds = _payToPublishIds.Keys.ToList();
+            var basicPriceIds = _basicPriceIds.Keys.ToList();
 
-            
+            // Validate input parameters
             if (!Enum.IsDefined(typeof(Vertical), verticalTypeId))
             {
                 _logger.LogWarning("Invalid VerticalTypeId: {VerticalTypeId}", verticalTypeId);
-                return new PayToPublishListResponseDto
-                {
-                    VerticalId = verticalTypeId,
-                    VerticalName = "Invalid",
-                    CategoryId = categoryId,
-                    CategoryName = "Invalid",
-                    PayToPublish = new List<PayToPublishResponseDto>()
-                };
+                return resultList;
             }
 
             if (!Enum.IsDefined(typeof(SubscriptionCategory), categoryId))
             {
                 _logger.LogWarning("Invalid CategoryId: {CategoryId}", categoryId);
-                return new PayToPublishListResponseDto
-                {
-                    VerticalId = verticalTypeId,
-                    VerticalName = "Invalid",
-                    CategoryId = categoryId,
-                    CategoryName = "Invalid",
-                    PayToPublish = new List<PayToPublishResponseDto>()
-                };
+                return resultList;
             }
 
-            
-            var targetVertical = (Vertical)verticalTypeId;
-            var targetCategory = (SubscriptionCategory)categoryId;
+            var verticalEnum = (Vertical)verticalTypeId;
+            var categoryEnum = (SubscriptionCategory)categoryId;
 
             _logger.LogInformation("Searching for plans with Vertical: {Vertical} ({VerticalId}), Category: {Category} ({CategoryId}). Total plans in memory: {TotalPlans}",
-                targetVertical, verticalTypeId, targetCategory, categoryId, ids.Count);
-            if (!ids.Any())
+                verticalEnum, verticalTypeId, categoryEnum, categoryId, planIds.Count);
+
+            if (!planIds.Any())
             {
                 _logger.LogWarning("No plans found in memory. Make sure plans are created before trying to retrieve them.");
-                return new PayToPublishListResponseDto
-                {
-                    VerticalId = verticalTypeId,
-                    VerticalName = GetEnumDisplayName(targetVertical),
-                    CategoryId = categoryId,
-                    CategoryName = GetEnumDisplayName(targetCategory),
-                    PayToPublish = new List<PayToPublishResponseDto>()
-                };
+                return resultList;
             }
 
-            foreach (var id in ids)
+            // First, get all basic prices and create a lookup dictionary
+            var basicPriceLookup = new Dictionary<(Vertical, SubscriptionCategory), BasicPriceDto>();
+            foreach (var basicPriceId in basicPriceIds)
             {
                 try
                 {
-                    var actor = GetActorProxy(id);
-                    using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-                    using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+                    var basicPriceActor = GetActorProxy(basicPriceId);
+                    using var basicPriceTimeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                    using var basicPriceCombinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, basicPriceTimeoutCts.Token);
 
-                    var data = await actor.GetDataAsync(combinedCts.Token);
-
-                    if (data != null)
+                    var basicPriceData = await basicPriceActor.GetDatasAsync(basicPriceCombinedCts.Token);
+                    if (basicPriceData != null)
                     {
-                        _logger.LogDebug("Retrieved plan data: ID={Id}, PlanName={PlanName}, Vertical={Vertical} ({VerticalInt}), Category={Category} ({CategoryInt}), Status={Status}",
-                            data.Id, data.PlanName, data.VerticalTypeId, (int)data.VerticalTypeId, data.CategoryId, (int)data.CategoryId, data.StatusId);
-
-                        if (data.VerticalTypeId == targetVertical &&
-                            data.CategoryId == targetCategory &&
-                            data.StatusId != Status.Expired)
+                        var key = (basicPriceData.VerticalTypeId, basicPriceData.CategoryId);
+                        if (!basicPriceLookup.ContainsKey(key))
                         {
-                            resultList.Add(new PayToPublishResponseDto
-                            {
-                                Id = data.Id,
-                                PlanName = data.PlanName,
-                                Price = data.Price,
-                                Currency = data.Currency,
-                                Description = data.Description,
-                                DurationId = (int)data.Duration,
-                                DurationName = GetEnumDisplayName(data.Duration)
-                            });
-
-                            _logger.LogInformation("Added plan to results: {PlanName} (ID: {Id})", data.PlanName, data.Id);
+                            basicPriceLookup[key] = basicPriceData;
                         }
-                        else
-                        {
-                            _logger.LogDebug("Plan doesn't match criteria - Vertical match: {VerticalMatch}, Category match: {CategoryMatch}, Not expired: {NotExpired}",
-                                data.VerticalTypeId == targetVertical,
-                                data.CategoryId == targetCategory,
-                                data.StatusId != Status.Expired);
-                        }
-                    }
-                    else
-                    {
-                        _logger.LogWarning("Actor returned null data for PayToPublish ID: {Id}", id);
-                        _payToPublishIds.TryRemove(id, out _);
                     }
                 }
                 catch (TimeoutException)
                 {
-                    _logger.LogError("Timeout occurred while retrieving data for PayToPublish ID: {Id}", id);
+                    _logger.LogError("Timeout occurred while retrieving basic price data for ID: {Id}", basicPriceId);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error retrieving data for PayToPublish ID: {Id}. Exception type: {ExceptionType}", id, ex.GetType().Name);
+                    _logger.LogError(ex, "Error retrieving basic price data for ID: {Id}. Exception type: {ExceptionType}", basicPriceId, ex.GetType().Name);
+                }
+            }
+
+            // Now get filtered plans and match with basic prices
+            foreach (var planId in planIds)
+            {
+                try
+                {
+                    var planActor = GetActorProxy(planId);
+                    using var planTimeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                    using var planCombinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, planTimeoutCts.Token);
+
+                    var planData = await planActor.GetDataAsync(planCombinedCts.Token);
+
+                    if (planData != null)
+                    {
+                        _logger.LogDebug("Retrieved plan data: ID={Id}, Vertical={Vertical} ({VerticalInt}), Category={Category} ({CategoryInt}), Status={Status}",
+                            planData.Id, planData.VerticalTypeId, (int)planData.VerticalTypeId, planData.CategoryId, (int)planData.CategoryId, planData.StatusId);
+
+                        // Filter by vertical, category, and exclude expired plans
+                        if (planData.VerticalTypeId == verticalEnum &&
+                            planData.CategoryId == categoryEnum &&
+                            planData.StatusId != Status.Expired)
+                        {
+                            // Look up basic price for this plan's vertical and category
+                            var lookupKey = (planData.VerticalTypeId, planData.CategoryId);
+                            basicPriceLookup.TryGetValue(lookupKey, out var matchingBasicPrice);
+
+                            resultList.Add(new PayToPublishWithBasicPriceResponseDto
+                            {
+                                Id = planData.Id,
+                                PlanName = planData.PlanName,
+                                Price = planData.Price,
+                                Currency = planData.Currency,
+                                Description = planData.Description,
+                                DurationId = (int)planData.Duration,
+                                DurationName = GetEnumDisplayName(planData.Duration),
+                                IsFreeAd = planData.IsFreeAd,
+                                VerticalId = (int)planData.VerticalTypeId,
+                                VerticalName = GetEnumDisplayName(planData.VerticalTypeId),
+                                CategoryId = (int)planData.CategoryId,
+                                CategoryName = GetEnumDisplayName(planData.CategoryId),
+                                BasicPriceId = matchingBasicPrice != null ? (int)matchingBasicPrice.BasicPriceId : (int?)null,
+                                BasicPriceName = matchingBasicPrice != null ? GetEnumDisplayName(matchingBasicPrice.BasicPriceId) : null
+                            });
+
+                            _logger.LogInformation("Added plan to results: ID={Id}, PlanName={PlanName}", planData.Id, planData.PlanName);
+                        }
+                        else
+                        {
+                            _logger.LogDebug("Plan doesn't match criteria - Vertical match: {VerticalMatch}, Category match: {CategoryMatch}, Status: {Status}",
+                                planData.VerticalTypeId == verticalEnum,
+                                planData.CategoryId == categoryEnum,
+                                planData.StatusId);
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Actor returned null data for Plan ID: {Id}", planId);
+                        _payToPublishIds.TryRemove(planId, out _);
+                    }
+                }
+                catch (TimeoutException)
+                {
+                    _logger.LogError("Timeout occurred while retrieving data for Plan ID: {Id}", planId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error retrieving data for Plan ID: {Id}. Exception type: {ExceptionType}", planId, ex.GetType().Name);
                     _logger.LogDebug("Full exception details: {Exception}", ex);
                 }
             }
 
-            _logger.LogInformation("Found {Count} plans matching criteria out of {TotalIds} total plans", resultList.Count, ids.Count);
-            var verticalName = GetEnumDisplayName(targetVertical);
-            var categoryName = GetEnumDisplayName(targetCategory);
-
-            return new PayToPublishListResponseDto
-            {
-                VerticalId = verticalTypeId,
-                VerticalName = verticalName,
-                CategoryId = categoryId,
-                CategoryName = categoryName,
-                PayToPublish = resultList
-            };
+            _logger.LogInformation("Found {Count} plans matching criteria out of {TotalIds} total plans", resultList.Count, planIds.Count);
+            return resultList;
         }
         private string GetEnumDisplayName<T>(T enumValue) where T : Enum
         {
@@ -316,11 +330,38 @@ namespace QLN.Backend.API.Service.PayToPublishService
             }
         }
 
-        public async Task<List<PayToPublishResponseDto>> GetAllPlansAsync(CancellationToken cancellationToken = default)
+        public async Task<List<PayToPublishWithBasicPriceResponseDto>> GetAllPlansWithBasicPriceAsync(CancellationToken cancellationToken = default)
         {
             var ids = _payToPublishIds.Keys.ToList();
-            var plans = new List<PayToPublishResponseDto>();
+            var basicPriceIds = _basicPriceIds.Keys.ToList();
+            var plans = new List<PayToPublishWithBasicPriceResponseDto>();
 
+            // First, get all basic prices and create a lookup dictionary
+            var basicPriceLookup = new Dictionary<(Vertical, SubscriptionCategory), BasicPriceDto>();
+
+            foreach (var basicPriceId in basicPriceIds)
+            {
+                try
+                {
+                    var actor = GetActorProxy(basicPriceId);
+                    var basicPriceData = await actor.GetDatasAsync(cancellationToken);
+
+                    if (basicPriceData != null)
+                    {
+                        var key = (basicPriceData.VerticalTypeId, basicPriceData.CategoryId);
+                        if (!basicPriceLookup.ContainsKey(key))
+                        {
+                            basicPriceLookup[key] = basicPriceData;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error retrieving basic price data for ID: {Id}", basicPriceId);
+                }
+            }
+
+            // Now get all plans and match with basic prices
             foreach (var id in ids)
             {
                 try
@@ -330,7 +371,11 @@ namespace QLN.Backend.API.Service.PayToPublishService
 
                     if (data != null && data.StatusId != Status.Expired)
                     {
-                        plans.Add(new PayToPublishResponseDto
+                        // Look up basic price for this plan's vertical and category
+                        var lookupKey = (data.VerticalTypeId, data.CategoryId);
+                        basicPriceLookup.TryGetValue(lookupKey, out var matchingBasicPrice);
+
+                        plans.Add(new PayToPublishWithBasicPriceResponseDto
                         {
                             Id = data.Id,
                             PlanName = data.PlanName,
@@ -338,8 +383,17 @@ namespace QLN.Backend.API.Service.PayToPublishService
                             Currency = data.Currency,
                             Description = data.Description,
                             DurationId = (int)data.Duration,
-                            DurationName = GetEnumDisplayName(data.Duration)
+                            DurationName = GetEnumDisplayName(data.Duration),
+                            IsFreeAd = data.IsFreeAd,
+                            VerticalId = (int)data.VerticalTypeId,
+                            VerticalName = GetEnumDisplayName(data.VerticalTypeId),
+                            CategoryId = (int)data.CategoryId,
+                            CategoryName = GetEnumDisplayName(data.CategoryId),
+                            BasicPriceId = matchingBasicPrice != null ? (int)matchingBasicPrice.BasicPriceId : (int?)null,
+                            BasicPriceName = matchingBasicPrice != null ? GetEnumDisplayName(matchingBasicPrice.BasicPriceId) : null
                         });
+
+                        _logger.LogInformation("Added plan with basic price info: {PlanName} (ID: {Id})", data.PlanName, data.Id);
                     }
                 }
                 catch (Exception ex)
@@ -348,8 +402,10 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 }
             }
 
+            _logger.LogInformation("Retrieved {Count} plans with basic price information", plans.Count);
             return plans;
         }
+
 
         public async Task<bool> UpdatePlanAsync(Guid id, PayToPublishRequestDto request, CancellationToken cancellationToken = default)
         {

@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using QLN.Common.DTO_s;
-using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.IService.IPayToPublishService;
 using System.Security.Claims;
 
@@ -68,30 +67,22 @@ public static class PayToPublishEndpoints
         {
             try
             {
-                var result = await service.GetPlansByVerticalAndCategoryAsync(verticalTypeId, categoryId, cancellationToken);
-                if (result is null)
-                    return TypedResults.NotFound(new ProblemDetails
-                    {
-                        Title = "Not Found",
-                        Detail = $"Plan with VerticalTypeId '{verticalTypeId}' and CategoryId '{categoryId}' not found.",
-                        Status = StatusCodes.Status404NotFound
-                    });
+                var result = await service.GetPlansByVerticalAndCategoryWithBasicPriceAsync(verticalTypeId, categoryId, cancellationToken);
 
                 return TypedResults.Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception ex)    
             {
                 return TypedResults.Problem("Internal Server Error", ex.Message, StatusCodes.Status500InternalServerError);
             }
         })
         .WithName("GetPayToPublish")
         .WithTags("PayToPublish")
-        .WithSummary("Get a PayToPublish by Vertical and Category")
-        .WithDescription("Get a PayToPublish with the provided details.")
+        .WithSummary("Get PayToPublish plans by Vertical and Category")
+        .WithDescription("Get PayToPublish plans filtered by the provided vertical type and category.")
         .Produces<PayToPublishListResponseDto>(StatusCodes.Status200OK)
         .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
         return group;
     }
 
@@ -103,7 +94,7 @@ public static class PayToPublishEndpoints
         {
             try
             {
-                var result = await service.GetAllPlansAsync(cancellationToken);
+                var result = await service.GetAllPlansWithBasicPriceAsync(cancellationToken);
                 return TypedResults.Ok(result);
             }
             catch (Exception ex)
@@ -313,37 +304,37 @@ public static class PayToPublishEndpoints
         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        group.MapGet("/basicprice/getbasicprice", async Task<IResult> (
-        [FromQuery] int verticalTypeId,
-        [FromQuery] int categoryId,
-        [FromServices] IPayToPublishService service,
-        CancellationToken cancellationToken) =>
-        {
-            try
-            {
-                var result = await service.GetBasicPricesByVerticalAndCategoryAsync(verticalTypeId, categoryId, cancellationToken);
-                if (result == null || !result.Any())
-                    return TypedResults.NotFound(new ProblemDetails
-                    {
-                        Title = "Not Found",
-                        Detail = $"Basic price with VerticalTypeId '{verticalTypeId}' and CategoryId '{categoryId}' not found.",
-                        Status = StatusCodes.Status404NotFound
-                    });
+        //group.MapGet("/basicprice/getbasicprice", async Task<IResult> (
+        //[FromQuery] int verticalTypeId,
+        //[FromQuery] int categoryId,
+        //[FromServices] IPayToPublishService service,
+        //CancellationToken cancellationToken) =>
+        //{
+        //    try
+        //    {
+        //        var result = await service.GetBasicPricesByVerticalAndCategoryAsync(verticalTypeId, categoryId, cancellationToken);
+        //        if (result == null || !result.Any())
+        //            return TypedResults.NotFound(new ProblemDetails
+        //            {
+        //                Title = "Not Found",
+        //                Detail = $"Basic price with VerticalTypeId '{verticalTypeId}' and CategoryId '{categoryId}' not found.",
+        //                Status = StatusCodes.Status404NotFound
+        //            });
 
-                return TypedResults.Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return TypedResults.Problem("Internal Server Error", ex.Message, StatusCodes.Status500InternalServerError);
-            }
-        })
-        .WithName("GetBasicPriceByVerticalAndCategory")
-        .WithTags("PayToPublish")
-        .WithSummary("Get Basic Prices by Vertical and Category")
-        .WithDescription("Retrieves basic prices filtered by vertical type and category.")
-        .Produces<List<BasicPriceResponseDto>>(StatusCodes.Status200OK)
-        .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+        //        return TypedResults.Ok(result);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return TypedResults.Problem("Internal Server Error", ex.Message, StatusCodes.Status500InternalServerError);
+        //    }
+        //})
+        //.WithName("GetBasicPriceByVerticalAndCategory")
+        //.WithTags("PayToPublish")
+        //.WithSummary("Get Basic Prices by Vertical and Category")
+        //.WithDescription("Retrieves basic prices filtered by vertical type and category.")
+        //.Produces<List<BasicPriceResponseDto>>(StatusCodes.Status200OK)
+        //.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+        //.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         return group;
     }

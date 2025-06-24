@@ -13,7 +13,8 @@ namespace QLN.Common.DTO_s
         ThreeMonths = 1,
         SixMonths = 2,
         OneYear = 3,
-        TwoMinutes=4
+        TwoMinutes=4,
+        OneWeek=5
     }
     public enum BasicPrice
     {
@@ -36,8 +37,10 @@ namespace QLN.Common.DTO_s
         public string Currency { get; set; } = string.Empty;
         public Vertical VerticalTypeId { get; set; }
         public SubscriptionCategory CategoryId { get; set; }
+        public bool IsFreeAd { get; set; }
         public Status StatusId { get; set; }
         public DateTime LastUpdated { get; set; }
+
     }
     public class BasicPriceDto
     {
@@ -47,6 +50,29 @@ namespace QLN.Common.DTO_s
         public BasicPrice BasicPriceId { get; set; }
         public DateTime LastUpdated { get; set; }
 
+    }
+    public class PayToPublishWithBasicPriceResponseDto
+    {
+        public Guid Id { get; set; }
+        public string PlanName { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public string Currency { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public int DurationId { get; set; }
+        public string DurationName { get; set; } = string.Empty;
+        public bool IsFreeAd { get; set; } = false;
+
+        // Vertical Information
+        public int VerticalId { get; set; }
+        public string VerticalName { get; set; } = string.Empty;
+
+        // Category Information
+        public int CategoryId { get; set; }
+        public string CategoryName { get; set; } = string.Empty;
+
+        // Basic Price Information (nullable if no matching basic price found)
+        public int? BasicPriceId { get; set; }
+        public string? BasicPriceName { get; set; }
     }
     public class BasicPriceRequestDto
     {
@@ -86,8 +112,9 @@ namespace QLN.Common.DTO_s
         public string Currency { get; set; } = string.Empty;
         [Required]
         public Vertical VerticalTypeId { get; set; }
-        [Required]
+
         public SubscriptionCategory CategoryId { get; set; }
+        public bool IsFreeAd { get; set; }
         [Required]
         public Status StatusId { get; set; }
     }
@@ -101,6 +128,7 @@ namespace QLN.Common.DTO_s
         public string Description { get; set; } = string.Empty;
         public int DurationId { get; set; }
         public string DurationName { get; set; } = string.Empty;
+        public bool IsFreeAd { get; set; } = false;
     }
 
 

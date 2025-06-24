@@ -10,7 +10,6 @@
 	  <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="CloudNative.CloudEvents" Version="2.8.0" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.24.1" />
     <PackageReference Include="Dapr.AspNetCore" Version="1.13.1" />
     <PackageReference Include="Dapr.Client" Version="1.13.1" />

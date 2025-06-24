@@ -16,9 +16,12 @@ namespace QLN.Common.Infrastructure.Subscriptions
     }
     public enum SubscriptionCategory
     {
-        Deals = 1,
-        Stores = 2,
-        Preloved = 3
+        Ittems=1,
+        Deals = 2,
+        Stores = 3,
+        Preloved = 4,
+        Collectibles=5,
+        Services=6
     }
     public enum Status
     {
