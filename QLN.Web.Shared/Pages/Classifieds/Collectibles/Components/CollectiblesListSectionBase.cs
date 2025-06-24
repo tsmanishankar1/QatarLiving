@@ -53,7 +53,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Collectibles.Components
 
        protected void OnClickCardItem(ClassifiedsIndex item)
         {
-            NavigationManager.NavigateTo($"/qln/classifieds/items/details/{item.Id}");
+            NavigationManager.NavigateTo($"/qln/classifieds/collectibles/details/{item.Id}");
         }
           protected int WindowWidth { get; set; }
 
@@ -90,7 +90,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Collectibles.Components
         {
             SearchState.CollectiblesSearchText = null;
             SearchState.CollectiblesCategory = null;
-            SearchState.CollectiblesBrand = null;
+            SearchState.CollectiblesCondition = null;
             SearchState.CollectiblesMinPrice = null;
             SearchState.CollectiblesMaxPrice = null;
             SearchState.CollectiblesViewMode = "grid";

@@ -1,7 +1,7 @@
 @using QLN.Common.DTO_s
 @using MudBlazor
 
-<div  class="custom-card">
+<div  class="custom-card-info">
     <span class="status-text">@Item?.Status</span>
     <h3  class="title-text">@Item?.Title</h3>
        <div class="item-detail-price-text">
@@ -137,11 +137,10 @@
     }
 }
 <style>
-    .custom-card {
+    .custom-card-info {
         padding: 16px;
         border-radius: 6px;
-        width: 100%;
-        max-width: 300px;
+        width: 300px;
         display: flex;
         flex-direction: column;
         box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.05);
@@ -341,9 +340,8 @@
     }
 }
     @@media (max-width: 770px) {
-        .custom-card {
+        .custom-card-info {
             width: 100%;
-            max-width: 100%;
         }
         .responsive-buttons {
             position: fixed;

@@ -91,8 +91,8 @@ public class CollectiblesComponentBase : ComponentBase
                 filters.Add("maxPrice", SearchState.CollectiblesMaxPrice.Value);
             if (!string.IsNullOrWhiteSpace(SearchState.CollectiblesCategory))
                 filters.Add("category", SearchState.CollectiblesCategory);
-            if (!string.IsNullOrWhiteSpace(SearchState.CollectiblesBrand))
-                filters.Add("brand", SearchState.CollectiblesBrand);
+            if (!string.IsNullOrWhiteSpace(SearchState.CollectiblesCondition))
+                filters.Add("condition", SearchState.CollectiblesCondition);
             if (!string.IsNullOrWhiteSpace(SearchState.CollectiblesSortBy))
                 filters.Add("orderBy", SearchState.CollectiblesSortBy);
 

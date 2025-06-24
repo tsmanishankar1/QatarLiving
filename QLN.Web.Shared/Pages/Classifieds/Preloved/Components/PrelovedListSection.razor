@@ -2,6 +2,7 @@
 @using QLN.Web.Shared.Components.Classifieds.PromotedItemCards
 @using QLN.Web.Shared.Pages.Classifieds.Skeletons
 @using QLN.Web.Shared.Components.EmptyCard
+@using QLN.Web.Shared.Components.SearchNotFound
 @using QLN.Web.Shared.Components.PriceSelect
 @using QLN.Web.Shared.Components.BreadCrumb
 @using QLN.Web.Shared.Components.PaginationFooter
@@ -10,6 +11,7 @@
 @inherits PrelovedListSectionBase
 
 <Breadcrumb Items="breadcrumbItems" />
+
 <div class="item-list">
      <div class="item-list-header">
         <h1 class="item-list-header-title">@($"Items in Qatar ({Items.Count} results)")</h1>
@@ -28,10 +30,10 @@
             </div>
         </div>
 </div>
-    
+<div class="max-width-List">
     @if (Loading)
     {
-        <MudGrid GutterSize="16px" Class="max-width-List">
+        <MudGrid GutterSize="3" >
             @for (int i = 0; i < 9; i++)
             {
                 <MudItem xs="12" sm="6" md="4">
@@ -40,17 +42,29 @@
             }
         </MudGrid>
     }
-    else if (PagedItems == null || !PagedItems.Any())
-    {
-        <div class="empty-wrapper">
-            <EmptyCard Title="No items found." Subtitle="Try adjusting your filters or search keywords." />
-        </div>
-    }
+   else if (PagedItems == null || !PagedItems.Any())
+{
+    <div class="empty-wrapper">
+        @if (IsSearchPerformed)
+        {
+            <SearchNotFound 
+                Title="No results found" 
+                Subtitle="Try adjusting your filters or keywords"
+                ButtonText="Clear Search"
+                OnClearSearch="ClearSearch" />
+        }
+        else
+        {
+            <EmptyCard Title="No items found." Subtitle="Browse the categories or check back later." />
+        }
+    </div>
+}
+
     else
     {
         @if (ViewMode == "grid")
         {
-            <MudGrid GutterSize="16px" Class="max-width-List">
+             <MudGrid GutterSize="3" >
                 @foreach (var item in PagedItems)
                 {
                     <MudItem xs="12" sm="6" md="4">
@@ -81,6 +95,7 @@
 
     }
 
+    </div>
 
 </div>
 
@@ -103,7 +118,7 @@
     }
 
     .pagination-center {
-        display: flex;
+        display: flex;  
         flex-direction: column;
         align-items: center;
     }
@@ -188,5 +203,21 @@
 
     .pagination-container {
         margin-top: 24px;
+    }
+     @@media (max-width: 1160px) {
+        .item-list {
+          padding: 5px;
+        }
+    }
+     @@media (max-width: 770px) {
+        .item-list {
+          padding: 5px;
+        }
+        .item-list-header-sort-label{
+            display: none;
+        }
+        .item-list-header-title{
+            font-size: 14px;
+        }
     }
 </style>

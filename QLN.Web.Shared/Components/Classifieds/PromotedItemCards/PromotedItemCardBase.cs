@@ -12,6 +12,15 @@ namespace QLN.Web.Shared.Components.Classifieds.PromotedItemCards
         [Parameter] public EventCallback<ClassifiedsIndex> OnClickCard { get; set; }
         [Inject] protected NavigationManager NavigationManager { get; set; } = default!;
 
+        protected bool ShowAuthenticated
+        {
+            get
+            {
+                var path = new Uri(NavigationManager.Uri).AbsolutePath.ToLowerInvariant();
+                return path.StartsWith("/qln/classifieds/preloved") || path.StartsWith("/qln/classifieds/collectibles");
+            }
+        }
+
         protected bool isHovered = false;
         protected bool isFavorite = false;
         protected int activeIndex = 0;

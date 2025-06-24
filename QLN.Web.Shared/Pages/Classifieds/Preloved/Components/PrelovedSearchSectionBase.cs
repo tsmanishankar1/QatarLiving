@@ -1,131 +1,102 @@
 using Microsoft.AspNetCore.Components;
-using QLN.Web.Shared.Services;
-using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Components.ViewToggleButtons;
 using MudBlazor;
-
+using QLN.Common.DTO_s;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Components.Routing;
+namespace QLN.Web.Shared.Pages.Classifieds.Preloved.Components;
 public class PrelovedSearchSectionBase : ComponentBase
 {
     [Inject] protected SearchStateService SearchState { get; set; }
-    [Inject] protected ISnackbar Snackbar { get; set; }
+    protected bool ShowSaveSearchPopup { get; set; } = false;
 
-    protected long? SelectedMin;
-    protected long? SelectedMax;
-    protected string _searchText;
-    protected string _category;
-    protected string _brand;
-    protected bool _isSearchFocused = false;
-    protected bool _isSearching = false;
+    protected List<CategoryTreeDto> CategoryTrees => SearchState.PrelovedCategoryTrees;
+
+    [Parameter] public EventCallback<string> OnSearch { get; set; }
 
     [Parameter] public EventCallback<string> OnViewModeChanged { get; set; }
-    [Parameter] public EventCallback OnSearchStarted { get; set; }
-    [Parameter] public EventCallback<List<PromotedItem>> OnSearchCompleted { get; set; }
-
-    protected override async Task OnInitializedAsync()
-    {
-        _searchText = SearchState.SearchText;
-        _category = SearchState.Category;
-        _brand = SearchState.Brand;
-        _selectedView = SearchState.ViewMode;
-
-        if (SearchState.Results == null || !SearchState.Results.Any())
-        {
-            await PerformSearch();
-        }
-    }
-
-    protected async Task ApplyPriceFilter()
-    {
-        SearchState.MinPrice = SelectedMin;
-        SearchState.MaxPrice = SelectedMax;
-
-        await PerformSearch();
-    }
-
-    protected async Task ResetPriceFilter()
-    {
-        SelectedMin = null;
-        SelectedMax = null;
-        SearchState.MinPrice = null;
-        SearchState.MaxPrice = null;
-
-        await PerformSearch();
-    }
-
-    protected async Task OnFilterChanged(string field, string value)
-    {
-        if (field == nameof(_category))
-        {
-            _category = value;
-            _brand = null;
-        }
-        else if (field == nameof(_brand))
-        {
-            _brand = value;
-        }
-
-        await PerformSearch();
-        StateHasChanged();
-    }
-
-    protected async Task PerformSearch()
-    {
-        // Actual logic goes here. Right now, placeholder:
-        _isSearching = true;
-        await Task.Delay(500); // Simulate loading
-
-        // Optionally trigger events
-        await OnSearchStarted.InvokeAsync();
-        SearchState.SearchText = _searchText;
-        SearchState.Category = _category;
-        SearchState.Brand = _brand;
-        SearchState.ViewMode = _selectedView;
-
-        // TODO: Your actual search logic to fetch results
-        var results = new List<PromotedItem>(); // Populate this with actual data
-        SearchState.Results = results;
-
-        _isSearching = false;
-        await OnSearchCompleted.InvokeAsync(results);
-    }
-
-    protected void ClearSearch() => _searchText = string.Empty;
-
-    protected string _selectedView = "grid";
-    protected void SetViewMode(string view)
-    {
-        _selectedView = view;
-        OnViewModeChanged.InvokeAsync(view);
-    }
-
-    protected List<ViewToggleButtons.ViewToggleOption> _viewOptions = new()
+    [Inject] private ILogger<PrelovedSearchSectionBase> Logger { get; set; }
+    [Inject] private NavigationManager Nav { get; set; }
+    protected bool _isSearchFocused = false;
+ [Parameter] public bool Loading { get; set; } = false;
+      protected List<ViewToggleButtons.ViewToggleOption> _viewOptions = new()
     {
         new() { ImageUrl = "/qln-images/list_icon.svg", Label = "List", Value = "list" },
         new() { ImageUrl = "/qln-images/grid_icon.svg", Label = "Grid", Value = "grid" }
     };
 
-   protected List<CategoryItem> _categories = new()
-{
-    new() { Id = "mobiles", Label = "Mobile Phones & Tablets" },
-    new() { Id = "electronics", Label = "Electronics" },
-    new() { Id = "furniture", Label = "Furniture" },
-};
+    protected List<BrandItem> _brands = new()
+    {
+        new() { Id="google", Label="Google" },
+        new() { Id="apple", Label="Apple" },
+        new() { Id="sony", Label="Sony" }
+    };
 
-protected List<BrandItem> _brands = new()
-{
-    new() { Id = "google", Label = "Google" },
-    new() { Id = "apple", Label = "Apple" },
-    new() { Id = "sony", Label = "Sony" },
-};
+        protected Task HandleSaveSearch()
+        {
+            // Implement actual save logic here — call backend or store locally
+            ShowSaveSearchPopup = false;
+            return Task.CompletedTask;
+        }
 
-// Define DTOs if not already
-public class CategoryItem
-{
-    public string Id { get; set; }
-    public string Label { get; set; }
-}
+        protected Task CloseSaveSearchPopup()
+        {
+            ShowSaveSearchPopup = false;
+            return Task.CompletedTask;
+        }
 
-public class BrandItem
+    protected override void OnInitialized()
+    {
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object sender, LocationChangedEventArgs args)
+    {
+       var path = new Uri(args.Location).AbsolutePath.ToLowerInvariant();
+
+    // Keep state if we're still under /qln/classifieds/items or its subpaths
+    if (!path.StartsWith("/qln/classifieds/preloved"))
+        {
+            SearchState.PrelovedSearchText = null;
+            SearchState.PrelovedCategory = null;
+            SearchState.PrelovedBrand = null;
+            SearchState.PrelovedMinPrice = null;
+            SearchState.PrelovedMaxPrice = null;
+            SearchState.PrelovedViewMode ??= "grid";
+
+            StateHasChanged();
+        }
+    }
+
+    protected void OnFilterChanged(string fieldName, string value)
+    {
+        var prop = SearchState.GetType().GetProperty(fieldName);
+        prop?.SetValue(SearchState, value);
+        PerformSearch();
+    }
+    protected async Task PerformSearch()
+    {
+        StateHasChanged();
+        await Task.Yield();
+        await OnSearch.InvokeAsync(SearchState.PrelovedSearchText);
+    }
+    protected async Task ClearSearch()
+    {
+        SearchState.PrelovedSearchText = string.Empty;
+        StateHasChanged();
+
+        if (OnSearch.HasDelegate)
+        {
+            await OnSearch.InvokeAsync(string.Empty); // pass empty string as the search text
+        }
+    }
+
+    protected void SetViewMode(string mode)
+    {
+        SearchState.PrelovedViewMode = mode;
+        OnViewModeChanged.InvokeAsync(mode);
+    }
+    public class BrandItem
 {
     public string Id { get; set; }
     public string Label { get; set; }

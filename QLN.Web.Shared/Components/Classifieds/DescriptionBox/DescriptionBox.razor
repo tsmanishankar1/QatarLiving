@@ -1,64 +1,97 @@
 @using MudBlazor
-<MudPaper Class="pa-4" Elevation="0" Style="border-radius:8px;">
-    <MudText Typo="Typo.h6" Class="mb-3">Description</MudText>
+@using QLN.Common.DTO_s;
 
-    <MudText>
+<MudPaper Class="pa-4" Elevation="0" Style="border-radius:8px;">
+    <h3 class="box-heading">Description</h3>
+
+    <h3 class="description-text">
         @if (showMore)
         {
-            @fullDescription
+            @((MarkupString)fullDescription)
         }
         else
         {
-            @shortDescription
+            @((MarkupString)shortDescription)
         }
-    </MudText>
+    </h3>
 
-    <MudDivider Class="my-3" />
 
-   <MudText id="readMoreButton" Class="read-toggle cursor-pointer"  @onclick="ToggleReadMore">
-    @(showMore ? "Read less" : "Read more")
-    </MudText>  
+    @if (ShouldShowToggle)
+    {
+       <MudDivider Class="my-3" />
+
+        <h3 id="readMoreButton" class="read-toggle" @onclick="ToggleReadMore">
+            @(showMore ? "Read less" : "Read more")
+        </h3>
+    }
 </MudPaper>
 
 <style>
     .description-paper {
-    border-radius: 8px;
-    height: 370px;
-    background-color: white; 
-    overflow: hidden; 
+        border-radius: 8px;
+        background-color: white;
+        overflow: hidden;
+    }
+     .box-heading {
+        font-family: 'Public Sans', sans-serif ;
+        font-size: 25px ;
+        font-weight: 600 ;
+        color: var(--color-text-heading) ;
     }
 
-.description-heading {
-    font-family: 'Public Sans', sans-serif !important;
-    font-size: 25px !important;
-    font-weight: 600 !important;
-    color: var(--color-text-heading); 
-}
+    .description-text {
+        font-family: 'Public Sans', sans-serif !important;
+        font-size: 15px ;
+        font-weight: 400 ;
+        color: var(--color-text-heading);
+        padding: 16px 0;
+    }
 
-.description-text {
-    font-family: 'Public Sans', sans-serif !important;
-    font-size: 15px !important;
-    font-weight: 400 !important;
-    color: var(--color--accent); 
-}
-
-.read-toggle {
-    font-family: 'Public Sans', sans-serif !important;
-    font-size: 16px !important;
-    font-weight: 500 !important;
-    color: var(--color--accent); 
-}
+    .read-toggle {
+        font-family: 'Public Sans', sans-serif ;
+        font-size: 16px ;
+        font-weight: 500 ;
+        color: var(--color--accent) ;
+    }
 </style>
 
-@code{
-     private bool showMore = false;
+@code {
+    [Parameter]
+    public ClassifiedsIndex Item { get; set; } = default!;
 
-    private string shortDescription => "Oryx International School is an independent school exclusively for the children of employees of Qatar Airways and its approved subsidiaries. The school delivers a five-star British curriculum for boys and girls aged 3 to 18 years old. Our enhanced version of the English National Curriculum meets the needs of our international student body here in Qatar, providing our students with a challenging learning environment by offering an academic curriculum that is balanced, interactive...";
+    private bool showMore = false;
+    private int MaxPreviewLength = 250;
 
-    private string fullDescription => "Oryx International School is an independent school exclusively for the children of employees of Qatar Airways and its approved subsidiaries. The school delivers a five-star British curriculum for boys and girls aged 3 to 18 years old. Our enhanced version of the English National Curriculum meets the needs of our international student body here in Qatar, providing our students with a challenging learning environment by offering an academic curriculum that is balanced, interactive and supports development in all activities at school. Our students are recognised as individuals with their own unique learning styles and are nurtured to become successful learners.";
+    private string? fullDescription => Item?.Description;
+
+    private string? shortDescription =>
+        string.IsNullOrWhiteSpace(Item?.Description)
+            ? string.Empty
+            : GenerateShortDescription(Item.Description, MaxPreviewLength);
+
+    private bool ShouldShowToggle =>
+        !string.IsNullOrWhiteSpace(Item?.Description) &&
+        StripHtmlTags(Item.Description).Length > MaxPreviewLength;
 
     private void ToggleReadMore()
     {
         showMore = !showMore;
+    }
+
+    private static string StripHtmlTags(string input)
+    {
+        return System.Text.RegularExpressions.Regex.Replace(input, "<.*?>", string.Empty);
+    }
+
+    private string GenerateShortDescription(string html, int maxLength)
+    {
+        var plainText = StripHtmlTags(html);
+
+        if (plainText.Length <= maxLength)
+            return html;
+
+        // Cut text and add ellipsis
+        var truncated = plainText.Substring(0, maxLength) + "...";
+        return $"<p>{truncated}</p>";
     }
 }

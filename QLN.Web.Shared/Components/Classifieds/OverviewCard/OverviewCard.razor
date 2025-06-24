@@ -43,7 +43,7 @@
             new("/qln-images/classifieds/storage_icon.svg", Format("Storage", Item.Storage, "N/A")),
             new("/qln-images/classifieds/battery_icons.svg", Item.BatteryPercentage > 0 ? $"Battery: {Item.BatteryPercentage}%" : "Unknown"),
             new("/qln-images/classifieds/chip_icons.svg", Format("Chip", Item.Processor, "Not mentioned")),
-            new("/qln-images/classifieds/wireless_icon.svg", "Wireless Charging"), // Always shown
+            @* new("/qln-images/classifieds/wireless_icon.svg", "Wireless Charging"), // Always shown *@
             new("/qln-images/classifieds/warranty_icon.svg", Format("Warranty", Item.Coverage, "No Warranty")),
         };
     }

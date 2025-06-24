@@ -4,7 +4,6 @@ using MudBlazor;
 using QLN.Common.DTO_s;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Components.Routing;
-namespace QLN.Web.Shared.Pages.Classifieds.Items.Components;
 public class CollectiblesSearchSectionBase : ComponentBase
 {
     [Inject] protected SearchStateService SearchState { get; set; }
@@ -15,7 +14,7 @@ public class CollectiblesSearchSectionBase : ComponentBase
     [Parameter] public EventCallback<string> OnSearch { get; set; }
 
     [Parameter] public EventCallback<string> OnViewModeChanged { get; set; }
-    [Inject] private ILogger<SearchSectionBase> Logger { get; set; }
+    [Inject] private ILogger<CollectiblesSearchSectionBase> Logger { get; set; }
     [Inject] private NavigationManager Nav { get; set; }
     protected bool _isSearchFocused = false;
 
@@ -28,9 +27,8 @@ public class CollectiblesSearchSectionBase : ComponentBase
 
     protected List<BrandItem> _brands = new()
     {
-        new() { Id="google", Label="Google" },
-        new() { Id="apple", Label="Apple" },
-        new() { Id="sony", Label="Sony" }
+        new() { Id="Used", Label="Used" },
+        new() { Id="Brand New", Label="Brand New" },
     };
 
         protected Task HandleSaveSearch()
@@ -60,7 +58,7 @@ public class CollectiblesSearchSectionBase : ComponentBase
         {
             SearchState.CollectiblesSearchText = null;
             SearchState.CollectiblesCategory = null;
-            SearchState.CollectiblesBrand = null;
+            SearchState.CollectiblesCondition = null;
             SearchState.CollectiblesMinPrice = null;
             SearchState.CollectiblesMaxPrice = null;
             SearchState.CollectiblesViewMode ??= "grid";

@@ -107,6 +107,15 @@
         <div class="grid-category">@Item.Category</div>
         <h3 class="grid-title">@Item.Title</h3>
         <div class="grid-features">
+            
+            @if (ShowAuthenticated)
+            {
+                <div class="grid-feature-item">
+                    <img src="/qln-images/classifieds/auth_icon.svg" alt="Storage" class="feature-icon" />
+                    <span class="feature-name">Authenticated</span>
+                </div>
+            }
+
             @if (!string.IsNullOrEmpty(Item.Colour))
             {
                 <div class="feature-item">

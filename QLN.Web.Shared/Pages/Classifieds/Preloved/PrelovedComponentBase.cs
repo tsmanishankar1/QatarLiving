@@ -1,33 +1,109 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 public class PrelovedComponentBase : ComponentBase
 {
+    [Inject] protected SearchStateService SearchState { get; set; }
     [Inject] private IClassifiedsServices _classifiedsService { get; set; } = default!;
-    protected string currentViewMode = "grid";
-    protected bool IsLoading { get; set; } = true;
+    protected List<CategoryTreeDto> CategoryTrees { get; set; } = new();
+    [Inject] private ILogger<PrelovedComponentBase> Logger { get; set; } = default!;
+
+    protected bool IsLoadingSearch { get; set; } = true;
+    protected bool IsLoadingCategories { get; set; } = true;
+
     protected string? ErrorMessage { get; set; }
 
     protected List<ClassifiedsIndex> SearchResults { get; set; } = new();
-
     protected void HandleViewModeChange(string newMode)
     {
-        currentViewMode = newMode;
+        SearchState.PrelovedViewMode = newMode;
     }
+     protected void ClearSearch()
+    {
+        // Example reset logic:
+        SearchResults.Clear();
+        StateHasChanged();
+
+    }
+    protected async Task OnSearchTriggered(string searchText)
+{
+    await LoadSearchResultsAsync(searchText);
+}
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadCategoryTreesAsync();
+  
+        await LoadSearchResultsAsync();    
+    }
+
+    private async Task LoadCategoryTreesAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(SearchState.PrelovedCategory))
+        {
+            IsLoadingCategories = false;
+            return;
+        }
         try
         {
-               var payload = new Dictionary<string, object>
-        {
-            ["filters"] = new Dictionary<string, string>
+            var response = await _classifiedsService.GetAllCategoryTreesAsync("Preloved");
+
+            if (response is { IsSuccessStatusCode: true })
             {
-                { "SubVertical", "Preloved" }
+                var result = await response.Content.ReadFromJsonAsync<List<CategoryTreeDto>>();
+                CategoryTrees = result ?? new();
+                 SearchState.PrelovedCategoryTrees = CategoryTrees;
             }
+            else
+            {
+                ErrorMessage = $"Failed to load category trees. Status: {response?.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Error loading category trees.";
+            Logger.LogError(ex, ErrorMessage);
+        }
+        finally
+        {
+            IsLoadingCategories = false;
+        }
+    }
+
+    private async Task LoadSearchResultsAsync(string? searchText = null)
+    {
+        IsLoadingSearch = true;
+        try
+        {
+            var filters = new Dictionary<string, object>
+        {
+            { "SubVertical", "Preloved" }
         };
+
+            // Include price filters only if they are set
+            if (SearchState.PrelovedMinPrice.HasValue)
+                filters.Add("minPrice", SearchState.PrelovedMinPrice.Value);
+            if (SearchState.PrelovedMaxPrice.HasValue)
+                filters.Add("maxPrice", SearchState.PrelovedMaxPrice.Value);
+            if (!string.IsNullOrWhiteSpace(SearchState.PrelovedCategory))
+                filters.Add("category", SearchState.PrelovedCategory);
+            if (!string.IsNullOrWhiteSpace(SearchState.PrelovedBrand))
+                filters.Add("brand", SearchState.PrelovedBrand);
+            if (!string.IsNullOrWhiteSpace(SearchState.PrelovedSortBy))
+                filters.Add("orderBy", SearchState.PrelovedSortBy);
+
+
+            var payload = new Dictionary<string, object>
+            {
+                ["text"] = searchText ?? SearchState.PrelovedSearchText,
+                ["filters"] = filters
+            };
+
+            var payloadJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
 
             var responses = await _classifiedsService.SearchClassifiedsAsync(payload);
             var firstResponse = responses.FirstOrDefault();
@@ -44,12 +120,11 @@ public class PrelovedComponentBase : ComponentBase
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Search Init Error: " + ex);
             ErrorMessage = "Error loading classifieds.";
         }
         finally
         {
-            IsLoading = false;
+            IsLoadingSearch = false;
         }
     }
 }

@@ -60,9 +60,7 @@
                 <ItemInfo Item="Item" />
                 </div>
                 <OverviewCard Item="Item" />
-                <DescriptionBox />
-               
-
+                <DescriptionBox Item="Item" />
             </MudItem>
 
             <MudItem xs="12" md="5">
@@ -89,14 +87,15 @@
             <a href="/qln/classifieds/items" class="view-all-link">View All</a>
         </div>
 
-        <MudGrid Class="similar-grid"  GutterSize="0px">
+        <div class="similar-items-grid">
             @foreach (var item in Simler)
             {
-                <MudItem xs="12" md="3" >
+                <div class="similar-card-wrapper">
                     <PromotedItemGridCard Item="item" OnClickCard="OnClickCardItem" />
-                </MudItem>
+                </div>
             }
-        </MudGrid>
+        </div>
+
     </div>
 }
 
@@ -261,9 +260,35 @@
     text-decoration: underline;
 }
 
-.similar-grid {
-    margin-top: 1rem;
-}
+    .similar-items-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 1rem;
+    }
+
+    .similar-card-wrapper {
+        flex: 0 1 calc(25% - 16px);
+        box-sizing: border-box;
+    }
+
+    @@media (max-width: 1024px) {
+        .similar-card-wrapper {
+            flex: 0 1 calc(33.333% - 16px);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .similar-card-wrapper {
+            flex: 0 1 calc(50% - 16px);
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .similar-card-wrapper {
+            flex: 0 1 100%;
+        }
+    }
 
 
     /* Responsive Rules */

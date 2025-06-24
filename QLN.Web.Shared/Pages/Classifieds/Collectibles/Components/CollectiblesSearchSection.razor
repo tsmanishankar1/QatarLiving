@@ -67,16 +67,17 @@
             <div class="second-row">
                 <!-- Brand -->
                 <div class="brand-select">
-                    <NewCustomSelect TItem="BrandItem"
+                    <CustomSelectCategory TItem="BrandItem"
                         Items="@_brands"
-                         SelectedId="@SearchState.CollectiblesBrand"
-                         SelectedIdChanged="v => OnFilterChanged(nameof(SearchState.CollectiblesBrand), v)"
+                         SelectedId="@SearchState.CollectiblesCondition"
+                         SelectedIdChanged="v => OnFilterChanged(nameof(SearchState.CollectiblesCondition), v)"
                         GetId="x => x.Id"
                         GetLabel="x => x.Label"
-                        Placeholder="Brand"
+                        Placeholder="Condition"
                         Padding="13px 10px"
                         BorderRadius="4px"
-                        IsDisabled="@string.IsNullOrWhiteSpace(SearchState.CollectiblesCategory)" />
+                        />
+                    
                 </div>
 
                 <!-- Price -->
