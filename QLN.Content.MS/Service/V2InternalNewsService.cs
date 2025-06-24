@@ -7,6 +7,7 @@ using QLN.Common.Infrastructure.IService.IContentService;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
@@ -261,38 +262,174 @@ namespace QLN.Content.MS.Service
             var tagDict = writerTags.ToDictionary(tag => tag, tag => tag);
             return Task.FromResult(tagDict);
         }
-        public async Task<string> CreateNewsArticleAsync(Guid userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default)
+        //public async Task<string> CreateNewsArticleAsync(Guid userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default)
+        //{
+        //    try
+        //    {
+        //        var articleId = Guid.NewGuid();
+        //        dto.Id = articleId;
+        //        dto.CreatedBy = userId;
+        //        dto.CreatedAt = DateTime.UtcNow;
+        //        dto.UpdatedBy = userId;
+        //        dto.UpdatedAt = DateTime.UtcNow;
+
+        //        string storeName = "contentstatestore";
+        //        string indexKey = "news-index";
+
+        //        // Save to Dapr
+        //        await _dapr.SaveStateAsync(storeName, dto.Id.ToString(), dto, cancellationToken: cancellationToken);
+
+        //        // Update index
+        //        var index = await _dapr.GetStateAsync<List<string>>(storeName, indexKey, cancellationToken: cancellationToken) ?? new();
+        //        if (!index.Contains(dto.Id.ToString()))
+        //        {
+        //            index.Add(dto.Id.ToString());
+        //            await _dapr.SaveStateAsync(storeName, indexKey, index, cancellationToken: cancellationToken);
+        //        }
+
+        //        return "News article created successfully";
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error creating news article");
+        //        throw;
+        //    }
+        //}
+
+        public async Task<CreateNewsArticleResponseDto> CreateNewsArticleAsync(Guid userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                var articleId = Guid.NewGuid();
-                dto.Id = articleId;
+                dto.Id = Guid.NewGuid();
                 dto.CreatedBy = userId;
-                dto.CreatedAt = DateTime.UtcNow;
                 dto.UpdatedBy = userId;
+                dto.CreatedAt = DateTime.UtcNow;
                 dto.UpdatedAt = DateTime.UtcNow;
 
-                string storeName = "contentstatestore";
-                string indexKey = "news-index";
+                string storeName = V2Content.ContentStoreName;
+                string articleIdStr = dto.Id.ToString();
 
-                // Save to Dapr
-                await _dapr.SaveStateAsync(storeName, dto.Id.ToString(), dto, cancellationToken: cancellationToken);
-
-                // Update index
-                var index = await _dapr.GetStateAsync<List<string>>(storeName, indexKey, cancellationToken: cancellationToken) ?? new();
-                if (!index.Contains(dto.Id.ToString()))
+                var response = new CreateNewsArticleResponseDto
                 {
-                    index.Add(dto.Id.ToString());
-                    await _dapr.SaveStateAsync(storeName, indexKey, index, cancellationToken: cancellationToken);
+                    ArticleId = dto.Id,
+                    Message = "News article created successfully"
+                };
+
+                // Save the main article
+                await _dapr.SaveStateAsync(storeName, articleIdStr, dto, cancellationToken: cancellationToken);
+
+                // Update index key
+                var indexKey = V2Content.NewsIndexKey;
+                var currentIndex = await _dapr.GetStateAsync<List<string>>(storeName, indexKey, cancellationToken: cancellationToken)
+                                   ?? new List<string>();
+
+                if (!currentIndex.Contains(articleIdStr))
+                {
+                    currentIndex.Add(articleIdStr);
+                    await _dapr.SaveStateAsync(storeName, indexKey, currentIndex, cancellationToken: cancellationToken);
                 }
 
-                return "News article created successfully";
+                // Process slots
+                foreach (var cat in dto.Categories)
+                {
+                    int slotId = cat.SlotId == 0 ? (int)Slot.UnPublished : cat.SlotId;
+
+                    if (slotId >= 1 && slotId <= 13)
+                    {
+                        await HandleSlotShiftAsync(cat.CategoryId, cat.SubcategoryId, slotId, dto.Id, response, cancellationToken);
+                    }
+                    else if (slotId == (int)Slot.Published || slotId == (int)Slot.UnPublished)
+                    {
+                        string key = GetStatusSlotKey(cat.CategoryId, cat.SubcategoryId, slotId);
+                        await _dapr.SaveStateAsync(storeName, key, articleIdStr, cancellationToken: cancellationToken);
+
+                        response.AssignedSlots.Add(new AssignedSlotDto
+                        {
+                            CategoryId = cat.CategoryId,
+                            SubCategoryId = cat.SubcategoryId,
+                            Slot = ((Slot)slotId).ToString()
+                        });
+                    }
+                    else
+                    {
+                        throw new InvalidDataException($"Invalid SlotId: {slotId} for category {cat.CategoryId}-{cat.SubcategoryId}");
+                    }
+                }
+
+                return response;
+            }
+            catch (InvalidDataException ex)
+            {
+                _logger.LogError(ex, "Validation error while creating article");
+                throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating news article");
-                throw;
+                _logger.LogError(ex, "Failed to create article");
+                throw new Exception("Unexpected error during article creation", ex);
             }
         }
+
+        private async Task HandleSlotShiftAsync(int categoryId, int subCategoryId, int desiredSlot, Guid newArticleId, CreateNewsArticleResponseDto response, CancellationToken cancellationToken)
+        {
+            const int MaxSlot = 13;
+            string storeName = "contentstatestore";
+
+            var keys = Enumerable.Range(1, MaxSlot)
+                .Select(i => GetSlotKey(categoryId, subCategoryId, i))
+                .ToList();
+
+            var existingStates = await _dapr.GetBulkStateAsync(
+                storeName,
+                keys,
+                parallelism: null,
+                metadata: null,
+                cancellationToken: cancellationToken
+            );
+            var slotMap = existingStates.ToDictionary(
+                s => int.Parse(Regex.Match(s.Key, @"slot(\d+)$").Groups[1].Value),
+                s => s.Value
+            );
+
+            for (int i = MaxSlot - 1; i >= desiredSlot; i--)
+            {
+                if (slotMap.ContainsKey(i) && !string.IsNullOrWhiteSpace(slotMap[i]))
+                {
+                    if (i + 1 > MaxSlot)
+                    {
+                        // Optionally log or collect in response as "discarded" or "overflown"
+                        continue;
+                    }
+
+                    var fromKey = GetSlotKey(categoryId, subCategoryId, i);
+                    var toKey = GetSlotKey(categoryId, subCategoryId, i + 1);
+
+                    await _dapr.SaveStateAsync(storeName, toKey, slotMap[i], cancellationToken: cancellationToken);
+
+                    response.SlotShifts.Add(new SlotShiftDto
+                    {
+                        From = $"Slot{i}",
+                        To = $"Slot{i + 1}"
+                    });
+                }
+            }
+
+            var targetKey = GetSlotKey(categoryId, subCategoryId, desiredSlot);
+            await _dapr.SaveStateAsync(storeName, targetKey, newArticleId.ToString(), cancellationToken: cancellationToken);
+
+            response.AssignedSlots.Add(new AssignedSlotDto
+            {
+                CategoryId = categoryId,
+                SubCategoryId = subCategoryId,
+                Slot = $"Slot{desiredSlot}"
+            });
+        }
+
+        private string GetSlotKey(int categoryId, int subCategoryId, int slot) =>
+            $"slot-article-{categoryId}-{subCategoryId}-slot{slot}";
+
+        private string GetStatusSlotKey(int categoryId, int subCategoryId, int slot) =>
+            $"slot-article-status-{categoryId}-{subCategoryId}-slot{slot}";
+    
     }
 }

@@ -429,16 +429,16 @@ public static class V2NewsEndpoints
          .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         group.MapPost("/createNewsArticle", async Task<Results<
-    Ok<string>,
-    ForbidHttpResult,
-    BadRequest<ProblemDetails>,
-    ProblemHttpResult>>
-(
-    V2NewsArticleDTO dto,
-    IV2NewsService service,
-    HttpContext httpContext,
-    CancellationToken cancellationToken
-) =>
+     Ok<CreateNewsArticleResponseDto>,
+     ForbidHttpResult,
+     BadRequest<ProblemDetails>,
+     ProblemHttpResult>>
+ (
+     V2NewsArticleDTO dto,
+     IV2NewsService service,
+     HttpContext httpContext,
+     CancellationToken cancellationToken
+ ) =>
         {
             try
             {
@@ -470,18 +470,18 @@ public static class V2NewsEndpoints
                 return TypedResults.Problem("Internal Server Error", ex.Message);
             }
         })
-.WithName("CreateNewsArticle")
-.WithTags("News")
-.WithSummary("Create News Article")
-.WithDescription("Creates a news article using authenticated user ID and name from token.")
-.Produces<string>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-        // .RequireAuthorization(); // Uncomment when auth is needed
+ .WithName("CreateNewsArticle")
+ .WithTags("News")
+ .WithSummary("Create News Article")
+ .WithDescription("Creates a news article using authenticated user ID and name from token.")
+ .Produces<CreateNewsArticleResponseDto>(StatusCodes.Status200OK)
+ .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+ .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+ .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
         group.MapPost("/createNewsArticleById", async Task<Results<
-    Ok<string>,
+    Ok<CreateNewsArticleResponseDto>,
     BadRequest<ProblemDetails>,
     ProblemHttpResult>>
 (
@@ -527,7 +527,7 @@ public static class V2NewsEndpoints
 .WithTags("News")
 .WithSummary("Create News Article By UserId")
 .WithDescription("Creates a news article using CreatedBy and UpdatedBy passed explicitly.")
-.Produces<string>(StatusCodes.Status200OK)
+.Produces<CreateNewsArticleResponseDto>(StatusCodes.Status200OK)
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 

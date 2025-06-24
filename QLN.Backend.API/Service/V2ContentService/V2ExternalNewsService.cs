@@ -245,10 +245,18 @@ namespace QLN.Backend.API.Service.V2ContentService
         //        throw;
         //    }
         //}
-        public async Task<string> CreateNewsArticleAsync(Guid userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default)
+        public async Task<CreateNewsArticleResponseDto> CreateNewsArticleAsync(Guid userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default)
         {
             try
             {
+                // Set unique ID if not already set
+                dto.Id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id;
+                dto.CreatedBy = userId;
+                dto.UpdatedBy = userId;
+                dto.CreatedAt = DateTime.UtcNow;
+                dto.UpdatedAt = DateTime.UtcNow;
+
+                // Upload cover image
                 if (!string.IsNullOrWhiteSpace(dto.CoverImageUrl))
                 {
                     var imageName = $"{dto.Title}_{dto.Id}.png";
@@ -264,11 +272,15 @@ namespace QLN.Backend.API.Service.V2ContentService
                 response.EnsureSuccessStatusCode();
 
                 var rawJson = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+
+                return JsonSerializer.Deserialize<CreateNewsArticleResponseDto>(rawJson, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }) ?? throw new Exception("Empty or invalid response from content service.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating news");
+                _logger.LogError(ex, "Error creating news article via external service");
                 throw;
             }
         }
