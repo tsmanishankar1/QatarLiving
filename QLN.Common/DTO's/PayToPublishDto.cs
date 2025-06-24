@@ -61,16 +61,10 @@ namespace QLN.Common.DTO_s
         public int DurationId { get; set; }
         public string DurationName { get; set; } = string.Empty;
         public bool IsFreeAd { get; set; } = false;
-
-        // Vertical Information
         public int VerticalId { get; set; }
         public string VerticalName { get; set; } = string.Empty;
-
-        // Category Information
         public int CategoryId { get; set; }
         public string CategoryName { get; set; } = string.Empty;
-
-        // Basic Price Information (nullable if no matching basic price found)
         public int? BasicPriceId { get; set; }
         public string? BasicPriceName { get; set; }
     }
