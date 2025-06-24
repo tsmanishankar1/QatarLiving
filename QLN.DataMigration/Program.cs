@@ -83,23 +83,39 @@ app.MapGet("/migrate_items", async (
     {
         return Results.Problem("No items found or deserialized data is invalid.");
     }
-    // Here you would typically save the items to your database or perform further processing.
-    // For demonstration, we will just return the count of items.
 
     Console.WriteLine($"Completed Items Migration @ {DateTime.UtcNow}");
 
-    // require a collection of the various sub items to be commonly stored such as locations, zones, offers, categories etc.
-    // that data should contain and store the english and Arabic names for each item etc
+    List<DrupalCategory> categories = drupalItems.Items
+        .SelectMany(i => i.Category)
+        .Distinct(new DrupalCategoryTidComparer())
+        .ToList();
 
-    var migrationItems = (MigrationItems)drupalItems;
+    //var migrationItems = (MigrationItems)drupalItems;
 
-    await migrationService.SaveMigrationItemsAsync(migrationItems);
+    //await migrationService.SaveMigrationItemsAsync(migrationItems);
 
     return Results.Ok(new
     {
-        Message = $"Items migration for {environment} completed @ {DateTime.UtcNow}."
+        Message = $"Items migration for {environment} completed @ {DateTime.UtcNow}.",
+        Categories = categories
     });
 });
 
 
 app.Run();
+
+public class DrupalCategoryTidComparer : IEqualityComparer<DrupalCategory>
+{
+    public bool Equals(DrupalCategory? x, DrupalCategory? y)
+    {
+        if (ReferenceEquals(x, y)) return true;
+        if (x is null || y is null) return false;
+        return x.Tid == y.Tid;
+    }
+
+    public int GetHashCode(DrupalCategory obj)
+    {
+        return obj.Tid.GetHashCode();
+    }
+}
