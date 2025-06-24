@@ -1,0 +1,32 @@
+@page "/manage/reports"
+@inherits ReportsBase
+<MudGrid Style="padding-top: 18px">
+    <!-- Left Form Section -->
+    <MudItem xs="12" md="12">
+            <MudText Class="reports-style">Reports</MudText>
+            <MudTextField @bind-Value="@searchText"
+                Placeholder="Search"
+                Variant="Variant.Outlined"
+                Adornment="Adornment.Start"
+                AdornmentIcon="@Icons.Material.Filled.Search"
+                Class="report-content-style"/>
+       @* Date grid within mud paper *@
+    </MudItem>
+</MudGrid>
+
+<style>
+    .reports-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 30px;
+        font-weight: 600;
+        color: #242424;
+        text-transform: none;
+        padding-bottom: 32px;
+    }
+    .report-content-style {
+        background-color: #FFFFFF;
+        border-radius: 4px; 
+        width: 400px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);  
+    }
+</style>
