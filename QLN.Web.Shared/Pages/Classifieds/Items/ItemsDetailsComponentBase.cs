@@ -15,7 +15,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Items
 
         protected string viewAllUrl => $"/classifieds";
         protected bool IsLoading { get; set; } = true;  
-        protected ClassifiedsIndex ItemsDetails { get; set; } = new();
+        protected ClassifiedsIndex? ItemsDetails { get; set; } = null;
         protected List<ClassifiedsIndex> ItemsDetailsSimler { get; set; } = new();
         protected List<string> carouselImages = new()
         {

@@ -9,6 +9,7 @@ public class ItemsComponentBase : ComponentBase
 {
     [Inject] protected SearchStateService SearchState { get; set; }
     [Inject] private IClassifiedsServices _classifiedsService { get; set; } = default!;
+    protected List<CategoryTreeDto> CategoryTrees { get; set; } = new();
     [Inject] private ILogger<ItemsComponentBase> Logger { get; set; } = default!;
 
     protected bool IsLoadingSearch { get; set; } = true;
@@ -17,8 +18,6 @@ public class ItemsComponentBase : ComponentBase
     protected string? ErrorMessage { get; set; }
 
     protected List<ClassifiedsIndex> SearchResults { get; set; } = new();
-    protected List<CategoryTreeDto> CategoryTrees { get; set; } = new();
-
     protected void HandleViewModeChange(string newMode)
     {
         SearchState.ItemViewMode = newMode;
@@ -30,14 +29,25 @@ public class ItemsComponentBase : ComponentBase
         StateHasChanged();
 
     }
+    protected async Task OnSearchTriggered(string searchText)
+{
+    await LoadSearchResultsAsync(searchText);
+}
+
     protected override async Task OnInitializedAsync()
     {
         await LoadCategoryTreesAsync();
-        await LoadSearchResultsAsync();
+  
+        await LoadSearchResultsAsync();    
     }
 
     private async Task LoadCategoryTreesAsync()
     {
+        if (!string.IsNullOrWhiteSpace(SearchState.ItemCategory))
+        {
+            IsLoadingCategories = false;
+            return;
+        }
         try
         {
             var response = await _classifiedsService.GetAllCategoryTreesAsync("Items");
@@ -46,6 +56,7 @@ public class ItemsComponentBase : ComponentBase
             {
                 var result = await response.Content.ReadFromJsonAsync<List<CategoryTreeDto>>();
                 CategoryTrees = result ?? new();
+                 SearchState.ItemCategoryTrees = CategoryTrees;
             }
             else
             {
@@ -63,16 +74,33 @@ public class ItemsComponentBase : ComponentBase
         }
     }
 
-    private async Task LoadSearchResultsAsync()
+    private async Task LoadSearchResultsAsync(string? searchText = null)
     {
+        IsLoadingSearch = true;
         try
         {
+            var filters = new Dictionary<string, object>
+        {
+            { "SubVertical", "Items" }
+        };
+
+            // Include price filters only if they are set
+            if (SearchState.ItemMinPrice.HasValue)
+                filters.Add("minPrice", SearchState.ItemMinPrice.Value);
+            if (SearchState.ItemMaxPrice.HasValue)
+                filters.Add("maxPrice", SearchState.ItemMaxPrice.Value);
+            if (!string.IsNullOrWhiteSpace(SearchState.ItemCategory))
+                filters.Add("category", SearchState.ItemCategory);
+            if (!string.IsNullOrWhiteSpace(SearchState.ItemBrand))
+                filters.Add("brand", SearchState.ItemBrand);
+            if (!string.IsNullOrWhiteSpace(SearchState.ItemSortBy))
+                filters.Add("orderBy", SearchState.ItemSortBy);
+
+
             var payload = new Dictionary<string, object>
             {
-                ["filters"] = new Dictionary<string, string>
-                {
-                    { "SubVertical", "Items" }
-                }
+                ["text"] = searchText ?? SearchState.ItemSearchText,
+                ["filters"] = filters
             };
 
             var payloadJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });

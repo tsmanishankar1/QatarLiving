@@ -8,14 +8,18 @@ namespace QLN.Web.Shared.Pages.Classifieds.Items.Components;
 public class SearchSectionBase : ComponentBase
 {
     [Inject] protected SearchStateService SearchState { get; set; }
-    [Parameter] public List<CategoryTreeDto> CategoryTrees { get; set; }
+    protected bool ShowSaveSearchPopup { get; set; } = false;
+
+    protected List<CategoryTreeDto> CategoryTrees => SearchState.ItemCategoryTrees;
+
+    [Parameter] public EventCallback<string> OnSearch { get; set; }
+
     [Parameter] public EventCallback<string> OnViewModeChanged { get; set; }
     [Inject] private ILogger<SearchSectionBase> Logger { get; set; }
     [Inject] private NavigationManager Nav { get; set; }
     protected bool _isSearchFocused = false;
 
     protected bool _isSearching;
-     protected void ClearSearch() => SearchState.ItemSearchText = string.Empty;
       protected List<ViewToggleButtons.ViewToggleOption> _viewOptions = new()
     {
         new() { ImageUrl = "/qln-images/list_icon.svg", Label = "List", Value = "list" },
@@ -28,6 +32,19 @@ public class SearchSectionBase : ComponentBase
         new() { Id="apple", Label="Apple" },
         new() { Id="sony", Label="Sony" }
     };
+
+        protected Task HandleSaveSearch()
+        {
+            // Implement actual save logic here — call backend or store locally
+            ShowSaveSearchPopup = false;
+            return Task.CompletedTask;
+        }
+
+        protected Task CloseSaveSearchPopup()
+        {
+            ShowSaveSearchPopup = false;
+            return Task.CompletedTask;
+        }
 
     protected override void OnInitialized()
     {
@@ -47,6 +64,7 @@ public class SearchSectionBase : ComponentBase
             SearchState.ItemMinPrice = null;
             SearchState.ItemMaxPrice = null;
             SearchState.ItemViewMode ??= "grid";
+
             StateHasChanged();
         }
     }
@@ -57,14 +75,23 @@ public class SearchSectionBase : ComponentBase
         prop?.SetValue(SearchState, value);
         PerformSearch();
     }
-
     protected async Task PerformSearch()
     {
         _isSearching = true;
         StateHasChanged();
         await Task.Yield();
-        OnViewModeChanged.InvokeAsync(SearchState.ItemViewMode);
+        await OnSearch.InvokeAsync(SearchState.ItemSearchText);
         _isSearching = false;
+    }
+    protected async Task ClearSearch()
+    {
+        SearchState.ItemSearchText = string.Empty;
+        StateHasChanged();
+
+        if (OnSearch.HasDelegate)
+        {
+            await OnSearch.InvokeAsync(string.Empty); // pass empty string as the search text
+        }
     }
 
     protected void SetViewMode(string mode)

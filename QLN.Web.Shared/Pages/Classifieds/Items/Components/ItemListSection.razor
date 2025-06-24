@@ -2,6 +2,7 @@
 @using QLN.Web.Shared.Components.Classifieds.PromotedItemCards
 @using QLN.Web.Shared.Pages.Classifieds.Skeletons
 @using QLN.Web.Shared.Components.EmptyCard
+@using QLN.Web.Shared.Components.SearchNotFound
 @using QLN.Web.Shared.Components.PriceSelect
 @using QLN.Web.Shared.Components.BreadCrumb
 @using QLN.Web.Shared.Components.PaginationFooter
@@ -41,12 +42,24 @@
             }
         </MudGrid>
     }
-    else if (PagedItems == null || !PagedItems.Any())
-    {
-        <div class="empty-wrapper">
-            <EmptyCard Title="No items found." Subtitle="Try adjusting your filters or search keywords." />
-        </div>
-    }
+   else if (PagedItems == null || !PagedItems.Any())
+{
+    <div class="empty-wrapper">
+        @if (IsSearchPerformed)
+        {
+            <SearchNotFound 
+                Title="No results found" 
+                Subtitle="Try adjusting your filters or keywords"
+                ButtonText="Clear Search"
+                OnClearSearch="ClearSearch" />
+        }
+        else
+        {
+            <EmptyCard Title="No items found." Subtitle="Browse the categories or check back later." />
+        }
+    </div>
+}
+
     else
     {
         @if (ViewMode == "grid")

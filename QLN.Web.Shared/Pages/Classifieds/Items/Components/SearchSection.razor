@@ -2,6 +2,7 @@
 @using MudBlazor
 @using QLN.Web.Shared.Components.ViewToggleButtons
 @using QLN.Web.Shared.Components.NewCustomSelect
+@using QLN.Web.Shared.Components.SaveSearchPopup
 @using QLN.Web.Shared.Components.CustomSelectCategory
 @using QLN.Web.Shared.Components.PriceRangeSelect
 @using QLN.Web.Shared.Pages.Classifieds.Items.Components
@@ -51,7 +52,7 @@
                     Items="@CategoryTrees"
                     SelectedId="@SearchState.ItemCategory"
                     SelectedIdChanged="v => OnFilterChanged(nameof(SearchState.ItemCategory), v)"
-                    GetId="x => x.Id.ToString()"
+                    GetId="x => x.Name"
                     GetLabel="x => x.Name"
                     Placeholder="Category"
                     BorderRadius="4px"
@@ -96,7 +97,7 @@
 
                 <!-- Save Search -->
                 <div class="save-search">
-                    <button class="save-search-btn">Save Search</button>
+                    <button class="save-search-btn" @onclick="() => ShowSaveSearchPopup = true">Save Search</button>
                 </div>
             </div>
         }
@@ -107,6 +108,18 @@
         </div>
 
     </div>
+    @if (ShowSaveSearchPopup)
+{
+    <SaveSearchPopup 
+        ShowTextField="true"
+        Title="Save this Search"
+        Description="Give a name to your search and access it anytime"
+        PrimaryButtonText="Save Search"
+        SecondaryButtonText="Cancel"
+        OnPrimaryClick="HandleSaveSearch"
+        OnSecondaryClick="CloseSaveSearchPopup" />
+}
+
 </div>
 
 <style>

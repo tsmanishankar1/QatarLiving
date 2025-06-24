@@ -7,8 +7,11 @@ namespace QLN.Web.Shared.Pages.Classifieds.Items.Components
 {
     public class ItemListSectionBase : ComponentBase
     {
+        [Inject] protected SearchStateService SearchState { get; set; } = default!;
         [Parameter] public string ViewMode { get; set; }
         [Parameter] public bool Loading { get; set; } = false;
+        [Parameter] public bool IsSearchPerformed { get; set; }
+        [Parameter] public EventCallback<string> OnSearch { get; set; }
        [Inject] NavigationManager NavigationManager { get; set; }
        [Parameter] public List<ClassifiedsIndex> Items { get; set; } = new();
 
@@ -83,6 +86,20 @@ namespace QLN.Web.Shared.Pages.Classifieds.Items.Components
             _objectRef?.Dispose();
         }
 
+        protected async Task ClearSearch()
+        {
+            SearchState.ItemSearchText = null;
+            SearchState.ItemCategory = null;
+            SearchState.ItemBrand = null;
+            SearchState.ItemMinPrice = null;
+            SearchState.ItemMaxPrice = null;
+            SearchState.ItemViewMode = "grid";
+            if (OnSearch.HasDelegate)
+            {
+                await OnSearch.InvokeAsync("");
+            }
+        }
+
         protected override void OnInitialized()
         {
             breadcrumbItems = new()
@@ -91,25 +108,35 @@ namespace QLN.Web.Shared.Pages.Classifieds.Items.Components
                 new() { Label = "Items", Url = "/qln/classifieds/items", IsLast = true }
             };
         }
-    protected async Task OnSortChanged(string newSortId)
+        protected async Task OnSortChanged(string newSortId)
+        {
+            selectedSort = newSortId;
+            currentPage = 1;
+
+            var selectedOption = sortOptions.FirstOrDefault(x => x.Id == newSortId);
+            SearchState.ItemSortBy = selectedOption?.OrderByValue;
+
+            if (OnSearch.HasDelegate)
+            {
+                await OnSearch.InvokeAsync(SearchState.ItemSearchText ?? string.Empty);
+            }
+        }
+
+
+    public class SortOption
     {
-        selectedSort = newSortId;
-        currentPage = 1;
-        // Optionally do sorting logic
-        await InvokeAsync(StateHasChanged);
+        public string Id { get; set; }
+        public string Label { get; set; }
+        public string? OrderByValue { get; set; } 
     }
 
-       public class SortOption
-{
-    public string Id { get; set; }
-    public string Label { get; set; }
-}
-protected List<SortOption> sortOptions = new()
-{
-    new() { Id = "default", Label = "Default" },
-    new() { Id = "priceLow", Label = "Price: Low to High" },
-    new() { Id = "priceHigh", Label = "Price: High to Low" }
-};
+        protected List<SortOption> sortOptions = new()
+        {
+            new() { Id = "default", Label = "Default", OrderByValue = null },
+            new() { Id = "priceLow", Label = "Price: Low to High", OrderByValue = "price asc" },
+            new() { Id = "priceHigh", Label = "Price: High to Low", OrderByValue = "price desc" }
+        };
+
 
     }
 }
