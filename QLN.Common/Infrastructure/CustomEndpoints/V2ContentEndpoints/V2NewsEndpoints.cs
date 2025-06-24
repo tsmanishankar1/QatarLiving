@@ -403,6 +403,133 @@ public static class V2NewsEndpoints
              .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
+        group.MapGet("/getWriterTags", async Task<Results<
+         Ok<Dictionary<string, string>>,
+         ProblemHttpResult>>
+         (
+             IV2NewsService service,
+             CancellationToken cancellationToken
+         ) =>
+        {
+            try
+            {
+                var tags = await service.GetWriterTagsAsync(cancellationToken);
+                return TypedResults.Ok(tags);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Error retrieving writer tags", ex.Message);
+            }
+        })
+         .WithName("getWriterTags")
+         .WithTags("News")
+         .WithSummary("Get all writer tags as key-value JSON")
+         .WithDescription("Returns writer tags in a key-value JSON object format")
+         .Produces<Dictionary<string, string>>(StatusCodes.Status200OK)
+         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        group.MapPost("/createNewsArticle", async Task<Results<
+    Ok<string>,
+    ForbidHttpResult,
+    BadRequest<ProblemDetails>,
+    ProblemHttpResult>>
+(
+    V2NewsArticleDTO dto,
+    IV2NewsService service,
+    HttpContext httpContext,
+    CancellationToken cancellationToken
+) =>
+        {
+            try
+            {
+                Guid? userId = httpContext.User.GetId();
+                string userName = httpContext.User.GetName();
+
+                if (!userId.HasValue || string.IsNullOrWhiteSpace(userName))
+                    return TypedResults.Forbid();
+
+                dto.CreatedBy = userId.Value;
+                dto.UpdatedBy = userId.Value;
+                dto.CreatedAt = DateTime.UtcNow;
+                dto.UpdatedAt = DateTime.UtcNow;
+
+                var result = await service.CreateNewsArticleAsync(userId.Value, dto, cancellationToken);
+                return TypedResults.Ok(result);
+            }
+            catch (InvalidDataException ex)
+            {
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "Invalid Data",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Internal Server Error", ex.Message);
+            }
+        })
+.WithName("CreateNewsArticle")
+.WithTags("News")
+.WithSummary("Create News Article")
+.WithDescription("Creates a news article using authenticated user ID and name from token.")
+.Produces<string>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+        // .RequireAuthorization(); // Uncomment when auth is needed
+
+        group.MapPost("/createNewsArticleById", async Task<Results<
+    Ok<string>,
+    BadRequest<ProblemDetails>,
+    ProblemHttpResult>>
+(
+    V2NewsArticleDTO dto,
+    IV2NewsService service,
+    CancellationToken cancellationToken
+) =>
+        {
+            try
+            {
+                if (dto.CreatedBy == Guid.Empty || dto.UpdatedBy == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "CreatedBy and UpdatedBy must be provided in the payload.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                dto.CreatedAt = DateTime.UtcNow;
+                dto.UpdatedAt = DateTime.UtcNow;
+
+                var result = await service.CreateNewsArticleAsync(dto.CreatedBy, dto, cancellationToken);
+                return TypedResults.Ok(result);
+            }
+            catch (InvalidDataException ex)
+            {
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "Invalid Data",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Internal Server Error", ex.Message);
+            }
+        })
+.ExcludeFromDescription()
+.WithName("CreateNewsArticleByUserId")
+.WithTags("News")
+.WithSummary("Create News Article By UserId")
+.WithDescription("Creates a news article using CreatedBy and UpdatedBy passed explicitly.")
+.Produces<string>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         return group;
     }

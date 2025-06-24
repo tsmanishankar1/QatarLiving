@@ -36,8 +36,8 @@ namespace QLN.Backend.API.Service.V2ContentService
                     dto.Image_url = blobUrl;
                 }
 
-                var url = "/v2/api/News/createNewBy-Id";
-                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2ContentNews.NewsServiceAppId, url);
+                var url = "/api/v2/news/createNewBy-Id";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
@@ -58,8 +58,8 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                var appId = ConstantValues.V2ContentNews.NewsServiceAppId;
-                var path = "/v2/api/News/getAllnews";
+                var appId = ConstantValues.V2Content.ContentServiceAppId;
+                var path = "/api/v2/news/getAllnews";
 
                 _logger.LogInformation("Calling Dapr method: AppId = {AppId}, Path = {Path}", appId, path);
 
@@ -83,11 +83,11 @@ namespace QLN.Backend.API.Service.V2ContentService
             //try
                 try
             {
-                var url = $"/v2/api/News/getById/{id}";
+                var url = $"/api/v2/news/getById/{id}";
 
                 return await _dapr.InvokeMethodAsync<V2ContentNewsDto>(
                     HttpMethod.Get,
-                     ConstantValues.V2ContentNews.NewsServiceAppId,
+                     ConstantValues.V2Content.ContentServiceAppId,
                     url,
                     cancellationToken);
             }
@@ -125,8 +125,8 @@ namespace QLN.Backend.API.Service.V2ContentService
                     dto.Image_url = blobUrl;
                 }
 
-                var url = "/v2/api/News/updateNewsByUserId";
-                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.V2ContentNews.NewsServiceAppId, url);
+                var url = "/api/v2/news/updateNewsByUserId";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.V2Content.ContentServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
@@ -148,8 +148,8 @@ namespace QLN.Backend.API.Service.V2ContentService
             {
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Delete,
-                    ConstantValues.V2ContentNews.NewsServiceAppId,
-                    $"/v2/api/News/delete/{id}",
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    $"/api/v2/news/delete/{id}",
                     cancellationToken);
 
                 return true;
@@ -166,8 +166,8 @@ namespace QLN.Backend.API.Service.V2ContentService
             try
             {
 
-                var url = "/v2/api/News/createNewsCategory";
-                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2ContentNews.NewsServiceAppId, url);
+                var url = "/api/v2/news/createNewsCategory";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
@@ -187,8 +187,8 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                var appId = ConstantValues.V2ContentNews.NewsServiceAppId;
-                var path = "/v2/api/News/getAllnewsCategory";
+                var appId = ConstantValues.V2Content.ContentServiceAppId;
+                var path = "/api/v2/news/getAllnewsCategory";
 
 
                 return await _dapr.InvokeMethodAsync<List<NewsCategoryDto>>(
@@ -201,6 +201,74 @@ namespace QLN.Backend.API.Service.V2ContentService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving all news");
+                throw;
+            }
+        }
+        public async Task<Dictionary<string, string>> GetWriterTagsAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var appId = ConstantValues.V2Content.ContentServiceAppId;
+                var path = "/api/v2/news/getWriterTags";
+
+                return await _dapr.InvokeMethodAsync<Dictionary<string, string>>(
+               HttpMethod.Get,
+               appId,
+               path,
+               cancellationToken
+           ) ?? new();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving writer tags from internal service");
+                throw;
+            }
+        }
+        //public async Task<string> CreateNewsArticleAsync(Guid userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default)
+        //{
+        //    try
+        //    {
+        //        var appId = "qln-content-ms";
+        //        var path = $"/api/v2/news/createNewsArticleById/{userId}";
+
+        //        return await _dapr.InvokeMethodAsync<V2NewsArticleDTO, string>(
+        //            HttpMethod.Post,
+        //            appId,
+        //            path,
+        //            dto,
+        //            cancellationToken
+        //        );
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error invoking CreateNewsArticle endpoint");
+        //        throw;
+        //    }
+        //}
+        public async Task<string> CreateNewsArticleAsync(Guid userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(dto.CoverImageUrl))
+                {
+                    var imageName = $"{dto.Title}_{dto.Id}.png";
+                    var blobUrl = await _blobStorage.SaveBase64File(dto.CoverImageUrl, imageName, "imageurl", cancellationToken);
+                    dto.CoverImageUrl = blobUrl;
+                }
+
+                var url = "/api/v2/news/createNewsArticleById";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
+                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                response.EnsureSuccessStatusCode();
+
+                var rawJson = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating news");
                 throw;
             }
         }

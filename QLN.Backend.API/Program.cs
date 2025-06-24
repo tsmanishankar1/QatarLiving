@@ -198,7 +198,6 @@ builder.Services.NewsConfiguration(builder.Configuration);
 
 builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
-builder.Services.ContentConfiguration(builder.Configuration);
 var app = builder.Build();
 
 app.UseResponseCaching();
@@ -247,12 +246,12 @@ app.MapGroup("/api/subscriptions")
 app.MapGroup("/api/PayToPublish")
     .MapPayToPublishEndpoints();
 
-app.MapGroup("/api/v2/content")
-    .MapNewsContentEndpoints();
+//app.MapGroup("/api/v2/content")
+//    .MapNewsContentEndpoints();
 
 
 
-var newsGroup = app.MapGroup("v2/api/News");
+var newsGroup = app.MapGroup("/api/v2/news");
 newsGroup.MapNewsEndpoints()
      .RequireAuthorization();
 app.MapAllBackOfficeEndpoints();

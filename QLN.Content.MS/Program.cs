@@ -3,7 +3,7 @@ using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Service.FileStorage;
-using QLN.Content.MS.Service.NewsInternalService;
+//using QLN.Content.MS.Service.NewsInternalService;
 using QLN.Content.MS.Service;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 using QLN.Common.Infrastructure.IService.IContentService;
@@ -43,9 +43,8 @@ builder.Services.AddSwaggerGen(opts =>
 });
 
 builder.Services.AddDaprClient();
-builder.Services.AddScoped<IV2ContentNews, NewsInternalService>();
+builder.Services.AddScoped<IV2NewsService, V2InternalNewsService>();
 builder.Services.AddScoped<IV2EventService, V2InternalEventService>();
-builder.Services.AddScoped<IV2contentBannerService, V2InternalBannerService>();
 builder.Services.AddScoped<IFileStorageBlobService, FileStorageBlobService>();
 
 var app = builder.Build();
@@ -57,8 +56,10 @@ if (app.Environment.IsDevelopment())
 }
 var eventGroup = app.MapGroup("v2/api/event");
 eventGroup.MapEventEndpoints();
-app.MapGroup("/api/v2").MapContentBannerEndpoints()
-    .MapContentNewsEndpoints();
+
+var newsGroup = app.MapGroup("/api/v2/news");
+newsGroup.MapNewsEndpoints();
+
 app.MapControllers();
 app.UseHttpsRedirection();
 app.Run();

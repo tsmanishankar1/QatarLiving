@@ -17,6 +17,15 @@ namespace QLN.Content.MS.Service
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<IV2NewsService> _logger;
+        private static readonly List<string> writerTags = new()
+    {
+        "Qatar Living",
+        "Everything Qatar",
+        "FIFA Arab Cup",
+        "QL Exclusive",
+        "Advice & Help"
+    };
+
         public V2InternalNewsService(DaprClient dapr, ILogger<IV2NewsService> logger)
         {
             _dapr = dapr;
@@ -38,16 +47,16 @@ namespace QLN.Content.MS.Service
                 }
                 // Save the news item
                 await _dapr.SaveStateAsync(
-                    ConstantValues.V2ContentNews.ContentStoreName,
+                    ConstantValues.V2Content.ContentStoreName,
                     dto.Id.ToString(),
                     dto,
                     cancellationToken: cancellationToken
                 );
 
                 // Get or create index list
-                var indexKey = ConstantValues.V2ContentNews.NewsIndexKey;
+                var indexKey = ConstantValues.V2Content.NewsIndexKey;
                 var keys = await _dapr.GetStateAsync<List<string>>(
-                    ConstantValues.V2ContentNews.ContentStoreName,
+                    ConstantValues.V2Content.ContentStoreName,
                     indexKey
                     //cancellationToken
                 ) ?? new List<string>();
@@ -56,7 +65,7 @@ namespace QLN.Content.MS.Service
                 {
                     keys.Add(dto.Id.ToString());
                     await _dapr.SaveStateAsync(
-                        ConstantValues.V2ContentNews.ContentStoreName,
+                        ConstantValues.V2Content.ContentStoreName,
                         indexKey,
                         keys,
                         cancellationToken: cancellationToken
@@ -77,11 +86,11 @@ namespace QLN.Content.MS.Service
         {
             try
             {
-                var keys = await _dapr.GetStateAsync<List<string>>(ConstantValues.V2ContentNews.ContentStoreName, ConstantValues.V2ContentNews.NewsIndexKey) ?? new();
+                var keys = await _dapr.GetStateAsync<List<string>>(ConstantValues.V2Content.ContentStoreName, ConstantValues.V2Content.NewsIndexKey) ?? new();
 
                 _logger.LogInformation("Fetched {Count} keys from index", keys.Count);
 
-                var items = await _dapr.GetBulkStateAsync(ConstantValues.V2ContentNews.ContentStoreName, keys, null, cancellationToken: cancellationToken);
+                var items = await _dapr.GetBulkStateAsync(ConstantValues.V2Content.ContentStoreName, keys, null, cancellationToken: cancellationToken);
 
                 var News = items
                     .Select(i => JsonSerializer.Deserialize<V2ContentNewsDto>(i.Value, new JsonSerializerOptions
@@ -107,7 +116,7 @@ namespace QLN.Content.MS.Service
             try
             {
                 var data = await _dapr.GetStateAsync<V2ContentNewsDto>(
-                    ConstantValues.V2ContentNews.ContentStoreName,
+                    ConstantValues.V2Content.ContentStoreName,
                     id.ToString(),
                     cancellationToken: cancellationToken
                 );
@@ -144,7 +153,7 @@ namespace QLN.Content.MS.Service
             }
 
             await _dapr.SaveStateAsync(
-                V2ContentNews.ContentStoreName,
+                V2Content.ContentStoreName,
                 dto.Id.ToString(),
                 dto,
                 cancellationToken: cancellationToken
@@ -160,11 +169,11 @@ namespace QLN.Content.MS.Service
             if (existing == null)
                 return false;
 
-            await _dapr.DeleteStateAsync(V2ContentNews.ContentStoreName, id.ToString(), cancellationToken: cancellationToken);
+            await _dapr.DeleteStateAsync(V2Content.ContentStoreName, id.ToString(), cancellationToken: cancellationToken);
 
-            var keys = await _dapr.GetStateAsync<List<string>>(V2ContentNews.ContentStoreName, V2ContentNews.NewsIndexKey) ?? new List<string>();
+            var keys = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, V2Content.NewsIndexKey) ?? new List<string>();
             keys.Remove(id.ToString());
-            await _dapr.SaveStateAsync(V2ContentNews.ContentStoreName, V2ContentNews.NewsIndexKey, keys, cancellationToken: cancellationToken);
+            await _dapr.SaveStateAsync(V2Content.ContentStoreName, V2Content.NewsIndexKey, keys, cancellationToken: cancellationToken);
 
             return true;
         }
@@ -182,16 +191,16 @@ namespace QLN.Content.MS.Service
 
                 // Save the news item
                 await _dapr.SaveStateAsync(
-                    ConstantValues.V2ContentNews.ContentStoreName,
+                    ConstantValues.V2Content.ContentStoreName,
                     dto.Id.ToString(),
                     dto,
                     cancellationToken: cancellationToken
                 );
 
                 // Get or create index list
-                var indexKey = ConstantValues.V2ContentNews.NewsIndexKey;
+                var indexKey = ConstantValues.V2Content.NewsIndexKey;
                 var keys = await _dapr.GetStateAsync<List<string>>(
-                    ConstantValues.V2ContentNews.ContentStoreName,
+                    ConstantValues.V2Content.ContentStoreName,
                     indexKey
                 //cancellationToken
                 ) ?? new List<string>();
@@ -200,7 +209,7 @@ namespace QLN.Content.MS.Service
                 {
                     keys.Add(dto.Id.ToString());
                     await _dapr.SaveStateAsync(
-                        ConstantValues.V2ContentNews.ContentStoreName,
+                        ConstantValues.V2Content.ContentStoreName,
                         indexKey,
                         keys,
                         cancellationToken: cancellationToken
@@ -219,11 +228,11 @@ namespace QLN.Content.MS.Service
         {
             try
             {
-                var keys = await _dapr.GetStateAsync<List<string>>(ConstantValues.V2ContentNews.ContentStoreName, ConstantValues.V2ContentNews.NewsIndexKey) ?? new();
+                var keys = await _dapr.GetStateAsync<List<string>>(ConstantValues.V2Content.ContentStoreName, ConstantValues.V2Content.NewsIndexKey) ?? new();
 
                 _logger.LogInformation("Fetched {Count} keys from index", keys.Count);
 
-                var items = await _dapr.GetBulkStateAsync(ConstantValues.V2ContentNews.ContentStoreName, keys, null, cancellationToken: cancellationToken);
+                var items = await _dapr.GetBulkStateAsync(ConstantValues.V2Content.ContentStoreName, keys, null, cancellationToken: cancellationToken);
 
                 var News = items
                     .Select(i => JsonSerializer.Deserialize<NewsCategoryDto>(i.Value, new JsonSerializerOptions
@@ -239,6 +248,49 @@ namespace QLN.Content.MS.Service
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while retrieving all news items");
+                throw;
+            }
+        }
+
+
+        //// new news endpoints
+        public Task<Dictionary<string, string>> GetWriterTagsAsync(CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("Returning static writer tags as key-value JSON");
+
+            var tagDict = writerTags.ToDictionary(tag => tag, tag => tag);
+            return Task.FromResult(tagDict);
+        }
+        public async Task<string> CreateNewsArticleAsync(Guid userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var articleId = Guid.NewGuid();
+                dto.Id = articleId;
+                dto.CreatedBy = userId;
+                dto.CreatedAt = DateTime.UtcNow;
+                dto.UpdatedBy = userId;
+                dto.UpdatedAt = DateTime.UtcNow;
+
+                string storeName = "contentstatestore";
+                string indexKey = "news-index";
+
+                // Save to Dapr
+                await _dapr.SaveStateAsync(storeName, dto.Id.ToString(), dto, cancellationToken: cancellationToken);
+
+                // Update index
+                var index = await _dapr.GetStateAsync<List<string>>(storeName, indexKey, cancellationToken: cancellationToken) ?? new();
+                if (!index.Contains(dto.Id.ToString()))
+                {
+                    index.Add(dto.Id.ToString());
+                    await _dapr.SaveStateAsync(storeName, indexKey, index, cancellationToken: cancellationToken);
+                }
+
+                return "News article created successfully";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating news article");
                 throw;
             }
         }
