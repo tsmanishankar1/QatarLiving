@@ -45,8 +45,8 @@
                         @companyProfile.BusinessName
                     </MudText>
                     <MudText Typo="Typo.body2" Style="color: #5F6C7B;">
-                        @companyProfile.NatureOfBusiness - Company
-                    </MudText>
+@string.Join(", ", companyProfile.NatureOfBusiness
+    .Select(id => GetDisplayName((NatureOfBusiness)id))) - Company   </MudText>
                     <MudText Typo="Typo.caption" Class="mt-1" Style="color: #5F6C7B;">Created on</MudText>
                     <MudText Typo="Typo.caption" Style="color: #5F6C7B;">
                         @companyProfile.CreatedUtc.ToString("MMM dd, yyyy")
