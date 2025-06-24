@@ -4200,6 +4200,79 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .ExcludeFromDescription();
 
 
+            group.MapGet("/category/{vertical}/{mainCategoryId:guid}/filters", async Task<IResult> (
+                string vertical,
+                Guid mainCategoryId,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                if (string.IsNullOrWhiteSpace(vertical))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Vertical must be specified.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                if (mainCategoryId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Main category ID must not be empty.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                try
+                {
+                    var result = await service.GetFiltersByMainCategoryAsync(vertical, mainCategoryId, token);
+
+                    if (result == null || !result.Any())
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "No Filters Found",
+                            Detail = "No filters were found under the provided main category.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Filter Retrieval Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+   .WithName("GetFiltersByMainCategory")
+   .WithTags("Classified")
+   .WithSummary("Get all filters for a main category")
+   .WithDescription("Returns all filter definitions (fields with options) for a given vertical and main category, including inherited fields from subcategories.")
+   .Produces<List<CategoryField>>(StatusCodes.Status200OK)
+   .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+   .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+   .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+   .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+
+
             return group;
         }
 

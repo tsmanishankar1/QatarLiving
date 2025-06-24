@@ -29,7 +29,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
         private readonly DaprClient _dapr;
         private readonly IEventlogger _log;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly IFileStorageBlobService _fileStorageBlob;
+        private readonly IFileStorageBlobService _fileStorageBlob;       
 
         public ExternalClassifiedService(DaprClient dapr, IEventlogger log, IHttpContextAccessor httpContextAccessor, IFileStorageBlobService fileStorageBlob)
         {
@@ -1221,6 +1221,33 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw new InvalidOperationException("Failed to unpublish collectibles ads from classified microservice.", ex);
             }
         }
+
+        public async Task<List<CategoryField>> GetFiltersByMainCategoryAsync(string vertical, Guid mainCategoryId, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical must be specified.");
+
+            if (mainCategoryId == Guid.Empty)
+                throw new ArgumentException("Main category ID must not be empty.");
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<List<CategoryField>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/category/{vertical}/{mainCategoryId}/filters",
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to retrieve category filters from classified microservice.", ex);
+            }
+        }
+
+
     }
 }
 

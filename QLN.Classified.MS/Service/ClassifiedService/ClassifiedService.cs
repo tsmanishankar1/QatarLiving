@@ -2652,7 +2652,62 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("Failed to retrieve all category trees", ex);
             }
         }
+     
+        public async Task<List<CategoryField>> GetFiltersByMainCategoryAsync(string vertical, Guid mainCategoryId, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical must be specified.");
 
+            if (mainCategoryId == Guid.Empty)
+                throw new ArgumentException("Main category ID must not be empty.");
+
+            try
+            {                
+                var allTrees = await GetAllCategoryTrees(vertical, cancellationToken)
+                    .ConfigureAwait(false);
+
+                var root = allTrees.FirstOrDefault(t => t.Id == mainCategoryId);
+                if (root == null)
+                    return new List<CategoryField>();
+
+                var collected = new List<CategoryField>();
+                void Collect(CategoryTreeDto node)
+                {
+                    if (node.Fields?.Any() == true)
+                        collected.AddRange(node.Fields);
+
+                    foreach (var child in node.Children)
+                        Collect(child);
+                }
+                Collect(root);
+                
+                var merged = collected
+                    .GroupBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
+                    .Select(g =>
+                    {
+                        var exemplar = g.First();
+                        var allOptions = g
+                            .Where(f => f.Options != null)
+                            .SelectMany(f => f.Options!)
+                            .Distinct(StringComparer.OrdinalIgnoreCase)
+                            .ToList();
+
+                        return new CategoryField
+                        {
+                            Name = exemplar.Name,
+                            Type = exemplar.Type,
+                            Options = allOptions
+                        };
+                    })
+                    .ToList();
+
+                return merged;
+            }
+            catch (Exception ex)
+            {                
+                throw new InvalidOperationException("Failed to retrieve filters from the category tree.", ex);
+            }
+        }
 
     }
 }
