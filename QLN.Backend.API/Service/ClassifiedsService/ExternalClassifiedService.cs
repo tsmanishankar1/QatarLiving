@@ -707,17 +707,23 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<PaginatedAdResponseDto> GetUserUnPublishedItemsAds(Guid userId, int? page, int? pageSize, CancellationToken cancellationToken = default)
+        public async Task<PaginatedAdResponseDto> GetUserUnPublishedItemsAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             if (userId == Guid.Empty)
                 throw new ArgumentException("User ID must not be empty.");
             try
             {
                 var queryParams = new Dictionary<string, string>();
+
                 if (page.HasValue)
                     queryParams.Add("page", page.Value.ToString());
+
                 if (pageSize.HasValue)
                     queryParams.Add("pageSize", pageSize.Value.ToString());
+
+                if (sortOption.HasValue)
+                    queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
+
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
                     : string.Empty;
@@ -735,7 +741,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<PaginatedPrelovedAdResponseDto> GetUserPublishedPrelovedAds(Guid userId, int? page, int? pageSize, CancellationToken cancellationToken = default)
+        public async Task<PaginatedPrelovedAdResponseDto> GetUserPublishedPrelovedAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             if (userId == Guid.Empty)
                 throw new ArgumentException("User ID must not be empty.");
@@ -749,6 +755,10 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 if (pageSize.HasValue)
                     queryParams.Add("pageSize", pageSize.Value.ToString());
+
+
+                if (sortOption.HasValue)
+                    queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
@@ -769,7 +779,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<PaginatedPrelovedAdResponseDto> GetUserUnPublishedPrelovedAds(Guid userId, int? page, int? pageSize, CancellationToken cancellationToken = default)
+        public async Task<PaginatedPrelovedAdResponseDto> GetUserUnPublishedPrelovedAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             if (userId == Guid.Empty)
                 throw new ArgumentException("User ID must not be empty.");
@@ -783,6 +793,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 if (pageSize.HasValue)
                     queryParams.Add("pageSize", pageSize.Value.ToString());
+
+                if (sortOption.HasValue)
+                    queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
@@ -803,7 +816,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<PaginatedCollectiblesAdResponseDto> GetUserPublishedCollectiblesAds(Guid userId, int? page, int? pageSize, CancellationToken cancellationToken = default)
+        public async Task<PaginatedCollectiblesAdResponseDto> GetUserPublishedCollectiblesAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             if (userId == Guid.Empty)
                 throw new ArgumentException("User ID must not be empty.", nameof(userId));
@@ -813,6 +826,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var queryParams = new Dictionary<string, string>();
                 if (page.HasValue) queryParams["page"] = page.Value.ToString();
                 if (pageSize.HasValue) queryParams["pageSize"] = pageSize.Value.ToString();
+
+                if (sortOption.HasValue)
+                    queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
@@ -832,7 +848,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<PaginatedCollectiblesAdResponseDto> GetUserUnPublishedCollectiblesAds(Guid userId, int? page, int? pageSize, CancellationToken cancellationToken = default)
+        public async Task<PaginatedCollectiblesAdResponseDto> GetUserUnPublishedCollectiblesAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             if (userId == Guid.Empty)
                 throw new ArgumentException("User ID must not be empty.", nameof(userId));
@@ -842,6 +858,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var queryParams = new Dictionary<string, string>();
                 if (page.HasValue) queryParams["page"] = page.Value.ToString();
                 if (pageSize.HasValue) queryParams["pageSize"] = pageSize.Value.ToString();
+
+                if (sortOption.HasValue)
+                    queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
@@ -861,7 +880,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<PaginatedDealsAdResponseDto> GetUserPublishedDealsAds(Guid userId, int? page, int? pageSize, CancellationToken cancellationToken = default)
+        public async Task<PaginatedDealsAdResponseDto> GetUserPublishedDealsAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             if (userId == Guid.Empty)
                 throw new ArgumentException("User ID must not be empty.", nameof(userId));
@@ -871,6 +890,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var queryParams = new Dictionary<string, string>();
                 if (page.HasValue) queryParams["page"] = page.Value.ToString();
                 if (pageSize.HasValue) queryParams["pageSize"] = pageSize.Value.ToString();
+
+                if (sortOption.HasValue)
+                    queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
@@ -891,7 +913,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<PaginatedDealsAdResponseDto> GetUserUnPublishedDealsAds(Guid userId, int? page, int? pageSize, CancellationToken cancellationToken = default)
+        public async Task<PaginatedDealsAdResponseDto> GetUserUnPublishedDealsAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             if (userId == Guid.Empty)
                 throw new ArgumentException("User ID must not be empty.", nameof(userId));
@@ -901,6 +923,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var queryParams = new Dictionary<string, string>();
                 if (page.HasValue) queryParams["page"] = page.Value.ToString();
                 if (pageSize.HasValue) queryParams["pageSize"] = pageSize.Value.ToString();
+
+                if (sortOption.HasValue)
+                    queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))

@@ -993,7 +993,7 @@ namespace QLN.Classified.MS.Service
 
                 var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, ItemsIndexKey) ?? new();
 
-                var publishedAds = new List<ItemAdDto>();
+                var publishedAds = new List<ItemAdDto>();                
 
                 foreach (var key in index)
                 {
@@ -1001,7 +1001,11 @@ namespace QLN.Classified.MS.Service
                     {
                         var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
 
-                        if (state.ValueKind != JsonValueKind.Object) continue;
+                        if (state.ValueKind != JsonValueKind.Object)
+                        {
+                            _logger.LogWarning("Skipping key {Key} due to invalid state object.", key);
+                            continue;
+                        }
 
                         var subVertical = state.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
                         var adUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
@@ -1016,8 +1020,20 @@ namespace QLN.Classified.MS.Service
                             continue;
 
                         var title = state.GetProperty("title").GetString();
-                        if (!string.IsNullOrWhiteSpace(search) && !title.Contains(search, StringComparison.OrdinalIgnoreCase))
-                            continue;
+                        if (!string.IsNullOrWhiteSpace(search))
+                        {
+                            var normalizedTitle = title.Trim().ToLowerInvariant();
+                            var normalizedSearch = search.Trim().ToLowerInvariant();
+                            if (!normalizedTitle.Contains(normalizedSearch))
+                            {
+                                _logger.LogInformation("Ad with key {Key} skipped: title '{Title}' does not contain search term '{Search}'", key, title, search);
+                                continue;
+                            }
+                            else
+                            {
+                                _logger.LogInformation("Ad with key {Key} included: title '{Title}' matches search '{Search}'", key, title, search);
+                            }
+                        }
 
 
                         var ad = new ItemAdDto
@@ -1093,7 +1109,6 @@ namespace QLN.Classified.MS.Service
                 var total = publishedAds.Count;
 
                 var pagedItems = publishedAds
-                    .OrderByDescending(a => a.CreatedAt)
                     .Skip((currentPage - 1) * currentPageSize)
                     .Take(currentPageSize)
                     .ToList();
@@ -1110,7 +1125,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<PaginatedAdResponseDto> GetUserUnPublishedItemsAds(Guid userId, int? page, int? pageSize, CancellationToken cancellationToken = default)
+        public async Task<PaginatedAdResponseDto> GetUserUnPublishedItemsAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -1145,6 +1160,10 @@ namespace QLN.Classified.MS.Service
                         if (status == AdStatus.Published || status == AdStatus.Approved)
                             continue;
 
+                        var title = state.GetProperty("title").GetString();
+                        if (!string.IsNullOrWhiteSpace(search) &&
+                            (string.IsNullOrWhiteSpace(title) || !title.Contains(search, StringComparison.OrdinalIgnoreCase)))
+                            continue;
 
                         var ad = new ItemAdDto
                         {
@@ -1207,10 +1226,18 @@ namespace QLN.Classified.MS.Service
                     }
                 }
 
+                unpublishedAds = sortOption switch
+                {
+                    AdSortOption.CreationDateOldest => unpublishedAds.OrderBy(a => a.CreatedAt).ToList(),
+                    AdSortOption.CreationDateRecent => unpublishedAds.OrderByDescending(a => a.CreatedAt).ToList(),
+                    AdSortOption.PriceHighToLow => unpublishedAds.OrderByDescending(a => a.Price).ToList(),
+                    AdSortOption.PriceLowToHigh => unpublishedAds.OrderBy(a => a.Price).ToList(),
+                    _ => unpublishedAds.OrderByDescending(a => a.CreatedAt).ToList()
+                };
+
                 var total = unpublishedAds.Count;
 
                 var pagedItems = unpublishedAds
-                    .OrderByDescending(a => a.CreatedAt)
                     .Skip((currentPage - 1) * currentPageSize)
                     .Take(currentPageSize)
                     .ToList();
@@ -1364,7 +1391,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<PaginatedPrelovedAdResponseDto> GetUserPublishedPrelovedAds(Guid userId, int? page, int? pageSize, CancellationToken cancellationToken = default)
+        public async Task<PaginatedPrelovedAdResponseDto> GetUserPublishedPrelovedAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -1391,6 +1418,11 @@ namespace QLN.Classified.MS.Service
                             ? (AdStatus)statusInt : AdStatus.Draft;
 
                         if (status != AdStatus.Published && status != AdStatus.Approved)
+                            continue;
+
+                        var title = state.GetProperty("title").GetString();
+                        if (!string.IsNullOrWhiteSpace(search) &&
+                            (string.IsNullOrWhiteSpace(title) || !title.Contains(search, StringComparison.OrdinalIgnoreCase)))
                             continue;
 
                         var ad = new PrelovedAdDto
@@ -1453,9 +1485,17 @@ namespace QLN.Classified.MS.Service
                     
                 }
 
+                published = sortOption switch
+                {
+                    AdSortOption.CreationDateOldest => published.OrderBy(a => a.CreatedAt).ToList(),
+                    AdSortOption.CreationDateRecent => published.OrderByDescending(a => a.CreatedAt).ToList(),
+                    AdSortOption.PriceHighToLow => published.OrderByDescending(a => a.Price).ToList(),
+                    AdSortOption.PriceLowToHigh => published.OrderBy(a => a.Price).ToList(),
+                    _ => published.OrderByDescending(a => a.CreatedAt).ToList(),
+                };
+
                 var total = published.Count;
                 var pagedItems = published
-                                 .OrderByDescending(a => a.CreatedAt)
                                  .Skip((currentPage - 1) * currentPageSize)
                                  .Take(currentPageSize)
                                  .ToList();
@@ -1472,7 +1512,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<PaginatedPrelovedAdResponseDto> GetUserUnPublishedPrelovedAds(Guid userId, int? page, int? pageSize, CancellationToken cancellationToken = default)
+        public async Task<PaginatedPrelovedAdResponseDto> GetUserUnPublishedPrelovedAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -1501,6 +1541,10 @@ namespace QLN.Classified.MS.Service
                             ? (AdStatus)statusInt : AdStatus.Draft;
 
                         if (status == AdStatus.Published || status == AdStatus.Approved)
+                            continue;
+
+                        var title = state.GetProperty("title").GetString();
+                        if (!string.IsNullOrWhiteSpace(search) && !title.Contains(search, StringComparison.OrdinalIgnoreCase))
                             continue;
 
                         var ad = new PrelovedAdDto
@@ -1563,9 +1607,17 @@ namespace QLN.Classified.MS.Service
 
                 }
 
+                unpublished = sortOption switch
+                {
+                    AdSortOption.CreationDateOldest => unpublished.OrderBy(a => a.CreatedAt).ToList(),
+                    AdSortOption.CreationDateRecent => unpublished.OrderByDescending(a => a.CreatedAt).ToList(),
+                    AdSortOption.PriceHighToLow => unpublished.OrderByDescending(a => a.Price).ToList(),
+                    AdSortOption.PriceLowToHigh => unpublished.OrderBy(a => a.Price).ToList(),
+                    _ => unpublished.OrderByDescending(a => a.CreatedAt).ToList()
+                };
+
                 var total = unpublished.Count;
                 var pagedItems = unpublished
-                                 .OrderByDescending(a => a.CreatedAt)
                                  .Skip((currentPage - 1) * currentPageSize)
                                  .Take(currentPageSize)
                                  .ToList();
@@ -1719,7 +1771,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<PaginatedDealsAdResponseDto> GetUserPublishedDealsAds(Guid userId, int? page, int? pageSize, CancellationToken cancellationToken = default)
+        public async Task<PaginatedDealsAdResponseDto> GetUserPublishedDealsAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -1747,6 +1799,10 @@ namespace QLN.Classified.MS.Service
                             ? (AdStatus)statusInt : AdStatus.Draft;
 
                         if (status != AdStatus.Published && status != AdStatus.Approved)
+                            continue;
+
+                        var title = state.GetProperty("title").GetString();
+                        if (!string.IsNullOrWhiteSpace(search) && !title.Contains(search, StringComparison.OrdinalIgnoreCase))
                             continue;
 
                         var ad = new DealsAdDto
@@ -1791,9 +1847,15 @@ namespace QLN.Classified.MS.Service
                     }
                 }
 
+                published = sortOption switch
+                {
+                    AdSortOption.CreationDateOldest => published.OrderBy(a => a.CreatedAt).ToList(),
+                    AdSortOption.CreationDateRecent => published.OrderByDescending(a => a.CreatedAt).ToList(),                    
+                    _ => published.OrderByDescending(a => a.CreatedAt).ToList(),
+                };
+
                 var total = published.Count;
                 var pagedItems = published
-                                 .OrderByDescending(a => a.CreatedAt)
                                  .Skip((currentPage - 1) * currentPageSize)
                                  .Take(currentPageSize)
                                  .ToList();
@@ -1810,7 +1872,7 @@ namespace QLN.Classified.MS.Service
             }
         } 
 
-        public async Task<PaginatedDealsAdResponseDto> GetUserUnPublishedDealsAds(Guid userId, int? page, int? pageSize, CancellationToken cancellationToken = default)
+        public async Task<PaginatedDealsAdResponseDto> GetUserUnPublishedDealsAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -1838,6 +1900,10 @@ namespace QLN.Classified.MS.Service
                             ? (AdStatus)statusInt : AdStatus.Draft;
 
                         if (status == AdStatus.Published || status == AdStatus.Approved)
+                            continue;
+
+                        var title = state.GetProperty("title").GetString();
+                        if (!string.IsNullOrWhiteSpace(search) && !title.Contains(search, StringComparison.OrdinalIgnoreCase))
                             continue;
 
                         var ad = new DealsAdDto
@@ -1883,9 +1949,16 @@ namespace QLN.Classified.MS.Service
                     }
                 }
 
+                unpublished = sortOption switch
+                {
+                    AdSortOption.CreationDateOldest => unpublished.OrderBy(a => a.CreatedAt).ToList(),
+                    AdSortOption.CreationDateRecent => unpublished.OrderByDescending(a => a.CreatedAt).ToList(),                    
+                    _ => unpublished.OrderByDescending(a => a.CreatedAt).ToList()
+                };
+
+
                 var total = unpublished.Count;
                 var pagedItems = unpublished
-                                 .OrderByDescending(a => a.CreatedAt)
                                  .Skip((currentPage - 1) * currentPageSize)
                                  .Take(currentPageSize)
                                  .ToList();
@@ -2038,7 +2111,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<PaginatedCollectiblesAdResponseDto> GetUserPublishedCollectiblesAds(Guid userId, int? page, int? pageSize, CancellationToken cancellationToken = default)
+        public async Task<PaginatedCollectiblesAdResponseDto> GetUserPublishedCollectiblesAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -2065,6 +2138,10 @@ namespace QLN.Classified.MS.Service
                             ? (AdStatus)statusInt : AdStatus.Draft;
 
                         if (status != AdStatus.Published && status != AdStatus.Approved)
+                            continue;
+
+                        var title = state.GetProperty("title").GetString();
+                        if (!string.IsNullOrWhiteSpace(search) && !title.Contains(search, StringComparison.OrdinalIgnoreCase))
                             continue;
 
                         var ad = new CollectiblesAdDto
@@ -2132,9 +2209,17 @@ namespace QLN.Classified.MS.Service
                     }
                 }
 
+                published = sortOption switch
+                {
+                    AdSortOption.CreationDateOldest => published.OrderBy(a => a.CreatedAt).ToList(),
+                    AdSortOption.CreationDateRecent => published.OrderByDescending(a => a.CreatedAt).ToList(),
+                    AdSortOption.PriceHighToLow => published.OrderByDescending(a => a.Price).ToList(),
+                    AdSortOption.PriceLowToHigh => published.OrderBy(a => a.Price).ToList(),
+                    _ => published.OrderByDescending(a => a.CreatedAt).ToList()
+                };
+
                 var total = published.Count;
                 var pagedItems = published
-                                 .OrderByDescending(a => a.CreatedAt)
                                  .Skip((currentPage - 1) * currentPageSize)
                                  .Take(currentPageSize)
                                  .ToList();
@@ -2151,7 +2236,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<PaginatedCollectiblesAdResponseDto> GetUserUnPublishedCollectiblesAds(Guid userId, int? page, int? pageSize, CancellationToken cancellationToken = default)
+        public async Task<PaginatedCollectiblesAdResponseDto> GetUserUnPublishedCollectiblesAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -2176,6 +2261,11 @@ namespace QLN.Classified.MS.Service
 
                         var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var statusInt)
                             ? (AdStatus)statusInt : AdStatus.Draft;
+
+                        var title = state.GetProperty("title").GetString();
+                        if (!string.IsNullOrWhiteSpace(search) &&
+                            (string.IsNullOrWhiteSpace(title) || !title.Contains(search, StringComparison.OrdinalIgnoreCase)))
+                            continue;
 
                         if (status == AdStatus.Published || status == AdStatus.Approved)
                             continue;
@@ -2245,9 +2335,17 @@ namespace QLN.Classified.MS.Service
                     }
                 }
 
+                unpublished = sortOption switch
+                {
+                    AdSortOption.CreationDateOldest => unpublished.OrderBy(a => a.CreatedAt).ToList(),
+                    AdSortOption.CreationDateRecent => unpublished.OrderByDescending(a => a.CreatedAt).ToList(),
+                    AdSortOption.PriceHighToLow => unpublished.OrderByDescending(a => a.Price).ToList(),
+                    AdSortOption.PriceLowToHigh => unpublished.OrderBy(a => a.Price).ToList(),
+                    _ => unpublished.OrderByDescending(a => a.CreatedAt).ToList()
+                };
+
                 var total = unpublished.Count;
                 var pagedItems = unpublished
-                                 .OrderByDescending(a => a.CreatedAt)
                                  .Skip((currentPage - 1) * currentPageSize)
                                  .Take(currentPageSize)
                                  .ToList();
