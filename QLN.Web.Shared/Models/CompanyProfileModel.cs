@@ -97,7 +97,6 @@ namespace QLN.Web.Shared.Models
         public int CompanySize { get; set; }
         public List<int> NatureOfBusiness { get; set; } = new();
         public string BusinessDescription { get; set; }
-        public int Status { get; set; }
         public int CrNumber { get; set; }
         public bool IsVerified { get; set; }
         public bool IsActive { get; set; }

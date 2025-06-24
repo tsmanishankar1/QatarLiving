@@ -157,21 +157,19 @@
 
                     <!-- Company Profile -->
                     <MudText Typo="Typo.h6" Class="heading-style">Company Profile</MudText>
-
                     <MudSelect T="int"
                                Label="Nature of Business *"
                                SelectedValues="@companyProfile.NatureOfBusiness"
-                               SelectedValuesChanged="@(values => companyProfile.NatureOfBusiness = values.ToList())"
+                               SelectedValuesChanged="@((IEnumerable<int> values) => { companyProfile.NatureOfBusiness = values.ToList(); })"
                                MultiSelection="true"
+                               ToStringFunc="@(value => GetDisplayName((NatureOfBusiness)value))"
                                Class="select-input no-underline">
-
                         @foreach (var item in Enum.GetValues<NatureOfBusiness>())
                         {
-                            var enumInt = Convert.ToInt32(item);
-                            var displayName = GetDisplayName((NatureOfBusiness)item);
-                            <MudSelectItem T="int" Value="@enumInt">@displayName</MudSelectItem>
+                            <MudSelectItem Value="@(Convert.ToInt32(item))">@GetDisplayName(item)</MudSelectItem>
                         }
                     </MudSelect>
+
 
 
 
