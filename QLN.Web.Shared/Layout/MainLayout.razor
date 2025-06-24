@@ -123,11 +123,13 @@
                                         <ChildContent>
                                             @foreach (var nested in nestedProfileMenuItems)
                                             {
-                                                <MudMenuItem OnClick="@(() => NavManager.NavigateTo(nested.Route))" Class="menu-item">
-                                                    <div class="nested-menu-item-list-content">
-                                                        <img src="@nested.ImageSrc" alt="@nested.Text" class="menu-item-icon nested-icon-color" />
-                                                        <span class="menu-item-text">@nested.Text</span>
-                                                    </div>
+                                                <MudMenuItem Class="menu-item">
+                                                    <MudLink Href="@nested.Route" Underline="Underline.None">
+                                                        <div class="nested-menu-item-list-content">
+                                                            <img src="@nested.ImageSrc" alt="@nested.Text" class="menu-item-icon nested-icon-color" />
+                                                            <span class="menu-item-text">@nested.Text</span>
+                                                        </div>
+                                                    </MudLink>
                                                 </MudMenuItem>
                                             }
                                         </ChildContent>
@@ -241,7 +243,7 @@
         new MenuItem { Text = "Classifieds", ImageSrc = "/qln-images/post-icons/ad_classifieds.svg", Route = ClassifiedsProfileMenuUrl },
         new MenuItem { Text = "Services", ImageSrc = "/qln-images/post-icons/ad_services.svg", Route = ServicesProfileMenu },
         new MenuItem { Text = "Jobs", ImageSrc = "/qln-images/post-icons/ad_jobs.svg", Route = JobsProfileMenu },
-        new MenuItem { Text = "Rewards", ImageSrc = "/qln-images/post-icons/ad_rewards.svg", Route = navigationPath.Rewards }
+        new MenuItem { Text = "Rewards", ImageSrc = "/qln-images/post-icons/ad_rewards.svg", Route = navigationPath.RewardsProfileMenu }
     };
 
         // Top-level profile items

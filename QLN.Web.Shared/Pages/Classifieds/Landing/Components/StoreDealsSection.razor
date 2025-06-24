@@ -1,134 +1,148 @@
-@using MudBlazor
+@inherits StoreDealsSectionBase
 @using QLN.Web.Shared.Components.Classifieds.StoreCard
+@using QLN.Web.Shared.Pages.Classifieds.Skeletons
+@using QLN.Web.Shared.Components.EmptyCard
+@using MudBlazor
 
-<div class="store-carousel-wrapper">
-    <h3 class="carousel-title">Discover amazing deals from the best stores in Qatar</h3>
+<div class="store-deals-wrapper">
 
-    <div class="carousel-container">
-        <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" OnClick="@PrevSlide" Disabled="@IsFirstSlide"
-            Class="custom-arrow-button1 left" />
-
-        <div class="carousel-viewport-store">
-            <div class="carousel-track" style="transform:@TrackOffset">
-                @foreach (var store in Stores)
-                {
-                    <StoreCard StoreData="store" OnShopNow="HandleShopNow" />
-                }
-            </div>
+     <div class="store-header">
+            <h3 class="store-section-header">Discover amazing deals from the best stores in Qatar</h3>
+    </div>
+    
+    @if (Loading)
+    {
+      <div class="store-skeleton-scroll-container">
+            @for (int i = 0; i < 6; i++)
+            {
+                <div class="store-skeleton-item">
+                    <StoreSkeletonCard />
+                </div>
+            }
         </div>
 
-        <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" OnClick="@NextSlide" Disabled="@IsLastSlide"
-            Class="custom-arrow-button1 right" />
+    }
+    else if (Stores?.Any() != true)
+    {
+        <EmptyCard Title="No Store items found." Subtitle="Please check back later or explore other categories." />
+    }
+    else
+    {
+
+    <div class="swiper-container">
+        <!-- Arrows -->
+        <div class="swiper-store-button-prev store-custom-arrow-button storeleft">
+            <MudIcon Icon="@Icons.Material.Filled.ChevronLeft" />
+        </div>
+        <div class="swiper-store-button-next store-custom-arrow-button storeright">
+            <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+        </div>
+
+        <!-- Swiper with reusable card -->
+        <div class="swiper swiper-store">
+            <div class="swiper-wrapper @(Stores.Count <= 6 ? "les5swiper-wrapper" : "")">
+                <MudVirtualize Context="store" Items="Stores">
+                    <div class="swiper-slide">
+                        <StoreCard StoreData="store" OnShopNow="HandleShopNow" />
+                    </div>
+               </MudVirtualize>
+            </div>
+        </div>
     </div>
+    }
 </div>
 
-@code {
-    [Parameter]
-    public List<StoreCard.StoreItem> Stores { get; set; } = new();
-    private int groupIndex = 0;
-    private int itemsPerGroup = 6;
-    private int cardWidthPx = 170 + 16;
-
-    private int TotalGroups => (int)Math.Ceiling((double)Stores.Count / itemsPerGroup);
-
-    private void NextSlide()
-    {
-        if (groupIndex < TotalGroups - 1)
-            groupIndex++;
-    }
-
-    private void PrevSlide()
-    {
-        if (groupIndex > 0)
-            groupIndex--;
-    }
-
-    private string TrackOffset => $"translateX(-{groupIndex * cardWidthPx * itemsPerGroup}px)";
-    private bool IsFirstSlide => groupIndex == 0;
-    private bool IsLastSlide => groupIndex >= TotalGroups - 1;
-
-    private void HandleShopNow(StoreCard.StoreItem store)
-    {
-        Console.WriteLine($"Shop Now clicked for {store.StoreName}");
-    }
-}
-
 <style>
-    .store-carousel-wrapper {
-        padding: 2rem 1rem;
+    .store-deals-wrapper{
+        width: 100%;
+        padding: 0 0 80px 0;
+         font-family: 'Public Sans', sans-serif;
+    }
+    .swiper-container {
         position: relative;
-        text-align: center;
-        font-family: 'Public Sans', sans-serif;
-    }
-
-    .carousel-title {
-        font-weight: 600;
-        font-size: 25px;
-        color: var(--color-text-heading);
-        margin-bottom: 1.5rem;
-        text-align: center;
-    }
-
-    .carousel-container {
         display: flex;
         align-items: center;
         justify-content: center;
-        position: relative;
-    }
-
-    .carousel-viewport-store {
-        overflow: hidden;
         width: 100%;
-        /* 6 cards * (200 + 16)px */
-        padding: 0 1rem
+        padding: 10px 40px;
     }
-
-    .carousel-track {
+     .store-header {
         display: flex;
-        padding: 5px;
-        transition: transform 0.5s ease-in-out;
-        width: fit-content;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 0 1rem;
+        }
+
+    .store-section-header {
+        font-weight: 600;
+        text-align: center;
+        font-size: 25px;
+        color: var(--color-text-heading);
+    }
+    .swiper-store {
+       width: 100%;
+        padding: 1rem;
     }
 
-    .custom-arrow-button1 {
+
+    .store-custom-arrow-button {
+        background-color: var(--color-background);
+        border-radius:555px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #00426D;
+        z-index: 10;
+        cursor: pointer;
         position: absolute;
         top: 50%;
         transform: translateY(-50%);
-        z-index: 10;
-        background: var(--color-background);
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     }
 
-    .custom-arrow-button1.left {
-        left: -20px;
+    .storeleft {
+        left: 0;
     }
 
-    .custom-arrow-button1.right {
-        right: -20px;
+    .storeright {
+        right: 0;
     }
 
-    @@media (max-width: 768px) {
-        .custom-arrow-button1 {
-            display: none;
-        }
+    .store-skeleton-scroll-container {
+        display: flex;
+        justify-content: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        padding: 16px 0;
+    }
 
-        .carousel-viewport {
-            overflow-x: auto;
-            scroll-behavior: smooth;
-            width: 100%;
-        }
+    .store-skeleton-item {
+        width: 150px;
+        display: flex;
+        justify-content: center;
+    }
 
-        .carousel-track {
-            transform: none !important;
-            width: max-content;
+   @@media (max-width: 770px) {
+        .store-custom-arrow-button {
+            display: none !important;
         }
-
-        .store-card {
-            width: 100px;
-            margin-right: 12px;
+    }
+      @@media (max-width: 1000px) {
+        .store-skeleton-scroll-container {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        padding-left: 12px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;  
+        }
+        .store-skeleton-scroll-container::-webkit-scrollbar {
+         display: none;               
+        }
+        .store-skeleton-item {
+            flex: 0 0 auto;
         }
     }
 </style>

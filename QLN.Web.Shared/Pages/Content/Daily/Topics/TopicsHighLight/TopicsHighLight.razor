@@ -1,0 +1,201 @@
+﻿@using QLN.Web.Shared.Helpers
+@using QLN.Web.Shared.Pages.Content.Daily.DailyNewsCard
+@inherits QLN.Web.Shared.Pages.Content.Daily.Topics.TopicsHighLight.TopicsHighlightsBase
+<div class="category-section-topic">
+    <div class="card-list-topic">
+        @for (int i = 0; i < ListOfItems.Take(3).Count(); i++)
+        {
+            var item = ListOfItems[i];
+            bool isLast = i == ListOfItems.Take(3).Count() - 1;
+            <div class="news-card-topic @(isLast ? "" : "with-divider-topic")" @onclick="() => NavigateToDetailPage(item)">
+                <img class="daily-news-image-topic" src="@item.ImageUrl" alt="img" />
+                <div class="text-content-topic">
+                    <p class="tag-topic">@item.Category</p>
+                    <h4 class="headline-topic">@item.Title</h4>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .category-section-topic {
+        padding: 0 1rem 1rem 1rem;
+        margin-bottom: 1rem;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .section-header-topic {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        width: 100%;
+        padding: 0px 5px;
+    }
+
+    .section-heading-topic {
+        font-size: 25px;
+        font-weight: 600;
+        color: var(--color-primary);
+        display: flex;
+        align-items: center;
+    }
+
+    .with-divider-topic {
+        border-right: 1px solid #F0F0F0;
+    }
+
+    .accent-bar-topic {
+        width: 4px;
+        height: 24px;
+        background-color: var(--color-primary);
+        margin-right: 8px;
+    }
+
+    .view-all-topic {
+        display: flex;
+        align-items: center;
+        color: var(--color-accent);
+        font-weight: 600;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    .view-all-text-topic {
+        margin-right: 4px;
+    }
+
+    .category-title-topic {
+        font-size: 1.2rem;
+        font-weight: bold;
+        border-left: 4px solid #0078ba;
+        padding-left: 0.5rem;
+        margin: 0;
+        color: #004a75;
+    }
+
+    .view-all-topic {
+        color: var(--color-accent);
+        font-weight: bold;
+        text-decoration: none;
+    }
+
+    .card-list-topic {
+        display: flex;
+        overflow-x: auto;
+        gap: 1rem;
+        padding: 8px 0 10px 0;
+        scroll-snap-type: x mandatory;
+    }
+
+    .news-card-topic {
+        display: flex;
+        align-items: flex-start;
+        flex-direction: column;
+        flex: 0 0 214px;
+        background: white;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        scroll-snap-align: start;
+        transition: all 0.3s ease;
+        padding: 10px;
+    }
+
+        .news-card-topic img,
+        .daily-news-image-topic {
+            width: 100%;
+            height: 100px;
+            border-radius: 6px;
+            object-fit: cover;
+        }
+
+    .text-content-topic {
+        padding: 5px 10px;
+        gap: 5px;
+    }
+
+    .tag-topic {
+        color: var(--color-accent);
+        font-size: 14px;
+        font-weight: 500;
+        margin: 0;
+        line-height: 26px;
+        letter-spacing: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .headline-topic {
+        font-size: 16px;
+        font-weight: 600 !important;
+        margin: 0;
+        color: var(--color-text-heading);
+        line-height: 26px;
+        letter-spacing: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-family: 'Public Sans'/sans-serif;
+    }
+
+        .headline-topic:hover {
+            text-decoration: underline;
+            color: var(--color-primary);
+            cursor: pointer;
+        }
+
+    .date-topic {
+        margin: 0;
+        font-weight: 500;
+        font-size: 12px;
+        color: var(--color-text-primary);
+        line-height: 18px;
+        letter-spacing: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* --- Desktop: image left, text right --- */
+    @@media (min-width: 768px) {
+        .card-list-topic {
+            overflow-x: visible;
+        }
+
+        .news-card-topic {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-start;
+            flex: 1 1 calc(33.333% - 1rem);
+            max-width: 100%;
+            height: 130px;
+            padding: 10px;
+            gap: 10px;
+        }
+
+            .news-card-topic img,
+            .daily-news-image-topic {
+                width: 50%;
+                height: 100%;
+                border-radius: 6px;
+                object-fit: cover;
+            }
+
+        .text-content-topic {
+            width: 50%;
+            padding: 0;
+            gap: 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+    }
+</style>

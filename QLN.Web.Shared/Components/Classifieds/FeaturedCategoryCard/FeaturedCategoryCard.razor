@@ -1,9 +1,26 @@
 @using MudBlazor
+@inherits FeaturedCategoryCardBase
+@using QLN.Web.Shared.Components.EmptyCard
 
 <div class="category-card-section" @onclick="() => OnClick.InvokeAsync(Item)">
     <div class="card-contents">
-        <img src="@Item.ImageUrl" alt="@Item.Category" class="category-image" />
-        <h4 class="category-card-title">@Item.Category</h4>
+           @if (ShowEmptyCard)
+            {
+                <EmptyCard Title="No image found." Subtitle="Please check back later for updates." />
+            }
+            else
+            {
+                @if (!imageLoaded)
+                {
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="260px" />
+                }
+
+                <img src="@Item.ImageUrl" alt="@Item.Title" class="category-image"
+                    style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                    @onerror="OnImageError" key="@Item.ImageUrl" />
+            }
+
+        <h4 class="category-card-title">@Item.Title</h4>
     </div>
 </div>
 

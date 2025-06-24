@@ -31,7 +31,6 @@ namespace QLN.Backend.API.Service.BackOffice
             if (item == null)
                 throw new ArgumentNullException(nameof(item), "Backoffice master item is required.");
 
-            // Build the request DTO
             var request = new LandingBackOfficeRequestDto
             {
                 Title = item.Title,
@@ -43,13 +42,12 @@ namespace QLN.Backend.API.Service.BackOffice
                 ImageUrl = item.ImageUrl,
                 ListingCount = item.ListingCount,
                 RotationSeconds = item.RotationSeconds,
-                AdId = item.AdId,
+                EntityId = item.EntityId,
                 PayloadJson = !string.IsNullOrWhiteSpace(item.PayloadJson)
                                     ? JsonSerializer.Deserialize<CommonSearchRequest>(item.PayloadJson)
                                     : null
             };
 
-            // Determine vertical and route
             var parts = item.Id.Split('-', 3, StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length < 2)
                 throw new ArgumentException("Item.Id must be in format '<vertical>-<entityType>-<guid>'", nameof(item.Id));
@@ -64,7 +62,6 @@ namespace QLN.Backend.API.Service.BackOffice
 
             try
             {
-                // POST the request DTO (not the index)
                 var result = await _dapr.InvokeMethodAsync<LandingBackOfficeRequestDto, string>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
