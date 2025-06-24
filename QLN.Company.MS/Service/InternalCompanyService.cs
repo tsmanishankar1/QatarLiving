@@ -30,9 +30,20 @@ namespace QLN.Company.MS.Service
                 foreach (var key in keys)
                 {
                     var existing = await _dapr.GetStateAsync<CompanyProfileDto>(ConstantValues.CompanyStoreName, key, cancellationToken : cancellationToken);
-                    if (existing != null && existing.UserId == dto.UserId && existing.SubVertical == dto.SubVertical)
+                    if (existing != null)
                     {
-                        throw new InvalidDataException("A company profile already exists for this user under the same subvertical.");
+                        if (existing.UserId == dto.UserId &&
+                            existing.Vertical == dto.Vertical &&
+                            existing.SubVertical == dto.SubVertical)
+                        {
+                            throw new InvalidDataException("A company profile already exists for this user under the same subvertical.");
+                        }
+
+                        if (existing.UserId != dto.UserId &&
+                            (existing.PhoneNumber == dto.PhoneNumber || existing.Email == dto.Email))
+                        {
+                            throw new InvalidDataException("Phone number or email is already used by another user.");
+                        }
                     }
                 }
                 var id = Guid.NewGuid();
@@ -195,18 +206,52 @@ namespace QLN.Company.MS.Service
             try
             {
                 Validate(dto);
-                var existing = await _dapr.GetStateAsync<CompanyProfileDto>(ConstantValues.CompanyStoreName, dto.Id.ToString(), cancellationToken: cancellationToken);
+
+                var existing = await _dapr.GetStateAsync<CompanyProfileDto>(
+                    ConstantValues.CompanyStoreName,
+                    dto.Id.ToString(),
+                    cancellationToken : cancellationToken);
+
                 if (existing == null)
                     throw new KeyNotFoundException($"Company with ID {dto.Id} was not found.");
+
                 if ((int)(existing.SubVertical ?? 0) == (int)SubVertical.Stores)
-                {
-                    throw new InvalidOperationException("Editing companies in the 'Stores' category is not allowed.");
-                }
-                var entity = EntityForUpdate(dto, existing);
-                entity.IsVerified = false;
-                await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, dto.Id.ToString(), entity);
+                    throw new InvalidDataException("Editing companies in the 'Stores' category is not allowed.");
 
                 var keys = await GetIndex();
+                foreach (var key in keys)
+                {
+                    if (key == dto.Id.ToString()) continue; 
+
+                    var other = await _dapr.GetStateAsync<CompanyProfileDto>(
+                        ConstantValues.CompanyStoreName,
+                        key,
+                        cancellationToken : cancellationToken);
+
+                    if (other == null) continue;
+
+                    if (other.UserId == dto.UserId &&
+                        other.Vertical == dto.Vertical &&
+                        other.SubVertical == dto.SubVertical)
+                    {
+                        throw new InvalidDataException("A company profile already exists for this user under the same subvertical.");
+                    }
+
+                    if (other.UserId != dto.UserId &&
+                        (other.PhoneNumber == dto.PhoneNumber || other.Email == dto.Email))
+                    {
+                        throw new InvalidDataException("Phone number or email is already used by another user.");
+                    }
+                }
+
+                var entity = EntityForUpdate(dto, existing);
+                entity.IsVerified = false;
+
+                await _dapr.SaveStateAsync(
+                    ConstantValues.CompanyStoreName,
+                    dto.Id.ToString(),
+                    entity);
+
                 if (!keys.Contains(dto.Id.ToString()))
                 {
                     keys.Add(dto.Id.ToString());
