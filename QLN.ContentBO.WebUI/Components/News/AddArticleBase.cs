@@ -4,6 +4,7 @@ using Microsoft.JSInterop;
 using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
+using System.Runtime.InteropServices;
 
 namespace QLN.ContentBO.WebUI.Components.News
 {
@@ -20,11 +21,28 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected MudExRichTextEdit Editor;
 
+        protected ArticleCategory Category { get; set; } = new();
+
         protected override async Task OnInitializedAsync()
         {
             Categories = await GetNewsCategories();
             Slots = await GetSlots();
             WriterTags = await GetWriterTags();
+        }
+
+        protected void AddCategory()
+        {
+            article.Categories.Add(Category);
+            Category = new();
+        }
+
+        protected void RemoveCategory()
+        {
+            if(article.Categories.Count > 0)
+            {
+                article.Categories.Remove(Category);
+                Category = new();
+            }
         }
 
         protected async Task HandleValidSubmit()
