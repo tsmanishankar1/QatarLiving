@@ -3,6 +3,7 @@
 
 <MudContainer MaxWidth="MaxWidth.False">
     <EditForm Model="@article" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
         <MudGrid GutterSize="24px">
             <!-- Left Column -->
             <MudItem xs="12" md="7">
@@ -10,7 +11,8 @@
 
                 <MudGrid GutterSize="16px">
                     <MudItem xs="4">
-                        <MudSelect T="int" Class="w-100" Variant="Variant.Filled" Label="Category" Placeholder="Choose" @bind-Value="Category.CategoryId">
+                        <MudSelect T="int" @bind-Value="Category.CategoryId" Class="w-100" Variant="Variant.Filled" Label="Category" Placeholder="Choose" For="@(() => Category.CategoryId)">
+                             <MudSelectItem Value="@(0)">Choose</MudSelectItem>
                             @foreach (var item in Categories)
                             {
                                 <MudSelectItem Value="@item.Id">@item.CategoryName</MudSelectItem>
@@ -19,8 +21,9 @@
                     </MudItem>
 
                     <MudItem xs="4">
-                        <MudSelect T="int" Class="w-100" Variant="Variant.Filled" Label="Subcategory" Placeholder="Choose" @bind-Value="Category.SubcategoryId">
-                            @foreach (var item in Categories)
+                        <MudSelect T="int" @bind-Value="Category.SubcategoryId" Class="w-100" Variant="Variant.Filled" Label="Subcategory" Placeholder="Choose" Disabled="@(Category.CategoryId == 0)" For="@(() => Category.SubcategoryId)">
+                                                         <MudSelectItem Value="@(0)">Choose</MudSelectItem>
+                            @foreach (var item in Categories.Where(x=> x.Id == Category.CategoryId))
                             {
                                 <MudSelectItem Value="@item.Id">@item.CategoryName</MudSelectItem>
                             }
@@ -29,35 +32,54 @@
 
                     <MudItem xs="3">
 
-                        <MudSelect T="int" Class="w-100" Variant="Variant.Filled" Placeholder="Slot" @bind-Value="Category.SlotId">
+                        <MudSelect T="int" @bind-Value="Category.SlotId" Class="w-100" Variant="Variant.Filled" Placeholder="Slot" Disabled="@(Category.CategoryId == 0)" For="@(() => Category.SlotId)" >
+                            <MudSelectItem Value="@(0)">Choose</MudSelectItem>
                             @foreach (var item in Slots)
                             {
-                                <MudSelectItem Value="@item.Id">@item</MudSelectItem>
+                                <MudSelectItem Value="@item.Id">@item.Name</MudSelectItem>
                             }
                         </MudSelect>
                     </MudItem>
 
                     <MudItem xs="1" Class="d-flex align-center">
                         <MudTooltip Text="Add">
-                            <MudIconButton OnClick="AddCategory" Icon="@Icons.Material.Filled.Add" Class="rounded-circle" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" />
+                            <MudIconButton OnClick="AddCategory" Icon="@Icons.Material.Filled.Add" Class="rounded-circle" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" Disabled="@(Category.CategoryId == 0 && Category.SubcategoryId == 0)" />
                         </MudTooltip>
                     </MudItem>
                 </MudGrid>
 
-                <MudSelect Label="Writer" Variant="Variant.Filled" Placeholder="Choose" Class="mt-4 w-100" @bind-Value="article.WriterTag">
+                <MudGrid GutterSize="16px">
+                        @foreach (var item in TempCategoryList)
+                        {
+                                <MudItem xs="3" Class="d-flex align-center">
+                                <MudTextField T="string" Variant="Variant.Filled" Label="@(item.CategoryId.ToString())" Class="mt-4 w-100" ReadOnly="true"  />
+                                <MudTextField T="string" Variant="Variant.Filled" Label="@(item.SubcategoryId.ToString())" Class="mt-4 w-100" ReadOnly="true" />
+                                <MudTextField T="string" Variant="Variant.Filled" Label="@(item.SlotId.ToString())" Class="mt-4 w-100" ReadOnly="true" />
+                                </MudItem>
+
+                            <MudItem xs="1" Class="d-flex align-center">
+                                <MudTooltip Text="Remove">
+                                    <MudIconButton OnClick="@(() => RemoveCategory(item))" Icon="@Icons.Material.Filled.Remove" Class="rounded-circle" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" />
+                                </MudTooltip>
+                            </MudItem>
+                        }
+                </MudGrid>
+
+                <MudSelect T="string"  @bind-Value="article.WriterTag" Label="Writer" Variant="Variant.Filled" Placeholder="Choose" Class="mt-4 w-100" For="@(() => article.WriterTag)">
                     @foreach (var item in WriterTags)
                     {
                         <MudSelectItem Value="@item">@item</MudSelectItem>
                     }
                 </MudSelect>
 
-                <MudTextField Label="Article Title" Variant="Variant.Filled" Class="mt-4 w-100" @bind-Value="article.Title" />
+                <MudTextField Label="Article Title" Variant="Variant.Filled" Class="mt-4 w-100" @bind-Value="article.Title" For="@(() => article.Title)"  />
 
                 <MudText Typo="Typo.body2" Class="mt-4 mb-1">Article content</MudText>
-                <MudExRichTextEdit @ref="@Editor"
+                <MudExRichTextEdit @bind-Value="article.Content" @ref="@Editor"
                                    Height="444"
                                    Class="m-2"
-                                   Placeholder="Start Typing">
+                                   Placeholder="Start Typing"
+                For="@(() => article.Content)">
                 </MudExRichTextEdit>
                 <MudStack Row Class="mt-6 justify-content-between">
                     <MudButton Class="action-btn rounded-lg" Variant="Variant.Filled" Color="Color.Default" OnClick="@Cancel">Cancel</MudButton>

@@ -22,6 +22,8 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected ArticleCategory Category { get; set; } = new();
 
+        protected List<ArticleCategory> TempCategoryList { get; set; } = [];
+
         protected override async Task OnInitializedAsync()
         {
             Categories = await GetNewsCategories();
@@ -31,15 +33,15 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected void AddCategory()
         {
-            article.Categories.Add(Category);
+            TempCategoryList.Add(Category);
             Category = new();
         }
 
-        protected void RemoveCategory()
+        protected void RemoveCategory(ArticleCategory articleCategory)
         {
-            if(article.Categories.Count > 0)
+            if(TempCategoryList.Count > 0)
             {
-                article.Categories.Remove(Category);
+                TempCategoryList.Remove(articleCategory);
                 Category = new();
             }
         }
@@ -48,6 +50,7 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             try
             {
+                article.Categories = TempCategoryList;
                 var response = await newsService.CreateArticle(article);
             }
             catch (Exception ex)
