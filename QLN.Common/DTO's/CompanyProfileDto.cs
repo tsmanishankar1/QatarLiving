@@ -7,6 +7,7 @@ namespace QLN.Common.Infrastructure.DTO_s
 {
     public class CompanyProfileDto : BaseCompanyDto
     {
+        public CompanyStatus? Status { get; set; }
         [Required]
         public VerticalType Vertical { get; set; }
         public SubVertical? SubVertical { get; set; }

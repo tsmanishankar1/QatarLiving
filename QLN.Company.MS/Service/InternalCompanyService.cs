@@ -146,7 +146,7 @@ namespace QLN.Company.MS.Service
                 CompanyLogo = dto.CompanyLogo,
                 CRDocument = dto.CRDocument,
                 IsVerified = dto.IsVerified,
-                Status = dto.Status,
+                Status = dto.Status ?? CompanyStatus.Active,
                 CreatedBy = (Guid)dto.UserId,
                 CreatedUtc = DateTime.UtcNow,
                 IsActive = true
@@ -255,10 +255,14 @@ namespace QLN.Company.MS.Service
                 UserDesignation = dto.UserDesignation,
                 BusinessDescription = dto.BusinessDescription,
                 CRNumber = dto.CRNumber,
-                CompanyLogo = dto.CompanyLogo,
-                CRDocument = dto.CRDocument,
+                CompanyLogo = !string.IsNullOrWhiteSpace(dto.CompanyLogo)
+                        ? dto.CompanyLogo
+                        : existing.CompanyLogo,
+                CRDocument = !string.IsNullOrWhiteSpace(dto.CRDocument)
+                        ? dto.CRDocument
+                        : existing.CRDocument,
                 IsVerified = dto.IsVerified,
-                Status = dto.Status,
+                Status = dto.Status ?? CompanyStatus.Active,
                 CreatedBy = existing.CreatedBy,
                 CreatedUtc = existing.CreatedUtc,
                 UpdatedBy = dto.UserId,
@@ -289,7 +293,6 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-
         private async Task<List<string>> GetIndex()
         {
             try
