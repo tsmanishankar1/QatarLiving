@@ -59,6 +59,6 @@ namespace QLN.ContentBO.WebUI.Models
     public class EventsCategory
     {
         public int Id { get; set; }
-        public string CategoryName { get; set; }
+        public string Name { get; set; }
     }
 }
