@@ -1,0 +1,1036 @@
+﻿@page "/content/daily/topics/{topic}"
+@inherits QLN.Web.Shared.Pages.Content.Daily.Topics.TopicDetailBase
+@using MudBlazor
+@layout ContentLayout
+@using QLN.Web.Shared.Pages.Content.Daily.DailyVideoCards
+@using QLN.Web.Shared.Pages.Content.News.NewsCard
+@using QLN.Web.Shared.Pages.Content.News.NewsLetter
+@using QLN.Web.Shared.Pages.Content.News.PopularArticles
+@using QLN.Web.Shared.Pages.Content.Daily.DailyNewsCard
+@using QLN.Web.Shared.Pages.Content.Daily.DailyNewsLetter
+@using QLN.Web.Shared.Components.AdBanner
+@using QLN.Web.Shared.Components.ViewToggleButtons
+@using QLN.Web.Shared.Components.BannerHero
+@using QLN.Web.Shared.Pages.Content.Events
+@using QLN.Web.Shared.Components.BannerTakeOver
+@using QLN.Web.Shared.Components.EmptyCard
+@using QLN.Web.Shared.Pages.Content.Daily.Topics.SideArticles
+@using QLN.Web.Shared.Pages.Content.Daily.Topics.TopicsHighLight
+@using QLN.Web.Shared.Pages.Content.News.Skeletons
+@inject IJSRuntime JSRuntime
+@using QLN.Web.Shared.Components.Carousel
+
+<PageTitle>Qatar Living | The go-to place for lifestyle, news, and events</PageTitle>
+
+ 
+
+<div style="width: 100%;background-color: var(--color-secondary-background); align-items:center">
+    @* <div class="carousel-responsive-container"> *@
+    <div class="max-carousel-container">
+        <!-- Carousel Banner -->
+        @if (isLoadingBanners)
+        {
+            <BannerSkleton />
+        }
+        else if (DailyHeroBanners?.Any() == true)
+        {
+            <BannerTakeOver BannerItems="@DailyTakeOverBanners" Loading="@isLoadingBanners" NoBorder="true" />
+        }
+        else
+        {
+            <EmptyCard Title="No news banners found."
+                       Subtitle="Please check back later for updates." />
+        }
+    </div>
+    @* </div> *@
+
+
+    
+    <div style="gap: 0px;">
+        <div class="news-container">
+            <div class="max-container">
+                <div style="width:100%">
+                    <h3 class="section-heading">
+                        <span class="accent-bar"></span>@topic
+                    </h3>
+                </div>
+                <MudGrid GutterSize="5px" Style="margin-bottom: 20px;">
+    <MudItem xs="12" md="8">
+        <div class="main-article">
+            <div class="main-content">
+                <div class="main-category" @onclick="@(() => onclick(topNewsSlot))">
+                    @if (isLoading)
+                    {
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="400px" Width="100%" Animation="Animation.Wave" />
+                    }
+                    else if (topNewsSlot == null || string.IsNullOrEmpty(topNewsSlot.Title))
+                    {
+                        <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
+                    }
+                    else
+                    {
+                        @if (string.IsNullOrEmpty(topNewsSlot.ImageUrl))
+                        {
+                            <EmptyCard Title="No Image Available" Subtitle="" />
+                        }
+                        else
+                        {
+                            @if (!imageLoaded)
+                            {
+                                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="200px" Class="main-image" />
+                            }
+                            <img src="@topNewsSlot.ImageUrl" alt="News Image" class="main-image"
+                                 style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                                 @onerror="OnImageError" key="@topNewsSlot.ImageUrl" />
+                        }
+                    }
+
+                    @if (isLoading)
+                    {
+                        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="100px" Animation="Animation.Wave" />
+                        <MudSkeleton Class="mb-2" SkeletonType="SkeletonType.Text" Height="30px" Width="100%" Animation="Animation.Wave" />
+                        <MudSkeleton Class="mb-2" SkeletonType="SkeletonType.Text" Height="30px" Width="200px" Animation="Animation.Wave" />
+                    }
+                    else if (topNewsSlot == null || string.IsNullOrEmpty(topNewsSlot.Title))
+                    {
+                    }
+                    else
+                    {
+                        @if (!string.IsNullOrWhiteSpace(topNewsSlot?.Category))
+                        {
+                            <span class="category-style">@topNewsSlot?.Category</span>
+                        }
+                        <h2 class="main-title-style">@topNewsSlot.Title</h2>
+
+                        <div class="author-comment-row">
+                            @if (!string.IsNullOrWhiteSpace(topNewsSlot?.UserName))
+                            {
+                                <span class="main-author">@topNewsSlot.UserName</span>
+                            }
+                            <div class="comment-badge">
+                                <img src="/qln-images/comment_icon.svg" alt="Comments" />
+                                <span class="count">@commentsCount</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+   
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <SideArticles Articles="@moreArticleListSlot" loading="@isLoading" selectedMainTab="@_selectedView" selectedTab="@subTabLabel" />
+                    </MudItem>
+                </MudGrid>
+            </div>
+        </div>
+        <div class="responsive-news-container">
+            <div class="max-container">
+                @if (TopicQueue1.Count() > 0)
+                {
+                    <TopicsHighLight ListOfItems="TopicQueue1" />
+                }
+                @if (isLoadingBanners)
+                {
+                    <BannerSkleton />
+                }
+            </div>
+        </div>
+        <div class="max-carousel-container">
+            @* <div class="max-container"> *@
+            <!-- Carousel Banner -->
+            @if (isLoadingBanners)
+            {
+                <BannerSkleton />
+            }
+            else if (DailyHeroBanners?.Any() == true)
+            {
+                @* <div style="height: 150px;"> *@
+                <BannerTakeOver BannerItems="@DailyTakeOverBanners" Loading="@isLoadingBanners" />
+                @* </div> *@
+            }
+            else
+            {
+                <EmptyCard Title="No event banners found."
+                            Subtitle="Please check back later for updates." />
+            }
+            @* </div> *@
+        </div>
+        @if (VideoList?.Count > 0)
+        {
+            <div class="video-container">
+                <div class="max-container">
+                    <DailyVideoCards Items="@VideoList" />
+                </div>
+            </div>
+        }
+        <div class="responsive-news-container">
+            <div class="max-container">
+                @if (TopicQueue2.Count() > 0)
+                {
+                    <TopicsHighLight ListOfItems="TopicQueue2" />
+                }
+                @if (isLoadingBanners)
+                {
+                    <BannerSkleton />
+                }
+            </div>
+        </div>
+    </div>
+
+</div>
+<style>
+    .section-heading {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        font-family: 'Public Sans', sans-serif;
+        font-size: 25px;
+        font-weight: 600;
+        color: var(--color-text-heading);
+        padding: 0px 0px 24px 0px;
+    }
+    .card-with-divider {
+        position: relative;
+        display: flex;
+        flex-direction: row;
+        align-items: stretch;
+    }
+
+
+    .carousel-responsive-container {
+        width: 100%;
+        @* padding: 0px 30px; *@
+        margin-bottom: 40px;
+        box-sizing: border-box;
+    }
+
+    .horizontal-scroll-wrapper {
+        overflow-x: hidden !important;
+        -webkit-overflow-scrolling: auto;
+        width: 100%;
+    }
+
+        .horizontal-scroll-wrapper > * {
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+    .custom-text {
+        font-weight: 600px;
+        font-size: 14px;
+        padding-left: 30px;
+        padding-right: 30px;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .max-container {
+        max-width: 1170px;
+        margin: 0 auto;
+        width: 100%;
+        @* padding: 0px 16px !important; *@
+    }
+
+    .popular-container {
+        max-width: 1170px;
+        margin: 0 auto;
+        width: 100%;
+        padding: 0px 16px !important;
+    }
+
+    .max-carousel-container {
+        max-width: 1170px;
+        margin: 0 auto;
+        width: 100%;
+        margin-bottom: 40px;
+        @* padding: 0px 16px !important; *@
+    }
+
+    .responsive-news-container {
+        width: 100%;
+        padding: 0px 30px;
+        box-sizing: border-box;
+        background-color: #FFFFFF;
+    }
+
+    .responsive-news-container-daily {
+        width: 100%;
+        padding: 0px 30px;
+        box-sizing: border-box;
+        background: linear-gradient(to top, #FFFFFF 0%, #FFFFFF 20%, #F5F6FA 100%);
+    }
+
+    .take-over-style {
+        max-width: 1170px;
+        margin: 0 auto;
+        width: 100%;
+    }
+
+    .tooggle-container {
+        display: flex;
+        justify-content: center;
+        max-width: 1170px;
+        margin: 0 auto;
+    }
+
+    .count {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 400;
+        font-size: 12px;
+        color: var(--color-primary);
+    }
+
+    .full-width {
+        @* width: 100%; *@
+    background-color: var(--color-secondary-background)
+    }
+
+    .news-container {
+        width: 100%;
+        padding: 0px 30px;
+        box-sizing: border-box;
+        background-color: white;
+        padding-left: 0;
+        padding-right: 0;
+        padding-bottom: 16px;
+    }
+
+    .divider-vertical {
+        width: 1px;
+        height: auto;
+        background-color: #F0F0F0;
+        align-self: stretch;
+        margin: 0 5px;
+    }
+
+    .video-container {
+        width: 100%;
+        padding: 32px 0 22px 0;
+        box-sizing: border-box;
+        background-color: #FAFAFA;
+    }
+
+    .cards-row {
+        display: flex;
+        flex-direction: row;
+        align-items: stretch;
+        gap: 0; /* spacing will come from the divider itself */
+    }
+
+    @* .ad-container-style {
+        width: 340px;
+        height: 402px;
+    } *@
+
+    .news-tabs {
+        width: 100%;
+        display: flex;
+        overflow-x: auto;
+        margin: 23px 0px;
+        @* padding: 8px 16px; *@
+    align-items:center;
+        gap: 8px;
+        white-space: nowrap;
+        justify-content: space-between;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none;
+        @* padding: 0px 100px; *@
+    }
+
+    .news-tabs::-webkit-scrollbar {
+        display: none; /* Chrome, Safari and Opera */
+    }
+
+    .ad-style {
+        padding-right: 100px;
+        align-items: center;
+    }
+
+    .author-wrapper {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+    .author-comment-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.main-author {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+}
+
+
+
+    .comment-badge {
+        display: inline-flex; 
+        align-items: center; 
+        border: 1px solid #E3E3E3;
+        border-radius: 50px;
+        padding: 4px 8px; 
+        gap: 4px;
+        max-width: fit-content;
+   
+    }
+
+
+        .comment-badge .icon {
+            color: var(--color-primary);
+            height: 24px;
+            width: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .comment-badge .count {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+
+
+    .horizontal-scroll-wrapper {
+        gap: 10px;
+    }
+
+    .news-tabs-wrapper {
+        width: 100%;
+    }
+
+    .news-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .horizontal-stack {
+        display: flex;
+        flex-direction: row;
+        gap: 16px;
+    }
+
+    .news-tab {
+        padding: 10px 50px 10px 50px;
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+        height: 44px;
+        color: var(--color-text-heading);
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    @* .mud-grid-spacing-xs-6 > .mud-grid-item {
+    padding-left: 0px !important;
+    padding-top: 24px;
+} *@
+
+    .category-style {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--color-accent);
+    }
+
+    .main-title-style {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 25px;
+        color: var(--color-text-heading);
+    }
+
+    .main-author {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 14px;
+        color: var(--color-text-heading);
+    }
+
+    .main-source {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 14px;
+        color: var(--color-primary);
+    }
+
+
+    .newsletter-wrapper {
+        flex: 1;
+        max-width: 453px;
+        padding: 0 8px;
+        box-sizing: border-box;
+    }
+
+
+    .main-category {
+        border: 1px solid #F0F0F0;
+        border-radius: 8px;
+        padding: 16px;
+        box-sizing: border-box;
+    }
+
+    .news-tab.active {
+        color: var(--color-accent);
+        background-color: white;
+        padding-right: 50px;
+        padding-left: 50px;
+        border-bottom: 2px solid var(--color-accent);
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        align-items: center;
+        height: 44px;
+        font-size: 14px;
+    }
+
+    .multiple-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* responsive columns */
+        gap: 24px;
+        padding: 16px;
+    }
+
+    .main-article {
+        background: white;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .main-image {
+        width: 100%;
+        height: auto;
+        border-radius: 6px;
+    }
+
+    .carousel-padding {
+        padding-left: 98px;
+        padding-right: 98px;
+    }
+
+    .side-padding {
+        padding-left: 98px;
+        padding-right: 98px;
+    }
+
+    .video-padding {
+        padding-left: 98px;
+        padding-right: 98px;
+        background-color: #FAFAFA;
+    }
+
+    .comment-badge {
+        display: flex;
+        align-items: center;
+        border: 1px solid #E3E3E3;
+        border-radius: 20px;
+        padding: 4px 8px;
+        gap: 4px;
+    }
+
+    .news-layout {
+        display: flex;
+        flex-direction: row;
+        @* justify-content: center; *@
+    align-items: flex-start;
+        gap: 24px;
+        flex-wrap: wrap;
+    }
+
+    .flex-container {
+        width: 100%;
+        justify-content: space-between;
+        @* align-items: flex-end; *@
+    display: flex;
+        flex-wrap: wrap;
+        gap: 0px;
+    }
+
+    .content-list-container {
+        width: 100%;
+        justify-content: flex-start;
+        align-items: flex-start;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0px;
+    }
+
+    .skeleton-container {
+        justify-content: space-between;
+        display: flex;
+        align-items: center;
+        @* flex-wrap: wrap; *@
+    gap: 30px;
+    }
+
+    .card-container {
+        @* justify-content: space-between; *@
+    display: flex;
+        flex-wrap: wrap;
+        gap: 0px;
+    }
+
+    .newsletter-container {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        @* max-width: 400px; *@
+    }
+
+    @* .mud-grid-spacing-xs-6 {
+    width: calc(100% + 24px);
+    margin-left: -24px;
+    margin-top: 0px; 
+} *@
+    .poular-article-container {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        gap: 150px;
+        align-items: center;
+        padding: 0px;
+        width: 100%;
+        @* padding-left: 42px;
+        padding-right: 42px; *@
+        padding-top: 50px;
+    }
+
+    .card-wrapper {
+        @* display: flex; *@
+    @* justify-content: center; *@
+    @* width: 340px; *@
+    }
+
+    @@media (max-width: 430px) {
+        .divider-vertical {
+            display: none;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .ad-container-style {
+            height: 220px !important;
+            width: 100% !important;
+        }
+    }
+
+
+    @@media (max-width: 600px) {
+        .custom-text {
+            font-weight: 600px;
+            font-size: 14px;
+            padding-left: 10px;
+            padding-right: 10px;
+            font-family: 'Public Sans', sans-serif;
+        }
+
+        .max-carousel-container {
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .popular-container {
+            @* max-width: 1170px; *@
+            margin: 0 auto;
+            width: 100%;
+            @* padding: 0px 16px !important; *@
+        }
+
+        .news-tabs-wrapper {
+            width: 100%;
+            margin-top: 16px;
+        }
+
+        .news-layout {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .carousel-padding {
+            padding-left: 0px;
+            padding-right: 0px;
+        }
+
+        .side-padding {
+            padding-left: 16px;
+            padding-right: 16px;
+        }
+
+        .video-padding {
+            padding-left: 16px;
+            padding-right: 16px;
+            background-color: #FAFAFA;
+        }
+
+        .horizontal-scroll-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .ad-style {
+            padding-left: 200px;
+        }
+
+        .news-grid {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 12px;
+            width: max-content;
+        }
+
+        .grid-padding {
+            padding-left: 16px;
+            padding-right: 16px;
+            padding-top: 60px
+        }
+
+
+        .news-grid > .mud-grid-item {
+            flex: 0 0 auto;
+        }
+
+        .poular-article-container {
+            display: flex;
+            flex-direction: column;
+            gap: 35px;
+            align-items: center;
+            width: 100%;
+            @* padding-left: 10px;
+            padding-right: 10px; *@
+        }
+
+        .multiple-container {
+            grid-template-columns: 1fr;
+        }
+
+        .responsive-grid {
+            justify-content: center;
+            padding-left: 15px;
+        }
+
+        .custom-text {
+            font-weight: 600px;
+            font-size: 14px;
+            padding-left: 10px;
+            padding-right: 10px;
+            font-family: 'Public Sans', sans-serif;
+        }
+
+        .flex-container {
+            width: 100%;
+            justify-content: flex-start;
+            align-items: flex-start;
+            flex-direction: column;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .content-list-container {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0px;
+        }
+    }
+
+    .news-tabs {
+        padding-left: 0px !important;
+    }
+
+    @@media (max-width: 375px) {
+        .custom-text {
+            font-weight: 600;
+            font-size: 14px;
+            padding-left: 5px;
+            padding-right: 5px;
+            font-family: 'Public Sans', sans-serif;
+        }
+
+        .max-container {
+            max-width: 1170px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 0px 25px;
+        }
+
+        .ad-container-style {
+            height: 150px !important;
+            width: 100% !important;
+        }
+
+        .grid-padding {
+            padding-right: 16px;
+            padding-top: 60px;
+        }
+
+        .flex-container {
+            width: 100%;
+            justify-content: flex-start;
+            align-items: flex-start;
+            flex-direction: column;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .content-list-container {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 0px;
+        }
+
+        .poular-article-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            @* padding-left: 16px;
+            padding-right: 16px; *@
+            align-items: center;
+        }
+    }
+
+    @@media (max-width: 320px) {
+        .custom-text {
+            font-weight: 600;
+            font-size: 14px;
+            padding-left: 2px;
+            padding-right: 2px;
+            font-family: 'Public Sans', sans-serif;
+        }
+
+        .ad-container-style {
+            height: 150px !important;
+            width: 100% !important;
+        }
+
+        .flex-container {
+            width: 100%;
+            justify-content: flex-start;
+            align-items: flex-start;
+            flex-direction: column;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0px;
+        }
+
+        .content-list-container {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 0px;
+        }
+
+        .poular-article-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            @* padding-left: 16px;
+            padding-right: 16px; *@
+            align-items: center;
+        }
+    }
+
+    @@media (max-width: 1024px) {
+        .max-container {
+            max-width: 1170px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 0px 25px;
+        }
+
+        .poular-article-container {
+            display: flex;
+            flex-direction: row;
+            gap: 24px;
+            @* padding-left: 16px;
+            padding-right: 16px; *@
+            align-items: center;
+        }
+
+        .flex-container {
+            width: 100%;
+            justify-content: flex-start;
+            align-items: flex-start;
+            flex-direction: row;
+            display: flex;
+            flex-wrap: wrap;
+            padding-left: 5px;
+            padding-right: 5px;
+            gap: 0px;
+        }
+
+        .content-list-container {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            flex-direction: row;
+            gap: 0px;
+        }
+
+        .grid-padding {
+            padding-left: 16px;
+            padding-right: 16px;
+        }
+
+        .news-tabs {
+            width: 100%;
+            display: flex;
+            overflow-x: auto;
+            margin: 23px 0px;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            justify-content: space-between;
+            padding: 0px 30px;
+        }
+
+        .news-tab {
+            padding: 10px 25px 10px 25px;
+            font-family: 'Public Sans', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            height: 44px;
+            color: var(--color-text-heading);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .news-tabs {
+            width: 100%;
+            display: flex;
+            overflow-x: auto;
+            margin: 23px 0px;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            justify-content: space-between;
+            padding: 0px 100px;
+        }
+
+        .content-list-container {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            flex-direction: row;
+            gap: 0px;
+        }
+    }
+
+    @@media (max-width: 425px) {
+        .poular-article-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            @* padding-left: 16px;
+            padding-right: 16px; *@
+            align-items: center;
+        }
+
+        .divider-vertical {
+            display: none;
+        }
+
+        .ad-container-style {
+            height: 150px !important;
+            width: 100% !important;
+        }
+
+        .flex-container {
+            width: 100%;
+            justify-content: flex-start;
+            align-items: flex-start;
+            flex-direction: column;
+            display: flex;
+            flex-wrap: wrap;
+            padding-left: 5px;
+            padding-right: 5px;
+            gap: 0px;
+        }
+
+        .content-list-container {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            flex-direction: column;
+            padding-left: 5px;
+            padding-right: 5px;
+            gap: 0px;
+        }
+
+        @* .grid-padding {
+        padding-right: 16px;
+        padding-top: 60px;
+    } *@
+    }
+
+    @@media (max-width: 770px) {
+        .responsive-container {
+            padding: 0 16px;
+        }
+
+        .responsive-news-container {
+            padding: 0px 16px;
+        }
+
+        .responsive-news-container-daily {
+            padding: 0px 16px;
+        }
+
+        .carousel-responsive-container {
+            margin-bottom: 10px;
+            padding: 0 16px;
+        }
+
+        .poular-article-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            @* padding-left: 16px;
+            padding-right: 16px; *@
+            align-items: center;
+        }
+    }
+
+    }
+
+    @@media (max-width: 480px) {
+        .responsive-container {
+            padding: 0 5px;
+        }
+
+        .responsive-news-container {
+            padding: 0px 5px;
+        }
+
+        .responsive-news-container-daily {
+            padding: 0px 5px;
+        }
+
+        .carousel-responsive-container {
+            margin-bottom: 5px;
+            padding: 0 5px;
+        }
+
+        .poular-article-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            @* padding-left: 16px;
+            padding-right: 16px; *@
+            align-items: center;
+        }
+    }
+</style>

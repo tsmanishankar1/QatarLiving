@@ -1,0 +1,64 @@
+@using MudBlazor
+<MudPaper Class="pa-4" Elevation="0" Style="border-radius:8px;">
+    <MudText Typo="Typo.h6" Class="mb-3">Description</MudText>
+
+    <MudText>
+        @if (showMore)
+        {
+            @fullDescription
+        }
+        else
+        {
+            @shortDescription
+        }
+    </MudText>
+
+    <MudDivider Class="my-3" />
+
+   <MudText id="readMoreButton" Class="read-toggle cursor-pointer"  @onclick="ToggleReadMore">
+    @(showMore ? "Read less" : "Read more")
+    </MudText>  
+</MudPaper>
+
+<style>
+    .description-paper {
+    border-radius: 8px;
+    height: 370px;
+    background-color: white; 
+    overflow: hidden; 
+    }
+
+.description-heading {
+    font-family: 'Public Sans', sans-serif !important;
+    font-size: 25px !important;
+    font-weight: 600 !important;
+    color: var(--color-text-heading); 
+}
+
+.description-text {
+    font-family: 'Public Sans', sans-serif !important;
+    font-size: 15px !important;
+    font-weight: 400 !important;
+    color: var(--color--accent); 
+}
+
+.read-toggle {
+    font-family: 'Public Sans', sans-serif !important;
+    font-size: 16px !important;
+    font-weight: 500 !important;
+    color: var(--color--accent); 
+}
+</style>
+
+@code{
+     private bool showMore = false;
+
+    private string shortDescription => "Oryx International School is an independent school exclusively for the children of employees of Qatar Airways and its approved subsidiaries. The school delivers a five-star British curriculum for boys and girls aged 3 to 18 years old. Our enhanced version of the English National Curriculum meets the needs of our international student body here in Qatar, providing our students with a challenging learning environment by offering an academic curriculum that is balanced, interactive...";
+
+    private string fullDescription => "Oryx International School is an independent school exclusively for the children of employees of Qatar Airways and its approved subsidiaries. The school delivers a five-star British curriculum for boys and girls aged 3 to 18 years old. Our enhanced version of the English National Curriculum meets the needs of our international student body here in Qatar, providing our students with a challenging learning environment by offering an academic curriculum that is balanced, interactive and supports development in all activities at school. Our students are recognised as individuals with their own unique learning styles and are nurtured to become successful learners.";
+
+    private void ToggleReadMore()
+    {
+        showMore = !showMore;
+    }
+}

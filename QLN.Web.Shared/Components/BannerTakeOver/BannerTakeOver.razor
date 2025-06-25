@@ -20,20 +20,20 @@
                            rel="noopener noreferrer"
                            @onmouseenter="PauseRotation"
                            @onmouseleave="ResumeRotation">
-                            <img class="banner-image"
-                                 src="@banner.ImageDesktop"
-                                 data-mobile="@banner.ImageMobile"
-                                 data-desktop="@banner.ImageDesktop"
+                            <img class="banner-image @(NoBorder ? "no-border" : "")"
+                                 src="@banner.ImageDesktopUrl"
+                                 data-mobile="@banner.ImageMobileUrl"
+                                 data-desktop="@banner.ImageDesktopUrl"
                                  alt="@banner.Alt"
                                  @onclick="@(() => TriggerBannerAnalytics(banner, "click"))" />
                         </a>
                     }
                     else
                     {
-                        <img class="banner-image"
-                             src="@banner.ImageDesktop"
-                             data-mobile="@banner.ImageMobile"
-                             data-desktop="@banner.ImageDesktop"
+                        <img class="banner-image @(NoBorder ? "no-border" : "")"
+                             src="@banner.ImageDesktopUrl"
+                             data-mobile="@banner.ImageMobileUrl"
+                             data-desktop="@banner.ImageDesktopUrl"
                              alt="@banner.Alt"
                              @onclick="@(() => TriggerBannerAnalytics(banner, "click"))" />
                     }
@@ -62,6 +62,9 @@
     private DotNetObjectReference<BannerTakeOver>? _dotNetRef;
     private System.Threading.Timer? _rotationTimer;
     private bool _isPaused = false;
+
+    [Parameter]
+    public bool NoBorder { get; set; } = false;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -172,6 +175,11 @@
     object-fit: cover;
     border-radius: 3px;
 }
+
+    .no-border {
+        border: none !important;
+        border-radius: 0 !important;
+    }
 
 @@media (max-width: 768px) {
     .take-carousel-container {

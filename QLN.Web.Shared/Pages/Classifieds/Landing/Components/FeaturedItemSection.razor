@@ -1,9 +1,10 @@
 @using MudBlazor
+@using QLN.Common.DTO_s
 @using QLN.Web.Shared.Components.Classifieds.FeaturedItemCard
 @using QLN.Web.Shared.Components.EmptyCard
-@using QLN.Web.Shared.Pages.Classifieds.Landing.Components.Skeletons.FeaturedItemSkeleton
+@using QLN.Web.Shared.Pages.Classifieds.Skeletons
 @inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
+@inherits FeaturedItemsBase
 
 <div class="featured-cards-section">
     <div class="featured-header">
@@ -13,7 +14,14 @@
 
     @if (Loading)
     {
-        <FeaturedItemSkeleton />
+         <div class="featured-skeleton-wrapper">
+        @for (int i = 0; i < 4; i++)
+        {
+            <div class="skeleton-slide">
+                <FeaturedItemSkeletonCard />
+            </div>
+        }
+    </div>
     }
     else if (FeaturedItems?.Any() != true)
     {
@@ -32,12 +40,11 @@
                 </div>
 
                 <div class="swiper-wrapper">
-                    @foreach (var item in FeaturedItems)
-                    {
+                         <MudVirtualize Context="item" Items="FeaturedItems">
                         <div class="swiper-slide swiper-slide-Card">
                             <FeaturedItemCard Item="item" OnHeartClick="HandleHeartClick" OnSelect="HandleSelect" />
                         </div>
-                    }
+                        </MudVirtualize>
                 </div>
 
                 <div class="swiper-featured-pagination"></div>
@@ -46,38 +53,6 @@
         </div>
     }
 </div>
-
-@code {
-    [Parameter]
-    public bool Loading { get; set; } = false;
-
-    [Parameter]
-    public List<FeaturedItemCard.FeaturedItem> FeaturedItems { get; set; } = new();
-
-    private void HandleHeartClick(FeaturedItemCard.FeaturedItem item)
-    {
-        Console.WriteLine($"Heart clicked for {item.Title}");
-    }
-
-    private void HandleSelect(FeaturedItemCard.FeaturedItem item)
-    {
-        Navigation.NavigateTo($"/classifieds/items/details?id={item.Id}");
-    }
-
-    private bool _swiperInitialized = false;
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!_swiperInitialized && !Loading && FeaturedItems?.Any() == true)
-        {
-            _swiperInitialized = true;
-            await JSRuntime.InvokeVoidAsync("initFeaturedSwiper");
-        }
-    }
-
-
-}
-
 
 <style>
     .featured-cards-section {
@@ -177,7 +152,19 @@
         background: #00426D;
     }
 
+    .featured-skeleton-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: center;
+        padding: 0 1rem;
+    }
 
+    /* Each skeleton slide */
+    .skeleton-slide {
+        flex: 0 0 calc(25% - 1rem); /* 4 per row */
+        min-width: 200px;
+    }
     /* Show arrows on hover (only desktop) */
     @@media (min-width: 769px) {
         .swiper-featured-container:hover .arrow-button {
@@ -186,17 +173,31 @@
         }
     }
 
-    /* Hide arrows permanently on mobile & tablet */
-    @@media (max-width: 768px) {
-        .arrow-button {
-            display: none !important;
-        }
-    }
-
-
     @@media (max-width: 768px) {
         .swiper-featured {
             padding: 0 0.5rem;
+        }
+           .arrow-button {
+            display: none !important;
+        }
+      
+    }
+     @@media (max-width: 1000px) {
+         .featured-skeleton-wrapper {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding-left: 12px;
+            scrollbar-width: none;        
+            -ms-overflow-style: none; 
+        }
+
+        .featured-skeleton-wrapper::-webkit-scrollbar {
+            display: none;               
+        }
+
+        .skeleton-slide {
+            flex: 0 0 auto;
+            width: 250px;
         }
     }
 </style>

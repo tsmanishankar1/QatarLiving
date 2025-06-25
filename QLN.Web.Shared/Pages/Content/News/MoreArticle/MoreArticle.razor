@@ -29,9 +29,9 @@
         {
             <div class="article-entry">
                 <div class="article-content">
-                    <a class="more-article-title" href="@($"/content/article/details/{article.Slug}?category={selectedMainTab}&subcategory={selectedTab}")">
+                    <MudLink Class="more-article-title" href="@($"/content/article/details/{article.Slug}?category={selectedMainTab}&subcategory={selectedTab}")">
                         @article.Title
-                    </a>
+                    </MudLink>
                 </div>
                 @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
                 {
@@ -155,7 +155,7 @@
 
         font-size: 16px;
         font-weight: 600;
-        color: var(--color-text-heading);
+        color: var(--color-text-heading) !important;
         line-height: 1.4;
         max-height: calc(1.4em * 3);
         /* 3 lines x line-height */
@@ -163,7 +163,7 @@
 
     .more-article-title:hover {
         text-decoration: underline;
-        color: var(--color-primary);          
+        color: var(--color-primary) !important;          
     }
 
     .article-image {

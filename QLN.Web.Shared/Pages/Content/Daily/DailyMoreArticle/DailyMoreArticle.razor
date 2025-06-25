@@ -34,7 +34,7 @@
         <MudVirtualize Context="article" Items="Items" T="ContentEvent">
             <div class="article-entry">
                 <div class="article-content">
-                    <a href="#" @onclick="() => NavigatetoArticle(article)" class="article-title">@(article.Title)</a>
+                    <MudLink OnClick="() => NavigatetoArticle(article)" class="article-title">@(article.Title)</MudLink>
                 </div>
                 @if (!string.IsNullOrWhiteSpace(@article.ImageUrl))
                 {
@@ -111,7 +111,7 @@
         font-size: 16px;
         font-weight: 600;
         text-decoration: none;
-        color: var(--color-text-heading);
+        color: var(--color-text-heading) !important;
         line-height: 26px;
         letter-spacing: 0;
         display: -webkit-box;
@@ -123,7 +123,7 @@
 
     .article-title:hover {
         text-decoration: underline;
-        color: var(--color-primary);
+        color: var(--color-primary) !important;
     }
 
     .article-image {

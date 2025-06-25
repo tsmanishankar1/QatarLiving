@@ -29,6 +29,7 @@ namespace QLN.Common.Infrastructure.Constants
         public static class EntityTypes
         {
             public const string HeroBanner = "HeroBanner";
+            public const string TakeOverBanner = "TakeOverBanner";
             public const string FeaturedItems = "FeaturedItems";
             public const string FeaturedServices = "FeaturedServices";
             public const string FeaturedCategory = "FeaturedCategory";
@@ -46,6 +47,7 @@ namespace QLN.Common.Infrastructure.Constants
         public static class EntityRoutes
         {
             public const string HeroBanner = "hero-banner";
+            public const string TakeOverBanner = "take-over-banner";
             public const string FeaturedItems = "featured-items";
             public const string FeaturedServices = "featured-services";
             public const string FeaturedCategory = "featured-category";
@@ -68,6 +70,16 @@ namespace QLN.Common.Infrastructure.Constants
         {
             public const string LandingBackOfficeStore = "landingbackofficestore";
             public const string LandingBackOfficeKey = "landing-backoffice-keys";
+            public const string UnifiedStore = "adstore";
+            public const string UnifiedIndexKey = "ad-index";
+            public const string ItemsIndexKey = "items-ad-index";
+            public const string PrelovedIndexKey = "preloved-index";
+            public const string CollectiblesIndexKey = "collectibles-index";
+            public const string DealsIndexKey = "deals-index";
+            public const string ItemsCategoryIndexKey = "items-category-index";
+            public const string PrelovedCategoryIndexKey = "preloved-category-index";
+            public const string CollectiblesCategoryIndexKey = "collectibles-category-index";
+            public const string DealsCategoryIndexKey = "deals-category-index";
         }
         public static class PubSubTopics
         {
@@ -82,6 +94,13 @@ namespace QLN.Common.Infrastructure.Constants
         {
             public const string ContentStoreName = "contentstatestore";
             public const string EventIndexKey = "event-index";
+            // renaming this to content as all content will go to this MS - it may have multiple state stores for data though, so leaving in place the event statestore
+            public const string ContentServiceAppId = "qln-content-ms"; 
+        }
+        public static class V2ContentNews
+        {
+            public const string v2contentnews = "contentstatestore";
+            public const string v2contentServiceAppId = "qln-content-ms";
             public const string ContentServiceAppId = "qln-content-ms";
         }
     }

@@ -1,0 +1,111 @@
+@using QLN.Web.Shared.Components.MoreFilters
+
+<MoreFilters Selection="@modelSelection" OnApply="ApplyFilters" OnReset="ResetFilters">
+    <div class="filter-section">
+        <label class="section-label">Model</label>
+        @foreach (var model in PopularModels)
+        {
+            <label class="checkbox-item">
+                 <MudCheckBox @bind-Value="@modelSelection[model]"
+                     Color="Color.Primary"
+                     UncheckedColor="Color.Default"
+                     Class="mb-1" />
+                @model
+            </label>
+        }
+    </div>
+</MoreFilters>
+
+@code {
+    private Dictionary<string, bool> modelSelection = new();
+
+    private List<string> PopularModels = new() { "iPhone 16 Pro Max", "iPhone 15 Pro Max" };
+
+    protected override void OnInitialized()
+    {
+        foreach (var item in PopularModels)
+            modelSelection[item] = false;
+    }
+
+    private Task ApplyFilters()
+    {
+        Console.WriteLine("Filters applied.");
+        return Task.CompletedTask;
+    }
+
+    private Task ResetFilters()
+    {
+        Console.WriteLine("Filters reset.");
+        return Task.CompletedTask;
+    }
+}
+
+<style>
+
+    .section-label {
+        font-weight: 500;
+        font-size: 15px;
+        color: #FF7F38;
+        margin-bottom: 6px;
+        display: block;
+    }
+
+    .search-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: #f4f4f4;
+        padding: 6px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+    }
+
+    .search-box {
+        flex: 1;
+        border: none;
+        outline: none;
+        background: transparent;
+    }
+
+    .filter-group-label {
+        font-weight: 500;
+        margin-top: 8px;
+        margin-bottom: 4px;
+        background: #F6F6F6;
+        padding: 4px 8px;
+        font-size: 15px;
+        border-radius: 4px;
+        color: #454545;
+    }
+
+    .filter-section {
+        margin-bottom: 16px;
+    }
+
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        font-size: 15px;
+        fount-weight: 400;
+        color: #242424;
+        padding: 4px 0;
+        gap: 8px;
+    }
+
+    .color-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .color-item {
+        border: 1px solid #ddd;
+        padding: 4px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+    }
+
+</style>

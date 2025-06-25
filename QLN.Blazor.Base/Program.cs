@@ -18,11 +18,13 @@ using QLN.Web.Shared.Contracts;
 using GoogleAnalytics.Blazor;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.SignalR;
+using QLN.Web.Shared.Pages.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var contentVerticalAPIUrl = builder.Configuration["ServiceUrlPaths:ContentVerticalAPI"];
 var qatarLivingAPI = builder.Configuration["ServiceUrlPaths:QatarLivingAPI"];
+var baseURL = builder.Configuration["ServiceUrlPaths:BaseURL"];
 
 Console.WriteLine($"ContentVerticalAPI URL: {contentVerticalAPIUrl}");
 
@@ -38,6 +40,11 @@ if (string.IsNullOrWhiteSpace(qatarLivingAPI))
     throw new InvalidOperationException("QatarLivingAPI URL is missing in configuration.");
 }
 
+if (string.IsNullOrWhiteSpace(baseURL))
+{
+    throw new InvalidOperationException("BaseURL URL is missing in configuration.");
+}
+
 builder.Services.AddCors(options =>
 {
 
@@ -45,7 +52,8 @@ builder.Services.AddCors(options =>
     string[] origins = { 
                 // add more as necessary
                 contentVerticalAPIUrl,
-                qatarLivingAPI
+                qatarLivingAPI,
+                baseURL
     };
 
     // filter out distinct URLs
@@ -87,19 +95,19 @@ if (string.IsNullOrWhiteSpace(newsLetterSubscriptionAPIUrl))
 }
 
 
-builder.Services.AddResponseCompression(options =>
-{
-    options.EnableForHttps = true;
-    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[]
-    {
-        "application/octet-stream",
-        "application/wasm",
-        "text/css",
-        "application/javascript",
-        "text/html",
-        "application/json"
-    });
-});
+//builder.Services.AddResponseCompression(options =>
+//{
+//    options.EnableForHttps = true;
+//    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[]
+//    {
+//        "application/octet-stream",
+//        "application/wasm",
+//        "text/css",
+//        "application/javascript",
+//        "text/html",
+//        "application/json"
+//    });
+//});
 
 builder.Services.AddAuthentication();
 
@@ -172,8 +180,11 @@ builder.Services.AddCascadingAuthenticationState();
 
 //builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<ICompanyProfileService, CompanyProfileService>();
+builder.Services.AddScoped<SearchStateService>();
 builder.Services.Configure<ApiSettings>(
     builder.Configuration.GetSection("ApiSettings"));
+    var youtubeApiKey = builder.Configuration["YouTubeAPI:ApiKey"];
+builder.Services.AddScoped(sp => new YouTubeApiService(youtubeApiKey));
 
 builder.Services.Configure<NavigationPath>(
     builder.Configuration.GetSection("NavigationPath"));
@@ -229,7 +240,16 @@ builder.Services.AddHttpClient<ISearchService, CommunitySearchService>(client =>
 {
     client.BaseAddress = new Uri(qatarLivingAPI);
 });
+builder.Services.AddHttpClient<ApiService>();
+builder.Services.AddHttpClient<ISubscriptionService, SubscriptionService>(client =>
+{
+    client.BaseAddress = new Uri(baseURL);
+});
 
+builder.Services.AddHttpClient<IClassifiedDashboardService, ClassfiedDashboardService>(client =>
+{
+    client.BaseAddress = new Uri(baseURL);
+});
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ISimpleMemoryCache, SimpleMemoryCache>(); // add shared Banner Service
 
@@ -256,7 +276,7 @@ app.UseRequestLocalization(localizationOptions);
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseResponseCompression();
+    //app.UseResponseCompression();
     // app.UseMigrationsEndPoint();
 }
 else
@@ -268,7 +288,8 @@ else
 
 app.UseHttpsRedirection();
 
-app.UseStaticFiles();
+//app.UseStaticFiles();
+app.MapStaticAssets();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();

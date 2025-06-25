@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
 
-    <link rel="preload" href="/qln-images/qatar-living-logo-sized.webp" as="image" type="image/webp">
+    <link rel="preload" href="/qln-images/qatar-living-logo-sized.png" as="image" type="image/webp">
 
-    <link rel="stylesheet" href="_content/QLN.Web.Shared/bootstrap/bootstrap.min.css" />
-    <link rel="stylesheet" href="QLN.Blazor.Base.styles.css" />
-    <link rel="stylesheet" href="_content/QLN.Web.Shared/css/app.css" />
-    <link rel="stylesheet" href="_content/QLN.Web.Shared/css/site.css" />
+    <link rel="stylesheet" href="@Assets["_content/QLN.Web.Shared/bootstrap/bootstrap.min.css"]" as="style" />
+    <link rel="stylesheet" href="@Assets["QLN.Blazor.Base.styles.css"]" as="style" type="text/css" />
+    <link rel="stylesheet" href="@Assets["_content/QLN.Web.Shared/css/app.css"]" as="style" />
+    <link rel="stylesheet" href="@Assets["_content/QLN.Web.Shared/css/site.css"]" as="style" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap"
@@ -21,13 +21,14 @@
 
     @* <link rel="preload" href="fonts/PublicSans.woff2" as="font" type="font/woff2" crossorigin="anonymous"> *@
 
-    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" media="print" onload="this.media='all'">
-    <noscript>
-        <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet">
-    </noscript>
+    <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet" media="print" onload="this.media='all'" as="style">
+    @* <noscript>
+        <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet" as="style">
+    </noscript> *@
 
     <link rel="icon" type="image/svg+xml" href="fav-icon.svg">
     <HeadOutlet />
+    <ImportMap />
 </head>
 
 @* <HeadContent>
@@ -63,12 +64,12 @@
 
 <body>
     <Routes @rendermode="InteractiveServer" />
-    <script src="_content/MudBlazor/MudBlazor.min.js?v=8.5.1"></script>
-    <div id="reconnect-modal" style="display: none;"></div>
-    <script src="_framework/blazor.web.js" autostart="false"></script>
-    <script src="js/boot.js"></script>
+    <script src="@Assets["_content/MudBlazor/MudBlazor.min.js?v=8.6.0"]"></script>
+    @* <div id="reconnect-modal" style="display: none;"></div> *@
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+    @* <script src="js/boot.js"></script> *@
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js" defer></script>
-    <script src="_content/GoogleAnalytics.Blazor/googleanalytics.blazor.js" defer></script>
+    <script src="@Assets["_content/GoogleAnalytics.Blazor/googleanalytics.blazor.js"]" defer></script>
     @* 
         Script is MIA, not needed maybe?
         <script src="_content/Extensions.MudBlazor.StaticInput/NavigationObserver.js?v=3.2.0" defer></script> 
@@ -181,17 +182,6 @@
     </script>
 
     <script>
-        window.registerImageLoadCallback = (imageId, dotNetRef) => {
-            const img = document.getElementById(imageId);
-            if (!img) return;
-
-            img.onload = () => {
-                dotNetRef.invokeMethodAsync("OnImageLoaded");
-            };
-        };
-
-    </script>
-    <script>
         window.toggleBodyScroll = function (shouldLock) {
             document.body.style.overflow = shouldLock ? 'hidden' : '';
         };
@@ -202,23 +192,88 @@
             if (element) element.click();
         };
     </script>
+   
+<script>
+    window.registerOutsideClickHandlerPrice = (panelSelector, dotNetRef) => {
+        function onClick(event) {
+            const panel = document.querySelector(panelSelector);
+            if (panel && !panel.contains(event.target)) {
+                dotNetRef.invokeMethodAsync('CloseDropdownFromJs');
+            }
+        }
+
+        document.addEventListener('mousedown', onClick);
+
+        // Store handler reference globally using the panelSelector as key
+        window._outsideClickHandlers = window._outsideClickHandlers || {};
+        window._outsideClickHandlers[panelSelector] = onClick;
+
+        return {
+            dispose: () => {
+                document.removeEventListener('mousedown', onClick);
+                delete window._outsideClickHandlers[panelSelector];
+            }
+        };
+    };
+
+    window.unregisterOutsideClickHandler = (panelSelector) => {
+        const handler = window._outsideClickHandlers?.[panelSelector];
+        if (handler) {
+            document.removeEventListener('mousedown', handler);
+            delete window._outsideClickHandlers[panelSelector];
+        }
+    };
+</script>
+
+
+<script>
+     window.registerOutsideClickHandler = (panelSelector, dotNetRef) => {
+    function onClick(event) {
+        const panel = document.querySelector(panelSelector);
+        if (panel && !panel.contains(event.target)) {
+            dotNetRef.invokeMethodAsync('CloseFilters');
+        }
+    }
+
+    document.addEventListener('mousedown', onClick);
+
+    return {
+        dispose: () => document.removeEventListener('mousedown', onClick)
+    };
+};
+</script>
     <script>
+        let seasonalSwiperInstance;
         window.initSeasonalSwiper = () => {
-            new Swiper('.swiper-seasonal', {
+            if (seasonalSwiperInstance) {
+                seasonalSwiperInstance.destroy(true, true);
+            }
+
+            const swiperEl = document.querySelector('.swiper-seasonal');
+            if (!swiperEl) {
+                console.warn("Seasonal Swiper element not found");
+                return;
+            }
+
+            seasonalSwiperInstance = new Swiper(swiperEl, {
                 slidesPerView: 'auto',
-                spaceBetween: 16,
+                spaceBetween: 10,
                 navigation: {
                     nextEl: '.swiper-seasonal-button-next',
                     prevEl: '.swiper-seasonal-button-prev'
                 },
                 breakpoints: {
-                    640: { slidesPerView: 1 },
-                    768: { slidesPerView: 2 },
-                    1024: { slidesPerView: 3 }
+                    320: { slidesPerView: 1, spaceBetween: 10 },
+                    340: { slidesPerView: 1, spaceBetween: 10 },
+                    480: { slidesPerView: 1, spaceBetween: 10 },
+                    640: { slidesPerView: 1.5, spaceBetween: 12 },
+                    768: { slidesPerView: 2, spaceBetween: 14 },
+                    860: { slidesPerView: 2.5, spaceBetween: 16 },
+                    1024: { slidesPerView: 3, spaceBetween: 18 },
+                    1200: { slidesPerView: 3, spaceBetween: 18 }
                 }
             });
         };
-      
         let featuredSwiperInstance;
 
         function initFeaturedSwiper() {
@@ -313,6 +368,55 @@
             });
         }
 
+        let storeSwiperInstance;
+        window.initStoreSwiper = () => {
+            if (storeSwiperInstance) {
+                storeSwiperInstance.destroy(true, true);
+            }
+
+            const swiperEl = document.querySelector('.swiper-store');
+            if (!swiperEl) {
+                console.warn("Store Swiper element not found");
+                return;
+            }
+
+            storeSwiperInstance = new Swiper(swiperEl, {
+                slidesPerView: 'auto',
+                spaceBetween: 10,
+                navigation: {
+                    nextEl: '.swiper-store-button-next',
+                    prevEl: '.swiper-store-button-prev'
+                },
+                breakpoints: {
+                    320: { slidesPerView: 1.8, spaceBetween: 5 },
+                    340: { slidesPerView: 1.8, spaceBetween: 5 },
+                    480: { slidesPerView: 2.5, spaceBetween: 10 },
+                    640: { slidesPerView: 3, spaceBetween: 10 },
+                    768: { slidesPerView: 4.5, spaceBetween: 10 },
+                    860: { slidesPerView: 5, spaceBetween: 10 },
+                    1024: { slidesPerView: 6, spaceBetween: 10 },
+                    1200: { slidesPerView: 6, spaceBetween: 10 }
+                    },
+                        on: {
+                            afterInit: function (swiper) {
+                                const totalSlides = swiper.slides.length;
+                                const visibleSlides = swiper.params.slidesPerView;
+
+                                const nextBtn = document.querySelector(".swiper-store-button-next");
+                                const prevBtn = document.querySelector(".swiper-store-button-prev");
+
+                                // If all slides fit into view, hide arrows
+                                if (totalSlides <= visibleSlides) {
+                                    nextBtn.style.display = "none";
+                                    prevBtn.style.display = "none";
+                                } else {
+                                    nextBtn.style.display = "";
+                                    prevBtn.style.display = "";
+                                }
+                            },
+                        }
+            });
+        };
 
     </script>
 
@@ -396,6 +500,13 @@
                     });
                 });
             };
+        </script>
+        <script>
+            document.querySelectorAll('.mud-popover').forEach(pop => {
+            if (pop.innerHTML.includes('share-icon')) {
+                pop.classList.add('share-popover');
+            }
+            });
         </script>
 
     <GBAnchor />

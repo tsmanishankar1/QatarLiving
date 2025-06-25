@@ -25,7 +25,7 @@ namespace QLN.Common.DTO_s
         public int? ListingCount { get; set; }
 
         public int? RotationSeconds { get; set; }
-        public string? AdId { get; set; }
+        public string? EntityId { get; set; }
 
         public CommonSearchRequest? PayloadJson { get; set; }
     }
