@@ -86,36 +86,69 @@ app.MapGet("/migrate_items", async (
 
     Console.WriteLine($"Completed Items Migration @ {DateTime.UtcNow}");
 
+    // the following collections would allow us to capturre existing
+    // "linked references" for the flattened data structures
+
+    List<DrupalCategory> categoryParents = drupalItems.Items
+        .Select(i => i.CategoryParent)
+        .Distinct(new DrupalCategoryTidComparer())
+        .ToList();
+
     List<DrupalCategory> categories = drupalItems.Items
         .SelectMany(i => i.Category)
         .Distinct(new DrupalCategoryTidComparer())
         .ToList();
 
-    //var migrationItems = (MigrationItems)drupalItems;
+    List<DrupalCategory> linkedCategories = drupalItems.Items
+        .SelectMany(i => i.LinkedCategories)
+        .Distinct(new DrupalCategoryTidComparer())
+        .ToList();
 
-    //await migrationService.SaveMigrationItemsAsync(migrationItems);
+    // Review this 
+    List<DrupalCategory> consolidatedCategories = new List<DrupalCategory>();
+    consolidatedCategories.AddRange(categoryParents);
+    consolidatedCategories.AddRange(categories);
+    consolidatedCategories.AddRange(linkedCategories);
+
+    consolidatedCategories = consolidatedCategories
+    .Distinct(new DrupalCategoryTidComparer())
+    .ToList();
+
+    // The above categories should maybe be merged into one large Categories listing ?
+
+    List<DrupalLocation?> locations = drupalItems.Items
+        .Select(i => i.Location)
+        .Distinct(new DrupalLocationTidComparer())
+        .ToList();
+
+    List<DrupalZone?> zones = drupalItems.Items
+        .Select(i => i.Zone)
+        .Distinct(new DrupalZoneTidComparer())
+        .ToList();
+
+    List<DrupalOffer?> offers = drupalItems.Items
+        .Select(i => i.Offer)
+        .Distinct(new DrupalOfferTidComparer())
+        .ToList();
+
+    // this would create the items we actually want to migrate - I have
+    // implemented a data normalization process to "flatten" the data,
+    // this more closely represents what a columner structure would look
+    // like with entity
+
+    var migrationItems = (MigrationItems)drupalItems;
+
+    await migrationService.SaveMigrationItemsAsync(migrationItems);
 
     return Results.Ok(new
     {
         Message = $"Items migration for {environment} completed @ {DateTime.UtcNow}.",
-        Categories = categories
+        Categories = consolidatedCategories,
+        Locations = locations,
+        Zones = zones,
+        Offers = offers
     });
 });
 
 
 app.Run();
-
-public class DrupalCategoryTidComparer : IEqualityComparer<DrupalCategory>
-{
-    public bool Equals(DrupalCategory? x, DrupalCategory? y)
-    {
-        if (ReferenceEquals(x, y)) return true;
-        if (x is null || y is null) return false;
-        return x.Tid == y.Tid;
-    }
-
-    public int GetHashCode(DrupalCategory obj)
-    {
-        return obj.Tid.GetHashCode();
-    }
-}

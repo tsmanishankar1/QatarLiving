@@ -26,18 +26,6 @@ namespace QLN.DataMigration.Models
         public string Arabic { get; set; }
     }
 
-    public class DrupalCategoryParent
-    {
-        [JsonPropertyName("tid")]
-        public int Tid { get; set; }
-
-        [JsonPropertyName("name")]
-        public string Name { get; set; }
-
-        [JsonPropertyName("arabic")]
-        public string Arabic { get; set; }
-    }
-
     public class DrupalGeoLocation
     {
         [JsonPropertyName("lat")]
@@ -74,7 +62,7 @@ namespace QLN.DataMigration.Models
         public string BuildingNo { get; set; }
 
         [JsonPropertyName("category_parent")]
-        public DrupalCategoryParent CategoryParent { get; set; }
+        public DrupalCategory CategoryParent { get; set; }
 
         [JsonPropertyName("category")]
         public List<DrupalCategory> Category { get; set; }
