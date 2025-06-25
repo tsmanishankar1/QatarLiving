@@ -9,6 +9,7 @@ using QLN.Web.Shared.Components.BreadCrumb;
 using QLN.Web.Shared.Pages.Classifieds.CreatePost.Components;
 using System.Collections.Generic;
 using MudBlazor;
+using Microsoft.JSInterop;
 
 namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
 {
@@ -45,59 +46,136 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
      protected async void HandleCategoryChanged(string newValue)
         {
             selectedVertical = newValue;
-
-            // Now load category trees for the selected vertical
+            adPostModel = new AdPost(); // Reset to new model
+            photoUrls = new List<string> { "", "", "", "", "", "" }; // Reset photo slots
+            dynamicFieldValues = new Dictionary<string, string>(); // Clear dynamic fields
             await LoadCategoryTreesAsync();
 
             StateHasChanged(); // Re-render after data is loaded
         }
+        [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+
      
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
             {
-                _authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6Ijk3NTQ1NGI1LTAxMmItNGQ1NC1iMTUyLWUzMGYzNmYzNjNlMiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJNVUpBWSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6Im11amF5LmFAa3J5cHRvc2luZm9zeXMuY29tIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbW9iaWxlcGhvbmUiOiIrOTE3NzA4MjA0MDcxIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjpbIkNvbXBhbnkiLCJTdWJzY3JpYmVyIl0sIlVzZXJJZCI6Ijk3NTQ1NGI1LTAxMmItNGQ1NC1iMTUyLWUzMGYzNmYzNjNlMiIsIlVzZXJOYW1lIjoiTVVKQVkiLCJFbWFpbCI6Im11amF5LmFAa3J5cHRvc2luZm9zeXMuY29tIiwiUGhvbmVOdW1iZXIiOiIrOTE3NzA4MjA0MDcxIiwiZXhwIjoxNzUwODUzMjE2LCJpc3MiOiJodHRwczovL3Rlc3QucWF0YXJsaXZpbmcuY29tIiwiYXVkIjoiaHR0cHM6Ly90ZXN0LnFhdGFybGl2aW5nLmNvbSJ9.7bOn01vqsHanmw7Ji88xaqm3ML7NmE3oRENPEE2CeU0";
+                _authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6Ijk3NTQ1NGI1LTAxMmItNGQ1NC1iMTUyLWUzMGYzNmYzNjNlMiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJNVUpBWSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6Im11amF5LmFAa3J5cHRvc2luZm9zeXMuY29tIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbW9iaWxlcGhvbmUiOiIrOTE3NzA4MjA0MDcxIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjpbIkNvbXBhbnkiLCJTdWJzY3JpYmVyIl0sIlVzZXJJZCI6Ijk3NTQ1NGI1LTAxMmItNGQ1NC1iMTUyLWUzMGYzNmYzNjNlMiIsIlVzZXJOYW1lIjoiTVVKQVkiLCJFbWFpbCI6Im11amF5LmFAa3J5cHRvc2luZm9zeXMuY29tIiwiUGhvbmVOdW1iZXIiOiIrOTE3NzA4MjA0MDcxIiwiZXhwIjoxNzUwODc3Mzc0LCJpc3MiOiJodHRwczovL3Rlc3QucWF0YXJsaXZpbmcuY29tIiwiYXVkIjoiaHR0cHM6Ly90ZXN0LnFhdGFybGl2aW5nLmNvbSJ9.sVjbvb10RUATqUO6tbLTCJTW9-8neYGP82fwCy57Nc4";
                 StateHasChanged();
 
             }
 
             await base.OnAfterRenderAsync(firstRender);
         }
+        public async Task LogObjectToConsoleAsync<T>(T obj)
+            {
+                var json = JsonSerializer.Serialize(obj, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = false
+                });
+
+                // await JSRuntime.InvokeVoidAsync("eval", $"console.log({json})");
+            }
+                    
+           public class ValidationResult
+                {
+                    public bool IsValid => !Messages.Any();
+                    public List<string> Messages { get; set; } = new();
+                }
+
+                    private ValidationResult ValidateForm()
+                {
+                    var result = new ValidationResult();
+                    var vertical = selectedVertical?.Trim().ToLower();
+
+                    if (string.IsNullOrWhiteSpace(vertical))
+                    {
+                        result.Messages.Add("Vertical is required.");
+                        return result;
+                    }
+
+                    // Shared Validation
+                    if (string.IsNullOrWhiteSpace(adPostModel.Title))
+                        result.Messages.Add("Title is required.");
+
+                    if (!adPostModel.IsAgreed)
+                        result.Messages.Add("You must agree to the terms and conditions.");
+
+                    // Vertical-specific
+                    switch (vertical)
+                    {
+                        case "deals":
+                            ValidateDealsFields(result);
+                            break;
+
+                        default:
+                            ValidateDefaultFields(result);
+                            break;
+                    }
+
+                    return result;
+                }
+
+        private void ValidateDealsFields(ValidationResult result)
+        {
+            if (string.IsNullOrWhiteSpace(adPostModel.Certificate))
+                result.Messages.Add("Certificate is required for Deals.");
+
+            if (string.IsNullOrWhiteSpace(adPostModel.FlyerLocation))
+                result.Messages.Add("Flyer Location is required for Deals.");
+
+            if (photoUrls.All(string.IsNullOrWhiteSpace))
+                result.Messages.Add("At least one image is required for Deals.");
+
+            if (string.IsNullOrWhiteSpace(adPostModel.Phone) && string.IsNullOrWhiteSpace(adPostModel.Whatsapp))
+                result.Messages.Add("At least one contact (Phone or WhatsApp) is required for Deals.");
+        }
+
+        private void ValidateDefaultFields(ValidationResult result)
+        {
+            if (string.IsNullOrWhiteSpace(adPostModel.ItemDescription))
+                result.Messages.Add("Description is required.");
+
+            var hasCategory = !string.IsNullOrWhiteSpace(adPostModel.SelectedCategoryId)
+                        || !string.IsNullOrWhiteSpace(adPostModel.SelectedSubcategoryId)
+                        || !string.IsNullOrWhiteSpace(adPostModel.SelectedSubSubcategoryId);
+
+            if (!hasCategory)
+                result.Messages.Add("At least one category must be selected.");
+
+            if (string.IsNullOrWhiteSpace(adPostModel.Phone))
+                result.Messages.Add("Phone number is required.");
+
+            if (string.IsNullOrWhiteSpace(adPostModel.Whatsapp))
+                result.Messages.Add("WhatsApp number is required.");
+                if (string.IsNullOrWhiteSpace(adPostModel.Certificate))
+                result.Messages.Add("Certificate is required.");
+
+            if (string.IsNullOrWhiteSpace(adPostModel.Zone) ||
+                string.IsNullOrWhiteSpace(adPostModel.StreetNumber) ||
+                string.IsNullOrWhiteSpace(adPostModel.BuildingNumber))
+                result.Messages.Add("Location details (Zone, Street, Building) are required.");
+
+            var filledPhotos = photoUrls.Count(url => !string.IsNullOrWhiteSpace(url));
+            if (filledPhotos < 4)
+                result.Messages.Add("Please upload at least 4 images.");
+        }
+
         protected async void SaveForm()
         {
-             IsSaving = true;
-    ErrorMessage = string.Empty;
+            IsSaving = true;
+            ErrorMessage = string.Empty;
             try
             {
-  if (string.IsNullOrWhiteSpace(selectedVertical))
-        {
-            Snackbar.Add("Vertical is required.", Severity.Warning);
-            return;
-        }
+                var validation = ValidateForm();
+                if (!validation.IsValid)
+                {
+                    foreach (var msg in validation.Messages)
+                        Snackbar.Add(msg, Severity.Warning);
 
-        if (string.IsNullOrWhiteSpace(adPostModel.Title))
-        {
-            Snackbar.Add("Title is required.", Severity.Warning);
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(adPostModel.ItemDescription))
-        {
-            Snackbar.Add("Description is required.", Severity.Warning);
-            return;
-        }
-
-        if (photoUrls.All(string.IsNullOrWhiteSpace))
-        {
-            Snackbar.Add("At least one image is required.", Severity.Warning);
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(adPostModel.Certificate))
-        {
-            Snackbar.Add("Certificate is required.", Severity.Warning);
-            return;
-        }
+                    return;
+                }
                 var selectedCategory = CategoryTrees.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedCategoryId);
                 var selectedSubcategory = selectedCategory?.Children?.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedSubcategoryId);
                 var selectedSubSubcategory = selectedSubcategory?.Children?.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedSubSubcategoryId);
@@ -131,8 +209,9 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
                     Gender = dynamicFieldValues.TryGetValue("Gender", out var gender) ? gender : null,
 
 
-
+                    Price = adPostModel.Price,
                     CertificateBase64 = adPostModel.Certificate,
+                    CertificateFileName = adPostModel.CertificateFileName,
                     BatteryPercentage = int.TryParse(adPostModel.BatteryPercentage, out var percent) ? percent : 0,
                     PhoneNumber = adPostModel.Phone,
                     WhatsAppNumber = adPostModel.Whatsapp,
@@ -155,34 +234,51 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
                     AcceptsOffers = "No",
                     CountryOfOrigin = "Qatar",
                     Language = "en",
-                    Location = new List<string> { adPostModel.Zone, adPostModel.StreetNumber, adPostModel.BuildingNumber }
+                    Location = new List<string?>
+                        {
+                            adPostModel.Zone,
+                            adPostModel.StreetNumber,
+                            adPostModel.BuildingNumber,
+                            adPostModel.FlyerLocation
+                        }
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .ToList()
+
                 };
                 var jsonDto = JsonSerializer.Serialize(dto, new JsonSerializerOptions
                 {
                     WriteIndented = true // Optional: makes it pretty-printed
                 });
 
-                Logger.LogInformation("Submitting ClassifiedPostDto as JSON:\n{DtoJson}", jsonDto);
+                await LogObjectToConsoleAsync(dto);
 
-                var response = await _classifiedsService.PostClassifiedItemAsync(adPostModel.SelectedVertical.ToLower(), dto,_authToken);
+                // Logger.LogInformation("Submitting ClassifiedPostDto as JSON:\n{DtoJson}", jsonDto);
 
-             if (response?.IsSuccessStatusCode == true)
-        {
-            Snackbar.Add("Post submitted successfully!", Severity.Success);
-        }
-        else
-        {
-            Snackbar.Add($"Submission failed. Status: {response?.StatusCode}", Severity.Error);
-        }
+                var response = await _classifiedsService.PostClassifiedItemAsync(adPostModel.SelectedVertical.ToLower(), dto, _authToken);
+
+                if (response?.IsSuccessStatusCode == true)
+                {
+                    Snackbar.Add($"{char.ToUpper(adPostModel.SelectedVertical[0]) + adPostModel.SelectedVertical.Substring(1).ToLower()} post submitted successfully!", Severity.Success);
+                    adPostModel = new AdPost();
+                    photoUrls = new List<string> { "", "", "", "", "", "" };
+                    dynamicFieldValues = new Dictionary<string, string>();
+                    selectedVertical = string.Empty;
+                    StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Add($"Submission failed. Status: {response?.StatusCode}", Severity.Error);
+                }
             }
             catch (Exception ex)
             {
                 ErrorMessage = $"Error while submitting post: {ex.Message}";
-            } finally
-    {
-        IsSaving = false;
-        StateHasChanged();
-    }
+            }
+            finally
+            {
+                IsSaving = false;
+                StateHasChanged();
+            }
         }
 
 

@@ -55,12 +55,12 @@
                     @if (video.IsValid)
                     {
                     <!-- Video -->
-                    <video width="100%" height="100%" 
-                        muted loop
-                        style="object-fit: cover;"
+                    <iframe width="100%" height="100%"
                         src="@video.VideoUrl"
-                        @ref="video.VideoElement">
-                    </video>
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen>
+                    </iframe>
                         }
                         else
                         {

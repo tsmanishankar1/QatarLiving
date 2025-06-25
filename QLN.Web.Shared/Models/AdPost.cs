@@ -17,9 +17,13 @@ namespace QLN.Web.Shared.Models
         // Description and Features
         public string Title { get; set; }
         public string Certificate { get; set; }
+        public string CertificateFileName { get; set; }
         public string BatteryPercentage { get; set; }
         public string ItemDescription { get; set; }
+        public string XmlLink { get; set; }
+        public string FlyerLocation { get; set; }
 
+        public decimal Price { get; set; }
         // Contact Details
         public string Phone { get; set; }
         public string Whatsapp { get; set; }

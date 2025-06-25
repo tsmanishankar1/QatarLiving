@@ -4,6 +4,7 @@
 @using QLN.Web.Shared.Pages.Classifieds.CreatePost.Components
 @using QLN.Common.DTO_s;
 @using MudExRichTextEditor
+@inject IJSRuntime JS
 @typeparam TItem
 
 <div class="form-section">
@@ -28,9 +29,11 @@
     var fields = selectedSubSubcategory?.Fields ?? selectedSubcategory?.Fields ?? selectedCategory?.Fields;
 
     var allowedFields = new[] { "Condition", "Ram", "Model", "Capacity", "Processor", "Brand", "Storage", "Colour", "Gender", "Resolution", "Coverage" };
-
+      @if (adPostModel.SelectedVertical != "deals")
+{
     <div class="form-section">
         <h6 class="form-heading">Ad Information</h6>
+  
         <div class="form-group">
             <NewCustomSelect TItem="CategoryTreeDto"
                 Items="@CategoryTrees"
@@ -41,7 +44,6 @@
                 SelectedId="@adPostModel.SelectedCategoryId"
                 SelectedIdChanged="OnCategoryChanged" />
         </div>
-
         @if (selectedCategory?.Children?.Any() == true)
         {
             <div class="form-group">
@@ -90,27 +92,41 @@
                     </div>
                 }
             }
+        <div class="form-group">
+            <CustomInput TItem="decimal" Placeholder="Price" @bind-Value="adPostModel.Price" TextRight="QAR" />
+        </div>
         }
     </div>
+        }
+
 
     <div class="form-section">
         <h6 class="form-heading">Description and Features</h6>
         <div class="form-group">
-            <CustomInput TItem="string" Placeholder="Title" @bind-Value="adPostModel.Title" />
+            <CustomInput TItem="string" Placeholder="@(adPostModel.SelectedVertical == "deals" ? "Offer Title" : "Title")" @bind-Value="adPostModel.Title" />
         </div>
-        <div class="form-group">
-            <CustomInput TItem="string" Placeholder="Battery Percentage" @bind-Value="adPostModel.BatteryPercentage" TextRight="%" />
-        </div>
-          <div class="form-group">
+             @if (adPostModel.SelectedVertical != "deals")
+{
+         <div class="form-group">
         <MudExRichTextEdit @bind-Value="adPostModel.ItemDescription"
                            Height="300"
                            Class="description-input no-underline"
                            Placeholder="Write your business description..." />
         </div>
+          <div class="form-group">
+            <CustomInput TItem="string" Placeholder="Battery Percentage" @bind-Value="adPostModel.BatteryPercentage" TextRight="%" />
+        </div>
+        }
 
      <div class="form-group">
-            <FileUploader OnFileUploaded="HandleUpload"  LabelText="Certificate / Warranty*"/>
+            <FileUploader OnFileUploadedWithMeta="HandleUpload"  LabelText="@(adPostModel.SelectedVertical == "deals" ? "Flyer File" : "Certificate / Warranty*")"/>
         </div>
+          @if (adPostModel.SelectedVertical == "deals")
+    {
+        <div class="form-group">
+            <CustomInput TItem="string" Placeholder="XML Link" @bind-Value="adPostModel.XmlLink" />
+        </div>
+        }
     </div>
      
 
@@ -126,6 +142,14 @@
 
     <div class="form-section">
         <h6 class="form-heading">Location</h6>
+         @if (adPostModel.SelectedVertical == "deals")
+            {
+                <div class="form-group">
+                    <CustomInput TItem="string" Placeholder="Location*" @bind-Value="adPostModel.FlyerLocation" />
+                </div>
+            }
+                    @if (adPostModel.SelectedVertical != "deals")
+{
         <div class="form-group">
             <CustomInput TItem="string" Placeholder="Zone" @bind-Value="adPostModel.Zone" />
         </div>
@@ -143,6 +167,7 @@
                     src="https://www.openstreetmap.org/export/embed.html?bbox=51.5318%2C25.2840%2C51.5378%2C25.2880&layer=mapnik&marker=25.2860%2C51.5348">
             </iframe>
         </div>
+        }
 
         <div class="checkbox-section">
             <div class="checkbox-left">
@@ -166,12 +191,13 @@
     [Parameter] public EventCallback<string> CategoryChanged { get; set; }
      private string uploadedFileBase64;
 
-    private void HandleUpload(string base64)
-    {
-        uploadedFileBase64 = base64;
-        adPostModel.Certificate = uploadedFileBase64;
-        
-    }
+    private void HandleUpload((string FileName, string Base64) fileData)
+{
+    uploadedFileBase64 = fileData.Base64;
+    adPostModel.Certificate = fileData.Base64;
+    adPostModel.CertificateFileName = fileData.FileName;
+}
+
     private async Task OnVerticalChanged(string newValue)
     {
         adPostModel.SelectedVertical = newValue;

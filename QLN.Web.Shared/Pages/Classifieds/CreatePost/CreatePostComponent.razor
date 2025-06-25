@@ -17,7 +17,7 @@
             <MudItem xs="12" md="7">
                 @if (!string.IsNullOrWhiteSpace(selectedVertical))
                 {
-                    <UploadPhotos PhotoUrls="@photoUrls"  />
+                    <UploadPhotos PhotoUrls="@photoUrls" selectedVertical="@selectedVertical" />
                 }
             </MudItem>
         </MudGrid>
@@ -28,9 +28,22 @@
     {
         <div class="d-flex justify-end mt-4">
             <MudButton Variant="Variant.Outlined" Class="close-button">Close</MudButton>
-            <MudButton Class="ml-2 save-button" Variant="Variant.Filled" OnClick="SaveForm">
-                Save & Publish
+         <MudButton Class="ml-2 save-button"
+           Variant="Variant.Filled"
+           Disabled="@IsSaving"
+           OnClick="SaveForm">
+                @if (IsSaving)
+                {
+                     <MudProgressCircular Color="Color.Inherit"
+                             Size="Size.Small"
+                             Indeterminate="true" />
+                }
+                else
+                {
+                    <span>Save & Publish</span>
+                }
             </MudButton>
+
         </div>
     }
 </div>

@@ -28,13 +28,13 @@
         <div class="text-red-600 text-sm mt-1">@ErrorMessage</div>
     }
 </div>
-
 @code {
     private ElementReference fileInput;
     private string FileName = string.Empty;
     private string ErrorMessage;
 
-    [Parameter] public EventCallback<string> OnFileUploaded { get; set; }
+    [Parameter] public EventCallback<(string Name, string Base64)> OnFileUploadedWithMeta { get; set; }
+
     [Parameter] public string LabelText { get; set; } = "Certificate / Warranty*";
 
     private async Task TriggerFileUpload()
@@ -53,16 +53,16 @@
 
             if (!string.IsNullOrEmpty(fileData))
             {
-                await OnFileUploaded.InvokeAsync(fileData);
+               await OnFileUploadedWithMeta.InvokeAsync((FileName, fileData));
+
             }
         }
         catch (JSException ex)
         {
-            ErrorMessage = ex.Message;
+            ErrorMessage = "Failed to read file: " + ex.Message;
         }
     }
 }
-
 
 <style>
  .file-upload-container {

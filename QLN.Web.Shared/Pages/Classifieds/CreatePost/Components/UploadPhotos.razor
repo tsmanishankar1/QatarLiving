@@ -9,13 +9,68 @@
     <div class="d-flex align-items-center mb-2">
         <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2 info-icon" />
         <span class="photo-guidelines">
+             @if (selectedVertical == "deals")
+        {
+            <span class="photo-guidelines">
+                Upload a high quality cover for the flyer to attract shoppers to your offer. Use portrait orientation (vertical) for optimal photo display.
+            </span>
+        }
+         else
+        {
+            <span class="photo-guidelines">
             Upload at least 4 photos (maximum 9 photos) to attract shoppers to your offer. Use landscape orientation (horizontal) for optimal photo display.
             <MudLink href="#">View Photo Suggestions</MudLink>
+            </span>
+            }
         </span>
     </div>
-
+  @if (selectedVertical != "deals")
+    {
     <MudText Typo="Typo.body2" Class="mb-3">Hold and drag to reorder.</MudText>
+    }
 
+ @if (selectedVertical == "deals")
+    {
+        <div class="photo-grid single-photo-grid">
+            @if (PhotoUrls.Count == 0 || string.IsNullOrEmpty(PhotoUrls[0]))
+            {
+                <div class="photo-box add-box" @onclick="AddPhoto">
+                    <div class="add-box-content">
+                        <div class="upload-icon-box">
+                            <MudIcon Icon="@Icons.Material.Filled.Add" Class="upload-icon" />
+                        </div>
+                        <div class="upload-text">Add Cover Photo</div>
+                    </div>
+                </div>
+            }
+        <div class="photo-box add-box @(string.IsNullOrEmpty(PhotoUrls[0]) ? "" : "has-image")" style="height: 180px;">
+            @if (!string.IsNullOrEmpty(PhotoUrls[0]))
+            {
+                <div>
+                    <img src="@PhotoUrls[0]" class="uploaded-image" style="height: 100%; object-fit: cover;" />
+                    <MudIconButton Icon="@Icons.Material.Rounded.DeleteOutline" Class="delete-icon"
+                                   OnClick="@(() => RemovePhoto(0))" />
+                </div>
+            }
+            else
+            {
+                <label class="upload-label">
+                    <InputFile OnChange="@(e => OnInputFileChanged(e, 0))" accept="image/*" class="file-input" />
+                    <div class="upload-content">
+                        <div class="upload-icon-box">
+                            <MudIcon Icon="@Icons.Material.Filled.Add" Class="upload-icon" />
+                        </div>
+                        <div class="upload-text">Upload Cover Photo</div>
+                    </div>
+                </label>
+            }
+
+            <div class="cover-label">Cover Photo</div>
+        </div>
+        </div>
+    }
+    else
+    {
     <div id="sortable-grid" class="photo-grid">
         @for (int i = 0; i < PhotoUrls.Count; i++)
         {
@@ -61,11 +116,21 @@
             </div>
         }
     </div>
+    }
 </div>
 
 @code {
     [Parameter]
-    public List<string> PhotoUrls { get; set; } = new();
+    public List<string> PhotoUrls { get; set; } = new() { "", "", "", "", "", "" };
+
+        [Parameter] public string selectedVertical { get; set; } = "default";
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+    if (firstRender)
+    {
+        await JS.InvokeVoidAsync("initSortable", "sortable-grid", DotNetObjectReference.Create(this));
+    }
+}
 
     private async Task OnInputFileChanged(InputFileChangeEventArgs e, int index)
     {
@@ -88,7 +153,7 @@
             }
         }
     }
-
+  
     private void AddPhoto()
     {
         if (PhotoUrls.Count < 9)

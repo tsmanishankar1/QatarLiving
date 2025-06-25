@@ -49,7 +49,8 @@ namespace QLN.Web.Shared.Pages.Classifieds.Landing.Components
 
                 foreach (var item in selectedVideos)
                 {
-                    bool isReachable = await IsUrlReachableAsync(item.ImageUrl);
+                     string? embedUrl = GetEmbeddableYouTubeUrl(item.ImageUrl);
+                    bool isReachable = await IsUrlReachableAsync(embedUrl);
                     // Logger.LogInformation("Video URL: {Url} - Valid: {IsValid}", item.ImageUrl, isReachable);
 
                     VideoCards.Add(new VideoCard
@@ -62,6 +63,33 @@ namespace QLN.Web.Shared.Pages.Classifieds.Landing.Components
                 }
             }
         }
+private string? GetEmbeddableYouTubeUrl(string? url)
+{
+    if (string.IsNullOrWhiteSpace(url))
+        return null;
+
+    var uri = new Uri(url);
+    var segments = uri.Segments;
+
+    if (uri.Host.Contains("youtube.com") && segments.Length > 1)
+    {
+        // Handle Shorts
+        if (segments[1].Trim('/').Equals("shorts", StringComparison.OrdinalIgnoreCase) && segments.Length > 2)
+        {
+            var videoId = segments[2].Trim('/');
+            return $"https://www.youtube.com/embed/{videoId}";
+        }
+
+        // Handle watch?v= format
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        if (query.TryGetValue("v", out var videoIdParam))
+        {
+            return $"https://www.youtube.com/embed/{videoIdParam}";
+        }
+    }
+
+    return url; // fallback, might be direct embed URL already
+}
 
 
         private async Task<bool> IsUrlReachableAsync(string? url)

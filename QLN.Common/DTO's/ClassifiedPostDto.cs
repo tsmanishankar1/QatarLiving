@@ -2,7 +2,6 @@ namespace QLN.Common.DTO_s
 {
     public class ClassifiedPostDto
     {
-        public string Id { get; set; }
         public string SubVertical { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
@@ -46,6 +45,9 @@ namespace QLN.Common.DTO_s
         public bool TearmsAndCondition { get; set; }
         public int Status { get; set; }
         public string AcceptsOffers { get; set; }
+         public string FlyerFile { get; set; }
+    public string FlyerName { get; set; }
+    public string XmlLink { get; set; }
     }
 
     public class AdImageDto
