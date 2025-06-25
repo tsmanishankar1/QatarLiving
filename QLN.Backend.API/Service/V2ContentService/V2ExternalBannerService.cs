@@ -1,15 +1,10 @@
 ﻿using Dapr.Client;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
-using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Utilities;
 using System.Net;
-using System.Text;
-using System.Text.Json;
 
 namespace QLN.Backend.API.Service.V2ContentService
 {
@@ -40,7 +35,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             return userId?.ToString() ?? throw new UnauthorizedAccessException("User ID not found in token.");
         }
 
-        public async Task<BannerResponse> SaveBannerAsync(BannerCreateRequest dto, string userId = null, CancellationToken ct = default)
+        public async Task<BannerResponse> SaveBannerAsync(BannerCreateRequest dto, string? userId = null, CancellationToken ct = default)
         {
             try
             {
@@ -95,7 +90,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-        public async Task<BannerResponse> UpdateBannerAsync(BannerUpdateRequest dto, string userId = null, CancellationToken ct = default)
+        public async Task<BannerResponse> UpdateBannerAsync(BannerUpdateRequest dto, string? userId = null, CancellationToken ct = default)
         {
             try
             {

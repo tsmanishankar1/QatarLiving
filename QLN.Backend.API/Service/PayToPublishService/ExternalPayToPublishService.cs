@@ -205,7 +205,8 @@ namespace QLN.Backend.API.Service.PayToPublishService
             _logger.LogInformation("Searching for plans with Vertical: {Vertical} ({VerticalId}), Category: {Category} ({CategoryId}). Total plans in memory: {TotalPlans}",
                 verticalEnum, verticalTypeId, categoryEnum, categoryId, planIds.Count);
 
-            if (!planIds.Any())
+            // Moved from any to count, as it's more efficient to check if there are any plans before proceeding
+            if (planIds.Count == 0)
             {
                 _logger.LogWarning("No plans found in memory. Make sure plans are created before trying to retrieve them.");
                 return resultList;
@@ -447,17 +448,13 @@ namespace QLN.Backend.API.Service.PayToPublishService
 
         public async Task<Guid> CreatePaymentsAsync(PaymentRequestDto request, Guid userId, CancellationToken cancellationToken = default)
         {
-            if (request == null) throw new ArgumentNullException(nameof(request));
+            ArgumentNullException.ThrowIfNull(request);
 
             var id = Guid.NewGuid();
             var startDate = DateTime.UtcNow;
 
             var payToPublishActor = GetActorProxy(request.PayToPublishId);
-            var payToPublishData = await payToPublishActor.GetDataAsync(cancellationToken);
-
-            if (payToPublishData == null)
-                throw new Exception($"PayToPublish data not found for ID: {request.PayToPublishId}");
-
+            var payToPublishData = await payToPublishActor.GetDataAsync(cancellationToken) ?? throw new Exception($"PayToPublish data not found for ID: {request.PayToPublishId}");
             var endDate = GetEndDateByDurationEnum(startDate, payToPublishData.Duration);
 
             var dto = new PaymentDto

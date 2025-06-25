@@ -1,5 +1,4 @@
 ﻿using Dapr.Actors.Runtime;
-using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IAddonService;
 using static QLN.Common.DTO_s.AddonDto;
 
@@ -18,7 +17,7 @@ namespace QLN.Backend.Actor.ActorClass
 
         public async Task<bool> SetAddonDataAsync(AddonDataDto data, CancellationToken cancellationToken = default)
         {
-            if (data == null) throw new ArgumentNullException(nameof(data));
+            ArgumentNullException.ThrowIfNull(data);
 
             _logger.LogInformation("[AddonActor {ActorId}] SetAddonDataAsync called", Id);
 

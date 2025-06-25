@@ -1,5 +1,4 @@
-﻿using Dapr.Actors;
-using Dapr.Actors.Runtime;
+﻿using Dapr.Actors.Runtime;
 using Dapr.Client;
 using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.IService.ISubscriptionService;
@@ -29,7 +28,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
         public async Task<bool> SetDataAsync(PaymentTransactionDto data, CancellationToken cancellationToken = default)
         {
-            if (data == null) throw new ArgumentNullException(nameof(data));
+            ArgumentNullException.ThrowIfNull(data);
 
             _logger.LogInformation("[PaymentActor {ActorId}] SetDataAsync called", Id);
 

@@ -1,9 +1,7 @@
 ﻿using Dapr.Actors;
 using Dapr.Actors.Client;
-using Google.Protobuf.WellKnownTypes;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IAddonService;
-using QLN.Common.Infrastructure.IService.IPayToPublicActor;
 using System.Collections.Concurrent;
 using static QLN.Common.DTO_s.AddonDto;
 
@@ -73,7 +71,7 @@ namespace QLN.Backend.API.Service.AddonService
 
         public async Task<Quantities> CreateQuantityAsync(CreateQuantityRequest request)
         {
-            if (request == null) throw new ArgumentNullException(nameof(request));
+            ArgumentNullException.ThrowIfNull(request);
 
             var data = await GetOrCreateAddonDataAsync();
 
@@ -96,7 +94,7 @@ namespace QLN.Backend.API.Service.AddonService
         }
         public async Task<Currency> CreateCurrencyAsync(CreateCurrencyRequest request)
         {
-            if (request == null) throw new ArgumentNullException(nameof(request));
+            ArgumentNullException.ThrowIfNull(request);
 
             var data = await GetOrCreateAddonDataAsync();
 
@@ -119,7 +117,7 @@ namespace QLN.Backend.API.Service.AddonService
         }
         public async Task<UnitCurrency> CreatequantityCurrencyAsync(CreateUnitCurrencyRequest request)
         {
-            if (request == null) throw new ArgumentNullException(nameof(request));
+            ArgumentNullException.ThrowIfNull(request);
 
             var data = await GetOrCreateAddonDataAsync();
 
@@ -167,16 +165,13 @@ namespace QLN.Backend.API.Service.AddonService
 
         public async Task<Guid> CreateAddonPaymentsAsync(PaymentAddonRequestDto request,Guid userId,CancellationToken cancellationToken = default)
         {
-            if (request == null) throw new ArgumentNullException(nameof(request));
+            ArgumentNullException.ThrowIfNull(request);
 
             var id = Guid.NewGuid();
             var startDate = DateTime.UtcNow;
             var addonData = await GetOrCreateAddonDataAsync(cancellationToken);
             var unitCurrency = addonData.QuantitiesCurrencies
-                .FirstOrDefault(x => x.Id == request.AddonId);
-
-            if (unitCurrency == null)
-                throw new Exception($"UnitCurrency not found for Addon ID: {request.AddonId}");
+                .FirstOrDefault(x => x.Id == request.AddonId) ?? throw new Exception($"UnitCurrency not found for Addon ID: {request.AddonId}");
             var endDate = GetEndDateByAddonDuration(startDate, unitCurrency.Duration);
 
             var dto = new AddonPaymentDto

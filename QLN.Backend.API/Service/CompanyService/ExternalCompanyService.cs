@@ -8,7 +8,6 @@ using QLN.Common.Infrastructure.IService.IEmailService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Utilities;
-using System.ComponentModel.Design;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -70,7 +69,7 @@ namespace QLN.Backend.API.Service.CompanyService
 
                 if (response.StatusCode == HttpStatusCode.BadRequest)
                 {
-                    var errorJson = await response.Content.ReadAsStringAsync();
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
                     string errorMessage;
                     try
@@ -88,7 +87,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 }
                 response.EnsureSuccessStatusCode();
 
-                var rawJson = await response.Content.ReadAsStringAsync();
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
             }
             catch (Exception ex)
@@ -185,7 +184,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
                 if (response.StatusCode == HttpStatusCode.BadRequest)
                 {
-                    var errorJson = await response.Content.ReadAsStringAsync();
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
                     string errorMessage;
                     try
@@ -203,7 +202,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 }
                 response.EnsureSuccessStatusCode();
 
-                var rawJson = await response.Content.ReadAsStringAsync();
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
             }
             catch (Exception ex)
@@ -235,13 +234,13 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<List<CompanyProfileCompletionStatusDto>> GetCompanyProfileCompletionStatus(
+        public async Task<List<CompanyProfileCompletionStatusDto?>> GetCompanyProfileCompletionStatus(
             Guid userId, VerticalType vertical, CancellationToken cancellationToken = default)
         {
             try
             {
                 var url = $"/api/companyprofile/completionstatusbyuserId?userId={userId}&vertical={vertical}";
-                var response = await _dapr.InvokeMethodAsync<List<CompanyProfileCompletionStatusDto>>(
+
                 var response = await _dapr.InvokeMethodAsync<List<CompanyProfileCompletionStatusDto?>>(
                     HttpMethod.Get,
                     ConstantValues.CompanyServiceAppId,
@@ -265,14 +264,8 @@ namespace QLN.Backend.API.Service.CompanyService
             try
             {
                 var allCompanies = await GetAllCompanies(cancellationToken);
-                var company = allCompanies.FirstOrDefault(c => c.Id == dto.CompanyId);
-
-                if (company == null)
-                    throw new KeyNotFoundException($"Company with ID {dto.CompanyId} not found.");
-
-                var user = await _userManager.FindByIdAsync(company.UserId.ToString());
-                if (user == null)
-                    throw new KeyNotFoundException($"User with ID {company.UserId} not found.");
+                var company = allCompanies.FirstOrDefault(c => c.Id == dto.CompanyId) ?? throw new KeyNotFoundException($"Company with ID {dto.CompanyId} not found.");
+                var user = await _userManager.FindByIdAsync(company.UserId.ToString()) ?? throw new KeyNotFoundException($"User with ID {company.UserId} not found.");
 
                 if (user.IsCompany == true && company.IsVerified == true)
                     throw new InvalidDataException("Company is already marked as approved.");
@@ -295,7 +288,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
                 if (response.StatusCode == HttpStatusCode.BadRequest)
                 {
-                    var errorJson = await response.Content.ReadAsStringAsync();
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
                     string errorMessage;
                     try
@@ -325,7 +318,8 @@ namespace QLN.Backend.API.Service.CompanyService
                     var htmlBody = _emailSender.GetApprovalEmailTemplate(company.BusinessName);
                     await _emailSender.SendEmail(company.Email, subject, htmlBody);
                 }
-                var rawJson = await response.Content.ReadAsStringAsync();
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
             }
             catch (KeyNotFoundException ex)
@@ -384,6 +378,8 @@ namespace QLN.Backend.API.Service.CompanyService
                 }
 
                 var json = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                // TODO: Possibly create this once and reuse it, not creating a new instance every time
                 return JsonSerializer.Deserialize<List<CompanyProfileVerificationStatusDto>>(json, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true

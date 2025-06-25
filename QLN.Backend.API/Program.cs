@@ -33,6 +33,20 @@ using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.Wishlist;
 var builder = WebApplication.CreateBuilder(args);
 
+#region Kestrel For Dev Testing via dapr.yaml
+if (builder.Environment.IsDevelopment())
+{
+    builder.WebHost.ConfigureKestrel(options =>
+    {
+        options.ListenAnyIP(5200); // HTTP
+        options.ListenAnyIP(7161, listenOptions =>
+        {
+            listenOptions.UseHttps(); // HTTPS
+        });
+    });
+}
+#endregion
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 

@@ -12,7 +12,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 {
     private readonly ILogger<ExternalSubscriptionService> _logger;
     private static readonly ConcurrentDictionary<Guid, byte> _paymentTransactionIds = new();
-    private static readonly ConcurrentDictionary<Guid, byte> _subscriptionIds = new ConcurrentDictionary<Guid, byte>();
+    private static readonly ConcurrentDictionary<Guid, byte> _subscriptionIds = new();
     private static readonly ConcurrentDictionary<Guid, byte> _subscriptionId = new();
     private readonly RoleManager<IdentityRole<Guid>> _roleManager;
     private readonly UserManager<ApplicationUser> _userManager;
@@ -83,7 +83,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
     public async Task CreateSubscriptionAsync(SubscriptionRequestDto request, CancellationToken cancellationToken = default)
     {
-        if (request == null) throw new ArgumentNullException(nameof(request));
+        ArgumentNullException.ThrowIfNull(request);
 
         var id = Guid.NewGuid();
 
@@ -174,8 +174,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
     public async Task<bool> UpdateSubscriptionAsync(Guid subscriptionId, SubscriptionRequestDto request, CancellationToken cancellationToken)
     {
-        if (request == null)
-            throw new ArgumentNullException(nameof(request));
+        ArgumentNullException.ThrowIfNull(request);
 
         var dto = new SubscriptionDto
         {
@@ -242,7 +241,22 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         }
     }
 
+    // TODO: Test this replacement instead of the current that has the foreach
+    //private async Task<SubscriptionDto?> GetSubscriptionByIdAsync(Guid subscriptionId, CancellationToken cancellationToken)
+    //{
+    //    if (subscriptionId == Guid.Empty) return null;
 
+    //    var actor = GetActorProxy(subscriptionId);
+
+    //    var dto = await actor.GetDataAsync(cancellationToken);
+
+    //    // Return the DTO only if it's not expired
+    //    if (dto != null && dto.StatusId != Status.Expired)
+    //    {
+    //        return dto;
+    //    }
+    //    return null;
+    //}
 
     private async Task<SubscriptionDto?> GetSubscriptionByIdAsync(Guid subscriptionId, CancellationToken cancellationToken)
     {
@@ -267,7 +281,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
      Guid userId,
      CancellationToken cancellationToken = default)
     {
-        if (request == null) throw new ArgumentNullException(nameof(request));
+        ArgumentNullException.ThrowIfNull(request);
 
         var id = Guid.NewGuid();
         var startDate = DateTime.UtcNow;
@@ -294,10 +308,8 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         }
 
         var subscriptionActor = GetActorProxy(request.SubscriptionId);
-        var subscriptionData = await subscriptionActor.GetDataAsync(cancellationToken);
-
-        if (subscriptionData == null)
-            throw new Exception($"Subscription data not found for ID: {request.SubscriptionId}");
+        
+        var subscriptionData = await subscriptionActor.GetDataAsync(cancellationToken) ?? throw new Exception($"Subscription data not found for ID: {request.SubscriptionId}");
 
         if (!Enum.TryParse<DurationType>(subscriptionData.Duration.ToString(), out var durationEnum))
             throw new Exception($"Invalid subscription duration: {subscriptionData.Duration}");
@@ -370,9 +382,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 throw new Exception("Failed to create Subscriber role.");
         }
 
-        var user = await _userManager.FindByIdAsync(userId.ToString());
-        if (user == null)
-            throw new Exception($"User not found with ID: {userId}");
+        var user = await _userManager.FindByIdAsync(userId.ToString()) ?? throw new Exception($"User not found with ID: {userId}");
 
         var currentRoles = await _userManager.GetRolesAsync(user);
 

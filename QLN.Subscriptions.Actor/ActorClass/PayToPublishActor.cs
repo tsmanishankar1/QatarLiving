@@ -1,7 +1,6 @@
 ﻿using Dapr.Actors.Runtime;
 using global::QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IPayToPublicActor;
-using QLN.Common.Infrastructure.IService.ISubscriptionService;
 
 
 namespace QLN.Subscriptions.Actor.ActorClass
@@ -19,7 +18,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
         public async Task<bool> SetDataAsync(PayToPublishDto data, CancellationToken cancellationToken = default)
         {
-            if (data == null) throw new ArgumentNullException(nameof(data));
+            ArgumentNullException.ThrowIfNull(data);
 
             _logger.LogInformation("[PayToPublishActor {ActorId}] SetDataAsync called", Id);
 
