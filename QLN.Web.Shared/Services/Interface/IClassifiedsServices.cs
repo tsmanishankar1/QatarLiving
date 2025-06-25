@@ -26,7 +26,7 @@ namespace QLN.Web.Shared.Services.Interface
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetAllCategoryTreesAsync(string vertical);
 
-        Task<HttpResponseMessage?> PostClassifiedItemAsync(string vertical, object payload);
+        Task<HttpResponseMessage?> PostClassifiedItemAsync(string vertical, object payload ,string authToken);
        
        /// <summary>
         /// Gets a classified along with similar items by ID and page size.

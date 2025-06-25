@@ -11,13 +11,13 @@
     <div Class="form-container">
         <MudGrid GutterSize="24px">
             <MudItem xs="12" md="5">
-                <CreateFormList TItem="string" @ref="formRef" CategoryTrees="CategoryTrees" CategoryChanged="HandleCategoryChanged" />
+                <CreateFormList TItem="string" adPostModel="adPostModel"  CategoryTrees="CategoryTrees" CategoryChanged="HandleCategoryChanged" />
             </MudItem>
 
             <MudItem xs="12" md="7">
                 @if (!string.IsNullOrWhiteSpace(selectedVertical))
                 {
-                    <UploadPhotos @ref="photoRef" />
+                    <UploadPhotos PhotoUrls="@photoUrls"  />
                 }
             </MudItem>
         </MudGrid>

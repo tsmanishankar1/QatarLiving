@@ -71,11 +71,13 @@ namespace QLN.Web.Shared.Services
             }
         }
             
-            public async Task<HttpResponseMessage?> PostClassifiedItemAsync(string vertical, object payload)
+            public async Task<HttpResponseMessage?> PostClassifiedItemAsync(string vertical, object payload,string authToken)
             {
                 try
                 {
                     var endpoint = $"/api/classified/{vertical}/post";
+                    _httpClient.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authToken);
                     var response = await _httpClient.PostAsJsonAsync(endpoint, payload);
                     return response;
                 }
