@@ -12,24 +12,45 @@ namespace QLN.ContentBO.WebUI.Components.News
         [Inject] INewsService newsService { get; set; }
         [Inject] ILogger<AddArticleBase> Logger { get; set; }
         [Inject] IJSRuntime JS { get; set; }
-        protected V2ContentNewsDto article { get; set; } = new();
+        protected NewsArticleDTO article { get; set; } = new();
 
-        protected List<string> Categories = [];
-        protected List<string> Subcategories = [];
-        protected List<string> Slots = [];
-        protected List<string> Writers = [];
+        protected List<NewsCategory> Categories = [];
+        protected List<Slot> Slots = [];
+        protected List<string> WriterTags = [];
 
         protected MudExRichTextEdit Editor;
 
+        protected ArticleCategory Category { get; set; } = new();
+
+        protected List<ArticleCategory> TempCategoryList { get; set; } = [];
+
         protected override async Task OnInitializedAsync()
         {
+            Categories = await GetNewsCategories();
+            Slots = await GetSlots();
+            WriterTags = await GetWriterTags();
+        }
 
+        protected void AddCategory()
+        {
+            TempCategoryList.Add(Category);
+            Category = new();
+        }
+
+        protected void RemoveCategory(ArticleCategory articleCategory)
+        {
+            if(TempCategoryList.Count > 0)
+            {
+                TempCategoryList.Remove(articleCategory);
+                Category = new();
+            }
         }
 
         protected async Task HandleValidSubmit()
         {
             try
             {
+                article.Categories = TempCategoryList;
                 var response = await newsService.CreateArticle(article);
             }
             catch (Exception ex)
@@ -61,6 +82,63 @@ namespace QLN.ContentBO.WebUI.Components.News
         protected void Cancel()
         {
 
+        }
+
+        private async Task<List<NewsCategory>> GetNewsCategories()
+        {
+            try
+            {
+                var apiResponse = await newsService.GetNewsCategories();
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    return await apiResponse.Content.ReadFromJsonAsync<List<NewsCategory>>() ?? [];
+                }
+
+                return [];
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetNewsCategories");
+                return [];
+            }
+        }
+
+        private async Task<List<Slot>> GetSlots()
+        {
+            try
+            {
+                var apiResponse = await newsService.GetSlots();
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    return await apiResponse.Content.ReadFromJsonAsync<List<Slot>>() ?? [];
+                }
+
+                return [];
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetSlots");
+                return [];
+            }
+        }
+
+        private async Task<List<string>> GetWriterTags()
+        {
+            try
+            {
+                var apiResponse = await newsService.GetWriterTags();
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    return await apiResponse.Content.ReadFromJsonAsync<List<string>>() ?? [];
+                }
+
+                return [];
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetWriterTags");
+                return [];
+            }
         }
     }
 }

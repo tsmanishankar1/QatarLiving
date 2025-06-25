@@ -98,10 +98,12 @@
                                     }
                                     else
                                     {
-                                        @if (!string.IsNullOrWhiteSpace(topNewsSlot?.Category))
+                                      @*
+                                           @if (!string.IsNullOrWhiteSpace(topNewsSlot?.Category))
                                         {
                                             <span class="category-style">@topNewsSlot?.Category</span>
                                         }
+                                      *@ 
                                         <h2 class="main-title-style">@topNewsSlot.Title</h2>
                                         <div class="author-wrapper">
                                             <div class="main-author">
@@ -495,7 +497,15 @@
         font-weight: 600;
         font-size: 25px;
         color: var(--color-text-heading);
+        padding-top: 12px;
     }
+
+        .main-title-style:hover {
+            cursor: pointer;
+            text-decoration: underline;
+            color: var(--color-primary) !important;
+        }
+
 
     .main-author {
         font-family: 'Public Sans', sans-serif;
@@ -519,9 +529,18 @@
         box-sizing: border-box;
     }
 
+    .main-content{
+        aspect-ratio: 16 / 9;
+        width: 100%;
+    }
+
+    .main-content:hover {
+        cursor: pointer;
+    }
 
     .main-category {
         border: 1px solid #F0F0F0;
+        width:100%;
         border-radius: 8px;
         padding: 16px;
         box-sizing: border-box;
@@ -556,8 +575,13 @@
 
     .main-image {
         width: 100%;
-        height: auto;
+        height: 100%;
+        object-fit: cover;
         border-radius: 6px;
+    }
+
+        .main-image:hover {
+        cursor: pointer;
     }
 
     .carousel-padding {

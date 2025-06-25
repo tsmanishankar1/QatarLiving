@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.Json.Serialization;
 
 namespace QLN.Common.DTO_s
 {
@@ -18,5 +19,8 @@ namespace QLN.Common.DTO_s
         public string? ImageUrl { get; set; }
         public bool IsActive { get; set; }
         public IEnumerable<PopularSearchDto> Children { get; set; } = Enumerable.Empty<PopularSearchDto>();
+        
+        [JsonIgnore]
+        public bool IsExpanded { get; set; } = false;
     }
 }

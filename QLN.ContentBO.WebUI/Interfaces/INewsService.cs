@@ -1,11 +1,20 @@
-﻿
-using QLN.ContentBO.WebUI.Models;
+﻿using QLN.ContentBO.WebUI.Models;
 
 namespace QLN.ContentBO.WebUI.Interfaces
 {
     public interface INewsService
     {
-        Task<HttpResponseMessage> GetAllArticle(int id);
-        Task<HttpResponseMessage> CreateArticle(V2ContentNewsDto newsArticle);
+        Task<HttpResponseMessage> GetAllArticles();
+        
+        Task<HttpResponseMessage> CreateArticle(NewsArticleDTO newsArticle);
+
+        Task<HttpResponseMessage> UpdateArticle(NewsArticleDTO newsArticle);
+
+        Task<HttpResponseMessage> GetNewsCategories();
+        
+        Task<HttpResponseMessage> GetWriterTags();
+
+        Task<HttpResponseMessage> GetSlots();
+
     }
 }

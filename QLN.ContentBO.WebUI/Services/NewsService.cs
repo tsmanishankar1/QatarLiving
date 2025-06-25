@@ -15,7 +15,7 @@ namespace QLN.ContentBO.WebUI.Services
 
         }
 
-        public async Task<HttpResponseMessage> CreateArticle(V2ContentNewsDto newsArticle)
+        public async Task<HttpResponseMessage> CreateArticle(NewsArticleDTO newsArticle)
         {
             try
             {
@@ -42,6 +42,31 @@ namespace QLN.ContentBO.WebUI.Services
                 Logger.LogError(ex, "GetAllArticle");
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
+        }
+
+        public Task<HttpResponseMessage> GetAllArticles()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<HttpResponseMessage> GetNewsCategories()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<HttpResponseMessage> GetSlots()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<HttpResponseMessage> GetWriterTags()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<HttpResponseMessage> UpdateArticle(NewsArticleDTO newsArticle)
+        {
+            throw new NotImplementedException();
         }
     }
 }

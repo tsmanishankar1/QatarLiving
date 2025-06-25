@@ -2,6 +2,7 @@ using MudBlazor.Services;
 using NLog;
 using NLog.Web;
 using QLN.ContentBO.WebUI.Interfaces;
+using QLN.ContentBO.WebUI.MockServices;
 using QLN.ContentBO.WebUI.Services;
 
 // Early init of NLog to allow startup and exception logging, before host is built
@@ -21,7 +22,7 @@ try
     builder.Services.AddServerSideBlazor();
     builder.Services.AddMudServices();
 
-    builder.Services.AddHttpClient<INewsService, NewsService>(client =>
+    builder.Services.AddHttpClient<INewsService, NewsMockService>(client =>
     {
         client.BaseAddress = new Uri(contentBOAPIURL);
     });

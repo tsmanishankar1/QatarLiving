@@ -1,23 +1,16 @@
 using Microsoft.AspNetCore.Components;
-using System.Collections.Generic;
+using QLN.Common.DTO_s;
 
 namespace QLN.Web.Shared.Components.PopularSearchList
 {
     public partial class PopularSearchList : ComponentBase
     {
         [Parameter] public string Title { get; set; } = "Popular Searches";
-        [Parameter] public List<PopularSearchItem> Items { get; set; } = new();
+        [Parameter] public List<PopularSearchDto> Items { get; set; } = new();
 
-        protected void Toggle(PopularSearchItem item)
+        protected void Toggle(PopularSearchDto item)
         {
-            item.Expanded = !item.Expanded;
-        }
-
-        public class PopularSearchItem
-        {
-            public string Question { get; set; }
-            public List<string> AnswerList { get; set; } = new();
-            public bool Expanded { get; set; } = false;
+            item.IsExpanded = !item.IsExpanded;
         }
     }
 }
