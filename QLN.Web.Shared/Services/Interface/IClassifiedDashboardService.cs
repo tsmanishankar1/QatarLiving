@@ -6,7 +6,7 @@ namespace QLN.Web.Shared.Services.Interface
     public interface IClassifiedDashboardService
     {
         Task<ItemDashboardResponse?> GetItemDashboard(string authToken);
-        Task<ItemDashboardResponse?> GetPreLovedDashboard(string authToken);
+        Task<PreLovedDashboardResponse?> GetPreLovedDashboard(string authToken);
 
     }
 }

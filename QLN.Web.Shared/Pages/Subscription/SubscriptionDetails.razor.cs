@@ -161,6 +161,57 @@ namespace QLN.Web.Shared.Pages.Subscription
             [JsonPropertyName("itemsAds")]
             public ItemsAds ItemsAds { get; set; }
         }
+        public class PreLovedDashboardResponse
+        {
+            [JsonPropertyName("prelovedDashboard")]
+            public PreLovedDashboard preLovedDashboard { get; set; }
+
+            [JsonPropertyName("prelovedAds")]
+            public ItemsAds ItemsAds { get; set; }
+        }
+
+        public class PreLovedDashboard
+        {
+            [JsonPropertyName("publishedAds")]
+            public int PublishedAds { get; set; }
+
+            [JsonPropertyName("promotedAds")]
+            public int PromotedAds { get; set; }
+
+            [JsonPropertyName("featuredAds")]
+            public int FeaturedAds { get; set; }
+
+            [JsonPropertyName("refreshes")]
+            public int Refreshes { get; set; }
+
+            [JsonPropertyName("remainingRefreshes")]
+            public int RemainingRefreshes { get; set; }
+
+            [JsonPropertyName("totalAllowedRefreshes")]
+            public int TotalAllowedRefreshes { get; set; }
+
+          
+            [JsonPropertyName("impressions")]
+            public int Impressions { get; set; }
+
+            [JsonPropertyName("views")]
+            public int Views { get; set; }
+
+            [JsonPropertyName("whatsAppClicks")]
+            public int WhatsAppClicks { get; set; }
+
+            [JsonPropertyName("calls")]
+            public int Calls { get; set; }
+        }
+
+        public class PreLovedDashboardAds
+        {
+            [JsonPropertyName("publishedAds")]
+            public List<AdModal> PublishedAds { get; set; }
+
+            [JsonPropertyName("unpublishedAds")]
+            public List<AdModal> UnpublishedAds { get; set; }
+        }
 
         public class ItemsDashboard
         {

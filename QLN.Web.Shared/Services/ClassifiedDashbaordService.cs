@@ -47,19 +47,22 @@ namespace QLN.Web.Shared.Services
             }
         }
 
-        public async Task<ItemDashboardResponse?> GetPreLovedDashboard(string authToken)
+        public async Task<PreLovedDashboardResponse?> GetPreLovedDashboard(string authToken)
         {
+
             try
             {
                 var request = new HttpRequestMessage(HttpMethod.Get, "api/classified/prelovedAd-dashboard");
                 request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authToken);
+                
+                _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authToken);   
 
-                var response = await _httpClient.SendAsync(request);
+                var response = await _httpClient.GetAsync("api/classified/prelovedAd-dashboard");
 
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
-                    var result = JsonSerializer.Deserialize<ItemDashboardResponse>(json, new JsonSerializerOptions
+                    var result = JsonSerializer.Deserialize<PreLovedDashboardResponse>(json, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
