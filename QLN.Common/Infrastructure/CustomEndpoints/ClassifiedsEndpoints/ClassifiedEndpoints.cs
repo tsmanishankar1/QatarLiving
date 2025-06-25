@@ -18,6 +18,7 @@ using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Azure;
+using static QLN.Common.DTO_s.ClassifiedsIndex;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 {
@@ -870,6 +871,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedItems dto,
                 IClassifiedService service,
+                [FromServices]ISearchService svc,
                 CancellationToken token) =>
             {
                 try
@@ -887,6 +889,47 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     dto.UserId = userId;
                     var response = await service.CreateClassifiedItemsAd(dto, token);
+                    var classifiedsIndex = new ClassifiedsIndex
+                    {
+                        SubVertical = dto.SubVertical,
+                        Title = dto.Title,
+                        Description = dto.Description,
+                        CategoryId = dto.CategoryId.ToString(),
+                        Category = dto.Category,
+                        L1Category = dto.l1Category,
+                        L2Category = dto.L2Category,
+                        Price = (double?)dto.Price,
+                        PriceType = dto.PriceType,
+                        Location = dto.Location.FirstOrDefault(),
+                        PhoneNumber = dto.PhoneNumber,
+                        WhatsappNumber = dto.WhatsAppNumber,
+                        UserId = dto.UserId.ToString(),
+                        CreatedDate = DateTime.UtcNow,
+                        ModifiedDate = DateTime.UtcNow,
+                        Images = new List<ImageInfo>(),
+                        Make = dto.MakeType,
+                        Model = dto.Model,
+                        Brand = dto.Brand,
+                        Processor = dto.Processor,
+                        Ram = dto.Ram,
+                        SizeType = dto.Size,
+                        Size = dto.SizeValue,
+                        Status = "Active",
+                        StreetNumber = dto.StreetNumber,
+                        Zone = dto.Zone,
+                        Storage = dto.Capacity,
+                        BuildingNumber = dto.BuildingNumber,
+                        Colour = dto.Color,
+                        BatteryPercentage = dto.BatteryPercentage,
+                        ExpiryDate = dto.ExpiryDate,
+                        RefreshExpiryDate = dto.RefreshExpiry
+                    };
+                    var indexDocument = new CommonIndexRequest
+                    {
+                        VerticalName = ConstantValues.Verticals.Classifieds,
+                        ClassifiedsItem = classifiedsIndex
+                    };
+                    var msg = await svc.UploadAsync(indexDocument);
                     return TypedResults.Created($"/api/classifieds/items/user-ads-by-id/{response.AdId}", response);
 
                 }
@@ -1008,6 +1051,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedPreloved dto,
                 IClassifiedService service,
+                [FromServices] ISearchService svc,
                 CancellationToken token) =>
             {
                 try
@@ -1025,6 +1069,46 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     dto.UserId = userId;
                     var result = await service.CreateClassifiedPrelovedAd(dto, token);
+                    var prelovedIndex = new ClassifiedsIndex
+                    {
+                        SubVertical = dto.SubVertical,
+                        Title = dto.Title,
+                        Description = dto.Description,
+                        CategoryId = dto.CategoryId.ToString(),
+                        Category = dto.Category,
+                        L1Category = dto.l1Category,
+                        L2Category = dto.L2Category,
+                        Price = (double?)dto.Price,
+                        PriceType = dto.PriceType,
+                        Location = dto.Location.FirstOrDefault(),
+                        PhoneNumber = dto.PhoneNumber,
+                        WhatsappNumber = dto.WhatsAppNumber,
+                        UserId = dto.UserId.ToString(),
+                        CreatedDate = DateTime.UtcNow,
+                        ModifiedDate = DateTime.UtcNow,
+                        Images = new List<ImageInfo>(),
+                        Status = "Active",
+                        Model = dto.Model,
+                        Brand = dto.Brand,
+                        Processor = dto.Processor,
+                        Ram = dto.Ram,
+                        SizeType = dto.Size,
+                        Size = dto.SizeValue,
+                        StreetNumber = dto.StreetNumber,
+                        Zone = dto.Zone,
+                        Storage = dto.Capacity,
+                        BuildingNumber = dto.BuildingNumber,
+                        Colour = dto.Color,
+                        BatteryPercentage = dto.BatteryPercentage,
+                        ExpiryDate = dto.ExpiryDate,
+                        RefreshExpiryDate = dto.RefreshExpiry
+                    };
+                    var indexDocument = new CommonIndexRequest
+                    {
+                        VerticalName = ConstantValues.Verticals.Classifieds,
+                        ClassifiedsItem = prelovedIndex
+                    };
+                    var msg = await svc.UploadAsync(indexDocument);
 
                     return TypedResults.Created(
            $"/api/classifieds/preloved/user-ads-by-id/{result.AdId}", result);
@@ -1156,6 +1240,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedCollectibles dto,
                 IClassifiedService service,
+                [FromServices]ISearchService svc,
                 CancellationToken token) =>
             {
                 try
@@ -1173,6 +1258,41 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     dto.UserId = userId;
                     var result = await service.CreateClassifiedCollectiblesAd(dto, token);
+                    var collectiblesIndex = new ClassifiedsIndex
+                    {
+                        SubVertical = dto.SubVertical,
+                        Title = dto.Title,
+                        Description = dto.Description,
+                        CategoryId = dto.CategoryId.ToString(),
+                        Category = dto.Category,
+                        L1Category = dto.l1Category,
+                        L2Category = dto.L2Category,
+                        Price = (double?)dto.Price,
+                        PriceType = dto.PriceType,
+                        Location = dto.Location.FirstOrDefault(),
+                        PhoneNumber = dto.PhoneNumber,
+                        WhatsappNumber = dto.WhatsAppNumber,
+                        UserId = dto.UserId.ToString(),
+                        CreatedDate = DateTime.UtcNow,
+                        ModifiedDate = DateTime.UtcNow,
+                        Images = new List<ImageInfo>(),
+                        YearEra = dto.YearOrEra,
+                        Rarity = dto.Rarity,
+                        Material = dto.Material,
+                        Status = "Active",
+                        SerialNumber = dto.SerialNumber,
+                        SignedBy = dto.SignedBy,
+                        IsSigned = dto.Signed,
+                        ExpiryDate = dto.ExpiryDate,
+                        RefreshExpiryDate = dto.RefreshExpiry
+                    };
+                    var indexDocument = new CommonIndexRequest
+                    {
+                        VerticalName = ConstantValues.Verticals.Classifieds,
+                        ClassifiedsItem = collectiblesIndex
+                    };
+                    var msg = await svc.UploadAsync(indexDocument);
+
 
                     return TypedResults.Created(
                         $"/api/classifieds/collectibles/user-ads-by-id/{result.AdId}", result);
@@ -1275,6 +1395,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedDeals dto,
                 IClassifiedService service,
+                [FromServices]ISearchService svc,
                 CancellationToken token) =>
             {
                 try
@@ -1292,6 +1413,26 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     dto.UserId = userId;
                     var result = await service.CreateClassifiedDealsAd(dto, token);
+                    var dealsIndex = new ClassifiedsIndex
+                    {
+                        SubVertical = dto.SubVertical,
+                        Title = dto.Title,
+                        Description = dto.Description,
+                        Location = dto.Location.FirstOrDefault(),
+                        CreatedDate = DateTime.UtcNow,
+                        Images = new List<ImageInfo>(),
+                        Status = "Active",
+                        FlyerFileName = dto.FlyerName,
+                        FlyerXmlLink = dto.XMLLink,
+                        ExpiryDate = dto.ExpiryDate,
+                        RefreshExpiryDate = dto.RefreshExpiry
+                    };
+                    var indexDocument = new CommonIndexRequest
+                    {
+                        VerticalName = ConstantValues.Verticals.Classifieds,
+                        ClassifiedsItem = dealsIndex
+                    };
+                    var msg = await svc.UploadAsync(indexDocument);
 
                     return TypedResults.Created($"/api/classifieds/deals/user-ads-by-id/{result.AdId}", result);
 
