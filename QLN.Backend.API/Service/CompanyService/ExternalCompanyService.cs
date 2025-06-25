@@ -242,6 +242,7 @@ namespace QLN.Backend.API.Service.CompanyService
             {
                 var url = $"/api/companyprofile/completionstatusbyuserId?userId={userId}&vertical={vertical}";
                 var response = await _dapr.InvokeMethodAsync<List<CompanyProfileCompletionStatusDto>>(
+                var response = await _dapr.InvokeMethodAsync<List<CompanyProfileCompletionStatusDto?>>(
                     HttpMethod.Get,
                     ConstantValues.CompanyServiceAppId,
                     url,
