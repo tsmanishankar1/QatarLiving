@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Logging;
 using QLN.Common.DTOs;
 using System.Security.Claims;
 
@@ -298,7 +299,117 @@ public static class SubscriptionEndpoints
 
         return group;
     }
-  
+    // Add this method to your PaymentEndpoint class
+
+    public static RouteGroupBuilder MapGetUserPaymentDetailsEndpoint(this RouteGroupBuilder group)
+    {
+        // Get user payment details endpoint
+        group.MapGet("/user-payments", async (
+            HttpContext context,
+            [FromServices] IExternalSubscriptionService service,
+            [FromServices] ILogger<IExternalSubscriptionService> logger,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)
+                                    ?? context.User.FindFirst("sub")
+                                    ?? context.User.FindFirst("userId");
+
+                if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+                {
+                    logger.LogWarning("Unauthorized access attempt - no valid user ID found in claims");
+                    return Results.Unauthorized();
+                }
+
+                logger.LogInformation("Retrieving payment details for user {UserId}", userId);
+
+                var paymentDetails = await service.GetUserPaymentDetailsAsync(userId, cancellationToken);
+
+                if (paymentDetails == null || paymentDetails.Count == 0)
+                {
+                    logger.LogInformation("No payment details found for user {UserId}", userId);
+                    return Results.Ok(paymentDetails);
+                }
+
+                return Results.Ok(paymentDetails);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                logger.LogWarning(ex, "No payment data found.");
+                return Results.NotFound(new ProblemDetails
+                {
+                    Title = "Payment Details Not Found",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status404NotFound
+                });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error retrieving payment details for user");
+                return Results.Problem(
+                    title: "Payment Details Retrieval Error",
+                    detail: "An internal error occurred while retrieving payment details.",
+                    statusCode: StatusCodes.Status500InternalServerError
+                );
+            }
+        })
+        .WithName("GetUserPaymentDetails")
+        .WithTags("Payment")
+        .WithSummary("Get user payment details")
+        .WithDescription("Retrieves all payment transactions and corresponding subscription details for the authenticated user.")
+        .Produces<object>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+     
+        group.MapGet("/user-payments/{userId:guid}", async (
+          Guid userId,
+          [FromServices] IExternalSubscriptionService service,
+          [FromServices] ILogger<IExternalSubscriptionService> logger,
+          CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                logger.LogInformation("Retrieving payment details for user {UserId}", userId);
+
+                var paymentDetails = await service.GetUserPaymentDetailsAsync(userId, cancellationToken);
+
+                if (paymentDetails == null || !paymentDetails.Any())
+                {
+                    logger.LogInformation("No payment details found for user {UserId}", userId);
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "No Payment Records Found",
+                        Detail = $"No payment records exist for user with ID {userId}.",
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+
+                return Results.Ok(paymentDetails);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error retrieving payment details for user {UserId}", userId);
+                return Results.Problem(
+                    title: "Payment Retrieval Error",
+                    detail: "An internal error occurred while retrieving payment records.",
+                    statusCode: StatusCodes.Status500InternalServerError
+                );
+            }
+        })
+      .WithName("GetAllUserPayments")
+      .WithTags("Payment")
+      .WithSummary("Get all payments by user ID")
+      .WithDescription("Retrieves all payment transactions and subscription details for the specified user ID.")
+      .Produces<object>(StatusCodes.Status200OK)
+      .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+      .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        return group;
+    }
+
 
 }
 

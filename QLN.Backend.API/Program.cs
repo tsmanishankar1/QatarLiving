@@ -9,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using QLN.Backend.API.ServiceConfiguration;
 using QLN.Common.Infrastructure.CustomEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
@@ -31,6 +32,20 @@ using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
 
 using QLN.Common.Infrastructure.CustomEndpoints.Wishlist;
 var builder = WebApplication.CreateBuilder(args);
+
+#region Kestrel For Dev Testing via dapr.yaml
+if (builder.Environment.IsDevelopment())
+{
+    builder.WebHost.ConfigureKestrel(options =>
+    {
+        options.ListenAnyIP(5200); // HTTP
+        options.ListenAnyIP(7161, listenOptions =>
+        {
+            listenOptions.UseHttps(); // HTTPS
+        });
+    });
+}
+#endregion
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -203,10 +218,18 @@ builder.Services.EventConfiguration(builder.Configuration);
 builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
 builder.Services.ContentConfiguration(builder.Configuration);
-
+builder.Services.AddonConfiguration(builder.Configuration);
 var app = builder.Build();
 
-app.UseResponseCaching();
+#region DAPR Subscriptions
+
+app.UseCloudEvents();
+
+app.MapSubscribeHandler();
+
+#endregion
+
+app.UseResponseCaching();                
 
 if (!app.Environment.IsDevelopment())
 {
@@ -248,15 +271,20 @@ var analyticGroup = app.MapGroup("/api/analytics");
 analyticGroup.MapAnalyticsEndpoints();
 app.MapGroup("/api/subscriptions")
    .MapSubscriptionEndpoints();
-   app.MapGroup("/api/payments")
-    .MapPaymentEndpoints()
-    .RequireAuthorization();
-app.MapGroup("/api/PayToPublish")
+
+app.MapGroup("/api/payments")
+ .MapPaymentEndpoints();
+   //.RequireAuthorization(); // so because you have authorize here, it means all these endpoints need authorization - I am overriding it later on by adding AllowAnonymous as an option on a per endpoint implementation
+
+app.MapGroup("/api/paytopublish")
     .MapPayToPublishEndpoints();
 
 app.MapGroup("/api/v2/content")
     .MapNewsContentEndpoints();
 
+
+app.MapGroup("/api/addon")
+ .MapAddonEndpoints();
 
 
 app.MapAllBackOfficeEndpoints();

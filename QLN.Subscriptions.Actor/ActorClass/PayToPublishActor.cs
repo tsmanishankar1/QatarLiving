@@ -1,7 +1,6 @@
 ﻿using Dapr.Actors.Runtime;
 using global::QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IPayToPublicActor;
-using QLN.Common.Infrastructure.IService.ISubscriptionService;
 
 
 namespace QLN.Subscriptions.Actor.ActorClass
@@ -9,6 +8,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
     public class PayToPublishActor : Dapr.Actors.Runtime.Actor, IPayToPublishActor
     {
         private const string StateKey = "pay-to-publish-data";
+        private const string BasicPriceStateName = "basicPriceData";
         private readonly ILogger<PayToPublishActor> _logger;
 
         public PayToPublishActor(ActorHost host, ILogger<PayToPublishActor> logger) : base(host)
@@ -18,7 +18,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
         public async Task<bool> SetDataAsync(PayToPublishDto data, CancellationToken cancellationToken = default)
         {
-            if (data == null) throw new ArgumentNullException(nameof(data));
+            ArgumentNullException.ThrowIfNull(data);
 
             _logger.LogInformation("[PayToPublishActor {ActorId}] SetDataAsync called", Id);
 
@@ -48,6 +48,57 @@ namespace QLN.Subscriptions.Actor.ActorClass
             _logger.LogInformation("[PayToPublishActor {ActorId}] Activated", Id);
             return base.OnActivateAsync();
         }
+        public async Task<bool> SetDatasAsync(BasicPriceDto data, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (data == null)
+                {
+                    _logger.LogWarning("Attempted to set null BasicPriceDto for actor {ActorId}", Id);
+                    return false;
+                }
+
+                _logger.LogInformation("Setting BasicPrice data for actor {ActorId}", Id);
+
+                await StateManager.SetStateAsync(BasicPriceStateName, data, cancellationToken);
+                await StateManager.SaveStateAsync(cancellationToken);
+
+                _logger.LogInformation("Successfully set BasicPrice data for actor {ActorId}", Id);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting BasicPrice data for actor {ActorId}", Id);
+                return false;
+            }
+        }
+
+        public async Task<BasicPriceDto?> GetDatasAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogDebug("Getting BasicPrice data for actor {ActorId}", Id);
+
+                var conditionalResult = await StateManager.TryGetStateAsync<BasicPriceDto>(
+                    BasicPriceStateName,
+                    cancellationToken);
+
+                if (conditionalResult.HasValue)
+                {
+                    _logger.LogDebug("Successfully retrieved BasicPrice data for actor {ActorId}", Id);
+                    return conditionalResult.Value;
+                }
+
+                _logger.LogDebug("No BasicPrice data found for actor {ActorId}", Id);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting BasicPrice data for actor {ActorId}", Id);
+                return null;
+            }
+        }
+
     }
 
 }
