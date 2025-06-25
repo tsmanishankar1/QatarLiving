@@ -28,7 +28,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         private void HandleLocationChanged(object sender, LocationChangedEventArgs e)
         {
             UpdateCategoriesFromQuery();
-            InvokeAsync(StateHasChanged); 
+            InvokeAsync(StateHasChanged);
         }
         private void UpdateCategoriesFromQuery()
         {
@@ -50,6 +50,10 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         public void Dispose()
         {
             Navigation.LocationChanged -= HandleLocationChanged;
+        }
+         protected void NavigateToAddEvent()
+        {
+            Navigation.NavigateTo("/manage/news/addarticle");
         }
     }
 }

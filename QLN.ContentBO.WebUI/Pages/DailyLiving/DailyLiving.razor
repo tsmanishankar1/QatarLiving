@@ -1,5 +1,6 @@
 @page "/dashboard"
 @inherits DailyLivingBase
+@using QLN.ContentBO.WebUI.Components.DailyLiving.MudArticleTable
 <MudGrid Style="padding-top: 18px">
     <!-- Left Form Section -->
     <MudItem xs="12" md="12">
@@ -39,6 +40,8 @@
                     </MudItem>
                 </MudGrid>
             }
+            <MudArticleTable />
+
     </MudItem>
 </MudGrid>
 

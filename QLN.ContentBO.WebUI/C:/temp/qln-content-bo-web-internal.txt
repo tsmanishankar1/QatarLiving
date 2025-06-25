@@ -1,0 +1,66 @@
+2025-06-25 13:24:20.6086 Info Registered target NLog.Targets.FileTarget(Name=allfile)
+2025-06-25 13:24:20.6229 Info Registered target NLog.Targets.FileTarget(Name=ownFile-web)
+2025-06-25 13:24:20.6245 Info Registered target NLog.Targets.ConsoleTarget(Name=lifetimeConsole)
+2025-06-25 13:24:20.6269 Info NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c. File version: 5.5.0.3962. Product version: 5.5.0+1873145cbc26e0312d9481234d69ce7dc68aac4e. GlobalAssemblyCache: False
+2025-06-25 13:24:20.6511 Info Validating config: TargetNames=allfile, lifetimeConsole, ownFile-web, ConfigItems=73, FilePath=/Users/apple/Desktop/QLN-V2/QLN.ContentBO.WebUI/bin/Debug/net9.0/nlog.config
+2025-06-25 13:24:20.6568 Info Configuration initialized.
+2025-06-25 14:05:41.3668 Info Registered target NLog.Targets.FileTarget(Name=allfile)
+2025-06-25 14:05:41.3807 Info Registered target NLog.Targets.FileTarget(Name=ownFile-web)
+2025-06-25 14:05:41.3822 Info Registered target NLog.Targets.ConsoleTarget(Name=lifetimeConsole)
+2025-06-25 14:05:41.3844 Info NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c. File version: 5.5.0.3962. Product version: 5.5.0+1873145cbc26e0312d9481234d69ce7dc68aac4e. GlobalAssemblyCache: False
+2025-06-25 14:05:41.4157 Info Validating config: TargetNames=allfile, lifetimeConsole, ownFile-web, ConfigItems=73, FilePath=/Users/apple/Desktop/QLN-V2/QLN.ContentBO.WebUI/bin/Debug/net9.0/nlog.config
+2025-06-25 14:05:41.4215 Info Configuration initialized.
+2025-06-25 14:08:33.6392 Info Registered target NLog.Targets.FileTarget(Name=allfile)
+2025-06-25 14:08:33.6532 Info Registered target NLog.Targets.FileTarget(Name=ownFile-web)
+2025-06-25 14:08:33.6548 Info Registered target NLog.Targets.ConsoleTarget(Name=lifetimeConsole)
+2025-06-25 14:08:33.6572 Info NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c. File version: 5.5.0.3962. Product version: 5.5.0+1873145cbc26e0312d9481234d69ce7dc68aac4e. GlobalAssemblyCache: False
+2025-06-25 14:08:33.6881 Info Validating config: TargetNames=allfile, lifetimeConsole, ownFile-web, ConfigItems=73, FilePath=/Users/apple/Desktop/QLN-V2/QLN.ContentBO.WebUI/bin/Debug/net9.0/nlog.config
+2025-06-25 14:08:33.6933 Info Configuration initialized.
+2025-06-25 14:17:55.3081 Info Registered target NLog.Targets.FileTarget(Name=allfile)
+2025-06-25 14:17:55.3225 Info Registered target NLog.Targets.FileTarget(Name=ownFile-web)
+2025-06-25 14:17:55.3242 Info Registered target NLog.Targets.ConsoleTarget(Name=lifetimeConsole)
+2025-06-25 14:17:55.3266 Info NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c. File version: 5.5.0.3962. Product version: 5.5.0+1873145cbc26e0312d9481234d69ce7dc68aac4e. GlobalAssemblyCache: False
+2025-06-25 14:17:55.3542 Info Validating config: TargetNames=allfile, lifetimeConsole, ownFile-web, ConfigItems=73, FilePath=/Users/apple/Desktop/QLN-V2/QLN.ContentBO.WebUI/bin/Debug/net9.0/nlog.config
+2025-06-25 14:17:55.3598 Info Configuration initialized.
+2025-06-25 14:47:56.9042 Info Registered target NLog.Targets.FileTarget(Name=allfile)
+2025-06-25 14:47:56.9197 Info Registered target NLog.Targets.FileTarget(Name=ownFile-web)
+2025-06-25 14:47:56.9213 Info Registered target NLog.Targets.ConsoleTarget(Name=lifetimeConsole)
+2025-06-25 14:47:56.9238 Info NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c. File version: 5.5.0.3962. Product version: 5.5.0+1873145cbc26e0312d9481234d69ce7dc68aac4e. GlobalAssemblyCache: False
+2025-06-25 14:47:56.9484 Info Validating config: TargetNames=allfile, lifetimeConsole, ownFile-web, ConfigItems=73, FilePath=/Users/apple/Desktop/QLN-V2/QLN.ContentBO.WebUI/bin/Debug/net9.0/nlog.config
+2025-06-25 14:47:56.9546 Info Configuration initialized.
+2025-06-25 14:51:41.9687 Info Registered target NLog.Targets.FileTarget(Name=allfile)
+2025-06-25 14:51:41.9830 Info Registered target NLog.Targets.FileTarget(Name=ownFile-web)
+2025-06-25 14:51:41.9845 Info Registered target NLog.Targets.ConsoleTarget(Name=lifetimeConsole)
+2025-06-25 14:51:41.9869 Info NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c. File version: 5.5.0.3962. Product version: 5.5.0+1873145cbc26e0312d9481234d69ce7dc68aac4e. GlobalAssemblyCache: False
+2025-06-25 14:51:42.0126 Info Validating config: TargetNames=allfile, lifetimeConsole, ownFile-web, ConfigItems=73, FilePath=/Users/apple/Desktop/QLN-V2/QLN.ContentBO.WebUI/bin/Debug/net9.0/nlog.config
+2025-06-25 14:51:42.0181 Info Configuration initialized.
+2025-06-25 14:53:44.9310 Info Registered target NLog.Targets.FileTarget(Name=allfile)
+2025-06-25 14:53:44.9445 Info Registered target NLog.Targets.FileTarget(Name=ownFile-web)
+2025-06-25 14:53:44.9461 Info Registered target NLog.Targets.ConsoleTarget(Name=lifetimeConsole)
+2025-06-25 14:53:44.9484 Info NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c. File version: 5.5.0.3962. Product version: 5.5.0+1873145cbc26e0312d9481234d69ce7dc68aac4e. GlobalAssemblyCache: False
+2025-06-25 14:53:44.9759 Info Validating config: TargetNames=allfile, lifetimeConsole, ownFile-web, ConfigItems=73, FilePath=/Users/apple/Desktop/QLN-V2/QLN.ContentBO.WebUI/bin/Debug/net9.0/nlog.config
+2025-06-25 14:53:44.9812 Info Configuration initialized.
+2025-06-25 14:59:29.5029 Info Registered target NLog.Targets.FileTarget(Name=allfile)
+2025-06-25 14:59:29.5161 Info Registered target NLog.Targets.FileTarget(Name=ownFile-web)
+2025-06-25 14:59:29.5176 Info Registered target NLog.Targets.ConsoleTarget(Name=lifetimeConsole)
+2025-06-25 14:59:29.5198 Info NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c. File version: 5.5.0.3962. Product version: 5.5.0+1873145cbc26e0312d9481234d69ce7dc68aac4e. GlobalAssemblyCache: False
+2025-06-25 14:59:29.5390 Info Validating config: TargetNames=allfile, lifetimeConsole, ownFile-web, ConfigItems=73, FilePath=/Users/apple/Desktop/QLN-V2/QLN.ContentBO.WebUI/bin/Debug/net9.0/nlog.config
+2025-06-25 14:59:29.5444 Info Configuration initialized.
+2025-06-25 15:01:27.0528 Info Registered target NLog.Targets.FileTarget(Name=allfile)
+2025-06-25 15:01:27.0664 Info Registered target NLog.Targets.FileTarget(Name=ownFile-web)
+2025-06-25 15:01:27.0679 Info Registered target NLog.Targets.ConsoleTarget(Name=lifetimeConsole)
+2025-06-25 15:01:27.0703 Info NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c. File version: 5.5.0.3962. Product version: 5.5.0+1873145cbc26e0312d9481234d69ce7dc68aac4e. GlobalAssemblyCache: False
+2025-06-25 15:01:27.0962 Info Validating config: TargetNames=allfile, lifetimeConsole, ownFile-web, ConfigItems=73, FilePath=/Users/apple/Desktop/QLN-V2/QLN.ContentBO.WebUI/bin/Debug/net9.0/nlog.config
+2025-06-25 15:01:27.1015 Info Configuration initialized.
+2025-06-25 15:02:18.2493 Info Registered target NLog.Targets.FileTarget(Name=allfile)
+2025-06-25 15:02:18.2626 Info Registered target NLog.Targets.FileTarget(Name=ownFile-web)
+2025-06-25 15:02:18.2642 Info Registered target NLog.Targets.ConsoleTarget(Name=lifetimeConsole)
+2025-06-25 15:02:18.2666 Info NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c. File version: 5.5.0.3962. Product version: 5.5.0+1873145cbc26e0312d9481234d69ce7dc68aac4e. GlobalAssemblyCache: False
+2025-06-25 15:02:18.2938 Info Validating config: TargetNames=allfile, lifetimeConsole, ownFile-web, ConfigItems=73, FilePath=/Users/apple/Desktop/QLN-V2/QLN.ContentBO.WebUI/bin/Debug/net9.0/nlog.config
+2025-06-25 15:02:18.2991 Info Configuration initialized.
+2025-06-25 16:28:12.0996 Info Registered target NLog.Targets.FileTarget(Name=allfile)
+2025-06-25 16:28:12.1152 Info Registered target NLog.Targets.FileTarget(Name=ownFile-web)
+2025-06-25 16:28:12.1168 Info Registered target NLog.Targets.ConsoleTarget(Name=lifetimeConsole)
+2025-06-25 16:28:12.1192 Info NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c. File version: 5.5.0.3962. Product version: 5.5.0+1873145cbc26e0312d9481234d69ce7dc68aac4e. GlobalAssemblyCache: False
+2025-06-25 16:28:12.1554 Info Validating config: TargetNames=allfile, lifetimeConsole, ownFile-web, ConfigItems=73, FilePath=/Users/apple/Desktop/QLN-V2/QLN.ContentBO.WebUI/bin/Debug/net9.0/nlog.config
+2025-06-25 16:28:12.1611 Info Configuration initialized.

@@ -20,7 +20,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 CloseOnEscapeKey = true
             };
             return DialogService.ShowAsync<RadioAutoCompleteDialog>(string.Empty, options);
-        }
+        } 
 
     }
 }
