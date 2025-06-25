@@ -42,6 +42,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseCloudEvents();
 app.MapSubscribeHandler();
 var common = app.MapGroup("/api/{vertical}");
 common.MapCommonIndexingEndpoints();
