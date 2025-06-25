@@ -224,27 +224,46 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        //public async Task<string> CreateNewsArticleAsync(Guid userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default)
-        //{
-        //    try
-        //    {
-        //        var appId = "qln-content-ms";
-        //        var path = $"/api/v2/news/createNewsArticleById/{userId}";
+        public async Task<List<V2NewsCategory>> GetNewsCategoriesAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var appId = ConstantValues.V2Content.ContentServiceAppId;
+                var path = "/api/v2/news/getcategories";
 
-        //        return await _dapr.InvokeMethodAsync<V2NewsArticleDTO, string>(
-        //            HttpMethod.Post,
-        //            appId,
-        //            path,
-        //            dto,
-        //            cancellationToken
-        //        );
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error invoking CreateNewsArticle endpoint");
-        //        throw;
-        //    }
-        //}
+                return await _dapr.InvokeMethodAsync<List<V2NewsCategory>>(
+               HttpMethod.Get,
+               appId,
+               path,
+               cancellationToken
+           ) ?? new();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving writer tags from internal service");
+                throw;
+            }
+        }
+        public async Task<List<V2Slot>> GetAllSlotsAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var appId = ConstantValues.V2Content.ContentServiceAppId;
+                var path = "/api/v2/news/slots";
+
+                return await _dapr.InvokeMethodAsync<List<V2Slot>>(
+               HttpMethod.Get,
+               appId,
+               path,
+               cancellationToken
+           ) ?? new();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving writer tags from internal service");
+                throw;
+            }
+        }
         public async Task<CreateNewsArticleResponseDto> CreateNewsArticleAsync(Guid userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default)
         {
             try
@@ -286,7 +305,7 @@ namespace QLN.Backend.API.Service.V2ContentService
         }
         public async Task<List<V2NewsArticleDTO>> GetAllNewsArticlesAsync(CancellationToken cancellationToken = default)
         {
-            var url = "/api/v2/news/getAll";
+            var url = "/api/v2/news/getAllNewsArticle";
             var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.V2Content.ContentServiceAppId, url);
 
             var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
@@ -300,50 +319,53 @@ namespace QLN.Backend.API.Service.V2ContentService
             }) ?? throw new Exception("Failed to retrieve articles.");
         }
 
-        public async Task<string> CreateNewsArticleCategoryAsync(V2NewsCategory dto, CancellationToken cancellationToken = default)
+        public async Task<List<V2NewsArticleDTO>> GetArticlesByCategoryIdAsync(int categoryId, CancellationToken cancellationToken)
+        {
+            var url = $"api/v2/news/byCategory/{categoryId}";
+            var response = await _dapr.InvokeMethodAsync<List<V2NewsArticleDTO>>(
+                HttpMethod.Get,
+                V2Content.ContentServiceAppId,
+                url,
+                cancellationToken
+            );
+            return response;
+        }
+
+        public async Task<List<V2NewsArticleDTO>> GetArticlesBySubCategoryIdAsync(int categoryId, int subCategoryId, CancellationToken cancellationToken)
+        {
+            var url = $"api/v2/news/byCategory/{categoryId}/sub/{subCategoryId}";
+            var response = await _dapr.InvokeMethodAsync<List<V2NewsArticleDTO>>(
+                HttpMethod.Get,
+                V2Content.ContentServiceAppId,
+                url,
+                cancellationToken
+            );
+            return response;
+        }
+        public async Task<string> UpdateNewsArticleAsync(V2NewsArticleDTO dto, CancellationToken cancellationToken)
         {
             try
             {
-
-                var url = "/api/v2/news/createNewsArticleCategory";
-                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
+                if (!string.IsNullOrWhiteSpace(dto.CoverImageUrl))
+                {
+                    var imageName = $"{dto.Title}_{dto.Id}.png";
+                    var blobUrl = await _blobStorage.SaveBase64File(dto.CoverImageUrl, imageName, "imageurl", cancellationToken);
+                    dto.CoverImageUrl = blobUrl;
+                }
+                var url = "/api/v2/news/updateNewsarticleByUserId"; 
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.V2Content.ContentServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
                 response.EnsureSuccessStatusCode();
 
-                var rawJson = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+                return await response.Content.ReadAsStringAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating news");
+                _logger.LogError(ex, "Failed to update article via external service");
                 throw;
             }
         }
-
-        public async Task<List<V2NewsCategory>> GetAllNewsArticleCategoriesAsync(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var appId = ConstantValues.V2Content.ContentServiceAppId;
-                var path = "/api/v2/news/getAllNewsArticleCategories";
-
-
-                return await _dapr.InvokeMethodAsync<List<V2NewsCategory>>(
-                    HttpMethod.Get,
-                    appId,
-                    path,
-                    cancellationToken
-                ) ?? new List<V2NewsCategory>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving all news");
-                throw;
-            }
-          
-        }
-
     }
 }

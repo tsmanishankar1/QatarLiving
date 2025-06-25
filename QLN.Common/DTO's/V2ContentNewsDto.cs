@@ -58,6 +58,8 @@ namespace QLN.Common.DTO_s
     public class V2NewsArticleDTO
     {
         public Guid Id { get; set; }
+        public Guid UserId { get; set; }
+
 
         [Required]
         public string Title { get; set; }
@@ -83,26 +85,26 @@ namespace QLN.Common.DTO_s
         public Guid UpdatedBy { get; set; }
 
         public DateTime UpdatedAt { get; set; }
+        public string authorName { get; set; }
+
     }
 
     public class V2NewsCategory
     {
-        public Guid Id { get; set; } // Unique identifier for the category
-        public string CategoryName { get; set; } // Category name
-        public List<V2NewsSubCategory> SubCategories { get; set; } = new List<V2NewsSubCategory>(); // List of subcategories
+        public int Id { get; set; }
+        public string CategoryName { get; set; }
+        public List<V2NewsSubCategory> SubCategories { get; set; }
     }
-
     public class V2NewsSubCategory
     {
-        public Guid Id { get; set; } // Unique identifier for subcategory
-        public string SubCategoryName { get; set; } // Subcategory name
+        public int Id { get; set; }
+        public string CategoryName { get; set; }
     }
-
     public class V2Slot
     {
-        public Slot Id { get; set; }
+        public int Id { get; set; }
 
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
     }
     public enum Slot
     {

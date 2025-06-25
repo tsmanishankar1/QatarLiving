@@ -6,26 +6,14 @@ namespace QLN.Common.Infrastructure.IService.IContentService
 {
     public interface IV2NewsService
     {
-        Task<string> CreateNews(V2ContentNewsDto dto, CancellationToken cancellationToken = default);
-        //
-        Task<List<V2ContentNewsDto>> GetAllNews( CancellationToken cancellationToken = default);
-        Task<V2ContentNewsDto?> GetNewsById(Guid id, CancellationToken cancellationToken = default);
-        Task<string> UpdateNews(V2ContentNewsDto dto, CancellationToken cancellationToken = default);
-        Task<bool> DeleteNews(Guid id, CancellationToken cancellationToken = default);
-
-
-        // news category 
-        Task<string> CreateNewsCategoryAsync(NewsCategoryDto dto, CancellationToken cancellationToken = default);
-        Task<List<NewsCategoryDto>> GetAllNewsCategoriesAsync(CancellationToken cancellationToken = default);
-
-
-
         ///////// New News Json 
         Task<Dictionary<string, string>> GetWriterTagsAsync(CancellationToken cancellationToken = default);
-        //Task<string> CreateNewsArticleAsync(Guid userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default);
         Task<CreateNewsArticleResponseDto> CreateNewsArticleAsync(Guid userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default);
         Task<List<V2NewsArticleDTO>> GetAllNewsArticlesAsync(CancellationToken cancellationToken = default);
-        Task<string> CreateNewsArticleCategoryAsync(V2NewsCategory dto, CancellationToken cancellationToken = default);
-        Task<List<V2NewsCategory>> GetAllNewsArticleCategoriesAsync(CancellationToken cancellationToken = default);
+        Task<List<V2NewsCategory>> GetNewsCategoriesAsync(CancellationToken cancellationToken = default);
+        Task<List<V2Slot>> GetAllSlotsAsync(CancellationToken cancellationToken = default);
+        Task<List<V2NewsArticleDTO>> GetArticlesByCategoryIdAsync(int categoryId, CancellationToken cancellationToken);
+        Task<List<V2NewsArticleDTO>> GetArticlesBySubCategoryIdAsync(int categoryId, int subCategoryId, CancellationToken cancellationToken);
+        Task<string> UpdateNewsArticleAsync(V2NewsArticleDTO updatedDto, CancellationToken cancellationToken);
     }
 }
