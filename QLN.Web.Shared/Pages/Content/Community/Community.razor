@@ -1,0 +1,438 @@
+@page "/content/community"
+<PageTitle>Community</PageTitle>
+@layout ContentLayout
+@inherits CommunityBase
+
+@inject NavigationManager Navigation
+@using QLN.Web.Shared.Pages.Content.Community.Components.SearchBarSection
+@using QLN.Web.Shared.Components.Carousel
+@using QLN.Web.Shared.Pages.Content.Community.Components.CustomDropdown
+@using QLN.Web.Shared.Components.NewCustomSelect
+@using QLN.Web.Shared.Pages.Content.Community.Components.PaginationFooter
+@using QLN.Web.Shared.Components.EmptyCard
+@using QLN.Web.Shared.Components.AdBanner
+
+@using QLN.Web.Shared.Pages.Content.Events
+@using QLN.Web.Shared.Components.BannerHero
+
+<div class="community-container">
+     <div class="banner-responsive-container">
+            @if (isLoadingBanners)
+            {
+                <BannerSkleton />
+            }
+            else if (DailyHeroBanners?.Any() == true)
+            {
+                <BannerHero BannerItems="DailyHeroBanners" Loading="isLoadingBanners" />
+            }
+            else
+            {
+                <EmptyCard Title="No  banners found." Subtitle="Please check back later for updates." />
+            }
+</div>
+    <div class="container-inner-wrapper">
+       
+            <CommunitySearchBarSection OnSearchCompleted="HandleSearchResults" OnCategoryChanged="HandleCategoryChanged" InitialCategoryId="@categoryId" />
+            <div class="section-container">
+
+                <MudGrid>
+                    <!-- Left Section -->
+                    <MudItem xs="12" md="8">
+                        <div class="community-header">
+                            <MudText Typo="Typo.h5" Class="community-title">
+                                Community Posts <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                                               Style="color: #F26D1E;"
+                                                               OnClick="OpenDialogAsync"
+                                                               Class="ms-2" />
+                            </MudText>
+
+                            <div class="sort-section">
+                                <div class="sort-label">
+                                    Sort by:
+                                </div>
+
+
+                                <SortDropdown TItem="SelectOption"
+                                              Items="@CategorySelectOptions"
+                                              SelectedId="@SelectedCategoryId"
+                                              SelectedIdChanged="OnSortChanged"
+                                              GetLabel="x => x.Label"
+                                              GetId="x => x.Id"
+                                              BorderRadius="0px"
+                                              Padding="8px 10px" />
+                            </div>
+                        </div>
+                        @if (IsLoading)
+                        {
+                            @for (int i = 0; i < PageSize; i++)
+                            {
+                                <div class="postcard-margin-top">
+                                    <MudSkeleton Width="100%" Height="440px" Animation="Animation.Pulse" />
+                                    <MudSkeleton Height="32px" Width="70%" Animation="Animation.Wave" Class="my-2" />
+                                    <MudSkeleton Height="20px" Width="90%" Animation="Animation.Wave" />
+
+                                </div>
+                            }
+                        }
+
+                        else if (HasError)
+                        {
+
+                            <EmptyCard Title="No Posts found." Subtitle="Please check back later for updates." />
+
+
+                        }
+                        else if (PostList == null)
+                        {
+                            <EmptyCard Title="No Posts found." Subtitle="Please check back later for updates." />
+
+                        }
+                        else
+                        {
+                            <MudVirtualize Context="post" Items="PostList">
+                                <div class="postcard-margin-top">
+
+                                    <PostCard Post="post" IsDetailView="false" />
+                                </div>
+                            </MudVirtualize>
+                            <div class="pagination-container">
+                                <PaginationFooter TotalItems="@TotalPosts"
+                                                  CurrentPage="@CurrentPage"
+                                                  PageSize="@PageSize"
+                                                  OnPageChange="HandlePageChange"
+                                                  OnPageSizeChange="HandlePageSizeChange" />
+                            </div>
+                        }
+                    </MudItem>
+
+
+                    <!-- Right Section -->
+                    <MudItem xs="12" md="4">
+                        <CommunityRules />
+
+                        <MudPaper Class="community-newsletter-box" Elevation="1">
+
+                            <img src="/qln-images/content/Mail.svg" alt="mail icon" class="newsletter-icon" />
+                            <MudText Typo="Typo.body1" Class="newsletter-text">
+                                Get The QL newsletter. Sign up to receive the top stories you need to know right now.
+                            </MudText>
+                            <EditForm Model="SubscriptionModel" OnValidSubmit="SubscribeAsync">
+                                <DataAnnotationsValidator />
+                                <ValidationSummary />
+                                <input type="email"
+                                       class="community-newsletter-input"
+                                       placeholder="Enter your email"
+                                       @bind="SubscriptionModel.Email"
+                                       @bind:event="oninput" />
+
+                                <MudButton Variant="Variant.Filled"
+                                           Class="community-newsletter-button"
+                                           Disabled="@IsSubscribingToNewsletter"
+                                           OnClick="SubscribeAsync">
+                                    @if (IsSubscribingToNewsletter)
+                                    {
+                                        <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" />
+                                        @("Subscribing...")
+                                    }
+                                    else
+                                    {
+                                        @("Subscribe")
+                                    }
+                                </MudButton>
+                            </EditForm>
+                        </MudPaper>
+
+                        @*   <MudPaper Class="post-ad-wrapper" Elevation="0" Square="true">
+                            <MudImage Src="/qln-images/content/Ad.png" Alt="Advertisement" Class="ad-image" />
+                        </MudPaper> *@
+                        <div class="post-ad-wrapper">
+                            @if (isLoadingBanners)
+                            {
+                                <BannerSkleton />
+                            }
+                            else if (CommunitySideBanners?.Any() == true)
+                            {
+                                <AdBanner BannerItems="CommunitySideBanners" />
+                            }
+                            else
+                            {
+                                <EmptyCard Title="No  banners found." Subtitle="Please check back later for updates." />
+                            }
+                        </div>
+                    </MudItem>
+                </MudGrid>
+
+            </div>
+    </div>
+</div>
+
+
+
+
+<style>
+    .community-container {
+        width: 100%;
+        background-color: var(--color-secondary-background);
+    }
+
+    .container-inner-wrapper {
+        width: 100%;
+        padding: 0 40px;
+        box-sizing: border-box;
+        max-width: 1170px;
+        margin: 0 auto;
+    }
+    .banner-responsive-container{
+        width: 100%;
+        padding: 0 40px;
+        box-sizing: border-box;
+        max-width: 1170px;
+        margin: 0 auto;
+    }
+    .section-container {
+        margin-top: 40px;
+    }
+
+    .category-banner-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    .category-banner-image {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        object-fit: cover;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+
+    .postcard-margin-top {
+        margin-top: 20px;
+    }
+
+    .community-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 32px;
+        margin-top: 16px;
+    }
+
+    .community-title {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 16px;
+        line-height: 26px;
+    }
+
+    .mud-select-input {
+        height: 40px;
+    }
+
+    .sort-section {
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .sort-label {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 13px;
+        white-space: nowrap;
+        color: #242424;
+        margin-bottom: 4px;
+    }
+
+    .sort-select {
+        min-width: 180px;
+        background-color: #FFFFFF;
+    }
+    /* Select container */
+    .sort-select {
+        min-width: 180px;
+        background-color: #FFFFFF;
+    }
+
+        /* Focus/orange border styling */
+        .sort-select .mud-input-control-outlined:hover .mud-input-outlined-border {
+            border-color: #FF7F38 !important;
+        }
+
+        .sort-select .mud-input-control-outlined.mud-focused .mud-input-outlined-border {
+            border-color: #FF7F38 !important;
+            border-width: 2px !important;
+        }
+
+        /* Selected item text color */
+        .sort-select .mud-select-input {
+            color: #000000 !important;
+        }
+
+        /* Dropdown items */
+        .sort-select .mud-list-item.mud-selected-item {
+            color: #000000 !important;
+            background-color: rgba(255, 127, 56, 0.08) !important;
+        }
+
+            /* Check icon styling */
+            .sort-select .mud-list-item.mud-selected-item .mud-list-item-icon {
+                color: #FF7F38 !important;
+                margin-left: auto !important;
+                margin-right: 0 !important;
+                min-width: unset !important;
+            }
+
+        /* Dropdown panel styling */
+        .sort-select .mud-popover {
+            border-radius: 6px !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+        }
+
+    .community-newsletter-box {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        padding: 12px;
+        margin-top: 1rem;
+        max-width: 340px;
+        border: 1px solid #F0F0F0;
+    }
+
+    .mud-elevation-1 {
+        box-shadow: none !important;
+    }
+
+    .community-newsletter-box.mud-elevation-1 {
+        box-shadow: none !important;
+    }
+
+
+    .newsletter-icon {
+        width: 48px;
+        height: 48px;
+        margin-top: 10px;
+    }
+
+    .newsletter-text {
+        font-family: 'Public Sans',sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 24px;
+        text-align: center;
+        color: #242424;
+    }
+
+    .community-newsletter-input {
+        width: 292px;
+        height: 44px;
+        padding: 10px 16px;
+        border: 1px solid #D0D5DD;
+        border-radius: 6px;
+    }
+
+        .community-newsletter-input::placeholder {
+            padding-left: 14px;
+        }
+
+        .community-newsletter-input:focus {
+            outline: none;
+            border: 1px solid #FF7F38;
+            box-shadow: none;
+        }
+    .newsletter-html-input:focus {
+        border-color: #FF7F38;
+    }
+
+    .community-newsletter-button {
+        width: 292px;
+        height: 44px;
+        gap: 8px;
+        border-radius: 6px;
+        padding: 6px 40px;
+        background-color: #FF7F38;
+        color: white;
+        margin-top: 16px;
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 24px;
+        letter-spacing: 0;
+        text-transform: capitalize;
+    }
+
+
+
+    .post-ad-wrapper {
+        padding: 0;
+        margin-top: 16px;
+        width: 340px;
+        height: 402px;
+        overflow: hidden;
+    }
+
+    .ad-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    @@media (max-width: 700px) and (min-width: 240px) {
+        .container-inner-wrapper {
+            padding: 0 10px;
+        }
+       .banner-responsive-container{
+             padding: 0;
+        }
+        .community-newsletter-box,
+        .post-ad-wrapper,
+        .mud-paper.community-newsletter-box,
+        .mud-paper.post-ad-wrapper {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+    }
+
+    @@media (min-width: 960px) and (max-width: 1145px) {
+        .container-inner-wrapper {
+            padding: 0 20px;
+        }
+        .banner-responsive-container{
+             padding: 0;
+        }
+        .community-newsletter-box {
+            max-width: 100%;
+            width: 100%;
+            padding: 10px !important
+        }
+    }
+
+    @@media (max-width: 350px) and (min-width: 240px) {
+        .community-header {
+            display: flex;
+            height: 50px;
+            flex-direction: column;
+            margin-top: 0px;
+            gap: 10px;
+        }
+       .banner-responsive-container{
+             padding: 0;
+        }
+        .post-ad-wrapper {
+            padding: 1px;
+            margin-top: 16px;
+            width: 340px;
+            overflow: hidden;
+        }
+
+        .postcard-margin-top {
+            margin-top: 50px;
+        }
+    }
+</style>

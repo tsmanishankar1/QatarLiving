@@ -1,0 +1,191 @@
+@using MudBlazor
+@using QLN.Common.DTO_s
+@using QLN.Web.Shared.Components.Classifieds.FeaturedCategoryCard
+@using QLN.Web.Shared.Pages.Classifieds.Skeletons
+@using QLN.Web.Shared.Components.EmptyCard
+@inherits FeaturedCategoriesBase
+
+<div class="categories-wrapper">
+    <div class="categories-header">
+            <h3 class="section-header">Featured Categories</h3>
+    </div>
+
+    @if (Loading)
+    {
+     <div class="skeleton-categories-scroll-container">
+        @for (int i = 0; i < 6; i++)
+        {
+            <FeaturedCategorySkeleton />
+        }
+    </div>
+    }
+    else if (FeaturedCategories?.Any() != true)
+    {
+        <EmptyCard Title="No Featured categories found." Subtitle="Please check back later or explore other categories." />
+    }
+    else
+    {
+        <div class="swiper-categories-container">
+            <div class="swiper-categories swiper">
+                <!-- Navigation arrows -->
+                <div class="swiper-categories-button-prev arrow-button left">
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronLeft" />
+                </div>
+                <div class="swiper-categories-button-next arrow-button right">
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+                </div>
+
+                <div class="swiper-wrapper @(FeaturedCategories.Count <= 5 ? "les5swiper-wrapper" : "")">
+                        <MudVirtualize Context="category" Items="FeaturedCategories">
+                        <div class="swiper-slide swiper-slide-Card">
+                            <FeaturedCategoryCard Item="category" OnClick="HandleCategoryClick" />
+                        </div>
+                     </MudVirtualize>
+                </div>
+                <!-- Pagination dots -->
+                <div class="swiper-categories-pagination-wrapper">
+                <div class="swiper-categories-pagination"></div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .categories-wrapper {
+        width: 100%;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .categories-header {
+        background-color: var(--color-secondary-background);
+        padding: 2rem 0 1rem;
+    }
+    .swiper-categories-pagination-wrapper{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+         margin-top: 1rem;
+          padding-left: 150px;
+    }
+
+    .section-header {
+        font-weight: 600;
+        text-align: center;
+        font-size: 25px;
+        color: var(--color-text-heading);
+    }
+
+    .swiper-categories-container {
+        position: relative;
+        width: 100%;
+    }
+
+    .swiper-categories {
+         position: relative;
+        width: 100%;
+        padding: 0;
+    }
+    .swiper-wrapper.les5swiper-wrapper {
+        justify-content: center !important;
+    }
+
+    .swiper-slide-Card {
+        padding: 0.5rem;
+        box-sizing: border-box;
+    }
+
+    .swiper-slide {
+        width: auto;
+        box-sizing: border-box;
+        flex-shrink: 0;
+    }
+
+    /* Navigation Buttons - hidden initially */
+    .arrow-button {
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        position: absolute;
+        top: 40%;
+        transform: translateY(-50%);
+        z-index: 10;
+        background-color: white;
+        border-radius: 50%;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    /* Position left/right arrows */
+    .arrow-button.left {
+        left: 20px;
+    }
+
+    .arrow-button.right {
+        right: 20px;
+    }
+
+    /* Swiper pagination dots styling */
+    .swiper-categories-pagination {
+        text-align: center;
+        margin-top: 1rem;
+    }
+
+    .swiper-categories-pagination .swiper-pagination-bullet {
+         width: 8px;
+        /* smaller size for inactive dots */
+        height: 8px;
+        background: #bbb;
+        border-radius: 50%;
+        display: inline-block;
+        margin: 0 4px;
+        transition: opacity 0.3s ease;
+    }
+
+      .swiper-categories-pagination .swiper-pagination-bullet-active {
+        width: 10px;
+        height: 10px;
+        background: #00426D;
+    }
+    .skeleton-categories-scroll-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    /* Show arrows on hover only for desktop */
+    @@media (min-width: 769px) {
+        .swiper-categories-container:hover .arrow-button {
+            opacity: 1;
+        }
+    }
+
+    /* Hide arrows permanently on mobile */
+    @@media (max-width: 770px) {
+        .arrow-button {
+            display: none !important;
+        }
+          .swiper-wrapper.les5swiper-wrapper {
+            justify-content: flex-start !important;
+        }
+    }
+    @@media (max-width: 1000px) {
+    .skeleton-categories-scroll-container {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-left: 12px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        }
+
+        .skeleton-categories-scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+    }
+</style>

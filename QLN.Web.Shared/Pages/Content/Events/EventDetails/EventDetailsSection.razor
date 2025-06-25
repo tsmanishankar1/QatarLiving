@@ -1,0 +1,655 @@
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using QLN.Common.Infrastructure.DTO_s
+@using QLN.Web.Shared.Components.AdBanner
+@using QLN.Web.Shared.Helpers
+
+<MudGrid Class="py-4" GutterSize="16px">
+    <!-- Main Content -->
+    <MudItem xs="12" md="8">
+        <div class="event-card">
+            <div class="event-header">
+                <h2 class="event-title">@Item.Title</h2>
+            </div>
+
+            <div class="event-image-container">
+
+                @if (!imageLoaded)
+                {
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="421px" />
+                }
+                <img src="@(!string.IsNullOrWhiteSpace(Item?.ImageUrl) ? Item.ImageUrl : "/images/not_found.svg")"
+                    alt="Event Image" class="event-image" style="@(imageLoaded ? "display: block;" : "display: none;")"
+                    @onload="OnImageLoaded" @onerror="OnImageError" />
+
+
+                <div class="event-info-bar">
+                    @if (!string.IsNullOrWhiteSpace(Item?.EventVenue))
+                    {
+                        <div class="location">
+                            <MudIcon Icon="@Icons.Material.Filled.LocationOn" class="location-icon" />
+                            <span class="location-text">@Item.EventVenue</span>
+                        </div>
+                    }
+
+                    <div class="icons">
+                        @* <MudIconButton Icon="@Icons.Material.Filled.FavoriteBorder" Class="icons-color" /> *@
+                        <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu"
+                            AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight">
+                            <ActivatorContent>
+                                <MudIconButton Icon="@Icons.Material.Filled.Share" Class="icons-color" />
+                            </ActivatorContent>
+                            <ChildContent>
+                                @foreach (var item in shareMenuItems)
+                                {
+                                    if (item.OnClick != null)
+                                    {
+                                        <MudMenuItem OnClick="@item.OnClick">
+                                            <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                        </MudMenuItem>
+                                    }
+                                    else
+                                    {
+                                        <MudMenuItem Href="@item.Route" Target="@(item.OpenInNewTab ? "_blank" : "_self")">
+                                            <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                        </MudMenuItem>
+                                    }
+                                }
+                            </ChildContent>
+                        </MudMenu>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Info -->
+            <div class="event-mobile-info">
+                @* Reuse common event info *@
+                @EventInfoBlock()
+
+                @* Register/Calendar Buttons *@
+                @ActionButtons()
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Item?.Description))
+            {
+                <div class="event-description mt-4">
+                    @((MarkupString)Item.Description)
+                </div>
+            }
+
+        </div>
+    </MudItem>
+
+    <!-- Sidebar -->
+    <MudItem xs="12" md="4">
+        <div class="card-container">
+            <div class="card-desktop-only">
+                @if (!string.IsNullOrWhiteSpace(Item?.EventCategory) || !string.IsNullOrWhiteSpace(Item?.Category))
+                {
+                    <h3 class="section-title">
+                        @(!string.IsNullOrWhiteSpace(Item?.EventCategory)
+                                            ? Item.EventCategory
+                                            : Item.Category )
+                </h3>
+                                }
+
+                @EventInfoBlock()
+                @ActionButtons()
+            </div>
+
+            <!-- Always visible map & ad -->
+            <div class="map-container">
+                @if (!string.IsNullOrWhiteSpace(Item?.EventLat) && !string.IsNullOrWhiteSpace(Item?.EventLong))
+                {
+                    <span class="map-access-name">Location:</span>
+                    <iframe frameborder="0" scrolling="no" marginheight="0" marginwidth="0"
+                        src="https://www.openstreetmap.org/export/embed.html?bbox=@Item.EventLong,@Item.EventLat,@Item.EventLong,@Item.EventLat&layer=mapnik&marker=@Item.EventLat,@Item.EventLong"
+                        class="map-frame">
+                    </iframe>
+                }
+            </div>
+            <div class="Ad_banner">
+                <AdBanner BannerItems="EventSideBanners" />
+            </div>
+        </div>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter] public ContentEvent Item { get; set; }
+    [Parameter] public List<BannerItem> EventSideBanners { get; set; }
+
+    private bool IsModalOpen { get; set; } = false;
+    protected bool imageLoaded = false;
+    protected override void OnParametersSet()
+    {
+        imageLoaded = false; // reset loading state
+    }
+
+    protected void OnImageLoaded()
+    {
+        imageLoaded = true;
+        StateHasChanged();
+    }
+
+    protected void OnImageError()
+    {
+        imageLoaded = true; // stop skeleton on error
+        StateHasChanged();
+    }
+    private List<MenuItem> shareMenuItems => new()
+{
+new MenuItem {
+ImageSrc = "/qln-images/facebook_share_icon.svg",
+Route = SocialShareHelper.GetFacebookUrl(CurrentUrl),
+OpenInNewTab = true
+},
+new MenuItem {
+ImageSrc = "/qln-images/instagram_share_icon.svg",
+Route = SocialShareHelper.GetInstagramUrl(CurrentUrl),
+OpenInNewTab = true
+},
+new MenuItem {
+ImageSrc = "/qln-images/whatsApp_share_icon.svg",
+Route = SocialShareHelper.GetWhatsAppUrl(CurrentUrl),
+OpenInNewTab = true
+},
+new MenuItem {
+ImageSrc = "/qln-images/tiktok_share_icon.svg",
+Route = SocialShareHelper.GetTikTokUrl(CurrentUrl),
+OpenInNewTab = true
+},
+new MenuItem {
+ImageSrc = "/qln-images/x_share_icon.svg",
+Route = SocialShareHelper.GetXUrl(CurrentUrl, Item?.Title ?? ""),
+OpenInNewTab = true
+},
+new MenuItem {
+ImageSrc = "/qln-images/linkedin_share_icon.svg",
+Route = SocialShareHelper.GetLinkedInUrl(CurrentUrl, Item?.Title ?? "", Item?.Description ?? ""),
+OpenInNewTab = true
+},
+new MenuItem
+{
+ImageSrc = "/qln-images/copy_link_icon.svg",
+OnClick = async () =>
+{
+bool copied = false;
+copied = await SocialShareHelper.CopyLinkToClipboardAsync(JSRuntime, CurrentUrl);
+if (copied)
+{
+Snackbar.Add("Item link has been copied to the clipboard", Severity.Success);
+}
+else
+{
+Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
+}
+}
+}
+};
+    public class MenuItem
+    {
+        public string Text { get; set; }
+        public string ImageSrc { get; set; }
+        public string Route { get; set; }
+        public bool OpenInNewTab { get; set; } = false;
+        public Func<Task> OnClick { get; set; }
+    }
+
+    private string CurrentUrl => Navigation.ToAbsoluteUri(Navigation.Uri).ToString();
+
+
+    RenderFragment EventInfoBlock() => __builder =>
+    {
+        <div class="info-section">
+            @if (!string.IsNullOrWhiteSpace(Item?.EventStart) || !string.IsNullOrWhiteSpace(Item?.EventEnd))
+            {
+                <div class="info-item">
+
+                    <img src="/qln-images/events_date_icon.svg" alt="Date Icon" class="info-icon" />
+                    <span class="info-text">
+                        @if (!string.IsNullOrWhiteSpace(Item?.EventStart))
+                        {
+                            @DateHelper.FormatDate(Item.EventStart)
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Item?.EventStart) && !string.IsNullOrWhiteSpace(Item?.EventEnd))
+                        {
+                            <text> to </text>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Item?.EventEnd))
+                        {
+                            @DateHelper.FormatDate(Item.EventEnd)
+                        }
+                    </span>
+                </div>
+            }
+
+            @* <div class="info-item">
+                <MudIcon Icon="@Icons.Material.Filled.AccessTime" Style="color: #555;" />
+                <span class="info-text">12:00 PM</span>
+            </div> *@
+        </div>
+
+        @* <div class="info-Access">
+            <span class="access-name">Access Fees:</span>
+            <span class="price-text">250 - 3,500 <span class="qar">QAR</span></span>
+        </div> *@
+
+
+        @if (!string.IsNullOrWhiteSpace(Item?.EventVenue))
+        {
+            <div class="location-secondary">
+                <MudIcon Icon="@Icons.Material.Filled.LocationOn" class="location-icon" />
+                <span class="location-text">@Item.EventVenue</span>
+            </div>
+        }
+
+    };
+
+    private async Task OnCalendarConfirmed(string calendarId)
+    {
+        // Use the Item object for event data
+        var title = Uri.EscapeDataString(Item?.Title ?? "");
+        var description = Uri.EscapeDataString(Item?.Description ?? "");
+        var location = Uri.EscapeDataString(Item?.EventVenue ?? "");
+
+        // Parse start and end dates from Item
+        DateTime startDate = DateTime.TryParse(Item?.EventStart, out var dtStart) ? dtStart : DateTime.Now;
+        DateTime endDate = DateTime.TryParse(Item?.EventEnd, out var dtEnd) ? dtEnd : startDate.AddHours(2);
+
+        string startUtc = startDate.ToUniversalTime().ToString("yyyyMMddTHHmmssZ");
+        string endUtc = endDate.ToUniversalTime().ToString("yyyyMMddTHHmmssZ");
+
+        string url = "";
+
+        switch (calendarId)
+        {
+            case "google":
+                url =
+                $"https://calendar.google.com/calendar/render?action=TEMPLATE&text={title}&dates={startUtc}/{endUtc}&details={description}&location={location}";
+                break;
+            case "outlook":
+                url =
+                $"https://outlook.live.com/calendar/0/deeplink/compose?subject={title}&body={description}&startdt={startDate:yyyy-MM-ddTHH:mm:ss}&enddt={endDate:yyyy-MM-ddTHH:mm:ss}&location={location}";
+                break;
+            case "webapp":
+                url =
+                $"https://outlook.office.com/calendar/0/deeplink/compose?subject={title}&body={description}&startdt={startDate:yyyy-MM-ddTHH:mm:ss}&enddt={endDate:yyyy-MM-ddTHH:mm:ss}&location={location}";
+                break;
+            case "yahoo":
+                url = $"https://calendar.yahoo.com/?v=60&title={title}&st={startUtc}&et={endUtc}&desc={description}&in_loc={location}";
+                break;
+            default:
+                return;
+        }
+
+        await JSRuntime.InvokeVoidAsync("window.open", url, "_blank");
+    }
+
+    RenderFragment ActionButtons() => __builder =>
+    {
+        @* <button class="register-button">
+            Register Now
+            <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowRight" Style="margin-right: 6px; color:white" />
+        </button> *@
+        <button class="calendar-button" @onclick="() => IsModalOpen = true">
+            Add to Calendar
+            <img src="/qln-images/add_to_calendar_Icons.svg" alt="Date Icon" class="add-to-info-icon" />
+        </button>
+
+        <AddToCalendarDialog @bind-IsVisible="IsModalOpen" Message="You will be notified 1 day ahead of this event"
+            OnConfirm="OnCalendarConfirmed" />
+    };
+}
+
+
+<style>
+    .event-card {
+        background-color: white;
+        border-radius: 6px;
+        padding: 24px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .custom-share-menu .mud-popover {
+        border-radius: 40px !important;
+        overflow: hidden;
+    }
+
+    .Ad_banner {
+        margin-top: 10px;
+    }
+
+    .share-icon {
+        margin: 0;
+        width: 32px;
+        height: 32px;
+    }
+
+        /* Target all popover menus that are open and belong to the share menu */
+    .mud-popover:has(.share-icon) .mud-list {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto;
+        gap: 4px;
+    }
+
+    .share-popover .mud-list {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto;
+        gap: 4px;
+    }
+
+
+    .mud-menu-item {
+        padding: 0px 6px 0px 0px !important;
+    }
+
+    .mud-menu-list {
+        padding-left: 6px;
+    }
+
+    .mud-menu-item .mud-menu-item-text {
+        margin: 4px 0px 0px 0px !important;
+    }
+
+    .event-title {
+        font-size: 25px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .event-image-container {
+        width: 100%;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #F0F0F0;
+    }
+
+    .event-image {
+        width: 100%;
+        max-height: 421.88px;
+        object-fit: cover;
+        display: block;
+    }
+
+    .event-info-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 5px 10px;
+        background: #ffffff;
+    }
+
+    .location {
+        display: flex;
+        align-items: center;
+        color: var(--color-primary);
+    }
+
+    .info-icon {
+        width: 20px;
+        height: 20px;
+        margin-right: 8px;
+        vertical-align: middle;
+    }
+
+    .add-to-info-icon {
+        width: 20px;
+        height: 20px;
+        margin-right: 6px;
+        vertical-align: middle;
+    }
+
+    .location-secondary {
+        display: none;
+        align-items: center;
+        color: var(--color-primary);
+    }
+
+
+    .icons-item {
+        border-radius: 50px;
+        padding: 10px;
+        border: 1px solid var(--color-secondary-grey-container);
+        color: var(--color-accent)
+    }
+
+    .icons-color {
+        background-color: white;
+        border-radius: 30px;
+        border: 1px solid var(--color-secondary-grey-container);
+        padding: 5px;
+        font-size: 14px;
+        color: var(--color-accent)
+    }
+
+    .location-icon {
+        font-size: 14px;
+        color: var(--color-primary);
+    }
+
+    .location-text {
+        margin-left: 6px;
+        font-weight: 500;
+        font-size: 13px;
+        color: var(--color-primary)
+    }
+
+    .icons {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .event-description a {
+        word-break: break-word;
+        overflow-wrap: break-word;
+        color: var(--color-primary);
+        text-decoration: underline;
+        display: inline-block;
+        max-width: 100%;
+    }
+
+    .event-description {
+        overflow-wrap: break-word;
+        word-break: break-word;
+        max-width: 100%;
+    }
+
+    .event-description p {
+        margin-bottom: 1rem;
+    }
+
+    .event-description img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 1rem auto;
+        border-radius: 8px;
+    }
+
+    .card-container {
+        background-color: white;
+        border-radius: 6px;
+        padding: 24px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .card-desktop-only {
+        display: block;
+    }
+
+    .section-title {
+        margin: 0;
+        font-size: 12px;
+        color: #2A6BA0;
+        font-weight: 500;
+        padding: 2px 6px;
+        border-radius: 3px;
+        border: 1px solid #E8F2FE;
+    }
+
+    .info-section {
+        margin: 10px 0;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid #E8F2FE;
+    }
+
+    .info-Access {
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        flex-direction: column;
+        padding: 10px 0;
+    }
+
+    .info-text {
+        font-size: 14px;
+        line-height: 26px;
+        letter-spacing: 0;
+        color: var(--color-text-heading);
+        font-weight: 500;
+    }
+
+    .price-text {
+        font-size: 25px;
+        font-weight: 600;
+        color: var(--color-text-heading);
+    }
+
+    .access-name {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--color-text-heading);
+    }
+
+    .map-access-name {
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 26px;
+        letter-spacing: 0;
+        padding: 10px 0;
+        color: var(--color-text-heading);
+    }
+
+
+    .qar {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--color-text-heading);
+    }
+
+    .register-button,
+    .calendar-button {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+        margin-bottom: 12px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+    }
+
+    .register-button {
+        background-color: var(--color-accent);
+        color: white;
+    }
+
+    .calendar-button {
+        background-color: transparent;
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--color-accent);
+        border: 1px solid var(--color-accent);
+    }
+
+    .map-container {
+        margin-top: 24px;
+    }
+
+    .map-frame {
+        width: 100%;
+        height: 200px;
+        border: none;
+        border-radius: 8px;
+    }
+
+    /* Responsive styles */
+    .event-mobile-info {
+        display: none;
+    }
+
+    @@media (max-width: 768px) {
+        .event-image-container {
+            position: relative;
+        }
+
+        .event-info-bar {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            background: transparent;
+            padding: 0;
+            justify-content: flex-end;
+            pointer-events: none;
+        }
+
+        .icons {
+            gap: 8px;
+            pointer-events: auto;
+        }
+
+        .icons-item {
+            border: none;
+        }
+
+        .card-container {
+            margin-top: 16px;
+        }
+
+        .card-desktop-only {
+            display: none;
+        }
+
+        .location {
+            display: none;
+        }
+
+        .event-mobile-info {
+            display: block;
+            padding: 10px 5px;
+        }
+
+        .event-info-bar {
+            top: 8px;
+            right: 8px;
+        }
+
+        .location-secondary {
+            display: flex;
+            padding: 5px 0;
+        }
+    }
+</style>

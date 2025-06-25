@@ -1,17 +1,38 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Infrastructure\RepositoryConfiguration\**" />
+    <Compile Remove="Infrastructure\Repository\**" />
+    <EmbeddedResource Remove="Infrastructure\RepositoryConfiguration\**" />
+    <EmbeddedResource Remove="Infrastructure\Repository\**" />
+    <None Remove="Infrastructure\RepositoryConfiguration\**" />
+    <None Remove="Infrastructure\Repository\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="DTO%27s\ContnetDaily.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" Version="4.0.2" />
+    <PackageReference Include="Azure.Search.Documents" Version="11.6.0" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.24.1" />
+    <PackageReference Include="Dapr.Actors" Version="1.13.1" />
+    <PackageReference Include="Dapr.Actors.AspNetCore" Version="1.13.1" />
+    <PackageReference Include="Dapr.AspNetCore" Version="1.13.1" />
+    <PackageReference Include="FirebaseAdmin" Version="3.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.15" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.15" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.15" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.3.0" />
+    <PackageReference Include="Microsoft.Azure.Core.Spatial" Version="1.1.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.15" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.15">
       <PrivateAssets>all</PrivateAssets>
@@ -29,9 +50,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Infrastructure\IRepository\" />
-    <Folder Include="Infrastructure\RepositoryConfiguration\" />
-    <Folder Include="Infrastructure\Repository\" />
+    <None Update="Properties\launchSettings.json">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

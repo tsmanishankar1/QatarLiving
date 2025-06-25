@@ -12,10 +12,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
         public static RouteGroupBuilder MapCompanyEndpoints(this RouteGroupBuilder group)
         {
             group.MapGetAllCompanyProfiles()
+                .MapGetCompanyProfilesByTokenUser()
+                .MapGetStatusByTokenUser()
                 .MapGetCompanyProfile()
                 .MapCreateCompanyProfile()
                 .MapUpdateCompanyProfile()
-                .MapDeleteCompanyProfile();
+                .MapDeleteCompanyProfile()
+                .MapGetCompanyProfileCompletionStatus()
+                .MapCompanyApproval()
+                .MapGetCompanyApprovalInfo()
+                .MapVerificationStatus();
             return group;
         }
     }

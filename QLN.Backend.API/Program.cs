@@ -1,28 +1,67 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Azure.Core.Serialization;
+using Dapr.Client;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using QLN.Backend.API.ServiceConfiguration;
+using QLN.Common.Infrastructure.CustomEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint;
+using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
+using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.User;
 using QLN.Common.Infrastructure.DbContext;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Common.Infrastructure.TokenProvider;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
-using Microsoft.OpenApi.Models;
-using QLN.Common.Infrastructure.CustomEndpoints.User;
-using Dapr.Client;
-using QLN.Backend.API.ServiceConfiguration;
-using QLN.Common.Infrastructure.CustomEndpoints.BannerEndPoints;
-using QLN.Common.Swagger;
-using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
 
+using QLN.Common.Infrastructure.CustomEndpoints.Wishlist;
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+#region Kestrel For Dev Testing via dapr.yaml
+// disabling as this should check if I am running local, 
+// not IsDevelopment as our dev environment uses Is
+//if (builder.Environment.IsDevelopment())
+//{
+//    builder.WebHost.ConfigureKestrel(options =>
+//   {
+//        options.ListenAnyIP(5200); // HTTP
+//        options.ListenAnyIP(7161, listenOptions =>
+//        {
+//          listenOptions.UseHttps(); // HTTPS
+//        });
+//    });
+//}
+#endregion
+
+//builder.Services.AddControllers(); // disabling as we dont use controllers
 builder.Services.AddEndpointsApiExplorer();
 
+#region Configure HttpClient with increased timeout for Dapr
+builder.Services.AddHttpClient("DaprClient")
+    .ConfigureHttpClient(client =>
+    {
+        client.Timeout = TimeSpan.FromMinutes(5); 
+    });
 
-#region swagger configuration
+#endregion
+
+#region Swagger configuration
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1.1.1", new OpenApiInfo
@@ -35,14 +74,12 @@ builder.Services.AddSwaggerGen(options =>
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
-        Type = SecuritySchemeType.Http, 
+        Type = SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
         Description = "Enter 'Bearer' followed by your JWT token."
     });
-
-    options.OperationFilter<SwaggerFileUploadFilter>();
 
     options.MapType<IFormFile>(() => new OpenApiSchema
     {
@@ -76,11 +113,10 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.Configure<DataProtectionTokenProviderOptions>(opt =>
 {
-    opt.TokenLifespan = TimeSpan.FromMinutes(30);
+    opt.TokenLifespan = TimeSpan.FromDays(1);
 });
 
-
-#region password identity options
+#region Identity password options
 builder.Services.Configure<IdentityOptions>(options =>
 {
     options.Password.RequireDigit = true;
@@ -92,12 +128,12 @@ builder.Services.Configure<IdentityOptions>(options =>
 });
 #endregion
 
-#region database context
+#region Database context
 builder.Services.AddDbContext<QatarlivingDevContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 
-#region verification
+#region Identity configuration
 builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
 {
     options.SignIn.RequireConfirmedEmail = true;
@@ -110,9 +146,11 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
 })
 .AddEntityFrameworkStores<QatarlivingDevContext>()
 .AddDefaultTokenProviders();
+
+WebApplicationBuilder builder1 = builder;
 #endregion
 
-#region authentication
+#region Authentication - New JWT Bearer configuration
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -128,40 +166,79 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+        RoleClaimType = ClaimTypes.Role,
+        NameClaimType = ClaimTypes.Name
     };
 
     options.MapInboundClaims = false;
-
-    options.TokenValidationParameters.RoleClaimType = "role";
-    options.TokenValidationParameters.NameClaimType = "name";
-
 });
 
 #endregion
 
-builder.Services.AddDaprClient(clientBuilder =>
-{
-    clientBuilder
-        .UseHttpEndpoint("http://localhost:3500")
-        .UseGrpcEndpoint("http://localhost:58796");
-});
-
 builder.Services.AddAuthorization();
 
+builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
+
+#region Dapr client & actors 
+builder.Services.AddSingleton<DaprClient>(_ =>
+{
+    return new DaprClientBuilder()
+        .Build();
+});
 
 builder.Services.AddDaprClient();
+#endregion
+builder.Services.AddActors(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
+builder.Services.ConfigureHttpJsonOptions(opts =>
+{
+    opts.SerializerOptions.Converters
+        .Add(new MicrosoftSpatialGeoJsonConverter());
+});
+builder.Services.AddResponseCaching();
+builder.Services.AddResponseCompression(options =>
+    {
+        options.EnableForHttps = true;
+        options.MimeTypes = new[] { "text/css", "application/javascript", "text/html", "application/json" };
+    });
 
-builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
+
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
+builder.Services.SearchServicesConfiguration(builder.Configuration);
+builder.Services.ContentServicesConfiguration(builder.Configuration);
+builder.Services.AnalyticsServicesConfiguration(builder.Configuration);
+builder.Services.BannerServicesConfiguration(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
+builder.Services.EventConfiguration(builder.Configuration);
+builder.Services.SubscriptionConfiguration(builder.Configuration);
+builder.Services.PayToPublishConfiguration(builder.Configuration);
+builder.Services.ContentConfiguration(builder.Configuration);
+builder.Services.AddonConfiguration(builder.Configuration);
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+#region DAPR Subscriptions
+
+app.UseCloudEvents();
+
+app.MapSubscribeHandler();
+
+#endregion
+
+app.UseResponseCaching();                
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseResponseCompression();
+}
+
+if (builder.Configuration.GetValue<bool>("EnableSwagger"))
 {
     app.UseSwagger();
     app.UseSwaggerUI(options =>
@@ -171,17 +248,78 @@ if (app.Environment.IsDevelopment())
         options.DocumentTitle = "Qatar Management API";
     });
 }
-
+app.UseHttpsRedirection();
+app.UseAuthorization();
 
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
+var wishlistgroup = app.MapGroup("/api/wishlist");
+wishlistgroup.MapWishlist();
 var companyGroup = app.MapGroup("/api/companyprofile");
-companyGroup.MapCompanyEndpoints();
+companyGroup.MapCompanyEndpoints()
+    .RequireAuthorization();
 var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedsEndpoints();
+var servicesGroup = app.MapGroup("/api/services");
+servicesGroup.MapServicesEndpoints();
+var eventGroup = app.MapGroup("v2/api/event");
+eventGroup.MapEventEndpoints()
+    .RequireAuthorization();
+var contentGroup = app.MapGroup("/api/content");
+contentGroup.MapContentLandingEndpoints();
+var bannerGroup = app.MapGroup("/api/banner");
+bannerGroup.MapBannerEndpoints();
+var analyticGroup = app.MapGroup("/api/analytics");
+analyticGroup.MapAnalyticsEndpoints();
+app.MapGroup("/api/subscriptions")
+   .MapSubscriptionEndpoints();
 
-app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
+app.MapGroup("/api/payments")
+ .MapPaymentEndpoints();
+   //.RequireAuthorization(); // so because you have authorize here, it means all these endpoints need authorization - I am overriding it later on by adding AllowAnonymous as an option on a per endpoint implementation
+
+app.MapGroup("/api/paytopublish")
+    .MapPayToPublishEndpoints();
+
+app.MapGroup("/api/v2/content")
+    .MapNewsContentEndpoints();
+
+
+app.MapGroup("/api/addon")
+ .MapAddonEndpoints();
+
+
+app.MapAllBackOfficeEndpoints();
+app.MapLandingPageEndpoints();
+
+app.MapGet("/testauth", (HttpContext context) =>
+{
+    var user = context.User;
+    if (user == null || !user.Identity.IsAuthenticated)
+    {
+        return Results.Unauthorized();
+    }
+    var claims = user.Claims.Select(c => new { c.Type, c.Value }).ToList();
+    return Results.Ok(new { Message = "Authenticated", Claims = claims });
+    })
+    .WithName("TestAuth")
+    .WithTags("AAAAuthentication")
+    .WithDescription("Test authentication endpoint to verify JWT token claims.")
+    .RequireAuthorization();
+
+app.MapPost("/testauth", (HttpContext context) =>
+{
+    var user = context.User;
+    if (user == null || !user.Identity.IsAuthenticated)
+    {
+        return Results.Unauthorized();
+    }
+    var claims = user.Claims.Select(c => new { c.Type, c.Value }).ToList();
+    return Results.Ok(new { Message = "Authenticated", Claims = claims });
+})
+    .WithName("TestPostAuth")
+    .WithTags("AAAAuthentication")
+    .WithDescription("Test authentication endpoint to verify JWT token claims.")
+    .RequireAuthorization();
+
 app.Run();

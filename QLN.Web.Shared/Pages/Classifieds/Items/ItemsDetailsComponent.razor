@@ -1,0 +1,75 @@
+@page "/qln/classifieds/items/details/{*Id}"
+@using QLN.Web.Shared.Services
+@using System.Text.Json
+@using Microsoft.AspNetCore.WebUtilities
+@using QLN.Web.Shared.Pages.Classifieds.Items.Components
+@using QLN.Web.Shared.Pages.Classifieds.Skeletons
+@using QLN.Web.Shared.Components.Classifieds.PromotedItemCards
+@using QLN.Web.Shared.Components.EmptyCard
+@inject NavigationManager NavigationManager
+@layout ClassifiedsLayout
+@inherits ItemsDetailsComponentBase
+
+<div style="width: 100%; background-color: var(--color-secondary-background);">
+    <div class="max-container">
+        <div class="category-banner-wrapper">
+            <img src="/qln-images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
+        </div>
+
+        @if (IsLoading)
+        {
+              <div class="loading-container">
+                <IteamDetailsSkeletons />
+            </div>
+        }
+       else if (ItemsDetails is not null)
+        {
+            <ItemDetailsSection Item="ItemsDetails" Simler="ItemsDetailsSimler" />
+        }
+        else
+        {
+            <EmptyCard Title="Item details not found."
+                Subtitle="Please try again later or explore other available events." />
+        }
+    </div>
+</div>
+
+<style>
+    .category-banner-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+    .max-container {
+            max-width: 1170px;
+            margin: 0 auto;
+        }
+    .category-banner-image {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        object-fit: cover;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+
+    .similar-items-title {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--color-text-heading);
+    }
+
+    .view-all-link {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        color: #ff6600;
+        /* Match the orange tone in the image */
+        text-decoration: none;
+    }
+
+    .view-all-link:hover {
+        text-decoration: underline;
+    }
+</style>

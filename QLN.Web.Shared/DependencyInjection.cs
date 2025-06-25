@@ -1,13 +1,9 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MudBlazor;
 using MudBlazor.Services;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace QLN.Web.Shared
 {
@@ -17,10 +13,10 @@ namespace QLN.Web.Shared
         {
             services.AddMudServices();
             services.AddScoped<GlobalAppState>();
-             services.AddScoped<SearchStateService>();
             var section = configuration.GetSection("ApiSettings");
             services.Configure<ApiSettings>(configuration.GetSection("ApiSettings"));
             services.AddHttpClient<ApiService>();
+
 
 
             return services;

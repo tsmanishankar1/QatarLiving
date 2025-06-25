@@ -1,10 +1,8 @@
-﻿@page "/edit-company"
-@inject ISnackbar Snackbar
-@inject IJSRuntime JSRuntime
+﻿@page "/qln/dashboard/company/edit/{id}"
 
 @using QLN.Web.Shared.Components.BreadCrumb
-@using System.ComponentModel.DataAnnotations
-
+@using QLN.Web.Shared.Components.EmptyCard
+@using MudExRichTextEditor
 
 <div style=" background-color: #F2F4F7; height: 100%;width:100%;padding: 24px;">
     <div Class=" mt-1 ml-10">
@@ -12,308 +10,390 @@
 
     </div>
 
-    <MudText Class="heading-style mt-2 ml-14">Contact Information</MudText>
+    @if (isCompanyLoading)
+    {
+        <div class="p-6">
+            <!-- Breadcrumb Skeleton -->
+            <MudSkeleton Width="30%" Height="24px" Animation="Animation.Pulse" Class="mb-4" />
 
-    <MudForm @ref="_form" Model="@_model" Validation="true" Class="mt-6">
-        <MudGrid GutterSize="3">
-            <!-- Company Logo Upload -->
-            <MudGrid GutterSize="3">
-                <MudItem xs="12" sm="4">
-                    <div Class="image-upload-container" Style="height: 100%; display: flex; justify-content: center;">
-                        <div class="upload-wrapper">
-                            <div class="upload-content-container">
-                                <MudText Typo="Typo.subtitle2" Class="upload-title">Company Logo</MudText>
+            <MudPaper Class="d-flex pa-4" Style="gap: 24px;">
+                <!-- Left-side Image Skeleton -->
+                <div style="width: 180px; height: 180px;">
+                    <MudSkeleton Variant="Variant.Circular" Width="180px" Height="180px" Animation="Animation.Pulse" />
+                </div>
 
-                                <label for="logo-upload" class="upload-box">
-                                    @if (logoPreviewUrl != null)
-                                    {
-                                        <img src="@logoPreviewUrl" class="logo-preview" alt="Company logo preview" />
-                                    }
-                                    else
-                                    {
-                                        <div class="upload-container" style="text-align: center; cursor: pointer;">
-                                            <img src="images/Upload.svg" alt="Upload" style="height: 48px; color: #FF7F38; fill: #FF7F38;" />
-                                            <div style="margin-top: 8px; color: #FF7F38; font-size: 14px; font-weight: 500;">Upload Image</div>
-                                        </div>
-                                    }
-                                </label>
+                <!-- Right-side Form Skeleton -->
+                <div class="flex-grow-1">
+                    <MudStack Spacing="2">
+                        @for (int i = 0; i < 10; i++)
+                        {
+                            <MudSkeleton Width="80%" Height="32px" />
+                        }
+                    </MudStack>
+                </div>
+            </MudPaper>
+        </div>
+    }
 
-                                <MudText Typo="Typo.caption" Class="upload-subtitle">Recommended size: 1920×1200 pixels</MudText>
-                            </div>
 
-                            <InputFile id="logo-upload" OnChange="HandleLogoUpload" accept="image/*" style="display: none;" />
+    else if (companyProfile != null)
+    {
+        <MudContainer Class="company-profile-container">
+            <MudGrid GutterSize="24px" class="ml-3 mt-4">
+             
 
-                       
-                        </div>
-                    </div>
+                <!-- Logo Upload -->
+                <MudItem xs="12" md="3" Class="company-profile-logo-container">
+                    <!-- Contact Information -->
+
+                    <MudText Class="heading-style mt-2 ml-14">Contact Information</MudText>
+
+                    <MudFileUpload T="IBrowserFile" Accept="image/*" FilesChanged="OnLogoFileSelected" MaxFileSize="10485760">
+                        <ActivatorContent>
+                            <MudPaper Elevation="1"
+                                      Class="d-flex flex-column align-center justify-center mt-4 p-2"
+                                      Style="height: 240px; width:240px; border: 2px dashed #ccc; cursor: pointer;">
+                                @if (!string.IsNullOrEmpty(companyProfile.CompanyLogo))
+                                {
+                                    <img src="@($"data:image/*;base64,{companyProfile.CompanyLogo}")"
+                                         alt="Company Logo"
+                                         style="max-height: 100%; max-width: 100%; object-fit: contain;" />
+                                    <div style=" position: absolute; bottom: 0;color:white;width:240px; height: 24px;background-color: #000000CC; display: flex; justify-content: center; align-items: center;gap: 8px;">
+
+
+                                        <MudIconButton Icon="@Icons.Material.Outlined.Edit"
+                                                       Style="color: white; padding: 0;" />
+                                        <MudIconButton Icon="@Icons.Material.Outlined.Delete"
+                                                       Style="color: white; padding: 0;"
+                                                       OnClick="ClearLogo" />
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div style="width: 64px; height: 64px; background-color: #E0E0E0; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                        <img src="/qln-images/Upload.svg" alt="Upload" style="height: 48px;" />
+                                    </div>
+                                    <MudText style="margin-top: 8px; color: #FF7F38; font-size: 14px; font-weight: 500;">Upload image</MudText>
+                                }
+
+                            </MudPaper>
+                        </ActivatorContent>
+                    </MudFileUpload>
+
+
+
+                    <MudText Typo="Typo.caption" Class="mt-1">Recommended size: 1920×1200, Max: 10MB</MudText>
                 </MudItem>
 
 
-                <!-- Form Fields -->
-                <MudItem xs="12" sm="8">
-                    <MudStack Spacing="2">
-                                                <div class="selector-wrapper">
 
-                        <MudTextField
-                            id="businessName"
+                <MudItem xs="12" md="9" Class="company-profile-form-section">
+                    <EditForm Model="@companyProfile" OnValidSubmit="SaveCompanyProfileAsync">
+                        <DataAnnotationsValidator />
 
-                                      @bind-Value="_model.BusinessName"
-                                      Immediate="true"
-                                      Label="Business Name"
-                                      For="@(() => _model.BusinessName)"
-                                      Class="form-input no-underline"
-                                      Required />
-                                      </div>
-                        <div class="selector-wrapper">
+                        <MudTextField id="businessName" @bind-Value="companyProfile.BusinessName" Label="Business Name" Required="true" Class="form-input no-underline" Immediate="true"
+                                      For="@(() => companyProfile.BusinessName)" />
+                        <ValidationMessage For="@(() => companyProfile.BusinessName)" />
 
-                            <MudSelect id="country"
-                                       @bind-Value="_model.Country"
-                                      Immediate="true"
-                                      T="string" Label="Country" For="@(() => _model.Country)"
-                                       Class="form-input no-underline"
-                                       Required>
-                                <MudSelectItem Value="@("Qatar")">Qatar</MudSelectItem>
-                                <MudSelectItem Value="@("UAE")">UAE</MudSelectItem>
+                        <MudSelect T="string"
+                                   Label="Country *"
+                                   Value="companyProfile.Country"
+                                   ValueChanged="OnCountryChanged"
+                                   Class="select-input no-underline"
+                                   Immediate="true">
+                            @foreach (var item in CountryCityList)
+                            {
+                                <MudSelectItem Value="@item.Country">@item.Country</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <ValidationMessage For="@(() => companyProfile.Country)" />
+
+                        <MudSelect T="string"
+                                   Label="City *"
+                                   @bind-Value="companyProfile.City"
+                                   Class="select-input no-underline"
+                                   Immediate="true"
+                                   Disabled="@(!AvailableCities.Any())">
+                            @foreach (var city in AvailableCities)
+                            {
+                                <MudSelectItem Value="@city">@city</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <ValidationMessage For="@(() => companyProfile.City)" />
+
+
+                    <MudTextField @bind-Value="companyProfile.BranchLocations[0]" Label="Branches" Class="form-input no-underline" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.LocationOn" />
+
+                        <MudTextField @bind-Value="companyProfile.PhoneNumber" Label="Phone Number" Class="form-input no-underline" Adornment="Adornment.Start" AdornmentText="@companyProfile.PhoneNumberCountryCode" />
+                        <MudTextField @bind-Value="companyProfile.WhatsAppNumber" Label="WhatsApp Number" Class="form-input no-underline" Adornment="Adornment.Start" AdornmentText="@companyProfile.WhatsAppCountryCode" />
+                        <ValidationMessage For="@(() => companyProfile.WebsiteUrl)" Immediate="true" />
+
+                    <MudTextField @bind-Value="companyProfile.Email" Label="Email" Class="form-input no-underline" />
+                        <ValidationMessage For="@(() => companyProfile.Email)" />
+
+                    <MudTextField @bind-Value="companyProfile.WebsiteUrl" Label="Website URL" Class="form-input no-underline" />
+                        <ValidationMessage For="@(() => companyProfile.WebsiteUrl)" Immediate="true" />
+
+                    <MudTextField @bind-Value="companyProfile.FacebookUrl" Label="Facebook URL" Class="form-input no-underline" />
+                        <ValidationMessage For="@(() => companyProfile.FacebookUrl)" />
+
+                    <MudTextField @bind-Value="companyProfile.InstagramUrl" Label="Instagram URL" Class="form-input no-underline" />
+                        <ValidationMessage For="@(() => companyProfile.InstagramUrl)" />
+
+                    <!-- Operating Hours -->
+
+                    <MudText Typo="Typo.h6" Class="section-header">Operating Hours</MudText>
+
+                    <MudGrid class="grid-flex">
+                        <div class="row-flex">
+                            <MudSelect T="string" Label="Start Day *"
+                                       @bind-Value="companyProfile.StartDay"
+                                       Class="select-input no-underline"
+                                       Immediate="true">
+                                @foreach (var day in Enum.GetValues<DaysOfWeek>())
+                                {
+                                    <MudSelectItem T="string" Value="@day.ToString()">@day</MudSelectItem>
+                                }
                             </MudSelect>
-                        </div>
-                        <div class ="selector-wrapper">
 
-                            <MudSelect T="string" Label="City" For="@(() => _model.City)"
-                                       Class="form-input no-underline"
-                                       id="City"
-                                       @bind-Value="_model.City"
-                                       Immediate="true"
-                                       Required>
-                                <MudSelectItem Value="@("Doha")">Doha</MudSelectItem>
-                                <MudSelectItem Value="@("Dubai")">Dubai</MudSelectItem>
+                            <MudSelect T="string" Label="End Day *"
+                                       @bind-Value="companyProfile.EndDay"
+                                       Class="select-input no-underline"
+                                       Immediate="true">
+                                @foreach (var day in Enum.GetValues<DaysOfWeek>())
+                                {
+                                    <MudSelectItem T="string" Value="@day.ToString()">@day</MudSelectItem>
+                                }
                             </MudSelect>
+                        
                         </div>
-                                                <div class="selector-wrapper">
+                        <div class="row-flex">
 
-                        <MudTextField Label="Branch’s Location"
-                                          Class="form-input no-underline"
-                                          @bind-Value="_model.BranchLocations"
-                                      id="BranchLocations"
-                                      Immediate="true"
-                                      Adornment="Adornment.End"
-                                      AdornmentIcon="@Icons.Material.Filled.LocationOn"
-                                          />
-                                      </div>
-                                                              <div class="selector-wrapper">
+                            <MudTimePicker @bind-Time="companyProfile.StartHour"
+                                           Label="Start Hour"
+                                           Class="grid-input no-underline"
+                                           Adornment="Adornment.End"
+                                           AdornmentIcon="@Icons.Material.Outlined.AccessTime" />
 
-                        <MudTextField Label="Phone Number" For="@(() => _model.PhoneNumber)"
-                                          Class="form-input no-underline"
-                                          Required
-                                      id="PhoneNumber"
-                                      @bind-Value="_model.PhoneNumber"
-                                      Immediate="true"
-                                      />
-                                      </div>
-                                                                                      <div class="selector-wrapper">
+                            <MudTimePicker @bind-Time="companyProfile.EndHour"
+                                           Label="End Hour"
+                                           Class="grid-input no-underline"
+                                           Adornment="Adornment.End"
+                                           AdornmentIcon="@Icons.Material.Outlined.AccessTime" />
 
-                        <MudTextField Label="WhatsApp Number"
-                                      For="@(() => _model.WhatsAppNumber)"
-                                      Class="form-input no-underline"
-                                      id="WhatsAppNumber"
-                                      @bind-Value="_model.WhatsAppNumber"
-                                      Immediate="true"
-                                      Required
-                                      />
-                                      </div>
-                                                                                      <div class="selector-wrapper">
+                        </div>
+                    </MudGrid>
 
-                        <MudTextField Label="Email" For="@(() => _model.Email)"
-                                      Class="form-input no-underline"
-                                      id="Email"
-                                      @bind-Value="_model.Email"
-                                      Immediate="true"
-                                      Required />
-                                      </div>
-                                                                                      <div class="selector-wrapper">
-
-                        <MudTextField Label="Website URL" Class="form-input no-underline"
-                                      For="@(() => _model.WebsiteUrl)"
-                                      id="WebsiteUrl"
-                                      @bind-Value="_model.WebsiteUrl"
-                                      Immediate="true"
-                                      Required/>
-                                      </div>
-
-                                                <div class="selector-wrapper">
-                        <MudTextField Label="Facebook URL" Class="form-input no-underline"
-                                      For="@(() => _model.FacebookUrl)"
-                                      id="FacebookUrl"
-                                      @bind-Value="_model.FacebookUrl"
-                                      Immediate="true"
-                                          Required />
-                                      </div>
-                                                                                      <div class="selector-wrapper">
-
-                        <MudTextField Label="Instagram URL" Class="form-input no-underline"
-                                      For="@(() => _model.InstagramUrl)"
-                                      id="InstagramUrl"
-                                      @bind-Value="_model.InstagramUrl"
-                                      Immediate="true"
-                                          Required />
-                                      </div>
-                        <!-- Operating Hours -->
-                        <MudItem xs="12" Style="width:472px">
-                            <MudText Typo="Typo.subtitle1" Class="mb-2" Style="font-weight:600;">Operating Hours</MudText>
-
-                            <div class="row-flex">
-                                <MudTextField Class="grid-input no-underline" Label="Start Day" Placeholder="e.g. Sunday"
-                                For="@(() => _model.StartDay)"
-                                              id="StartDay"
-                                              @bind-Value="_model.StartDay"
-                                              Immediate="true"
-                                              OpenTo="OpenTo.Day"
-                                              DateFormat="dddd" 
-                                              Adornment="Adornment.End"
-                                              AdornmentIcon="@Icons.Material.Filled.CalendarToday" />
-                                
-                                <MudTextField Class="grid-input no-underline" Label="End Day" Placeholder="e.g. Thursday"
-                                              For="@(() => _model.EndDay)"
-                                              id="EndDay"
-                                              @bind-Value="_model.EndDay"
-                                              Immediate="true"
-                                              OpenTo="OpenTo.Day"
-                                              DateFormat="dddd"
-                                              Adornment="Adornment.End"
-                                              AdornmentIcon="@Icons.Material.Filled.CalendarToday" />
-                            </div>
-
-                            <div class="row-flex">
-                                <MudTextField Class="grid-input no-underline" Label="Start Hour" Placeholder="e.g. 8:00 AM" For="@(() => _model.StartHour)"
-                                              id="StartHour"
-                                              @bind-Value="_model.StartHour"
-                                              Immediate="true"
-                                              AmPm="true"
-                                              Adornment="Adornment.End"
-                                              AdornmentIcon="@Icons.Material.Filled.AccessTime" />
-                                <MudTextField Class="grid-input no-underline" Label="End Hour" Placeholder="e.g. 5:00 PM" For="@(() => _model.EndHour)"
-                                              id="EndHour"
-                                              @bind-Value="_model.EndHour"
-                                              Immediate="true"
-                                              AmPm="true"
-                                              Adornment="Adornment.End"
-                                              AdornmentIcon="@Icons.Material.Filled.AccessTime" />
-                            </div>
-                        </MudItem>
+                    <!-- Company Profile -->
+                    <MudText Typo="Typo.h6" Class="heading-style">Company Profile</MudText>
+                    <MudSelect T="int"
+                               Label="Nature of Business *"
+                               SelectedValues="@companyProfile.NatureOfBusiness"
+                               SelectedValuesChanged="@((IEnumerable<int> values) => { companyProfile.NatureOfBusiness = values.ToList(); })"
+                               MultiSelection="true"
+                               ToStringFunc="@(value => GetDisplayName((NatureOfBusiness)value))"
+                               Class="select-input no-underline">
+                        @foreach (var item in Enum.GetValues<NatureOfBusiness>())
+                        {
+                            <MudSelectItem Value="@(Convert.ToInt32(item))">@GetDisplayName(item)</MudSelectItem>
+                        }
+                    </MudSelect>
 
 
-                        <!-- Company Profile -->
-                        <MudItem xs="12">
-                            <MudText Class="section-header">Company Profile</MudText>
-                            <div class="selector-wrapper">
-                                <MudSelect T="string"
-                                    Label="Nature of Business"
-                                           id="NatureOfBusiness"
-                                           @bind-Value="_model.NatureOfBusiness"
-                                           Immediate="true"
-                                           Class="form-input no-underline"
-                                           For="@(() => _model.NatureOfBusiness)" Required>
-                                    <MudSelectItem Value="@("Retail")">Retail</MudSelectItem>
-                                    <MudSelectItem Value="@("Wholesale")">Wholesale</MudSelectItem>
-                                </MudSelect>
-                            </div>
-                            <div class="selector-wrapper">
-                                <MudSelect T="string"
-                                           id="CompanySize"
-                                           @bind-Value="_model.CompanySize"
-                                      Immediate="true"
-                                           Label="Company Size" For="@(() => _model.CompanySize)"
-                                           Class="form-input no-underline"
-                                           Required>
-                                    <MudSelectItem Value="@("1-10")">1-10</MudSelectItem>
-                                    <MudSelectItem Value="@("11-50")">11-50</MudSelectItem>
-                                    <MudSelectItem Value="@("51-200")">51-200</MudSelectItem>
-                                </MudSelect>
-                            </div>
-                            <div class="selector-wrapper">
-                                <MudSelect T="string"
-                                           id="CompanyType"
-                                      @bind-Value="_model.CompanyType"
-                                      Immediate="true"
-                                           Label="Company Type" For="@(() => _model.CompanyType)" Class="form-input no-underline"
-                                           Required>
-                                    <MudSelectItem Value="@("Private")">Private</MudSelectItem>
-                                    <MudSelectItem Value="@("Public")">Public</MudSelectItem>
-                                </MudSelect>
-                            </div>
-                            <div class="selector-wrapper">
+                    <MudSelect T="int" Label="Company Size*" @bind-Value="companyProfile.CompanySize" Class="select-input no-underline">
+                        @foreach (var item in Enum.GetValues<CompanySize>())
+                        {
+                            <MudSelectItem T="int" Value="@(Convert.ToInt32(item))">@GetDisplayName(item)</MudSelectItem>
+                        }
+                    </MudSelect>
 
-                                <MudTextField id="UserDesignation"
-                                              @bind-Value="_model.UserDesignation"
-                                      Immediate="true"
-                                              Class="form-input no-underline"
-                                              Label="User Designation" For="@(() => _model.UserDesignation)" />
+                    <MudSelect T="int" Label="Company Type*" @bind-Value="companyProfile.CompanyType" Class="select-input no-underline">
+                        @foreach (var item in Enum.GetValues<CompanyType>())
+                        {
+                            <MudSelectItem T="int" Value="@(Convert.ToInt32(item))">@GetDisplayName(item)</MudSelectItem>
+                        }
+                    </MudSelect>
 
-                            </div>
-                                                                            <div class="selector-wrapper">
+                    <MudTextField @bind-Value="companyProfile.UserDesignation" Label="User Designation" Class="description-input no-underline" />
+                    @*                     <MudTextField T="string" Label="Business Description" @bind-Value="companyProfile.BusinessDescription" Lines="5" Class="description-input no-underline" />
+ *@                    
 
-                            <MudTextField Class="form-input no-underline"
-                                          id="BusinessDescription"
-                                          @bind-Value="_model.BusinessDescription"
-                                          Immediate="true" Label="Description" For="@(() => _model.BusinessDescription)" Lines="4"
-                                          MaxLength="300" />
+                <MudExRichTextEdit @bind-Value="companyProfile.BusinessDescription"
+                                       Height="300"
+                                       Class="description-input no-underline"
+                                       Placeholder="Write your business description..." />
+                    @*  @if (!string.IsNullOrWhiteSpace(companyProfile?.BusinessDescription))
+                    {
+                        <div class="mt-4" style="border: 1px solid #D0D5DD; padding: 16px;">
+                            <h6>Preview:</h6>
+                            @((MarkupString)companyProfile.BusinessDescription)
+                        </div>
+                    } *@
+                    <!-- License & Visibility -->
+                    <MudText Typo="Typo.h6" Class="heading-style">License & Visibility</MudText>
 
-</div>
+                    <MudTextField T="int" @bind-Value="companyProfile.CrNumber" Label="CR Number" Class="form-input no-underline" />
+                    <MudPaper Class="d-flex align-center mt-2 p-2 doc-input no-underline">
+                        <MudText Typo="Typo.body1">
+                            CR Document*
+                            @if (!string.IsNullOrEmpty(crDocumentBase64))
+                            {
+                                @*           <a href="@($"data:application/pdf;base64,{crDocumentBase64}")" target="_blank">
+                                    <MudText Typo="Typo.caption" Class="ml-2">@crFileName</MudText>
+                                                             </a> *@
 
-                        </MudItem>
+                                <MudText Typo="Typo.caption" Class="ml-2">@crFileName</MudText>
+                                <MudIconButton Icon="@Icons.Material.Outlined.Close"
+                                               Size="Size.Small"
+                                               Color="Color.Error"
+                                               OnClick="ClearCrFile" />
+                            }
 
-                        <!-- License -->
-                        <MudItem xs="12">
-                            <MudText Class="section-header">License & Visibility</MudText>
-                                                                            <div class="selector-wrapper">
+                        </MudText>
+                        <MudSpacer />
 
-                            <MudTextField T="string"
-                                          Label="CR Number"
-                                              Class="form-input no-underline"
-                                          Adornment="Adornment.End"
-                                          AdornmentIcon="@Icons.Material.Filled.Upload"
-                                          OnAdornmentClick="TriggerFileUpload" />
-                            <InputFile id="doc-upload" OnChange="HandleDocumentUpload" style="display: none;" />
-                            </div>
-                            <div class="input-caption mt-2">
-                                Supported file formats: PDF, PNG, JPEG. Max: 10MB
-                            </div>
+                        <MudFileUpload T="IBrowserFile" Accept=".pdf,.png,.jpg,.jpeg"
+                                       MaxFileSize="10485760" FilesChanged="OnCrFileSelected">
+                            <ActivatorContent>
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Primary"
+                                           EndIcon="@Icons.Material.Outlined.CloudUpload"
+                                           Class="upload-button">
+                                    Upload
+                                </MudButton>
+                            </ActivatorContent>
+                        </MudFileUpload>
 
 
-                        </MudItem>
+                    </MudPaper>
 
-                    </MudStack>
-                    <!-- Submit Button -->
-                    <MudItem xs="12">
-                        <MudButton Variant="Variant.Filled" OnClick="SubmitForm" Class="mt-4 px-8" Style="background-color: #F26D1E;color:white">
+                    <MudText Typo="Typo.caption">Supported file formats: PDF, PNG, JPG. Max: 10MB</MudText>
+                    <!-- Save Button -->
+                    <MudItem xs="12" Class="mt-4 button-container">
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       Style="width:100%"
+                                       Disabled="@isSaving"
+                                       Loading="@isSaving"
+                                       ButtonType="ButtonType.Submit">
                             Save
                         </MudButton>
-
                     </MudItem>
+                   </EditForm>
                 </MudItem>
 
-            </MudGrid>
-        </MudGrid>
-    </MudForm>
 
+            </MudGrid>
+        </MudContainer>
+    }
+
+    else
+    {
+        <EmptyCard Title="Company Profile Not Found" Subtitle="The company profile you are trying to edit does not exist." />
+    }
 </div>
 
-
 <style>
-
-    .input-caption {
-        font-size: 0.75rem;
-        color: #888;
-        margin-top: 0.25rem;
-    }
 
     .heading-style {
         font-family: 'Public Sans', sans-serif;
         font-weight: 600;
         font-size: 18px;
         line-height: 26px;
-        letter-spacing: 0;
-        vertical-align: middle;
         color: #00426D;
+        margin-top: 14px;
+    }
+
+    .company-profile-container {
+        background-color: #F2F4F7;
+    }
+
+    .form-input {
+        justify-content: center;
+        width: 472px;
+        height: 60px;
+        margin-top: 14px;
+        background-color: #FFFFFF;
+        border-radius: 6px;
+        padding: 10px;
+        position: relative;
+        border: 1px solid #D0D5DD;
+    }
+
+    .select-input {
+        justify-content: center;
+        margin-top: 14px;
+        background-color: #FFFFFF;
+        border-radius: 6px;
+        padding: 10px;
+        position: relative;
+        border: 1px solid #D0D5DD;
+    }
+
+    .doc-input {
+        justify-content: center;
+        max-width: 472px;
+        height: 60px;
+        margin-top: 14px;
+        background-color: #FFFFFF;
+        border-radius: 6px;
+        padding: 10px;
+        position: relative;
+        border: 1px solid #D0D5DD;
+    }
+
+    .mud-select {
+        display: flex;
+        flex-grow: 1;
+        position: relative;
+        max-width: 472px !important;
+    }
+
+    .description-input {
+        justify-content: center;
+        max-width: 472px;
+        margin-top: 14px;
+        background-color: #FFFFFF;
+        border-radius: 6px;
+        padding: 10px;
+        position: relative;
+        border: 1px solid #D0D5DD;
+    }
+
+    .grid-flex {
+        display: flex;
+        gap: 10px;
+        flex-direction: column;
+        margin-top: 10px;
+        margin-left: 10px;
+        width: 472px;
+    }
+
+    .row-flex {
+        display: flex;
+        gap: 10px;
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    .grid-input {
+        width: 232px !important;
+        background-color: #FFFFFF;
+        padding: 0px 10px;
+        margin-top: 10px;
+        height: 60px;
+        border: 1px solid #D0D5DD;
+    }
+
+    .upload-subtitle {
+        color: #9E9E9E;
+        text-align: center;
+        margin-top: 8px;
+    }
+
+    .grid-input .mud-input-slot {
+        border-bottom: none !important;
     }
 
     .section-header {
@@ -323,144 +403,129 @@
         color: #333;
     }
 
-    .image-upload-container {
-        padding: 1rem;
+    .upload-button {
+        border-radius: 12px;
+        text-transform: none;
     }
 
-    .upload-wrapper {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+    .button-container {
+        max-width: 472px;
     }
 
-    .upload-content-container {
-        width: 240px;
-        height: 282px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: space-between;
-    }
 
-    .upload-box {
-        width: 240px;
-        height: 240px;
-        border: 2px dashed #A1A1A1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        background-color: white;
-    }
-
-    .upload-title {
-        color: #424242;
-        text-align: center;
-        margin-bottom: 8px;
-    }
-
-    .upload-subtitle {
-        color: #9E9E9E;
-        text-align: center;
-        margin-top: 8px;
-    }
-
-    .upload-icon {
-        color: #9E9E9E;
-        font-size: 3rem;
-    }
-
-    .logo-preview {
-        width: 100%;
-        height: 100%;
-        max-width: 100%; 
-        max-height: 100%; 
-        object-fit: fill;
-        display: block;
-    }
-
-    .upload-actions {
-        display: flex;
-        gap: 1rem;
-        margin-top: 1rem;
-    }
-
-    .action-button {
-        min-width: 100px;
-    }
-
-    .selector-wrapper {
-        width: 472px;
-        margin-top: 14px;
-        background-color: #FFFFFF;
-        border-radius: 6px;
-        padding: 10px;
-        position: relative;
-    }
-
-   
-    /* Target MudBlazor's error message container */
-    .mud-input-helper-text {
-        position: absolute;
-        bottom: -30px; 
-        left: 8px;
-        color: red ;
-        font-size: 0.75rem;
-    }
-
-    .form-input {
-      
-        
-        justify-content:center;
-    }
-
-        .form-input input {
-            padding-left:15px;
-        }
-
-
-        .form-input .mud-input-control {
-            width: 100%;
-        }
-        /* Special rule for select inputs */
-        .form-input.mud-select {
-            min-width: 100% !important;
-            width: 100% !important;
-        }
-
-        .form-input .mud-input-slot {
-            border-bottom: none !important;
-        }
-
-        .form-input .mud-input-control {
-            border-bottom: none !important;
-        }
-
-    .row-flex {
-        display: flex;
-        gap: 40px;
-    }
-
-    .grid-input {
-        width: 180px !important;
-        background-color: #FFFFFF;
-        padding: 14px;
-        margin-top: 10px;
-    }
-
-        .grid-input .mud-input-slot {
-        border-bottom: none !important;
-    }
-
-        .grid-input .mud-input-control {
-        border-bottom: none !important;
-    }
     .no-underline .mud-input-underline::before,
     .no-underline .mud-input-underline::after {
         border-bottom: none !important;
     }
-    .custom-icon-color .mud-input-adornment-end .mud-icon-root {
-        color: #FF7F38 !important;
+
+    @@media (max-width: 600px) {
+        .company-profile-container {
+            justify-content: center;
+            align-items: center;
+            display: flex;
+            padding: 10px 8px;
+        }
+
+        .company-profile-logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .grid-flex {
+            display: flex;
+            gap: 10px;
+            flex-direction: column;
+            margin-top: 10px;
+            margin-left: 10px;
+            width: auto;
+        }
+
+        .row-flex {
+            flex-direction: column;
+            display: flex;
+            gap: 10px;
+            width: auto;
+        }
+
+        .doc-input {
+            justify-content: center;
+            height: 60px;
+            margin-top: 14px;
+            background-color: #FFFFFF;
+            border-radius: 6px;
+            padding: 10px;
+            position: relative;
+            border: 1px solid #D0D5DD;
+        }
+
+        .grid-input {
+            width: 100% !important;
+            background-color: #FFFFFF;
+            padding: 0px 10px;
+            margin-top: 10px;
+            height: 60px;
+            border: 1px solid #D0D5DD;
+        }
     }
 
+    @@media (min-width: 601px) and (max-width: 1110px) {
+        .company-profile-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px 8px;
+        }
+
+        .company-profile-logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .company-profile-form-section {
+            justify-content: center;
+            display: flex;
+        }
+
+        .grid-flex {
+            display: flex;
+            gap: 10px;
+            flex-direction: column;
+            margin-top: 10px;
+            margin-left: 10px;
+            max-width: auto !important;
+        }
+
+        .row-flex {
+            flex-direction: column;
+            display: flex;
+            gap: 10px;
+            width: auto;
+        }
+
+        .doc-input {
+            justify-content: center;
+            height: 60px;
+            margin-top: 14px;
+            background-color: #FFFFFF;
+            border-radius: 6px;
+            padding: 10px;
+            position: relative;
+            border: 1px solid #D0D5DD;
+        }
+
+        .grid-input {
+            width: 100% !important;
+            background-color: #FFFFFF;
+            padding: 0px 10px;
+            margin-top: 10px;
+            height: 60px;
+            border: 1px solid #D0D5DD;
+        }
+    }
+
+    }
 </style>

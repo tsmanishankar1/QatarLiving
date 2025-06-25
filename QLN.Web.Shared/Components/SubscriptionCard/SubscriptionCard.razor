@@ -1,0 +1,90 @@
+@inherits SubscriptionCardBase
+@using MudBlazor
+@using QLN.Web.Shared.Components.EmptyCard
+
+<div class="subscription-card-container">
+    <MudPaper Class="promo-box" Elevation="0" Square="false">
+        <MudGrid>
+            <!-- Left Section -->
+            <MudItem xs="12" md="6">
+                <div class="promo-text">
+                    <MudText Typo="Typo.h5" Class="promo-heading">@Heading</MudText>
+                    <MudText Typo="Typo.body1" Class="promo-description">@Description</MudText>
+                    <MudButton Class="subscribe-btn" OnClick="@HandleClick">
+                        @ButtonText
+                    </MudButton>
+                </div>
+            </MudItem>
+
+            <!-- Right Section -->
+            <MudItem xs="12" md="6" Class="d-flex justify-end align-center">
+                @if (ShowEmptyCard)
+                {
+                    <EmptyCard Title="No image found." Subtitle="Please check back later for updates." />
+                }
+                else
+                {
+                    @if (!imageLoaded)
+                    {
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="200px" />
+                    }
+
+                    <img src="@ImageSrc" alt="@Heading" class="promo-image"
+                         style="@(imageLoaded ? "display: block;" : "display: none;")"
+                         @onload="OnImageLoaded"
+                         @onerror="OnImageError" />
+                }
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</div>
+
+<style>
+    .subscription-card-container {
+        width: 100%;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .promo-box {
+        padding: 2rem;
+        border-radius: 10px;
+        background-color: var(--mud-palette-background);
+    }
+
+    .promo-text {
+        padding: 1rem;
+    }
+
+    .promo-heading {
+        font-size: 25px !important;
+        font-weight: 600;
+        color: var(--color-primary);
+        margin-bottom: 1rem;
+    }
+
+    .promo-description {
+        font-size: 16px !important;
+        font-weight: 500;
+        color: var(--color-text-descripton);
+        margin-bottom: 1.5rem;
+    }
+
+    .subscribe-btn {
+        background-color: var(--color-accent);
+        color: var(--color-text-white);
+        font-weight: 600;
+        font-size: 16px !important;
+        padding: 0.75rem 1.5rem;
+        width: fit-content;
+        border-radius: 4px;
+        font-family: 'Public Sans', sans-serif;
+        text-transform: none !important;
+    }
+
+    .promo-image {
+        width: 508px !important;
+        height: 200px !important;
+    }
+</style>

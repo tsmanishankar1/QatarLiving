@@ -146,6 +146,23 @@ namespace QLN.Common.Infrastructure.CustomException
         public ResetPasswordInvalidTokenException(string message = "Invalid or expired token.") : base(message) { }
     }
 
+    public class SearchValidationException : Exception
+    {
+        public IDictionary<string, string[]> Errors { get; }
 
+        public SearchValidationException(IDictionary<string, string[]> errors)
+        {
+            Errors = errors;
+        }
+    }
+    public class SaveSearchException : Exception
+    {
+        public SaveSearchException(string message) : base(message) { }
+    }
+
+    public class GetSearchesException : Exception
+    {
+        public GetSearchesException(string message) : base(message) { }
+    }
 
 }

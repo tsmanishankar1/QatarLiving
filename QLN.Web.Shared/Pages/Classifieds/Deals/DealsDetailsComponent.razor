@@ -1,0 +1,111 @@
+@page "/qln/classifieds/deals/details"
+
+@using MudBlazor
+@using QLN.Web.Shared.Pages.Classifieds.Deals.Components
+@using QLN.Web.Shared.Pages.Classifieds.Deals.Components
+@layout ClassifiedsLayout
+
+<div style="width: 100%; background-color: var(--color-secondary-background);">
+     <div class="search-section-container">
+    <div class="max-container">
+    <SearchSectionDeals />
+    </div></div>
+      <div class="max-container">
+        <div class="category-banner-wrapper"> 
+            <img src="qln-images/stores/hypermarket.svg" class="blurred-banner" alt="banner" />
+        </div> 
+
+
+        <!-- OVERLAY using translateY -->
+        <div class="item-card-wrapper">
+            <ItemCard />
+        </div>
+           <a href="/qln/classifieds/deals" class="back-link">
+                <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowLeft"
+                                Class="back-to-login-icon" />
+                <span class="back-text">Back to Deals</span>
+            </a>
+
+        <div class="item-list-container">
+            <ItemListDeals />
+        </div>
+    </div>
+</div>
+
+<style>
+   .category-banner-wrapper {
+    width: 100%;
+    height: 150px;
+    display: flex;
+    overflow: hidden;
+    justify-content: center;
+    padding: 0px 20px;
+}
+.back-link {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--color-primary);
+    text-decoration: none;
+    margin-left: 27px;
+    margin-bottom: 10px;
+}
+.search-section-container {
+        width: 100%;
+        background-color: var(--color-background-secondary-grey-medium);
+    }
+   .max-container {
+        max-width: 1170px;
+        margin: 0 auto;
+    }
+.blurred-banner {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: blur(30px) brightness(1.2);
+    transform: scale(1.8);
+    opacity: 0.8;
+}
+.item-list-container{
+    padding-top: 20px; 
+    padding: 0px 20px;
+}
+
+.category-banner-image {
+    width: 100%;
+    max-width: 100%;
+    height: 150px;
+    object-fit: cover;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.item-card-wrapper {
+    margin-top: -50px; /* Controls overlap */
+    z-index: 1;
+    position: relative;
+    padding: 0px 20px;
+}
+
+/* Optional: Adjust overlap on smaller screens */
+@@media (max-width: 768px) {
+    .item-card-wrapper {
+        margin-top: -50px;
+        padding: 0px 20px;
+    }
+}
+@@media (max-width: 560px) {
+    .item-card-wrapper {
+        margin-top: -70px;
+        padding: 0px 20px;
+        padding-bottom: 20px;
+    }
+    .category-banner-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        padding: 20px 0px;
+    }
+}
+
+</style>

@@ -1,32 +1,51 @@
+@inherits FeaturedItemCardBase
+@using QLN.Web.Shared.Components.EmptyCard
 @using MudBlazor
 
 <div class="card">
-    @if (Item.IsFeatured)
+    @if (Item.IsFeatured == true)
     {
         <div class="featured-badge">
             <MudIcon Icon="@Icons.Material.Filled.FlashOn" Size="Size.Small" Class="featured-icon" />
             <span>Featured</span>
         </div>
     }
-    <MudIconButton Icon="@(IsFavorite? Icons.Material.Filled.Favorite : Icons.Material.Outlined.FavoriteBorder)"
-        Color="@(IsFavorite? Color.Error: Color.Inherit)" OnClick="@(() => HandleHeartClick(Item))"
-        Class="@HeartIconClass" />
-    @if (Item.ImageUrls?.Any() == true)
-    {
-        <img src="@Item.ImageUrls.First()" alt="@Item.Title" class="card-image" />
-    }
-    else
-    {
-        <img src="/images/categories/game_image.svg" alt="Default" class="card-image" />
-    }
-    <div class="card-content" @onclick="() => HandleSelect(Item)">
+
+    <MudIconButton Icon="@(IsFavorite ? Icons.Material.Filled.Favorite : Icons.Material.Outlined.FavoriteBorder)"
+                   Color="@(IsFavorite ? Color.Error : Color.Inherit)"
+                   OnClick="@(() => HandleHeartClick(Item))"
+                   Class="@HeartIconClass" />
+
+      @if (ShowEmptyCard)
+            {
+                <div style="max-height:180px ;">
+                <EmptyCard Title="No image found." Subtitle="Please check back later for updates." />
+                </div>
+            }
+            else
+            {
+                @if (!imageLoaded)
+                {
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="170px" />
+                }
+
+                <img src="@Item.ImageURLs.First().Url" alt="@Item.Title" class="card-image"
+                    style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                    @onerror="OnImageError" key="@Item.ImageURLs.First().Url" />
+            }
+
+
+    <div class="card-content" @onclick="() => OnSelect.InvokeAsync(Item)">
         <div class="category">@Item.Category</div>
-        <div class="price">@Item.Price QAR</div>
+        <div class="price">@((Item.Price ?? 0).ToString("N0")) QAR</div>
         <h3 class="title">@Item.Title</h3>
-        <div class="location">
-            <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" />
-            @Item.Location
-        </div>
+        @if (!string.IsNullOrWhiteSpace(Item.Location))
+        {
+            <div class="location">
+                <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" />
+                @Item.Location
+            </div>
+        }
     </div>
 </div>
 
@@ -38,10 +57,8 @@
         background: #fff;
         font-family: 'Public Sans', sans-serif;
         transition: transform 0.3s ease;
-        flex: 1 1 auto;
-        max-width: 100%;
-        height: 100%;
-        min-height: 318px;
+        width: 274px;
+        height: 318px;
     }
 
     .card:hover {
@@ -110,33 +127,29 @@
         flex-direction: column;
         cursor: pointer;
         justify-content: space-between;
-        padding: 15px;
+        padding: 16px;
+        gap: 8px
     }
 
     .category {
         font-size: 11px;
         color: #646464;
         font-weight: 500;
-        margin-bottom: 5px;
     }
 
     .price {
         font-weight: 600;
         font-size: 20px;
-        margin-bottom: 8px;
     }
 
     .title {
         font-size: 14px;
         font-weight: 500;
         color: #242424;
-        margin: 8px 0;
-        line-height: 1.3;
         overflow: hidden;
         text-overflow: ellipsis;
         display: -webkit-box;
-        -webkit-line-clamp: 2;
-        /* limit to 2 lines */
+        -webkit-line-clamp: 1;
         -webkit-box-orient: vertical;
     }
 
@@ -148,7 +161,6 @@
         font-size: 12px;
         font-weight: 500;
         color: ##646464;
-        margin-top: 8px;
         display: flex;
         align-items: center;
         gap: 6px;

@@ -15,6 +15,7 @@
   --color-text-gray: #454545; /*For use on the subtitle text */
   --color-text-green: #079455; /* For the success green text */
   --color-category-text: #2a6ba0; /* For the category text */
+  --color-condition-text:#0071AF;
   --color-text-heading-rgb: 18, 52, 86;
   --color-light-gray: #d5d7da;
   /* 
@@ -113,9 +114,9 @@
 }
 
 .custom-tabs {
-  width: 100%;
-  margin: 0 auto;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    width: 100%;
+    margin: 0 auto;
+    font-family: 'Public Sans', sans-serif;
 }
 
 .tabs-toolbar {
@@ -186,9 +187,9 @@
 }
 
 .vertical-tabs {
-  width: 100%;
-  margin: 0 auto;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    width: 100%;
+    margin: 0 auto;
+    font-family: 'Public Sans', sans-serif;
 }
 
 .vertical-tabs-toolbar {

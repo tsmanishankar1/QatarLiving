@@ -3,21 +3,27 @@
 @using System.Collections.Generic
 
 <div class="breadcrumb-wrapper">
-  
+
     <div class="breadcrumb-trail">
-        <a href="/" class="breadcrumb-link home-link">
-            <img src="/images/components/Home.svg" class="home-icon" alt="Home" />
-        </a>        <span class="breadcrumb-separator">></span>
+        <MudLink href="/" class="breadcrumb-link home-link">
+            <img src="/qln-images/components/Home.svg" class="home-icon" alt="Home" />
+        </MudLink> <span class="breadcrumb-separator">></span>
 
         @foreach (var item in Items.Select((value, index) => new { value, index }))
         {
             @if (!string.IsNullOrEmpty(item.value.Url) && !item.value.IsLast)
             {
-                <a href="@item.value.Url" class="breadcrumb-link">@item.value.Label</a>
+                <MudLink href="@item.value.Url" class="breadcrumb-link">
+                    <span class="breadcrumb-label">@item.value.Label</span>
+                </MudLink>
+
             }
             else
             {
-                <span class="breadcrumb-text">@item.value.Label</span>
+                <span class="breadcrumb-text">
+                    <span class="breadcrumb-label">@item.value.Label</span>
+                </span>
+
             }
 
             @if (!item.value.IsLast)
@@ -26,8 +32,8 @@
             }
         }
     </div>
-   @*  <div class="back-link">
-        <a href="@BackLinkUrl"> <span class="breadcrumb-text">Back to</span> @BackLinkText</a>
+    @*  <div class="back-link">
+        <MudLink href="@BackLinkUrl"> <span class="breadcrumb-text">Back to</span> @BackLinkText</MudLink>
     </div> *@
 </div>
 
@@ -46,27 +52,27 @@
     .breadcrumb-wrapper {
         display: flex;
         flex-direction: column;
-        justify-content:center;
+        justify-content: center;
         gap: 0.5rem;
-        padding: 1rem;
+        padding: 1rem 0;
         font-family: 'Public Sans', sans-serif;
     }
 
     .back-link {
         align-self: flex-start;
-        margin-top:2
+        margin-top: 2
     }
 
-        .back-link a {
-            color: #1d3557;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
+    .back-link a {
+        color: #1d3557;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
 
-            .back-link a:hover {
-                text-decoration: underline;
-            }
+    .back-link a:hover {
+        text-decoration: underline;
+    }
 
     .breadcrumb-trail {
         display: flex;
@@ -74,23 +80,45 @@
         gap: 0.25rem;
         font-size: 0.9rem;
         color: #1d3557;
+        flex-wrap: wrap !important;
     }
 
     .fa-home {
         margin-right: 0.25rem;
     }
 
-    .breadcrumb-link, .breadcrumb-text {
-        color: #475467;
+    .breadcrumb-label {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
+    }
+
+
+    .breadcrumb-link {
+        color: #475467 !important;
         padding: 0 2px;
         text-decoration: none;
         font-weight: 500;
         font-size: 14px;
+
     }
 
-        .breadcrumb-link:hover {
-            text-decoration: underline;
-        }
+    .breadcrumb-text {
+        color: #00426D;
+        padding: 0 2px;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 14px;
+
+    }
+
+
+    .breadcrumb-link:hover {
+        text-decoration: underline;
+    }
 
     .breadcrumb-separator {
         color: inherit;

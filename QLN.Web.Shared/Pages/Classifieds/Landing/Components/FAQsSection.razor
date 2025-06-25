@@ -1,0 +1,47 @@
+@inherits FAQsSectionBase
+@using QLN.Common.DTO_s
+@using QLN.Web.Shared.Components.FaqList
+@using QLN.Web.Shared.Components.EmptyCard
+@using MudBlazor
+
+<div class="faqs-section">
+        <h3 class="faq-title">FAQ's</h3>
+
+        @if (Loading)
+        {
+            @for (int i = 0; i < 5; i++)
+            {
+                <div style="margin-bottom: 1rem;">
+                    <MudSkeleton Height="45px" Width="100%" />
+                </div>
+            }
+        }
+        else if (FaqItemsList?.Any() != true)
+        {
+            <EmptyCard Title="No FAQ's items found." Subtitle="Please check back later or explore other categories." />
+        }
+        else
+        {
+            <FaqList Items="FaqItemsList.ToList()" />
+        }
+</div>
+
+<style>
+    .faqs-section {
+        padding: 2rem 0;
+        font-family: 'Public Sans', sans-serif;
+    }
+    .faq-title {
+        font-weight: 600;
+        font-size: 25px;
+        color: var(--color-text-heading);
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    @@media (max-width: 600px) {
+        .faqs-section {
+            padding: 0 0.5rem;
+        }
+    }
+</style>

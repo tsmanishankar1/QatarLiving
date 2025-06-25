@@ -1,256 +1,57 @@
 @using MudBlazor
+@inherits MoreFiltersBase
 
 <div class="more-filters-container">
     <button @onclick="ToggleFilter" class="@($"filter-toggle-button {(showFilters ? "active" : "")}")">
+         @if (!IsMobile)
+    {
         <span>More</span>
-        <MudIcon Icon="@Icons.Material.Filled.Tune" />
+    }
+        <img src="/qln-images/classifieds/more_filter_icon.svg" alt="more filter icon" class="more-filter-icon" />
         @if (SelectedFilterCount > 0)
         {
             <span class="filter-badge">@SelectedFilterCount</span>
         }
     </button>
 
-
     @if (showFilters)
     {
-        <div class="filter-panel">
-            <!-- Header -->
-            <div class="filter-header">
-                <h3>More Filters</h3>
-            </div>
-
-            <!-- Scrollable body -->
-            <div class="filter-body">
-                <!-- MODEL -->
-                <div class="filter-section">
-                    <label class="section-label">Model</label>
-                    <div class="search-wrapper">
-                        <MudIcon Icon="@Icons.Material.Filled.Search" />
-                        <input type="text" class="search-box" placeholder="Search..." />
-                    </div>
-                    <div class="filter-group-label">Popular</div>
-                    @foreach (var model in PopularModels)
-                    {
-                        <label class="checkbox-item">
-                            <MudCheckBox T="bool" Checked="@modelSelection[model]"
-                                CheckedChanged="@( (bool val) => OnFilterChanged(model, val) )" Class="custom-mud-checkbox"
-                                DisableRipple="true" />
-
-                            <span class="custom-checkbox"></span>
-                            @model
-                        </label>
-                    }
-                    <div class="filter-group-label">All</div>
-                    @foreach (var model in AllModels)
-                    {
-                        <label class="checkbox-item">
-                            <MudCheckBox T="bool" Checked="@modelSelection[model]"
-                                CheckedChanged="@( (bool val) => OnFilterChanged(model, val) )" Class="custom-mud-checkbox"
-                                DisableRipple="true" />
-                            <span class="custom-checkbox"></span>
-                            @model
-                        </label>
-                    }
+        @if (!IsMobile)
+        {
+            <!-- Desktop Filter Panel -->
+            <div class="filter-panel">
+                <div class="filter-header">
+                    <h3 class="advanced-filter">More Filters</h3>
                 </div>
-
-                <!-- CONDITION -->
-                <div class="filter-section">
-                    <label class="section-label">Condition</label>
-                    @foreach (var condition in Conditions)
-                    {
-                        <label class="checkbox-item">
-                            <MudCheckBox T="bool" Checked="@modelSelection[condition]"
-                                CheckedChanged="@( (bool val) => OnFilterChanged(condition, val) )" Class="custom-mud-checkbox"
-                                DisableRipple="true" />
-                            <span class="custom-checkbox"></span>
-                            @condition
-                        </label>
-                    }
+                <div class="filter-body">
+                    @ChildContent
                 </div>
-
-                <!-- COLOR -->
-                <div class="filter-section">
-                    <label class="section-label">Color</label>
-                    <div class="color-grid">
-                        @foreach (var color in Colors)
-                        {
-                            <label class="color-item">
-                                <MudCheckBox T="bool" Checked="@modelSelection[color]"
-                                    CheckedChanged="@( (bool val) => OnFilterChanged(color, val) )" Class="custom-mud-checkbox"
-                                    DisableRipple="true" />
-                                <span class="color-label">@color</span>
-                            </label>
-                        }
-                    </div>
-                </div>
-
-                <!-- CAPACITY -->
-                <div class="filter-section">
-                    <label class="section-label">Capacity</label>
-                    @foreach (var cap in Capacities)
-                    {
-                        <label class="checkbox-item">
-                            <MudCheckBox T="bool" Checked="@modelSelection[cap]"
-                                CheckedChanged="@( (bool val) => OnFilterChanged(cap, val) )" Class="custom-mud-checkbox"
-                                DisableRipple="true" />
-                            <span class="custom-checkbox"></span>
-                            @cap
-                        </label>
-                    }
-                </div>
-
-                <!-- BATTERY LIFE -->
-                <div class="filter-section">
-                    <label class="section-label">Battery Life</label>
-                    @foreach (var battery in BatteryLife)
-                    {
-                        <label class="checkbox-item">
-                            <MudCheckBox T="bool" Checked="@modelSelection[battery]"
-                                CheckedChanged="@( (bool val) => OnFilterChanged(battery, val) )" Class="custom-mud-checkbox"
-                                DisableRipple="true" />
-                            <span class="custom-checkbox"></span>
-                            @battery
-                        </label>
-                    }
-                </div>
-
-                <!-- RAM -->
-                <div class="filter-section">
-                    <label class="section-label">RAM</label>
-                    @foreach (var ram in RAMOptions)
-                    {
-                        <label class="checkbox-item">
-                            <MudCheckBox T="bool" Checked="@modelSelection[ram]"
-                                CheckedChanged="@( (bool val) => OnFilterChanged(ram, val) )" Class="custom-mud-checkbox"
-                                DisableRipple="true" />
-                            <span class="custom-checkbox"></span>
-                            @ram
-                        </label>
-                    }
-                </div>
-
-                <!-- PROCESSOR -->
-                <div class="filter-section">
-                    <label class="section-label">Processor</label>
-                    <div class="search-wrapper">
-                        <MudIcon Icon="@Icons.Material.Filled.Search" />
-                        <input type="text" class="search-box" placeholder="Search..." />
-                    </div>
-                    <div class="filter-group-label">Popular</div>
-                    @foreach (var proc in PopularProcessors)
-                    {
-                        <label class="checkbox-item">
-                            <MudCheckBox T="bool" Checked="@modelSelection[proc]"
-                                CheckedChanged="@( (bool val) => OnFilterChanged(proc, val) )" Class="custom-mud-checkbox"
-                                DisableRipple="true" />
-                            <span class="custom-checkbox"></span>
-                            @proc
-                        </label>
-                    }
-                    <div class="filter-group-label">All</div>
-                    @foreach (var proc in AllProcessors)
-                    {
-                        <label class="checkbox-item">
-                            <MudCheckBox T="bool" Checked="@modelSelection[proc]"
-                                CheckedChanged="@( (bool val) => OnFilterChanged(proc, val) )" Class="custom-mud-checkbox"
-                                DisableRipple="true" />
-                            <span class="custom-checkbox"></span>
-                            @proc
-                        </label>
-                    }
-                </div>
-
-                <!-- WARRANTY -->
-                <div class="filter-section">
-                    <label class="checkbox-item">
-                        <MudCheckBox T="bool" @bind-Checked="@modelSelection["Warranty"]" Class="custom-mud-checkbox"
-                            DisableRipple="true" />
-                        <span class="custom-checkbox"></span>
-                        Ads with an active warranty
-                    </label>
+                <div class="filter-footer">
+                    <button class="reset-button" @onclick="ResetFilters">Reset all filters</button>
+                    <button class="apply-button" @onclick="ApplyFilters">Apply</button>
                 </div>
             </div>
-
-            <!-- Footer -->
-            <div class="filter-footer">
-                <button class="reset-button" @onclick="ResetFilters">Reset all filters</button>
-                <button class="apply-button" @onclick="ApplyFilters">Apply</button>
+        }
+        else
+        {
+            <!-- Mobile Filter Bottom Sheet -->
+            <div class="mobile-filter-sheet-overlay" @onclick="CloseFilters"></div>
+            <div class="mobile-filter-sheet">
+                <div class="mobile-filter-header">
+                    <h3 class="advanced-filter">Advanced Filters</h3>
+                    <h3 class="clear-reset-button" @onclick="ResetFilters">Clear Filters</h3>
+                </div>
+                <div class="mobile-filter-body">
+                    @ChildContent
+                </div>
+                <div class="mobile-filter-footer">
+                    <button class="cancle-apply" @onclick="CloseFilters">Cancel</button>
+                    <button class="apply-button" @onclick="ApplyFilters">Apply</button>
+                </div>
             </div>
-        </div>
+        }
     }
 </div>
-
-
-@code {
-    private bool showFilters = false;
-    private int selectedFilterCount = 0;
-    private int SelectedFilterCount => selectedFilterCount;
-    private void OnFilterChanged(string key, bool isChecked)
-    {
-        modelSelection[key] = isChecked;
-        selectedFilterCount = modelSelection.Count(x => x.Value);
-    }
-
-    private void ResetFilters()
-    {
-        foreach (var key in modelSelection.Keys.ToList())
-        {
-            modelSelection[key] = false;
-        }
-
-        selectedFilterCount = 0;
-        StateHasChanged();
-    }
-
-
-    protected override void OnInitialized()
-    {
-        foreach (var val in PopularModels.Concat(AllModels)
-        .Concat(Conditions)
-        .Concat(Colors)
-        .Concat(Capacities)
-        .Concat(BatteryLife)
-        .Concat(RAMOptions)
-        .Concat(PopularProcessors)
-        .Concat(AllProcessors)
-        .Append("Warranty"))
-        {
-            modelSelection[val] = false;
-        }
-    }
-
-
-    private Dictionary<string, bool> modelSelection = new();
-    private void ToggleFilter() => showFilters = !showFilters;
-    private void ApplyFilters()
-    {
-        // Force recalculate count (not strictly necessary if you're calling StateHasChanged)
-        selectedFilterCount = modelSelection.Count(x => x.Value);
-
-        showFilters = false;
-        StateHasChanged(); // Ensure UI updates, including badge
-    }
-
-
-    private List<string> BatteryLife = new()
-{
-"100%",
-"90%-99%",
-"75%-90%",
-"50%-75%",
-"25%-50%",
-"0%-25%"
-};
-
-    private List<string> PopularModels = new() { "iPhone 16 Pro Max", "iPhone 16 Pro", "iPhone 16", "iPhone 15 Pro Max" };
-    private List<string> AllModels = new() { "iPhone 15", "iPhone 14 Pro Max", "iPhone 14 Pro" };
-    private List<string> Conditions = new() { "Used", "New", "Brand New" };
-    private List<string> Colors = new() { "Black", "White", "Gold", "Pink", "Blue", "Green", "Orange", "Red", "Purple" };
-    private List<string> Capacities = new() { "32 GB", "64 GB", "128 GB", "256 GB", "1 TB", "2 TB" };
-    private List<string> RAMOptions = new() { "1 GB", "2 GB", "4 GB", "8 GB", "16 GB", ">24 GB" };
-    private List<string> PopularProcessors = new() { "Apple M1", "Tensor G3", "Intel Xeon", "Snapdragon" };
-    private List<string> AllProcessors = new() { "M1", "M2", "G3", "G5", "Xeon", "Snapdragon", "Helio" };
-}
 
 <style>
     .more-filters-container {
@@ -258,31 +59,43 @@
         font-family: 'Public Sans', sans-serif;
     }
 
+    .more-filter-icon {
+        width: 25px;
+        height: 25px;
+        transition: filter 0.2s ease;
+    }
+    .mobile-filter-sheet-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 1000;
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+    }
     .filter-toggle-button {
         display: flex;
         align-items: center;
         padding: 12px 10px;
-        border: 1px solid #D0D5DD;
+        border: 1px solid var(--color-captcha-box);
         background-color: white;
         color: #787878;
-        border-radius: 8px;
+        border-radius: 4px;
+        height: 51px;
+        cursor: pointer;
+        width: 100%;
         position: relative;
         gap: 0.5rem;
     }
 
     .filter-toggle-button.active {
         background-color: #FF7F38;
-        /* Orange */
         color: white;
         border: none;
     }
 
-    .filter-toggle-button .mud-icon {
-        font-size: 1.2rem;
-    }
-
-    .filter-toggle-button.active .mud-icon {
-        color: white;
+    .filter-toggle-button.active .more-filter-icon {
+        filter: brightness(0) invert(1);
     }
 
     .filter-badge {
@@ -297,18 +110,20 @@
         font-weight: bold;
     }
 
+    /* Desktop Panel Styles */
     .filter-panel {
         position: absolute;
         top: 110%;
-        left: 0;
+        right: 0;
         background-color: #fff;
-        border-radius: 8px;
         box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-        width: 360px;
-        height: 80vh;
+        max-width: 500px;
+        min-width: 450px;
+        max-height: 350px;
         z-index: 100;
         display: flex;
-        boderrer-radius: 6px;
+        border-radius: 8px;
+        overflow: hidden;
         flex-direction: column;
         animation: fadeIn 0.25s ease forwards;
     }
@@ -316,14 +131,9 @@
     .filter-header {
         padding: 12px 16px;
         background-color: #E3E3E3;
-        position: sticky;
-        top: 0;
-        z-index: 1001;
-    }
-
-    .filter-header h3 {
-        font-weight: 500;
+        border-radius: 8px 8px 0 0;
         font-size: 15px;
+        font-weight: 500;
         color: #242424;
     }
 
@@ -334,114 +144,56 @@
     }
 
     .filter-footer {
-        position: sticky;
-        bottom: 0;
         padding: 12px 16px;
         background-color: white;
         border-top: 1px solid #eee;
         display: flex;
         justify-content: space-between;
         gap: 8px;
+        border-radius: 0 0 8px 8px;
     }
 
-    .section-label {
-        font-weight: 500;
-        font-size: 15px;
-        color: #FF7F38;
-        margin-bottom: 6px;
-        display: block;
-    }
-
-    .search-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        background: #f4f4f4;
-        padding: 6px;
-        border-radius: 6px;
-        margin-bottom: 10px;
-    }
-
-    .search-box {
-        flex: 1;
-        border: none;
-        outline: none;
-        background: transparent;
-    }
-
-    .filter-group-label {
-        font-weight: 500;
-        margin-top: 8px;
-        margin-bottom: 4px;
-        background: #F6F6F6;
-        padding: 4px 8px;
-        font-size: 15px;
-        border-radius: 4px;
-        color: #454545;
-    }
-
-    .filter-section {
-        margin-bottom: 16px;
-    }
-
-    .checkbox-item {
-        display: flex;
-        align-items: center;
-        font-size: 15px;
-        fount-weight: 400;
-        color: #242424;
-        padding: 4px 0;
-        gap: 8px;
-    }
-
-    .checkbox-item input[type="checkbox"] {
-        display: none;
-    }
-
-    /* Main container override */
-    .custom-mud-checkbox .mud-checkbox {
-        padding: 0;
-        margin: 0;
-    }
-
-    /* Unchecked visual box */
-    .custom-mud-checkbox .mud-button-root {
-        width: 20px;
-        height: 20px;
+    /* Mobile Bottom Sheet */
+    .mobile-filter-sheet {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 80%;
         background-color: white;
-        border-radius: 4px;
-        transition: all 0.2s ease;
-        box-sizing: border-box;
-        position: relative;
-    }
-
-    /* Checked visual box */
-    .custom-mud-checkbox input:checked~.mud-button-root {
-        background-color: #FF7F38;
-        border-color: #FF7F38;
-
-        mask: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M20.285 6.708a1 1 0 010 1.414l-10.01 10.01a1 1 0 01-1.414 0l-5.01-5.01a1 1 0 011.414-1.414l4.303 4.303 9.303-9.303a1 1 0 011.414 0z"/></svg>') center center no-repeat;
-        -webkit-mask: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M20.285 6.708a1 1 0 010 1.414l-10.01 10.01a1 1 0 01-1.414 0l-5.01-5.01a1 1 0 011.414-1.414l4.303 4.303 9.303-9.303a1 1 0 011.414 0z"/></svg>') center center no-repeat;
-        mask-size: 14px;
-        -webkit-mask-size: 14px;
-    }
-
-
-
-    .color-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-    }
-
-    .color-item {
-        border: 1px solid #ddd;
-        padding: 4px;
-        border-radius: 6px;
+        z-index: 1000;
+        border-radius: 16px 16px 0 0;
         display: flex;
+        flex-direction: column;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.2);
+        animation: slideUp 0.3s ease-out forwards;
+        overflow: hidden;
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .mobile-filter-header {
+        padding: 16px;
+        background: #F5F5F5;
+        font-size: 16px;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
         align-items: center;
-        gap: 6px;
-        font-size: 13px;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .mobile-filter-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px 16px;
+    }
+
+    .mobile-filter-footer {
+        padding: 12px 16px;
+        display: flex;
+        gap: 10px;
+        border-top: 1px solid #eee;
+        background-color: white;
     }
 
     .reset-button {
@@ -450,6 +202,7 @@
         padding: 6px 12px;
         border-radius: 4px;
         flex: 1;
+        font-weight: 600;
     }
 
     .apply-button {
@@ -459,6 +212,46 @@
         padding: 6px 12px;
         border-radius: 4px;
         flex: 1;
+        font-weight: 600;
+    }
+
+    .close-button {
+        background: none;
+        border: none;
+        font-size: 24px;
+        line-height: 1;
+        cursor: pointer;
+    }
+    .advanced-filter{
+        color: var(--color-text-heading);
+        font-weight: 600;
+        font-size: 15px ;
+    }
+    .clear-reset-button{
+        color: var(--color-accent);
+        font-weight: 500;
+        font-size: 14px ;
+    }
+    .cancle-apply {
+        padding: 6px 12px;
+        border-radius: 4px;
+        flex: 1;
+        font-size: 14px;
+        font-weight: 600;
+        border: none;
+        background: var(--color-background);
+        border: 1px solid var(--color-secondary-grey-container);
+        color: var(--color-text-heading);
+    }
+
+    @@keyframes slideUp {
+        from {
+            transform: translateY(100%);
+        }
+
+        to {
+            transform: translateY(0);
+        }
     }
 
     @@keyframes fadeIn {

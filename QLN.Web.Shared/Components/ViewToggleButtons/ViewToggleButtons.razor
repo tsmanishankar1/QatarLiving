@@ -1,11 +1,16 @@
-<div class="view-toggle-wrapper">
+<div class="view-toggle-wrapper"  style="height:@Height"
+>
     @foreach (var item in Items)
     {
         <div class="view-toggle-item @(SelectedValue == item.Value ? "active" : "")"
             @onclick="() => OnSelected.InvokeAsync(item.Value)">
-            <img src="@item.ImageUrl" alt="@item.Label"
-                class="toggle-icon @(SelectedValue == item.Value ? "filter-white" : "filter-gray")" />
-            <span>@item.Label</span>
+
+            @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+            {
+                <img src="@item.ImageUrl" alt="@item.Label"
+                    class="toggle-icon @(SelectedValue == item.Value ? "filter-white" : "filter-gray")" />
+            }
+            <span class="@TextClass">@item.Label</span>
         </div>
     }
 </div>
@@ -13,31 +18,34 @@
 
 <style>
     .view-toggle-wrapper {
-        display: flex;
-        padding: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 6px;
         border-radius: 6px;
         gap: 4px;
-        border: 1px solid var(--color-captcha-box);
         background-color: var(--color-background);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
     .view-toggle-item {
         display: flex;
         align-items: center;
         gap: 6px;
-        padding: 8px 12px;
+        padding: 10px 12px;
         border-radius: 6px;
         background-color: var(--color-background);
         cursor: pointer;
         transition: background-color 0.2s;
         font-weight: 500;
         font-size: 14px;
-        color: #333;
+        color: #646464;
     }
 
     .view-toggle-item.active {
         background-color: var(--color-accent);
         color: var(--color-background);
+        animation: activeToggleAnimation 0.3s ease-in-out;
     }
 
     .toggle-icon {
@@ -55,4 +63,36 @@
     .filter-gray {
         filter: brightness(0) saturate(100%) invert(53%) sepia(0%) saturate(1031%) hue-rotate(176deg) brightness(93%) contrast(91%);
     }
+
+    @@keyframes activeToggleAnimation {
+        0% {
+            transform: scale(1);
+            background-color: var(--color-background);
+        }
+
+        50% {
+            transform: scale(1.05);
+            background-color: var(--color-accent-light, #f9c97c);
+            /* optional lighter accent */
+        }
+
+        100% {
+            transform: scale(1);
+            background-color: var(--color-accent);
+        }
+    }
+     @@media (max-width: 360px) {
+         .view-toggle-item {
+        display: flex;
+        align-items: center;
+        padding: 10px 8px;
+        border-radius: 6px;
+        background-color: var(--color-background);
+        cursor: pointer;
+        transition: background-color 0.2s;
+        font-weight: 500;
+        font-size: 14px;
+        color: #646464;
+    }
+        }
 </style>

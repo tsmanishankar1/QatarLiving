@@ -1,0 +1,68 @@
+@using QLN.Web.Shared.Components.Classifieds.StoreCard
+@using QLN.Web.Shared.Components.PaginationFooter
+@using MudBlazor
+@using QLN.Web.Shared.Components.BreadCrumb
+@using QLN.Common.DTO_s
+
+<Breadcrumb Items="breadcrumbItems" />
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <MudGrid GutterSize="3">
+        @foreach (var store in stores)
+        {
+            <MudItem xs="12" sm="6" md="2">
+                <StoreCard StoreData="store" OnShopNow="HandleShopNow" />
+            </MudItem>
+        }
+    </MudGrid>
+    <!-- Pagination -->
+    <PaginationFooter TotalItems="stores.Count" CurrentPage="currentPage" PageSize="pageSize"
+        OnPageChange="HandlePageChange" OnPageSizeChange="HandlePageSizeChange" />
+
+</MudContainer>
+@code {
+    private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
+    private int currentPage = 1;
+    private int pageSize = 12;
+
+    private void HandlePageChange(int newPage)
+    {
+        currentPage = newPage;
+    }
+
+    private void HandlePageSizeChange(int newSize)
+    {
+        pageSize = newSize;
+    }
+
+    protected override void OnInitialized()
+    {
+        breadcrumbItems = new()
+{
+new() { Label = "Classifieds",Url ="classifieds" },
+
+new() { Label = "Stores", Url = "/Store", IsLast = true },
+};
+
+    }
+    private List<LandingBackOfficeIndex> stores = new()
+{
+new() { Title = "AIRBNB", ImageUrl = "qln-images/stores/vector.svg", ListingCount = 2152 },
+new() { Title = "Starlink", ImageUrl = "qln-images/stores/starlink.svg", ListingCount = 2152 },
+new() { Title = "MICROSOFT", ImageUrl = "qln-images/stores/microsoft.svg", ListingCount = 2152 },
+new() { Title = "Lulu Hypermarket", ImageUrl = "qln-images/stores/hypermarket.svg", ListingCount = 2152 },
+new() { Title = "City Hypermarket", ImageUrl = "qln-images/stores/hypermarket_city.svg", ListingCount = 1845 },
+new() { Title = "Al Meera", ImageUrl = "qln-images/stores/meera.svg", ListingCount = 3021 },
+new() { Title = "MICROSOFT", ImageUrl = "qln-images/stores/microsoft.svg", ListingCount = 2152 },
+new() { Title = "Lulu Hypermarket", ImageUrl = "qln-images/stores/hypermarket.svg", ListingCount = 2152 },
+new() { Title = "AIRBNB", ImageUrl = "qln-images/stores/vector.svg", ListingCount = 2152 },
+new() { Title = "Starlink", ImageUrl = "qln-images/stores/starlink.svg", ListingCount = 2152 },
+new() { Title = "Al Meera", ImageUrl = "qln-images/stores/meera.svg", ListingCount = 3021 },
+new() { Title = "MICROSOFT", ImageUrl = "qln-images/stores/microsoft.svg", ListingCount = 2152 }
+};
+[Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    private void HandleShopNow(LandingBackOfficeIndex store)
+    {
+        Navigation.NavigateTo("/qln/classifieds/stores/details");
+    }
+}

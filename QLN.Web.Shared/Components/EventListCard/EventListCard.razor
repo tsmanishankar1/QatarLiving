@@ -1,0 +1,162 @@
+@using QLN.Web.Shared.Helpers
+@using QLN.Web.Shared.Components.EmptyCard
+@inherits EventListCardBase
+
+<div class="Event-list-card" @onclick="() => OnClick.InvokeAsync(Item)">
+    <div class="image-wrapper">
+        @if (string.IsNullOrWhiteSpace(Item.ImageUrl) || imageFailed)
+        {
+            <EmptyCard Title="No image found." Subtitle="Please check back later for updates." />
+        }
+        else
+        {
+            @if (!imageLoaded)
+            {
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="214px" />
+            }
+
+            <img src="@Item.ImageUrl" class="card-img" alt="@Item.Title"
+                style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                @onerror="OnImageError" key="@Item.ImageUrl" />
+        }
+
+        @if (!string.IsNullOrEmpty(Item.EventStart) && !string.IsNullOrEmpty(Item.EventEnd))
+        {
+            <div class="date">
+                @DateHelper.FormatDate(Item.EventStart) to @DateHelper.FormatDate(Item.EventEnd)
+            </div>
+        }
+    </div>
+
+
+    <div class="card-body">
+        <div class="category">@Item.EventCategory</div>
+
+        <h3 class="title">@Item.Title</h3>
+        <p class="description" style="text-overflow:ellipsis">@HtmlHelper.StripHTML(Item.Description)</p>
+
+        @if (!string.IsNullOrEmpty(Item.EventLocation))
+        {
+            <div class="location">
+                <MudIcon Icon="@Icons.Material.Rounded.LocationOn" Class="location-icon" />
+                <span class="location-text">@Item.EventLocation</span>
+            </div>
+        }
+        <!--
+        <div class="price">
+            <span>@Item.PriceMin.ToString("0") - @Item.PriceMax.ToString("0")</span>
+            <span class="currency">QAR</span>
+        </div>
+         -->
+    </div>
+</div>
+
+<style>
+    .Event-list-card {
+        border-radius: 6px;
+        overflow: hidden;
+        box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        height: 404px;
+        cursor: pointer;
+        font-family: 'Public Sans', sans-serif;
+        background: #FFFFFF;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        will-change: transform;
+    }
+
+    .Event-list-card:hover {
+        transform: translateY(-6px) scale(1.02);
+        box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
+        z-index: 2;
+    }
+
+    .image-wrapper {
+        position: relative;
+        width: 100%;
+        height: 214px;
+        overflow: hidden;
+        border-radius: 0;
+    }
+
+    .card-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        border-radius: 0;
+    }
+
+    .date {
+        position: absolute;
+        bottom: 0px;
+        right: 0px;
+        background: #0071AF;
+        color: white;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .card-body {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        background: #FFFFFF;
+    }
+
+    .category {
+        font-size: 11px;
+        font-weight: 500;
+        color: #646464;
+    }
+
+    .title {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: #242424;
+    }
+
+    .description {
+        font-size: 14px;
+        color: #242424;
+        font-weight: 400;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        /* Limit to 2 lines */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .location {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #646464;
+    }
+
+    .location-icon {
+        font-size: 20px;
+        color: #646464;
+    }
+
+    .price {
+        font-size: 25px;
+        font-weight: 600;
+        color: var(--color-primary);
+    }
+
+    .price .currency {
+        font-size: 14px;
+        font-weight: 500;
+        margin-left: 4px;
+        color: var(--color-primary);
+    }
+</style>

@@ -1,0 +1,110 @@
+@page "/qln/classifieds"
+@layout ClassifiedsLayout
+@inherits LandingComponentBase
+@using MudBlazor
+@using QLN.Web.Shared.Services
+@using QLN.Web.Shared.Components.Carousel
+@using QLN.Web.Shared.Pages.Classifieds.Landing.Components
+
+<!-- Page: Classifieds -->
+
+<!-- Main Container -->
+<div style="width: 100%; background-color: var(--color-secondary-background);">
+    <div class="responsive-container">
+    <div class="max-container">
+        <!-- Carousel Banner -->
+        <CarouselBanner ImageUrls="CarouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
+            Transition="Transition.Slide" />
+
+        <!-- Search Bar Section -->
+        <SearchBarSection />
+
+        <!-- Featured item -->
+        <FeaturedItemSection FeaturedItems="FeaturedItemsList?.ToList()"  Loading="IsLoading" />
+    </div>
+    </div>
+    <div class="max-container">
+    <!-- Featured Categories -->
+    <FeaturedCategorySection FeaturedCategories="FeaturedCategoriesList?.ToList()" Loading="IsLoading" />
+
+    <!-- Subscription Card -->
+    <SubscriptionSection Data="ReadyToGrowList?.FirstOrDefault()" Loading="IsLoading" />
+
+   </div>
+
+    <div class="responsive-container">
+        <div class="max-container">
+        <!-- Store Deals -->
+        <StoreDealsSection  Stores="FeaturedStoresList?.ToList()" Loading="IsLoading"/>
+
+        <!-- Category Card 1: First 6 -->
+        <CategoryAdSection Categories="@CategoriesList?.Take(6).ToList()" Loading="IsLoading" />
+
+        <div class="category-banner-wrapper">
+            <img src="/qln-images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
+        </div>
+        <!-- Category Card 2: Next 4 -->
+        <CategoryAdSection Categories="@CategoriesList?.Skip(6).Take(4).ToList()" Loading="IsLoading" />
+
+        <!-- Seasonal Section -->
+       <SeasonalSection Seasonal="SeasonalPicksList?.ToList()" Loading="IsLoading"/>
+
+    </div>
+    </div>
+    <div class="social-media-container">
+    <div class="max-container">
+    <!-- Social Media Section -->
+    <SocialMediaSection SocialPostDetails="SocialPostDetailList" SocialLinksList="SocialLinksList"SocialMediaVideosList="SocialMediaVideosList" Loading="IsLoading"/>
+
+    </div>
+    </div>
+  <div class="max-container">
+    <!-- FAQs Section -->
+    <FAQsSection FaqItemsList="FaqItemsList?.ToList()" Loading="IsLoading"/>
+
+    <!-- Popular Searches Section -->
+    <PopularSearchesSection  PopularSearchList="PopularSearchesList?.ToList()" Loading="IsLoading"/>
+    </div>
+</div>
+
+<style>
+    .category-banner-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+       .category-banner-image {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        object-fit: cover;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+    .social-media-container{
+        width: 100%;
+        background-color: var(--color-background);
+    }
+     .max-container {
+        max-width: 1170px;
+        margin: 0 auto;
+    }
+
+    .responsive-container {
+        width: 100%;
+        padding: 0 40px;
+        box-sizing: border-box;
+    }
+
+    @@media (max-width: 768px) {
+        .responsive-container {
+            padding: 0 16px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .responsive-container {
+            padding: 0 5px;
+        }
+    }
+</style>

@@ -1,0 +1,53 @@
+@using QLN.Common.DTO_s
+@using QLN.Web.Shared.Components.PopularSearchList
+@using QLN.Web.Shared.Components.EmptyCard
+@using MudBlazor
+
+<div class="popular-search-section">
+    <h3 class="popular-search-title">Popular searches</h3>
+
+    @if (Loading)
+    {
+        @for (int i = 0; i < 5; i++)
+        {
+            <div style="margin-bottom: 1rem;">
+                <MudSkeleton Height="45px" Width="100%" />
+            </div>
+        }
+    }
+    else if (PopularSearchList?.Any() != true)
+    {
+        <EmptyCard Title="No Popular searches items found." Subtitle="Please check back later or explore other categories." />
+    }
+    else
+    {
+        <PopularSearchList Items="PopularSearchList" />
+    }
+    
+</div>
+
+@code {
+    [Parameter] public bool Loading { get; set; }
+    [Parameter] public List<PopularSearchDto>? PopularSearchList { get; set; }
+
+}
+
+<style>
+    .popular-search-section {
+        padding: 2rem 0;
+        font-family: 'Public Sans', sans-serif;
+    }
+    .popular-search-title {
+        font-weight: 600;
+        font-size: 25px;
+        color: var(--color-text-heading);
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    @@media (max-width: 600px) {
+        .popular-search-section {
+            padding: 1rem;
+        }
+    }
+</style>

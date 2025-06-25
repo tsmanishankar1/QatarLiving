@@ -1,0 +1,54 @@
+﻿@page "/qln/subscription/list"
+@inherits SubscriptionListBase
+
+@using MudBlazor
+@using QLN.Web.Shared.Models
+
+<h3>Subscription List</h3>
+<PageTitle>List Subscription</PageTitle>
+
+<MudPaper Class="pa-4">
+
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" sm="6">
+            <MudTextField @bind-Value="SearchText"
+                          Placeholder="Search..."
+                          Variant="Variant.Outlined"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Immediate="true"
+                          Class="w-100" />
+        </MudItem>
+
+        <MudItem xs="12" sm="6" Class="d-flex justify-end">
+            <MudButton Variant="Variant.Filled"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       Color="Color.Primary"
+                       OnClick="NavigateToAdd">
+                Add New
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+
+    <MudTable Items="pagedData"
+              ServerData="LoadServerData"
+              RowsPerPage="5"
+              Elevation="1"
+              Dense="true"
+              Bordered="true"
+              Hover="true">
+        <HeaderContent>
+            <MudTh>Subscription Name</MudTh>
+            <MudTh>Price</MudTh>
+            <MudTh>Currency</MudTh>
+            <MudTh>Duration</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Subscription Name">@context.SubscriptionName</MudTd>
+            <MudTd DataLabel="Price">@context.Price</MudTd>
+            <MudTd DataLabel="Currency">@context.Currency</MudTd>
+            <MudTd DataLabel="Duration">@context.Duration</MudTd>
+        </RowTemplate>
+    </MudTable>
+
+</MudPaper>

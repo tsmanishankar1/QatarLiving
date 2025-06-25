@@ -1,0 +1,181 @@
+
+@inherits FeaturedStoresBase
+@using QLN.Web.Shared.Components.EmptyCard
+@using MudBlazor
+
+<div class="store-deals-wrapper">
+
+     <div class="store-header">
+            <h3 class="store-section-header">Featured Stores</h3>
+    </div>
+    
+    @if (Loading)
+    {
+      <div class="store-skeleton-scroll-container">
+            @for (int i = 0; i < 6; i++)
+            {
+                <div class="store-skeleton-item">
+                    <StoreSkeletonCard />
+                </div>
+            }
+        </div>
+
+    }
+    else if (Stores?.Any() != true)
+    {
+        <EmptyCard Title="No Store items found." Subtitle="Please check back later or explore other categories." />
+    }
+    else
+    {
+
+    <div class="swiper-container">
+        <!-- Arrows -->
+        <div class="swiper-store-button-prev-deals store-custom-arrow-button storeleft">
+            <MudIcon Icon="@Icons.Material.Filled.ChevronLeft" />
+        </div>
+        <div class="swiper-store-button-next-deals store-custom-arrow-button storeright">
+            <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+        </div>
+
+
+        <!-- Swiper with reusable card -->
+        <div class="swiper swiper-deals-store">
+            <div class="swiper-wrapper @(Stores.Count <= 6 ? "les5swiper-wrapper" : "")">
+                <MudVirtualize Context="store" Items="Stores">
+                    <div class="swiper-slide">
+                            <div class="store-card" @onclick="() => HandleShopNow(store)">
+                                <div class="feture-store-logo-container">
+                                    <img src="@store.ImageUrl" class="feture-store-logo" alt="@store.Title" />
+                                </div>
+                            </div>
+                    </div>
+               </MudVirtualize>
+            </div>
+        </div>
+    </div>
+    }
+</div>
+
+
+<style>
+    .store-deals-wrapper{
+        width: 100%;
+        padding: 0 0 80px 0;
+         font-family: 'Public Sans', sans-serif;
+    }
+    .swiper-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 10px 40px;
+    }
+     .store-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 0 1rem;
+        }
+
+    .store-section-header {
+        font-weight: 600;
+        text-align: center;
+        font-size: 25px;
+        color: var(--color-text-heading);
+    }
+    .swiper-deals-store {
+       width: 100%;
+        padding: 1rem;
+    }
+
+
+    .store-custom-arrow-button {
+        background-color: var(--color-background);
+        border-radius:555px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #00426D;
+        z-index: 10;
+        cursor: pointer;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .storeleft {
+        left: 0;
+    }
+
+    .storeright {
+        right: 0;
+    }
+
+    .store-skeleton-scroll-container {
+        display: flex;
+        justify-content: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        padding: 16px 0;
+    }
+
+    .store-skeleton-item {
+        width: 150px;
+        display: flex;
+        justify-content: center;
+    }
+     .store-card {
+        width: 125px;
+        margin-right: 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 5px;
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+
+    .feture-store-logo-container {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background-color: var(--color-background);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 10px;
+    }
+
+    .feture-store-logo {
+        max-width: 100%;
+        max-height: 100%;
+        padding: 10px;
+        object-fit: contain;
+    }
+
+   @@media (max-width: 770px) {
+        .store-custom-arrow-button {
+            display: none !important;
+        }
+    }
+      @@media (max-width: 1000px) {
+        .store-skeleton-scroll-container {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        padding-left: 12px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;  
+        }
+        .store-skeleton-scroll-container::-webkit-scrollbar {
+         display: none;               
+        }
+        .store-skeleton-item {
+            flex: 0 0 auto;
+        }
+    }
+</style>

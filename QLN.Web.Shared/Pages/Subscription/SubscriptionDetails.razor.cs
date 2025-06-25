@@ -1,17 +1,9 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.JSInterop;
-using MudBlazor;
-using QLN.Web.Shared.Helpers;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Net.WebRequestMethods;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using QLN.Web.Shared.Services.Interface;
+using System.Text.Json.Serialization;
 
 namespace QLN.Web.Shared.Pages.Subscription
 {
@@ -20,9 +12,9 @@ namespace QLN.Web.Shared.Pages.Subscription
         [Inject] private NavigationManager Navigation { get; set; } = default!;
 
 
-        [Inject] protected IJSRuntime _jsRuntime { get; set; }
         [Inject] private HttpClient Http { get; set; } = default!;
         [Inject] private ApiService Api { get; set; } = default!;
+        [Inject] private IClassifiedDashboardService ClassfiedDashboardService { get; set; } 
 
         private List<StatItem> stats = new();
         private string _authToken;
@@ -37,25 +29,16 @@ namespace QLN.Web.Shared.Pages.Subscription
         private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
         private string? _errorMessage;
         private BusinessProfile? _businessProfile;
-
-        //private List<StatItem> stats = new()
-        //{
-        //     new() { Title = "Published Ads", Value = "5 out of 15", Icon = "PublishedAds.svg" },
-        //new() { Title = "Promoted Ads", Value = "1 out of 2", Icon = "PromotedAds.svg" },
-        //new() { Title = "Featured Ads", Value = "2 out of 2", Icon = "FeaturedAds.svg" },
-        //new() { Title = "Refreshes", Value = "5 out on 75", Icon = "Refreshes.svg" },
-        //new() { Title = "Impressions", Value = "52,034", Icon = "Impressions.svg" },
-        //new() { Title = "Views", Value = "52,034", Icon = "Views.svg" },
-        //new() { Title = "WhatsApp", Value = "52,034", Icon = "WhatsApp.svg" },
-        //new() { Title = "Calls", Value = "52,034", Icon = "Calls.svg" },
-        //};
+        private List<AdModal> publishedAds = new();
+        private List<AdModal> unpublishedAds = new();
+        protected bool _isLoading { get; set; } = true;
 
         protected override async void OnInitialized()
         {
             breadcrumbItems = new()
         {
             new() { Label = "Classifieds", Url = "classifieds" },
-            new() { Label = "Dashboard", Url = "/subscription-details",IsLast=true }
+            new() { Label = "Dashboard", Url = "/subscription/details",IsLast=true }
         };
           
         }
@@ -63,13 +46,9 @@ namespace QLN.Web.Shared.Pages.Subscription
         {
             if (firstRender)
             {
-                _authToken = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
-                if (string.IsNullOrWhiteSpace(_authToken))
-                {
-                    _authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjU0NTZhZTY0LTNjMGMtNDJjYS04MGIxLTBjOWQ2YjBkYmY5MiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJqYXNyMjciLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJqYXN3YW50aC5yQGtyeXB0b3NpbmZvc3lzLmNvbSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL21vYmlsZXBob25lIjoiKzkxOTAwMzczODEzOCIsIlVzZXJJZCI6IjU0NTZhZTY0LTNjMGMtNDJjYS04MGIxLTBjOWQ2YjBkYmY5MiIsIlVzZXJOYW1lIjoiamFzcjI3IiwiRW1haWwiOiJqYXN3YW50aC5yQGtyeXB0b3NpbmZvc3lzLmNvbSIsIlBob25lTnVtYmVyIjoiKzkxOTAwMzczODEzOCIsImV4cCI6MTc0NjY5NTE0NywiaXNzIjoiUWF0YXIgTGl2aW5nIiwiYXVkIjoiUWF0YXIgTGl2aW5nIn0.KYxgzCBr5io7jm9SDzh2GE7GADKZ38k3kivgx6gC3PQ";
-                }
-                await LoadSubscriptionDetailsAsync(3); // Now moved here
-                await LoadBusinessProfileAsync();      // Token is now ready
+                _authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6Ijk3NTQ1NGI1LTAxMmItNGQ1NC1iMTUyLWUzMGYzNmYzNjNlMiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJNVUpBWSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6Im11amF5LmFAa3J5cHRvc2luZm9zeXMuY29tIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbW9iaWxlcGhvbmUiOiIrOTE3NzA4MjA0MDcxIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjpbIkNvbXBhbnkiLCJTdWJzY3JpYmVyIl0sIlVzZXJJZCI6Ijk3NTQ1NGI1LTAxMmItNGQ1NC1iMTUyLWUzMGYzNmYzNjNlMiIsIlVzZXJOYW1lIjoiTVVKQVkiLCJFbWFpbCI6Im11amF5LmFAa3J5cHRvc2luZm9zeXMuY29tIiwiUGhvbmVOdW1iZXIiOiIrOTE3NzA4MjA0MDcxIiwiZXhwIjoxNzUwNTk2Njg3LCJpc3MiOiJRYXRhciBMaXZpbmciLCJhdWQiOiJRYXRhciBMaXZpbmcifQ.yR3NTs7yVNFZPS_qbDU9vmclI7rEKxlJ5fC5zq7llEo";
+                await LoadSubscriptionDetailsAsync(3); 
+                 SetHardcodedBusinessProfile();     
                 StateHasChanged();
 
             }
@@ -88,31 +67,12 @@ namespace QLN.Web.Shared.Pages.Subscription
         {
             Navigation.NavigateTo("/edit-company");
         }
- private void NavigateToAdPost()
+        private void NavigateToAdPost()
         {
             Navigation.NavigateTo("/classifieds/createform");
         }
 
-        private async Task LoadBusinessProfileAsync()
-        {
-            try
-            {
-                var response = await Api.GetAsyncWithToken<SubscriptionDetailsResponse>("api/subscription/details?verticalId=3", _authToken);
-                if (response?.BusinessProfile is not null)
-                {
-                    _businessProfile = response.BusinessProfile;
-                }
-                else
-                {
-                    SetHardcodedBusinessProfile();
-                }
-            }
-            catch
-            {
-                SetHardcodedBusinessProfile();
-            }
-            StateHasChanged();
-        }
+      
 
         private void SetHardcodedBusinessProfile()
         {
@@ -123,112 +83,54 @@ namespace QLN.Web.Shared.Pages.Subscription
                 Duration = "6 month Plus",
                 ValidFrom = "2025-04-27",
                 ValidTo = "2025-10-27",
-                LogoUrl = "images/subscription/CompanyLogo.svg"
+                LogoUrl = "qln-images/subscription/CompanyLogo.svg"
             };
             StateHasChanged();
         }
         private async Task LoadSubscriptionDetailsAsync(int verticalId)
         {
+            _isLoading = true;
+
             try
             {
-                var url = $"api/subscription/details?verticalId={verticalId}";
+                var response = await ClassfiedDashboardService.GetItemDashboard(_authToken);
 
-                var response = await Api.GetAsyncWithToken<SubscriptionDetailsResponse>(url,_authToken);
-
-                if (response != null)
+                if (response?.ItemsDashboard != null)
                 {
-                    _errorMessage = null;
-                    stats = new List<StatItem>()
+                    stats = new List<StatItem>
             {
-                new() { Title = "Published Ads", Value = $"{response.SubscriptionStatistics.PublishedAds.Usage} out of {response.SubscriptionStatistics.PublishedAds.Total}", Icon = "PublishedAds.svg" },
-                new() { Title = "Promoted Ads", Value = $"{response.SubscriptionStatistics.PromotedAds.Usage} out of {response.SubscriptionStatistics.PromotedAds.Total}", Icon = "PromotedAds.svg" },
-                new() { Title = "Featured Ads", Value = $"{response.SubscriptionStatistics.FeaturedAds.Usage} out of {response.SubscriptionStatistics.FeaturedAds.Total}", Icon = "FeaturedAds.svg" },
-                new() { Title = "Refreshes", Value = $"{response.SubscriptionStatistics.Refreshes.Usage} out of {response.SubscriptionStatistics.Refreshes.Total}", Icon = "Refreshes.svg" },
-                new() { Title = "Impressions", Value = "52,034", Icon = "Impressions.svg" },
-                new() { Title = "Views", Value = "52,034", Icon = "Views.svg" },
-                new() { Title = "WhatsApp", Value = "52,034", Icon = "WhatsApp.svg" },
-                new() { Title = "Calls", Value = "52,034", Icon = "Calls.svg" },
+                new() { Title = "Published Ads", Value = $"{response.ItemsDashboard.PublishedAds}", Icon = "PublishedAds.svg" },
+                new() { Title = "Promoted Ads", Value = $"{response.ItemsDashboard.PromotedAds}", Icon = "PromotedAds.svg" },
+                new() { Title = "Featured Ads", Value = $"{response.ItemsDashboard.FeaturedAds}", Icon = "FeaturedAds.svg" },
+                new() { Title = "Refreshes", Value = $"{response.ItemsDashboard.Refreshes} / {response.ItemsDashboard.TotalAllowedRefreshes}", Icon = "Refreshes.svg" },
+                new() { Title = "Impressions", Value = $"{response.ItemsDashboard.Impressions:N0}", Icon = "Impressions.svg" },
+                new() { Title = "Views", Value = $"{response.ItemsDashboard.Views:N0}", Icon = "Views.svg" },
+                new() { Title = "WhatsApp", Value = $"{response.ItemsDashboard.WhatsAppClicks}", Icon = "WhatsApp.svg" },
+                new() { Title = "Calls", Value = $"{response.ItemsDashboard.Calls}", Icon = "Calls.svg" },
             };
+                    publishedAds = response.ItemsAds?.PublishedAds ?? new();
+
                 }
                 else
                 {
                     _errorMessage = "No subscription details found.";
-                    stats = new List<StatItem>();
+                    stats = new();
                 }
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex)
             {
-                HttpErrorHelper.HandleHttpException(ex, Snackbar);
+                Console.WriteLine("Error loading subscription details: " + ex.Message);
+                _errorMessage = "Something went wrong while loading subscription stats.";
+                stats = new();
             }
-        }
+            finally 
+            {
+                _isLoading = false;
 
-        private List<AdItem> publishedAds = new()
-    {
-        new() {
-            Category = "Pre-loved / Bags",
-            Title = "Used Gucci bag authentic",
-            Location = "Westbay",
-            Price = "5,000 QAR",
-            ExpiryDate = "04/12/25 - 3:15 PM",
-            IsFeatured = true,
-            Impressions = "1,034",
-            Views = "42",
-            Calls = "40",
-            WhatsApp = "40",
-            Shares = "40",
-            Saves = "40",
-            ImageUrl = ".images/subscription/Gucci.jpg"
-        },
-        new() {
-            Category = "Pre-loved / Bags",
-            Title = "Used Gucci bag authentic",
-            Location = "Westbay",
-            Price = "5,000 QAR",
-            ExpiryDate = "04/12/25 - 3:15 PM",
-            IsFeatured = false,
-            Impressions = "1,034",
-            Views = "42",
-            Calls = "40",
-            WhatsApp = "40",
-            Shares = "40",
-            Saves = "40",
-            ImageUrl = "images/subscription/Gucci.jpg"
-        }
-    };
-        private List<AdItem> unpublishedAds = new()
-    {
-        new() {
-            Category = "Pre-loved / Bags",
-            Title = "Used Gucci bag authentic",
-            Location = "Westbay",
-            Price = "5,000 QAR",
-            ImageUrl = "images/subscription/Gucci.jpg"
-        },
-        new() {
-            Category = "Pre-loved / Bags",
-            Title = "Used Gucci bag authentic",
-            Location = "Westbay",
-            Price = "5,000 QAR",
-            ImageUrl = "images/subscription/Gucci.jpg"
-        },
-    };
-     
-        public class AdItem
-        {
-            public string Category { get; set; }
-            public string Title { get; set; }
-            public string Location { get; set; }
-            public string Price { get; set; }
-            public string ExpiryDate { get; set; }
-            public bool IsFeatured { get; set; }
-            public string Impressions { get; set; }
-            public string Views { get; set; }
-            public string Calls { get; set; }
-            public string WhatsApp { get; set; }
-            public string Shares { get; set; }
-            public string Saves { get; set; }
-            public string ImageUrl { get; set; }
-        }
+            }
+           }
+
+
         public class SubscriptionDetailsResponse
         {
             public int CategoryId { get; set; }
@@ -250,5 +152,140 @@ namespace QLN.Web.Shared.Pages.Subscription
             public int Usage { get; set; }
             public int Total { get; set; }
         }
+
+        public class ItemDashboardResponse
+        {
+            [JsonPropertyName("itemsDashboard")]
+            public ItemsDashboard ItemsDashboard { get; set; }
+
+            [JsonPropertyName("itemsAds")]
+            public ItemsAds ItemsAds { get; set; }
+        }
+
+        public class ItemsDashboard
+        {
+            [JsonPropertyName("publishedAds")]
+            public int PublishedAds { get; set; }
+
+            [JsonPropertyName("promotedAds")]
+            public int PromotedAds { get; set; }
+
+            [JsonPropertyName("featuredAds")]
+            public int FeaturedAds { get; set; }
+
+            [JsonPropertyName("refreshes")]
+            public int Refreshes { get; set; }
+
+            [JsonPropertyName("remainingRefreshes")]
+            public int RemainingRefreshes { get; set; }
+
+            [JsonPropertyName("totalAllowedRefreshes")]
+            public int TotalAllowedRefreshes { get; set; }
+
+            [JsonPropertyName("refreshExpiry")]
+            public DateTime RefreshExpiry { get; set; }
+
+            [JsonPropertyName("impressions")]
+            public int Impressions { get; set; }
+
+            [JsonPropertyName("views")]
+            public int Views { get; set; }
+
+            [JsonPropertyName("whatsAppClicks")]
+            public int WhatsAppClicks { get; set; }
+
+            [JsonPropertyName("calls")]
+            public int Calls { get; set; }
+        }
+
+        public class ItemsAds
+        {
+            [JsonPropertyName("publishedAds")]
+            public List<AdModal> PublishedAds { get; set; }
+
+            [JsonPropertyName("unpublishedAds")]
+            public List<AdModal> UnpublishedAds { get; set; }
+        }
+
+        public class AdModal
+        {
+            [JsonPropertyName("id")]
+            public string Id { get; set; }
+
+            [JsonPropertyName("title")]
+            public string Title { get; set; }
+
+            [JsonPropertyName("category")]
+            public string Category { get; set; }
+
+            [JsonPropertyName("description")]
+            public string Description { get; set; }
+
+            [JsonPropertyName("location")]
+            public string Location { get; set; }
+
+            [JsonPropertyName("subVertical")]
+            public string SubVertical { get; set; }
+
+            [JsonPropertyName("price")]
+            public decimal Price { get; set; }
+
+            [JsonPropertyName("priceType")]
+            public string PriceType { get; set; }
+
+            [JsonPropertyName("phoneNumber")]
+            public string PhoneNumber { get; set; }
+
+            [JsonPropertyName("whatsappNumber")]
+            public string WhatsappNumber { get; set; }
+
+            [JsonPropertyName("createdDate")]
+            public DateTime CreatedDate { get; set; }
+
+            [JsonPropertyName("expiryDate")]
+            public DateTime ExpiryDate { get; set; }
+
+            [JsonPropertyName("userId")]
+            public string UserId { get; set; }
+
+            [JsonPropertyName("isFeatured")]
+            public bool IsFeatured { get; set; }
+
+            [JsonPropertyName("isPromoted")]
+            public bool IsPromoted { get; set; }
+
+            [JsonPropertyName("refreshExpiry")]
+            public DateTime? RefreshExpiry { get; set; }
+
+            [JsonPropertyName("remainingRefreshes")]
+            public int RemainingRefreshes { get; set; }
+
+            [JsonPropertyName("totalAllowedRefreshes")]
+            public int TotalAllowedRefreshes { get; set; }
+
+            [JsonPropertyName("impressions")]
+            public int Impressions { get; set; }
+
+            [JsonPropertyName("views")]
+            public int Views { get; set; }
+
+            [JsonPropertyName("calls")]
+            public int Calls { get; set; }
+
+            [JsonPropertyName("whatsAppClicks")]
+            public int WhatsAppClicks { get; set; }
+
+            [JsonPropertyName("shares")]
+            public int Shares { get; set; }
+
+            [JsonPropertyName("saves")]
+            public int Saves { get; set; }
+
+            [JsonPropertyName("imageUrls")]
+            public List<string> ImageUrls { get; set; }
+        }
+
     }
+
+
 }

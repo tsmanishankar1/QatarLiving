@@ -1,0 +1,41 @@
+@inject NavigationManager NavigationManager
+@using QLN.Web.Shared.Components.SubTabs
+
+<SubTabs Tabs="@tabItems" OnTabClick="@OnTabClick" />
+
+@code {
+    private List<SubTabs.TabItem> tabItems = new()
+{
+new() {
+Text = "Daily",
+Route = "/content/daily",
+ActiveRoutePaths = new List<string> { "/content/daily", "/","/content/daily/article/details" },
+ImagePath = "/qln-images/content/daily_icon.svg"
+},
+new() {
+Text = "News",
+Route = "/content/news",
+ActiveRoutePaths = new List<string> { "/content/news", "/content/article/details" },
+ImagePath = "/qln-images/content/news_icon.svg"
+},
+new() {
+Text = "Events",
+Route = "/content/events",
+ActiveRoutePaths = new List<string> { "/content/events" ,"/content/events/details" },
+ImagePath = "/qln-images/content/events_icon.svg"
+},
+new() {
+Text = "Community",
+Route = "/content/community",
+ActiveRoutePaths = new List<string> { "/content/community" ,"/content/community/post/detail"},
+ImagePath = "/qln-images/content/community_icon.svg"
+}
+};
+
+
+    private void OnTabClick(SubTabs.TabItem tab)
+    {
+        NavigationManager.NavigateTo(tab.Route);
+        // You can do additional logic here
+    }
+}

@@ -1,0 +1,85 @@
+@using MudBlazor
+@inherits QLN.Web.Shared.Components.FaqList.FaqListBase
+
+<div class="faqs-section">
+    @foreach (var faq in Items)
+    {
+        <MudPaper Class="@($"faq-item {(faq.IsExpanded ? "expanded" : "")}")" Elevation="0">
+            <MudButton Variant="Variant.Text" FullWidth="true" Class="@($"faq-question {(faq.IsExpanded ? "expanded" : "")}")"
+                EndIcon="@(faq.IsExpanded? Icons.Material.Filled.Remove : Icons.Material.Filled.Add)"
+                OnClick="@(() => ToggleFaq(faq))">
+                <h4 class="faq-question-text">@faq.Title</h4>
+            </MudButton>
+
+            <MudCollapse Expanded="@faq.IsExpanded">
+                <MudPaper Class="faq-answer" Elevation="0">
+                    <h4 class="faq-answer-text">@faq.Description</h4>
+                </MudPaper>
+            </MudCollapse>
+        </MudPaper>
+    }
+</div>
+
+<style>
+    .faqs-section {
+        width: 100%;
+    }
+
+
+    .faq-item {
+        margin-bottom: 8px;
+        border-radius: 8px;
+        overflow: hidden;
+        background-color: var(--color-secondary-background);
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .faq-item:hover,
+    .faq-item.expanded {
+        background-color: var(--color-background);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .faq-question-text {
+        font-weight: 500;
+        font-size: 15px;
+        color: var(--color-text-heading);
+    }
+
+    .faq-answer-text {
+        font-weight: 500;
+        font-size: 15px;
+        color: var(--color-text-gray);
+    }
+
+    .faq-question {
+        justify-content: space-between;
+        padding: 1rem;
+        text-transform: none;
+        text-align: left;
+        width: 100%;
+        transition: background-color 0.3s ease;
+    }
+
+    .faq-item:hover .faq-question,
+    .faq-item.expanded .faq-question {
+        background-color: var(--color-background);
+    }
+
+    .faq-question .mud-button-end-icon {
+        margin-left: 1rem;
+        color: var(--mud-palette-primary);
+    }
+
+    .faq-answer {
+        padding: 1rem;
+        padding-top: 0;
+        background-color: var(--color-background);
+    }
+
+    @@media (max-width: 600px) {
+        .faq-question {
+            padding: 0.75rem;
+        }
+    }
+</style>

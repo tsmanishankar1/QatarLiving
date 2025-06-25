@@ -1,4 +1,4 @@
-@page "/login"
+@page "/qln/login"
 @using QLN.Web.Shared.Services
 @using QLN.Web.Shared.Helpers
 @using MudBlazor
@@ -18,52 +18,40 @@
 @inject CustomAuthStateProvider CustomAuthenticationStateProvider;
 @inject IJSRuntime JS
 
-<div id="login-container" style="width: 100%; background-color: var(--color-secondary-background); padding: 32px 16px;">
+<MudThemeProvider Theme="@CustomPaletteTheme" /> 
+<div id="login-container" style="width: 100%; background-color: var(--color-secondary-background); padding: 100px 16px;">
     <div style="max-width: 400px; margin: 0 auto;">
-        <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-4 login-heading">Log in to your account</MudText>
-        <MudStack AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
-            <MudText Typo="Typo.body1" Align="Align.Center" Class="login-description">
+        <MudText Align="Align.Center" Class="mt-4 login-heading">Log in to your account</MudText>
+        <MudStack AlignItems="AlignItems.Center"  Class="mb-4">
+            <MudText  Align="Align.Center" Class="login-description">
                 Welcome back! Please enter your details.
             </MudText>
         </MudStack>
-        <MudText Typo="Typo.body1" Class="label-text">
+        <MudText Typo="Typo.body1" Class="email-text">
             Email or Phone number </MudText>
-        <MudTextField T="string" Label="Email or Phone number" Variant="Variant.Outlined" FullWidth="true"
-            InputType="InputType.Text" style="background-color: var(--color-background)" MaxLength="50" Required="true"
+        <MudTextField id="loginEmailInput" T="string" Placeholder="Email or Phone number" Variant="Variant.Outlined" FullWidth="true"
+            InputType="InputType.Text" style="background-color: var(--color-background)" MaxLength="50" Required="true" Class="mt-4"
             Error="@(!string.IsNullOrEmpty(_usernameError))" ErrorText="@_usernameError" Immediate="true"
-            ValueChanged="OnEmailChanged" ValueExpression="(() => _username)" OnBlur="@ValidateUsername" InputAttributes="@(new Dictionary<string, object>
-              {
-                  ["aria-label"] = "Email",
-                  ["data-testid"] = "email-input"
-              })"/>
+            ValueChanged="OnEmailChanged" ValueExpression="(() => _username)" OnBlur="@ValidateUsername"/>
         <MudText Typo="Typo.body1" Class="label-text">
             Password
         </MudText>
-        <MudTextField T="string" Label="Password" MaxLength="50" Variant="Variant.Outlined"
+        <MudTextField id="loginPasswordInput" T="string" Placeholder="Password" MaxLength="50" Variant="Variant.Outlined"
             InputType="@(_showPassword? InputType.Text: InputType.Password)" FullWidth="true" Class="mt-4"
             style="background-color: var(--color-background)" Required="true" Adornment="Adornment.End"
             AdornmentIcon="@(_showPassword? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
             OnAdornmentClick="TogglePasswordVisibility" AdornmentColor="Color.Default"
             Error="@(!string.IsNullOrEmpty(_passwordError))" ErrorText="@_passwordError" Immediate="true"
-            ValueChanged="OnPasswordChanged" ValueExpression="(() => _password)" OnBlur="ValidatePassword" InputAttributes="@(new Dictionary<string, object>
-              {
-                  ["aria-label"] = "password",
-                  ["data-testid"] = "password-input"
-              })" />
+            ValueChanged="OnPasswordChanged" ValueExpression="(() => _password)" OnBlur="ValidatePassword"/>
 
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
-            <MudCheckBox T="bool" Label="Remember me" DisableMargins="true"  InputAttributes="@(new Dictionary<string, object>
-             {
-                 { "id", "remember-me-checkbox" },
-                 { "data-testid", "remember-me-checkbox" }
-             })"/>
-            <NavLink href="/forgot-password" style="color: var(--color-accent)"> Forgot Password?</NavLink>
+            <MudCheckBox T="bool" Label="Remember me" DisableMargins="true" id="rememberMeCheckBox"/>
+            <NavLink id="forgetPasswordLink" href="/forgot-password" class="link-style"> Forgot Password?</NavLink>
         </div>
 
-        <CustomButton BackgroundColor="var(--color-accent)" TextColor="#FFFFFF" Text="Sign In" Disabled="_isLoading"
-            Loading="_isLoading" OnClick="@PerformLogin" Class="mt-4" aria-label="Sign In Button"
-    data-testid="sign-in-button"/>
+        <CustomButton id="signInButton" BackgroundColor="var(--color-accent)" TextColor="#FFFFFF" Text="Sign In" Disabled="_isLoading"
+            Loading="_isLoading" OnClick="@PerformLogin" Class="mt-4 pt-3 pb-3" Height="50px"/>
 
 
         <div class="d-flex align-center my-4">
@@ -72,57 +60,40 @@
             <div style="flex-grow: 1; height: 1px; background-color: var(--color-secondary-grey-container)"></div>
         </div>
 
-        <MudGrid Justify="Justify.SpaceEvenly" GutterSize="12px">
+        <MudGrid Class="social-buttons-container">
     <MudItem xs="2">
-                <MudButton Variant="Variant.Outlined" Class="social-login-button" InputAttributes="@(new Dictionary<string, object>
-    {
-        ["aria-label"] = "Google Login Button",
-        ["data-testid"] = "google-login-button"
-    })">
-            <img src="/images/google.svg" alt="Google" style="height: 24px;" />
+                <MudButton id="googleLoginButton" Variant="Variant.Outlined" Class="social-login-button">
+            <img src="/qln-images/google.svg" alt="Google" style="height: 24px;" />
         </MudButton>
     </MudItem>
     <MudItem xs="2">
-                <MudButton Variant="Variant.Outlined" Class="social-login-button" InputAttributes="@(new Dictionary<string, object>
-    {
-        ["aria-label"] = "Apple Login Button",
-        ["data-testid"] = "apple-login-button"
-    })">
-            <img src="/images/apple.svg" alt="Google" style="height: 24px;" />
+                <MudButton id="appleLoginButton" Variant="Variant.Outlined" Class="social-login-button">
+            <img src="/qln-images/apple.svg" alt="Google" style="height: 24px;" />
         </MudButton>
     </MudItem>
     <MudItem xs="2">
-                <MudButton Variant="Variant.Outlined" Class="social-login-button" InputAttributes="@(new Dictionary<string, object>
-    {
-        ["aria-label"] = "Microsoft Login Button",
-        ["data-testid"] = "microsoft-login-button"
-    })">
-            <img src="/images/microsoft.svg" alt="Microsoft" style="height: 24px;" />
+                <MudButton id="microsoftLoginButton" Variant="Variant.Outlined" Class="social-login-button">
+            <img src="/qln-images/microsoft.svg" alt="Microsoft" style="height: 24px;" />
         </MudButton>
     </MudItem>
     <MudItem xs="2">
-                <MudButton Variant="Variant.Outlined" Class="social-login-button" InputAttributes="@(new Dictionary<string, object>
-    {
-        ["aria-label"] = "Facebook Login Button",
-        ["data-testid"] = "facebook-login-button"
-    })">
+                <MudButton id="facebookLoginButton" Variant="Variant.Outlined" Class="social-login-button" >
  
-            <img src="/images/facebook.svg" alt="Facebook" />
+            <img src="/qln-images/facebook.svg" alt="Facebook" />
         </MudButton>
     </MudItem>
     </MudGrid>
         <MudStack AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
             <MudText Align="Align.Start" Class="mt-4 label-text">
                 Don't have an account?
-                <NavLink href="/signup" style="color: var(--color-accent)">Sign Up</NavLink>
+                <NavLink href="/signup" id="signUpLink" class="link-style">Sign Up</NavLink>
             </MudText>
         </MudStack>
     </div>
 </div>
 
 @code {
-    [CascadingParameter] 
-    public HttpContext? HttpContext { get; set; } 
+    private MudTheme CustomPaletteTheme = new CustomTheme();
     public string Name{ get; set; }
     private string _username = string.Empty;
     private string _password = string.Empty;
@@ -241,7 +212,7 @@
 
 <style>
     .login-heading {
-        font-weight: 500;
+        font-weight: 600;
         font-size: 30px;
         font-family: 'Public Sans', sans-serif;
         margin-bottom: 1.5rem;
@@ -262,5 +233,30 @@
         font-weight: 400;
         font-size: 14px;
         color: var(--color-text-heading);
+        margin-top: 30px;
     }
+
+    .email-text {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 400;
+        font-size: 14px;
+        color: var(--color-text-heading);
+        margin-top: 22px;
+    }
+
+    .link-style {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--color-accent); 
+    }
+
+    .social-buttons-container
+    {
+        gap: 20px;
+        width: 524px;
+        display: flex;
+        flex-direction: row;
+    }
+
 </style>

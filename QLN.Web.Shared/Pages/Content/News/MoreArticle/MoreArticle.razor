@@ -1,0 +1,238 @@
+@inherits MoreArticleBase
+@using QLN.Web.Shared.Components.EmptyCard
+<div class="more-articles article-side-spacing" style="padding-top: 20px;">
+    <h3 class="section-heading" style="color: var(--color-text-heading);">
+        <span class="accent-bar"></span>More Articles
+    </h3>
+    @if (loading)
+    {
+        @for (int i = 0; i < 4; i++)
+        {
+            <MudGrid Class="ps-3 py-1">
+                <MudItem xs="9">
+                    <MudSkeleton SkeletonType="SkeletonType.Text" Width="80%" Height="20px" Animation="Animation.Wave"
+                        Class="mb-1 " />
+                    <MudSkeleton SkeletonType="SkeletonType.Text" Width="95%" Height="20px" Animation="Animation.Wave"
+                        Class="mb-1" />
+                    <MudSkeleton SkeletonType="SkeletonType.Text" Width="70%" Height="20px" Animation="Animation.Wave" />
+                </MudItem>
+                <MudItem xs="3">
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="100px" Width="70px" Animation="Animation.Wave"
+                        Class="rounded" />
+                </MudItem>
+            </MudGrid>
+        }
+    }
+    else if (Articles != null && Articles.Any())
+    {
+        @foreach (var article in Articles.Take(4))
+        {
+            <div class="article-entry">
+                <div class="article-content">
+                    <MudLink Class="more-article-title" href="@($"/content/article/details/{article.Slug}?category={selectedMainTab}&subcategory={selectedTab}")">
+                        @article.Title
+                    </MudLink>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
+                {
+                    <div class="image-container" @onclick="@(() => onclick(article))">
+                     @if (!imageLoaded)
+                    {
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Class="more-article-image"  />
+                    }  
+                         <img src="@article.ImageUrl" alt="News-Image" class="more-article-image"
+                          style="@(imageLoaded ? "display: block;" : "display: none;")" 
+                        @onerror="OnImageError" key="@article.ImageUrl"/> 
+                    </div>
+                }
+                else
+                {
+                    <div class="image-placeholder">
+                        No image available
+                    </div>
+                }
+            </div>
+        }
+    }
+    else
+    {
+        <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
+    }
+
+</div>
+
+<style>
+    .section-heading {
+        display: flex;
+        align-items: center;
+        font-family: 'Public Sans', sans-serif;
+        font-size: 25px;
+        font-weight: 600;
+        color: var(--color-text-heading);
+    }
+
+    .image-placeholder {
+        width: 124px;
+        height: 70px;
+        border-radius: 6px;
+        display: flex;
+        font-size: 14px;
+        font-family: 'Public Sans', sans-serif;
+        background-color: #FAFAFA;
+        border-radius: 6px;
+        align-items: center;
+        justify-content: center;
+        color: #555;
+        font-size: 1rem;
+    }
+    .image-container {
+        width: 100%;
+        max-width: 124px;
+        aspect-ratio: 16 / 9;
+        border-radius: 4px;
+        overflow: hidden;
+        background-color: #f3f3f3; 
+        flex-shrink: 0;
+    }
+
+    .accent-bar {
+        display: inline-block;
+        width: 6px;
+        height: 26px;
+        background-color: var(--color-primary);
+        margin-right: 8px;
+    }
+
+    .more-articles {
+        max-width: 600px;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .heading-style {
+        margin-right: 4px;
+        font-size: 25px;
+        font-weight: 600;
+        font-family: 'Public Sans', sans-serif;
+        color: var(--color-text-heading);
+    }
+
+    h3 {
+        font-size: 20px;
+    }
+
+    .article-entry {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #F0F0F0;
+    }
+
+    .article-entry:last-child {
+        border-bottom: none;
+    }
+
+    .article-content {
+        flex: 1;
+        padding-right: 12px;
+    }
+
+    .article-meta {
+        color: #FF7F38;
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
+
+    
+    .more-article-title {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        /* Number of lines to show */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
+
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--color-text-heading) !important;
+        line-height: 1.4;
+        max-height: calc(1.4em * 3);
+        /* 3 lines x line-height */
+    }
+
+    .more-article-title:hover {
+        text-decoration: underline;
+        color: var(--color-primary) !important;          
+    }
+
+    .article-image {
+        width: 124px;
+        height: 70px;
+        border-radius: 4px;
+        @* object-fit: contain; *@
+    }
+    .more-article-image {
+    width: 100%;
+    height: 100%;
+    border-radius: 4px;
+    object-fit: cover; 
+}
+
+    more-article-image:hover {
+        cursor: pointer;
+    }
+
+.image-hidden {
+    display: none;
+}
+
+.image-visible {
+    display: block;
+}
+
+    @@media (max-width: 768px) {
+         .article-side-spacing {
+            padding-left: 16px; 
+        } 
+    }
+
+    @@media (max-width: 1024px) {
+        .article-image {
+            width: 124px;
+            height: 70px;
+            border-radius: 4px;
+            object-fit: cover;
+        }
+
+        .article-side-spacing {
+             padding-right: 16px;
+            padding-left: 16px; 
+    }
+    @@media (max-width: 320px) {
+         .article-side-spacing {
+            padding-left: 10px;
+        }
+        }
+    @@media (max-width: 375px) {
+        .article-side-spacing {
+            padding-left: 10px;
+        } 
+    }
+    @@media (max-width: 400px) {
+        .more-article-title {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        font-size: 14px;
+        text-overflow: ellipsis;
+        white-space: normal;
+        font-weight: 600;
+        color: var(--color-text-heading);
+        line-height: 1.4;
+        max-height: calc(1.4em * 3);
+        }
+    }
+</style>

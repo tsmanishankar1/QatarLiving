@@ -1,0 +1,139 @@
+@inherits TopEventCardBase
+@using QLN.Web.Shared.Helpers
+<div class="Top-event-list-card" @onclick="() => NavigateToEventDetail()">
+    <div class="Top-event-image-wrapper">
+        <a> <img src="@Item.ImageUrl" class="Top-event-card-img" alt="Title" /></a>
+        @if (!string.IsNullOrEmpty(Item.EventStart) && !string.IsNullOrEmpty(Item.EventEnd))
+        {
+            <div class="Top-event-date">
+                @DateHelper.FormatDate(Item.EventStart) to @DateHelper.FormatDate(Item.EventEnd)
+            </div>
+        }
+    </div>
+
+    <div class="Top-event-card-body">
+        <div class="Top-event-category">Highlighted Event</div>
+
+        <MudLink OnClick="() => NavigateToEventDetail()">
+            <h3 class="Top-event-title">@Item.Title</h3>
+        </MudLink>
+
+        <p class="Top-event-description" style="text-overflow:ellipsis;">
+            @HtmlHelper.StripHTML(Item.Description ?? "")
+        </p>
+        @if (!string.IsNullOrEmpty(Item.EventLocation))
+        {
+            <div class="Top-event-location">
+                <MudIcon Icon="@Icons.Material.Rounded.LocationOn" class="Top-event-location-icon" />
+                <span class="Top-event-location-text">@Item.EventLocation</span>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .Top-event-list-card {
+        border-radius: 6px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        max-width: 374px;
+        height: 368px;
+        cursor: pointer;
+        font-family: 'Public Sans', sans-serif;
+        border: 1px solid #F0F0F0;
+        background: #FFFFFF;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .Top-event-list-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .Top-event-image-wrapper {
+        position: relative;
+        width: 100%;
+        height: 214px;
+        overflow: hidden;
+        padding: 10px
+    }
+
+    .Top-event-card-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        border-radius: 6px;
+    }
+
+    .Top-event-date {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        background: #0071AF;
+        color: white;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .Top-event-card-body {
+        padding: 8px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        background: #FFFFFF;
+    }
+
+    .Top-event-category {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--color-accent);
+    }
+
+    .Top-event-title {
+        margin: 0;
+        font-size: 25px;
+        font-weight: 500;
+        color: var(--color-text-heading);
+        line-height: 26px;
+        letter-spacing: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .Top-event-description {
+        font-size: 14px;
+        color: var(--color-text-heading);
+        font-weight: 400;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .Top-event-location {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #646464;
+    }
+
+    .Top-event-location-text {
+        font-size: 12px;
+    }
+
+    .Top-event-location-icon {
+        font-size: 16px;
+        color: #646464;
+    }
+</style>

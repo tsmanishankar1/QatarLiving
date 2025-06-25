@@ -10,10 +10,16 @@ namespace QLN.Common.Infrastructure.IService.ICompanyService
 {
     public interface ICompanyService
     {
-        Task<CompanyProfileEntity> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default);
-        Task<CompanyProfileEntity?> GetCompanyById(Guid id, CancellationToken cancellationToken = default);
-        Task<IEnumerable<CompanyProfileEntity>> GetAllCompanies();
-        Task<CompanyProfileEntity> UpdateCompany(Guid id, CompanyProfileDto dto, CancellationToken cancellationToken = default);
+        Task<string> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default);
+        Task<CompanyProfileDto?> GetCompanyById(Guid id, CancellationToken cancellationToken = default);
+        Task<List<CompanyProfileDto>> GetAllCompanies(CancellationToken cancellationToken = default);
+        Task<string> UpdateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default);
         Task DeleteCompany(Guid id, CancellationToken cancellationToken = default);
+        Task<List<CompanyProfileCompletionStatusDto?>> GetCompanyProfileCompletionStatus(Guid userId, VerticalType vertical, CancellationToken cancellationToken = default);
+        Task<string> ApproveCompany(Guid userId, CompanyApproveDto dto, CancellationToken cancellationToken = default);
+        Task<CompanyApprovalResponseDto?> GetCompanyApprovalInfo(Guid companyId, CancellationToken cancellationToken = default);
+        Task<List<CompanyProfileVerificationStatusDto>> VerificationStatus(Guid userId, VerticalType vertical, bool isVerified, CancellationToken cancellationToken = default);
+        Task<List<CompanyProfileDto>> GetCompaniesByTokenUser(Guid userId, CancellationToken cancellationToken = default);
+        Task<List<ProfileStatus>> GetStatusByTokenUser(Guid userId, CancellationToken cancellationToken = default);
     }
 }

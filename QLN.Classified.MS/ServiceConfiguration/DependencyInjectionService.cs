@@ -1,16 +1,21 @@
 ﻿using QLN.Classified.MS.Service;
-using QLN.Classified.MS.Service.BannerService;
-using QLN.Common.Infrastructure.IService.BannerService;
+using QLN.Classified.MS.Service.BackOfficeService;
+using QLN.Classified.MS.Service.ServicesAdService;
+using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.IBackOfficeService;
 
-namespace QLN.Common.Infrastructure.ServiceConfiguration
+
+namespace QLN.Classifieds.MS.ServiceConfiguration
 {
     public static class DependencyInjectionService
     {
-        public static IServiceCollection ClassifiedServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection ClassifiedInternalServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddTransient<IBannerService, BannerService>();
 
             services.AddTransient<IClassifiedService, ClassifiedService>();
+            services.AddTransient<IServicesService, ServicesAdService>();
+            services.AddTransient<IBackOfficeService<LandingBackOfficeIndex>, InternalLandingBackOfficeService>();
             return services;
         }
     }

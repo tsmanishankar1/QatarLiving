@@ -1,6 +1,5 @@
 <div class="custom-pagination-bar">
     @if (TotalPages >= 1)
-
     {
         @foreach (var p in VisiblePages)
         {
@@ -15,7 +14,18 @@
                 </button>
             }
         }
-        <span class="pagination-total">/ @TotalPages</span>
+
+        @* Show total only when TotalPages > 5 and screen is not mobile *@
+@*         @if (TotalPages > 5)
+        {
+            <span class="pagination-total desktop-only"> @TotalPages</span>
+        } *@
+
+        @* Mobile summary format *@
+        <span class="pagination-mobile-only">
+            Page <span class="strong-text">@CurrentPage</span> of <span class="strong-text">@TotalPages</span>
+        </span>
+
     }
 </div>
 
@@ -108,5 +118,38 @@
         margin-left: 12px;
         color: #475467;
         font-size: 14px;
+    }
+
+    /* Desktop: show full pagination with total */
+    .pagination-total.desktop-only {
+        display: inline;
+    }
+
+    /* Mobile: compact view */
+    .pagination-mobile-only {
+        display: none;
+        font-size: 14px;
+        color: #475467;
+        margin-left: 8px;
+    }
+
+    .strong-text {
+        color: #242424;
+        font-weight: 600;
+    }
+
+
+    /* Responsive Behavior */
+    @@media (max-width: 768px) {
+
+        .pagination-page-button,
+        .pagination-ellipsis,
+        .pagination-total.desktop-only {
+            display: none;
+        }
+
+        .pagination-mobile-only {
+            display: inline;
+        }
     }
 </style>

@@ -1,0 +1,28 @@
+﻿@inherits AddPostDialogBase
+@using QLN.Web.Shared.Components.NewCustomSelect
+@using MudBlazor
+@using QLN.Web.Shared.Contracts
+<MudDialog MaxWidth="MaxWidth.Small" FullWidth="true"
+           CloseOnEscapeKey="true" CloseOnBackdropClick="true"
+           Style="min-height: 220px; max-height: 220px;">
+    <TitleContent>
+        Create a Community Post
+    </TitleContent>
+    <DialogContent>
+ <NewCustomSelect TItem="SelectOption"
+                             Items="@CategorySelectOptions"
+                             Label="Category"
+                             Placeholder="Choose"
+                             SelectedId="@SelectedCategoryId"
+                             SelectedIdChanged="@OnCategoryChange"
+                             GetLabel="x => x.Label"
+                             GetId="x => x.Id"
+                             BorderRadius="0px" />
+
+        <div style="margin-top:24px; width:100%; display:flex; justify-content:flex-end; gap:8px;">
+            <MudButton OnClick="Cancel">Cancel</MudButton>
+            <MudButton Color="Color.Primary" OnClick="RedirectToPostPage">Post</MudButton>
+        </div>
+
+    </DialogContent>
+</MudDialog>

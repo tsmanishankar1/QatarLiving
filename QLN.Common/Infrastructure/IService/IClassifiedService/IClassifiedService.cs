@@ -1,4 +1,5 @@
-﻿using QLN.Common.Infrastructure.DTO_s;
+﻿using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.Model;
 using System;
 using System.Collections.Generic;
@@ -6,51 +7,45 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace QLN.Common.Infrastructure.IService.BannerService
+namespace QLN.Common.Infrastructure.IService
 {
     public interface IClassifiedService
-    {
-        Task<IEnumerable<ClassifiedIndexDto>> Search(CommonSearchRequest request);
-        Task<ClassifiedIndexDto?> GetById(string id);
-        Task<string> Upload(ClassifiedIndexDto document);
-        Task<ClassifiedLandingPageResponse> GetLandingPage();
-        Task<Adcateg> AddCategory(string categoryName, CancellationToken cancellationToken = default);
-        Task<List<Adcateg>> GetAllCategories(CancellationToken cancellationToken = default);
-
-        Task<AdSubCategory> AddSubCategory(string name, Guid categoryId, CancellationToken cancellationToken = default);
-        Task<List<AdSubCategory>> GetAllSubCategories(CancellationToken cancellationToken = default);
-        Task<List<AdSubCategory>> GetSubCategoriesByCategoryId(Guid categoryId);
-        Task<AdBrand> AddBrand(string name, Guid subCategoryId, CancellationToken cancellationToken = default);
-        Task<List<AdBrand>> GetAllBrands(CancellationToken cancellationToken = default);
-        Task<List<AdBrand>> GetBrandsBySubCategoryId(Guid subCategoryId, CancellationToken cancellationToken = default);
-        Task<AdModel> AddModel(string name, Guid brandId, CancellationToken cancellationToken = default);
-        Task<List<AdModel>> GetAllModels(CancellationToken cancellationToken = default);
-        Task<List<AdModel>> GetModelsByBrandId(Guid brandId, CancellationToken cancellationToken = default);
-        Task<AdCondition> AddCondition(string name, CancellationToken cancellationToken = default);
-        Task<List<AdCondition>> GetAllConditions(CancellationToken cancellationToken = default);
-        Task<AdColor> AddColor(string name, CancellationToken cancellationToken = default);
-        Task<List<AdColor>> GetAllColors(CancellationToken cancellationToken = default);
-        Task<AdCapacity> AddCapacity(string name, CancellationToken cancellationToken = default);
-        Task<List<AdCapacity>> GetAllCapacities(CancellationToken cancellationToken = default);
-        Task<AdProcessor> AddProcessor(string name, Guid modelId, CancellationToken cancellationToken = default);
-        Task<List<AdProcessor>> GetAllProcessors(CancellationToken cancellationToken = default);
-        Task<List<AdProcessor>> GetProcessorsByModelId(Guid modelId, CancellationToken cancellationToken = default);
-        Task<AdCoverage> AddCoverage(string name, CancellationToken cancellationToken = default);
-        Task<List<AdCoverage>> GetAllCoverages(CancellationToken cancellationToken = default);
-        Task<AdRam> AddRam(string name, Guid modelId, CancellationToken cancellationToken = default);
-        Task<List<AdRam>> GetAllRams(CancellationToken cancellationToken = default);
-        Task<List<AdRam>> GetRamsByModelId(Guid modelId, CancellationToken cancellationToken = default);
-        Task<AdResolution> AddResolution(string name, Guid modelId, CancellationToken cancellationToken = default);
-        Task<List<AdResolution>> GetAllResolutions(CancellationToken cancellationToken = default);
-        Task<List<AdResolution>> GetResolutionsByModelId(Guid modelId, CancellationToken cancellationToken = default);
-        Task<AdSizeType> AddSizeType(string name, CancellationToken cancellationToken = default);
-        Task<List<AdSizeType>> GetAllSizeTypes(CancellationToken cancellationToken = default);
-        Task<AdGender> AddGender(string name, CancellationToken cancellationToken = default);
-        Task<List<AdGender>> GetAllGenders(CancellationToken cancellationToken = default);
-        Task<AdZone> AddZone(string name, CancellationToken cancellationToken = default);
-        Task<List<AdZone>> GetAllZones(CancellationToken cancellationToken = default);
-        //Task<string> CreateAd(AdInformation ad, string userId, CancellationToken token = default);
-        //Task<List<AdResponse>> GetUserAds(string userId, bool? isPublished, CancellationToken token = default);
-
+    {        
+        Task<bool> SaveSearch(SaveSearchRequestDto dto, Guid userId, CancellationToken cancellationToken = default);
+        Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default);
+        Task<List<SavedSearchResponseDto>> GetSearches(string userId, CancellationToken cancellationToken = default);
+        Task<ItemAdsAndDashboardResponse> GetUserItemsAdsWithDashboard(Guid userId, CancellationToken cancellationToken = default);
+        Task<PrelovedAdsAndDashboardResponse> GetUserPrelovedAdsAndDashboard(Guid userId, CancellationToken cancellationToken = default);        
+        Task<AdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default);
+        Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default);
+        Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(ClassifiedCollectibles dto, CancellationToken cancellationToken = default);
+        Task<CollectiblesResponse> GetCollectibles(string userId, CancellationToken cancellationToken = default);
+        Task<AdCreatedResponseDto> CreateClassifiedDealsAd(ClassifiedDeals dto, CancellationToken cancellationToken = default);
+        Task<DeleteAdResponseDto> DeleteClassifiedItemsAd(Guid adId, CancellationToken cancellationToken = default);
+        Task<DeleteAdResponseDto> DeleteClassifiedPrelovedAd(Guid adId, CancellationToken cancellationToken = default);
+        Task<DeleteAdResponseDto> DeleteClassifiedCollectiblesAd(Guid adId, CancellationToken cancellationToken = default);
+        Task<DeleteAdResponseDto> DeleteClassifiedDealsAd(Guid adId, CancellationToken cancellationToken = default);
+        Task<PaginatedAdResponseDto> GetUserPublishedItemsAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default);
+        Task<PaginatedAdResponseDto> GetUserUnPublishedItemsAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default);
+        Task<PaginatedPrelovedAdResponseDto> GetUserPublishedPrelovedAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default);
+        Task<PaginatedPrelovedAdResponseDto> GetUserUnPublishedPrelovedAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default);
+        Task<BulkAdActionResponse> BulkUnpublishItemsAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default);
+        Task<BulkAdActionResponse> BulkPublishItemsAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default);
+        Task<BulkAdActionResponse> BulkPublishPrelovedAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default);
+        Task<BulkAdActionResponse> BulkPublishDealsAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default);
+        Task<BulkAdActionResponse> BulkUnpublishDealsAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default);
+        Task<BulkAdActionResponse> BulkUnpublishPrelovedAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default);
+        Task<BulkAdActionResponse> BulkPublishCollectiblesAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default);
+        Task<BulkAdActionResponse> BulkUnpublishCollectiblesAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default);
+        Task<PaginatedDealsAdResponseDto> GetUserPublishedDealsAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default);
+        Task<PaginatedDealsAdResponseDto> GetUserUnPublishedDealsAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default);
+        Task<PaginatedCollectiblesAdResponseDto> GetUserPublishedCollectiblesAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default);
+        Task<PaginatedCollectiblesAdResponseDto> GetUserUnPublishedCollectiblesAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default);
+        Task<Guid> CreateCategory(CategoryDtos dto, CancellationToken cancellationToken);
+        Task<List<Categories>> GetChildCategories(string vertical, Guid parentId, CancellationToken cancellationToken);
+        Task<CategoryTreeDto?> GetCategoryTree(string vertical, Guid categoryId, CancellationToken cancellationToken);
+        Task DeleteCategoryTree(string vertical, Guid categoryId, CancellationToken cancellationToken);
+        Task<List<CategoryTreeDto>> GetAllCategoryTrees(string vertical, CancellationToken cancellationToken);
+        Task<List<CategoryField>> GetFiltersByMainCategoryAsync(string vertical, Guid mainCategoryId, CancellationToken cancellationToken);
     }
 }
