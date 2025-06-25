@@ -7,10 +7,10 @@
         <MudText Align="Align.Center" Class="mt-4 mb-2 title-style ">
             @Title
         </MudText>
-        <MudRadioGroup T="string" @bind-SelectedOption="@TopicType" Class="custom-radio-group">
-            <MudRadio T="string" Option="Article">Article</MudRadio>
-            <MudRadio T="string" Option="Video">Video</MudRadio>
-            <MudRadio T="string" Option="Event">Event</MudRadio>
+        <MudRadioGroup T="string" @bind-Value="@TopicType" Class="custom-radio-group">
+            <MudRadio T="string" Value="@("Article")">Article</MudRadio>
+            <MudRadio T="string" Value="@("Video")">Video</MudRadio>
+            <MudRadio T="string" Value="@("Event")">Event</MudRadio>
         </MudRadioGroup>
         <MudAutocomplete T="string"
                  Key="@Placeholder"

@@ -82,7 +82,7 @@
                             <button class="cancel-button" @onclick="CancelDatePicker">Cancel</button>
                             <button class="apply-button"
                                 @onclick="ApplyDatePicker"
-                                disabled="@(_dateRange?.Start == null || _dateRange?.End == null)">
+                                disabled="@(_dateRange?.Start == null && _dateRange?.End == null)">
                                 Apply
                             </button>
                         </div>

@@ -1,6 +1,6 @@
 @page "/dashboard"
 @inherits DailyLivingBase
-@using QLN.ContentBO.WebUI.Components.DailyLiving.MudArticleTable
+@using QLN.ContentBO.WebUI.Components.DailyLiving.MudArticleTable;
 <MudGrid Style="padding-top: 18px">
     <!-- Left Form Section -->
     <MudItem xs="12" md="12">
@@ -24,7 +24,7 @@
 
             </MudTabs>
             @if (activeIndex != 0 && activeIndex != 1) {
-                <MudGrid AlignItems="Center" Class="padding-top:16px">
+                <MudGrid AlignItems="Center" Class="py-3">
                     <MudItem xs="12" md="12">
                         <div class="button-container">
                             <MudButton StartIcon="@Icons.Material.Outlined.Add" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button" OnClick="@OpenDialogAsync">
@@ -33,7 +33,7 @@
                             <MudButton StartIcon="@Icons.Material.Outlined.Edit" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button">
                                 Rename Topic
                             </MudButton>
-                            <MudButton StartIcon="@Icons.Material.Outlined.VisibilityOff" Style="background-color: #F04438; color: white; text-transform: none;" Class="compact-button">
+                            <MudButton StartIcon="@Icons.Material.Outlined.VisibilityOff" Style="background-color: #F04438; color: white; text-transform: none;" Class="compact-button" OnClick="async () => await OpenDialogAsync()">
                                 Unpublish
                             </MudButton>
                         </div>
@@ -85,7 +85,6 @@
         display: flex;
         gap: 16px; 
         align-items: center;
-        padding-top: 16px;
     }
     .compact-button {
         min-width: unset !important;
