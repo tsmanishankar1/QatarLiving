@@ -18,7 +18,8 @@ public class CollectiblesSearchSectionBase : ComponentBase
     [Inject] private NavigationManager Nav { get; set; }
     protected bool _isSearchFocused = false;
 
-    protected bool _isSearching;
+    [Parameter]
+    public bool Loading { get; set; } = false;
       protected List<ViewToggleButtons.ViewToggleOption> _viewOptions = new()
     {
         new() { ImageUrl = "/qln-images/list_icon.svg", Label = "List", Value = "list" },
@@ -75,11 +76,9 @@ public class CollectiblesSearchSectionBase : ComponentBase
     }
     protected async Task PerformSearch()
     {
-        _isSearching = true;
         StateHasChanged();
         await Task.Yield();
         await OnSearch.InvokeAsync(SearchState.CollectiblesSearchText);
-        _isSearching = false;
     }
     protected async Task ClearSearch()
     {
