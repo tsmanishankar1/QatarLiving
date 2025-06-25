@@ -24,5 +24,8 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         Task<Dictionary<string, string>> GetWriterTagsAsync(CancellationToken cancellationToken = default);
         //Task<string> CreateNewsArticleAsync(Guid userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default);
         Task<CreateNewsArticleResponseDto> CreateNewsArticleAsync(Guid userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default);
+        Task<List<V2NewsArticleDTO>> GetAllNewsArticlesAsync(CancellationToken cancellationToken = default);
+        Task<string> CreateNewsArticleCategoryAsync(V2NewsCategory dto, CancellationToken cancellationToken = default);
+        Task<List<V2NewsCategory>> GetAllNewsArticleCategoriesAsync(CancellationToken cancellationToken = default);
     }
 }

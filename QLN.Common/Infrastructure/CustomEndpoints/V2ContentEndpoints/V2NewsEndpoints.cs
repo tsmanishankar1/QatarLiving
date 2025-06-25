@@ -429,16 +429,16 @@ public static class V2NewsEndpoints
          .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         group.MapPost("/createNewsArticle", async Task<Results<
-     Ok<CreateNewsArticleResponseDto>,
-     ForbidHttpResult,
-     BadRequest<ProblemDetails>,
-     ProblemHttpResult>>
- (
-     V2NewsArticleDTO dto,
-     IV2NewsService service,
-     HttpContext httpContext,
-     CancellationToken cancellationToken
- ) =>
+            Ok<CreateNewsArticleResponseDto>,
+            ForbidHttpResult,
+            BadRequest<ProblemDetails>,
+            ProblemHttpResult>>
+         (
+        V2NewsArticleDTO dto,
+        IV2NewsService service,
+        HttpContext httpContext,
+        CancellationToken cancellationToken
+        ) =>
         {
             try
             {
@@ -470,25 +470,25 @@ public static class V2NewsEndpoints
                 return TypedResults.Problem("Internal Server Error", ex.Message);
             }
         })
- .WithName("CreateNewsArticle")
- .WithTags("News")
- .WithSummary("Create News Article")
- .WithDescription("Creates a news article using authenticated user ID and name from token.")
- .Produces<CreateNewsArticleResponseDto>(StatusCodes.Status200OK)
- .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
- .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
- .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+         .WithName("CreateNewsArticle")
+         .WithTags("News")
+         .WithSummary("Create News Article")
+         .WithDescription("Creates a news article using authenticated user ID and name from token.")
+         .Produces<CreateNewsArticleResponseDto>(StatusCodes.Status200OK)
+         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+         .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
         group.MapPost("/createNewsArticleById", async Task<Results<
-    Ok<CreateNewsArticleResponseDto>,
-    BadRequest<ProblemDetails>,
-    ProblemHttpResult>>
-(
-    V2NewsArticleDTO dto,
-    IV2NewsService service,
-    CancellationToken cancellationToken
-) =>
+            Ok<CreateNewsArticleResponseDto>,
+            BadRequest<ProblemDetails>,
+            ProblemHttpResult>>
+        (
+            V2NewsArticleDTO dto,
+            IV2NewsService service,
+            CancellationToken cancellationToken
+        ) =>
         {
             try
             {
@@ -522,13 +522,97 @@ public static class V2NewsEndpoints
                 return TypedResults.Problem("Internal Server Error", ex.Message);
             }
         })
-.ExcludeFromDescription()
-.WithName("CreateNewsArticleByUserId")
+        .ExcludeFromDescription()
+        .WithName("CreateNewsArticleByUserId")
+        .WithTags("News")
+        .WithSummary("Create News Article By UserId")
+        .WithDescription("Creates a news article using CreatedBy and UpdatedBy passed explicitly.")
+        .Produces<CreateNewsArticleResponseDto>(StatusCodes.Status200OK)
+        .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        group.MapGet("/getAll", async Task<Results<
+            Ok<List<V2NewsArticleDTO>>,
+            ProblemHttpResult>>
+        (
+            IV2NewsService service,
+            CancellationToken cancellationToken
+) =>
+        {
+            try
+            {
+                var articles = await service.GetAllNewsArticlesAsync(cancellationToken);
+                return TypedResults.Ok(articles);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Error retrieving articles", ex.Message);
+            }
+        })
+        .WithName("GetAllNewsArticles")
+        .WithTags("News")
+        .WithSummary("Get all news articles")
+        .WithDescription("Returns all news articles stored in the system.")
+        .Produces<List<V2NewsArticleDTO>>(StatusCodes.Status200OK)
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        group.MapPost("/createNewsArticleCategory", async Task<Results<Ok<string>, ForbidHttpResult, BadRequest<ProblemDetails>, ProblemHttpResult>> (
+    V2NewsCategory dto,
+    IV2NewsService service,
+    HttpContext httpContext,
+    CancellationToken cancellationToken
+) =>
+        {
+            try
+            {
+
+                var result = await service.CreateNewsArticleCategoryAsync(dto, cancellationToken);
+                return TypedResults.Ok(result);
+            }
+            catch (InvalidDataException ex)
+            {
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "Invalid Data",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Internal Server Error", ex.Message);
+            }
+        })
+        .WithName("createNewsArticleCategory")
+        .WithTags("News")
+        .WithSummary("Create News")
+        .WithDescription("Creates a new news createNewsCategory")
+        .Produces<string>(StatusCodes.Status200OK)
+        .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+        .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        group.MapGet("/getAllNewsArticleCategories", async Task<Results<Ok<List<V2NewsCategory>>, ProblemHttpResult>> (
+    IV2NewsService service,
+    HttpContext httpContext,
+    CancellationToken cancellationToken
+) =>
+        {
+            try
+            {
+                var result = await service.GetAllNewsArticleCategoriesAsync(cancellationToken);
+                return TypedResults.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Internal Server Error", ex.Message);
+            }
+        })
+.WithName("getAllNewsArticleCategories")
 .WithTags("News")
-.WithSummary("Create News Article By UserId")
-.WithDescription("Creates a news article using CreatedBy and UpdatedBy passed explicitly.")
-.Produces<CreateNewsArticleResponseDto>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.WithSummary("Get All News Categories")
+.WithDescription("Retrieves all news article categories.")
+.Produces<List<V2NewsCategory>>(StatusCodes.Status200OK)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         return group;

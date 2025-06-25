@@ -87,15 +87,17 @@ namespace QLN.Common.DTO_s
 
     public class V2NewsCategory
     {
-        public int Id { get; set; }
-        public string CategoryName { get; set; }
-        public List<V2NewsSubCategory> SubCategories { get; set; }
+        public Guid Id { get; set; } // Unique identifier for the category
+        public string CategoryName { get; set; } // Category name
+        public List<V2NewsSubCategory> SubCategories { get; set; } = new List<V2NewsSubCategory>(); // List of subcategories
     }
+
     public class V2NewsSubCategory
     {
-        public int Id { get; set; }
-        public string CategoryName { get; set; }
+        public Guid Id { get; set; } // Unique identifier for subcategory
+        public string SubCategoryName { get; set; } // Subcategory name
     }
+
     public class V2Slot
     {
         public Slot Id { get; set; }

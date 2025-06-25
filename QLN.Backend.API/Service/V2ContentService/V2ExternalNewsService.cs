@@ -284,5 +284,66 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
+        public async Task<List<V2NewsArticleDTO>> GetAllNewsArticlesAsync(CancellationToken cancellationToken = default)
+        {
+            var url = "/api/v2/news/getAll";
+            var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.V2Content.ContentServiceAppId, url);
+
+            var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+            response.EnsureSuccessStatusCode();
+
+            var rawJson = await response.Content.ReadAsStringAsync();
+
+            return JsonSerializer.Deserialize<List<V2NewsArticleDTO>>(rawJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            }) ?? throw new Exception("Failed to retrieve articles.");
+        }
+
+        public async Task<string> CreateNewsArticleCategoryAsync(V2NewsCategory dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+
+                var url = "/api/v2/news/createNewsArticleCategory";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
+                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                response.EnsureSuccessStatusCode();
+
+                var rawJson = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating news");
+                throw;
+            }
+        }
+
+        public async Task<List<V2NewsCategory>> GetAllNewsArticleCategoriesAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var appId = ConstantValues.V2Content.ContentServiceAppId;
+                var path = "/api/v2/news/getAllNewsArticleCategories";
+
+
+                return await _dapr.InvokeMethodAsync<List<V2NewsCategory>>(
+                    HttpMethod.Get,
+                    appId,
+                    path,
+                    cancellationToken
+                ) ?? new List<V2NewsCategory>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all news");
+                throw;
+            }
+          
+        }
+
     }
 }
