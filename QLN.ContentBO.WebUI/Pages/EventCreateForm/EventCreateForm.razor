@@ -158,9 +158,11 @@
                         MaximumFileCount="1">
                         <ActivatorContent>
                         <div class="d-flex flex-column align-center">
+                        <div class="icon-circle">
                         <img src="/qln-images/upload_icon.svg"
                         class="file-upload-style"
                         alt="Upload"/>
+                        </div>
                         <div class="mt-1" style="color: #FF7F38;">Cover Image</div>
                         </div>
                         </ActivatorContent>
@@ -178,10 +180,17 @@
             </div>
             <MudPaper Elevation="0" Class="image-picker-style">
             <div class="upload-action-style">
-                <MudButton 
-                OnClick="@EditImage">
-                <img src="/qln-images/edit_icon.svg" alt="Edit" class="action-icon-style" />
-                </MudButton>
+                <MudFileUpload T="IBrowserFile"
+                        Accept=".png,.jpg"
+                        FilesChanged="@(async f => await UploadFiles(f))"
+                        MaximumFileCount="1">
+                        <ActivatorContent>
+                        <MudButton 
+                        OnClick="@EditImage">
+                        <img src="/qln-images/edit_icon.svg" alt="Edit" class="action-icon-style" />
+                        </MudButton>
+                        </ActivatorContent>
+                </MudFileUpload>
                 <MudButton 
                 OnClick="@EditImage">
                 <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
@@ -406,13 +415,21 @@
     background-color: #ccc;
     cursor: not-allowed;
 }
-.my-checkbox .mud-checkbox-input:checked {
+.my-checkbox.mud-checkbox-root input[type="checkbox"]:checked + .mud-checkbox-ripple .mud-icon-root {
     color: #FF7F38 !important;
 }
 
-/* ✅ Unchecked icon color */
-.my-checkbox .mud-checkbox-input:not(:checked) + .mud-checkbox-ripple .mud-icon-root {
-    color: #D0D5DD !important; 
+.my-checkbox.mud-checkbox-root input[type="checkbox"]:not(:checked) + .mud-checkbox-ripple .mud-icon-root {
+    color: #D0D5DD !important;
+}
+.icon-circle {
+    background-color: #FAFAFA;
+    border-radius: 50%;
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 </style>
