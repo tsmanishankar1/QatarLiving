@@ -17,8 +17,8 @@ namespace QLN.Web.Shared.Pages.Content.Events.EventsList
 [Parameter] public int PageSize { get; set; }
 [Parameter] public int TotalItems { get; set; }
 
-protected IEnumerable<ContentEvent> FilteredEventItems => Items; // Apply filtering here if needed
-protected IEnumerable<ContentEvent> PagedFilteredEventItems => FilteredEventItems
+protected IEnumerable<ContentEvent> Filtereddtos => Items; // Apply filtering here if needed
+protected IEnumerable<ContentEvent> PagedFiltereddtos => Filtereddtos
     .Skip((CurrentPage - 1) * PageSize)
     .Take(PageSize);
 protected async void HandlePageChange(int newPage)

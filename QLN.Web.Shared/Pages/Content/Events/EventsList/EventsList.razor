@@ -36,9 +36,9 @@
         }
         else
         {
-            <MudVirtualize Context="eventItem" Items="Items">
+            <MudVirtualize Context="dto" Items="Items">
                 <MudItem xs="12" sm="6" md="4">
-                    <EventListCard Item="@eventItem" OnClick="HandleCardClick" />
+                    <EventListCard Item="@dto" OnClick="HandleCardClick" />
                 </MudItem>
             </MudVirtualize>
         }

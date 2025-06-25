@@ -4,6 +4,7 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.Utilities;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -21,24 +22,20 @@ namespace QLN.Backend.API.Service.V2ContentService
             _logger = logger;
             _blobStorage = blobStorage;
         }
-
-        public async Task<string> CreateEvent(V2ContentEventDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateEvent(Guid userId, V2EventForm dto, CancellationToken cancellationToken = default)
         {
+            string? FileName = null;
             try
             {
-                var items = dto.QlnEvents?.FeaturedEvents?.Items;
-
-                if (items == null || !items.Any())
-                    throw new InvalidDataException("No event items provided.");
-
-                foreach (var item in items)
+                if (!string.IsNullOrWhiteSpace(dto.CoverImage))
                 {
-                    if (!string.IsNullOrWhiteSpace(item.ImageUrl))
-                    {
-                        var imageName = $"{item.Title}_{item.UserName}.png";
-                        var blobUrl = await _blobStorage.SaveBase64File(item.ImageUrl, imageName, "imageurl", cancellationToken);
-                        item.ImageUrl = blobUrl;
-                    }
+                    var (Extension, Base64) = Base64Helper.ParseBase64(dto.CoverImage);
+                    if (Extension is not ("png" or "jpg"))
+                        throw new ArgumentException("Cover Image must be in PNG, or JPG format.");
+
+                    FileName = $"{dto.EventTitle}_{userId}.{Extension}";
+                    var BlobUrl = await _blobStorage.SaveBase64File(Base64, FileName, "CoverImage", cancellationToken);
+                    dto.CoverImage = BlobUrl;
                 }
                 var url = "/api/v2/event/createByUserId";
 
@@ -56,21 +53,26 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
             catch (Exception ex)
             {
+                await CleanupUploadedFiles(FileName, cancellationToken);
                 _logger.LogError(ex, "Error creating event");
                 throw;
             }
         }
-
-        public async Task<V2ContentEventDto> GetAllEvents(CancellationToken cancellationToken = default)
+        private async Task CleanupUploadedFiles(string? file, CancellationToken cancellationToken)
+        {
+            if (!string.IsNullOrWhiteSpace(file))
+                await _blobStorage.DeleteFile(file, "CoverImage", cancellationToken);
+        }
+        public async Task<List<V2EventResponse>> GetAllEvents(CancellationToken cancellationToken = default)
         {
             try
             {
-                return await _dapr.InvokeMethodAsync<V2ContentEventDto>(
+                return await _dapr.InvokeMethodAsync<List<V2EventResponse>>(
                     HttpMethod.Get,
                     ConstantValues.V2Content.ContentServiceAppId,
                     "/api/v2/event/getAll",
                     cancellationToken
-                ) ?? new V2ContentEventDto();
+                ) ?? new List<V2EventResponse>();
             }
             catch (Exception ex)
             {
@@ -78,23 +80,17 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-
-        public async Task<V2ContentEventDto?> GetEventById(Guid id, CancellationToken cancellationToken = default)
+        public async Task<V2EventResponse?> GetEventById(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
                 var url = $"/api/v2/event/getById/{id}";
 
-                return await _dapr.InvokeMethodAsync<V2ContentEventDto>(
+                return await _dapr.InvokeMethodAsync<V2EventResponse>(
                     HttpMethod.Get,
                     ConstantValues.V2Content.ContentServiceAppId,
                     url,
                     cancellationToken);
-            }
-            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                _logger.LogWarning(ex, "Event with id '{id}' not found.", id);
-                return null;
             }
             catch (Exception ex)
             {
@@ -103,23 +99,21 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-        public async Task<string> UpdateEvent(V2ContentEventDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateEvent(Guid userId, V2UpdateRequest dto, CancellationToken cancellationToken = default)
         {
+            string? FileName = null;
             try
             {
-                var items = dto.QlnEvents?.FeaturedEvents?.Items;
-
-                if (items == null || !items.Any())
-                    throw new InvalidDataException("No event items provided.");
-
-                foreach (var item in items)
+                var eventId = Guid.NewGuid();
+                if (!string.IsNullOrWhiteSpace(dto.CoverImage))
                 {
-                    if (!string.IsNullOrWhiteSpace(item.ImageUrl))
-                    {
-                        var imageName = $"{item.Title}_{item.UserName}.png";
-                        var blobUrl = await _blobStorage.SaveBase64File(item.ImageUrl, imageName, "imageurl", cancellationToken);
-                        item.ImageUrl = blobUrl;
-                    }
+                    var (Extension, Base64) = Base64Helper.ParseBase64(dto.CoverImage);
+                    if (Extension is not ("png" or "jpg"))
+                        throw new ArgumentException("Cover Image must be in PNG, or JPG format.");
+
+                    FileName = $"{dto.EventTitle}_{eventId}.{Extension}";
+                    var BlobUrl = await _blobStorage.SaveBase64File(Base64, FileName, "CoverImage", cancellationToken);
+                    dto.CoverImage = BlobUrl;
                 }
                 var url = "/api/v2/event/updateByUserId";
 
@@ -142,11 +136,11 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
             catch (Exception ex)
             {
+                await CleanupUploadedFiles(FileName, cancellationToken);
                 _logger.LogError(ex, "Error updating event");
                 throw;
             }
         }
-
         public async Task<string> DeleteEvent(Guid id, CancellationToken cancellationToken = default)
         {
             try

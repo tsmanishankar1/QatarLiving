@@ -21,7 +21,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             BadRequest<ProblemDetails>,
             ProblemHttpResult>>
             (
-            V2ContentEventDto dto,
+            V2EventForm dto,
             IV2EventService service,
             HttpContext httpContext,
             CancellationToken cancellationToken
@@ -30,37 +30,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 try
                 {
                     Guid? userId = httpContext.User.GetId();
-                    string userName = httpContext.User.GetName();
-
-                    if (!userId.HasValue || string.IsNullOrWhiteSpace(userName))
+                    if (!userId.HasValue)
                         return TypedResults.Forbid();
-
-                    var items = dto.QlnEvents?.FeaturedEvents?.Items;
-
-                    if (items == null || !items.Any())
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Validation Error",
-                            Detail = "No event items provided in the payload.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-
-                    foreach (var item in items)
-                    {
-                        item.User_id = userId.Value;
-                        item.UserName = userName;
-
-                        if (item.Comments != null && item.Comments.Any())
-                        {
-                            foreach (var c in item.Comments)
-                            {
-                                c.UserId = userId?.ToString() ?? string.Empty;
-                                c.Username = userName;
-                                c.CreatedDate = DateTime.UtcNow.ToString("o");
-                            }
-                        }
-                    }
-                    var result = await service.CreateEvent(dto, cancellationToken);
+                    dto.CreatedBy = userId.Value;
+                    var result = await service.CreateEvent(userId.Value, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
@@ -92,7 +65,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             BadRequest<ProblemDetails>,
             ProblemHttpResult>>
             (
-            V2ContentEventDto dto,
+            V2EventForm dto,
             IV2EventService service,
             HttpContext httpContext,
             CancellationToken cancellationToken
@@ -100,15 +73,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             {
                 try
                 {
-                    if (dto.QlnEvents?.FeaturedEvents?.Items == null || !dto.QlnEvents.FeaturedEvents.Items.Any())
+                    if (dto.CreatedBy == Guid.Empty)
+                    {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
-                            Title = "Validation Error",
-                            Detail = "UserId and UserName must be provided in the payload.",
+                            Title = "Invalid Data",
+                            Detail = "CreatedBy cannot be null.",
                             Status = StatusCodes.Status400BadRequest
                         });
-
-                    var result = await service.CreateEvent(dto, cancellationToken);
+                    }
+                    var result = await service.CreateEvent(dto.CreatedBy, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
@@ -137,7 +111,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
         }
         public static RouteGroupBuilder MapGetAllEventEndpoints(this RouteGroupBuilder group)
         {
-            group.MapGet("/getAll", static async Task<Results<Ok<V2ContentEventDto>, ProblemHttpResult>>
+            group.MapGet("/getAll", static async Task<Results<Ok<List<V2EventResponse>>, ProblemHttpResult>>
             (
                 IV2EventService service,
                 CancellationToken cancellationToken
@@ -163,7 +137,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
         }
         public static RouteGroupBuilder MapGetEventEndpoints(this RouteGroupBuilder group)
         {
-            group.MapGet("/getById/{id:guid}", async Task<Results<Ok<V2ContentEventDto>, NotFound<ProblemDetails>, ProblemHttpResult>>
+            group.MapGet("/getById/{id:guid}", async Task<Results<Ok<V2EventResponse>, NotFound<ProblemDetails>, ProblemHttpResult>>
                 (
                     Guid id,
                     IV2EventService service,
@@ -183,6 +157,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                             });
                         }
                         return TypedResults.Ok(result);
+                    }
+                    catch (KeyNotFoundException ex)
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        });
                     }
                     catch (Exception ex)
                     {
@@ -206,7 +189,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             NotFound<ProblemDetails>,
             ProblemHttpResult>>
             (
-            V2ContentEventDto dto,
+            V2UpdateRequest dto,
             IV2EventService service,
             HttpContext httpContext,
             CancellationToken cancellationToken
@@ -215,36 +198,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 try
                 {
                     Guid? userId = httpContext.User.GetId();
-                    string userName = httpContext.User.GetName();
-
-                    if (!userId.HasValue || string.IsNullOrWhiteSpace(userName))
+                    if (!userId.HasValue)
                         return TypedResults.Forbid();
-                    var items = dto.QlnEvents?.FeaturedEvents?.Items;
-
-                    if (items == null || !items.Any())
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Validation Error",
-                            Detail = "No event items provided in the payload.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-
-                    foreach (var item in items)
-                    {
-                        item.User_id = userId.Value;
-                        item.UserName = userName;
-
-                        if (item.Comments != null && item.Comments.Any())
-                        {
-                            foreach (var c in item.Comments)
-                            {
-                                c.UserId = userId?.ToString() ?? string.Empty;
-                                c.Username = userName;
-                                c.CreatedDate = DateTime.UtcNow.ToString("o");
-                            }
-                        }
-                    }
-                    var result = await service.UpdateEvent(dto, cancellationToken);
+                    dto.UpdatedBy = userId.Value;
+                    var result = await service.UpdateEvent(userId.Value, dto, cancellationToken);
                     if (result == null)
                         throw new KeyNotFoundException($"Event with ID not found.");
                     return TypedResults.Ok(result);
@@ -286,7 +243,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             BadRequest<ProblemDetails>,
             ProblemHttpResult>>
             (
-            V2ContentEventDto dto,
+            V2UpdateRequest dto,
             IV2EventService service,
             HttpContext httpContext,
             CancellationToken cancellationToken
@@ -294,14 +251,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             {
                 try
                 {
-                    if (dto.QlnEvents?.FeaturedEvents?.Items == null || !dto.QlnEvents.FeaturedEvents.Items.Any())
+                    if (dto.UpdatedBy == Guid.Empty)
+                    {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
-                            Title = "Validation Error",
-                            Detail = "UserId and UserName must be provided in the payload.",
+                            Title = "Invalid Data",
+                            Detail = "CreatedBy cannot be null.",
                             Status = StatusCodes.Status400BadRequest
                         });
-                    var result = await service.UpdateEvent(dto, cancellationToken);
+                    }
+                    var result = await service.UpdateEvent(dto.UpdatedBy, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)

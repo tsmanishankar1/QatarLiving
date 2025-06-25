@@ -41,7 +41,7 @@ protected void OnImageError()
     StateHasChanged();
 }
 
-        public class EventItem
+        public class dto
         {
             public string Title { get; set; } = string.Empty;
             public string Description { get; set; } = string.Empty;

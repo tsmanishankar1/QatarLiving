@@ -10,10 +10,10 @@ namespace QLN.Common.Infrastructure.IService.IContentService
 {
     public interface IV2EventService
     {
-        Task<string> CreateEvent(V2ContentEventDto dto, CancellationToken cancellationToken = default);
-        Task<V2ContentEventDto?> GetEventById(Guid id, CancellationToken cancellationToken = default);
-        Task<V2ContentEventDto> GetAllEvents(CancellationToken cancellationToken = default);
-        Task<string> UpdateEvent(V2ContentEventDto dto, CancellationToken cancellationToken = default);
+        Task<string> CreateEvent(Guid userId, V2EventForm dto, CancellationToken cancellationToken = default);
+        Task<V2EventResponse?> GetEventById(Guid id, CancellationToken cancellationToken = default);
+        Task<List<V2EventResponse>> GetAllEvents(CancellationToken cancellationToken = default);
+        Task<string> UpdateEvent(Guid userId, V2UpdateRequest dto, CancellationToken cancellationToken = default);
         Task<string> DeleteEvent(Guid id, CancellationToken cancellationToken = default);
     }
 }
