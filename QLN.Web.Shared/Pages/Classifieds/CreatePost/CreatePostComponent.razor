@@ -26,7 +26,7 @@
 
     @if (!string.IsNullOrWhiteSpace(selectedVertical))
     {
-        <div class="d-flex justify-end mt-4">
+        <div class="save-button-container">
             <MudButton Variant="Variant.Outlined" Class="close-button">Close</MudButton>
          <MudButton Class="ml-2 save-button"
            Variant="Variant.Filled"
@@ -60,9 +60,15 @@
             max-width: 1170px;
             margin: 0 auto;
         }
+    .save-button-container {
+    display: flex;
+    justify-content: flex-end;
+    padding: 5px;
+    margin-top: 1rem; /* equivalent to mt-4 in Bootstrap (usually 16px) */
+    }
 
     .form-container {
-        padding: 10px 0;
+        padding: 10px 5px;
         background-color: transparent;
         display: flex;
         flex-direction: column;
