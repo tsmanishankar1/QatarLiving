@@ -33,9 +33,9 @@ namespace QLN.SearchService.CustomEndpoints
 
                     try
                     {
-                        if (msg.Action == "Upsert" && msg.UpsertRequest?.MasterItem != null)
+                        if (msg.Action == "Upsert" && msg.UpsertRequest?.ClassifiedsItem != null)
                         {
-                            var id = msg.UpsertRequest.MasterItem.Id;
+                            var id = msg.UpsertRequest.ClassifiedsItem.Id;
                             var vertical = msg.UpsertRequest.VerticalName;
                             logger.LogInformation("Processing upsert for item Id={Id}, Vertical={Vertical}", id, vertical);
 
