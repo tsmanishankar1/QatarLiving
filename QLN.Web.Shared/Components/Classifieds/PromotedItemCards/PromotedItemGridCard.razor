@@ -1,46 +1,79 @@
-@inherits QLN.Web.Shared.Components.Classifieds.PromotedItemCards.PromotedItemCardBase
+@inherits PromotedItemCardBase
 @using MudBlazor
 @using QLN.Web.Shared.Models
+@using QLN.Web.Shared.Components.EmptyCard
 
 <div class="card">
   
-        <div class="Promoted-badge">
-            <MudIcon Icon="@Icons.Material.Filled.FlashOn" Size="Size.Small" Class="Promoted-icon" />
+ <div class="badge-column">
+    @if (Item?.IsPromoted == true)
+    {
+        <div class="badge">
+            <img src="/qln-images/classifieds/featured_tag_icon.svg" alt="Promoted" class="badge-icon" />
             <span>Promoted</span>
         </div>
+    }
+    @if (Item?.IsFeatured == true)
+    {
+        <div class="badge">
+            <img src="/qln-images/classifieds/featured_tag_icon.svg" alt="Featured" class="badge-icon" />
+            <span>Featured</span>
+        </div>
+    }
+</div>
+
 
     <MudIconButton Icon="@(isFavorite? Icons.Material.Filled.Favorite : Icons.Material.Outlined.FavoriteBorder)"
         Color="@(isFavorite? Color.Error: Color.Inherit)" OnClick="@(() => HandleHeartClick(Item))"
         Class="@heartIconClass" />
 
     <div class="carousel-container" @onmouseover="() => isHovered = true" @onmouseout="() => isHovered = false">
-        @if (Item.ImageUrls != null && Item.ImageUrls.Count > 0)
+        @if (ShowEmptyCard)
+    {
+        <div class="card-image">
+        <EmptyCard Title="No image found." Subtitle="Please check back later for updates." />
+        </div>
+    }
+    else
+    {
+        @if (!imageLoaded)
         {
-            <img src="@Item.ImageUrls[activeIndex]" alt="@Item.Title" class="card-image" />
-        }
-        else
-        {
-            <img src="/qln-images/categories/game_image.svg" alt="No image available" class="card-image" />
-        }
-
-        @if (isHovered && Item.ImageUrls.Count > 1)
-        {
-
-            <button class="nav-arrow left" @onclick="PrevImage">&#10094;</button>
-            <button class="nav-arrow right" @onclick="NextImage">&#10095;</button>
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="214px" />
         }
 
-        @if (Item.ImageUrls != null && Item.ImageUrls.Count > 0)
+        <img 
+             src="@Item.Images[activeIndex].Url"
+         alt="@Item.Images[activeIndex].Order ?? Item.Title"
+         class="card-image"
+             style="@(imageLoaded ? "display: block;" : "display: none;")"
+             @onload="OnImageLoaded"
+             @onerror="OnImageError"
+             key="@Item.Images[activeIndex].Url" />
+    }
+
+        @if (isHovered && Item.Images.Count > 1)
         {
-            <div class="image-counter">@(activeIndex + 1)/@Item.ImageUrls.Count</div>
+
+           <button class="nav-arrow-grid left" @onclick="PrevImage">
+                <MudIcon Icon="@Icons.Material.Filled.ChevronLeft" />
+            </button>
+
+            <button class="nav-arrow-grid right" @onclick="NextImage">
+                <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+            </button>
         }
 
-        @if (Item.ImageUrls != null && Item.ImageUrls.Count > 1)
+        @if (Item.Images != null && Item.Images.Count > 0)
+        {
+            <div class="image-counter">@(activeIndex + 1)/@Item.Images.Count</div>
+        }
+
+        @if (Item.Images != null && Item.Images.Count > 1)
         {
             <div class="carousel-dots">
                 @{
                     var maxDots = 5;
-                    var total = Item.ImageUrls.Count;
+                    var total = Item.Images.Count;
                     var start = 0;
 
                     if (total > maxDots)
@@ -53,28 +86,36 @@
                             start = activeIndex - 2;
                     }
 
-                    var visibleDots = Item.ImageUrls.Skip(start).Take(Math.Min(maxDots, total)).ToList();
+                    var visibleDots = Item.Images.Skip(start).Take(Math.Min(maxDots, total)).ToList();
                 }
 
                 @for (int i = 0; i < visibleDots.Count; i++)
                 {
                     var actualIndex = start + i;
-                    <span class="dot @(actualIndex == activeIndex ? "active" : "")"
-                        @onclick="(() => SetImageIndex(actualIndex))"></span>
+                    <span class="dot @(actualIndex == activeIndex ? "active" : "")"></span>
                 }
             </div>
         }
 
-        @if (!string.IsNullOrEmpty(Item.Condition))
+        @if (!string.IsNullOrEmpty(Item.Status))
         {
-            <div class="condition-badge">@Item.Condition</div>
+            <div class="condition-badge">@Item.Status</div>
         }
     </div>
 
-    <div id="@Item.Id" class="card-content" @onclick="() => HandleSelect(Item)">
-        <div class="category">@Item.Category</div>
-        <h3 class="title">@Item.Title</h3>
-        <div class="features">
+    <div id="@Item.Id" class="card-content-grid" @onclick="HandleSelect">
+        <div class="grid-category">@Item.Category</div>
+        <h3 class="grid-title">@Item.Title</h3>
+        <div class="grid-features">
+            
+            @if (ShowAuthenticated)
+            {
+                <div class="grid-feature-item">
+                    <img src="/qln-images/classifieds/auth_icon.svg" alt="Storage" class="feature-icon" />
+                    <span class="feature-name">Authenticated</span>
+                </div>
+            }
+
             @if (!string.IsNullOrEmpty(Item.Colour))
             {
                 <div class="feature-item">
@@ -86,7 +127,7 @@
 
             @if (!string.IsNullOrEmpty(Item.Storage))
             {
-                <div class="feature-item">
+                <div class="grid-feature-item">
                     <img src="/qln-images/classifieds/storage_icon.svg" alt="Storage" class="feature-icon" />
                     <span class="feature-name">@Item.Storage</span>
                 </div>
@@ -95,16 +136,16 @@
 
             @if (Item.BatteryPercentage.HasValue)
             {
-                <div class="feature-item">
+                <div class="grid-feature-item">
                     <img src="/qln-images/classifieds/battery_icons.svg" alt="Battery" class="feature-icon" />
-                    <span class="feature-name">@($"{Item.BatteryPercentage.Value}%")</span>
+                    <span class="feature-name">@($"{Item.BatteryPercentage}%")</span>
                 </div>
                 <div class="divider"></div>
             }
 
             @if (!string.IsNullOrEmpty(Item.Processor))
             {
-                <div class="feature-item">
+                <div class="grid-feature-item">
                     <img src="/qln-images/classifieds/chip_icons.svg" alt="Processor" class="feature-icon" />
                     <span class="feature-name">@Item.Processor</span>
                 </div>
@@ -112,12 +153,17 @@
         </div>
 
 
-        <div class="price">@Item.Price</div>
+          <div class="grid-card-price">
+            <span>@Item.Price</span>
+            <span class="currency">QAR</span>
+        </div>
         <div class="company-details">
-            <img src="@(!string.IsNullOrEmpty(Item.CompanyLogoUrl) ? Item.CompanyLogoUrl : "/qln-images/classifieds/item_logo.svg")"
+            <img src="@(!string.IsNullOrEmpty(Item.StoreLogoUrl) ? Item.StoreLogoUrl : "/qln-images/classifieds/item_logo.svg")"
                 alt="logo" class="company-logo" />
             <div class="company-info">
-                <span class="company-name">@Item.Company</span>
+                <div>
+                <span class="company-name">@(@Item.StoreName ?? "Rashid Electronics")</span>
+                </div>
                 <div class="location">
                     <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" />
                     @Item.Location
@@ -131,34 +177,54 @@
 <style>
     .card {
         position: relative;
-        border-radius: 8px;
+        border-radius: 6px;
         overflow: hidden;
         background: #fff;
         font-family: 'Public Sans', sans-serif;
         transition: transform 0.3s ease;
-        flex: 1 1 auto;
-        max-width: 100%;
-        max-height: 402px;
+        width: 100%;
+        height:  402px;
+        box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        will-change: transform;
     }
 
     .card:hover {
-        transform: translateY(-2px);
+        transform: translateY(-6px) scale(1.02);
+        box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
+        z-index: 2;
     }
 
-    .Promoted-badge {
+    .badge-column {
         position: absolute;
         top: 10px;
         left: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        z-index: 2;
+    }
+
+    .badge {
         background-color: #FF7F38;
         color: white;
         padding: 4px 6px;
         font-size: 11px;
         font-weight: 500;
-        z-index: 2;
         display: flex;
         align-items: center;
         gap: 2px;
         border-radius: 0 2px 2px 0;
+    }
+
+    .badge-icon {
+        width: 12px;
+        height: 12px;
+    }
+
+    .Promoted-badge-icon{
+        width: 12px;
+        height: 12px;
     }
 
     .heart-icon {
@@ -188,29 +254,29 @@
 
     .card-image {
         width: 100%;
-        height: 200px;
+        height: 214px;
         object-fit: cover;
     }
 
-    .nav-arrow {
+    .nav-arrow-grid {
         position: absolute;
         top: 50%;
         transform: translateY(-50%);
         background-color: #F0F0F0;
         color: #242424;
         border: none;
-        padding: 4px 10px;
+        padding: 8px;
         border-radius: 50%;
         font-size: 18px;
         cursor: pointer;
         z-index: 3;
     }
 
-    .nav-arrow.left {
+    .nav-arrow-grid.left {
         left: 10px;
     }
 
-    .nav-arrow.right {
+    .nav-arrow-grid.right {
         right: 10px;
     }
 
@@ -236,28 +302,39 @@
         font-weight: 500;
     }
 
-    .card-content {
-        padding: 15px;
+    .card-content-grid {
+        display: flex;
+        flex-direction: column;
+        padding: 12px 15px;
         cursor: pointer;
+        gap: 4px;
     }
 
-    .category {
+    .grid-category {
         font-size: 11px;
         font-weight: 500;
-        color: #646464;
-    }
-
-    .title {
-        font-size: 18px;
-        margin: 8px 0;
-        font-weight: 600;
-        line-height: 1.3;
-        white-space: nowrap;
+        color: var(--color-text-descripton);
+         display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    .features {
+    .grid-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: var(--color-text-heading);
+    }
+
+    .grid-features {
         display: flex;
         align-items: center;
         gap: 12px;
@@ -270,7 +347,7 @@
 
     }
 
-    .feature-item {
+    .grid-feature-item {
         display: flex;
         align-items: center;
         gap: 4px;
@@ -294,18 +371,23 @@
         background-color: #ccc;
     }
 
-    .price {
-        font-size: 18px;
+    .grid-card-price {
+        font-size: 25px;
         font-weight: 600;
-        color: #242424;
-        margin: 8px 0;
+        color: var(--color-text-heading);
+    }
+
+    .grid-card-price .currency {
+        font-size: 14px;
+        font-weight: 500;
+        margin-left: 4px;
+        color: var(--color-text-heading);
     }
 
     .company-details {
         display: flex;
         align-items: center;
         gap: 8px;
-        margin-top: 8px;
     }
 
     .company-logo {
@@ -318,7 +400,7 @@
     .company-info {
         display: flex;
         flex-direction: column;
-        align-items: center;
+        align-items: flex-start;
         justify-content: center;
     }
 
@@ -357,7 +439,7 @@
     }
 
     .dot.active {
-        background-color: white;
+        background-color: var(--color-primary);
         width: 8px;
         height: 8px;
     }

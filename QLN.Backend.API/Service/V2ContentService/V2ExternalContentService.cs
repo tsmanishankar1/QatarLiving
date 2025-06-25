@@ -22,7 +22,8 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                if (dto == null) throw new ArgumentNullException(nameof(dto));
+                ArgumentNullException.ThrowIfNull(dto);
+
                 if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID is required", nameof(userId));
 
                 // Prepare metadata headers if necessary (optional)

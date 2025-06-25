@@ -5,16 +5,19 @@
 @layout ClassifiedsLayout
 
 <div style="width: 100%; background-color: var(--color-secondary-background);">
-
+ <div class="search-section-container">
+    <div class="max-container">
     <SearchSectionDeals />
+ </div>
+</div>
 
-    <div style="width: 100%; padding: 0px 40px;">
+    <div class="max-container">
         <div class="category-banner-wrapper">
             <img src="/qln-images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
         </div>
         <FeaturedStores />
 
-        <IteamListDeals />
+        <ItemListDeals />
 
     </div>
 </div>
@@ -25,7 +28,14 @@
         display: flex;
         justify-content: center;
     }
-
+   .search-section-container {
+        width: 100%;
+        background-color: var(--color-background-secondary-grey-medium);
+    }
+   .max-container {
+        max-width: 1170px;
+        margin: 0 auto;
+    }
     .category-banner-image {
         width: 100%;
         max-width: 100%;

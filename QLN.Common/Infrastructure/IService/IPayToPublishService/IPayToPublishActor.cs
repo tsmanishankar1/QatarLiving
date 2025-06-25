@@ -13,5 +13,7 @@ namespace QLN.Common.Infrastructure.IService.IPayToPublicActor
         Task<bool> SetDataAsync(PayToPublishDto data, CancellationToken cancellationToken = default);
         Task<bool> FastSetDataAsync(PayToPublishDto data, CancellationToken cancellationToken = default);
         Task<PayToPublishDto?> GetDataAsync(CancellationToken cancellationToken = default);
+        Task<bool> SetDatasAsync(BasicPriceDto data, CancellationToken cancellationToken = default);
+        Task<BasicPriceDto?> GetDatasAsync(CancellationToken cancellationToken = default);
     }
 }
