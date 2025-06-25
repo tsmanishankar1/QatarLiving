@@ -1,398 +1,74 @@
 @typeparam TItem
 
-<div class="location-select-wrapper" tabindex="0" @onfocusout="TryHideDropdown">
-    <div class="location-input-area" @onclick="FocusInput"
-        style="@($"border-color:{(ShowSuggestions ? "#FF7F38" : "#D0D5DD")}; padding:{Padding}; {CustomStyle}")">
-        <div class="chip-wrapper">
-            @foreach (var item in SelectedItems)
-            {
-                <div class="chip">
-                    <span>@ShortLabel(item)</span>
-                    <button type="button" @onclick="(e) => RemoveLocation(item)">×</button>
-                </div>
-            }
+<MudSelectExtended T="TItem"
+                   @ref="selectRef"
+                   ItemCollection="Items"
+                   Placeholder="Location"
+                   ToStringFunc="@(item => GetLabel(item))"
+                   Variant="Variant.Outlined"
+                   ValuePresenter="ValuePresenter.Chip"
+                   Virtualize="true"
+                   ChipCloseable="true"
+                   ChipVariant="Variant.Filled"
+                   ChipSize="Size.Small"
+                   MultiSelection="@(!IsSingleLocation)"
+                   SearchBox="true"
+                   NoWrap="@NoWrap"
+                   AnchorOrigin="Origin.BottomCenter"
+                   AdornmentIcon="@Icons.Material.Filled.LocationOn"
+                   AdornmentColor="Color.Primary"
+                   ChipClass="mud-select-chip"
+                   InputClass="mud-select-input"
+                   InputStyle="@(CustomStyle)"
+                   SelectedValues="SelectedItems"
+                   SelectedValuesChanged="@OnSelectedValuesChanged" />
 
-            @if (SelectedItems.Count < MaxSelectableItems)
-            {
-                <input @ref="SearchInputRef" type="text" class="search-box" value="@SearchTerm" @oninput="OnInputChanged"
-                    @onfocus="ShowDropdown" @onkeydown="HandleKeyDown"
-                    placeholder="@(SelectedItems.Count == 0 ? "Location" : "+ Add")"
-                    disabled="@(SelectedItems.Count >= MaxSelectableItems)" />
-            }
-        </div>
-
-        <div class="location-icon"
-            @onmousedown:preventDefault
-            @onmousedown="StartDropdownInteraction"
-            @onmouseup="StopDropdownInteraction"
-            @onmouseleave="StopDropdownInteraction">
-            <MudIcon Icon="@Icons.Material.Rounded.LocationOn" Class="location-right-icon" />
-        </div>
-    </div>
-
-    @if (ShowSuggestions && FilteredItems.Any())
-    {
-        <div class="dropdown-list animate-dropdown"
-            @onmousedown:preventDefault
-            @onmousedown="StartDropdownInteraction"
-            @onmouseup="StopDropdownInteraction"
-            @onmouseleave="StopDropdownInteraction">
-            @foreach (var item in FilteredItems)
-            {
-                var isDisabled = SelectedItems.Count >= MaxSelectableItems;
-
-                <div class="dropdown-item @(isDisabled ? "disabled" : "")"
-                    @onclick="@(isDisabled ? null : (() => SelectLocation(item)))">
-                    @GetLabel(item)
-                </div>
-            }
-        </div>
-    }
-</div>
 @code {
     [Parameter] public List<TItem> Items { get; set; } = new();
     [Parameter] public EventCallback<List<TItem>> SelectedItemsChanged { get; set; }
     [Parameter] public Func<TItem, string> GetLabel { get; set; }
     [Parameter] public Func<TItem, string> GetId { get; set; }
     [Parameter] public EventCallback<string> OnSearch { get; set; }
-    [Parameter] public string Padding { get; set; } = "10px";
     [Parameter] public EventCallback<List<TItem>> OnLocationUpdated { get; set; }
     [Parameter] public string CustomStyle { get; set; } = string.Empty;
     [Parameter] public bool IsSingleLocation { get; set; } = false;
+    [Parameter] public bool NoWrap { get; set; } = true;
 
-    private List<TItem> SelectedItems = new();
-    private List<TItem> FilteredItems = new();
-    private string SearchTerm = string.Empty;
-    private bool ShowSuggestions = false;
-    private bool IsClickingDropdown = false;
-    private ElementReference SearchInputRef;
-    private bool IsInteractingWithDropdown = false;
-    private int MaxSelectableItems = 1;
+    private IEnumerable<TItem> SelectedItems { get; set; } = Enumerable.Empty<TItem>();
+    private MudSelectExtended<TItem> selectRef;
 
-    protected override void OnParametersSet()
+    public async Task ClearSelection()
     {
-        if (Items != null)
-            MaxSelectableItems = IsSingleLocation ? 1 : Items.Count;
-    }
-
-    private void StartDropdownInteraction() => IsInteractingWithDropdown = true;
-    private void StopDropdownInteraction() => IsInteractingWithDropdown = false;
-    private async Task OnInputChanged(ChangeEventArgs e)
-    {
-        var newValue = e?.Value?.ToString() ?? "";
-
-        if (string.IsNullOrEmpty(newValue) && string.IsNullOrEmpty(SearchTerm) && SelectedItems.Any())
+        if (selectRef != null)
         {
-            RemoveLocation(SelectedItems.Last());
-        }
-
-        SearchTerm = newValue;
-        await SearchLocations();
-    }
-
-    private async Task SearchLocations()
-    {
-        await OnSearch.InvokeAsync(SearchTerm);
-
-        FilteredItems = Items
-        .Where(x => GetLabel(x).Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)
-        && !SelectedItems.Any(s => GetId(s) == GetId(x)))
-        .ToList();
-
-        ShowSuggestions = true;
-    }
-
-    private async void SelectLocation(TItem item)
-    {
-        if (SelectedItems.Count >= MaxSelectableItems)
-            return;
-
-        if (!SelectedItems.Any(x => GetId(x) == GetId(item)))
-        {
-            SelectedItems.Add(item);
-            await SelectedItemsChanged.InvokeAsync(SelectedItems);
-        }
-
-        SearchTerm = string.Empty;
-        FilteredItems.Clear();
-
-        await Task.Delay(100);
-        ShowSuggestions = false;
-        StateHasChanged();
-    }
-
-    private async void RemoveLocation(TItem item)
-    {
-        SelectedItems.RemoveAll(x => GetId(x) == GetId(item));
-        await SelectedItemsChanged.InvokeAsync(SelectedItems);
-        await OnLocationUpdated.InvokeAsync(SelectedItems);
-        ShowSuggestions = true;
-    }
-    private void ShowDropdown()
-    {
-        ShowSuggestions = true;
-        FilteredItems = Items
-        .Where(x => !SelectedItems.Any(s => GetId(s) == GetId(x)))
-        .ToList();
-    }
-
-    private async void TryHideDropdown(FocusEventArgs _)
-    {
-        await Task.Delay(150);
-        if (!IsInteractingWithDropdown)
-        {
-            ShowSuggestions = false;
-            StateHasChanged();
-        }
-    }
-    private async void FocusInput()
-    {
-        ShowDropdown();
-        await Task.Yield();
-
-        if (SelectedItems.Count < MaxSelectableItems)
-        {
-            try
-            {
-                await SearchInputRef.FocusAsync();
-            }
-            catch (JSException ex)
-            {
-                Console.WriteLine($"Focus failed: {ex.Message}");
-            }
+            await selectRef.Clear();
         }
     }
 
-    private void HandleKeyDown(KeyboardEventArgs e)
+    private async Task OnSelectedValuesChanged(IEnumerable<TItem> selectedItems)
     {
-        if (e.Key == "Backspace" && string.IsNullOrEmpty(SearchTerm) && SelectedItems.Any())
-        {
-            RemoveLocation(SelectedItems.Last());
-        }
-    }
-
-    private string ShortLabel(TItem item)
-    {
-        var full = GetLabel(item);
-        return full.Length > 5 ? full.Substring(0, 5) + "…" : full;
+        SelectedItems = selectedItems;
+        await SelectedItemsChanged.InvokeAsync(SelectedItems.ToList());
+        await OnLocationUpdated.InvokeAsync(SelectedItems.ToList());
     }
 }
 
-
 <style>
-    .location-select-wrapper {
-        position: relative;
-        width: 100%;
-        font-family: 'Public Sans', sans-serif;
-    }
-
-    .chip-close-icon {
-        cursor: pointer;
-        display: flex;
+    .mud-select-chip {
+        background-color: #f0f0f0 !important;
+        border-radius: 6px !important;
+        padding: 4px 8px !important;
+        display: flex !important;
         align-items: center;
-        justify-content: center;
-        margin-left: 4px;
+        color: var(--color-text-descripton) !important;
+        font-weight: 400 !important;
+        font-size: 14px !important;
+        white-space: nowrap !important;
     }
-
-    .chip-close-icon:hover {
-        color: #FF7F38;
+    .mud-select-input {
+        background-color: #fff !important;
     }
-
-    .close-icon {
-        font-size: 14px;
-        color: #475467;
-    }
-
-    .location-input-area {
-        display: flex;
-        align-items: center;
-        background: #fff;
-        cursor: text;
-        position: relative;
-        gap: 6px;
-        border: 1px solid #ccc;
-        padding: 10px;
-        font-size: 14px;
-        height: 56px;
-        justify-content: space-between;
-    }
-
-    .location-input-area.focused {
-        border-color: #FF7F38;
-    }
-
-    .dropdown-item.disabled {
-        cursor: not-allowed;
-        pointer-events: none;
-    }
-
-    .chip-wrapper {
-        display: flex;
-        flex-wrap: nowrap;
-        align-items: center;
-        flex: 1;
-        overflow: hidden;
-        gap: 6px;
-        padding: 0;
-        min-width: 0;
-    }
-
-    .single-chip {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background-color: #f1f1f1;
-        padding: 6px 10px;
-        border-radius: 16px;
-        margin-right: 8px;
-    }
-
-
-    .search-box {
-        border: none;
-        outline: none;
-        font-size: 14px;
-        min-width: 10px;
-        flex: 1;
-        background: transparent;
-        width: auto;
-        max-width: 100%;
-        color: var(--color-text-descripton);
-        font-weight: 400;
-        font-size: 14px;
-    }
-
-    .location-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #888;
-        padding-left: 8px;
-        flex-shrink: 0;
-    }
-
-    .search-box::placeholder {
-        color: var(--color-background-grey);
-        /* or any color you want */
-        font-weight: 400;
-        font-size: 14px;
-    }
-
-
-    .chip {
-        background-color: #f0f0f0;
-        border-radius: 6px;
-        padding: 4px 8px;
-        display: flex;
-        align-items: center;
-        color: var(--color-text-descripton);
-        font-weight: 400;
-        font-size: 14px;
-        white-space: nowrap;
-    }
-
-    .chip.muted {
-        background-color: #eee;
-        color: #666;
-    }
-
-    .chip span {
-        margin-right: 4px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 100px;
-    }
-
-    .chip button {
-        background: none;
-        border: none;
-        font-size: 14px;
-        cursor: pointer;
-    }
-
-    .dropdown-list {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        width: 100%;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-        max-height: 300px;
-        overflow-y: auto;
-        z-index: 1000;
-        padding: 5px;
-        margin-top: 4px;
-    }
-
-    .animate-dropdown {
-        animation: slideDown 0.25s ease-out;
-    }
-
-    .location-right-icon {
-        font-size: 20px;
-        color: var(--color-accent);
-    }
-
-    @@keyframes slideDown {
-        from {
-            transform: translateY(-8px);
-            opacity: 0;
-        }
-
-        to {
-            transform: translateY(0);
-            opacity: 1;
-        }
-    }
-
-    .dropdown-top-fixed {
-        position: sticky;
-        top: 0;
-        background: white;
-        z-index: 1;
-        padding: 6px 0;
-        border-bottom: 1px solid #eee;
-    }
-
-    .dropdown-item {
-        padding: 10px 12px;
-        font-weight: 400;
-        font-size: 15px;
-        color: var(--color-text-heading) cursor: pointer;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        display: -webkit-box;
-        -webkit-line-clamp: 1;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: normal;
-    }
-
-    .dropdown-item:hover {
-        background-color: #f8f8f8;
-    }
-
-    .dropdown-item.selected {
-        font-weight: bold;
-        background-color: #e6e6e6;
-    }
-
-    .dropdown-header {
-        font-weight: 600;
-        padding: 8px 12px;
-        background: #f9f9f9;
-        font-size: 13px;
-        color: #666;
-    }
-
-    .remove-btn {
-        background: none;
-        border: none;
-        font-size: 16px;
-        cursor: pointer;
-        margin-left: 8px;
+    div.mud-input-slot.mud-input-root-outlined {
+        padding: 14.5px 14px !important;
     }
 </style>

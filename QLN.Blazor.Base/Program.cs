@@ -19,6 +19,7 @@ using GoogleAnalytics.Blazor;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.SignalR;
 using QLN.Web.Shared.Pages.Services;
+using MudExtensions.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -85,6 +86,7 @@ builder.Services.AddRazorComponents()
     });
 
 builder.Services.AddMudServices();
+builder.Services.AddMudExtensions();
 
 builder.Services.AddLocalization();
 
