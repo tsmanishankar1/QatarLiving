@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace QLN.Common.Infrastructure.Service
+namespace QLN.Common.Infrastructure.Service.TimeSpanConverter
 {
     public class CustomTimeSpanConverter : JsonConverter<TimeSpan>
     {
