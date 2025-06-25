@@ -46,7 +46,6 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
      protected async void HandleCategoryChanged(string newValue)
         {
             selectedVertical = newValue;
-            adPostModel = new AdPost(); // Reset to new model
             photoUrls = new List<string> { "", "", "", "", "", "" }; // Reset photo slots
             dynamicFieldValues = new Dictionary<string, string>(); // Clear dynamic fields
             await LoadCategoryTreesAsync();

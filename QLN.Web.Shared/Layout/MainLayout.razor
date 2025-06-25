@@ -34,32 +34,12 @@
         </div>
         <div class="nav-main-conainer">
             <div class="nav-container">
-                    <NavLink id="propertiesLink" href=@{
-                    navigationPath.Properties
-                                        }
- class="nav-link">Properties
-                    </NavLink>
-                    <NavLink id="vehiclesLink" href=@{
-                                        navigationPath.Vehicles
-                                        }
- class="nav-link">Vehicles</NavLink>
-                    <NavLink id="classifiedsLink" href=@{
-                                        navigationPath.Classifieds
-                                        }
- class="nav-link">Classifieds
-                    </NavLink>
-                    <NavLink id="servicesLink" href=@{
-                                        navigationPath.Services
-                                        }
- class="nav-link">Services</NavLink>
-                    <NavLink id="jobsLink" href=@{
-                                        navigationPath.Jobs
-                                        }
- class="nav-link">Jobs</NavLink>
-                    <NavLink id="rewardsLink" href=@{
-                                        navigationPath.Rewards
-                                        }
- class="nav-link">Rewards</NavLink>
+                    <NavLink id="propertiesLink" href=@{navigationPath.Properties} class="nav-link">Properties</NavLink>
+                    <NavLink id="vehiclesLink" href=@{navigationPath.Vehicles} class="nav-link">Vehicles</NavLink>
+                    <NavLink id="classifiedsLink" href="/qln/classifieds" class="nav-link">Classifieds</NavLink>
+                    <NavLink id="servicesLink" href=@{navigationPath.Services} class="nav-link">Services</NavLink>
+                    <NavLink id="jobsLink" href=@{navigationPath.Jobs} class="nav-link">Jobs</NavLink>
+                    <NavLink id="rewardsLink" href=@{navigationPath.Rewards} class="nav-link">Rewards</NavLink>
             </div>
 
             <div class="post-button-wrapper">
@@ -68,10 +48,21 @@
                         <MudButton id="headerPostButton" Variant="Variant.Filled"
                             Style="background-color: #FF7F38; color: white;" Size="Size.Medium"
                             StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn desktop-post-btn"
-                            @onclick="OnPostAdClicked">
+                            @onclick="ToggleProfileMenu">
                             <span class="post-ad-text">Post Ad</span>
                         </MudButton>
                     </ActivatorContent>
+                      <ChildContent>
+                @foreach (var item in postMenuItems)
+                {
+                  <MudMenuItem  OnClick="@(() => NavManager.NavigateTo(item.Route))" Class="menu-item">
+                <div id="options-@item.Text" class="menu-item-content">
+                    <img src="@item.ImageSrc" alt="@item.Text" class="menu-item-icon" />
+                    <span class="menu-item-text">@item.Text</span>
+                </div>
+            </MudMenuItem>
+                    }
+                </ChildContent>
                 </MudMenu>
             </div>
         </div>
@@ -87,7 +78,7 @@
              }
 
                    <img src="/qln-images/header/add_post_svg.svg" alt="Post" class="mobile-post-icon"
-                    @onclick="OnPostAdClicked" />
+                    @onclick="ToggleProfileMenu" />
         <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
                 <ActivatorContent>
                     <div id="userIcon" style="display: flex; align-items: center; gap: 0.5rem;" class="cursor-pointer">
@@ -293,6 +284,11 @@
         }
         StateHasChanged();
     }
+        private void ToggleProfileMenu()
+    {
+        showDashboards = !showDashboards;
+    }
+
 
     private void ToggleMobileMenu()
     {
@@ -391,6 +387,40 @@
         ServicesProfileMenu = ReplaceUrlWithAlias(navigationPath.ServicesProfileMenu, Alias);
         ClassifiedsProfileMenuUrl =  ReplaceUrlWithAlias(navigationPath.ClassifiedsProfileMenu, Alias);
     }
+
+    private List<MenuItem> postMenuItems = new List<MenuItem>
+    {
+        new MenuItem {
+        Text = "Properties",
+        ImageSrc = "/qln-images/post-icons/ad_properties.svg",
+        Route = "/qln/classifieds/createform"
+        },
+        new MenuItem {
+        Text = "Vehicles",
+        ImageSrc = "/qln-images/post-icons/ad_vehicles.svg",
+        Route = "/qln/classifieds/createform"
+        },
+        new MenuItem {
+        Text = "Classifieds",
+        ImageSrc = "/qln-images/post-icons/ad_classifieds.svg",
+        Route = "qln/classifieds/createform"
+        },
+        new MenuItem {
+        Text = "Services",
+        ImageSrc = "/qln-images/post-icons/ad_services.svg",
+        Route = "/qln/classifieds/createform"
+        },
+        new MenuItem {
+        Text = "Jobs",
+        ImageSrc = "/qln-images/post-icons/ad_jobs.svg",
+        Route = "/qln/classifieds/createform"
+        },
+        new MenuItem {
+        Text = "Rewards",
+        ImageSrc = "/qln-images/post-icons/ad_rewards.svg",
+        Route = "/qln/classifieds/createform"
+        }
+    };
 
     private string ReplaceUrlWithUserID(string url,int userID)
     {

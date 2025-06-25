@@ -49,47 +49,67 @@ namespace QLN.Web.Shared.Pages.Classifieds.Landing.Components
 
                 foreach (var item in selectedVideos)
                 {
-                     string? embedUrl = GetEmbeddableYouTubeUrl(item.ImageUrl);
+                     string? embedUrl = GetEmbeddableYouTubeUrl(item.ImageUrl, out var videoId);
                     bool isReachable = await IsUrlReachableAsync(embedUrl);
                     // Logger.LogInformation("Video URL: {Url} - Valid: {IsValid}", item.ImageUrl, isReachable);
-
+ var playerId = $"player-{Guid.NewGuid()}";
                     VideoCards.Add(new VideoCard
                     {
                         VideoUrl = isReachable ? item.ImageUrl : null,
                         Title = item.Title,
                         TimeAgo = item.Description,
-                        IsValid = isReachable
+                        IsValid = isReachable,
+                         PlayerId = playerId,
+                        VideoId = videoId
                     });
                 }
             }
         }
-private string? GetEmbeddableYouTubeUrl(string? url)
+private string? GetEmbeddableYouTubeUrl(string? url, out string videoId)
 {
+    videoId = string.Empty;
+
     if (string.IsNullOrWhiteSpace(url))
         return null;
 
-    var uri = new Uri(url);
-    var segments = uri.Segments;
-
-    if (uri.Host.Contains("youtube.com") && segments.Length > 1)
+    try
     {
-        // Handle Shorts
-        if (segments[1].Trim('/').Equals("shorts", StringComparison.OrdinalIgnoreCase) && segments.Length > 2)
-        {
-            var videoId = segments[2].Trim('/');
-            return $"https://www.youtube.com/embed/{videoId}";
-        }
+        var uri = new Uri(url);
 
-        // Handle watch?v= format
-        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
-        if (query.TryGetValue("v", out var videoIdParam))
+        if (uri.Host.Contains("youtube.com") || uri.Host.Contains("youtu.be"))
         {
-            return $"https://www.youtube.com/embed/{videoIdParam}";
+            var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+
+            // Watch format
+            if (query.TryGetValue("v", out var v))
+            {
+                videoId = v.ToString();
+            }
+            // Shorts format
+            else if (uri.Segments.Length > 1 && uri.Segments[1].Trim('/').Equals("shorts", StringComparison.OrdinalIgnoreCase))
+            {
+                videoId = uri.Segments.Last().Trim('/');
+            }
+            // youtu.be format
+            else if (uri.Host.Contains("youtu.be") && uri.Segments.Length >= 2)
+            {
+                videoId = uri.Segments[1].Trim('/');
+            }
+
+            if (!string.IsNullOrEmpty(videoId))
+            {
+                return $"https://www.youtube.com/embed/{videoId}?enablejsapi=1";
+            }
         }
     }
+    catch
+    {
+        // fallback in case of error
+    }
 
-    return url; // fallback, might be direct embed URL already
+    return null;
 }
+
 
 
         private async Task<bool> IsUrlReachableAsync(string? url)
@@ -111,30 +131,31 @@ private string? GetEmbeddableYouTubeUrl(string? url)
             }
         }
 
-        protected async Task ToggleVideoPlay(VideoCard video)
-        {
-            if (video.IsPlaying)
-            {
-                await JSRuntime.InvokeVoidAsync("pauseVideo", video.VideoElement);
-                video.IsPlaying = false;
-                video.ShowPlayButton = true;
-            }
-            else
-            {
-                foreach (var v in VideoCards.Where(v => v != video && v.IsPlaying))
-                {
-                    await JSRuntime.InvokeVoidAsync("pauseVideo", v.VideoElement);
-                    v.IsPlaying = false;
-                    v.ShowPlayButton = true;
-                }
+       protected async Task ToggleVideoPlay(VideoCard video)
+{
+    foreach (var v in VideoCards.Where(v => v != video && v.IsPlaying))
+    {
+        await JSRuntime.InvokeVoidAsync("pauseVideo", v.PlayerId);
+        v.IsPlaying = false;
+        v.ShowPlayButton = true;
+    }
 
-                await JSRuntime.InvokeVoidAsync("playVideo", video.VideoElement);
-                video.IsPlaying = true;
-                video.ShowPlayButton = false;
-            }
+    if (!video.IsPlaying)
+    {
+        await JSRuntime.InvokeVoidAsync("playVideo", video.PlayerId);
+        video.IsPlaying = true;
+        video.ShowPlayButton = false;
+    }
+    else
+    {
+        await JSRuntime.InvokeVoidAsync("pauseVideo", video.PlayerId);
+        video.IsPlaying = false;
+        video.ShowPlayButton = true;
+    }
 
-            StateHasChanged();
-        }
+    StateHasChanged();
+}
+
 
         protected void ShowPlayButton(VideoCard video)
         {
@@ -161,6 +182,8 @@ private string? GetEmbeddableYouTubeUrl(string? url)
             public string? TimeAgo { get; set; }
             public bool ShowPlayButton { get; set; }
             public bool IsPlaying { get; set; }
+               public string PlayerId { get; set; } = string.Empty; // For JS interop
+    public string VideoId { get; set; } = string.Empty;  // For data attr
             public ElementReference VideoElement { get; set; }
             public bool IsValid { get; set; } = false;
         }
