@@ -26,9 +26,9 @@ namespace QLN.Common.DTO_s
         public AdStatus Status { get; set; }
     }
 
-    public class DealsAdListDto
+    public class PaginatedDealsAdResponseDto
     {
-        public List<DealsAdDto> PublishedAds { get; set; } = new();
-        public List<DealsAdDto> UnpublishedAds { get; set; } = new();
+        public int Total { get; set; }
+        public List<DealsAdDto> Items { get; set; } = new();
     }
 }

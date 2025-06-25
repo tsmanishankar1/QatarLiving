@@ -12,10 +12,12 @@ namespace QLN.Common.DTO_s
     {
         public string SubVertical { get; set; }
         public string Title { get; set; }
-        public string? Description { get; set; }
-        public Guid CategoryId { get; set; }
+        public string? Description { get; set; }    
+        public Guid? CategoryId { get; set; }
         public string? Category { get; set; }
-        public string? SubCategory { get; set; }
+        public Guid? L1CategoryId { get; set; }
+        public string? l1Category { get; set; }
+        public Guid? L2CategoryId { get; set; }
         public string? L2Category { get; set; }
         public string? Section { get; set; }
         public string? Brand { get; set; }
