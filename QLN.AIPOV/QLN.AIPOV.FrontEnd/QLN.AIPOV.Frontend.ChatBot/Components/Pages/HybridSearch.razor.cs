@@ -39,32 +39,31 @@ namespace QLN.AIPOV.Frontend.ChatBot.Components.Pages
 
             try
             {
-                SearchResults<SearchDocument>? searchResults;
+                List<SearchDocument>? searchDocuments = null;
 
                 // Use the appropriate search method based on selected type
                 switch (SearchType)
                 {
                     case "keyword":
-                        searchResults = await SearchService.KeywordSearchAsync(SearchQuery);
+                        searchDocuments = await SearchService.KeywordSearchAsync(SearchQuery);
                         break;
                     case "vector":
-                        searchResults = await SearchService.VectorSearchAsync(SearchQuery);
+                        searchDocuments = await SearchService.VectorSearchAsync(SearchQuery);
                         break;
                     case "hybrid":
                     default:
-                        searchResults = await SearchService.HybridSearchAsync(SearchQuery);
+                        searchDocuments = await SearchService.HybridSearchAsync(SearchQuery);
                         break;
                 }
 
-                if (searchResults == null)
+                if (searchDocuments == null)
                 {
                     Snackbar.Add("No results found", Severity.Warning);
                     SearchDocuments.Clear();
                     return;
                 }
 
-                // Extract documents from results
-                SearchDocuments = searchResults.GetResults().Select(r => r.Document).ToList();
+                SearchDocuments = searchDocuments;
 
                 // Log information about search results
                 await JSRuntime.InvokeVoidAsync("console.log",

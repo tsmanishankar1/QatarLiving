@@ -9,7 +9,7 @@ namespace QLN.AIPOV.Backend.Domain.Services
         IEmbeddingService embeddingService)
         : ISearchService
     {
-        public async Task<SearchResults<SearchDocument>> KeywordSearchAsync(
+        public async Task<List<SearchDocument>> KeywordSearchAsync(
             string query,
             int top = 10,
             CancellationToken cancellationToken = default)
@@ -21,10 +21,12 @@ namespace QLN.AIPOV.Backend.Domain.Services
                 Select = { "FirstName", "LastName", "Email", "MobileNumber", "WorkHistory" }
             };
 
-            return await searchClient.SearchAsync<SearchDocument>(query, options, cancellationToken);
+            var results = await searchClient.SearchAsync<SearchDocument>(query, options, cancellationToken);
+            var documents = results.Value.GetResults().Select(r => r.Document).ToList();
+            return documents;
         }
 
-        public async Task<SearchResults<SearchDocument>> VectorSearchAsync(
+        public async Task<List<SearchDocument>> VectorSearchAsync(
             string query,
             int top = 10,
             CancellationToken cancellationToken = default)
@@ -47,13 +49,14 @@ namespace QLN.AIPOV.Backend.Domain.Services
                     Queries = {
                         new VectorizedQuery(queryEmbeddings.ToArray()) {
                             KNearestNeighborsCount = top,
-                            Fields = { "contentVector" }
+                            Fields = { "skillsVector" }
                         }
                     }
                 };
 
                 // Execute vector search (empty string query for pure vector search)
-                return await searchClient.SearchAsync<SearchDocument>("", options, cancellationToken);
+                var results = await searchClient.SearchAsync<SearchDocument>(string.Empty, options, cancellationToken);
+                return results.Value.GetResults().Select(r => r.Document).ToList();
             }
             catch (Exception ex)
             {
@@ -62,7 +65,7 @@ namespace QLN.AIPOV.Backend.Domain.Services
             }
         }
 
-        public async Task<SearchResults<SearchDocument>> HybridSearchAsync(
+        public async Task<List<SearchDocument>> HybridSearchAsync(
             string query,
             int top = 10,
             CancellationToken cancellationToken = default)
@@ -96,7 +99,8 @@ namespace QLN.AIPOV.Backend.Domain.Services
                 };
 
                 // Execute hybrid search
-                return await searchClient.SearchAsync<SearchDocument>(query, options, cancellationToken);
+                var results = await searchClient.SearchAsync<SearchDocument>(query, options, cancellationToken);
+                return results.Value.GetResults().Select(r => r.Document).ToList();
             }
             catch (Exception ex)
             {

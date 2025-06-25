@@ -4,17 +4,17 @@ namespace QLN.AIPOV.Backend.Application.Interfaces
 {
     public interface ISearchService
     {
-        Task<SearchResults<SearchDocument>> KeywordSearchAsync(
+        Task<List<SearchDocument>> KeywordSearchAsync(
             string query,
             int top = 10,
             CancellationToken cancellationToken = default);
 
-        Task<SearchResults<SearchDocument>> VectorSearchAsync(
+        Task<List<SearchDocument>> VectorSearchAsync(
             string query,
             int top = 10,
             CancellationToken cancellationToken = default);
 
-        Task<SearchResults<SearchDocument>> HybridSearchAsync(
+        Task<List<SearchDocument>> HybridSearchAsync(
             string query,
             int top = 10,
             CancellationToken cancellationToken = default);

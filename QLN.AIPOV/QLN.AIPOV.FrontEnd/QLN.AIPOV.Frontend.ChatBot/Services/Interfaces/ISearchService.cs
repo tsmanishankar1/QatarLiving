@@ -14,8 +14,7 @@ namespace QLN.AIPOV.Frontend.ChatBot.Services.Interfaces
         /// <param name="top">Maximum number of results to return</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Search results containing matching documents</returns>
-        Task<SearchResults<SearchDocument>?> KeywordSearchAsync(
-            string query,
+        Task<List<SearchDocument>?> KeywordSearchAsync(string query,
             int top = 10,
             CancellationToken cancellationToken = default);
 
@@ -26,7 +25,7 @@ namespace QLN.AIPOV.Frontend.ChatBot.Services.Interfaces
         /// <param name="top">Maximum number of results to return</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Search results containing matching documents</returns>
-        Task<SearchResults<SearchDocument>?> VectorSearchAsync(
+        Task<List<SearchDocument>?> VectorSearchAsync(
             string query,
             int top = 10,
             CancellationToken cancellationToken = default);
@@ -38,7 +37,7 @@ namespace QLN.AIPOV.Frontend.ChatBot.Services.Interfaces
         /// <param name="top">Maximum number of results to return</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Search results containing matching documents</returns>
-        Task<SearchResults<SearchDocument>?> HybridSearchAsync(
+        Task<List<SearchDocument>?> HybridSearchAsync(
             string query,
             int top = 10,
             CancellationToken cancellationToken = default);

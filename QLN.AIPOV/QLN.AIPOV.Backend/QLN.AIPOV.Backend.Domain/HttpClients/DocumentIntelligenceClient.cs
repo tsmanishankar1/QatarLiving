@@ -22,11 +22,8 @@ namespace QLN.AIPOV.Backend.Domain.HttpClients
             IEmbeddingService embeddingService)
         {
             _settings = settings.Value;
-            _documentAnalysisClient = new DocumentAnalysisClient(
-                new Uri(_settings.Endpoint),
-                new AzureKeyCredential(_settings.ApiKey));
-            _searchClient = searchClient ??
-                            throw new ArgumentNullException(nameof(searchClient), "Search client cannot be null.");
+            _documentAnalysisClient = new DocumentAnalysisClient(new Uri(_settings.Endpoint), new AzureKeyCredential(_settings.ApiKey));
+            _searchClient = searchClient ?? throw new ArgumentNullException(nameof(searchClient), "Search client cannot be null.");
             _embeddingService = embeddingService;
         }
 
@@ -134,15 +131,31 @@ namespace QLN.AIPOV.Backend.Domain.HttpClients
                 var skills = ExtractSkills(result);
 
                 // Generate embeddings for the content
-                //var contentEmbeddings = await _embeddingService.GenerateEmbeddingsAsync(resumeText, cancellationToken);
-                //document.Add("contentVector", contentEmbeddings);
+                var contentEmbeddings = await _embeddingService.GenerateEmbeddingsAsync(resumeText, cancellationToken);
+                if (contentEmbeddings != null && contentEmbeddings.Count == 1536)
+                {
+                    document.Add("contentVector", contentEmbeddings);
+                }
+                else
+                {
+                    // Log or handle the error
+                    Console.WriteLine("Failed to generate valid content embedding.");
+                }
 
-                //if (!string.IsNullOrEmpty(skills))
-                //{
-                //    var skillsEmbeddings = await _embeddingService.GenerateEmbeddingsAsync(skills, cancellationToken);
-                //    document.Add("skillsVector", skillsEmbeddings);
-                //    document.Add("Skills", skills);
-                //}
+                if (!string.IsNullOrEmpty(skills))
+                {
+                    var skillsEmbeddings = await _embeddingService.GenerateEmbeddingsAsync(skills, cancellationToken);
+                    if (skillsEmbeddings != null && skillsEmbeddings.Count == 1536)
+                    {
+                        document.Add("skillsVector", skillsEmbeddings);
+                        document.Add("Skills", skills);
+                    }
+                    else
+                    {
+                        // Log or handle the error
+                        Console.WriteLine("Failed to generate valid skills embedding.");
+                    }
+                }
 
                 var response = await _searchClient.UploadDocumentsAsync(new[] { document }, cancellationToken: cancellationToken);
 

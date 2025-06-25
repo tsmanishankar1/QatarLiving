@@ -8,7 +8,7 @@ namespace QLN.AIPOV.Frontend.ChatBot.Services.Implementation
         ILogger<SearchService> logger)
         : ISearchService
     {
-        public async Task<SearchResults<SearchDocument>?> KeywordSearchAsync(
+        public async Task<List<SearchDocument>?> KeywordSearchAsync(
             string query,
             int top = 10,
             CancellationToken cancellationToken = default)
@@ -21,8 +21,8 @@ namespace QLN.AIPOV.Frontend.ChatBot.Services.Implementation
 
                 var response = await httpClient.GetAsync(url, cancellationToken);
                 response.EnsureSuccessStatusCode();
-
-                var result = await response.Content.ReadFromJsonAsync<SearchResults<SearchDocument>>(
+                
+                var result = await response.Content.ReadFromJsonAsync<List<SearchDocument>>(
                     cancellationToken: cancellationToken);
 
                 return result;
@@ -39,7 +39,7 @@ namespace QLN.AIPOV.Frontend.ChatBot.Services.Implementation
             }
         }
 
-        public async Task<SearchResults<SearchDocument>?> VectorSearchAsync(
+        public async Task<List<SearchDocument>?> VectorSearchAsync(
             string query,
             int top = 10,
             CancellationToken cancellationToken = default)
@@ -53,7 +53,7 @@ namespace QLN.AIPOV.Frontend.ChatBot.Services.Implementation
                 var response = await httpClient.GetAsync(url, cancellationToken);
                 response.EnsureSuccessStatusCode();
 
-                var result = await response.Content.ReadFromJsonAsync<SearchResults<SearchDocument>>(
+                var result = await response.Content.ReadFromJsonAsync<List<SearchDocument>>(
                     cancellationToken: cancellationToken);
 
                 return result;
@@ -70,7 +70,7 @@ namespace QLN.AIPOV.Frontend.ChatBot.Services.Implementation
             }
         }
 
-        public async Task<SearchResults<SearchDocument>?> HybridSearchAsync(
+        public async Task<List<SearchDocument>?> HybridSearchAsync(
             string query,
             int top = 10,
             CancellationToken cancellationToken = default)
@@ -84,7 +84,7 @@ namespace QLN.AIPOV.Frontend.ChatBot.Services.Implementation
                 var response = await httpClient.GetAsync(url, cancellationToken);
                 response.EnsureSuccessStatusCode();
 
-                var result = await response.Content.ReadFromJsonAsync<SearchResults<SearchDocument>>(
+                var result = await response.Content.ReadFromJsonAsync<List<SearchDocument>>(
                     cancellationToken: cancellationToken);
 
                 return result;
