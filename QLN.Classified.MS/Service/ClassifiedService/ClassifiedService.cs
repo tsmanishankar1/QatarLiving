@@ -16,6 +16,7 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Service.FileStorage;
 using static Dapr.Client.Autogen.Grpc.v1.Dapr;
@@ -372,6 +373,8 @@ namespace QLN.Classified.MS.Service
                     dto.IsPromoted,
                     dto.TearmsAndCondition,
                     CreatedAt = DateTime.UtcNow,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiry = dto.RefreshExpiry,
                     Status = AdStatus.Draft
                 };
                 
@@ -380,55 +383,7 @@ namespace QLN.Classified.MS.Service
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
                 await _dapr.SaveStateAsync(UnifiedStore, ItemsIndexKey, index);
-                var classifiedsIndex = new ClassifiedsIndex
-                {
-                    Id = adId.ToString(),
-                    SubVertical = dto.SubVertical,
-                    Title = dto.Title,
-                    Description = dto.Description,
-                    CategoryId = dto.CategoryId.ToString(),
-                    Category = dto.Category,
-                    L1Category = dto.l1Category,
-                    L2Category = dto.L2Category,
-                    Price = (double?)dto.Price,
-                    PriceType = dto.PriceType,
-                    Location = dto.Location.FirstOrDefault(),
-                    PhoneNumber = dto.PhoneNumber,
-                    WhatsappNumber = dto.WhatsAppNumber,
-                    UserId = dto.UserId.ToString(),
-                    CreatedDate = DateTime.UtcNow,
-                    ModifiedDate = DateTime.UtcNow,
-                    Images = new List<ImageInfo>(),
-                    Make = dto.MakeType,
-                    Model = dto.Model,
-                    Brand = dto.Brand,
-                    Processor = dto.Processor,
-                    Ram = dto.Ram,
-                    SizeType = dto.Size,
-                    Size = dto.SizeValue,
-                    Status = "Active",
-                    StreetNumber = dto.StreetNumber,
-                    Zone = dto.Zone,
-                    Storage = dto.Capacity,
-                    BuildingNumber = dto.BuildingNumber,
-                    Colour = dto.Color,
-                    BatteryPercentage= dto.BatteryPercentage,
-                    
-                };
-
-               
-                var msg = new IndexMessage
-                {
-                    Vertical = ConstantValues.Verticals.Classifieds,
-                    Action = "Upsert", 
-                    UpsertRequest = new CommonIndexRequest
-                    {
-                        VerticalName = ConstantValues.Verticals.Classifieds, 
-                        ClassifiedsItem = classifiedsIndex
-                    }
-                };
-
-                await _dapr.PublishEventAsync(ConstantValues.PubSubName, ConstantValues.PubSubTopics.IndexUpdates, msg, cancellationToken);
+                      
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -523,6 +478,8 @@ namespace QLN.Classified.MS.Service
                     dto.IsFeatured,
                     dto.IsPromoted,
                     CreatedAt = DateTime.UtcNow,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiry = dto.RefreshExpiry,
                     Status = AdStatus.Draft
                 };
 
@@ -530,7 +487,7 @@ namespace QLN.Classified.MS.Service
                 index.Add(key);
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
-                await _dapr.SaveStateAsync(UnifiedStore, PrelovedIndexKey, index);
+                await _dapr.SaveStateAsync(UnifiedStore, PrelovedIndexKey, index);                              
 
                 var prelovedIndex = new ClassifiedsIndex
                 {
@@ -679,6 +636,8 @@ namespace QLN.Classified.MS.Service
                     dto.UserId,
                     dto.IsFeatured,
                     dto.IsPromoted,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiry = dto.RefreshExpiry,
                     CreatedAt = DateTime.UtcNow,
                     Status = AdStatus.Draft
                 };
@@ -715,20 +674,6 @@ namespace QLN.Classified.MS.Service
                     SignedBy = dto.SignedBy,
                     IsSigned = dto.Signed
                 };
-
-                // Publish the indexing message using Pub/Sub
-                var msg = new IndexMessage
-                {
-                    Vertical = ConstantValues.Verticals.Classifieds,
-                    Action = "Upsert",
-                    UpsertRequest = new CommonIndexRequest
-                    {
-                        VerticalName = ConstantValues.Verticals.Classifieds,
-                        ClassifiedsItem = collectiblesIndex
-                    }
-                };
-
-                await _dapr.PublishEventAsync(ConstantValues.PubSubName, ConstantValues.PubSubTopics.IndexUpdates, msg, cancellationToken);
 
                 return new AdCreatedResponseDto
                 {
@@ -801,6 +746,7 @@ namespace QLN.Classified.MS.Service
                     dto.IsFeatured,
                     dto.IsPromoted,
                     CreatedAt = DateTime.UtcNow,
+                    RefreshExpiry = dto.RefreshExpiry,
                     Status = AdStatus.Draft
                 };
 
@@ -1249,7 +1195,10 @@ namespace QLN.Classified.MS.Service
                             IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
                             IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
                             Status = status,
-                            UserId = adUserId
+                            UserId = adUserId,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
                         publishedAds.Add(ad);
@@ -1378,7 +1327,10 @@ namespace QLN.Classified.MS.Service
                             IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
                             IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
                             Status = status,
-                            UserId = adUserId
+                            UserId = adUserId,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
                         unpublishedAds.Add(ad);
@@ -1635,7 +1587,10 @@ namespace QLN.Classified.MS.Service
                             IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
                             IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
                             Status = status,
-                            UserId = adUserId
+                            UserId = adUserId,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
                         published.Add(ad);
@@ -1757,7 +1712,10 @@ namespace QLN.Classified.MS.Service
                             IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
                             IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
                             Status = status,
-                            UserId = adUserId
+                            UserId = adUserId,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
                         unpublished.Add(ad);
@@ -1999,7 +1957,9 @@ namespace QLN.Classified.MS.Service
                             CreatedAt = state.TryGetProperty("createdAt", out var created) && created.ValueKind == JsonValueKind.String
                                 ? created.GetDateTime()
                                 : DateTime.UtcNow,
-                            Status = status
+                            Status = status,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",                            
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
                         published.Add(ad);
@@ -2100,7 +2060,9 @@ namespace QLN.Classified.MS.Service
                             CreatedAt = state.TryGetProperty("createdAt", out var created) && created.ValueKind == JsonValueKind.String
                                 ? created.GetDateTime()
                                 : DateTime.UtcNow,
-                            Status = status
+                            Status = status,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",                           
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
 
@@ -2361,7 +2323,10 @@ namespace QLN.Classified.MS.Service
                             IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
                             IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
                             CreatedAt = state.GetProperty("createdAt").GetDateTime(),
-                            Status = status
+                            Status = status,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
                         published.Add(ad);
@@ -2487,7 +2452,10 @@ namespace QLN.Classified.MS.Service
                             IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
                             IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
                             CreatedAt = state.GetProperty("createdAt").GetDateTime(),
-                            Status = status
+                            Status = status,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
                         unpublished.Add(ad);
