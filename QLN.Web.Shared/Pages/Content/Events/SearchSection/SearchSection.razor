@@ -14,12 +14,17 @@
                 <input type="text" id="event-search-input" placeholder="Search" class="text-input" />
             </div> *@
             <div class="select-field">
-                <LocationSelect TItem="Area" Items="FilteredAreas" SelectedItemsChanged="HandleLocationSelectionChanged"
-                    OnLocationUpdated="CallApiForLocationChange" GetLabel="item => item.Name" GetId="item => item.Id"
-                    MaxSelectableItems="1" Padding="10px"
-                    CustomStyle="@(IsMobile ? "border-radius:8px;" 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            : "border-top-left-radius:6px; border-bottom-left-radius:6px; border-top-right-radius:0; border-bottom-right-radius:0;")"
-                    OnSearch="PerformSearch" />
+                <LocationSelect 
+                    TItem="Area"
+                    Items="FilteredAreas"
+                    SelectedItemsChanged="HandleLocationSelectionChanged"
+                    OnLocationUpdated="CallApiForLocationChange"
+                    GetLabel="item => item.Name"
+                    GetId="item => item.Id"
+                    Padding="10px"
+                    CustomStyle="@(IsMobile ? "border-radius:8px;" : "border-top-left-radius:8px; border-bottom-left-radius:8px;")"
+                    OnSearch="PerformSearch" 
+                />
             </div>
 
             <!-- Property Type Select -->
