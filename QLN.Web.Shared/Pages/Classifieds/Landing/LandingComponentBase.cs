@@ -6,7 +6,8 @@ using System.Net.Http.Json;
 
 public class LandingComponentBase : ComponentBase
 {
-  [Inject] private IClassifiedsServices _classifiedsService { get; set; }
+    [Inject] protected SearchStateService SearchState { get; set; }
+    [Inject] private IClassifiedsServices _classifiedsService { get; set; }
     protected bool IsLoading { get; set; } = true;
     protected string? ErrorMessage { get; set; }
 
@@ -29,17 +30,51 @@ public class LandingComponentBase : ComponentBase
     protected IEnumerable<LandingBackOfficeIndex>? SocialLinksList { get; set; }
     protected IEnumerable<LandingBackOfficeIndex>? SocialMediaVideosList { get; set; }
     protected IEnumerable<LandingBackOfficeIndex> FaqItemsList { get; set; }  = new List<LandingBackOfficeIndex>();
-protected IEnumerable<PopularSearchDto> PopularSearchesList { get; set; } = new List<PopularSearchDto>();
-
-  protected override async Task OnInitializedAsync()
-{
-    try
+    protected IEnumerable<PopularSearchDto> PopularSearchesList { get; set; } = new List<PopularSearchDto>();
+    protected List<CategoryTreeDto> CategoryTrees { get; set; } = new();
+    protected bool IsLoadingCategories { get; set; } = true;
+    protected override async Task OnInitializedAsync()
     {
-        var response = await _classifiedsService.GetClassifiedsLPAsync();
+        await LoadCategoryTreesAsync();
 
-        if (response != null && response.IsSuccessStatusCode)
+        await LoadLandingAsync();
+    }
+
+    private async Task LoadCategoryTreesAsync()
+    {
+        try
         {
-            var landingData = await response.Content.ReadFromJsonAsync<LandingPageDto>();
+            var response = await _classifiedsService.GetAllCategoryTreesAsync("Items");
+
+            if (response is { IsSuccessStatusCode: true })
+            {
+                var result = await response.Content.ReadFromJsonAsync<List<CategoryTreeDto>>();
+                CategoryTrees = result ?? new();
+                SearchState.ItemCategoryTrees = CategoryTrees;
+            }
+            else
+            {
+                ErrorMessage = $"Failed to load category trees. Status: {response?.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Error loading category trees.";
+        }
+        finally
+        {
+            IsLoadingCategories = false;
+        }
+    }
+    private async Task LoadLandingAsync()
+    {
+        try
+        {
+            var response = await _classifiedsService.GetClassifiedsLPAsync();
+
+            if (response != null && response.IsSuccessStatusCode)
+            {
+                var landingData = await response.Content.ReadFromJsonAsync<LandingPageDto>();
 
                 if (landingData != null)
                 {
@@ -57,22 +92,22 @@ protected IEnumerable<PopularSearchDto> PopularSearchesList { get; set; } = new 
                     FaqItemsList = landingData.FaqItems ?? new List<LandingBackOfficeIndex>();
                     PopularSearchesList = landingData.PopularSearches ?? Enumerable.Empty<PopularSearchDto>();
 
+                }
+            }
+            else
+            {
+                ErrorMessage = "Failed to fetch landing page data.";
             }
         }
-        else
+        catch (Exception ex)
         {
-            ErrorMessage = "Failed to fetch landing page data.";
+            ErrorMessage = "An error occurred while loading the landing page.";
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            IsLoading = false;
         }
     }
-    catch (Exception ex)
-    {
-        ErrorMessage = "An error occurred while loading the landing page.";
-        Console.WriteLine($"Error: {ex.Message}");
-    }
-    finally
-    {
-        IsLoading = false;
-    }
-}
 
 }
