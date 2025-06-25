@@ -16,6 +16,7 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Service.FileStorage;
 using static Dapr.Client.Autogen.Grpc.v1.Dapr;
@@ -380,55 +381,7 @@ namespace QLN.Classified.MS.Service
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
                 await _dapr.SaveStateAsync(UnifiedStore, ItemsIndexKey, index);
-                var classifiedsIndex = new ClassifiedsIndex
-                {
-                    Id = adId.ToString(),
-                    SubVertical = dto.SubVertical,
-                    Title = dto.Title,
-                    Description = dto.Description,
-                    CategoryId = dto.CategoryId.ToString(),
-                    Category = dto.Category,
-                    L1Category = dto.l1Category,
-                    L2Category = dto.L2Category,
-                    Price = (double?)dto.Price,
-                    PriceType = dto.PriceType,
-                    Location = dto.Location.FirstOrDefault(),
-                    PhoneNumber = dto.PhoneNumber,
-                    WhatsappNumber = dto.WhatsAppNumber,
-                    UserId = dto.UserId.ToString(),
-                    CreatedDate = DateTime.UtcNow,
-                    ModifiedDate = DateTime.UtcNow,
-                    Images = new List<ImageInfo>(),
-                    Make = dto.MakeType,
-                    Model = dto.Model,
-                    Brand = dto.Brand,
-                    Processor = dto.Processor,
-                    Ram = dto.Ram,
-                    SizeType = dto.Size,
-                    Size = dto.SizeValue,
-                    Status = "Active",
-                    StreetNumber = dto.StreetNumber,
-                    Zone = dto.Zone,
-                    Storage = dto.Capacity,
-                    BuildingNumber = dto.BuildingNumber,
-                    Colour = dto.Color,
-                    BatteryPercentage= dto.BatteryPercentage,
-                    
-                };
-
-               
-                var msg = new IndexMessage
-                {
-                    Vertical = ConstantValues.Verticals.Classifieds,
-                    Action = "Upsert", 
-                    UpsertRequest = new CommonIndexRequest
-                    {
-                        VerticalName = ConstantValues.Verticals.Classifieds, 
-                        ClassifiedsItem = classifiedsIndex
-                    }
-                };
-
-                await _dapr.PublishEventAsync(ConstantValues.PubSubName, ConstantValues.PubSubTopics.IndexUpdates, msg, cancellationToken);
+                      
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -530,55 +483,7 @@ namespace QLN.Classified.MS.Service
                 index.Add(key);
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
-                await _dapr.SaveStateAsync(UnifiedStore, PrelovedIndexKey, index);
-
-                var prelovedIndex = new ClassifiedsIndex
-                {
-                    Id = adId.ToString(),
-                    SubVertical = dto.SubVertical,
-                    Title = dto.Title,
-                    Description = dto.Description,
-                    CategoryId = dto.CategoryId.ToString(),
-                    Category = dto.Category,
-                    L1Category = dto.l1Category,
-                    L2Category = dto.L2Category,
-                    Price = (double?)dto.Price,
-                    PriceType = dto.PriceType,
-                    Location = dto.Location.FirstOrDefault(),
-                    PhoneNumber = dto.PhoneNumber,
-                    WhatsappNumber = dto.WhatsAppNumber,
-                    UserId = dto.UserId.ToString(),
-                    CreatedDate = DateTime.UtcNow,
-                    ModifiedDate = DateTime.UtcNow,
-                    Images = new List<ImageInfo>(),
-                    Status = "Active",
-                    Model = dto.Model,
-                    Brand = dto.Brand,
-                    Processor = dto.Processor,
-                    Ram = dto.Ram,
-                    SizeType = dto.Size,
-                    Size = dto.SizeValue,
-                    StreetNumber = dto.StreetNumber,
-                    Zone = dto.Zone,
-                    Storage = dto.Capacity,
-                    BuildingNumber = dto.BuildingNumber,
-                    Colour = dto.Color,
-                    BatteryPercentage = dto.BatteryPercentage,
-                };
-
-                // Publish the indexing message using Pub/Sub
-                var msg = new IndexMessage
-                {
-                    Vertical = ConstantValues.Verticals.Classifieds,
-                    Action = "Upsert",
-                    UpsertRequest = new CommonIndexRequest
-                    {
-                        VerticalName = ConstantValues.Verticals.Classifieds,
-                        ClassifiedsItem = prelovedIndex
-                    }
-                };
-
-                await _dapr.PublishEventAsync(ConstantValues.PubSubName, ConstantValues.PubSubTopics.IndexUpdates, msg, cancellationToken);
+                await _dapr.SaveStateAsync(UnifiedStore, PrelovedIndexKey, index);                              
 
                 return new AdCreatedResponseDto
                 {
@@ -688,47 +593,6 @@ namespace QLN.Classified.MS.Service
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
                 await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, index);
-                var collectiblesIndex = new ClassifiedsIndex
-                {
-                    Id = adId.ToString(),
-                    SubVertical = dto.SubVertical,
-                    Title = dto.Title,
-                    Description = dto.Description,
-                    CategoryId = dto.CategoryId.ToString(),
-                    Category = dto.Category,
-                    L1Category = dto.l1Category,
-                    L2Category = dto.L2Category,
-                    Price = (double?)dto.Price,
-                    PriceType = dto.PriceType,
-                    Location = dto.Location.FirstOrDefault(),
-                    PhoneNumber = dto.PhoneNumber,
-                    WhatsappNumber = dto.WhatsAppNumber,
-                    UserId = dto.UserId.ToString(),
-                    CreatedDate = DateTime.UtcNow,
-                    ModifiedDate = DateTime.UtcNow,
-                    Images = new List<ImageInfo>(),
-                    YearEra = dto.YearOrEra,
-                    Rarity = dto.Rarity,
-                    Material = dto.Material,
-                    Status = "Active",
-                    SerialNumber = dto.SerialNumber,
-                    SignedBy = dto.SignedBy,
-                    IsSigned = dto.Signed
-                };
-
-                // Publish the indexing message using Pub/Sub
-                var msg = new IndexMessage
-                {
-                    Vertical = ConstantValues.Verticals.Classifieds,
-                    Action = "Upsert",
-                    UpsertRequest = new CommonIndexRequest
-                    {
-                        VerticalName = ConstantValues.Verticals.Classifieds,
-                        ClassifiedsItem = collectiblesIndex
-                    }
-                };
-
-                await _dapr.PublishEventAsync(ConstantValues.PubSubName, ConstantValues.PubSubTopics.IndexUpdates, msg, cancellationToken);
 
                 return new AdCreatedResponseDto
                 {
@@ -809,34 +673,6 @@ namespace QLN.Classified.MS.Service
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
                 await _dapr.SaveStateAsync(UnifiedStore, DealsIndexKey, index);
-                var dealsIndex = new ClassifiedsIndex
-                {
-                    Id = adId.ToString(),
-                    SubVertical = dto.SubVertical,
-                    Title = dto.Title,
-                    Description = dto.Description,
-                    Location = dto.Location.FirstOrDefault(),
-                    CreatedDate = DateTime.UtcNow,
-                    Images = new List<ImageInfo>(),
-                    Status = "Active",
-                    FlyerFileName = dto.FlyerName,
-                    FlyerXmlLink = dto.XMLLink,
-                };
-
-                // Publish the indexing message using Pub/Sub
-                var msg = new IndexMessage
-                {
-                    Vertical = ConstantValues.Verticals.Classifieds,
-                    Action = "Upsert",
-                    UpsertRequest = new CommonIndexRequest
-                    {
-                        VerticalName = ConstantValues.Verticals.Classifieds,
-                        ClassifiedsItem = dealsIndex
-                    }
-                };
-
-                await _dapr.PublishEventAsync(ConstantValues.PubSubName, ConstantValues.PubSubTopics.IndexUpdates, msg, cancellationToken);
-
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
