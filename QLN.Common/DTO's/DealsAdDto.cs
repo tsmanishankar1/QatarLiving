@@ -23,6 +23,8 @@ namespace QLN.Common.DTO_s
         public bool IsFeatured { get; set; }
         public bool IsPromoted { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime RefreshExpiry { get; set; }
+        public string RefreshCount { get; set; }
         public AdStatus Status { get; set; }
     }
 

@@ -372,6 +372,8 @@ namespace QLN.Classified.MS.Service
                     dto.IsPromoted,
                     dto.TearmsAndCondition,
                     CreatedAt = DateTime.UtcNow,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiry = dto.RefreshExpiry,
                     Status = AdStatus.Draft
                 };
                 
@@ -413,7 +415,8 @@ namespace QLN.Classified.MS.Service
                     BuildingNumber = dto.BuildingNumber,
                     Colour = dto.Color,
                     BatteryPercentage= dto.BatteryPercentage,
-                    
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiryDate = dto.RefreshExpiry                                        
                 };
 
                
@@ -523,6 +526,8 @@ namespace QLN.Classified.MS.Service
                     dto.IsFeatured,
                     dto.IsPromoted,
                     CreatedAt = DateTime.UtcNow,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiry = dto.RefreshExpiry,
                     Status = AdStatus.Draft
                 };
 
@@ -564,6 +569,8 @@ namespace QLN.Classified.MS.Service
                     BuildingNumber = dto.BuildingNumber,
                     Colour = dto.Color,
                     BatteryPercentage = dto.BatteryPercentage,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiryDate = dto.RefreshExpiry
                 };
 
                 // Publish the indexing message using Pub/Sub
@@ -679,6 +686,8 @@ namespace QLN.Classified.MS.Service
                     dto.UserId,
                     dto.IsFeatured,
                     dto.IsPromoted,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiry = dto.RefreshExpiry,
                     CreatedAt = DateTime.UtcNow,
                     Status = AdStatus.Draft
                 };
@@ -713,7 +722,9 @@ namespace QLN.Classified.MS.Service
                     Status = "Active",
                     SerialNumber = dto.SerialNumber,
                     SignedBy = dto.SignedBy,
-                    IsSigned = dto.Signed
+                    IsSigned = dto.Signed,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiryDate = dto.RefreshExpiry
                 };
 
                 // Publish the indexing message using Pub/Sub
@@ -801,6 +812,7 @@ namespace QLN.Classified.MS.Service
                     dto.IsFeatured,
                     dto.IsPromoted,
                     CreatedAt = DateTime.UtcNow,
+                    RefreshExpiry = dto.RefreshExpiry,
                     Status = AdStatus.Draft
                 };
 
@@ -821,6 +833,8 @@ namespace QLN.Classified.MS.Service
                     Status = "Active",
                     FlyerFileName = dto.FlyerName,
                     FlyerXmlLink = dto.XMLLink,
+                    RefreshExpiryDate = dto.RefreshExpiry,
+                    ExpiryDate = dto.ExpiryDate
                 };
 
                 // Publish the indexing message using Pub/Sub
@@ -1249,7 +1263,10 @@ namespace QLN.Classified.MS.Service
                             IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
                             IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
                             Status = status,
-                            UserId = adUserId
+                            UserId = adUserId,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
                         publishedAds.Add(ad);
@@ -1378,7 +1395,10 @@ namespace QLN.Classified.MS.Service
                             IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
                             IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
                             Status = status,
-                            UserId = adUserId
+                            UserId = adUserId,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
                         unpublishedAds.Add(ad);
@@ -1635,7 +1655,10 @@ namespace QLN.Classified.MS.Service
                             IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
                             IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
                             Status = status,
-                            UserId = adUserId
+                            UserId = adUserId,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
                         published.Add(ad);
@@ -1757,7 +1780,10 @@ namespace QLN.Classified.MS.Service
                             IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
                             IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
                             Status = status,
-                            UserId = adUserId
+                            UserId = adUserId,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
                         unpublished.Add(ad);
@@ -1999,7 +2025,9 @@ namespace QLN.Classified.MS.Service
                             CreatedAt = state.TryGetProperty("createdAt", out var created) && created.ValueKind == JsonValueKind.String
                                 ? created.GetDateTime()
                                 : DateTime.UtcNow,
-                            Status = status
+                            Status = status,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",                            
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
                         published.Add(ad);
@@ -2100,7 +2128,9 @@ namespace QLN.Classified.MS.Service
                             CreatedAt = state.TryGetProperty("createdAt", out var created) && created.ValueKind == JsonValueKind.String
                                 ? created.GetDateTime()
                                 : DateTime.UtcNow,
-                            Status = status
+                            Status = status,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",                           
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
 
@@ -2361,7 +2391,10 @@ namespace QLN.Classified.MS.Service
                             IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
                             IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
                             CreatedAt = state.GetProperty("createdAt").GetDateTime(),
-                            Status = status
+                            Status = status,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
                         published.Add(ad);
@@ -2487,7 +2520,10 @@ namespace QLN.Classified.MS.Service
                             IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
                             IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
                             CreatedAt = state.GetProperty("createdAt").GetDateTime(),
-                            Status = status
+                            Status = status,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
                         unpublished.Add(ad);
