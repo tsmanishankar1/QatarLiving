@@ -18,10 +18,9 @@ namespace QLN.Common.DTO_s
         [Required]
         public CompanySize CompanySize { get; set; }
         [Required]
-        public List<NatureOfBusiness> NatureOfBusiness { get; set; }
+        public List<NatureOfBusiness> NatureOfBusiness { get; set; } 
         [Required, MaxLength(300)]
         public string BusinessDescription { get; set; } = string.Empty;
-        public CompanyStatus? Status { get; set; }
         [Required]
         public int CRNumber { get; set; }
         public bool? IsVerified { get; set; } = false;
