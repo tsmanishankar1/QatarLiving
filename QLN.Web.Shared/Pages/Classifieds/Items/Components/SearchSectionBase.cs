@@ -7,6 +7,13 @@ using Microsoft.AspNetCore.Components.Routing;
 namespace QLN.Web.Shared.Pages.Classifieds.Items.Components;
 public class SearchSectionBase : ComponentBase
 {
+      [Parameter]
+    [SupplyParameterFromQuery]
+    public string searchText { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string category { get; set; }
     [Inject] protected SearchStateService SearchState { get; set; }
     protected bool ShowSaveSearchPopup { get; set; } = false;
 
@@ -19,7 +26,8 @@ public class SearchSectionBase : ComponentBase
     [Inject] private NavigationManager Nav { get; set; }
     protected bool _isSearchFocused = false;
 
-    protected bool _isSearching;
+    [Parameter]
+    public bool Loading { get; set; } = false;
       protected List<ViewToggleButtons.ViewToggleOption> _viewOptions = new()
     {
         new() { ImageUrl = "/qln-images/list_icon.svg", Label = "List", Value = "list" },
@@ -33,12 +41,14 @@ public class SearchSectionBase : ComponentBase
         new() { Id="sony", Label="Sony" }
     };
 
-        protected Task HandleSaveSearch()
-        {
-            // Implement actual save logic here — call backend or store locally
-            ShowSaveSearchPopup = false;
-            return Task.CompletedTask;
-        }
+
+
+    protected Task HandleSaveSearch()
+    {
+        // Implement actual save logic here — call backend or store locally
+        ShowSaveSearchPopup = false;
+        return Task.CompletedTask;
+    }
 
         protected Task CloseSaveSearchPopup()
         {
@@ -77,11 +87,9 @@ public class SearchSectionBase : ComponentBase
     }
     protected async Task PerformSearch()
     {
-        _isSearching = true;
         StateHasChanged();
         await Task.Yield();
         await OnSearch.InvokeAsync(SearchState.ItemSearchText);
-        _isSearching = false;
     }
     protected async Task ClearSearch()
     {

@@ -8,6 +8,7 @@ using System.Text.Json;
 public class ItemsComponentBase : ComponentBase
 {
     [Inject] protected SearchStateService SearchState { get; set; }
+    
     [Inject] private IClassifiedsServices _classifiedsService { get; set; } = default!;
     protected List<CategoryTreeDto> CategoryTrees { get; set; } = new();
     [Inject] private ILogger<ItemsComponentBase> Logger { get; set; } = default!;
@@ -30,9 +31,9 @@ public class ItemsComponentBase : ComponentBase
 
     }
     protected async Task OnSearchTriggered(string searchText)
-{
-    await LoadSearchResultsAsync(searchText);
-}
+        {
+            await LoadSearchResultsAsync(searchText);
+        }
 
     protected override async Task OnInitializedAsync()
     {

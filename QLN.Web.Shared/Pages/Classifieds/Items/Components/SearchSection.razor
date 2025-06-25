@@ -30,7 +30,7 @@
                     <div class="search-actions">
                         <MudIconButton OnClick="PerformSearch" Class="search-action-btn search-btn">
                             <div class="search-icon-container">
-                                @if (_isSearching)
+                                @if (Loading)
                                 {
                                     <MudProgressCircular Indeterminate="true" Style="color: white;width: 20px; height: 20px;" />
                                 }
