@@ -243,6 +243,15 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         {
             throw new NotImplementedException("Remove functionality is not implemented yet.");
         }
+        protected async void HandlePageChange(int newPage)
+        {
+            await OnPageChange.InvokeAsync(newPage);
+        }
+
+        protected async void HandlePageSizeChange(int newSize)
+        {
+            await OnPageSizeChange.InvokeAsync(newSize);
+        }
         protected void SetTab(int index)
         {
             _activeTabIndex = index;
