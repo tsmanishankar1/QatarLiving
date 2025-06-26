@@ -20,12 +20,12 @@
                 class="nav-icon-style @(NavManager.Uri.Contains("/dashboard") ? "active-orange" : "default-gray")" />
                 <span class="nav-item @(NavManager.Uri.Contains("/dashboard") ? "active-orange" : "default-gray")">Daily Living</span>
                 </MudNavLink>
-               <MudNavGroup  @bind-Expanded="_isNewsGroupExpanded">
+               <MudNavGroup Expanded="_isNewsGroupExpanded" ExpandedChanged="OnNewsGroupExpanded">
                     <TitleContent>
                     <img src="/qln-images/news_icon.svg"
                     alt="News Icon"
-                    class="nav-icon-style @(_isNewsGroupExpanded ? "active-orange" : "default-gray")" />
-                    <span class="nav-item @(_isNewsGroupExpanded ? "active-orange" : "default-gray")">News</span>
+                    class="nav-icon-style default-gray" />
+                    <span class="nav-item default-gray">News</span>
                     </TitleContent>
                     <ChildContent>
                         <MudNavLink Href="/manage/news/category?type=news" Class="nav-item" Match="NavLinkMatch.Prefix" Icon="fas fa-users" IconColor="Color.Secondary">News</MudNavLink>
@@ -42,12 +42,12 @@
                 <img src="/qln-images/event_icon.svg" alt="Events" class="nav-icon-style @(NavManager.Uri.Contains("/manage/events") ? "active-orange" : "default-gray")" />
                 <span class="nav-item @(NavManager.Uri.Contains("/manage/events") ? "active-orange" : "default-gray")">Events</span>
                 </MudNavLink>
-                <MudNavGroup  @bind-Expanded="_isReportGroupExpanded">
+                    <MudNavGroup Expanded="_isReportGroupExpanded" ExpandedChanged="OnReportsGroupExpanded">
                     <TitleContent>
                     <img src="/qln-images/report_icon.svg"
                     alt="Reports Icon"
-                    class="nav-icon-style @(_isReportGroupExpanded ? "active-orange" : "default-gray")" />
-                    <span class="nav-item @(_isReportGroupExpanded ? "active-orange" : "default-gray")">Report</span>
+                    class="nav-icon-style default-gray" />
+                    <span class="nav-item default-gray">Report</span>
                     </TitleContent>
                     <ChildContent>
                         <MudNavLink Href="/manage/reports?type=article-comments" Class="nav-item" Match="NavLinkMatch.Prefix" Icon="fas fa-users" IconColor="Color.Secondary">Article Comments</MudNavLink>
@@ -163,7 +163,7 @@
         filter: brightness(0) invert(1);
     }
     .default-gray {
-        filter: brightness(0) saturate(100%) invert(53%) sepia(0%) saturate(1031%) hue-rotate(176deg) brightness(93%) contrast(91%);
+        filter: invert(40%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);
     }
     .main-content-style {
         background-color: #FAFAFA; 
@@ -205,4 +205,20 @@
             DefaultBorderRadius = "6px"
         }
     };
+    protected void OnNewsGroupExpanded(bool expanded)
+    {
+        _isNewsGroupExpanded = expanded; 
+        if (expanded)
+        {
+            NavManager.NavigateTo("/manage/news/category?type=news");
+        }
+    }
+    protected void OnReportsGroupExpanded(bool expanded)
+    {
+        _isReportGroupExpanded = expanded; 
+        if (expanded)
+        {
+            NavManager.NavigateTo("/manage/reports?type=article-comments");
+        }
+    }
 }
