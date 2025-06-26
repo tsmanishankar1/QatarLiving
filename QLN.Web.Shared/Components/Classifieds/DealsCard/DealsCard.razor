@@ -1,6 +1,7 @@
 @using MudBlazor
+@using Microsoft.AspNetCore.Components
 
-<div class="deals-card">
+<div class="deals-card" @onclick="HandleClick" style="cursor: pointer;">
     <img src="@DealData.ImageUrl" alt="Deal Banner" class="deal-image" />
 
     <div class="deal-details">
@@ -22,7 +23,15 @@
         </div>
     </div>
 </div>
+@code {
+    [Parameter] public DealModel DealData { get; set; } = default!;
+    [Parameter] public EventCallback OnClick { get; set; }
 
+    private async Task HandleClick()
+    {
+        await OnClick.InvokeAsync();
+    }
+}
 <style>
     .deals-card {
         font-family: 'Public Sans', sans-serif;
@@ -93,7 +102,3 @@
         font-weight: 400;
     }
 </style>
-
-@code {
-    [Parameter] public DealModel DealData { get; set; } = new();
-}

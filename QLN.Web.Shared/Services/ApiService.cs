@@ -1,40 +1,23 @@
-using System.Net.Http;
 using System.Net.Http.Json;
-using Microsoft.Extensions.Options;
 using System.Text.Json;
-using QLN.Web.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
-using Microsoft.JSInterop;
 using Microsoft.AspNetCore.Http;
 
 namespace QLN.Web.Shared.Services
 {
     public class ApiService
     {
-        private readonly HttpClient _http;
+        private readonly HttpClient _httpClient;
 
-        private readonly string _baseUrl;
-        private readonly IHttpContextAccessor _httpContextAccessor;
-
-        private string? _authToken;
-
-        public ApiService(HttpClient http, IOptions<ApiSettings> options, IHttpContextAccessor httpContextAccessor)
+        public ApiService(HttpClient httpClient)
         {
-            _http = http;
-            _baseUrl = options.Value.BaseUrl.TrimEnd('/');
-            _httpContextAccessor = httpContextAccessor;
-        }
-
-        private async Task<string?> GetTokenAsync()
-        {
-            _authToken = _httpContextAccessor.HttpContext?.Request.Cookies["qat"];
-            return _authToken;
+            _httpClient = httpClient;
         }
 
         public async Task<T?> GetAsync<T>(string endpoint)
         {
-            var response = await _http.GetAsync($"{_baseUrl}/{endpoint}");
+            var response = await _httpClient.GetAsync($"{endpoint}");
             var responseContent = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode)
@@ -47,15 +30,40 @@ namespace QLN.Web.Shared.Services
             }
             await HandleError(response);
             return default!;
+        }
+
+        public async Task<string?> GetAsync(string endpoint)
+        {
+            var response = await _httpClient.GetAsync($"{endpoint}");
+            
+
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadAsStringAsync();
+            }
+            await HandleError(response);
+            return "Unauthorized";
+        }
+
+        public async Task<string?> PostAsync(string endpoint)
+        {
+            var response = await _httpClient.PostAsync($"{endpoint}", null);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadAsStringAsync();
+            }
+            await HandleError(response);
+            return "Unauthorized";
         }
 
 
         public async Task<T?> GetAsyncWithToken<T>(string endpoint, string authToken)
         {
-            var request = new HttpRequestMessage(HttpMethod.Get, $"{_baseUrl}/{endpoint}");
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{endpoint}");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
 
-            var response = await _http.SendAsync(request);
+            var response = await _httpClient.SendAsync(request);
             var responseContent = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode)
@@ -70,21 +78,14 @@ namespace QLN.Web.Shared.Services
             return default!;
         }
 
-        public async Task<T?> PostAsync<TRequest, T>(string endpoint, TRequest data, string? accessToken = null)
+        public async Task<T?> PostAsync<TRequest, T>(string endpoint, TRequest data)
         {
-            var token = await GetTokenAsync();
-
-            var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/{endpoint}")
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{endpoint}")
             {
                 Content = JsonContent.Create(data)
             };
 
-            if (!string.IsNullOrWhiteSpace(accessToken))
-            {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-            }
-
-            var response = await _http.SendAsync(request);
+            var response = await _httpClient.SendAsync(request);
             var responseContent = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode)
@@ -103,11 +104,11 @@ namespace QLN.Web.Shared.Services
 
         public async Task<TResponse?> PatchAsync<TRequest, TResponse>(string endpoint, TRequest data)
         {
-            var request = new HttpRequestMessage(HttpMethod.Patch, $"{_baseUrl}/{endpoint}")
+            var request = new HttpRequestMessage(HttpMethod.Patch, $"{endpoint}")
             {
                 Content = JsonContent.Create(data)
             };
-            var response = await _http.SendAsync(request);
+            var response = await _httpClient.SendAsync(request);
             var responseContent = await response.Content.ReadAsStringAsync();
             if (response.IsSuccessStatusCode)
             {
@@ -123,7 +124,7 @@ namespace QLN.Web.Shared.Services
 
         public async Task<bool> DeleteAsync(string endpoint)
         {
-            var response = await _http.DeleteAsync($"{_baseUrl}/{endpoint}");
+            var response = await _httpClient.DeleteAsync($"{endpoint}");
             var responseContent = await response.Content.ReadAsStringAsync();
             if (response.IsSuccessStatusCode)
             {
@@ -135,11 +136,11 @@ namespace QLN.Web.Shared.Services
 
         public async Task<TResponse?> PutAsync<TRequest, TResponse>(string endpoint, TRequest data)
         {
-            var request = new HttpRequestMessage(HttpMethod.Put, $"{_baseUrl}/{endpoint}")
+            var request = new HttpRequestMessage(HttpMethod.Put, $"{endpoint}")
             {
                 Content = JsonContent.Create(data)
             };
-            var response = await _http.SendAsync(request);
+            var response = await _httpClient.SendAsync(request);
             var responseContent = await response.Content.ReadAsStringAsync();
             if (response.IsSuccessStatusCode)
             {

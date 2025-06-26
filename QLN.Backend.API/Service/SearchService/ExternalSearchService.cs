@@ -1,12 +1,9 @@
-﻿using System;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Dapr;
+﻿using Dapr;
 using Dapr.Client;
-using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.ISearchService;
+using System.Net;
 
 namespace QLN.Backend.API.Service.SearchService
 {
@@ -31,9 +28,9 @@ namespace QLN.Backend.API.Service.SearchService
         {
             if (string.IsNullOrWhiteSpace(vertical))
                 throw new ArgumentException("Vertical is required.", nameof(vertical));
-            if (request == null)
-                throw new ArgumentNullException(nameof(request));
-            
+
+            ArgumentNullException.ThrowIfNull(request);
+
             try
             {
                 var methodName = $"/api/{vertical}/search";
@@ -68,8 +65,7 @@ namespace QLN.Backend.API.Service.SearchService
         /// </summary>
         public async Task<string> UploadAsync(CommonIndexRequest request)
         {
-            if (request == null)
-                throw new ArgumentNullException(nameof(request));
+            ArgumentNullException.ThrowIfNull(request);
 
             try
             {
@@ -129,6 +125,11 @@ namespace QLN.Backend.API.Service.SearchService
             }
             catch (DaprException ex)
             {
+                if (ex.InnerException is HttpRequestException httpEx && httpEx.StatusCode == HttpStatusCode.NotFound)
+                {
+                    _logger.LogWarning("Remote returned 404 for {Vertical}/{Key}", vertical, key);
+                    throw new KeyNotFoundException($"Document '{key}' not found in '{vertical}'.");
+                }
                 _logger.LogError(ex, "Dapr invocation failed in GetByIdAsync: vertical={Vertical}, key={Key}", vertical, key);
                 throw;
             }
@@ -175,5 +176,54 @@ namespace QLN.Backend.API.Service.SearchService
                 throw;
             }
         }
+        /// <summary>
+        /// Calls SearchService’s GET /api/{vertical}/details/{key}?similarPageSize={n}
+        /// </summary>
+
+        /// <summary>  
+        /// Calls SearchService’s GET /api/{vertical}/details/{key}?similarPageSize={n}  
+        /// </summary>  
+        public async Task<GetWithSimilarResponse<T>> GetByIdWithSimilarAsync<T>(
+            string vertical,
+            string key,
+            int similarPageSize = 10
+        ) where T : class
+        {
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical is required.", nameof(vertical));
+            if (string.IsNullOrWhiteSpace(key))
+                throw new ArgumentException("Key is required.", nameof(key));
+
+            try
+            {
+                var methodName = $"/api/{vertical}/details/{key}?similarPageSize={similarPageSize}";
+                return await _dapr.InvokeMethodAsync<GetWithSimilarResponse<T>>(
+                    HttpMethod.Get,
+                    appId: SERVICE_APP_ID,
+                    methodName: methodName
+                );
+            }
+            catch (DaprException ex)
+            {
+                if (ex.InnerException is HttpRequestException httpEx && httpEx.StatusCode == HttpStatusCode.NotFound)
+                {
+                    _logger.LogWarning("Remote returned 404 for {Vertical}/{Key}", vertical, key);
+                    throw new KeyNotFoundException($"Document '{key}' not found in '{vertical}'.");
+                }
+                _logger.LogError(ex, "Dapr invocation failed in GetByIdWithSimilarAsync: vertical={Vertical}, key={Key}", vertical, key);
+                throw;
+            }
+            catch (ArgumentNullException ex)
+            {
+                _logger.LogWarning(ex, "GetByIdWithSimilarAsync called with null argument");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in GetByIdWithSimilarAsync: vertical={Vertical}, key={Key}", vertical, key);
+                throw;
+            }
+        }
+
     }
 }

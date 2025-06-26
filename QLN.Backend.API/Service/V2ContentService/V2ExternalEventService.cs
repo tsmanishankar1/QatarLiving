@@ -44,7 +44,8 @@ namespace QLN.Backend.API.Service.V2ContentService
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
                 response.EnsureSuccessStatusCode();
 
-                var rawJson = await response.Content.ReadAsStringAsync();
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
             }
             catch (Exception ex)
@@ -117,7 +118,8 @@ namespace QLN.Backend.API.Service.V2ContentService
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
                 response.EnsureSuccessStatusCode();
 
-                var rawJson = await response.Content.ReadAsStringAsync();
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
             }
             catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)

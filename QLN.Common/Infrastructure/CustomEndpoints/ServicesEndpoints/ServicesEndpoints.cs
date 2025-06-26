@@ -32,7 +32,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServicesEndpoints
             {
                 var searchReq = new CommonSearchRequest
                 {
-                    Top = 100,
                     Filters = new Dictionary<string, object>
                     {
                         { "IsFeatured", true }

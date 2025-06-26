@@ -1,0 +1,331 @@
+@using MudBlazor
+@using QLN.Common.DTO_s
+@using QLN.Web.Shared.Components.Classifieds.PromotedItemCards
+@using QLN.Web.Shared.Components.Classifieds.ItemDetailsImage
+@using QLN.Web.Shared.Components.Classifieds.ItemInfo
+@using QLN.Web.Shared.Components.Classifieds.OverviewCard
+@using QLN.Web.Shared.Components.Classifieds.DescriptionBox
+@using QLN.Web.Shared.Components.BreadCrumb
+@inherits ItemDetailsSectionBase
+
+@inject NavigationManager NavigationManager
+
+<Breadcrumb Items="breadcrumbItems" />
+    <div class="item-main-details">
+        <div class="row-container">
+            <div class="icon-label-container">
+            <h3 class="title-item-name">@Item?.Title</h3>
+            </div>
+            <div class="icon-label-container">
+
+                <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu"
+                    AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight">
+                <ActivatorContent>
+                    <div class="icon-label">
+                        <img src="/qln-images/classifieds/share.svg" alt="Share Icon" class="icon-image" />
+                        <span class="icon-text">Share</span>
+                    </div>
+                </ActivatorContent>
+                <ChildContent>
+                    @foreach (var item in ShareMenuItems)
+                    {
+                        if (item.OnClick != null)
+                        {
+                            <MudMenuItem OnClick="@item.OnClick">
+                                <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                            </MudMenuItem>
+                        }
+                        else
+                        {
+                            <MudMenuItem Href="@item.Route" Target="@(item.OpenInNewTab ? "_blank" : "_self")">
+                                <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                            </MudMenuItem>
+                        }
+                    }
+                </ChildContent>
+            </MudMenu>
+
+                <div id="saveButton" class="icon-label" @onclick="OnSaveClicked">
+                    <img src="@HeartIcon" alt="Save Icon" class="icon-image" />
+                    <span class="icon-text">@(isSaved ? "Saved" : "Save")</span>
+                </div>
+            </div>
+        </div>
+
+    <MudGrid Class="py-4" GutterSize="16px" >
+        <!-- Main Content -->
+        <MudItem xs="12" md="7">
+                <ItemDetailsImage Item="Item" />
+                <div class="info-mobile-container">
+                <ItemInfo Item="Item" />
+                </div>
+                <OverviewCard Item="Item" />
+                <DescriptionBox Item="Item" />
+            </MudItem>
+
+            <MudItem xs="12" md="5">
+        <div class="info-container">
+            <div class="info-ad-container">
+                <div class="info-desktop-container">
+                <ItemInfo Item="Item" />
+                </div>
+                <div class="item-main-image-container">
+                <img src="/qln-images/classifieds/detail_ad.svg" alt="Product Image" class="main-image" />
+                </div>
+            </div>
+            <div class="info-side-container">
+                <img src="/qln-images/classifieds/side_banner.svg" alt="Side Banner" />
+            </div>
+        </div>
+    </MudItem>
+    </MudGrid>
+    @if (Simler?.Count > 0)
+{
+    <div class="similar-items-section">
+        <div class="similar-items-header">
+            <h4 class="similar-title">Similar Items</h4>
+            <a href="/qln/classifieds/items" class="view-all-link">View All</a>
+        </div>
+
+        <div class="similar-items-grid">
+            @foreach (var item in Simler)
+            {
+                <div class="similar-card-wrapper">
+                    <PromotedItemGridCard Item="item" OnClickCard="OnClickCardItem" />
+                </div>
+            }
+        </div>
+
+    </div>
+}
+
+    
+
+</div>
+
+<style>
+    .item-main-details {
+        width: 100%;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .row-container {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+        width: 100%;
+        max-width: 980px;
+    }
+
+    .title-item-name {
+        color: var(--color-text-heading);
+        font-size: 25px;
+        font-weight: 500;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+    }
+
+    .icon-label-container {
+        display: flex;
+        gap: 2rem;
+        align-items: center;
+    }
+
+    .icon-label {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    .icon-image {
+        width: 18px;
+        height: 18px;
+    }
+
+    .icon-text {
+        margin-left: 0.5rem;
+        color: var(--color-accent);
+        font-family: 'Public Sans', sans-serif;
+        font-size: 13px !important;
+        font-weight: 500;
+    }
+    .info-mobile-container {
+        display: none;
+    }
+    .info-container {
+        display: flex;
+        align-items: flex-start;
+        flex-direction: row;
+        width: 100%;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .info-ad-container {
+        display: flex;
+        justify-content: flex-start;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 1rem;
+        width: 100%;
+        max-width: 300px;
+    }
+    .item-main-image-container {
+        width: 100%;
+        
+    }
+    .item-main-image {
+        width: 100%;
+        height: 350px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+
+    .info-side-container {
+        display: flex;
+        flex-direction: column;
+        width: 120px;
+        height: 480px;
+    }
+
+    .info-side-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        border-radius: 8px;
+    }
+      .custom-share-menu .mud-popover {
+        border-radius: 40px !important;
+        overflow: hidden;
+    }
+        /* Target all popover menus that are open and belong to the share menu */
+    .mud-popover:has(.share-icon) .mud-list {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto;
+        gap: 4px;
+    }
+
+    .share-popover .mud-list {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto;
+        gap: 4px;
+    }
+
+
+    .mud-menu-item {
+        padding: 0px 6px 0px 0px !important;
+    }
+
+    .mud-menu-list {
+        padding-left: 6px;
+    }
+
+    .mud-menu-item .mud-menu-item-text {
+        margin: 4px 0px 0px 0px !important;
+    }
+    .similar-items-section {
+    width: 100%;
+    padding: 1rem 0;
+}
+
+.similar-items-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.similar-title {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--color-text-heading);
+}
+
+.view-all-link {
+    font-size: 14px;
+    color: var(--color-accent);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.view-all-link:hover {
+    text-decoration: underline;
+}
+
+    .similar-items-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 1rem;
+    }
+
+    .similar-card-wrapper {
+        flex: 0 1 calc(25% - 16px);
+        box-sizing: border-box;
+    }
+
+    @@media (max-width: 1024px) {
+        .similar-card-wrapper {
+            flex: 0 1 calc(33.333% - 16px);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .similar-card-wrapper {
+            flex: 0 1 calc(50% - 16px);
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .similar-card-wrapper {
+            flex: 0 1 100%;
+        }
+    }
+
+
+    /* Responsive Rules */
+    @@media (max-width: 770px) {
+        .info-mobile-container {
+            padding: 5px 0;
+            display: block;
+            width: 100%;
+        }
+        .info-desktop-container {
+            display: none;
+        }
+        .info-side-container {
+            display: none;
+        }
+        .info-ad-container {
+            width: 100%;
+            max-width: 100%;
+        }
+        .item-main-image-container {
+            width: 100%;
+        }
+        .item-main-image {
+            height: 250px;
+        }
+        .info-container {
+            flex-direction: column;
+            align-items: center;
+    }
+        .row-container {
+           display: none;
+        }
+
+        .title-item-name {
+            font-size: 20px;
+            -webkit-line-clamp: 2;
+        }
+    }
+
+</style>
