@@ -134,6 +134,19 @@ namespace QLN.Web.Shared.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage?> GetCategoryFiltersAsync(string vertical, Guid mainCategoryId)
+        {
+            try
+            {
+                var endpoint = $"/api/classified/category/{vertical}/{mainCategoryId}/filters";
+                return await _httpClient.GetAsync(endpoint);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"GetCategoryFiltersAsync Error: {ex}");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
 
     }
 }

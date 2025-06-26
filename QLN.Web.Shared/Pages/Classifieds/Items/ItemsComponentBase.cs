@@ -8,9 +8,11 @@ using System.Text.Json;
 public class ItemsComponentBase : ComponentBase
 {
     [Inject] protected SearchStateService SearchState { get; set; }
-    
+
     [Inject] private IClassifiedsServices _classifiedsService { get; set; } = default!;
     protected List<CategoryTreeDto> CategoryTrees { get; set; } = new();
+    protected List<CategoryField> CategoryFilters { get; set; } = new();
+
     [Inject] private ILogger<ItemsComponentBase> Logger { get; set; } = default!;
 
     protected bool IsLoadingSearch { get; set; } = true;
@@ -23,7 +25,7 @@ public class ItemsComponentBase : ComponentBase
     {
         SearchState.ItemViewMode = newMode;
     }
-     protected void ClearSearch()
+    protected void ClearSearch()
     {
         // Example reset logic:
         SearchResults.Clear();
@@ -31,15 +33,44 @@ public class ItemsComponentBase : ComponentBase
 
     }
     protected async Task OnSearchTriggered(string searchText)
-        {
-            await LoadSearchResultsAsync(searchText);
-        }
+    {
+        await LoadSearchResultsAsync(searchText);
+    }
 
     protected override async Task OnInitializedAsync()
     {
         await LoadCategoryTreesAsync();
-  
-        await LoadSearchResultsAsync();    
+
+        await LoadSearchResultsAsync();
+    }
+    protected async Task OnCategoryChanged(string categoryName)
+    {
+        // Find category by name (search recursively)
+        var selectedCategory = FindCategoryByName(CategoryTrees, categoryName);
+
+        if (selectedCategory is not null)
+        {
+
+            await LoadCategoryFiltersAsync("items", selectedCategory.Id);
+        }
+        }
+    private CategoryTreeDto? FindCategoryByName(IEnumerable<CategoryTreeDto> categories, string name)
+    {
+        foreach (var category in categories)
+        {
+            if (category.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+            {
+                return category;
+            }
+
+            var foundInChildren = FindCategoryByName(category.Children, name);
+            if (foundInChildren != null)
+            {
+                return foundInChildren;
+            }
+        }
+
+        return null;
     }
 
     private async Task LoadCategoryTreesAsync()
@@ -57,7 +88,7 @@ public class ItemsComponentBase : ComponentBase
             {
                 var result = await response.Content.ReadFromJsonAsync<List<CategoryTreeDto>>();
                 CategoryTrees = result ?? new();
-                 SearchState.ItemCategoryTrees = CategoryTrees;
+                SearchState.ItemCategoryTrees = CategoryTrees;
             }
             else
             {
@@ -127,5 +158,32 @@ public class ItemsComponentBase : ComponentBase
         {
             IsLoadingSearch = false;
         }
+
     }
+    private async Task LoadCategoryFiltersAsync(string vertical, Guid mainCategoryId)
+{
+    try
+    {
+        var response = await _classifiedsService.GetCategoryFiltersAsync(vertical, mainCategoryId);
+
+            if (response is { IsSuccessStatusCode: true })
+            {
+                var filters = await response.Content.ReadFromJsonAsync<List<CategoryField>>();
+                CategoryFilters = filters ?? new();
+                 SearchState.ItemCategoryFilters = CategoryFilters;
+        }
+            else
+            {
+                ErrorMessage = $"Failed to load category filters. Status: {response?.StatusCode}";
+                CategoryFilters = new();
+            }
+    }
+    catch (Exception ex)
+    {
+        ErrorMessage = "Error loading category filters.";
+        Logger.LogError(ex, ErrorMessage);
+        CategoryFilters = new();
+    }
+}
+
 }

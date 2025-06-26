@@ -161,10 +161,10 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
                 var selectedCategory = CategoryTrees.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedCategoryId);
                 var selectedSubcategory = selectedCategory?.Children?.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedSubcategoryId);
                 var selectedSubSubcategory = selectedSubcategory?.Children?.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedSubSubcategoryId);
-
+                var vertical = char.ToUpper(adPostModel.SelectedVertical[0]) + adPostModel.SelectedVertical.Substring(1).ToLower();
                 var dto = new ClassifiedPostDto
                 {
-                    SubVertical = adPostModel.SelectedVertical,
+                    SubVertical = vertical,
                     Title = adPostModel.Title,
                     Description = adPostModel.ItemDescription,
                     CategoryId = Guid.TryParse(
