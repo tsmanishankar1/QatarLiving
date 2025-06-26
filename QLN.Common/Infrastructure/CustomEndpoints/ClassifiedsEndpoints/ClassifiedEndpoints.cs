@@ -889,6 +889,30 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     dto.UserId = userId;
                     var response = await service.CreateClassifiedItemsAd(dto, token);
+                    var imageUrls = new List<string>
+                    {
+                        "https://www.qatarliving.com/_next/image?url=%2Fimages%2Ftwo-iphone.jpeg&w=828&q=75",
+                        "https://www.qatarliving.com/_next/image?url=https%3A%2F%2Fwww.qatarliving.com%2Fq%2Fs3%2Ffiles%2Fstyles%2Fvehicle_listing_v3%2Fs3%2Fvehicles%2F2025%2F06%2F14%2F10081967%2FWhatsApp%20Image%202025-06-14%20at%2011.53.41_84673a0e.jpg&w=384&q=75",
+                        "https://th.bing.com/th/id/OIP.UCezLikSjxX91hGZNpCZQgHaHa?rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3",
+                        "https://i.pinimg.com/originals/82/32/27/823227eb85d3f43ede612e28e53a9d7c.jpg",
+                        "https://www.techspot.com/images2/news/bigimage/2023/11/2023-11-14-image-9.jpg",
+                        "https://th.bing.com/th/id/OIP.HgPa0rOyQFm1dCuGRzjc0AHaFj?rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3"
+                    };
+
+                    // Randomly select 1 or more images from the list
+                    var random = new Random();
+                    var selectedImageUrl = imageUrls[random.Next(imageUrls.Count)];
+
+                    // Create ImageInfo object and add to the list of images
+                    var images = new List<ImageInfo>
+                    {
+                        new ImageInfo
+                        {
+                            AdImageFileNames = "random_image.jpg", 
+                            Url = selectedImageUrl,
+                            Order = 0
+                        }
+                    };
                     var classifiedsIndex = new ClassifiedsIndex
                     {
                         SubVertical = dto.SubVertical,
@@ -906,7 +930,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         UserId = dto.UserId.ToString(),
                         CreatedDate = DateTime.UtcNow,
                         ModifiedDate = DateTime.UtcNow,
-                        Images = new List<ImageInfo>(),
+                        Images = images,
                         Make = dto.MakeType,
                         Model = dto.Model,
                         Brand = dto.Brand,
@@ -914,7 +938,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Ram = dto.Ram,
                         SizeType = dto.Size,
                         Size = dto.SizeValue,
-                        Status = "Active",
+                        Status = "Published",
                         StreetNumber = dto.StreetNumber,
                         Zone = dto.Zone,
                         Storage = dto.Capacity,
