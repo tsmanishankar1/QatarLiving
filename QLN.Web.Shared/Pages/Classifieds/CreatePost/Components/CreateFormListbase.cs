@@ -45,7 +45,6 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost.Components
         {
             adPostModel.SelectedVertical = newValue;
             await CategoryChanged.InvokeAsync(newValue);
-            await JS.InvokeVoidAsyncWithErrorHandling("initMap", 25.32, 51.54);
             StateHasChanged();
         }
 
