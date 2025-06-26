@@ -888,7 +888,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     // Fetch the 'uid' from the deserialized user data
                     var uid = userData.GetProperty("uid").GetString();
 
-                    if (uid != null)
+                    if (uid == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -997,7 +997,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    if (dto.UserId != null)
+                    if (dto.UserId == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -1078,7 +1078,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     // Fetch the 'uid' from the deserialized user data
                     var uid = userData.GetProperty("uid").GetString();
 
-                    if (uid != null)
+                    if (uid == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -1187,7 +1187,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    if (dto.UserId != null)
+                    if (dto.UserId == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -1277,7 +1277,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     // Fetch the 'uid' from the deserialized user data
                     var uid = userData.GetProperty("uid").GetString();
 
-                    if (uid != null)
+                    if (uid == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -1370,7 +1370,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    if (dto.UserId != null)
+                    if (dto.UserId == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -1442,7 +1442,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     // Fetch the 'uid' from the deserialized user data
                     var uid = userData.GetProperty("uid").GetString();
 
-                    if (uid != null)
+                    if (uid == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -1540,7 +1540,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    if (dto.UserId != null)
+                    if (dto.UserId == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -2079,7 +2079,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 // Fetch the 'uid' from the deserialized user data
                 var uid = userData.GetProperty("uid").GetString();
 
-                if (uid != null)
+                if (uid == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -2142,7 +2142,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                if (userId != null)
+                if (userId == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -2213,7 +2213,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 // Fetch the 'uid' from the deserialized user data
                 var uid = userData.GetProperty("uid").GetString();
 
-                if (uid != null)
+                if (uid == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -2275,7 +2275,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 [FromQuery] string? search,
                 CancellationToken token) =>
             {
-                if (userId != null)
+                if (userId == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -2348,7 +2348,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 // Fetch the 'uid' from the deserialized user data
                 var uid = userData.GetProperty("uid").GetString();
 
-                if (uid != null)
+                if (uid == null)
                 return TypedResults.BadRequest(new ProblemDetails
                 {
                     Title = "Validation Error",
@@ -2407,7 +2407,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 CancellationToken token) =>
             {
                 
-                if (userId != null)
+                if (userId == null)
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -2474,7 +2474,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 // Fetch the 'uid' from the deserialized user data
                 var uid = userData.GetProperty("uid").GetString();
 
-                if (uid != null)
+                if (uid == null)
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -2532,7 +2532,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {                
-                if (userId != null)
+                if (userId == null)
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -2600,7 +2600,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 // Fetch the 'uid' from the deserialized user data
                 var uid = userData.GetProperty("uid").GetString();
 
-                if (uid != null)
+                if (uid == null)
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -2659,7 +2659,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                if (userId != null)
+                if (userId == null)
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -2726,7 +2726,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 // Fetch the 'uid' from the deserialized user data
                 var uid = userData.GetProperty("uid").GetString();
 
-                if (uid != null)
+                if (uid == null)
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -2783,7 +2783,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                if (userId != null)
+                if (userId == null)
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -2851,7 +2851,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 // Fetch the 'uid' from the deserialized user data
                 var uid = userData.GetProperty("uid").GetString();
 
-                if (uid != null)
+                if (uid == null)
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -2909,7 +2909,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                if (userId != null)
+                if (userId == null)
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -2976,7 +2976,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 // Fetch the 'uid' from the deserialized user data
                 var uid = userData.GetProperty("uid").GetString();
 
-                if (uid != null)
+                if (uid == null)
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -3035,7 +3035,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                if (userId != null)
+                if (userId == null)
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",

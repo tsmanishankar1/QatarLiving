@@ -308,7 +308,7 @@ namespace QLN.Classified.MS.Service
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
-            if (dto.UserId != null) throw new ArgumentException("UserId is required.");
+            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
 
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
@@ -418,7 +418,7 @@ namespace QLN.Classified.MS.Service
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
-            if (dto.UserId != null) throw new ArgumentException("UserId is required.");
+            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
 
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
@@ -572,7 +572,7 @@ namespace QLN.Classified.MS.Service
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
-            if (dto.UserId != null) throw new ArgumentException("UserId is required.");
+            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
 
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
@@ -710,7 +710,7 @@ namespace QLN.Classified.MS.Service
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
-            if (dto.UserId != null) throw new ArgumentException("UserId is required.");
+            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
 
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 

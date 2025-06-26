@@ -136,7 +136,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
         {
             ArgumentNullException.ThrowIfNull(dto);
 
-            if (dto.UserId != null) throw new ArgumentException("UserId is required.");
+            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
             if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
                 throw new ArgumentException("At least one ad image is required.");
@@ -223,7 +223,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
         public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
-            if (dto.UserId != null) throw new ArgumentException("UserId is required.");
+            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
             if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
                 throw new ArgumentException("At least one ad image is required.");
@@ -308,7 +308,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
         public async Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(ClassifiedCollectibles dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
-            if (dto.UserId != null) throw new ArgumentException("UserId is required.");
+            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
             if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
                 throw new ArgumentException("At least one ad image is required.");
@@ -393,7 +393,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
         public async Task<AdCreatedResponseDto> CreateClassifiedDealsAd(ClassifiedDeals dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
-            if (dto.UserId != null) throw new ArgumentException("UserId is required.");
+            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
             if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
                 throw new ArgumentException("At least one ad image is required.");
@@ -663,7 +663,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<PaginatedAdResponseDto> GetUserPublishedItemsAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
-            if (userId != null)
+            if (userId == null)
                 throw new ArgumentException("User ID must not be empty.");
 
             try
@@ -700,7 +700,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<PaginatedAdResponseDto> GetUserUnPublishedItemsAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
-            if (userId != null)
+            if (userId == null)
                 throw new ArgumentException("User ID must not be empty.");
             try
             {
@@ -734,7 +734,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<PaginatedPrelovedAdResponseDto> GetUserPublishedPrelovedAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
-            if (userId != null)
+            if (userId == null)
                 throw new ArgumentException("User ID must not be empty.");
 
             try
@@ -772,7 +772,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<PaginatedPrelovedAdResponseDto> GetUserUnPublishedPrelovedAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
-            if (userId != null)
+            if (userId == null)
                 throw new ArgumentException("User ID must not be empty.");
 
             try
@@ -809,7 +809,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<PaginatedCollectiblesAdResponseDto> GetUserPublishedCollectiblesAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
-            if (userId != null)
+            if (userId == null)
                 throw new ArgumentException("User ID must not be empty.", nameof(userId));
 
             try
@@ -841,7 +841,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<PaginatedCollectiblesAdResponseDto> GetUserUnPublishedCollectiblesAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
-            if (userId != null)
+            if (userId == null)
                 throw new ArgumentException("User ID must not be empty.", nameof(userId));
 
             try
@@ -873,7 +873,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<PaginatedDealsAdResponseDto> GetUserPublishedDealsAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
-            if (userId != null)
+            if (userId == null)
                 throw new ArgumentException("User ID must not be empty.", nameof(userId));
 
             try
@@ -906,7 +906,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<PaginatedDealsAdResponseDto> GetUserUnPublishedDealsAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
-            if (userId != null)
+            if (userId == null)
                 throw new ArgumentException("User ID must not be empty.", nameof(userId));
 
             try
