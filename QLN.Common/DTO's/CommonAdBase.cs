@@ -54,7 +54,7 @@ namespace QLN.Common.DTO_s
         public bool? TearmsAndCondition { get; set; }        
         public DateTime RefreshExpiry { get; set; } = DateTime.UtcNow.AddDays(30);
         public string RefreshCount { get; set; } = "80";
-        public Guid UserId { get; set; }
+        public string UserId { get; set; }
         [DefaultValue(false)]
         public bool? IsFeatured { get; set; } = false;
         [DefaultValue(false)]
