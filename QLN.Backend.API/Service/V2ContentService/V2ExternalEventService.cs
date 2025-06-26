@@ -22,7 +22,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             _logger = logger;
             _blobStorage = blobStorage;
         }
-        public async Task<string> CreateEvent(Guid userId, V2EventForm dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateEvent(string userId, V2EventForm dto, CancellationToken cancellationToken = default)
         {
             string? FileName = null;
             try
@@ -95,7 +95,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-        public async Task<string> UpdateEvent(Guid userId, V2UpdateRequest dto, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateEvent(string userId, V2UpdateRequest dto, CancellationToken cancellationToken = default)
         {
             string? FileName = null;
             try

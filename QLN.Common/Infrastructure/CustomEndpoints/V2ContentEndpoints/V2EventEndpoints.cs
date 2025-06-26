@@ -8,6 +8,7 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.Utilities;
+using System.Text.Json;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
 {
@@ -29,11 +30,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             {
                 try
                 {
-                    Guid? userId = httpContext.User.GetId();
-                    if (!userId.HasValue)
-                        return TypedResults.Forbid();
-                    dto.CreatedBy = userId.Value;
-                    var result = await service.CreateEvent(userId.Value, dto, cancellationToken);
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+                    dto.CreatedBy = uid;
+                    //Guid? userId = httpContext.User.GetId();
+                    //if (!userId.HasValue)
+                    //    return TypedResults.Forbid();
+                    //dto.CreatedBy = userId.Value;
+                    var result = await service.CreateEvent(uid, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
@@ -73,7 +78,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             {
                 try
                 {
-                    if (dto.CreatedBy == Guid.Empty)
+                    if (dto.CreatedBy == string.Empty)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -197,11 +202,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             {
                 try
                 {
-                    Guid? userId = httpContext.User.GetId();
-                    if (!userId.HasValue)
-                        return TypedResults.Forbid();
-                    dto.UpdatedBy = userId.Value;
-                    var result = await service.UpdateEvent(userId.Value, dto, cancellationToken);
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+                    dto.UpdatedBy = uid;
+                    //Guid? userId = httpContext.User.GetId();
+                    //if (!userId.HasValue)
+                    //    return TypedResults.Forbid();
+                    //dto.UpdatedBy = userId.Value;
+                    var result = await service.UpdateEvent(uid, dto, cancellationToken);
                     if (result == null)
                         throw new KeyNotFoundException($"Event with ID not found.");
                     return TypedResults.Ok(result);
@@ -251,7 +260,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             {
                 try
                 {
-                    if (dto.UpdatedBy == Guid.Empty)
+                    if (dto.UpdatedBy == string.Empty)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {

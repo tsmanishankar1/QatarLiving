@@ -17,7 +17,7 @@ namespace QLN.Content.MS.Service.EventInternalService
         {
             _dapr = dapr;
         }
-        public async Task<string> CreateEvent(Guid userId, V2EventForm dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateEvent(string userId, V2EventForm dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -124,7 +124,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                 throw new Exception($"Error retrieving event with ID: {id}", ex);
             }
         }
-        public async Task<string> UpdateEvent(Guid userId, V2UpdateRequest dto, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateEvent(string userId, V2UpdateRequest dto, CancellationToken cancellationToken = default)
         {
             try
             {
