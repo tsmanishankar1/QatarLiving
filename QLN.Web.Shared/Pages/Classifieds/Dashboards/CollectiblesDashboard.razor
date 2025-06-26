@@ -627,14 +627,20 @@
                                         </MudButton>
                                     }
                                     <MudMenu OffsetY="true"
-                                             AnchorOrigin="Origin.TopRight"
-                                             TransformOrigin="Origin.TopRight">
+                                             AnchorOrigin="Origin.BottomRight"
+                                             TransformOrigin="Origin.BottomRight">
                                         <ActivatorContent>
                                             <MudIconButton Icon="@Icons.Material.Filled.MoreVert" />
                                         </ActivatorContent>
                                         <ChildContent>
-                                            <MudMenuItem @onclick="() => OnPublishAd(ad.Id)" Class="menu-item-style">Publish Ad</MudMenuItem>
-                                            <MudMenuItem @onclick="() => OnEditAd(ad.Id)" Class="menu-item-style">Edit Ad</MudMenuItem>
+                                            <MudMenuItem @onclick="() => OnPublishAd(ad.Id)" Class="menu-item-style">
+                                                <img src="/qln-images/subscription/unpublish.svg" class="menu-icon" />
+                                                Publish Ad
+                                            </MudMenuItem>
+                                            <MudMenuItem @onclick="() => OnEditAd(ad.Id)" Class="menu-item-style">
+                                                <img src="/qln-images/subscription/unpublish.svg" class="menu-icon" />
+                                                Edit Ad
+                                            </MudMenuItem>
                                         </ChildContent>
                                     </MudMenu>
                                 </div>
@@ -1023,6 +1029,42 @@
     .post-analytics-text-stat-value {
         color: #00426D;
         margin-left: 4px;
+    }
+
+        .custom-menu-width .mud-popover {
+        min-width: 200px;
+    }
+
+    .menu-item-style {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        width: 150px;
+        padding-left: 20px;
+    }
+
+    .menu-icon {
+        width: 18px;
+        height: 18px;
+    }
+
+    .custom-menu-width .mud-popover {
+        min-width: 200px;
+    }
+
+    .menu-item-style {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        width: 150px;
+        padding-left: 20px;
+    }
+
+    .menu-icon {
+        width: 18px;
+        height: 18px;
     }
 
 

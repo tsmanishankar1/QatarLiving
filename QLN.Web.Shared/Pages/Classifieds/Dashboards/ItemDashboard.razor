@@ -17,7 +17,7 @@
                     Items Dashboard
                 </MudText>
             </div>
-      
+
         </div>
 
         <!-- Your dashboard content would go here -->
@@ -541,7 +541,7 @@
                                             @GetStatusLabel(ad.Status)
                                         </MudChip>
                                         <div Class="mt-1 px-2 py-1" Style="background-color: #EDFAFF; border-radius: 4px; display: inline-block;">
-                                                            <img src="/qln-images/subscription/expire.svg" alt="Expire Icon" style="width: 14px; height: 14px;" />
+                                            <img src="/qln-images/subscription/expire.svg" alt="Expire Icon" style="width: 14px; height: 14px;" />
 
                                             <MudText Typo="Typo.caption"
                                                      Style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 11px; color: #0071AF;">
@@ -617,14 +617,20 @@
                                         </MudButton>
                                     }
                                     <MudMenu OffsetY="true"
-                                             AnchorOrigin="Origin.TopRight"
-                                             TransformOrigin="Origin.TopRight">
+                                             AnchorOrigin="Origin.BottomRight"
+                                             TransformOrigin="Origin.BottomRight">
                                         <ActivatorContent>
                                             <MudIconButton Icon="@Icons.Material.Filled.MoreVert" />
                                         </ActivatorContent>
                                         <ChildContent>
-                                            <MudMenuItem @onclick="() => OnPublishAd(ad.Id)" Class="menu-item-style">Publish Ad</MudMenuItem>
-                                            <MudMenuItem @onclick="() => OnEditAd(ad.Id)" Class="menu-item-style">Edit Ad</MudMenuItem>
+                                            <MudMenuItem @onclick="() => OnPublishAd(ad.Id)" Class="menu-item-style">
+                                                <img src="/qln-images/subscription/unpublish.svg" class="menu-icon" />
+                                                Publish Ad
+                                            </MudMenuItem>
+                                            <MudMenuItem @onclick="() => OnEditAd(ad.Id)" Class="menu-item-style">
+                                                <img src="/qln-images/subscription/unpublish.svg" class="menu-icon" />
+                                                Edit Ad
+                                            </MudMenuItem>
                                         </ChildContent>
                                     </MudMenu>
                                 </div>
