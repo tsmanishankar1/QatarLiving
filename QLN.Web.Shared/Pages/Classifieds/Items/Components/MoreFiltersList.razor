@@ -1,5 +1,5 @@
 @using QLN.Web.Shared.Components.MoreFilters
-
+@using QLN.Common.DTO_s;
 <MoreFilters Selection="@modelSelection" OnApply="ApplyFilters" OnReset="ResetFilters">
     <div class="filter-section">
         <label class="section-label">Model</label>
@@ -18,7 +18,8 @@
 
 @code {
     private Dictionary<string, bool> modelSelection = new();
-
+ protected List<CategoryField> CategoryFilters => SearchState.ItemCategoryFilters;
+    [Inject] protected SearchStateService SearchState { get; set; }
     private List<string> PopularModels = new() { "iPhone 16 Pro Max", "iPhone 15 Pro Max" };
 
     protected override void OnInitialized()

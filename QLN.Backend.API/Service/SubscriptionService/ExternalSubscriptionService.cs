@@ -1,6 +1,7 @@
 ﻿using Dapr.Actors;
 using Dapr.Actors.Client;
 using Microsoft.AspNetCore.Identity;
+using QLN.Common.DTO_s;
 using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.IService.ISubscriptionService;
 using QLN.Common.Infrastructure.Model;
@@ -11,7 +12,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 {
     private readonly ILogger<ExternalSubscriptionService> _logger;
     private static readonly ConcurrentDictionary<Guid, byte> _paymentTransactionIds = new();
-    private static readonly ConcurrentDictionary<Guid, byte> _subscriptionIds = new ConcurrentDictionary<Guid, byte>();
+    private static readonly ConcurrentDictionary<Guid, byte> _subscriptionIds = new();
     private static readonly ConcurrentDictionary<Guid, byte> _subscriptionId = new();
     private readonly RoleManager<IdentityRole<Guid>> _roleManager;
     private readonly UserManager<ApplicationUser> _userManager;
@@ -35,9 +36,9 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             "SubscriptionActor");
     }
     public async Task<SubscriptionGroupResponseDto> GetSubscriptionsByVerticalAndCategoryAsync(
-           int verticalTypeId,
-           int categoryId,
-           CancellationToken cancellationToken = default)
+     int verticalTypeId,
+     int categoryId,
+     CancellationToken cancellationToken = default)
     {
         var resultList = new List<SubscriptionResponseDto>();
         var ids = _subscriptionIds.Keys.ToList();
@@ -55,6 +56,8 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 data.CategoryId == categoryEnum &&
                 data.StatusId != Status.Expired)
             {
+                var durationEnum = (DurationType)data.Duration;
+
                 resultList.Add(new SubscriptionResponseDto
                 {
                     Id = data.Id,
@@ -62,7 +65,8 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                     Price = data.price,
                     Currency = data.currency,
                     Description = data.description,
-                    Duration = data.duration
+                    DurationId = (int)durationEnum,
+                    DurationName = durationEnum.ToString()
                 });
             }
         }
@@ -79,7 +83,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
     public async Task CreateSubscriptionAsync(SubscriptionRequestDto request, CancellationToken cancellationToken = default)
     {
-        if (request == null) throw new ArgumentNullException(nameof(request));
+        ArgumentNullException.ThrowIfNull(request);
 
         var id = Guid.NewGuid();
 
@@ -87,7 +91,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         {
             Id = id,
             subscriptionName = request.SubscriptionName,
-            duration = request.Duration,
+            Duration = request.DurationId,
             price = request.Price,
             description = request.Description,
             currency = request.Currency,
@@ -96,7 +100,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             refreshbudget = request.refreshbudget,
             CategoryId = request.CategoryId,
             VerticalTypeId = request.VerticalTypeId,
-            StatusId =request.StatusId,
+            StatusId = request.StatusId,
 
             lastUpdated = DateTime.UtcNow
         };
@@ -149,11 +153,15 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 continue;
             }
 
+
+            var durationEnum = (DurationType)result.Duration;
+
             subscriptions.Add(new SubscriptionResponseDto
             {
                 Id = result.Id,
                 SubscriptionName = result.subscriptionName,
-                Duration = result.duration,
+                DurationId = (int)durationEnum,
+                DurationName = durationEnum.ToString(),
                 Price = result.price,
                 Description = result.description,
                 Currency = result.currency
@@ -163,16 +171,16 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         return subscriptions;
     }
 
+
     public async Task<bool> UpdateSubscriptionAsync(Guid subscriptionId, SubscriptionRequestDto request, CancellationToken cancellationToken)
     {
-        if (request == null)
-            throw new ArgumentNullException(nameof(request));
+        ArgumentNullException.ThrowIfNull(request);
 
         var dto = new SubscriptionDto
         {
             Id = subscriptionId,
             subscriptionName = request.SubscriptionName,
-            duration = request.Duration,
+            Duration = request.DurationId,
             price = request.Price,
             description = request.Description,
             currency = request.Currency,
@@ -210,7 +218,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 return false;
             }
 
-            // Mark as expired
+
             existingSubscription.StatusId = Status.Expired;
             existingSubscription.lastUpdated = DateTime.UtcNow;
             existingSubscription.subscriptionName = $"Expired-{existingSubscription.subscriptionName ?? id.ToString()}";
@@ -233,7 +241,22 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         }
     }
 
+    // TODO: Test this replacement instead of the current that has the foreach
+    //private async Task<SubscriptionDto?> GetSubscriptionByIdAsync(Guid subscriptionId, CancellationToken cancellationToken)
+    //{
+    //    if (subscriptionId == Guid.Empty) return null;
 
+    //    var actor = GetActorProxy(subscriptionId);
+
+    //    var dto = await actor.GetDataAsync(cancellationToken);
+
+    //    // Return the DTO only if it's not expired
+    //    if (dto != null && dto.StatusId != Status.Expired)
+    //    {
+    //        return dto;
+    //    }
+    //    return null;
+    //}
 
     private async Task<SubscriptionDto?> GetSubscriptionByIdAsync(Guid subscriptionId, CancellationToken cancellationToken)
     {
@@ -254,37 +277,44 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
     }
 
     public async Task<Guid> CreatePaymentAsync(
-       PaymentTransactionRequestDto request,
-       Guid userId,
-       CancellationToken cancellationToken = default)
+     PaymentTransactionRequestDto request,
+     Guid userId,
+     CancellationToken cancellationToken = default)
     {
-        if (request == null) throw new ArgumentNullException(nameof(request));
+        ArgumentNullException.ThrowIfNull(request);
 
-        // 🔍 Check for existing active subscription
+        var id = Guid.NewGuid();
+        var startDate = DateTime.UtcNow;
+        DateTime? existingEndDate = null;
         foreach (var existingId in _paymentTransactionIds.Keys)
         {
             var existingActor = GetPaymentTransactionActorProxy(existingId);
             var existingPayment = await existingActor.GetDataAsync(cancellationToken);
 
-            if (existingPayment != null &&
-                existingPayment.SubscriptionId == request.SubscriptionId &&
-                existingPayment.UserId == userId &&
-                existingPayment.EndDate > DateTime.UtcNow)
+            if (existingPayment != null && existingPayment.UserId == userId)
             {
-                throw new InvalidOperationException("You already have an active subscription for this package.");
+                if (existingEndDate == null || existingPayment.EndDate > existingEndDate)
+                {
+                    existingEndDate = existingPayment.EndDate;
+                }
             }
         }
 
-        var id = Guid.NewGuid();
-        var startDate = DateTime.UtcNow;
+        if (existingEndDate.HasValue)
+        {
+            startDate = existingEndDate.Value;
+            _logger.LogInformation("Found existing records for userId {UserId}. New subscription will start on {StartDate}",
+                userId, startDate);
+        }
 
         var subscriptionActor = GetActorProxy(request.SubscriptionId);
-        var subscriptionData = await subscriptionActor.GetDataAsync(cancellationToken);
+        
+        var subscriptionData = await subscriptionActor.GetDataAsync(cancellationToken) ?? throw new Exception($"Subscription data not found for ID: {request.SubscriptionId}");
 
-        if (subscriptionData == null)
-            throw new Exception($"PayToPublish data not found for ID: {request.SubscriptionId}");
+        if (!Enum.TryParse<DurationType>(subscriptionData.Duration.ToString(), out var durationEnum))
+            throw new Exception($"Invalid subscription duration: {subscriptionData.Duration}");
 
-        var endDate = ParseDurationAndGetEndDate(startDate, subscriptionData.duration);
+        var endDate = GetEndDateByDurationEnum(startDate, durationEnum);
 
         var dto = new PaymentTransactionDto
         {
@@ -301,6 +331,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             CardHolderName = request.CardDetails.CardHolderName,
             TransactionDate = DateTime.UtcNow,
             LastUpdated = DateTime.UtcNow,
+            IsExpired=false
         };
 
         var actor = GetPaymentTransactionActorProxy(dto.Id);
@@ -310,8 +341,37 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             throw new Exception("Payment transaction creation failed.");
 
         _paymentTransactionIds.TryAdd(dto.Id, 0);
-        _logger.LogInformation("Payment transaction created with ID: {TransactionId}", dto.Id);
+        _logger.LogInformation("Payment transaction created with ID: {TransactionId}, Start Date: {StartDate}, End Date: {EndDate}",
+            dto.Id, dto.StartDate, dto.EndDate);
 
+       
+        if (!existingEndDate.HasValue)
+        {
+            await AssignSubscriberRoleAsync(userId);
+            _logger.LogInformation("Assigned subscriber role immediately for user {UserId} as this is their first subscription", userId);
+        }
+        else
+        {
+            _logger.LogInformation("Subscription extended for user {UserId}. Role assignment will continue from existing subscription", userId);
+        }
+
+        return dto.Id;
+    }
+
+    private DateTime GetEndDateByDurationEnum(DateTime startDate, DurationType duration)
+    {
+        return duration switch
+        {
+            DurationType.ThreeMonths => startDate.AddMonths(3),
+            DurationType.SixMonths => startDate.AddMonths(6),
+            DurationType.OneYear => startDate.AddYears(1),
+            DurationType.TwoMinutes => startDate.AddMinutes(2),
+            _ => throw new ArgumentException($"Unsupported DurationType: {duration}")
+        };
+    }
+
+    private async Task AssignSubscriberRoleAsync(Guid userId)
+    {
         const string subscriberRole = "Subscriber";
 
         var role = await _roleManager.FindByNameAsync(subscriberRole);
@@ -322,9 +382,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 throw new Exception("Failed to create Subscriber role.");
         }
 
-        var user = await _userManager.FindByIdAsync(userId.ToString());
-        if (user == null)
-            throw new Exception($"User not found with ID: {userId}");
+        var user = await _userManager.FindByIdAsync(userId.ToString()) ?? throw new Exception($"User not found with ID: {userId}");
 
         var currentRoles = await _userManager.GetRolesAsync(user);
 
@@ -338,52 +396,6 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             if (!addResult.Succeeded)
                 throw new Exception("Failed to add user to Subscriber role.");
         }
-
-        return dto.Id;
-    }
-
-
-
-
-    private DateTime ParseDurationAndGetEndDate(DateTime startDate, string duration)
-    {
-        if (string.IsNullOrWhiteSpace(duration))
-            throw new ArgumentException("Duration is empty or null", nameof(duration));
-
-        duration = duration.ToLowerInvariant();
-        var digits = new string(duration.Where(char.IsDigit).ToArray());
-
-        if (string.IsNullOrWhiteSpace(digits))
-            throw new ArgumentException($"No digits found in duration: {duration}");
-
-        int value = int.Parse(digits);
-
-        if (duration.Contains("month"))
-        {
-            return startDate.AddMonths(value);
-        }
-
-        if (duration.Contains("year"))
-        {
-            return startDate.AddYears(value);
-        }
-        if (duration.Contains("minute"))
-        {
-            return startDate.AddMinutes(value);
-        }
-
-        throw new ArgumentException($"Unsupported duration format: {duration}");
-    }
-    private IPaymentTransactionActor GetPaymentTransactionActorProxy(Guid id)
-    {
-        if (id == Guid.Empty)
-            throw new ArgumentException("Actor ID cannot be empty", nameof(id));
-
-        return ActorProxy.Create<IPaymentTransactionActor>(
-            new ActorId(id.ToString()),
-            ("PaymentTransactionActor"));
-
-       
     }
     public async Task<string[]> GetUserRolesAsync(Guid userId, CancellationToken cancellationToken = default)
     {
@@ -421,7 +433,6 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 return false;
             }
 
-            // Ensure role exists
             if (!await _roleManager.RoleExistsAsync(roleName))
             {
                 var createRoleResult = await _roleManager.CreateAsync(new IdentityRole<Guid>(roleName));
@@ -485,22 +496,26 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
     {
         try
         {
-            _logger.LogInformation("[UserManagementService] Checking if user {UserId} is in role {Role}", userId, roleName);
+            _logger.LogInformation("=== ROLE CHECK === Checking if user {UserId} is in role {Role}", userId, roleName);
 
             var user = await _userManager.FindByIdAsync(userId.ToString());
             if (user == null)
             {
-                _logger.LogWarning("[UserManagementService] User not found with ID: {UserId}", userId);
+                _logger.LogWarning("=== ROLE CHECK === User not found with ID: {UserId}", userId);
                 return false;
             }
 
             var result = await _userManager.IsInRoleAsync(user, roleName);
-            _logger.LogInformation("[UserManagementService] User {UserId} in role {Role}: {Result}", userId, roleName, result);
+            _logger.LogInformation("=== ROLE CHECK === User {UserId} in role {Role}: {Result}", userId, roleName, result);
+
+            var allRoles = await _userManager.GetRolesAsync(user);
+            _logger.LogInformation("=== ROLE CHECK === User {UserId} all current roles: [{Roles}]", userId, string.Join(", ", allRoles));
+
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[UserManagementService] Database connection error checking if user {UserId} is in role {Role}", userId, roleName);
+            _logger.LogError(ex, "=== ROLE CHECK ERROR === Error checking if user {UserId} is in role {Role}", userId, roleName);
             throw;
         }
     }
@@ -511,7 +526,6 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         {
             _logger.LogInformation("[UserManagementService] Changing role for user {UserId} to {NewRole}", userId, newRole);
 
-            // Find the user
             var user = await _userManager.FindByIdAsync(userId.ToString());
             if (user == null)
             {
@@ -519,7 +533,6 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 return false;
             }
 
-            // Ensure the target role exists
             var roleExists = await _roleManager.RoleExistsAsync(newRole);
             if (!roleExists)
             {
@@ -533,19 +546,16 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 _logger.LogInformation("[UserManagementService] Created new role: {Role}", newRole);
             }
 
-     
             var currentRoles = await _userManager.GetRolesAsync(user);
             _logger.LogInformation("[UserManagementService] User {UserId} current roles: {Roles}",
                 userId, string.Join(", ", currentRoles));
 
-  
             if (currentRoles.Contains(newRole))
             {
                 _logger.LogInformation("[UserManagementService] User {UserId} already has role {Role}", userId, newRole);
                 return true;
             }
 
-            // Remove from all current roles
             if (currentRoles.Any())
             {
                 var removeResult = await _userManager.RemoveFromRolesAsync(user, currentRoles);
@@ -559,7 +569,6 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                     userId, string.Join(", ", currentRoles));
             }
 
-            // Add to new role
             var addResult = await _userManager.AddToRoleAsync(user, newRole);
             if (addResult.Succeeded)
             {
@@ -580,49 +589,403 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         }
     }
 
-    public async Task<bool> HandleSubscriptionExpiryAsync(Guid userId, CancellationToken cancellationToken = default)
+   
+    public async Task HandleSubscriptionExpiryAsync(SubscriptionExpiryMessage message, CancellationToken cancellationToken = default)
     {
         try
         {
-            _logger.LogInformation("[UserManagementService] Handling subscription expiry for user {UserId}", userId);
+            _logger.LogInformation("=== HANDLING SUBSCRIPTION EXPIRY === Starting process for user {UserId}, subscription {SubscriptionId}, payment {PaymentId}",
+                message.UserId, message.SubscriptionId, message.PaymentTransactionId);
 
-            // Check if user is currently a subscriber - with proper error handling
-            bool isSubscriber;
-            try
+            // Validate the message
+            if (message.UserId == Guid.Empty)
             {
-                isSubscriber = await IsUserInRoleAsync(userId, "Subscriber", cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[UserManagementService] Database error while checking subscriber status for user {UserId}. Cannot proceed with expiry handling.", userId);
-                return false;
+                _logger.LogError("=== SUBSCRIPTION EXPIRY ERROR === Invalid UserId in message");
+                return;
             }
 
-            if (!isSubscriber)
+            // Check if user exists first
+            var user = await _userManager.FindByIdAsync(message.UserId.ToString());
+            if (user == null)
             {
-                _logger.LogInformation("[UserManagementService] User {UserId} is not a subscriber, no action needed", userId);
-                return true;
+                _logger.LogError("=== SUBSCRIPTION EXPIRY ERROR === User not found with ID: {UserId}", message.UserId);
+                return;
             }
 
-            // Change role from Subscriber to User
-            var success = await ChangeUserRoleAsync(userId, "User", cancellationToken);
-            if (success)
+            _logger.LogInformation("=== SUBSCRIPTION EXPIRY === Found user {UserId}, checking current roles", message.UserId);
+
+            // Get current user roles
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            _logger.LogInformation("=== SUBSCRIPTION EXPIRY === User {UserId} current roles: [{Roles}]",
+                message.UserId, string.Join(", ", currentRoles));
+
+            // Check if user is currently a subscriber
+            bool isSubscriber = currentRoles.Contains("Subscriber");
+
+            if (isSubscriber)
             {
-                _logger.LogInformation("[UserManagementService] Successfully handled subscription expiry for user {UserId}", userId);
+                _logger.LogInformation("=== SUBSCRIPTION EXPIRY === User {UserId} is a Subscriber, changing role to User", message.UserId);
+
+                // Remove from Subscriber role
+                var removeResult = await _userManager.RemoveFromRoleAsync(user, "Subscriber");
+                if (!removeResult.Succeeded)
+                {
+                    _logger.LogError("=== SUBSCRIPTION EXPIRY ERROR === Failed to remove Subscriber role from user {UserId}: {Errors}",
+                        message.UserId, string.Join(", ", removeResult.Errors.Select(e => e.Description)));
+                    return;
+                }
+
+                _logger.LogInformation("=== SUBSCRIPTION EXPIRY === Successfully removed Subscriber role from user {UserId}", message.UserId);
+
+                // Ensure User role exists
+                const string userRole = "User";
+                var role = await _roleManager.FindByNameAsync(userRole);
+                if (role == null)
+                {
+                    _logger.LogInformation("=== SUBSCRIPTION EXPIRY === Creating User role as it doesn't exist");
+                    var createRoleResult = await _roleManager.CreateAsync(new IdentityRole<Guid>(userRole));
+                    if (!createRoleResult.Succeeded)
+                    {
+                        _logger.LogError("=== SUBSCRIPTION EXPIRY ERROR === Failed to create User role: {Errors}",
+                            string.Join(", ", createRoleResult.Errors.Select(e => e.Description)));
+                        return;
+                    }
+                }
+
+                // Add to User role
+                var addResult = await _userManager.AddToRoleAsync(user, userRole);
+                if (!addResult.Succeeded)
+                {
+                    _logger.LogError("=== SUBSCRIPTION EXPIRY ERROR === Failed to add User role to user {UserId}: {Errors}",
+                        message.UserId, string.Join(", ", addResult.Errors.Select(e => e.Description)));
+                    return;
+                }
+
+                _logger.LogInformation("=== SUBSCRIPTION EXPIRY === Successfully added User role to user {UserId}", message.UserId);
+
+                // Verify the role change
+                var updatedRoles = await _userManager.GetRolesAsync(user);
+                _logger.LogInformation("=== SUBSCRIPTION EXPIRY === User {UserId} updated roles: [{Roles}]",
+                    message.UserId, string.Join(", ", updatedRoles));
+
+                // Remove from payment tracking if exists
+                if (_paymentTransactionIds.ContainsKey(message.PaymentTransactionId))
+                {
+                    _paymentTransactionIds.TryRemove(message.PaymentTransactionId, out _);
+                    _logger.LogInformation("=== SUBSCRIPTION EXPIRY === Removed expired payment transaction {PaymentTransactionId} from tracking",
+                        message.PaymentTransactionId);
+                }
+
+                _logger.LogInformation("=== SUBSCRIPTION EXPIRY COMPLETED === Successfully processed expiry for user {UserId}", message.UserId);
             }
             else
             {
-                _logger.LogError("[UserManagementService] Failed to handle subscription expiry for user {UserId}", userId);
+                _logger.LogInformation("=== SUBSCRIPTION EXPIRY === User {UserId} is not currently a subscriber (roles: [{Roles}]), no role change needed",
+                    message.UserId, string.Join(", ", currentRoles));
             }
-
-            return success;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[UserManagementService] Error handling subscription expiry for user {UserId}", userId);
-            return false;
+            _logger.LogError(ex, "=== SUBSCRIPTION EXPIRY CRITICAL ERROR === Error handling subscription expiry for user {UserId}", message.UserId);
+            throw;
         }
     }
+
+   
+    public async Task ProcessExpiredSubscriptionsAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("[UserManagementService] Processing expired subscriptions manually");
+
+            var expiredPaymentIds = new List<Guid>();
+
+            foreach (var paymentId in _paymentTransactionIds.Keys)
+            {
+                try
+                {
+                    var actor = GetPaymentTransactionActorProxy(paymentId);
+                    var paymentData = await actor.GetDataAsync(cancellationToken);
+
+                    if (paymentData != null && paymentData.EndDate <= DateTime.UtcNow)
+                    {
+                        expiredPaymentIds.Add(paymentId);
+
+                       
+                        var expiryMessage = new SubscriptionExpiryMessage
+                        {
+                            UserId = paymentData.UserId,
+                            SubscriptionId = paymentData.SubscriptionId,
+                            PaymentTransactionId = paymentData.Id,
+                            ExpiryDate = paymentData.EndDate,
+                            ProcessedAt = DateTime.UtcNow
+                        };
+
+                        await HandleSubscriptionExpiryAsync(expiryMessage, cancellationToken);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[UserManagementService] Error processing payment transaction {PaymentId}", paymentId);
+                }
+            }
+
+            _logger.LogInformation("[UserManagementService] Processed {Count} expired subscriptions", expiredPaymentIds.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[UserManagementService] Error processing expired subscriptions");
+            throw;
+        }
+
+
+    }
+    private IPaymentTransactionActor GetPaymentTransactionActorProxy(Guid id)
+    {
+        if (id == Guid.Empty)
+            throw new ArgumentException("Actor ID cannot be empty", nameof(id));
+
+        return ActorProxy.Create<IPaymentTransactionActor>(
+            new ActorId(id.ToString()),
+            "PaymentTransactionActor");
+    }
+    public async Task<List<UserPaymentDetailsResponseDto>> GetUserPaymentDetailsAsync(
+    Guid userId,
+    CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Getting payment details for user {UserId}", userId);
+
+            var userPaymentDetails = new List<UserPaymentDetailsResponseDto>();
+            var paymentIds = _paymentTransactionIds.Keys.ToList();
+
+            if (paymentIds.Count == 0)
+            {
+                _logger.LogWarning("No payment transactions found in tracking dictionary");
+                return userPaymentDetails;
+            }
+
+            _logger.LogInformation("Found {Count} payment IDs to check for user {UserId}", paymentIds.Count, userId);
+
+           
+            var userPaymentTasks = paymentIds.Select(async paymentId =>
+            {
+                try
+                {
+                    var paymentActor = GetPaymentTransactionActorProxy(paymentId);
+                    var paymentData = await paymentActor.GetDataAsync(cancellationToken);
+
+                    if (paymentData != null && paymentData.UserId == userId)
+                    {
+                        return paymentData;
+                    }
+                    return null;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error retrieving payment data for ID: {PaymentId}", paymentId);
+                    return null;
+                }
+            });
+
+            var userPayments = (await Task.WhenAll(userPaymentTasks))
+                .Where(p => p != null)
+                .ToList();
+
+            _logger.LogInformation("Found {Count} payments for user {UserId}", userPayments.Count, userId);
+
+            
+            foreach (var payment in userPayments)
+            {
+                try
+                {
+                    var subscriptionActor = GetActorProxy(payment.SubscriptionId);
+                    var subscriptionData = await subscriptionActor.GetDataAsync(cancellationToken);
+
+                    if (subscriptionData != null)
+                    {
+                        var durationEnum = (DurationType)subscriptionData.Duration;
+                        var isActive = payment.EndDate > DateTime.UtcNow;
+
+                        // Remove from tracking if expired
+                        if (!isActive && _paymentTransactionIds.ContainsKey(payment.Id))
+                        {
+                            _paymentTransactionIds.TryRemove(payment.Id, out _);
+                            _logger.LogInformation("Removed expired payment {PaymentId} from tracking", payment.Id);
+                        }
+
+                        userPaymentDetails.Add(new UserPaymentDetailsResponseDto
+                        {
+                           
+                            PaymentTransactionId = payment.Id,
+                            TransactionDate = payment.TransactionDate,
+                            StartDate = payment.StartDate,
+                            EndDate = payment.EndDate,
+                           
+                           
+                            SubscriptionId = subscriptionData.Id,
+                            SubscriptionName = subscriptionData.subscriptionName,
+                            Price = subscriptionData.price,
+                            Currency = subscriptionData.currency,
+                            Description = subscriptionData.description,
+                            DurationId = (int)durationEnum,
+                            DurationName = durationEnum.ToString(),
+
+                          
+                            VerticalTypeId = (int)subscriptionData.VerticalTypeId,
+                            VerticalName = subscriptionData.VerticalTypeId.ToString(),
+                            CategoryId = (int)subscriptionData.CategoryId,
+                            CategoryName = subscriptionData.CategoryId.ToString(),
+
+                           
+                            AdsbudBudget = subscriptionData.adsbudget,
+                            PromoteBudget = subscriptionData.promotebudget,
+                            RefreshBudget = subscriptionData.refreshbudget,
+
+                           
+                         
+                        });
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Subscription data not found for payment {PaymentId}, subscription {SubscriptionId}",
+                            payment.Id, payment.SubscriptionId);
+
+                        // Still add payment info even if subscription is not found
+                        userPaymentDetails.Add(new UserPaymentDetailsResponseDto
+                        {
+                            PaymentTransactionId = payment.Id,
+                            TransactionDate = payment.TransactionDate,
+                            StartDate = payment.StartDate,
+                            EndDate = payment.EndDate,
+                          
+                            CardHolderName = payment.CardHolderName,
+                            SubscriptionId = payment.SubscriptionId,
+                            SubscriptionName = "Subscription Not Found",
+                            VerticalTypeId = payment.VerticalId,
+                            CategoryId = payment.CategoryId
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error retrieving subscription data for payment {PaymentId}, subscription {SubscriptionId}",
+                        payment.Id, payment.SubscriptionId);
+                }
+            }
+
+           
+            userPaymentDetails = userPaymentDetails
+                .OrderByDescending(p => p.TransactionDate)
+                .ToList();
+
+            _logger.LogInformation("Successfully retrieved {Count} payment details for user {UserId}",
+                userPaymentDetails.Count, userId);
+
+            return userPaymentDetails;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting payment details for user {UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task<YearlySubscriptionResponseDto?> CheckYearlySubscriptionAsync(
+      Guid userId,
+      CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Checking yearly subscription for user {UserId}", userId);
+
+            var paymentIds = _paymentTransactionIds.Keys.ToList();
+
+            if (paymentIds.Count == 0)
+            {
+                _logger.LogWarning("No payment transactions found in tracking dictionary");
+                return null;
+            }
+
+           
+            var userPaymentTasks = paymentIds.Select(async paymentId =>
+            {
+                try
+                {
+                    var paymentActor = GetPaymentTransactionActorProxy(paymentId);
+                    var paymentData = await paymentActor.GetDataAsync(cancellationToken);
+
+                    if (paymentData != null &&
+                        paymentData.UserId == userId &&
+                        paymentData.EndDate > DateTime.UtcNow) 
+                    {
+                        return paymentData;
+                    }
+                    return null;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error retrieving payment data for ID: {PaymentId}", paymentId);
+                    return null;
+                }
+            });
+
+            var userActivePayments = (await Task.WhenAll(userPaymentTasks))
+                .Where(p => p != null)
+                .ToList();
+
+           
+            foreach (var payment in userActivePayments)
+            {
+                try
+                {
+                   
+                    var subscriptionDuration = payment.EndDate - payment.StartDate;
+                    bool isYearlySubscription = subscriptionDuration.TotalDays >= 360 && subscriptionDuration.TotalDays <= 370; // Allow some tolerance
+
+                    if (isYearlySubscription)
+                    {
+                        
+                        var subscriptionActor = GetActorProxy(payment.SubscriptionId);
+                        var subscriptionData = await subscriptionActor.GetDataAsync(cancellationToken);
+
+                        if (subscriptionData != null)
+                        {
+                            return new YearlySubscriptionResponseDto
+                            {
+                                UserId = userId,
+                                IsRewardsYearlySubscription = true,
+                                Price = subscriptionData.price,
+                                Currency = subscriptionData.currency,
+                                EndDate = payment.EndDate,
+                                PaymentTransactionId = payment.Id,
+                                SubscriptionId = payment.SubscriptionId
+                            };
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error checking yearly subscription for payment {PaymentId}", payment.Id);
+                }
+            }
+
+            
+            return new YearlySubscriptionResponseDto
+            {
+                UserId = userId,
+                IsRewardsYearlySubscription = false
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking yearly subscription for user {UserId}", userId);
+            throw;
+        }
+    }
+
+
 }
 
 
