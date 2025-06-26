@@ -193,6 +193,9 @@ namespace QLN.Web.Shared.Models
             [JsonPropertyName("saves")]
             public int Saves { get; set; }
 
+            [JsonPropertyName("status")]
+            public int Status { get; set; }
+
             [JsonPropertyName("imageUrls")]
             public List<ImageUrlItem> ImageUrls { get; set; }
         }

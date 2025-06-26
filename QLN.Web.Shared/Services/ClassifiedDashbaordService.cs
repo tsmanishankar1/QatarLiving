@@ -342,6 +342,126 @@ namespace QLN.Web.Shared.Services
             }
         }
 
+        public async Task<bool> PublishPreLovedAdAsync(string adId)
+        {
+            try
+            {
+                var url = "api/classified/preloved/user-ads/publish";
+                var request = new HttpRequestMessage(HttpMethod.Post, url);
 
+                var payload = new[] { adId };
+                var json = JsonSerializer.Serialize(payload);
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("PublishAdAsync Exception: " + ex.Message);
+                return false;
+            }
+        }
+        public async Task<bool> UnPublishPreLovedAdAsync(string adId)
+        {
+            try
+            {
+                var url = "api/classified/preloved/user-ads/unpublish";
+                var request = new HttpRequestMessage(HttpMethod.Post, url);
+
+                var payload = new[] { adId };
+                var json = JsonSerializer.Serialize(payload);
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("UnPublishAdAsync Exception: " + ex.Message);
+                return false;
+            }
+        }
+
+        public async Task<bool> PublishDealsAdAsync(string adId)
+        {
+            try
+            {
+                var url = "api/classified/deals/user-ads/publish";
+                var request = new HttpRequestMessage(HttpMethod.Post, url);
+
+                var payload = new[] { adId };
+                var json = JsonSerializer.Serialize(payload);
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("PublishAdAsync Exception: " + ex.Message);
+                return false;
+            }
+        }
+        public async Task<bool> UnPublishDealsAdAsync(string adId)
+        {
+            try
+            {
+                var url = "api/classified/deals/user-ads/unpublish";
+                var request = new HttpRequestMessage(HttpMethod.Post, url);
+
+                var payload = new[] { adId };
+                var json = JsonSerializer.Serialize(payload);
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("UnPublishAdAsync Exception: " + ex.Message);
+                return false;
+            }
+        }
+        public async Task<bool> PublishCollectiblesAdAsync(string adId)
+        {
+            try
+            {
+                var url = "api/classified/collectibles/user-ads/publish";
+                var request = new HttpRequestMessage(HttpMethod.Post, url);
+
+                var payload = new[] { adId };
+                var json = JsonSerializer.Serialize(payload);
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("PublishAdAsync Exception: " + ex.Message);
+                return false;
+            }
+        }
+        public async Task<bool> UnPublishCollectiblesAdAsync(string adId)
+        {
+            try
+            {
+                var url = "api/classified/collectibles/user-ads/unpublish";
+                var request = new HttpRequestMessage(HttpMethod.Post, url);
+
+                var payload = new[] { adId };
+                var json = JsonSerializer.Serialize(payload);
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("UnPublishAdAsync Exception: " + ex.Message);
+                return false;
+            }
+        }
     }
 }

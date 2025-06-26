@@ -18,6 +18,12 @@ namespace QLN.Web.Shared.Services.Interface
         Task<List<AdModal>?> GetDealsUnPublishedAds(int page, int pageSize, string search, int sortOption);
         Task<bool> PublishAdAsync(string adId);
         Task<bool> UnPublishAdAsync(string adId);
+        Task<bool> PublishPreLovedAdAsync(string adId);
+        Task<bool> UnPublishPreLovedAdAsync(string adId);
+        Task<bool> PublishCollectiblesAdAsync(string adId);
+        Task<bool> UnPublishCollectiblesAdAsync(string adId);
+        Task<bool> PublishDealsAdAsync(string adId);
+        Task<bool> UnPublishDealsAdAsync(string adId);
 
     }
 }

@@ -137,6 +137,7 @@
         </div>
 
         <!-- My Ads Section -->
+       <!-- My Ads Section -->
         <MudPaper Class="mt-4 p-5 rounded-xl" Style="background-color: white; box-shadow: none;padding:40px">
 
 
@@ -175,7 +176,7 @@
                         <img src="/qln-images/subscription/Search.svg" />
                         <MudTextField T="string"
                                       Placeholder="Search"
-                                      Class="no-outline"
+                                      Class="no-underline"
                                       Style="margin-left: 6px; max-width: 300px;"
                                       DisableUnderLine="true" />
                     </div>
@@ -268,18 +269,38 @@
                                     @ad.Title
                                 </MudText>
 
-                                <!-- Certificate + Location (Row 4) -->
-                                <div class="d-flex flex-column flex-sm-row align-items-sm-center mb-2">
-
-                                    <div class="d-flex align-items-center ">
-                                        <MudIcon Icon="@Icons.Material.Outlined.Place" Size="Size.Small"
-                                                 Style="color: #646464; margin-left: 0; margin-sm-left:4px;" />
+                                <!-- Certificate + Location + Status + Expiry (Row 4) -->
+                                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-2">
+                                    <!-- Left: Location -->
+                                    <div class="d-flex align-items-center">
+                                        <MudIcon Icon="@Icons.Material.Outlined.Place" Size="Size.Small" Style="color: #646464;" />
                                         <MudText Typo="Typo.caption"
-                                                 Style="margin-left:4px;font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 11px; line-height: 12px; letter-spacing: 0; color: #646464;">
+                                                 Style="margin-left:4px;font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 14px; line-height: 12px; letter-spacing: 0; color: #646464;">
                                             @ad.Location
                                         </MudText>
                                     </div>
+
+                                    <!-- Right: Status Chip + Expiry -->
+                                    <div class="d-flex flex-column align-items-sm-center mt-1 mt-sm-0">
+                                        <MudChip T="string" Style="@GetStatusStyle(ad.Status)"
+                                                 Color="Color.Default"
+                                                 Variant="Variant.Outlined"
+                                                 Size="Size.Small">
+                                            @GetStatusLabel(ad.Status)
+                                        </MudChip>
+                                        <div Class="mt-1 px-2 py-1" Style="background-color: #EDFAFF; border-radius: 4px; display: inline-block;">
+                                            <img src="/qln-images/subscription/expire.svg" alt="Expire Icon" style="width: 14px; height: 14px;" />
+
+
+                                            <MudText Typo="Typo.caption"
+                                                     Style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 11px; color: #0071AF;">
+                                                Expires: @ad.ExpiryDate.ToString("dd MMM yyyy")
+                                            </MudText>
+                                        </div>
+
+                                    </div>
                                 </div>
+
 
                                 <!-- Price (Row 5) -->
                                 <MudText Typo="Typo.h6"
@@ -346,14 +367,29 @@
                                         </MudButton>
                                     }
                                     <MudMenu OffsetY="true"
-                                             AnchorOrigin="Origin.TopRight"
-                                             TransformOrigin="Origin.TopRight">
+                                             AnchorOrigin="Origin.BottomRight"
+                                             TransformOrigin="Origin.BottomRight"
+                                             class="custom-menu-width">
                                         <ActivatorContent>
                                             <MudIconButton Icon="@Icons.Material.Filled.MoreVert" />
                                         </ActivatorContent>
                                         <ChildContent>
-                                            <MudMenuItem @onclick="() => UnPublishAd(ad.Id)">Un Publish</MudMenuItem>
-                                            <MudMenuItem @onclick="() => OnEditAd(ad.Id)">Edit Ad</MudMenuItem>
+                                            <MudMenuItem @onclick="() => UnPublishAd(ad.Id)" Class="menu-item-style">
+                                                <img src="/qln-images/subscription/unpublish.svg" class="menu-icon" />
+                                                <span>Unpublish</span>
+                                            </MudMenuItem>
+                                            <MudMenuItem @onclick="() => OnEditAd(ad.Id)" Class="menu-item-style">
+                                                <img src="/qln-images/subscription/edit.svg" class="menu-icon" />
+                                                <span>Edit Ad</span>
+                                            </MudMenuItem>
+                                            <MudMenuItem @onclick="() => onPreview(ad.Id)" Class="menu-item-style">
+                                                <img src="/qln-images/subscription/preview.svg" class="menu-icon" />
+                                                <span>Preview </span>
+                                            </MudMenuItem>
+                                            <MudMenuItem @onclick="() => onRemove(ad.Id)" Class="menu-item-style">
+                                                <img src="/qln-images/subscription/remove.svg" class="menu-icon" />
+                                                <span>Remove </span>
+                                            </MudMenuItem>
                                         </ChildContent>
                                     </MudMenu>
                                 </div>
@@ -429,9 +465,12 @@
                 {
                     <EmptyCard Title="No Published Ads" Subtitle="You have not published any ads yet." />
 
-                }       }
+                }
+
+            }
             else if (_selectedAdsTab == 1)
-            {@if (_isUnpublishedLoading)
+            {
+                @if (_isUnpublishedLoading)
                 {
                     <div class="d-flex justify-content-center mt-4 mb-4">
                         <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Medium" />
@@ -492,18 +531,36 @@
                                     @ad.Title
                                 </MudText>
 
-                                <!-- Certificate + Location (Row 4) -->
-                                <div class="d-flex flex-column flex-sm-row align-items-sm-center mb-2">
-
-                                    <div class="d-flex align-items-center ">
-                                        <MudIcon Icon="@Icons.Material.Outlined.Place" Size="Size.Small"
-                                                 Style="color: #646464; margin-left: 0; margin-sm-left:4px;" />
+                                <!-- Certificate + Location + Status + Expiry (Row 4) -->
+                                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-2">
+                                    <!-- Left: Location -->
+                                    <div class="d-flex align-items-center">
+                                        <MudIcon Icon="@Icons.Material.Outlined.Place" Size="Size.Small" Style="color: #646464;" />
                                         <MudText Typo="Typo.caption"
-                                                 Style="margin-left:4px;font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 11px; line-height: 12px; letter-spacing: 0; color: #646464;">
+                                                 Style="margin-left:4px;font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 14px; line-height: 12px; letter-spacing: 0; color: #646464;">
                                             @ad.Location
                                         </MudText>
                                     </div>
+
+                                    <!-- Right: Status Chip + Expiry -->
+                                    <div class="d-flex flex-column align-items-sm-center mt-1 mt-sm-0">
+                                        <MudChip T="string" Style="@GetStatusStyle(ad.Status)"
+                                                 Color="Color.Default"
+                                                 Variant="Variant.Outlined"
+                                                 Size="Size.Small">
+                                            @GetStatusLabel(ad.Status)
+                                        </MudChip>
+                                        <div Class="mt-1 px-2 py-1" Style="background-color: #EDFAFF; border-radius: 4px; display: inline-block;">
+                                                            <img src="/qln-images/subscription/expire.svg" alt="Expire Icon" style="width: 14px; height: 14px;" />
+
+                                            <MudText Typo="Typo.caption"
+                                                     Style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 11px; color: #0071AF;">
+                                                Expires: @ad.ExpiryDate.ToString("dd MMM yyyy")
+                                            </MudText>
+                                        </div>
+                                    </div>
                                 </div>
+
 
                                 <!-- Price (Row 5) -->
                                 <MudText Typo="Typo.h6"
@@ -576,8 +633,8 @@
                                             <MudIconButton Icon="@Icons.Material.Filled.MoreVert" />
                                         </ActivatorContent>
                                         <ChildContent>
-                                            <MudMenuItem @onclick="() => OnPublishAd(ad.Id)">Publish</MudMenuItem>
-                                            <MudMenuItem @onclick="() => OnEditAd(ad.Id)">Edit Ad</MudMenuItem>
+                                            <MudMenuItem @onclick="() => OnPublishAd(ad.Id)" Class="menu-item-style">Publish Ad</MudMenuItem>
+                                            <MudMenuItem @onclick="() => OnEditAd(ad.Id)" Class="menu-item-style">Edit Ad</MudMenuItem>
                                         </ChildContent>
                                     </MudMenu>
                                 </div>
@@ -654,9 +711,17 @@
                     <EmptyCard Title="No Published Ads" Subtitle="You have not published any ads yet." />
 
                 }
+
             }
         </MudPaper>
-
+        @if ((publishedAds?.Any() ?? false) || (unpublishedAds?.Any() ?? false))
+        {
+            <PaginationFooter TotalItems="@TotalItems"
+                              CurrentPage="@CurrentPage"
+                              PageSize="@PageSize"
+                              OnPageChange="HandlePageChange"
+                              OnPageSizeChange="HandlePageSizeChange" />
+        }
 
 
     </MudContainer>

@@ -36,11 +36,17 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         protected CompanyProfileModel? companyProfile;
 
 
-        private int currentPage = 1;
-        private int pageSize = 12;
+     
         private string searchTerm = string.Empty;
         private int sortOption = 2;
 
+
+        public EventCallback<int> OnPageChange { get; set; }
+        public EventCallback<int> OnPageSizeChange { get; set; }
+        public int CurrentPage = 1;
+        public int PageSize = 12;
+
+        public int TotalItems = 10;
         protected bool _isPublishedLoading = false;
         protected bool _isUnpublishedLoading = false;
 
@@ -141,7 +147,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             try
             {
                 publishedAds = await ClassfiedDashboardService
-                    .GetDealsPublishedAds(currentPage, pageSize, searchTerm, sortOption)
+                    .GetDealsPublishedAds(CurrentPage, PageSize, searchTerm, sortOption)
                     ?? new();
             }
             catch (Exception ex)
@@ -165,7 +171,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             try
             {
                 unpublishedAds = await ClassfiedDashboardService
-                    .GetDealsUnPublishedAds(currentPage, pageSize, searchTerm, sortOption)
+                    .GetDealsUnPublishedAds(CurrentPage, PageSize, searchTerm, sortOption)
                     ?? new();
             }
             catch (Exception ex)
@@ -180,18 +186,64 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
                 StateHasChanged();
             }
         }
-        protected void OnPublishAd(string adId)
+        protected async Task OnPublishAd(string adId)
         {
-            Console.WriteLine($"Publish clicked for ad ID: {adId}");
+            try
+            {
+                var result = await ClassfiedDashboardService.PublishDealsAdAsync(adId);
+                if (result)
+                {
+                    Snackbar.Add("Ad published successfully", Severity.Success);
+                    await LoadUnpublishedAds();
+                    await LoadPublishedAds();
+                }
+                else
+                {
+                    Snackbar.Add("Failed to publish ad.", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error in OnPublishAd: " + ex.Message);
+                Snackbar.Add("An error occurred.", Severity.Error);
+            }
+        }
+
+        protected async Task UnPublishAd(string adId)
+        {
+            try
+            {
+                var result = await ClassfiedDashboardService.UnPublishDealsAdAsync(adId);
+                if (result)
+                {
+                    Snackbar.Add("Ad unpublished successfully", Severity.Success);
+                    await LoadUnpublishedAds();
+                    await LoadPublishedAds();
+                }
+                else
+                {
+                    Snackbar.Add("Failed to un-publish ad.", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error in OnPublishAd: " + ex.Message);
+                Snackbar.Add("An error occurred.", Severity.Error);
+            }
         }
 
         protected void OnEditAd(string adId)
         {
-            Navigation.NavigateTo($"/qln/dashboard/ad/edit/{adId}");
+            Navigation.NavigateTo($"/qln/classifieds/editform{adId}");
         }
-        protected void UnPublishAd(string adId)
+        protected void onPreview(string adId)
         {
-            Console.WriteLine($"Publish clicked for ad ID: {adId}");
+            Navigation.NavigateTo($"/qln/classifieds/items/details/{adId}");
+        }
+
+        protected void onRemove(string adId)
+        {
+            throw new NotImplementedException("Remove functionality is not implemented yet.");
         }
         protected void SetTab(int index)
         {
@@ -220,6 +272,34 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             var displayAttr = member?.GetCustomAttributes(typeof(DisplayAttribute), false)
                                      .FirstOrDefault() as DisplayAttribute;
             return displayAttr?.Name ?? enumValue.ToString();
+        }
+        public enum AdStatus
+        {
+            Draft = 0,
+            PendingApproval = 1,
+            Approved = 2,
+            Published = 3,
+            Unpublished = 4,
+            Rejected = 5,
+            Expired = 6,
+            NeedsModification = 7
+        }
+
+        protected string GetStatusLabel(int status)
+        {
+            return Enum.IsDefined(typeof(AdStatus), status) ? ((AdStatus)status).ToString() : "Unknown";
+        }
+
+        protected string GetStatusStyle(int status)
+        {
+            return status switch
+            {
+                3 => "background-color: #E6F4EA; border: 1px solid #2E7D32; color: #2E7D32;",
+                4 => "background-color: #FFF9E5; border: 1px solid #F9A825; color: #F9A825;",
+                6 => "background-color: #FFEAEA; border: 1px solid #D32F2F; color: #D32F2F;",
+                1 => "background-color: #E3F2FD; border: 1px solid #1976D2; color: #1976D2;",
+                _ => "background-color: #F5F5F5; border: 1px solid #BDBDBD; color: #616161;"
+            };
         }
     }
 
