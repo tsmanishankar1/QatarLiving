@@ -93,13 +93,12 @@ public class CollectiblesComponentBase : ComponentBase
                 filters.Add("category", SearchState.CollectiblesCategory);
             if (!string.IsNullOrWhiteSpace(SearchState.CollectiblesCondition))
                 filters.Add("condition", SearchState.CollectiblesCondition);
-            if (!string.IsNullOrWhiteSpace(SearchState.CollectiblesSortBy))
-                filters.Add("orderBy", SearchState.CollectiblesSortBy);
 
 
             var payload = new Dictionary<string, object>
             {
                 ["text"] = searchText ?? SearchState.CollectiblesSearchText,
+                 ["orderBy"] = SearchState.CollectiblesSortBy,
                 ["filters"] = filters
             };
 
