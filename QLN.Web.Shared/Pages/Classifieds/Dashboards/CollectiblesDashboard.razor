@@ -16,44 +16,12 @@
                     Collectibles Dashboard
                 </MudText>
             </div>
-            @if (showCreateButton)
-            {
-                <div class="dashboard-button-container">
-                    <MudButton Variant="Variant.Outlined" Class="font-semibold dashboard-edit-profile-button"
-                               OnClick="NavigateToCreateProfile">
-                        Create Profile
-                    </MudButton>
-                </div>
-            }
+           
         </div>
 
         <!-- Your dashboard content would go here -->
         <MudPaper Class="p-4 rounded-xl dashboard-statistics-container">
 
-            @if (isCompanyLoading)
-            {
-                <MudProgressCircular Indeterminate="true" Size="Size.Medium" Color="Color.Primary" />
-            }
-            else if (companyProfile != null)
-            {
-                <MudPaper Class="p-4 dashboard-company-container">
-                    <img src="@companyProfile.CompanyLogo" alt="Logo" class="dashboard-company-logo" />
-                    <MudText Typo="Typo.h6" Class="mt-2" Style="color:#004F9A; font-weight: bold;">
-                        @companyProfile.BusinessName
-                    </MudText>
-                    <MudText Typo="Typo.body2" Style="color: #5F6C7B;">
-@string.Join(", ", companyProfile.NatureOfBusiness
-    .Select(id => GetDisplayName((NatureOfBusiness)id))) - Company   </MudText>
-                    <MudText Typo="Typo.caption" Class="mt-1" Style="color: #5F6C7B;">Created on</MudText>
-                    <MudText Typo="Typo.caption" Style="color: #5F6C7B;">
-                        @companyProfile.CreatedUtc.ToString("MMM dd, yyyy")
-                    </MudText>
-                    <MudButton Variant="Variant.Outlined" Class="font-semibold mt-3 dashboard-edit-profile-button"
-                                         OnClick="@(() => NavigateToEditProfile(companyProfile.Id))">
-                        Edit Profile
-                    </MudButton>
-                </MudPaper>
-            }
             <!-- Summary Cards -->
             <div class="statistics-content">
                 <div class="statistics-header">
@@ -639,7 +607,7 @@
                                                 Publish Ad
                                             </MudMenuItem>
                                             <MudMenuItem @onclick="() => OnEditAd(ad.Id)" Class="menu-item-style">
-                                                <img src="/qln-images/subscription/unpublish.svg" class="menu-icon" />
+                                                <img src="/qln-images/subscription/edit.svg" class="menu-icon" />
                                                 Edit Ad
                                             </MudMenuItem>
                                             <MudMenuItem @onclick="() => onPreview(ad.Id)" Class="menu-item-style">

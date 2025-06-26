@@ -108,12 +108,11 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
                 {
                     stats = new List<StatItem>
             {
-                new() { Title = "Published Ads", Value = $"{response.ItemsDashboard.PublishedAds}", Icon = "PublishedAds.svg" },
-                new() { Title = "Promoted Ads", Value = $"{response.ItemsDashboard.PromotedAds}", Icon = "PromotedAds.svg" },
-                new() { Title = "Featured Ads", Value = $"{response.ItemsDashboard.FeaturedAds}", Icon = "FeaturedAds.svg" },
-                new() { Title = "Refreshes", Value = $"{response.ItemsDashboard.Refreshes} / {response.ItemsDashboard.TotalAllowedRefreshes}", Icon = "Refreshes.svg" },
+                new() { Title = "Published Deals", Value = $"{response.ItemsDashboard.PublishedAds}", Icon = "PublishedDeals.svg" },
                 new() { Title = "Impressions", Value = $"{response.ItemsDashboard.Impressions:N0}", Icon = "Impressions.svg" },
                 new() { Title = "Views", Value = $"{response.ItemsDashboard.Views:N0}", Icon = "Views.svg" },
+                   new() { Title = "Downloads", Value = $"{response.ItemsDashboard.WhatsAppClicks}", Icon = "Download_Statistics.svg" },
+
                 new() { Title = "WhatsApp", Value = $"{response.ItemsDashboard.WhatsAppClicks}", Icon = "WhatsApp.svg" },
                 new() { Title = "Calls", Value = $"{response.ItemsDashboard.Calls}", Icon = "Calls.svg" },
             };

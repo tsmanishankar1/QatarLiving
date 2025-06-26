@@ -16,7 +16,7 @@
                     Deals Dashboard
                 </MudText>
             </div>
-            @if (showCreateButton)
+            @if (companyProfile == null)
             {
                 <div class="dashboard-button-container">
                     <MudButton Variant="Variant.Outlined" Class="font-semibold dashboard-edit-profile-button"
@@ -639,7 +639,7 @@
                                                 Publish Ad
                                             </MudMenuItem>
                                             <MudMenuItem @onclick="() => OnEditAd(ad.Id)" Class="menu-item-style">
-                                                <img src="/qln-images/subscription/unpublish.svg" class="menu-icon" />
+                                                <img src="/qln-images/subscription/edit.svg" class="menu-icon" />
                                                 Edit Ad
                                             </MudMenuItem>
                                             <MudMenuItem @onclick="() => onPreview(ad.Id)" Class="menu-item-style">
