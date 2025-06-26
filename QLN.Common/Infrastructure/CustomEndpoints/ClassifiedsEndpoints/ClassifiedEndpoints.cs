@@ -555,9 +555,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                var userId = context.User.GetId(); 
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                if (userId == null || userId == Guid.Empty)
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -569,7 +572,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.GetUserItemsAdsWithDashboard(userId, token);
+                    var result = await service.GetUserItemsAdsWithDashboard(uid, token);
 
                     if ((result?.ItemsAds.PublishedAds?.Any() != true) &&
                         (result?.ItemsAds.UnpublishedAds?.Any() != true))
@@ -577,7 +580,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         return TypedResults.NotFound(new ProblemDetails
                         {
                             Title = "No Ads Found",
-                            Detail = $"No ads were found for user ID '{userId}'.",
+                            Detail = $"No ads were found for user ID '{uid}'.",
                             Status = StatusCodes.Status404NotFound
                         });
                     }
@@ -631,13 +634,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapGet("itemsAd-dashboard-byId", async Task<IResult> (
-                [FromQuery] Guid userId,
+                [FromQuery] string userId,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    if (userId == Guid.Empty)
+                    if (userId == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -717,8 +720,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    var userId = httpContext.User.GetId(); 
-                    if (userId == Guid.Empty)
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+                    if (uid == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -728,7 +734,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    var result = await service.GetUserPrelovedAdsAndDashboard(userId, token);
+                    var result = await service.GetUserPrelovedAdsAndDashboard(uid, token);
 
                     if ((result?.PrelovedAds.PublishedAds?.Any() != true) &&
                         (result?.PrelovedAds.UnpublishedAds?.Any() != true))
@@ -790,13 +796,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
 
             group.MapGet("prelovedAd-dashboard-byId", async Task<IResult> (
-                Guid userId,
+                string userId,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    if (userId == Guid.Empty)
+                    if (userId == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -900,6 +906,30 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     dto.UserId = uid;
                     var response = await service.CreateClassifiedItemsAd(dto, token);
+                    var imageUrls = new List<string>
+                    {
+                        "https://www.qatarliving.com/_next/image?url=%2Fimages%2Ftwo-iphone.jpeg&w=828&q=75",
+                        "https://www.qatarliving.com/_next/image?url=https%3A%2F%2Fwww.qatarliving.com%2Fq%2Fs3%2Ffiles%2Fstyles%2Fvehicle_listing_v3%2Fs3%2Fvehicles%2F2025%2F06%2F14%2F10081967%2FWhatsApp%20Image%202025-06-14%20at%2011.53.41_84673a0e.jpg&w=384&q=75",
+                        "https://th.bing.com/th/id/OIP.UCezLikSjxX91hGZNpCZQgHaHa?rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3",
+                        "https://i.pinimg.com/originals/82/32/27/823227eb85d3f43ede612e28e53a9d7c.jpg",
+                        "https://www.techspot.com/images2/news/bigimage/2023/11/2023-11-14-image-9.jpg",
+                        "https://th.bing.com/th/id/OIP.HgPa0rOyQFm1dCuGRzjc0AHaFj?rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3"
+                    };
+
+                    // Randomly select 1 or more images from the list
+                    var random = new Random();
+                    var selectedImageUrl = imageUrls[random.Next(imageUrls.Count)];
+
+                    // Create ImageInfo object and add to the list of images
+                    var images = new List<ImageInfo>
+                    {
+                        new ImageInfo
+                        {
+                            AdImageFileNames = "random_image.jpg", 
+                            Url = selectedImageUrl,
+                            Order = 0
+                        }
+                    };
                     var classifiedsIndex = new ClassifiedsIndex
                     {
                         SubVertical = dto.SubVertical,
@@ -917,7 +947,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         UserId = dto.UserId.ToString(),
                         CreatedDate = DateTime.UtcNow,
                         ModifiedDate = DateTime.UtcNow,
-                        Images = new List<ImageInfo>(),
+                        Images = images,
                         Make = dto.MakeType,
                         Model = dto.Model,
                         Brand = dto.Brand,
@@ -925,7 +955,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Ram = dto.Ram,
                         SizeType = dto.Size,
                         Size = dto.SizeValue,
-                        Status = "Active",
+                        Status = "Published",
                         StreetNumber = dto.StreetNumber,
                         Zone = dto.Zone,
                         Storage = dto.Capacity,
@@ -1090,6 +1120,28 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     dto.UserId = uid;
                     var result = await service.CreateClassifiedPrelovedAd(dto, token);
+                    var imageUrls = new List<string>
+                    {
+                        "https://c1.peakpx.com/wallpaper/573/909/315/store-clothes-clothing-line-fashion-wallpaper.jpg",
+                        "https://th.bing.com/th/id/OIP.dIIn08vqRRAvYi2isTbtYwHaFg?r=0&rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3",
+                        "https://static.vecteezy.com/system/resources/thumbnails/007/974/855/small_2x/top-view-travel-accessories-with-shoes-map-smartphone-with-mockup-screen-hat-tourist-essentials-photo.jpg",
+                        "https://images.pexels.com/photos/190819/pexels-photo-190819.jpeg?_gl=1*wt5o9r*_ga*MTMzOTU2OTc5NC4xNzUwOTMyNzcz*_ga_8JE65Q40S6*czE3NTA5MzI3NzIkbzEkZzEkdDE3NTA5MzI3ODQkajQ4JGwwJGgw"
+                    };
+
+                    // Randomly select 1 or more images from the list
+                    var random = new Random();
+                    var selectedImageUrl = imageUrls[random.Next(imageUrls.Count)];
+
+                    // Create ImageInfo object and add to the list of images
+                    var images = new List<ImageInfo>
+                    {
+                        new ImageInfo
+                        {
+                            AdImageFileNames = "random_image.jpg",
+                            Url = selectedImageUrl,
+                            Order = 0
+                        }
+                    };
                     var prelovedIndex = new ClassifiedsIndex
                     {
                         SubVertical = dto.SubVertical,
@@ -1107,8 +1159,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         UserId = dto.UserId.ToString(),
                         CreatedDate = DateTime.UtcNow,
                         ModifiedDate = DateTime.UtcNow,
-                        Images = new List<ImageInfo>(),
-                        Status = "Active",
+                        Images = images,
+                        Status = "Published",
                         Model = dto.Model,
                         Brand = dto.Brand,
                         Processor = dto.Processor,
@@ -1289,6 +1341,30 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     dto.UserId = uid;
                     var result = await service.CreateClassifiedCollectiblesAd(dto, token);
+                    var imageUrls = new List<string>
+                     {
+                         "https://th.bing.com/th/id/OIP.rRURrtCLR84TLl6BtRDg6QHaLP?rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3",
+                         "https://th.bing.com/th/id/OIP.ExXF6fVNd4kVBOaRbB9XZAHaE7?rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3",
+                         "https://th.bing.com/th/id/OIP.ExXF6fVNd4kVBOaRbB9XZAHaE7?rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3",
+                         "https://th.bing.com/th/id/OIP.Z5p8VdDROPhS8U4UGe-GyQHaKV?rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3",
+                         "https://th.bing.com/th/id/OIP.q-bSUmHCaDClmwnHvGoXmAAAAA?rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3",
+                         "https://th.bing.com/th/id/OIP.bYWgM5Cfjha-cw-FLxpvygHaEa?rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3"
+                     };
+
+                    // Randomly select 1 or more images from the list
+                    var random = new Random();
+                    var selectedImageUrl = imageUrls[random.Next(imageUrls.Count)];
+
+                    // Create ImageInfo object and add to the list of images
+                    var images = new List<ImageInfo>
+                     {
+                         new ImageInfo
+                         {
+                             AdImageFileNames = "random_image.jpg",
+                             Url = selectedImageUrl,
+                             Order = 0
+                         }
+                     };
                     var collectiblesIndex = new ClassifiedsIndex
                     {
                         SubVertical = dto.SubVertical,
@@ -1306,11 +1382,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         UserId = dto.UserId.ToString(),
                         CreatedDate = DateTime.UtcNow,
                         ModifiedDate = DateTime.UtcNow,
-                        Images = new List<ImageInfo>(),
+                        Images = images,
                         YearEra = dto.YearOrEra,
                         Rarity = dto.Rarity,
                         Material = dto.Material,
-                        Status = "Active",
+                        Status = "Published",
                         SerialNumber = dto.SerialNumber,
                         SignedBy = dto.SignedBy,
                         IsSigned = dto.Signed,
@@ -1462,7 +1538,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Location = dto.Location.FirstOrDefault(),
                         CreatedDate = DateTime.UtcNow,
                         Images = new List<ImageInfo>(),
-                        Status = "Active",
+                        Status = "Published",
                         FlyerFileName = dto.FlyerName,
                         FlyerXmlLink = dto.XMLLink,
                         ExpiryDate = dto.ExpiryDate,
@@ -1613,9 +1689,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 CancellationToken cancellationToken
             ) =>
             {
-                Guid? userId = context.User.GetId();
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                if (userId == null || userId == Guid.Empty)
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -1628,7 +1707,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.GetCollectibles(userId.ToString(), cancellationToken);
+                    var result = await service.GetCollectibles(context.ToString(), cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (FileNotFoundException fileEx)
@@ -1664,13 +1743,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                   BadRequest<ProblemDetails>,
                   ProblemHttpResult>>
               (
-                  [Required][FromQuery] Guid userId,
+                  [Required][FromQuery] string userId,
                   IClassifiedService service,
                   HttpContext context,
                   CancellationToken cancellationToken
               ) =>
             {
-                if (userId == Guid.Empty)
+                if (userId == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {

@@ -17,7 +17,7 @@ namespace QLN.Backend.API.Service.ServicesService
             _log = log;
         }
 
-        public async Task<ServiceDashboardWithAdsDto> GetDashboardAndAds(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<ServiceDashboardWithAdsDto> GetDashboardAndAds(string userId, CancellationToken cancellationToken = default)
         {
             try
             {

@@ -30,7 +30,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
         }
        
 
-        public async Task<ItemAdsAndDashboardResponse> GetUserItemsAdsWithDashboard(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<ItemAdsAndDashboardResponse> GetUserItemsAdsWithDashboard(string userId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -50,7 +50,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<PrelovedAdsAndDashboardResponse> GetUserPrelovedAdsAndDashboard(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<PrelovedAdsAndDashboardResponse> GetUserPrelovedAdsAndDashboard(string userId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -1059,7 +1059,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<BulkAdActionResponse> BulkUnpublishItemsAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
-            if (userId != null || adIds == null || adIds.Count == 0)
+            if (userId == null || adIds == null || adIds.Count == 0)
                 throw new ArgumentException("Invalid bulk publish request.");
 
             try
@@ -1082,7 +1082,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<BulkAdActionResponse> BulkPublishItemsAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
-            if (userId != null || adIds == null || adIds.Count == 0)
+            if (userId == null || adIds == null || adIds.Count == 0)
                 throw new ArgumentException("Invalid bulk publish request.");
 
             try
@@ -1105,7 +1105,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<BulkAdActionResponse> BulkPublishPrelovedAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
-            if (userId != null || adIds == null || adIds.Count == 0)
+            if (userId == null || adIds == null || adIds.Count == 0)
                 throw new ArgumentException("Invalid bulk publish request.");
 
             try
@@ -1128,7 +1128,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<BulkAdActionResponse> BulkUnpublishPrelovedAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
-            if (userId != null || adIds == null || adIds.Count == 0)
+            if (userId == null || adIds == null || adIds.Count == 0)
                 throw new ArgumentException("Invalid bulk unpublish request.");
 
             try
@@ -1151,7 +1151,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<BulkAdActionResponse> BulkPublishDealsAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
-            if (userId != null || adIds == null || adIds.Count == 0)
+            if (userId == null || adIds == null || adIds.Count == 0)
                 throw new ArgumentException("Invalid bulk publish request.");
 
             try
@@ -1174,7 +1174,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<BulkAdActionResponse> BulkUnpublishDealsAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
-            if (userId != null || adIds == null || adIds.Count == 0)
+            if (userId == null || adIds == null || adIds.Count == 0)
                 throw new ArgumentException("Invalid bulk unpublish request.");
 
             try
@@ -1197,7 +1197,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<BulkAdActionResponse> BulkPublishCollectiblesAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
-            if (userId != null || adIds == null || adIds.Count == 0)
+            if (userId == null || adIds == null || adIds.Count == 0)
                 throw new ArgumentException("Invalid bulk publish request.");
 
             try
@@ -1220,7 +1220,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<BulkAdActionResponse> BulkUnpublishCollectiblesAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
-            if (userId != null || adIds == null || adIds.Count == 0)
+            if (userId == null || adIds == null || adIds.Count == 0)
                 throw new ArgumentException("Invalid bulk unpublish request.");
 
             try
