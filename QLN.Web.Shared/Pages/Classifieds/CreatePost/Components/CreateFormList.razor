@@ -1,8 +1,10 @@
 @using MudBlazor 
 @using QLN.Web.Shared.Components.NewCustomSelect
 @using QLN.Web.Shared.Components.CustomInput
+@using QLN.Web.Shared.Pages.Classifieds.CreatePost.Components
 @using QLN.Common.DTO_s;
 @using MudExRichTextEditor
+@inject IJSRuntime JS
 @typeparam TItem
 
 <div class="form-section">
@@ -10,64 +12,65 @@
     <div class="form-group">
        <NewCustomSelect TItem="OptionItem"
             Items="@categoryOptions"
-            SelectedId="@selectedVertical"
+            SelectedId="@adPostModel.SelectedVertical"
             SelectedIdChanged="OnVerticalChanged"
             GetId="x => x.Id"
             GetLabel="x => x.Label"
             Label="Subvertical"
             Placeholder="Choose" />
-
     </div>
 </div>
 
-@if (!string.IsNullOrEmpty(selectedVertical))
+@if (!string.IsNullOrEmpty(adPostModel.SelectedVertical))
 {
-    var selectedCategory = CategoryTrees.FirstOrDefault(x => x.Id.ToString() == selectedCategoryId);
-    var selectedSubcategory = selectedCategory?.Children?.FirstOrDefault(x => x.Id.ToString() == selectedSubcategoryId);
-    var selectedSubSubcategory = selectedSubcategory?.Children?.FirstOrDefault(x => x.Id.ToString() == selectedSubSubcategoryId);
+    var selectedCategory = CategoryTrees.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedCategoryId);
+    var selectedSubcategory = selectedCategory?.Children?.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedSubcategoryId);
+    var selectedSubSubcategory = selectedSubcategory?.Children?.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedSubSubcategoryId);
     var fields = selectedSubSubcategory?.Fields ?? selectedSubcategory?.Fields ?? selectedCategory?.Fields;
 
     var allowedFields = new[] { "Condition", "Ram", "Model", "Capacity", "Processor", "Brand", "Storage", "Colour", "Gender", "Resolution", "Coverage" };
-
+      @if (adPostModel.SelectedVertical != "deals")
+{
     <div class="form-section">
         <h6 class="form-heading">Ad Information</h6>
+  
         <div class="form-group">
-             <NewCustomSelect TItem="CategoryTreeDto"
-                     Items="@CategoryTrees"
-                     GetId="x => x.Id.ToString()"
-                     GetLabel="x => x.Name"
-                     Label="Category"
-                     Placeholder="Choose"
-                     SelectedId="@selectedCategoryId"
-                     SelectedIdChanged="OnCategoryChanged" />
+            <NewCustomSelect TItem="CategoryTreeDto"
+                Items="@CategoryTrees"
+                GetId="x => x.Id.ToString()"
+                GetLabel="x => x.Name"
+                Label="Category"
+                Placeholder="Choose"
+                SelectedId="@adPostModel.SelectedCategoryId"
+                SelectedIdChanged="OnCategoryChanged" />
         </div>
-            @if (selectedCategory?.Children?.Any() == true)
-            {
-                <div class="form-group">
-                    <NewCustomSelect TItem="CategoryTreeDto"
-                                    Items="@selectedCategory.Children"
-                                    GetId="x => x.Id.ToString()"
-                                    GetLabel="x => x.Name"
-                                    Label="Subcategory"
-                                    Placeholder="Choose"
-                                    SelectedId="@selectedSubcategoryId"
-                                    SelectedIdChanged="OnSubcategoryChanged" />
-                </div>
-            }
+        @if (selectedCategory?.Children?.Any() == true)
+        {
+            <div class="form-group">
+                <NewCustomSelect TItem="CategoryTreeDto"
+                    Items="@selectedCategory.Children"
+                    GetId="x => x.Id.ToString()"
+                    GetLabel="x => x.Name"
+                    Label="Subcategory"
+                    Placeholder="Choose"
+                    SelectedId="@adPostModel.SelectedSubcategoryId"
+                    SelectedIdChanged="OnSubcategoryChanged" />
+            </div>
+        }
 
-            @if (selectedSubcategory?.Children?.Any() == true)
-            {
-                <div class="form-group">
-                    <NewCustomSelect TItem="CategoryTreeDto"
-                                    Items="@selectedSubcategory.Children"
-                                    GetId="x => x.Id.ToString()"
-                                    GetLabel="x => x.Name"
-                                    Label="Sub Subcategory"
-                                    Placeholder="Choose"
-                                    SelectedId="@selectedSubSubcategoryId"
-                                    SelectedIdChanged="OnSubSubcategoryChanged" />
-                </div>
-            }
+        @if (selectedSubcategory?.Children?.Any() == true)
+        {
+            <div class="form-group">
+                <NewCustomSelect TItem="CategoryTreeDto"
+                    Items="@selectedSubcategory.Children"
+                    GetId="x => x.Id.ToString()"
+                    GetLabel="x => x.Name"
+                    Label="Sub Subcategory"
+                    Placeholder="Choose"
+                    SelectedId="@adPostModel.SelectedSubSubcategoryId"
+                    SelectedIdChanged="OnSubSubcategoryChanged" />
+            </div>
+        }
 
         @if (fields != null)
         {
@@ -75,119 +78,153 @@
             {
                 if (allowedFields.Contains(field.Name))
                 {
+                    var key = field.Name;
+                    var selected = adPostModel.DynamicFields.ContainsKey(key) ? adPostModel.DynamicFields[key] : null;
                     <div class="form-group">
                         <NewCustomSelect TItem="OptionItem"
-                                          Items="field.Options.Select(opt => new OptionItem { Id = opt, Label = opt }).ToList()"
-                                          GetId="x => x.Id"
-                                          GetLabel="x => x.Label"
-                                          Label="@field.Name"
-                                          Placeholder="Choose" />
+                            Items="field.Options.Select(opt => new OptionItem { Id = opt, Label = opt }).ToList()"
+                            GetId="x => x.Id"
+                            GetLabel="x => x.Label"
+                            Label="@field.Name"
+                            Placeholder="Choose"
+                            SelectedId="@selected"
+                            SelectedIdChanged="@(val => adPostModel.DynamicFields[key] = val)" />
                     </div>
                 }
             }
+        <div class="form-group">
+            <CustomInput TItem="decimal" Placeholder="Price" @bind-Value="adPostModel.Price" TextRight="QAR" />
+        </div>
         }
     </div>
-  <div class="form-section">
+        }
+
+
+    <div class="form-section">
         <h6 class="form-heading">Description and Features</h6>
         <div class="form-group">
-            <CustomInput TItem="string" Placeholder="Title" @bind-Value="title" />
+            <CustomInput TItem="string" Placeholder="@(adPostModel.SelectedVertical == "deals" ? "Offer Title" : "Title")" @bind-Value="adPostModel.Title" />
         </div>
-      
-            <div class="form-group">
-            <CustomInput TItem="string" Placeholder="Certificate / Warranty" @bind-Value="certificate" />
+             @if (adPostModel.SelectedVertical != "deals")
+{
+         <div class="form-group">
+        <MudExRichTextEdit @bind-Value="adPostModel.ItemDescription"
+                           Height="300"
+                           Class="description-input no-underline"
+                           Placeholder="Write your business description..." />
+        </div>
+          <div class="form-group">
+            <CustomInput TItem="string" Placeholder="Battery Percentage" @bind-Value="adPostModel.BatteryPercentage" TextRight="%" />
+        </div>
+        }
 
+     <div class="form-group">
+            <FileUploader OnFileUploadedWithMeta="HandleUpload"  LabelText="@(adPostModel.SelectedVertical == "deals" ? "Flyer File" : "Certificate / Warranty*")"/>
         </div>
+          @if (adPostModel.SelectedVertical == "deals")
+    {
         <div class="form-group">
-            <CustomInput TItem="string" Placeholder="Battery Percentage" @bind-Value="batteryPercentage" TextRight="%" />
+            <CustomInput TItem="string" Placeholder="XML Link" @bind-Value="adPostModel.XmlLink" />
         </div>
-         <MudExRichTextEdit @bind-Value="itemDescription"
-                                       Height="300"
-                                       Class="description-input no-underline"
-                                       Placeholder="Write your business description..." />
+        }
     </div>
+     
 
     <div class="form-section">
         <h6 class="form-heading">Contact Details</h6>
         <div class="form-group">
-            <CustomInput TItem="string" Placeholder="Phone Number" @bind-Value="phone" />
+            <CustomInput TItem="string" Placeholder="Phone Number" @bind-Value="adPostModel.Phone" />
         </div>
         <div class="form-group">
-            <CustomInput TItem="string" Placeholder="WhatsApp Number" @bind-Value="whatsapp" />
+            <CustomInput TItem="string" Placeholder="WhatsApp Number" @bind-Value="adPostModel.Whatsapp" />
         </div>
     </div>
 
     <div class="form-section">
         <h6 class="form-heading">Location</h6>
+         @if (adPostModel.SelectedVertical == "deals")
+            {
+                <div class="form-group">
+                    <CustomInput TItem="string" Placeholder="Location*" @bind-Value="adPostModel.FlyerLocation" />
+                </div>
+            }
+                    @if (adPostModel.SelectedVertical != "deals")
+{
         <div class="form-group">
-            <CustomInput TItem="string" Placeholder="Zone" @bind-Value="zone" />
+            <CustomInput TItem="string" Placeholder="Zone" @bind-Value="adPostModel.Zone" />
         </div>
         <div class="form-group">
-            <CustomInput TItem="string" Placeholder="Street Number" @bind-Value="streetNumber" />
+            <CustomInput TItem="string" Placeholder="Street Number" @bind-Value="adPostModel.StreetNumber" />
         </div>
         <div class="form-group">
-            <CustomInput TItem="string" Placeholder="Building Number" @bind-Value="buildingNumber" />
+            <CustomInput TItem="string" Placeholder="Building Number" @bind-Value="adPostModel.BuildingNumber" />
         </div>
-          <div class="map-container">
-            <iframe 
-                class="map-frame"
-                width="100%" 
-                height="300" 
-                frameborder="0" 
-                scrolling="no" 
-                marginheight="0" 
-                marginwidth="0"
-                src="https://www.openstreetmap.org/export/embed.html?bbox=51.5318%2C25.2840%2C51.5378%2C25.2880&layer=mapnik&marker=25.2860%2C51.5348">
+        <div class="map-container">
+            <iframe class="map-frame"
+                    width="100%" height="300"
+                    frameborder="0" scrolling="no"
+                    marginheight="0" marginwidth="0"
+                    src="https://www.openstreetmap.org/export/embed.html?bbox=51.5318%2C25.2840%2C51.5378%2C25.2880&layer=mapnik&marker=25.2860%2C51.5348">
             </iframe>
         </div>
+        }
 
-         <div class="checkbox-section">
-        <div class="checkbox-left">
-            <MudCheckBox @bind-Value="isAgreed" Color="Color.Primary" />
+        <div class="checkbox-section">
+            <div class="checkbox-left">
+                <MudCheckBox @bind-Value="adPostModel.IsAgreed" Color="Color.Primary" />
+            </div>
+            <div class="checkbox-right">
+                <span>
+                    I agree to the 
+                    <a href="https://www.qatarliving.com/rules" target="_blank">Rules for Advertising</a> 
+                    and the 
+                    <a href="https://www.qatarliving.com/terms" target="_blank">Terms of Use</a>.
+                </span>
+            </div>
         </div>
-        <div class="checkbox-right">
-            <span>
-                I agree to the 
-                <a href="https://www.qatarliving.com/rules" target="_blank">Rules for Advertising</a> 
-                on Qatar Living and the 
-                <a href="https://www.qatarliving.com/terms" target="_blank">Terms of Use</a>.
-            </span>
-        </div>
-    </div>
     </div>
 }
 
 @code {
-    public string selectedVertical, selectedCategoryId, selectedSubcategoryId, selectedSubSubcategoryId;
-    public string certificate,batteryPercentage,title, description, phone, whatsapp, zone, streetNumber, buildingNumber;
-
+    [Parameter] public AdPost adPostModel { get; set; }
     [Parameter] public List<CategoryTreeDto> CategoryTrees { get; set; }
     [Parameter] public EventCallback<string> CategoryChanged { get; set; }
+     private string uploadedFileBase64;
 
- private bool isAgreed;
- private string itemDescription;
-   private async Task OnVerticalChanged(string newValue)
+    private void HandleUpload((string FileName, string Base64) fileData)
 {
-    selectedVertical = newValue;
-    await CategoryChanged.InvokeAsync(newValue);
+    uploadedFileBase64 = fileData.Base64;
+    adPostModel.Certificate = fileData.Base64;
+    adPostModel.CertificateFileName = fileData.FileName;
 }
 
-private async Task OnCategoryChanged(string newValue)
-{
-    selectedCategoryId = newValue;
-    selectedSubcategoryId = null; // Reset sub-levels
-    selectedSubSubcategoryId = null;
-}
+    private async Task OnVerticalChanged(string newValue)
+    {
+        adPostModel.SelectedVertical = newValue;
+        await CategoryChanged.InvokeAsync(newValue);
+          StateHasChanged(); 
+    }
 
-private async Task OnSubcategoryChanged(string newValue)
-{
-    selectedSubcategoryId = newValue;
-    selectedSubSubcategoryId = null; // Reset child level
-}
+    private async Task OnCategoryChanged(string newValue)
+    {
+        adPostModel.SelectedCategoryId = newValue;
+        adPostModel.SelectedSubcategoryId = null;
+        adPostModel.SelectedSubSubcategoryId = null;
+          StateHasChanged(); 
+    }
 
-private async Task OnSubSubcategoryChanged(string newValue)
-{
-    selectedSubSubcategoryId = newValue;
-}
+    private async Task OnSubcategoryChanged(string newValue)
+    {
+        adPostModel.SelectedSubcategoryId = newValue;
+        adPostModel.SelectedSubSubcategoryId = null;
+          StateHasChanged(); 
+    }
+
+    private async Task OnSubSubcategoryChanged(string newValue)
+    {
+        adPostModel.SelectedSubSubcategoryId = newValue;
+         StateHasChanged(); 
+    }
 
     public class OptionItem
     {
@@ -203,6 +240,7 @@ private async Task OnSubSubcategoryChanged(string newValue)
         new OptionItem { Id = "deals", Label = "Deals" }
     };
 }
+
 
 <style>
     .form-section {

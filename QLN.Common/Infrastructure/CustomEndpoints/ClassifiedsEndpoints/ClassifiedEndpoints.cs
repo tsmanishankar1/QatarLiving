@@ -18,6 +18,8 @@ using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Azure;
+using System.Text.Json;
+using static QLN.Common.DTO_s.ClassifiedsIndex;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 {
@@ -553,9 +555,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                var userId = context.User.GetId(); 
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                if (userId == null || userId == Guid.Empty)
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -567,7 +572,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.GetUserItemsAdsWithDashboard(userId, token);
+                    var result = await service.GetUserItemsAdsWithDashboard(uid, token);
 
                     if ((result?.ItemsAds.PublishedAds?.Any() != true) &&
                         (result?.ItemsAds.UnpublishedAds?.Any() != true))
@@ -575,7 +580,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         return TypedResults.NotFound(new ProblemDetails
                         {
                             Title = "No Ads Found",
-                            Detail = $"No ads were found for user ID '{userId}'.",
+                            Detail = $"No ads were found for user ID '{uid}'.",
                             Status = StatusCodes.Status404NotFound
                         });
                     }
@@ -626,17 +631,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ItemAdsAndDashboardResponse>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .RequireAuthorization(new AuthorizeAttribute { Roles = "Subscriber" })
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapGet("itemsAd-dashboard-byId", async Task<IResult> (
-                [FromQuery] Guid userId,
+                [FromQuery] string userId,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    if (userId == Guid.Empty)
+                    if (userId == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -716,8 +720,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    var userId = httpContext.User.GetId(); 
-                    if (userId == Guid.Empty)
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+                    if (uid == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -727,7 +734,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    var result = await service.GetUserPrelovedAdsAndDashboard(userId, token);
+                    var result = await service.GetUserPrelovedAdsAndDashboard(uid, token);
 
                     if ((result?.PrelovedAds.PublishedAds?.Any() != true) &&
                         (result?.PrelovedAds.UnpublishedAds?.Any() != true))
@@ -785,18 +792,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<PrelovedAdsAndDashboardResponse>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .RequireAuthorization(new AuthorizeAttribute { Roles = "Subscriber" })
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
             group.MapGet("prelovedAd-dashboard-byId", async Task<IResult> (
-                Guid userId,
+                string userId,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    if (userId == Guid.Empty)
+                    if (userId == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -872,12 +878,23 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedItems dto,
                 IClassifiedService service,
+                [FromServices]ISearchService svc,
                 CancellationToken token) =>
             {
                 try
                 {
-                    var userId = httpContext.User.GetId();
-                    if (userId == Guid.Empty)
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return Results.Unauthorized();
+                    }
+
+                    // Deserialize the 'user' claim into a dynamic object
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    // Fetch the 'uid' from the deserialized user data
+                    var uid = userData.GetProperty("uid").GetString();
+
+                    if (uid == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -887,8 +904,49 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    dto.UserId = userId;
+                    dto.UserId = uid;
                     var response = await service.CreateClassifiedItemsAd(dto, token);
+                    var classifiedsIndex = new ClassifiedsIndex
+                    {
+                        SubVertical = dto.SubVertical,
+                        Title = dto.Title,
+                        Description = dto.Description,
+                        CategoryId = dto.CategoryId.ToString(),
+                        Category = dto.Category,
+                        L1Category = dto.l1Category,
+                        L2Category = dto.L2Category,
+                        Price = (double?)dto.Price,
+                        PriceType = dto.PriceType,
+                        Location = dto.Location.FirstOrDefault(),
+                        PhoneNumber = dto.PhoneNumber,
+                        WhatsappNumber = dto.WhatsAppNumber,
+                        UserId = dto.UserId.ToString(),
+                        CreatedDate = DateTime.UtcNow,
+                        ModifiedDate = DateTime.UtcNow,
+                        Images = new List<ImageInfo>(),
+                        Make = dto.MakeType,
+                        Model = dto.Model,
+                        Brand = dto.Brand,
+                        Processor = dto.Processor,
+                        Ram = dto.Ram,
+                        SizeType = dto.Size,
+                        Size = dto.SizeValue,
+                        Status = "Active",
+                        StreetNumber = dto.StreetNumber,
+                        Zone = dto.Zone,
+                        Storage = dto.Capacity,
+                        BuildingNumber = dto.BuildingNumber,
+                        Colour = dto.Color,
+                        BatteryPercentage = dto.BatteryPercentage,
+                        ExpiryDate = dto.ExpiryDate,
+                        RefreshExpiryDate = dto.RefreshExpiry
+                    };
+                    var indexDocument = new CommonIndexRequest
+                    {
+                        VerticalName = ConstantValues.Verticals.Classifieds,
+                        ClassifiedsItem = classifiedsIndex
+                    };
+                    var msg = await svc.UploadAsync(indexDocument);
                     return TypedResults.Created($"/api/classifieds/items/user-ads-by-id/{response.AdId}", response);
 
                 }
@@ -900,16 +958,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Detail = ex.Message,
                         Status = StatusCodes.Status400BadRequest
                     });
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Ad Creation Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
+                }               
                 catch (Exception ex)
                 {
                     if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
@@ -944,7 +993,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .RequireAuthorization(new AuthorizeAttribute { Roles = "Subscriber" })
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .RequireAuthorization();
 
@@ -955,7 +1003,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    if (dto.UserId == Guid.Empty)
+                    if (dto.UserId == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -977,16 +1025,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Detail = ex.Message,
                         Status = StatusCodes.Status400BadRequest
                     });
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Ad Creation Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
+                }                
                 catch (Exception ex)
                 {
                     if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
@@ -1029,12 +1068,23 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedPreloved dto,
                 IClassifiedService service,
+                [FromServices] ISearchService svc,
                 CancellationToken token) =>
             {
                 try
                 {
-                    var userId = httpContext.User.GetId();
-                    if (userId == Guid.Empty)
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return Results.Unauthorized();
+                    }
+
+                    // Deserialize the 'user' claim into a dynamic object
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    // Fetch the 'uid' from the deserialized user data
+                    var uid = userData.GetProperty("uid").GetString();
+
+                    if (uid == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -1044,8 +1094,48 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    dto.UserId = userId;
+                    dto.UserId = uid;
                     var result = await service.CreateClassifiedPrelovedAd(dto, token);
+                    var prelovedIndex = new ClassifiedsIndex
+                    {
+                        SubVertical = dto.SubVertical,
+                        Title = dto.Title,
+                        Description = dto.Description,
+                        CategoryId = dto.CategoryId.ToString(),
+                        Category = dto.Category,
+                        L1Category = dto.l1Category,
+                        L2Category = dto.L2Category,
+                        Price = (double?)dto.Price,
+                        PriceType = dto.PriceType,
+                        Location = dto.Location.FirstOrDefault(),
+                        PhoneNumber = dto.PhoneNumber,
+                        WhatsappNumber = dto.WhatsAppNumber,
+                        UserId = dto.UserId.ToString(),
+                        CreatedDate = DateTime.UtcNow,
+                        ModifiedDate = DateTime.UtcNow,
+                        Images = new List<ImageInfo>(),
+                        Status = "Active",
+                        Model = dto.Model,
+                        Brand = dto.Brand,
+                        Processor = dto.Processor,
+                        Ram = dto.Ram,
+                        SizeType = dto.Size,
+                        Size = dto.SizeValue,
+                        StreetNumber = dto.StreetNumber,
+                        Zone = dto.Zone,
+                        Storage = dto.Capacity,
+                        BuildingNumber = dto.BuildingNumber,
+                        Colour = dto.Color,
+                        BatteryPercentage = dto.BatteryPercentage,
+                        ExpiryDate = dto.ExpiryDate,
+                        RefreshExpiryDate = dto.RefreshExpiry
+                    };
+                    var indexDocument = new CommonIndexRequest
+                    {
+                        VerticalName = ConstantValues.Verticals.Classifieds,
+                        ClassifiedsItem = prelovedIndex
+                    };
+                    var msg = await svc.UploadAsync(indexDocument);
 
                     return TypedResults.Created(
            $"/api/classifieds/preloved/user-ads-by-id/{result.AdId}", result);
@@ -1058,16 +1148,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Detail = ex.Message,
                         Status = StatusCodes.Status400BadRequest
                     });
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Ad Creation Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
+                }               
                 catch (Exception ex)
                 {
                     if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
@@ -1102,7 +1183,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .RequireAuthorization(new AuthorizeAttribute { Roles = "Subscriber" })
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .RequireAuthorization();
 
@@ -1113,7 +1193,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    if (dto.UserId == Guid.Empty)
+                    if (dto.UserId == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -1187,12 +1267,23 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedCollectibles dto,
                 IClassifiedService service,
+                [FromServices]ISearchService svc,
                 CancellationToken token) =>
             {
                 try
                 {
-                    var userId = httpContext.User.GetId();
-                    if (userId == Guid.Empty)
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return Results.Unauthorized();
+                    }
+
+                    // Deserialize the 'user' claim into a dynamic object
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    // Fetch the 'uid' from the deserialized user data
+                    var uid = userData.GetProperty("uid").GetString();
+
+                    if (uid == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -1202,8 +1293,43 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    dto.UserId = userId;
+                    dto.UserId = uid;
                     var result = await service.CreateClassifiedCollectiblesAd(dto, token);
+                    var collectiblesIndex = new ClassifiedsIndex
+                    {
+                        SubVertical = dto.SubVertical,
+                        Title = dto.Title,
+                        Description = dto.Description,
+                        CategoryId = dto.CategoryId.ToString(),
+                        Category = dto.Category,
+                        L1Category = dto.l1Category,
+                        L2Category = dto.L2Category,
+                        Price = (double?)dto.Price,
+                        PriceType = dto.PriceType,
+                        Location = dto.Location.FirstOrDefault(),
+                        PhoneNumber = dto.PhoneNumber,
+                        WhatsappNumber = dto.WhatsAppNumber,
+                        UserId = dto.UserId.ToString(),
+                        CreatedDate = DateTime.UtcNow,
+                        ModifiedDate = DateTime.UtcNow,
+                        Images = new List<ImageInfo>(),
+                        YearEra = dto.YearOrEra,
+                        Rarity = dto.Rarity,
+                        Material = dto.Material,
+                        Status = "Active",
+                        SerialNumber = dto.SerialNumber,
+                        SignedBy = dto.SignedBy,
+                        IsSigned = dto.Signed,
+                        ExpiryDate = dto.ExpiryDate,
+                        RefreshExpiryDate = dto.RefreshExpiry
+                    };
+                    var indexDocument = new CommonIndexRequest
+                    {
+                        VerticalName = ConstantValues.Verticals.Classifieds,
+                        ClassifiedsItem = collectiblesIndex
+                    };
+                    var msg = await svc.UploadAsync(indexDocument);
+
 
                     return TypedResults.Created(
                         $"/api/classifieds/collectibles/user-ads-by-id/{result.AdId}", result);
@@ -1216,16 +1342,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Detail = ex.Message,
                         Status = StatusCodes.Status400BadRequest
                     });
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Ad Creation Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
+                }               
                 catch (Exception ex)
                 {
                     return ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false)
@@ -1249,7 +1366,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .RequireAuthorization(new AuthorizeAttribute { Roles = "Subscriber" })
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .RequireAuthorization();
 
@@ -1260,7 +1376,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    if (dto.UserId == Guid.Empty)
+                    if (dto.UserId == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -1283,16 +1399,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Detail = ex.Message,
                         Status = StatusCodes.Status400BadRequest
                     });
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Ad Creation Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
+                }               
                 catch (Exception ex)
                 {
                     return ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false)
@@ -1325,12 +1432,23 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedDeals dto,
                 IClassifiedService service,
+                [FromServices]ISearchService svc,
                 CancellationToken token) =>
             {
                 try
                 {
-                    var userId = httpContext.User.GetId();
-                    if (userId == Guid.Empty)
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return Results.Unauthorized();
+                    }
+
+                    // Deserialize the 'user' claim into a dynamic object
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    // Fetch the 'uid' from the deserialized user data
+                    var uid = userData.GetProperty("uid").GetString();
+
+                    if (uid == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -1340,8 +1458,28 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    dto.UserId = userId;
+                    dto.UserId = uid;
                     var result = await service.CreateClassifiedDealsAd(dto, token);
+                    var dealsIndex = new ClassifiedsIndex
+                    {
+                        SubVertical = dto.SubVertical,
+                        Title = dto.Title,
+                        Description = dto.Description,
+                        Location = dto.Location.FirstOrDefault(),
+                        CreatedDate = DateTime.UtcNow,
+                        Images = new List<ImageInfo>(),
+                        Status = "Active",
+                        FlyerFileName = dto.FlyerName,
+                        FlyerXmlLink = dto.XMLLink,
+                        ExpiryDate = dto.ExpiryDate,
+                        RefreshExpiryDate = dto.RefreshExpiry
+                    };
+                    var indexDocument = new CommonIndexRequest
+                    {
+                        VerticalName = ConstantValues.Verticals.Classifieds,
+                        ClassifiedsItem = dealsIndex
+                    };
+                    var msg = await svc.UploadAsync(indexDocument);
 
                     return TypedResults.Created($"/api/classifieds/deals/user-ads-by-id/{result.AdId}", result);
 
@@ -1398,7 +1536,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .RequireAuthorization(new AuthorizeAttribute { Roles = "Subscriber" })
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .RequireAuthorization();
 
@@ -1409,7 +1546,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    if (dto.UserId == Guid.Empty)
+                    if (dto.UserId == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -1432,16 +1569,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Detail = ex.Message,
                         Status = StatusCodes.Status400BadRequest
                     });
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Ad Creation Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
+                }                
                 catch (Exception ex)
                 {
                     if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
@@ -1491,9 +1619,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 CancellationToken cancellationToken
             ) =>
             {
-                Guid? userId = context.User.GetId();
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                if (userId == null || userId == Guid.Empty)
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -1506,7 +1637,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.GetCollectibles(userId.ToString(), cancellationToken);
+                    var result = await service.GetCollectibles(context.ToString(), cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (FileNotFoundException fileEx)
@@ -1542,13 +1673,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                   BadRequest<ProblemDetails>,
                   ProblemHttpResult>>
               (
-                  [Required][FromQuery] Guid userId,
+                  [Required][FromQuery] string userId,
                   IClassifiedService service,
                   HttpContext context,
                   CancellationToken cancellationToken
               ) =>
             {
-                if (userId == Guid.Empty)
+                if (userId == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -1946,8 +2077,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                var userId = context.User.GetId();
-                if (userId == Guid.Empty)
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return Results.Unauthorized();
+                }
+
+                // Deserialize the 'user' claim into a dynamic object
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                // Fetch the 'uid' from the deserialized user data
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -1959,7 +2100,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.GetUserPublishedItemsAds(userId, page, pageSize, sortOption, search, token);
+                    var result = await service.GetUserPublishedItemsAds(uid, page, pageSize, sortOption, search, token);
                     return TypedResults.Ok(result);
                 }                
                 catch (Exception ex)
@@ -2001,8 +2142,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .RequireAuthorization();
 
 
-            group.MapGet("items/user-ads-by-id/{userId:guid}/published", async Task<IResult> (
-                Guid userId,
+            group.MapGet("items/user-ads-by-id/{userId}/published", async Task<IResult> (
+                string userId,
                 [FromQuery] int? page,
                 [FromQuery] int? pageSize,
                 [FromQuery] AdSortOption? sortOption,
@@ -2010,7 +2151,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                if (userId == Guid.Empty)
+                if (userId == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -2070,8 +2211,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                var userId = context.User.GetId();
-                if (userId == Guid.Empty)
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return Results.Unauthorized();
+                }
+
+                // Deserialize the 'user' claim into a dynamic object
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                // Fetch the 'uid' from the deserialized user data
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -2083,7 +2234,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.GetUserUnPublishedItemsAds(userId, page, pageSize, sortOption, search, token);
+                    var result = await service.GetUserUnPublishedItemsAds(uid, page, pageSize, sortOption, search, token);
                     return TypedResults.Ok(result);
                 }              
                 catch (Exception ex)
@@ -2124,8 +2275,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .RequireAuthorization();
 
-            group.MapGet("items/user-ads-by-id/{userId:guid}/unpublished", async Task<IResult> (
-                Guid userId,
+            group.MapGet("items/user-ads-by-id/{userId}/unpublished", async Task<IResult> (
+                string userId,
                 [FromQuery] int? page,
                 [FromQuery] int? pageSize,
                 IClassifiedService service,
@@ -2133,7 +2284,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 [FromQuery] string? search,
                 CancellationToken token) =>
             {
-                if (userId == Guid.Empty)
+                if (userId == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -2195,8 +2346,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                var userId = context.User.GetId();
-                if (userId == Guid.Empty)
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return Results.Unauthorized();
+                }
+
+                // Deserialize the 'user' claim into a dynamic object
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                // Fetch the 'uid' from the deserialized user data
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                 return TypedResults.BadRequest(new ProblemDetails
                 {
                     Title = "Validation Error",
@@ -2206,7 +2367,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 
                 try
                 {
-                    var result = await service.GetUserPublishedPrelovedAds(userId, page, pageSize, sortOption, search, token);
+                    var result = await service.GetUserPublishedPrelovedAds(uid, page, pageSize, sortOption, search, token);
                     return TypedResults.Ok(result);
                 }               
                 catch (Exception ex)
@@ -2245,8 +2406,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .RequireAuthorization();
 
-            group.MapGet("preloved/user-ads-by-id/{userId:guid}/published", async Task<IResult> (
-                Guid userId,
+            group.MapGet("preloved/user-ads-by-id/{userId}/published", async Task<IResult> (
+                string userId,
                 [FromQuery] int? page,
                 [FromQuery] int? pageSize,
                 [FromQuery] AdSortOption? sortOption,
@@ -2255,7 +2416,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 CancellationToken token) =>
             {
                 
-                if (userId == Guid.Empty)
+                if (userId == null)
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -2311,8 +2472,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                var userId = context.User.GetId();
-                if (userId == Guid.Empty)
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return Results.Unauthorized();
+                }
+
+                // Deserialize the 'user' claim into a dynamic object
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                // Fetch the 'uid' from the deserialized user data
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -2321,7 +2492,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     });
                 try
                 {
-                    var result = await service.GetUserUnPublishedPrelovedAds(userId, page, pageSize, sortOption, search, token);
+                    var result = await service.GetUserUnPublishedPrelovedAds(uid, page, pageSize, sortOption, search, token);
                     return TypedResults.Ok(result);
                 }               
                 catch (Exception ex)
@@ -2361,8 +2532,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .RequireAuthorization();
             
-            group.MapGet("preloved/user-ads-by-id/{userId:guid}/unpublished", async Task<IResult> (
-                Guid userId,
+            group.MapGet("preloved/user-ads-by-id/{userId}/unpublished", async Task<IResult> (
+                string userId,
                 [FromQuery] int? page,
                 [FromQuery] int? pageSize,
                 [FromQuery] AdSortOption? sortOption,
@@ -2370,7 +2541,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {                
-                if (userId == Guid.Empty)
+                if (userId == null)
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -2427,8 +2598,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                var userId = context.User.GetId();
-                if (userId == Guid.Empty)
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return Results.Unauthorized();
+                }
+
+                // Deserialize the 'user' claim into a dynamic object
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                // Fetch the 'uid' from the deserialized user data
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -2438,7 +2619,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.GetUserPublishedCollectiblesAds(userId, page, pageSize, sortOption, search, token);
+                    var result = await service.GetUserPublishedCollectiblesAds(uid, page, pageSize, sortOption, search, token);
                     return TypedResults.Ok(result);
                 }              
                 catch (Exception ex)
@@ -2478,8 +2659,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .RequireAuthorization();
 
 
-            group.MapGet("collectibles/user-ads-by-id/{userId:guid}/published", async Task<IResult> (
-                Guid userId,
+            group.MapGet("collectibles/user-ads-by-id/{userId}/published", async Task<IResult> (
+                string userId,
                 [FromQuery] int? page,
                 [FromQuery] int? pageSize,
                 [FromQuery] AdSortOption? sortOption,
@@ -2487,7 +2668,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                if (userId == Guid.Empty)
+                if (userId == null)
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -2543,8 +2724,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                var userId = context.User.GetId();
-                if (userId == Guid.Empty)
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return Results.Unauthorized();
+                }
+
+                // Deserialize the 'user' claim into a dynamic object
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                // Fetch the 'uid' from the deserialized user data
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -2554,7 +2745,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.GetUserUnPublishedCollectiblesAds(userId, page, pageSize, sortOption, search, token);
+                    var result = await service.GetUserUnPublishedCollectiblesAds(uid, page, pageSize, sortOption, search, token);
                     return TypedResults.Ok(result);
                 }               
                 catch (Exception ex)
@@ -2592,8 +2783,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .RequireAuthorization();
 
-            group.MapGet("collectibles/user-ads-by-id/{userId:guid}/unpublished", async Task<IResult> (
-                Guid userId,
+            group.MapGet("collectibles/user-ads-by-id/{userId}/unpublished", async Task<IResult> (
+                string userId,
                 [FromQuery] int? page,
                 [FromQuery] int? pageSize,
                 [FromQuery] AdSortOption? sortOption,
@@ -2601,7 +2792,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                if (userId == Guid.Empty)
+                if (userId == null)
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -2658,8 +2849,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                var userId = context.User.GetId();
-                if (userId == Guid.Empty)
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return Results.Unauthorized();
+                }
+
+                // Deserialize the 'user' claim into a dynamic object
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                // Fetch the 'uid' from the deserialized user data
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -2669,7 +2870,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.GetUserPublishedDealsAds(userId, page, pageSize, sortOption, search, token);
+                    var result = await service.GetUserPublishedDealsAds(uid, page, pageSize, sortOption, search, token);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -2708,8 +2909,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .RequireAuthorization();
 
-            group.MapGet("deals/user-ads-by-id/{userId:guid}/published", async Task<IResult> (
-                Guid userId,
+            group.MapGet("deals/user-ads-by-id/{userId}/published", async Task<IResult> (
+                string userId,
                 [FromQuery] int? page,
                 [FromQuery] int? pageSize,
                 [FromQuery] AdSortOption? sortOption,
@@ -2717,7 +2918,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                if (userId == Guid.Empty)
+                if (userId == null)
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -2773,8 +2974,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                var userId = context.User.GetId();
-                if (userId == Guid.Empty)
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return Results.Unauthorized();
+                }
+
+                // Deserialize the 'user' claim into a dynamic object
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                // Fetch the 'uid' from the deserialized user data
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -2784,7 +2995,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.GetUserUnPublishedDealsAds(userId, page, pageSize, sortOption, search, token);
+                    var result = await service.GetUserUnPublishedDealsAds(uid, page, pageSize, sortOption, search, token);
                     return TypedResults.Ok(result);
                 }               
                 catch (Exception ex)
@@ -2824,8 +3035,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .RequireAuthorization();
 
 
-            group.MapGet("deals/user-ads-by-id/{userId:guid}/unpublished", async Task<IResult> (
-                Guid userId,
+            group.MapGet("deals/user-ads-by-id/{userId}/unpublished", async Task<IResult> (
+                string userId,
                 [FromQuery] int? page,
                 [FromQuery] int? pageSize,
                 [FromQuery] AdSortOption? sortOption,
@@ -2833,7 +3044,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                if (userId == Guid.Empty)
+                if (userId == null)
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -3296,8 +3507,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                var userId = context.User.GetId();
-                if (userId == Guid.Empty)
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return Results.Unauthorized();
+                }
+
+                // Deserialize the 'user' claim into a dynamic object
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                // Fetch the 'uid' from the deserialized user data
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -3309,7 +3530,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.BulkUnpublishItemsAds(userId, adIds, token);
+                    var result = await service.BulkUnpublishItemsAds(uid, adIds, token);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidOperationException ex)
@@ -3339,13 +3560,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .RequireAuthorization();
 
-            group.MapPost("items/user-ads-by-id/{userId:guid}/unpublish", async Task<IResult> (
-                 Guid userId,
+            group.MapPost("items/user-ads-by-id/{userId}/unpublish", async Task<IResult> (
+                 string userId,
                  List<Guid> adIds,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                if (userId == Guid.Empty)
+                if (userId == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -3393,8 +3614,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                var userId = context.User.GetId();
-                if (userId == Guid.Empty)
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return Results.Unauthorized();
+                }
+
+                // Deserialize the 'user' claim into a dynamic object
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                // Fetch the 'uid' from the deserialized user data
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -3406,7 +3637,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.BulkPublishItemsAds(userId, adIds, token);
+                    var result = await service.BulkPublishItemsAds(uid, adIds, token);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidOperationException ex)
@@ -3436,13 +3667,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .RequireAuthorization();
 
-            group.MapPost("items/user-ads-by-id/{userId:guid}/publish", async Task<IResult> (
-                Guid userId,
+            group.MapPost("items/user-ads-by-id/{userId}/publish", async Task<IResult> (
+                string userId,
                 List<Guid> adIds,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                if (userId == Guid.Empty)
+                if (userId == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -3490,8 +3721,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                var userId = context.User.GetId();
-                if (userId == Guid.Empty)
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return Results.Unauthorized();
+                }
+
+                // Deserialize the 'user' claim into a dynamic object
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                // Fetch the 'uid' from the deserialized user data
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -3503,7 +3744,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.BulkPublishPrelovedAds(userId, adIds, token);
+                    var result = await service.BulkPublishPrelovedAds(uid, adIds, token);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidOperationException ex)
@@ -3533,13 +3774,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .RequireAuthorization();
 
-            group.MapPost("/preloved/user-ads-by-id/{userId:guid}/publish", async Task<IResult> (
-                Guid userId,
+            group.MapPost("/preloved/user-ads-by-id/{userId}/publish", async Task<IResult> (
+                string userId,
                 List<Guid> adIds,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                if (userId == Guid.Empty)
+                if (userId == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -3587,8 +3828,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                var userId = context.User.GetId();
-                if (userId == Guid.Empty)
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return Results.Unauthorized();
+                }
+
+                // Deserialize the 'user' claim into a dynamic object
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                // Fetch the 'uid' from the deserialized user data
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -3600,7 +3851,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.BulkUnpublishPrelovedAds(userId, adIds, token);
+                    var result = await service.BulkUnpublishPrelovedAds(uid, adIds, token);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidOperationException ex)
@@ -3630,13 +3881,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .RequireAuthorization();
 
-            group.MapPost("/preloved/user-ads-by-id/{userId:guid}/unpublish", async Task<IResult> (
-                Guid userId,
+            group.MapPost("/preloved/user-ads-by-id/{userId}/unpublish", async Task<IResult> (
+                string userId,
                 List<Guid> adIds,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                if (userId == Guid.Empty)
+                if (userId == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -3684,8 +3935,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                var userId = context.User.GetId();
-                if (userId == Guid.Empty)
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return Results.Unauthorized();
+                }
+
+                // Deserialize the 'user' claim into a dynamic object
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                // Fetch the 'uid' from the deserialized user data
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -3697,7 +3958,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.BulkPublishDealsAds(userId, adIds, token);
+                    var result = await service.BulkPublishDealsAds(uid, adIds, token);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidOperationException ex)
@@ -3727,13 +3988,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .RequireAuthorization();
 
-            group.MapPost("/deals/user-ads-by-id/{userId:guid}/publish", async Task<IResult> (
-                Guid userId,
+            group.MapPost("/deals/user-ads-by-id/{userId}/publish", async Task<IResult> (
+                string userId,
                 List<Guid> adIds,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                if (userId == Guid.Empty)
+                if (userId == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -3781,8 +4042,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                var userId = context.User.GetId();
-                if (userId == Guid.Empty)
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return Results.Unauthorized();
+                }
+
+                // Deserialize the 'user' claim into a dynamic object
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                // Fetch the 'uid' from the deserialized user data
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -3794,7 +4065,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.BulkUnpublishDealsAds(userId, adIds, token);
+                    var result = await service.BulkUnpublishDealsAds(uid, adIds, token);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidOperationException ex)
@@ -3824,13 +4095,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .RequireAuthorization();
 
-            group.MapPost("/deals/user-ads-by-id/{userId:guid}/unpublish", async Task<IResult> (
-                Guid userId,
+            group.MapPost("/deals/user-ads-by-id/{userId}/unpublish", async Task<IResult> (
+                string userId,
                 List<Guid> adIds,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                if (userId == Guid.Empty)
+                if (userId == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -3878,8 +4149,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                var userId = context.User.GetId();
-                if (userId == Guid.Empty)
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return Results.Unauthorized();
+                }
+
+                // Deserialize the 'user' claim into a dynamic object
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                // Fetch the 'uid' from the deserialized user data
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -3891,7 +4172,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.BulkPublishCollectiblesAds(userId, adIds, token);
+                    var result = await service.BulkPublishCollectiblesAds(uid, adIds, token);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidOperationException ex)
@@ -3921,13 +4202,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .RequireAuthorization();
 
-            group.MapPost("/collectibles/user-ads-by-id/{userId:guid}/publish", async Task<IResult> (
-                Guid userId,
+            group.MapPost("/collectibles/user-ads-by-id/{userId}/publish", async Task<IResult> (
+                string userId,
                 List<Guid> adIds,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                if (userId == Guid.Empty)
+                if (userId == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -3975,8 +4256,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                var userId = context.User.GetId();
-                if (userId == Guid.Empty)
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return Results.Unauthorized();
+                }
+
+                // Deserialize the 'user' claim into a dynamic object
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                // Fetch the 'uid' from the deserialized user data
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -3988,7 +4279,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.BulkUnpublishCollectiblesAds(userId, adIds, token);
+                    var result = await service.BulkUnpublishCollectiblesAds(uid, adIds, token);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidOperationException ex)
@@ -4018,13 +4309,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .RequireAuthorization();
 
-            group.MapPost("/collectibles/user-ads-by-id/{userId:guid}/unpublish", async Task<IResult> (
-                Guid userId,
+            group.MapPost("/collectibles/user-ads-by-id/{userId}/unpublish", async Task<IResult> (
+                string userId,
                 List<Guid> adIds,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                if (userId == Guid.Empty)
+                if (userId == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {

@@ -11,13 +11,13 @@
     <div Class="form-container">
         <MudGrid GutterSize="24px">
             <MudItem xs="12" md="5">
-                <CreateFormList TItem="string" @ref="formRef" CategoryTrees="CategoryTrees" CategoryChanged="HandleCategoryChanged" />
+                <CreateFormList TItem="string" adPostModel="adPostModel"  CategoryTrees="CategoryTrees" CategoryChanged="HandleCategoryChanged" />
             </MudItem>
 
             <MudItem xs="12" md="7">
                 @if (!string.IsNullOrWhiteSpace(selectedVertical))
                 {
-                    <UploadPhotos @ref="photoRef" />
+                    <UploadPhotos PhotoUrls="@photoUrls" selectedVertical="@selectedVertical" />
                 }
             </MudItem>
         </MudGrid>
@@ -26,11 +26,24 @@
 
     @if (!string.IsNullOrWhiteSpace(selectedVertical))
     {
-        <div class="d-flex justify-end mt-4">
+        <div class="save-button-container">
             <MudButton Variant="Variant.Outlined" Class="close-button">Close</MudButton>
-            <MudButton Class="ml-2 save-button" Variant="Variant.Filled" OnClick="SaveForm">
-                Save & Publish
+         <MudButton Class="ml-2 save-button"
+           Variant="Variant.Filled"
+           Disabled="@IsSaving"
+           OnClick="SaveForm">
+                @if (IsSaving)
+                {
+                     <MudProgressCircular Color="Color.Inherit"
+                             Size="Size.Small"
+                             Indeterminate="true" />
+                }
+                else
+                {
+                    <span>Save & Publish</span>
+                }
             </MudButton>
+
         </div>
     }
 </div>
@@ -47,9 +60,15 @@
             max-width: 1170px;
             margin: 0 auto;
         }
+    .save-button-container {
+    display: flex;
+    justify-content: flex-end;
+    padding: 5px;
+    margin-top: 1rem; /* equivalent to mt-4 in Bootstrap (usually 16px) */
+    }
 
     .form-container {
-        padding: 10px 0;
+        padding: 10px 5px;
         background-color: transparent;
         display: flex;
         flex-direction: column;

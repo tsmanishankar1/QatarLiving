@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.Json;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ServicesEndpoints
 {
@@ -84,8 +85,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServicesEndpoints
                 [FromServices]IServicesService service,
                 CancellationToken token) =>
             {
-                var userId = context.User.GetId();
-                if (userId == Guid.Empty)
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var uid = userData.GetProperty("uid").GetString();
+                if (uid == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -97,7 +101,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServicesEndpoints
 
                 try
                 {
-                    var result = await service.GetDashboardAndAds(userId, token);
+                    var result = await service.GetDashboardAndAds(uid, token);
 
                     if ((result?.PublishedAds?.Any() != true) &&
                         (result?.UnpublishedAds?.Any() != true))
@@ -105,7 +109,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServicesEndpoints
                         return TypedResults.NotFound(new ProblemDetails
                         {
                             Title = "No Ads Found",
-                            Detail = $"No ads were found for user ID '{userId}'.",
+                            Detail = $"No ads were found for user ID '{uid}'.",
                             Status = StatusCodes.Status404NotFound
                         });
                     }
@@ -160,11 +164,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServicesEndpoints
              .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapGet("/dashboard-with-ads/byId", async Task<IResult> (
-                [FromQuery] Guid userId,
+                [FromQuery] string userId,
                 [FromServices]IServicesService service,
                 CancellationToken token) =>
             {
-                if (userId == Guid.Empty)
+                if (userId == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {

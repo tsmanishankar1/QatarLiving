@@ -3,7 +3,6 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
-using CloudNative.CloudEvents;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -33,9 +32,9 @@ namespace QLN.SearchService.CustomEndpoints
 
                     try
                     {
-                        if (msg.Action == "Upsert" && msg.UpsertRequest?.ClassifiedsItem != null)
+                        if (msg.Action == "Upsert" && msg.UpsertRequest?.MasterItem != null)
                         {
-                            var id = msg.UpsertRequest.ClassifiedsItem.Id;
+                            var id = msg.UpsertRequest.MasterItem.Id;
                             var vertical = msg.UpsertRequest.VerticalName;
                             logger.LogInformation("Processing upsert for item Id={Id}, Vertical={Vertical}", id, vertical);
 

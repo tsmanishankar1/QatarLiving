@@ -26,7 +26,13 @@ namespace QLN.Web.Shared.Pages.Classifieds.Landing.Components
         public string SourceName { get; set; } = "Qatar Living® Services";
 
         public List<LandingBackOfficeIndex> SocialLinks { get; set; } = new();
-        public List<VideoCard> VideoCards { get; set; } = new();
+        public List<VideoCard> VideoCards { get; set; } = new()
+        {
+            new VideoCard { VideoUrl = "/videos/video3.mp4", Title = "Video 1", TimeAgo = "1 week ago" },
+            new VideoCard { VideoUrl = "/videos/video2.mp4", Title = "Video 2", TimeAgo = "2 days ago" },
+            new VideoCard { VideoUrl = "/videos/video1.mp4", Title = "Video 3", TimeAgo = "3 hours ago" }
+        };
+
 
         protected override async Task OnParametersSetAsync()
         {
@@ -41,26 +47,26 @@ namespace QLN.Web.Shared.Pages.Classifieds.Landing.Components
                 SocialLinks = SocialLinksList.ToList();
             }
 
-            if (SocialMediaVideosList?.Any() == true)
-            {
-                var selectedVideos = SocialMediaVideosList.Take(3).ToList();
+            // if (SocialMediaVideosList?.Any() == true)
+            // {
+            //     var selectedVideos = SocialMediaVideosList.Take(3).ToList();
 
-                VideoCards.Clear(); // Clear before re-populating to prevent duplication
+            //     VideoCards.Clear(); // Clear before re-populating to prevent duplication
 
-                foreach (var item in selectedVideos)
-                {
-                    bool isReachable = await IsUrlReachableAsync(item.ImageUrl);
-                    // Logger.LogInformation("Video URL: {Url} - Valid: {IsValid}", item.ImageUrl, isReachable);
+            //     foreach (var item in selectedVideos)
+            //     {
+            //         bool isReachable = await IsUrlReachableAsync(item.ImageUrl);
+            //         // Logger.LogInformation("Video URL: {Url} - Valid: {IsValid}", item.ImageUrl, isReachable);
 
-                    VideoCards.Add(new VideoCard
-                    {
-                        VideoUrl = isReachable ? item.ImageUrl : null,
-                        Title = item.Title,
-                        TimeAgo = item.Description,
-                        IsValid = isReachable
-                    });
-                }
-            }
+            //         // VideoCards.Add(new VideoCard
+            //         // {
+            //         //     VideoUrl = isReachable ? item.ImageUrl : null,
+            //         //     Title = item.Title,
+            //         //     TimeAgo = item.Description,
+            //         //     IsValid = isReachable
+            //         // });
+            //     }
+            // }
         }
 
 

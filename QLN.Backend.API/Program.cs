@@ -34,20 +34,22 @@ using QLN.Common.Infrastructure.CustomEndpoints.Wishlist;
 var builder = WebApplication.CreateBuilder(args);
 
 #region Kestrel For Dev Testing via dapr.yaml
-if (builder.Environment.IsDevelopment())
-{
-    builder.WebHost.ConfigureKestrel(options =>
-    {
-        options.ListenAnyIP(5200); // HTTP
-        options.ListenAnyIP(7161, listenOptions =>
-        {
-            listenOptions.UseHttps(); // HTTPS
-        });
-    });
-}
+// disabling as this should check if I am running local, 
+// not IsDevelopment as our dev environment uses Is
+//if (builder.Environment.IsDevelopment())
+//{
+//    builder.WebHost.ConfigureKestrel(options =>
+//   {
+//        options.ListenAnyIP(5200); // HTTP
+//        options.ListenAnyIP(7161, listenOptions =>
+//        {
+//          listenOptions.UseHttps(); // HTTPS
+//        });
+//    });
+//}
 #endregion
 
-builder.Services.AddControllers();
+//builder.Services.AddControllers(); // disabling as we dont use controllers
 builder.Services.AddEndpointsApiExplorer();
 
 #region Configure HttpClient with increased timeout for Dapr
@@ -189,6 +191,7 @@ builder.Services.AddSingleton<DaprClient>(_ =>
 
 builder.Services.AddDaprClient();
 #endregion
+
 builder.Services.AddActors(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
