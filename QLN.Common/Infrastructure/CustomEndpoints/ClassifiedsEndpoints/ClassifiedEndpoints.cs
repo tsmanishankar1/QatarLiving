@@ -555,9 +555,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                var userId = context.User.GetId(); 
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                if (userId == null || userId == Guid.Empty)
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -569,7 +572,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.GetUserItemsAdsWithDashboard(userId, token);
+                    var result = await service.GetUserItemsAdsWithDashboard(uid, token);
 
                     if ((result?.ItemsAds.PublishedAds?.Any() != true) &&
                         (result?.ItemsAds.UnpublishedAds?.Any() != true))
@@ -577,7 +580,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         return TypedResults.NotFound(new ProblemDetails
                         {
                             Title = "No Ads Found",
-                            Detail = $"No ads were found for user ID '{userId}'.",
+                            Detail = $"No ads were found for user ID '{uid}'.",
                             Status = StatusCodes.Status404NotFound
                         });
                     }
@@ -631,13 +634,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapGet("itemsAd-dashboard-byId", async Task<IResult> (
-                [FromQuery] Guid userId,
+                [FromQuery] string userId,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    if (userId == Guid.Empty)
+                    if (userId == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -717,8 +720,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    var userId = httpContext.User.GetId(); 
-                    if (userId == Guid.Empty)
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+                    if (uid == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -728,7 +734,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    var result = await service.GetUserPrelovedAdsAndDashboard(userId, token);
+                    var result = await service.GetUserPrelovedAdsAndDashboard(uid, token);
 
                     if ((result?.PrelovedAds.PublishedAds?.Any() != true) &&
                         (result?.PrelovedAds.UnpublishedAds?.Any() != true))
@@ -790,13 +796,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
 
             group.MapGet("prelovedAd-dashboard-byId", async Task<IResult> (
-                Guid userId,
+                string userId,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    if (userId == Guid.Empty)
+                    if (userId == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -1613,9 +1619,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 CancellationToken cancellationToken
             ) =>
             {
-                Guid? userId = context.User.GetId();
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                if (userId == null || userId == Guid.Empty)
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -1628,7 +1637,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.GetCollectibles(userId.ToString(), cancellationToken);
+                    var result = await service.GetCollectibles(context.ToString(), cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (FileNotFoundException fileEx)
@@ -1664,13 +1673,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                   BadRequest<ProblemDetails>,
                   ProblemHttpResult>>
               (
-                  [Required][FromQuery] Guid userId,
+                  [Required][FromQuery] string userId,
                   IClassifiedService service,
                   HttpContext context,
                   CancellationToken cancellationToken
               ) =>
             {
-                if (userId == Guid.Empty)
+                if (userId == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
