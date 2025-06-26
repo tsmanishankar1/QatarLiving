@@ -2133,7 +2133,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .RequireAuthorization();
 
 
-            group.MapGet("items/user-ads-by-id/{userId:guid}/published", async Task<IResult> (
+            group.MapGet("items/user-ads-by-id/{userId}/published", async Task<IResult> (
                 string userId,
                 [FromQuery] int? page,
                 [FromQuery] int? pageSize,
