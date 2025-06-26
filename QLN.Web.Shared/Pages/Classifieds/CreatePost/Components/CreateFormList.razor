@@ -163,12 +163,12 @@
             <div class="form-group">
                 <CustomInput TItem="string" Placeholder="Building Number" @bind-Value="adPostModel.BuildingNumber" />
             </div>
-            <div id="map" style="height: 300px; width: 100%;"></div>
-            
+            <div class="form-group">
+                <div @ref="mapDiv" id="map" style="height: 300px; width: 100%;"></div>
+            </div> 
         }
 
-        
-        <div @ref="mapDiv" id="map" style="height: 300px; width: 100%;"></div>
+
         <div class="checkbox-section">
             <div class="checkbox-left">
                 <MudCheckBox @bind-Value="adPostModel.IsAgreed" Color="Color.Primary" />
