@@ -93,13 +93,13 @@ public class PrelovedComponentBase : ComponentBase
                 filters.Add("category", SearchState.PrelovedCategory);
             if (!string.IsNullOrWhiteSpace(SearchState.PrelovedBrand))
                 filters.Add("brand", SearchState.PrelovedBrand);
-            if (!string.IsNullOrWhiteSpace(SearchState.PrelovedSortBy))
-                filters.Add("orderBy", SearchState.PrelovedSortBy);
+
 
 
             var payload = new Dictionary<string, object>
             {
                 ["text"] = searchText ?? SearchState.PrelovedSearchText,
+                ["orderBy"] = SearchState.PrelovedSortBy,
                 ["filters"] = filters
             };
 
