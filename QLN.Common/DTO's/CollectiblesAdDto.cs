@@ -14,7 +14,7 @@ namespace QLN.Common.DTO_s
         public string Description { get; set; }
         public string SubVertical { get; set; }
         public string Category { get; set; }
-        public string SubCategory { get; set; }
+        public string L1Category { get; set; }
         public string? L2Category { get; set; }
         public bool HasAuthenticityCertificate { get; set; }
         public string AuthenticityCertificateUrl { get; set; }
@@ -50,13 +50,16 @@ namespace QLN.Common.DTO_s
         public bool IsFeatured { get; set; }
         public bool IsPromoted { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime ExpiryDate { get; set; }
+        public DateTime RefreshExpiry { get; set; }
+        public string RefreshCount { get; set; }
         public AdStatus Status { get; set; }
 
     }
 
-    public class CollectiblesAdListDto
+    public class PaginatedCollectiblesAdResponseDto
     {
-        public List<CollectiblesAdDto> PublishedAds { get; set; } = new();
-        public List<CollectiblesAdDto> UnpublishedAds { get; set; } = new();
+        public int Total { get; set; }
+        public List<CollectiblesAdDto> Items { get; set; } = new();
     }
 }

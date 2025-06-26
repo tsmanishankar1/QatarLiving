@@ -3,7 +3,6 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
-using CloudNative.CloudEvents;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;

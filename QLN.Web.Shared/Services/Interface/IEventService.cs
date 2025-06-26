@@ -32,5 +32,6 @@
         /// </summary>
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetBannerAsync();
+        
     }
 }

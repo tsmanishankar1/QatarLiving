@@ -3,7 +3,6 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
-using System.Net;
 using System.Text;
 using System.Text.Json;
 
@@ -42,7 +41,8 @@ namespace QLN.Backend.API.Service.V2ContentService
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
                 response.EnsureSuccessStatusCode();
 
-                var rawJson = await response.Content.ReadAsStringAsync();
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
             }
             catch (Exception ex)
@@ -115,7 +115,8 @@ namespace QLN.Backend.API.Service.V2ContentService
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
                 response.EnsureSuccessStatusCode();
 
-                var rawJson = await response.Content.ReadAsStringAsync();
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
             }
             catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)

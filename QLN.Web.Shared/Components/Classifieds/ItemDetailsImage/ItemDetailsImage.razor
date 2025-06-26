@@ -1,193 +1,392 @@
+@inherits ItemDetailsImageBase
+@using QLN.Web.Shared.Components.EmptyCard
+@using QLN.Web.Shared.Components.Classifieds.ImagePreview
 @using MudBlazor
-@code {
-    [Parameter] public List<string> Images { get; set; } = new();
-    [Parameter] public int SelectedImageIndex { get; set; }
-    [Parameter] public EventCallback<int> OnImageSelected { get; set; }
-    [Parameter] public EventCallback OnPrevSlide { get; set; }
-    [Parameter] public EventCallback OnNextSlide { get; set; }
 
-    private string TrackOffset => $"translateX(-{SelectedImageIndex * 144}px)";
+<div class="gallery-container" id="@_uniqueId">
+    <div class="swiper swiper-main">
+         <div class="header-Promoted-item">
+  @if (Item?.IsPromoted == true)
+        {
+            <div class="item-Promoted-badge">
+                <img src="/qln-images/classifieds/featured_tag_icon.svg" alt="Promoted" class="Promoted-badge-icon" />
+                <span>Promoted</span>
+            </div>
 }
-<div class="item-details-image-wrapper">
-    <div class="image-container">
-        @if (Images != null && Images.Count > 0 && SelectedImageIndex >= 0 && SelectedImageIndex < Images.Count)
-        {
-            <img src="@Images[SelectedImageIndex]" alt="Main Image" class="main-image" />
-        }
-        else
-        {
-            <img src="/qln-images/categories/game_image.svg" alt="No image available" class="main-image" />
-        }
-
-
-        <div class="Promoted-badge">
-            <MudIcon Icon="@Icons.Material.Filled.FlashOn" Size="Size.Small" Class="Promoted-icon" />
-            <span>Promoted</span>
-        </div>
-
-        <div class="photo-count">@($"{SelectedImageIndex + 1}/{Images.Count}")</div>
-
-        <div class="dots">
-            @for (int i = 0; i < Images.Count; i++)
+     @if (Item.IsFeatured == true)
             {
-                <span class="dot @(i == SelectedImageIndex ? "active" : "")"></span>
-            }
-        </div>
-
-        <button class="view-photos-btn">📷 View all @Images.Count photos</button>
-    </div>
-
-    <div class="carousel-container">
-        <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" id="prevSlideButton" OnClick="@OnPrevSlide" 
-            Disabled="@(SelectedImageIndex == 0)" Class="custom-arrow-details-button left" />
-
-        <div class="carousel-viewport">
-            <div class="carousel-track" style="transform:@TrackOffset">
-                @for (int i = 0; i < Images.Count; i++)
-                {
-                    <div class="seasonal-card @(SelectedImageIndex == i ? "selected-card" : "")"
-                        @onclick="() => OnImageSelected.InvokeAsync(i)">
-                        <img src="@Images[i]" alt="Carousel Image" />
-                    </div>
+                <div class="item-Promoted-badge">
+                    <img src="/qln-images/classifieds/featured_tag_icon.svg" alt="Featured" class="Promoted-badge-icon" />
+                    <span>Featured</span>
+                </div>
                 }
+        </div>
+        @if (WindowWidth <= 770)
+    {
+        <div class="mobile-image-actions">
+              <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu"
+                    AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight">
+                <ActivatorContent>
+                    <MudButton Variant="Variant.Text" Size="Size.Small" Class="mobile-action-btn">
+                        <MudIcon Icon="@Icons.Material.Filled.Share" />
+                    </MudButton>
+                </ActivatorContent>
+                <ChildContent>
+                    @foreach (var item in ShareMenuItems)
+                    {
+                        if (item.OnClick != null)
+                        {
+                            <MudMenuItem OnClick="@item.OnClick">
+                                <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                            </MudMenuItem>
+                        }
+                        else
+                        {
+                            <MudMenuItem Href="@item.Route" Target="@(item.OpenInNewTab ? "_blank" : "_self")">
+                                <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                            </MudMenuItem>
+                        }
+                    }
+                </ChildContent>
+            </MudMenu>
+           <MudButton Variant="Variant.Text" Size="Size.Small" Class="mobile-action-btn" @onclick="ToggleFavorite">
+            <MudIcon Icon="@(IsFavorited ? Icons.Material.Filled.Favorite : Icons.Material.Filled.FavoriteBorder)" />
+        </MudButton>
+
+        </div>
+    }
+     
+     <div class="swiper-wrapper">
+           @if (Item?.Images == null || !Item.Images.Any())
+    {
+        <div class="swiper-slide">
+            <div class="main-image-emty">
+                <EmptyCard Title="No image found." Subtitle="Please check back later for updates." />
             </div>
         </div>
+    }
+    else
+    {
+        @foreach (var img in Item.Images)
+        {
+            <div class="swiper-slide"  @onclick="HandleMainImageClick">
+                @if (imageFailedMap.TryGetValue(img.Url, out var failed) && failed)
+                {
+                    <div class="main-image-emty">
+                        <EmptyCard Title="No image found." Subtitle="Please check back later for updates." />
+                    </div>
+                }
+                else
+                {
+                    @if (!imageLoadedMap.TryGetValue(img.Url, out var loaded) || !loaded)
+                    {
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="490px" />
+                    }
 
-        <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" id="nextSlideButton" OnClick="@OnNextSlide"
-            Disabled="@(SelectedImageIndex >= Images.Count - 1)" Class="custom-arrow-details-button right" />
+                    <img
+                        alt="Main Image"
+                        src="@img.Url"
+                        class="item-main-image"
+                        onload="@(() => OnImageLoaded(img.Url))"
+                        onerror="@(() => OnImageError(img.Url))"
+                        style="display:@(
+                            currentImageUrl == img.Url &&
+                            imageLoadedMap.TryGetValue(img.Url, out var l) && l &&
+                            (!imageFailedMap.TryGetValue(img.Url, out var f) || !f)
+                            ? "block" : "none"
+                        )" />
+                }
+            </div>
+        }
+        }
     </div>
+    @if (Item?.Images != null && Item.Images.Any())
+{
+
+        <div class="image-gallery-footer">
+            <div class="image-count">@($"{CurrentIndex + 1}/{Item.Images?.Count ?? 0}")</div>
+            <div class="swiper-pagination"></div>
+            <div class="view-all" @onclick="HandleViewAllClick">
+                <img src="/qln-images/classifieds/view_all_icon.svg" alt="View All" class="view-all-icon" />
+                <span class="view-all-text">View all</span>
+            </div>
+        </div>
+        }
+    </div>
+     @if (ShowImageModal)
+    {
+        <ImagePreview 
+            Item="Item"
+            ShowImageModal="ShowImageModal" 
+            CloseGallery="CloseGallery" />
+    }
+
+@if (Item?.Images != null && Item.Images.Any())
+{
+    <div class="thumbs-container">
+        <div class="thumbs-prev">
+            <MudIcon Icon="@Icons.Material.Filled.ChevronLeft" />
+        </div>
+        <div class="swiper swiper-thumbs">
+        <div class="swiper-wrapper">
+            @if (Item?.Images != null && Item.Images.Any())
+            {
+                @for (int i = 0; i < Item.Images.Count; i++)
+                {
+                    var img = Item.Images[i];
+                    var failed = imageFailedMap.TryGetValue(img.Url, out var isFailed) && isFailed;
+
+                    <div class="swiper-slide" @onclick="@(() => OnThumbnailClicked(i))" style="cursor:pointer;">
+                        @if (!imageLoadedMap.TryGetValue(img.Url, out var loaded) || !loaded)
+                        {
+                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="100%" />
+                        }
+
+                        @if (!failed)
+                        {
+                            <img src="@img.Url" onload="@(() => OnImageLoaded(img.Url))" onerror="@(() => OnImageError(img.Url))" />
+                        }
+                        else
+                        {
+                            <div class="thumb-placeholder">
+                                <span>Image failed</span>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </div>
+        <div class="thumbs-next">
+            <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+        </div>
+    </div>
+    }
 </div>
 
 <style>
-    .item-details-image-wrapper {
+    .gallery-container {
         width: 100%;
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .image-container {
         position: relative;
-        width: 100%;
-    }
-
-    .main-image {
-        width: 100%;
-        border-radius: 8px;
-    }
-
-    .Promoted-badge {
-        position: absolute;
+        overflow: hidden;
+        }
+.header-Promoted-item{
+      z-index: 10;
+       position: absolute;
+       left: 0;
         top: 10px;
-        left: 10px;
-        background-color: orange;
+       display: flex;
+       flex-direction: column;
+       gap: 10px;
+}
+  .item-Promoted-badge {
+        background-color: #FF7F38;
         color: white;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 0.8rem;
-        font-weight: bold;
+        padding: 4px 6px;
+        font-size: 11px;
+        font-weight: 500;
         display: flex;
         align-items: center;
+        gap: 2px;
+        border-radius: 0 2px 2px 0;
+    }
+
+    .swiper-thumbs .swiper-wrapper {
+    justify-content: flex-start !important;
+    }
+    /* When 5 or fewer thumbnails, use fixed flex layout */
+    .swiper-thumbs .few-thumbs {
+    display: flex !important;
+    }
+
+    .swiper-thumbs .few-thumbs .swiper-slide {
+    flex: 0 0 auto;
+    width: 134px !important; /* Your desired thumb width */
+    height: 90px;
+    }
+  .item-main-image {
+    width: 100%;
+    height: 490px;
+  }
+.main-image-emty{
+     width: 100%;
+    height: 490px;
+    display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+}
+.thumb-placeholder{
+    display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+         font-size: 13px;
+        color: var(--color-text-primary);
+}
+    .image-gallery-footer{
+        position: absolute;
+        bottom: 8px;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 12px;
+        z-index: 2;
+}
+    .image-count {
+    background: rgba(0,0,0,0.6);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 14px;
+    }
+
+    .view-all {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 7px 12px;
+    font-size: 14px;
+    gap: 5px;
+    border-radius: 555px;
+    cursor: pointer;
+    }
+    .view-all-icon {
+        width: 16px;
+        height: 16px;
+    }
+    .view-all-text{
+        font-weight: 500;
+        font-size: 13px;
+        color: var(--color-text-primary);
+    }
+
+ .swiper-main .swiper-pagination-bullet {
+      width: 8px;
+    height: 8px;
+    background-color: white !important; /* Force white */
+    border-radius: 50%;
+    margin: 0 4px;
+    opacity: 1 !important; /* Override default opacity */
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.swiper-main .swiper-pagination-bullet-active {
+    width: 10px;
+    height: 10px;
+    background-color: #00426D !important; /* Your active color */
+    opacity: 1;
+}
+
+
+
+
+.thumbs-container {
+  display: flex;
+  align-items: center;
+  margin-top: 5px;
+  padding: 0;
+  position: relative;
+}
+/* Apply fixed dimensions directly on the slide */
+.swiper-thumbs .swiper-slide {
+  width: 134px;
+  height: 90px;
+  border: 2px solid transparent;
+  transition: border 0.3s;
+  border-radius: 4px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* Active thumbnail border */
+.swiper-thumbs .swiper-slide-thumb-active {
+  border: 2px solid #ff6600; /* Or your brand accent color */
+}
+
+/* Image inside the thumbnail */
+.swiper-thumbs img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumbs-prev,
+.thumbs-next {
+  opacity: 0.7;
+  border-radius: 0;
+  width: 40px;
+  height: 90px;
+  padding: 8px;
+  background-color: var(--color-text-heading);
+  color: var(--color-background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 16px;
+  z-index: 10;
+  cursor: pointer;
+}
+.mobile-image-actions {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 20;
+    display: flex;
+    gap: 8px;
+}
+
+.mobile-action-btn {
+    background-color: rgba(255, 255, 255, 0.8) !important;
+    color: var(--color-accent) !important;
+    min-width: 32px !important;
+    height: 32px;
+    padding: 4px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+  .custom-share-menu .mud-popover {
+        border-radius: 40px !important;
+        overflow: hidden;
+    }
+        /* Target all popover menus that are open and belong to the share menu */
+    .mud-popover:has(.share-icon) .mud-list {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto;
         gap: 4px;
     }
 
-    .photo-count {
-        position: absolute;
-        bottom: 45px;
-        left: 10px;
-        background: rgba(0, 0, 0, 0.6);
-        color: white;
-        padding: 4px 8px;
-        font-size: 0.8rem;
-        border-radius: 4px;
+    .share-popover .mud-list {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto;
+        gap: 4px;
     }
 
-    .dots {
-        position: absolute;
-        bottom: 15px;
-        left: 50%;
-        transform: translateX(-50%);
+
+    .mud-menu-item {
+        padding: 0px 6px 0px 0px !important;
     }
 
-    .dot {
-        height: 8px;
-        width: 8px;
-        margin: 0 3px;
-        background-color: lightgray;
-        border-radius: 50%;
-        display: inline-block;
+    .mud-menu-list {
+        padding-left: 6px;
     }
 
-    .dot.active {
-        background-color: #0033cc;
+    .mud-menu-item .mud-menu-item-text {
+        margin: 4px 0px 0px 0px !important;
+    }
+@@media (max-width: 770px) {
+ .view-all {
+        display: none;
+    }
     }
 
-    .view-photos-btn {
-        position: absolute;
-        bottom: 10px;
-        right: 10px;
-        background-color: white;
-        border: none;
-        border-radius: 20px;
-        padding: 6px 12px;
-        font-size: 0.8rem;
-        cursor: pointer;
-        box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
-    }
-
-    .carousel-container {
-        position: relative;
-        width: 100%;
-        display: flex;
-        align-items: center;
-    }
-
-    .carousel-viewport {
-        overflow: hidden;
-        flex-grow: 1;
-    }
-
-    .carousel-track {
-        display: flex;
-        transition: transform 0.5s ease;
-        gap: 10px;
-    }
-
-    .seasonal-card img {
-        width: 134px;
-        height: 90px;
-        object-fit: cover;
-        display: block;
-    }
-
-    .seasonal-card {
-        transition: border 0.3s ease;
-    }
-
-    .selected-card {
-        border: 2px solid var(--color-accent);
-    }
-
-    .custom-arrow-details-button {
-        border-radius: 0;
-        width: 40px;
-        height: 100px;
-        background-color: var(--color-text-heading);
-        color: var(--color-background);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10;
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-    }
-
-    .custom-arrow-details-button.left {
-        left: 0;
-    }
-
-    .custom-arrow-details-button.right {
-        right: 0;
-    }
 </style>

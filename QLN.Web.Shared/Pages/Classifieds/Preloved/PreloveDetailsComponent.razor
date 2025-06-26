@@ -1,108 +1,37 @@
-@page "/qln/classifieds/preloved/details"
+@page "/qln/classifieds/preloved/details/{*Id}"
 @using QLN.Web.Shared.Services
 @using System.Text.Json
 @using Microsoft.AspNetCore.WebUtilities
-@using QLN.Web.Shared.Models
-@using QLN.Web.Shared.Pages.Classifieds.Preloved.Components.PrelovedDetailsSection
+@using QLN.Web.Shared.Pages.Classifieds.Preloved.Components
 @using QLN.Web.Shared.Pages.Classifieds.Skeletons
 @using QLN.Web.Shared.Components.Classifieds.PromotedItemCards
 @inject NavigationManager NavigationManager
 @layout ClassifiedsLayout
+@inherits PreloveDetailsComponentBase
 
 <div style="width: 100%; background-color: var(--color-secondary-background);">
-    <div style="width: 100%; padding: 0px 40px;">
+    <div class="max-container">
         <div class="category-banner-wrapper">
             <img src="/qln-images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
         </div>
 
-        @if (isLoading)
+        @if (IsLoading)
         {
-            <div class="loading-container">
+              <div class="loading-container">
                 <IteamDetailsSkeletons />
             </div>
         }
-        else if (!string.IsNullOrEmpty(errorMessage))
+        else if (PrelovedsDetails is not null)
         {
-            <MudAlert Severity="Severity.Error">@errorMessage</MudAlert>
-        }
-        else if (Item != null)
-        {
-            <Iteamdetails Item="Item" />
-            <div style="margin: 40px 0 16px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin: 40px 0 16px;">
-                    <span class="similar-items-title">Similar Items</span>
-                    <a class="view-all-link" href="@viewAllUrl">View All</a>
-                </div>
-                <MudGrid GutterSize="16px">
-                    @foreach (var item in items)
-                    {
-                        <MudItem xs="12" sm="6" md="4">
-                            <PromotedItemGridCard Item="item" />
-                        </MudItem>
-                    }
-                </MudGrid>
-            </div>
+            <PrelovedDetailsSection Item="PrelovedsDetails"  Simler="PrelovedsDetailsSimler" />
         }
         else
         {
-            <p class="no-selection">Invalid or missing item data.</p>
+            <EmptyCard Title="Item details not found."
+                Subtitle="Please try again later or explore other available events." />
         }
     </div>
 </div>
-
-@code {
-    private PromotedItem? Item;
-    private string category = "items"; // default
-    private bool isLoading = true;
-    private string? errorMessage;
-
-    private string viewAllUrl => $"/classifieds/{category}";
-
-    protected override async Task OnInitializedAsync()
-    {
-        var uri = new Uri(NavigationManager.Uri);
-        var queryParams = QueryHelpers.ParseQuery(uri.Query);
-
-        // Detect category from path
-        var segments = uri.AbsolutePath.Split("/", StringSplitOptions.RemoveEmptyEntries);
-        if (segments.Length >= 2)
-            category = segments[1];
-
-        if (queryParams.TryGetValue("id", out var id))
-        {
-            await FetchItemDetailsAsync(id!);
-        }
-        else
-        {
-            isLoading = false;
-            errorMessage = "Item ID is missing in the URL.";
-        }
-    }
-
-    private async Task FetchItemDetailsAsync(string id)
-    {
-     
-    }
-
-    private List<PromotedItem> items = new()
-{
-
-new PromotedItem { Title = "Pixel 9 Pro XL", Price = 3400, Company = "QLN", Location = "Doha", ImageUrls = new() {
-"/qln-images/classifieds/google_image1.svg",
-"/qln-images/classifieds/google_image2.svg","/qln-images/classifieds/google_image3.svg","/qln-images/classifieds/google_image3.svg","/qln-images/classifieds/google_image3.svg","/qln-images/classifieds/google_image3.svg","/qln-images/classifieds/google_image3.svg"},
-Colour = "White", Storage = "256GB", BatteryPercentage = 85, Processor = "Tensor 4", CompanyLogoUrl =
-"/qln-images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
-new PromotedItem { Title = "goggle 9 Pro XL", Price = 3400, Company = "QLN", Location = "Doha", ImageUrls = new() {
-"/qln-images/classifieds/item_one.svg",
-"/qln-images/classifieds/item_one.svg","/qln-images/classifieds/google_image3.svg","/qln-images/classifieds/google_image3.svg","/qln-images/classifieds/google_image3.svg","/qln-images/classifieds/google_image3.svg","/qln-images/classifieds/google_image3.svg","/qln-images/classifieds/google_image3.svg"},
-Colour = "White", Storage = "256GB", BatteryPercentage = 85, Processor = "Tensor 4", CompanyLogoUrl =
-"/qln-images/classifieds/item_logo.svg", Category = "Smartphone", IsPromoted = true, Condition = "Brand New" },
-
-};
-}
-
-
-
 
 <style>
     .category-banner-wrapper {
@@ -110,7 +39,10 @@ Colour = "White", Storage = "256GB", BatteryPercentage = 85, Processor = "Tensor
         display: flex;
         justify-content: center;
     }
-
+    .max-container {
+            max-width: 1170px;
+            margin: 0 auto;
+        }
     .category-banner-image {
         width: 100%;
         max-width: 100%;

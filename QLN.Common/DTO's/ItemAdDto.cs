@@ -14,7 +14,7 @@ namespace QLN.Common.DTO_s
         public string SubVertical { get; set; }        
         public string Description { get; set; }
         public string Category { get; set; }
-        public string SubCategory { get; set; }
+        public string? L1Category { get; set; }
         public string? L2Category { get; set; }
         public string Brand { get; set; }
         public string Model { get; set; }
@@ -45,13 +45,16 @@ namespace QLN.Common.DTO_s
         public Guid UserId { get; set; }
         public bool IsFeatured { get; set; }
         public bool IsPromoted { get; set; }
+        public DateTime ExpiryDate { get; set; }
+        public DateTime RefreshExpiry { get; set; }
+        public string RefreshCount { get; set; }
         public DateTime CreatedAt { get; set; }
         public AdStatus Status { get; set; }
     }
 
-    public class ItemAdListDto
+    public class PaginatedAdResponseDto
     {
-        public List<ItemAdDto> PublishedAds { get; set; } = new();
-        public List<ItemAdDto> UnpublishedAds { get; set; } = new();
+        public int Total { get; set; }
+        public List<ItemAdDto> Items { get; set; } = new();
     }
 }
