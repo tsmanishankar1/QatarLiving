@@ -29,6 +29,42 @@
                             </MudButton>
                         </div>
                     </div>
+
+
+            <MudTable Items="_posts" Hover="true" Style="padding-top: 20px;">
+                <HeaderContent>
+                <MudTh>Number</MudTh>
+                <MudTh>Title</MudTh>
+                <MudTh>Category</MudTh>
+                <MudTh>Creation Date</MudTh>
+                <MudTh>Expiry Date</MudTh>
+                <MudTh>Live for</MudTh>
+                <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Number">@context.Number</MudTd>
+                    <MudTd DataLabel="Post Title">
+                    <MudLink Href="#">@context.PostTitle</MudLink>
+            </MudTd>
+            <MudTd DataLabel="Category">@context.Category</MudTd>
+            <MudTd DataLabel="Creation Date">@context.CreationDate.ToString("dd-MM-yyyy")</MudTd>
+            <MudTd DataLabel="Expiry Date">@context.ReportDate.ToString("dd-MM-yyyy")</MudTd>
+            <MudTd DataLabel="Live for">@context.LiveFor</MudTd>
+            <MudTd>
+                               <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
+                                    <MudMenuItem >
+                                    <MudIcon Icon="@Icons.Material.Outlined.Edit" Class="me-2" /> Edit
+                                    </MudMenuItem>
+                                    <MudMenuItem >
+                                    <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Class="me-2" /> Unpublish
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => DeletePost(context.Number))" Class="mud-error-text">
+                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
+                                    </MudMenuItem>
+                                </MudMenu>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
                 </MudItem>
             </MudGrid>
     </MudItem>
@@ -99,5 +135,25 @@
     }
     .sort-by-wrapper {
         margin-left: auto; 
+    }
+     .mud-button-group {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .mud-button {
+        min-width: 120px;
+        font-weight: 500;
+    }
+    .custom-tab-active {
+        background-color: #FF7F38; 
+        color: white !important;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+
+    .custom-tab-default {
+        color: rgba(0, 0, 0, 0.6);
+        font-weight: 500;
     }
 </style>

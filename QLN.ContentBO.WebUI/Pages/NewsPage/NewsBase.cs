@@ -51,9 +51,41 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             Navigation.LocationChanged -= HandleLocationChanged;
         }
-         protected void NavigateToAddEvent()
+        protected void NavigateToAddEvent()
         {
             Navigation.NavigateTo("/manage/news/addarticle");
+        }
+        protected List<PostItem> _posts = Enumerable.Range(1, 12).Select(i => new PostItem
+        {
+            Number = i,
+            PostTitle = "Family Residence Visa status stuck “Under Review”",
+            CreationDate = new DateTime(2025, 4, 12),
+            Username = "Ismat Zerin",
+            LiveFor = "2 hours"
+        }).ToList();
+
+        protected void DeletePost(int number)
+        {
+            _posts.RemoveAll(p => p.Number == number);
+        }
+
+        public class PostItem
+        {
+            public int Number { get; set; }
+            public string PostTitle { get; set; } = "";
+            public DateTime CreationDate { get; set; }
+            public string Username { get; set; } = "";
+            public string LiveFor { get; set; } = "";
+        }
+         protected Status status = Status.Live;
+
+        protected Color GetButtonColor(Status s) => s == status ? Color.Warning : Color.Default;
+
+       protected enum Status
+        {
+            Live,
+            Published,
+            Unpublished
         }
     }
 }

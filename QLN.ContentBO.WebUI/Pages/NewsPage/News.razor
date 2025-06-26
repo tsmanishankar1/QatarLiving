@@ -12,7 +12,7 @@
                      <MudTabPanel Text="@tab" />
                 }
             </MudTabs>
-            <MudGrid AlignItems="Center" Class="padding-top:16px">
+            <MudGrid AlignItems="Center">
                 <MudItem xs="12" md="12">
                     <div class="button-container">
                         <MudButton StartIcon="@Icons.Material.Outlined.Edit" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button">
@@ -28,6 +28,38 @@
                         AdornmentIcon="@Icons.Material.Filled.Search"
                         Class="search-field" />
                     </div>
+                    <MudTable Items="_posts" Hover="true" Style="padding-top: 20px;">
+                <HeaderContent>
+                <MudTh>Slot</MudTh>
+                <MudTh>Title</MudTh>
+                <MudTh>Creation Date</MudTh>
+                <MudTh>Live for</MudTh>
+                <MudTh>Author</MudTh>
+                <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Number">@context.Number</MudTd>
+                    <MudTd DataLabel="Post Title">
+                    <MudLink Href="#">@context.PostTitle</MudLink>
+            </MudTd>
+            <MudTd DataLabel="Creation Date">@context.CreationDate.ToString("dd-MM-yyyy")</MudTd>
+            <MudTd DataLabel="Live for">@context.LiveFor</MudTd>
+            <MudTd DataLabel="Author">@context.Username</MudTd>
+            <MudTd>
+                               <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
+                                    <MudMenuItem >
+                                    <MudIcon Icon="@Icons.Material.Outlined.Edit" Class="me-2" /> Edit
+                                    </MudMenuItem>
+                                    <MudMenuItem >
+                                    <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Class="me-2" /> Unpublish
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => DeletePost(context.Number))" Class="mud-error-text">
+                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
+                                    </MudMenuItem>
+                                </MudMenu>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
                 </MudItem>
             </MudGrid>
     </MudItem>
