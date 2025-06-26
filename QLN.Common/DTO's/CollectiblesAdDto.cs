@@ -46,7 +46,7 @@ namespace QLN.Common.DTO_s
         public bool HasWarranty { get; set; }
         public bool IsHandmade { get; set; }                         
         public bool TearmsAndCondition { get; set; }
-        public Guid UserId { get; set; }
+        public string UserId { get; set; }
         public bool IsFeatured { get; set; }
         public bool IsPromoted { get; set; }
         public DateTime CreatedAt { get; set; }

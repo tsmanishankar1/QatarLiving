@@ -75,7 +75,27 @@
         <script src="_content/Extensions.MudBlazor.StaticInput/NavigationObserver.js?v=3.2.0" defer></script> 
     *@
 
-   
+    <script>
+        window.setVideoFirstFrame = function (videoElement) {
+            videoElement.addEventListener('loadedmetadata', function () {
+                videoElement.currentTime = 0.1;
+            });
+            videoElement.load();
+        };
+
+        window.playVideo = function (videoElement) {
+            if (videoElement) {
+                videoElement.play();
+            }
+        };
+
+        window.pauseVideo = function (videoElement) {
+            if (videoElement) {
+                videoElement.pause();
+                videoElement.currentTime = 0;
+            }
+        };
+    </script>
     <script>
         document.addEventListener('input', function (e) {
             if (e.target.maxLength === 1 && e.target.value.length === 1) {
@@ -917,41 +937,6 @@
 
     getFileName: function (inputElement) {
         return inputElement?.files?.length > 0 ? inputElement.files[0].name : '';
-    }
-};
-
-</script>
-<script src="https://www.youtube.com/iframe_api"></script>
-<script src="js/youtube-player.js"></script>
-
-<script>
-    let youtubePlayers = {};
-
-window.onYouTubeIframeAPIReady = function () {
-    const iframes = document.querySelectorAll('iframe[data-youtube-id]');
-    iframes.forEach(iframe => {
-        const id = iframe.getAttribute('id');
-        const videoId = iframe.getAttribute('data-youtube-id');
-        youtubePlayers[id] = new YT.Player(id, {
-            videoId: videoId,
-            events: {
-                'onReady': () => console.log(`Player ${id} ready`)
-            }
-        });
-    });
-};
-
-window.playVideo = function (id) {
-    const player = youtubePlayers[id];
-    if (player && typeof player.playVideo === "function") {
-        player.playVideo();
-    }
-};
-
-window.pauseVideo = function (id) {
-    const player = youtubePlayers[id];
-    if (player && typeof player.pauseVideo === "function") {
-        player.pauseVideo();
     }
 };
 

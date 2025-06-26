@@ -5,9 +5,6 @@ using System.Text.Json;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
-using QLN.Web.Shared.Components.BreadCrumb;
-using QLN.Web.Shared.Pages.Classifieds.CreatePost.Components;
-using System.Collections.Generic;
 using MudBlazor;
 using Microsoft.JSInterop;
 
@@ -17,20 +14,18 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
     {
         [Inject] private IClassifiedsServices _classifiedsService { get; set; } = default!;
 
-         [Inject] private ILogger<CreatePostComponentBase> Logger { get; set; }
+        [Inject] private ILogger<CreatePostComponentBase> Logger { get; set; }
         protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
         protected bool IsLoadingCategories { get; set; } = true;
         protected string? ErrorMessage { get; set; }
         protected List<CategoryTreeDto> CategoryTrees { get; set; } = new();
-       protected AdPost adPostModel = new(); 
-      protected List<string> photoUrls = new() { "", "", "", "", "", "" };
+        protected AdPost adPostModel = new();
+        protected List<string> photoUrls = new() { "", "", "", "", "", "" };
 
         protected bool IsSaving { get; set; } = false;
         protected string SnackbarMessage { get; set; } = string.Empty;
         [Inject] public ISnackbar Snackbar { get; set; } = default!;
 
-
-        private string _authToken;
         protected string selectedVertical;
 
         protected override void OnInitialized()
@@ -43,7 +38,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
         }
         private Dictionary<string, string> dynamicFieldValues = new(); // Dynamic field values
 
-     protected async void HandleCategoryChanged(string newValue)
+        protected async void HandleCategoryChanged(string newValue)
         {
             selectedVertical = newValue;
             photoUrls = new List<string> { "", "", "", "", "", "" }; // Reset photo slots
@@ -54,67 +49,55 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
         }
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
-     
-        protected override async Task OnAfterRenderAsync(bool firstRender)
-        {
-            if (firstRender)
-            {
-                _authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6Ijk3NTQ1NGI1LTAxMmItNGQ1NC1iMTUyLWUzMGYzNmYzNjNlMiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJNVUpBWSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6Im11amF5LmFAa3J5cHRvc2luZm9zeXMuY29tIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbW9iaWxlcGhvbmUiOiIrOTE3NzA4MjA0MDcxIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjpbIkNvbXBhbnkiLCJTdWJzY3JpYmVyIl0sIlVzZXJJZCI6Ijk3NTQ1NGI1LTAxMmItNGQ1NC1iMTUyLWUzMGYzNmYzNjNlMiIsIlVzZXJOYW1lIjoiTVVKQVkiLCJFbWFpbCI6Im11amF5LmFAa3J5cHRvc2luZm9zeXMuY29tIiwiUGhvbmVOdW1iZXIiOiIrOTE3NzA4MjA0MDcxIiwiZXhwIjoxNzUwODgyMDA4LCJpc3MiOiJodHRwczovL3Rlc3QucWF0YXJsaXZpbmcuY29tIiwiYXVkIjoiaHR0cHM6Ly90ZXN0LnFhdGFybGl2aW5nLmNvbSJ9.n2ovCdykTXO8Og1ZwH3576WO82HfcDrRAkYnpV0Np_E";
-                StateHasChanged();
-
-            }
-
-            await base.OnAfterRenderAsync(firstRender);
-        }
         public async Task LogObjectToConsoleAsync<T>(T obj)
+        {
+            var json = JsonSerializer.Serialize(obj, new JsonSerializerOptions
             {
-                var json = JsonSerializer.Serialize(obj, new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    WriteIndented = false
-                });
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = false
+            });
 
-                // await JSRuntime.InvokeVoidAsync("eval", $"console.log({json})");
+            // await JSRuntime.InvokeVoidAsync("eval", $"console.log({json})");
+        }
+
+        public class ValidationResult
+        {
+            public bool IsValid => !Messages.Any();
+            public List<string> Messages { get; set; } = new();
+        }
+
+        private ValidationResult ValidateForm()
+        {
+            var result = new ValidationResult();
+            var vertical = selectedVertical?.Trim().ToLower();
+
+            if (string.IsNullOrWhiteSpace(vertical))
+            {
+                result.Messages.Add("Vertical is required.");
+                return result;
             }
-                    
-           public class ValidationResult
-                {
-                    public bool IsValid => !Messages.Any();
-                    public List<string> Messages { get; set; } = new();
-                }
 
-                    private ValidationResult ValidateForm()
-                {
-                    var result = new ValidationResult();
-                    var vertical = selectedVertical?.Trim().ToLower();
+            // Shared Validation
+            if (string.IsNullOrWhiteSpace(adPostModel.Title))
+                result.Messages.Add("Title is required.");
 
-                    if (string.IsNullOrWhiteSpace(vertical))
-                    {
-                        result.Messages.Add("Vertical is required.");
-                        return result;
-                    }
+            if (!adPostModel.IsAgreed)
+                result.Messages.Add("You must agree to the terms and conditions.");
 
-                    // Shared Validation
-                    if (string.IsNullOrWhiteSpace(adPostModel.Title))
-                        result.Messages.Add("Title is required.");
+            // Vertical-specific
+            switch (vertical)
+            {
+                case "deals":
+                    ValidateDealsFields(result);
+                    break;
 
-                    if (!adPostModel.IsAgreed)
-                        result.Messages.Add("You must agree to the terms and conditions.");
+                default:
+                    ValidateDefaultFields(result);
+                    break;
+            }
 
-                    // Vertical-specific
-                    switch (vertical)
-                    {
-                        case "deals":
-                            ValidateDealsFields(result);
-                            break;
-
-                        default:
-                            ValidateDefaultFields(result);
-                            break;
-                    }
-
-                    return result;
-                }
+            return result;
+        }
 
         private void ValidateDealsFields(ValidationResult result)
         {
@@ -148,7 +131,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
 
             if (string.IsNullOrWhiteSpace(adPostModel.Whatsapp))
                 result.Messages.Add("WhatsApp number is required.");
-                if (string.IsNullOrWhiteSpace(adPostModel.Certificate))
+            if (string.IsNullOrWhiteSpace(adPostModel.Certificate))
                 result.Messages.Add("Certificate is required.");
 
             if (string.IsNullOrWhiteSpace(adPostModel.Zone) ||
@@ -178,10 +161,10 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
                 var selectedCategory = CategoryTrees.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedCategoryId);
                 var selectedSubcategory = selectedCategory?.Children?.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedSubcategoryId);
                 var selectedSubSubcategory = selectedSubcategory?.Children?.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedSubSubcategoryId);
-
+                var vertical = char.ToUpper(adPostModel.SelectedVertical[0]) + adPostModel.SelectedVertical.Substring(1).ToLower();
                 var dto = new ClassifiedPostDto
                 {
-                    SubVertical = adPostModel.SelectedVertical,
+                    SubVertical = vertical,
                     Title = adPostModel.Title,
                     Description = adPostModel.ItemDescription,
                     CategoryId = Guid.TryParse(
@@ -253,7 +236,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
 
                 // Logger.LogInformation("Submitting ClassifiedPostDto as JSON:\n{DtoJson}", jsonDto);
 
-                var response = await _classifiedsService.PostClassifiedItemAsync(adPostModel.SelectedVertical.ToLower(), dto, _authToken);
+                var response = await _classifiedsService.PostClassifiedItemAsync(adPostModel.SelectedVertical.ToLower(), dto);
 
                 if (response?.IsSuccessStatusCode == true)
                 {
@@ -281,35 +264,35 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
         }
 
 
-          protected override async Task OnInitializedAsync()
-    {
-        await LoadCategoryTreesAsync();
-    }
+        protected override async Task OnInitializedAsync()
+        {
+            await LoadCategoryTreesAsync();
+        }
 
-    private async Task LoadCategoryTreesAsync()
-    {
-        try
+        private async Task LoadCategoryTreesAsync()
         {
-            var response = await _classifiedsService.GetAllCategoryTreesAsync(selectedVertical);
+            try
+            {
+                var response = await _classifiedsService.GetAllCategoryTreesAsync(selectedVertical);
 
-            if (response is { IsSuccessStatusCode: true })
-            {
-                var result = await response.Content.ReadFromJsonAsync<List<CategoryTreeDto>>();
-                CategoryTrees = result ?? new();
+                if (response is { IsSuccessStatusCode: true })
+                {
+                    var result = await response.Content.ReadFromJsonAsync<List<CategoryTreeDto>>();
+                    CategoryTrees = result ?? new();
+                }
+                else
+                {
+                    ErrorMessage = $"Failed to load category trees. Status: {response?.StatusCode}";
+                }
             }
-            else
+            catch (Exception ex)
             {
-                ErrorMessage = $"Failed to load category trees. Status: {response?.StatusCode}";
+                ErrorMessage = "Error loading category trees.";
+            }
+            finally
+            {
+                IsLoadingCategories = false;
             }
         }
-        catch (Exception ex)
-        {
-            ErrorMessage = "Error loading category trees.";
-        }
-        finally
-        {
-            IsLoadingCategories = false;
-        }
-    }
     }
 }

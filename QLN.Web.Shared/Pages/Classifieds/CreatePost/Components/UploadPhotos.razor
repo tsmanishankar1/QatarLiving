@@ -32,17 +32,6 @@
  @if (selectedVertical == "deals")
     {
         <div class="photo-grid single-photo-grid">
-            @if (PhotoUrls.Count == 0 || string.IsNullOrEmpty(PhotoUrls[0]))
-            {
-                <div class="photo-box add-box" @onclick="AddPhoto">
-                    <div class="add-box-content">
-                        <div class="upload-icon-box">
-                            <MudIcon Icon="@Icons.Material.Filled.Add" Class="upload-icon" />
-                        </div>
-                        <div class="upload-text">Add Cover Photo</div>
-                    </div>
-                </div>
-            }
         <div class="photo-box add-box @(string.IsNullOrEmpty(PhotoUrls[0]) ? "" : "has-image")" style="height: 180px;">
             @if (!string.IsNullOrEmpty(PhotoUrls[0]))
             {

@@ -42,7 +42,7 @@ namespace QLN.Common.DTO_s
         public string? BuildingNumber { get; set; }
         public string Latitude { get; set; }
         public string Longitude { get; set; }
-        public Guid UserId { get; set; }
+        public string UserId { get; set; }
         public bool IsFeatured { get; set; }
         public bool IsPromoted { get; set; }
         public DateTime ExpiryDate { get; set; }

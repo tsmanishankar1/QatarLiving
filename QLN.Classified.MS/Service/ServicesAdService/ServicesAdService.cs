@@ -26,7 +26,7 @@ namespace QLN.Classified.MS.Service.ServicesAdService
             }
         }
 
-        public async Task<ServiceDashboardWithAdsDto> GetDashboardAndAds(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<ServiceDashboardWithAdsDto> GetDashboardAndAds(string userId, CancellationToken cancellationToken = default)
         {
             var allAds = await ReadAllServiceAdsFromFile();
             var userAds = allAds.Where(ad => ad.UserId == userId).ToList();
