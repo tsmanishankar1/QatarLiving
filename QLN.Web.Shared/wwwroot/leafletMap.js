@@ -1,6 +1,6 @@
 ﻿window.initMap = (lat, lng) => {
     const map = L.map('map').setView([lat, lng], 16);
-
+    console.log(map);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);

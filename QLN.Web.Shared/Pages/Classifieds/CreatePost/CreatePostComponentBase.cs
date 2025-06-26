@@ -13,6 +13,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
     public class CreatePostComponentBase : ComponentBase
     {
         [Inject] private IClassifiedsServices _classifiedsService { get; set; } = default!;
+        [Inject] IJSRuntime JS { get; set; }
 
         [Inject] private ILogger<CreatePostComponentBase> Logger { get; set; }
         protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
@@ -35,7 +36,25 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
                 new () { Label = "Classifieds", Url = "/qln/classifieds" },
                 new () { Label = "Create Form", Url = "/qln/classifieds/createform", IsLast = true }
             };
+
+
         }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                await JS.InvokeVoidAsyncWithErrorHandling("initMap", 25.32, 51.54);
+            }
+        }
+
+      
+        public static Task UpdateLatLng(double lat, double lng)
+        {
+            Console.WriteLine($"New location: {lat}, {lng}");
+            return Task.CompletedTask;
+        }
+
         private Dictionary<string, string> dynamicFieldValues = new(); // Dynamic field values
 
         protected async void HandleCategoryChanged(string newValue)
@@ -47,7 +66,6 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
 
             StateHasChanged(); // Re-render after data is loaded
         }
-        [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
         public async Task LogObjectToConsoleAsync<T>(T obj)
         {
@@ -201,6 +219,8 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
                     StreetNumber = adPostModel.StreetNumber,
                     BuildingNumber = adPostModel.BuildingNumber,
                     TearmsAndCondition = adPostModel.IsAgreed,
+                    Latitude = adPostModel.Latitude,
+                    Longitude = adPostModel.Longitude,
 
                     AdImagesBase64 = photoUrls
                         .Where(url => !string.IsNullOrEmpty(url))
