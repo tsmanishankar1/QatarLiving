@@ -77,10 +77,12 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost.Components
             StateHasChanged(); // This updates the UI
             return Task.CompletedTask;
         }
+
+        public class OptionItem
+        {
+            public string Id { get; set; }
+            public string Label { get; set; }
+        }
     }
-    public class OptionItem
-    {
-        public string Id { get; set; }
-        public string Label { get; set; }
-    }
+  
 }
