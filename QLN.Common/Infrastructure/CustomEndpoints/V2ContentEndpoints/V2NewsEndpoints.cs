@@ -6,6 +6,7 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
 using Microsoft.AspNetCore.Builder;
 using QLN.Common.Infrastructure.Utilities;
+using System.Text.Json;
 
 public static class V2NewsEndpoints
 {
@@ -75,18 +76,18 @@ public static class V2NewsEndpoints
         {
             try
             {
-                Guid? userId = httpContext.User.GetId();
-                string userName = httpContext.User.GetName();
+                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var uid = userData.GetProperty("uid").GetString();
+                dto.UpdatedBy = uid;
 
-                if (!userId.HasValue || string.IsNullOrWhiteSpace(userName))
-                    return TypedResults.Forbid();
 
-                dto.CreatedBy = userId.Value;
-                dto.UpdatedBy = userId.Value;
+                dto.CreatedBy = uid;
+                dto.UpdatedBy = uid;
                 dto.CreatedAt = DateTime.UtcNow;
                 dto.UpdatedAt = DateTime.UtcNow;
 
-                var result = await service.CreateNewsArticleAsync(userId.Value, dto, cancellationToken);
+                var result = await service.CreateNewsArticleAsync(uid, dto, cancellationToken);
                 return TypedResults.Ok(result);
             }
             catch (InvalidDataException ex)
@@ -147,7 +148,7 @@ public static class V2NewsEndpoints
         {
             try
             {
-                if (dto.CreatedBy == Guid.Empty || dto.UpdatedBy == Guid.Empty)
+                if (dto.CreatedBy == string.Empty || dto.UpdatedBy == string.Empty)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -271,11 +272,10 @@ public static class V2NewsEndpoints
             try
             {
                 // ✅ Extract user from token
-                Guid? userId = httpContext.User.GetId();
-                string userName = httpContext.User.GetName();
-
-                if (!userId.HasValue || string.IsNullOrWhiteSpace(userName))
-                    return TypedResults.Forbid();
+                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var uid = userData.GetProperty("uid").GetString();
+                dto.UpdatedBy = uid;
 
                 // ✅ Basic validation
                 if (dto.Id == Guid.Empty)
@@ -286,9 +286,9 @@ public static class V2NewsEndpoints
                         Status = 400
                     });
 
-                dto.UserId = userId.Value;
-                dto.authorName = userName;
-                dto.UpdatedBy = userId.Value;
+                dto.UserId = uid;
+                dto.authorName = uid;
+                dto.UpdatedBy = uid;
                 dto.UpdatedAt = DateTime.UtcNow;
 
                 var result = await service.UpdateNewsArticleAsync(dto, cancellationToken);
@@ -338,7 +338,7 @@ public static class V2NewsEndpoints
            {
                try
                {
-                   if (dto.UserId == Guid.Empty || string.IsNullOrWhiteSpace(dto.authorName))
+                   if (dto.UserId == string.Empty || string.IsNullOrWhiteSpace(dto.authorName))
                    {
                        return TypedResults.BadRequest(new ProblemDetails
                        {

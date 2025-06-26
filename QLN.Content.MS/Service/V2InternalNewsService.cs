@@ -36,6 +36,10 @@ namespace QLN.Content.MS.Service
                         SubCategories = new List<V2NewsSubCategory>() {
                             new() { Id = 1, CategoryName = "Qatar" },
                             new() { Id = 2, CategoryName = "Middle East" },
+                            new() { Id = 3, CategoryName = "World" },
+                            new() { Id = 4, CategoryName = "Health & Education" },
+                            new() { Id = 5, CategoryName = "Community" },
+                            new() { Id = 6, CategoryName = "Law" },
                         }
                     },
 
@@ -45,7 +49,11 @@ namespace QLN.Content.MS.Service
                         CategoryName = "Business",
                         SubCategories = [
                             new() { Id = 1, CategoryName = "QatarEconomy" },
-                            new() { Id = 2, CategoryName = "MarketUpdates" }
+                            new() { Id = 2, CategoryName = "MarketUpdates" },
+                            new() { Id = 2, CategoryName = "Real Estate" },
+                            new() { Id = 2, CategoryName = "Entrepreneurship" },
+                            new() { Id = 2, CategoryName = "Finance" },
+                            new() { Id = 2, CategoryName = "Jobs & Careers" }
                         ]
                     },
 
@@ -55,7 +63,11 @@ namespace QLN.Content.MS.Service
                         CategoryName = "Sports",
                         SubCategories = [
                             new() { Id = 1, CategoryName = "Qatar Sports" },
-                            new() { Id = 2, CategoryName = "FootBall" }
+                            new() { Id = 2, CategoryName = "FootBall" },
+                            new() { Id = 2, CategoryName = "International " },
+                            new() { Id = 2, CategoryName = "MotorSports" },
+                            new() { Id = 2, CategoryName = "Olympics" },
+                            new() { Id = 2, CategoryName = "Athelete Features" }
                         ]
                     },
 
@@ -65,7 +77,11 @@ namespace QLN.Content.MS.Service
                         CategoryName = "LifeStyle",
                         SubCategories = [
                             new() { Id = 1, CategoryName = "Food & Dining" },
-                            new() { Id = 2, CategoryName = "Travel & Leisure" }
+                            new() { Id = 2, CategoryName = "Travel & Leisure" },
+                            new() { Id = 2, CategoryName = "Arts & Culture" },
+                            new() { Id = 2, CategoryName = "Events" },
+                            new() { Id = 2, CategoryName = "Fashion & Style" },
+                            new() { Id = 2, CategoryName = "Home & Living" }
                         ]
                     }
            ];
@@ -104,7 +120,7 @@ namespace QLN.Content.MS.Service
 
             return await Task.FromResult(slots);
         }
-        public async Task<CreateNewsArticleResponseDto> CreateNewsArticleAsync(Guid userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default)
+        public async Task<CreateNewsArticleResponseDto> CreateNewsArticleAsync(string userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default)
         {
             try
             {
