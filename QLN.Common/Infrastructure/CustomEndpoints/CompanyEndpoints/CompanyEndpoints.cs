@@ -8,6 +8,7 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 {
@@ -28,13 +29,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             {
                 try
                 {
-                    var userId = httpContext.User.FindFirst("sub")?.Value
-                              ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                    if (!Guid.TryParse(userId, out var userGuid))
-                        return TypedResults.Forbid();
-
-                    dto.UserId = userGuid; 
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+                    var isSubcriber = userData.GetProperty("roles").EnumerateArray()
+                        .Any(r => r.GetString() == "subscription");
+                    dto.UserId = uid;
 
                     var result = await service.CreateCompany(dto, cancellationToken);
                     return TypedResults.Ok(result);
@@ -57,7 +58,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                     );
                 }
             })
-            .RequireAuthorization(new AuthorizeAttribute { Roles = "Subscriber" })
             .WithName("CreateCompanyProfile")
             .WithTags("Company")
             .WithSummary("Create a company profile")
@@ -78,7 +78,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             {
                 try
                 {
-                    if (dto.UserId == Guid.Empty)
+                    if (dto.UserId == string.Empty)
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Validation Error",
@@ -204,11 +204,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             {
                 try
                 {
-                    var tokenUserId = httpContext.User.FindFirst("sub")?.Value
-                                    ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                    if (!Guid.TryParse(tokenUserId, out var userGuid))
-                        return TypedResults.Forbid();
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+                    var isSubcriber = userData.GetProperty("roles").EnumerateArray()
+                        .Any(r => r.GetString() == "subscription");
 
                     var existingCompany = await service.GetCompanyById(dto.Id.Value, cancellationToken);
                     if (existingCompany == null)
@@ -221,10 +222,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                         });
                     }
 
-                    if (existingCompany.UserId != userGuid)
+                    if (existingCompany.UserId != uid)
                         return TypedResults.Forbid();
 
-                    dto.UserId = userGuid;
+                    dto.UserId = uid;
 
                     var updated = await service.UpdateCompany(dto, cancellationToken);
                     return TypedResults.Ok(updated);
@@ -243,7 +244,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message, 500);
                 }
             })
-            .RequireAuthorization(new AuthorizeAttribute { Roles = "Subscriber" })
             .WithName("UpdateCompanyProfile")
             .WithTags("Company")
             .WithSummary("Update a company profile")
@@ -266,7 +266,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             {
                 try
                 {
-                    if (dto.UserId == Guid.Empty)
+                    if (dto.UserId == string.Empty)
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Validation Error",
@@ -736,15 +736,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             {
                 try
                 {
-                    var tokenUserId = httpContext.User.FindFirst("sub")?.Value
-                                    ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                    if (!Guid.TryParse(tokenUserId, out var userGuid))
-                        return TypedResults.Forbid();
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
 
-                    var allCompanies = await service.GetCompaniesByTokenUser(userGuid, cancellationToken);
+                    var allCompanies = await service.GetCompaniesByTokenUser(uid, cancellationToken);
                     var userCompanies = allCompanies
-                        .Where(c => c.UserId == userGuid)
+                        .Where(c => c.UserId == uid)
                         .ToList();
                     if (userCompanies.Count == 0)
                         throw new KeyNotFoundException("No company profiles found for the current user.");
@@ -778,13 +777,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapGet("/getByUserId", async Task<IResult> (
-            [FromQuery] Guid userId,
+            [FromQuery] string userId,
             ICompanyService service,
             CancellationToken cancellationToken) =>
             {
                 try
                 {
-                    if (userId == Guid.Empty)
+                    if (userId == string.Empty)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -837,18 +836,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             {
                 try
                 {
-                    var tokenUserId = httpContext.User.FindFirst("sub")?.Value
-                                    ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                    if (!Guid.TryParse(tokenUserId, out var userGuid))
-                        return TypedResults.Forbid();
-
-                    var companies = await service.GetStatusByTokenUser(userGuid, cancellationToken);
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+         
+                    var companies = await service.GetStatusByTokenUser(uid, cancellationToken);
 
                     var filtered = companies
                         .Where(c => c.Vertical == vertical &&
                                     c.SubVertical == subVertical &&
-                                    c.UserId == userGuid)
+                                    c.UserId == uid)
                         .ToList();
 
                     if (filtered.Count == 0)
@@ -880,13 +878,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapGet("/statusByUserId", async Task<IResult> (
-                [FromQuery] Guid userId,
+                [FromQuery] string userId,
                 [FromServices] ICompanyService service,
                 CancellationToken cancellationToken) =>
             {
                 try
                 {
-                    if (userId == Guid.Empty)
+                    if (userId == string.Empty)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
