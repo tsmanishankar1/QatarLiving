@@ -1,0 +1,91 @@
+@using MudBlazor
+@using QLN.Web.Shared.Components.Classifieds.DealsCard
+@using QLN.Web.Shared.Components.PaginationFooter
+@using QLN.Web.Shared.Components.PriceSelect
+@inherits ItemListDealsBase
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <div class="item-list-header">
+        <h1 class="item-list-header-title">@($"Items in Qatar ({Deals.Count} results)")</h1>
+        <div class="item-list-header-sort-section">
+            <label class="item-list-header-sort-label">Sort by:</label>
+            <div class="item-list-header-sort-dropdown">
+                <PriceSelect TItem="SortOption"
+             Label=""
+             Placeholder="Default"
+             Items="sortOptions"
+             SelectedId="@selectedSort"
+             SelectedIdChanged="OnSortChanged"
+             GetId="option => option.Id"
+             GetLabel="option => option.Label" />
+
+            </div>
+        </div>
+</div>
+
+    <MudGrid GutterSize="16px">
+        @foreach (var item in Deals)
+        {
+            <MudItem xs="12" sm="6" md="3">
+                <DealsCard DealData="item" OnClick="() => OnDealClick()" />
+            </MudItem>
+        }
+    </MudGrid>
+
+    <!-- Pagination -->
+    <PaginationFooter TotalItems="Deals.Count" CurrentPage="currentPage" PageSize="pageSize"
+        OnPageChange="HandlePageChange" OnPageSizeChange="HandlePageSizeChange" />
+
+</MudContainer>
+
+<style>
+      .item-list-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    .item-list-header-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 500;
+        color: #242424;
+    }
+
+    .item-list-header-sort-section {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .item-list-header-sort-label {
+        font-weight: 500;
+        font-size: 13px;
+        color: #242424;
+    }
+
+    .item-list-header-sort-dropdown {
+        min-width: 180px;
+    }
+
+    .item-list-header-sort-section {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .item-list-header-sort-dropdown {
+        min-width: 155px;
+    }
+     @@media (max-width: 770px) {
+   
+        .item-list-header-sort-label{
+            display: none;
+        }
+        .item-list-header-title{
+            font-size: 14px;
+        }
+    }
+</style>

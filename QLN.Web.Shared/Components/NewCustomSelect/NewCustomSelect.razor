@@ -35,7 +35,7 @@
         <div class="select-dropdown animate-dropdown">
             @if (!string.IsNullOrEmpty(Placeholder))
             {
-                <div class="dropdown-item disabled">@Placeholder</div>
+                <div class="dropdown-item-placeholder disabled">@Placeholder</div>
             }
 
             @foreach (var item in Items)
@@ -148,7 +148,16 @@
     }
 
     .select-value-placeholder {
-        color: #787878;
+        color: #A1A1A1;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
+    }
+    .select-value-placeholder {
+        color: #A1A1A1;
         display: -webkit-box;
         -webkit-line-clamp: 1;
         -webkit-box-orient: vertical;
@@ -157,9 +166,11 @@
         white-space: normal;
     }
 
-    .select-value-selected {
+    .dropdown-item-placeholder {
+        margin: 0;
+        padding: 0 5px;
         width: 100%;
-        color: #242424;
+        color: #A1A1A1;
         display: -webkit-box;
         -webkit-line-clamp: 1;
         -webkit-box-orient: vertical;
@@ -215,8 +226,9 @@
         cursor: pointer;
         white-space: nowrap;
     }
-
+ 
     .dropdown-text {
+        margin: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         -webkit-line-clamp: 1;

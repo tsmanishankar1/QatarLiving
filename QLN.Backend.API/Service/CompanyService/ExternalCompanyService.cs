@@ -8,7 +8,6 @@ using QLN.Common.Infrastructure.IService.IEmailService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Utilities;
-using System.ComponentModel.Design;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -37,13 +36,15 @@ namespace QLN.Backend.API.Service.CompanyService
 
             try
             {
+                var id = Guid.NewGuid();
+                dto.Id = id;
                 if (!string.IsNullOrWhiteSpace(dto.CRDocument))
                 {
                     var (crExtension, crBase64) = Base64Helper.ParseBase64(dto.CRDocument);
                     if (crExtension is not ("pdf" or "png" or "jpg"))
                         throw new ArgumentException("CR Document must be in PDF, PNG, or JPG format.");
 
-                    crBlobFileName = $"{dto.BusinessName}_{dto.UserId}.{crExtension}";
+                    crBlobFileName = $"{dto.BusinessName}_{id}.{crExtension}";
                     var crBlobUrl = await _blobStorage.SaveBase64File(crBase64, crBlobFileName, "crdocument", cancellationToken);
                     dto.CRDocument = crBlobUrl;
                 }
@@ -57,7 +58,7 @@ namespace QLN.Backend.API.Service.CompanyService
                     if (logoExtension is not ("png" or "jpg"))
                         throw new ArgumentException("Company logo must be in PNG or JPG format.");
 
-                    logoBlobFileName = $"{dto.BusinessName}_{dto.UserId}.{logoExtension}";
+                    logoBlobFileName = $"{dto.BusinessName}_{id}.{logoExtension}";
                     var logoBlobUrl = await _blobStorage.SaveBase64File(logoBase64Data, logoBlobFileName, "companylogo", cancellationToken);
                     dto.CompanyLogo = logoBlobUrl;
                 }
@@ -70,7 +71,7 @@ namespace QLN.Backend.API.Service.CompanyService
 
                 if (response.StatusCode == HttpStatusCode.BadRequest)
                 {
-                    var errorJson = await response.Content.ReadAsStringAsync();
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
                     string errorMessage;
                     try
@@ -88,7 +89,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 }
                 response.EnsureSuccessStatusCode();
 
-                var rawJson = await response.Content.ReadAsStringAsync();
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
             }
             catch (Exception ex)
@@ -151,27 +152,27 @@ namespace QLN.Backend.API.Service.CompanyService
             string? logoBlobFileName = null;
             try
             {
-                if (!string.IsNullOrWhiteSpace(dto.CRDocument))
+                var id = dto.Id != Guid.Empty ? dto.Id : Guid.NewGuid();
+                dto.Id = id;
+
+                if (!string.IsNullOrWhiteSpace(dto.CRDocument) && !dto.CRDocument.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                 {
                     var (crExtension, crBase64) = Base64Helper.ParseBase64(dto.CRDocument);
                     if (crExtension is not ("pdf" or "png" or "jpg"))
                         throw new ArgumentException("CR Document must be in PDF, PNG, or JPG format.");
 
-                    crBlobFileName = $"{dto.BusinessName}_{dto.UserId}.{crExtension}";
+                    crBlobFileName = $"{dto.BusinessName}_{id}.{crExtension}";
                     var crBlobUrl = await _blobStorage.SaveBase64File(crBase64, crBlobFileName, "crdocument", cancellationToken);
                     dto.CRDocument = crBlobUrl;
                 }
-                if (!string.IsNullOrWhiteSpace(dto.CompanyLogo))
+
+                if (!string.IsNullOrWhiteSpace(dto.CompanyLogo) && !dto.CompanyLogo.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                 {
-                    string logoExtension;
-                    string logoBase64Data;
-
-                    (logoExtension, logoBase64Data) = Base64Helper.ParseBase64(dto.CompanyLogo);
-
+                    var (logoExtension, logoBase64Data) = Base64Helper.ParseBase64(dto.CompanyLogo);
                     if (logoExtension is not ("png" or "jpg"))
                         throw new ArgumentException("Company logo must be in PNG or JPG format.");
 
-                    logoBlobFileName = $"{dto.BusinessName}_{dto.UserId}.{logoExtension}";
+                    logoBlobFileName = $"{dto.BusinessName}_{id}.{logoExtension}";
                     var logoBlobUrl = await _blobStorage.SaveBase64File(logoBase64Data, logoBlobFileName, "companylogo", cancellationToken);
                     dto.CompanyLogo = logoBlobUrl;
                 }
@@ -185,7 +186,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
                 if (response.StatusCode == HttpStatusCode.BadRequest)
                 {
-                    var errorJson = await response.Content.ReadAsStringAsync();
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
                     string errorMessage;
                     try
@@ -203,7 +204,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 }
                 response.EnsureSuccessStatusCode();
 
-                var rawJson = await response.Content.ReadAsStringAsync();
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
             }
             catch (Exception ex)
@@ -235,13 +236,14 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<List<CompanyProfileCompletionStatusDto>> GetCompanyProfileCompletionStatus(
+        public async Task<List<CompanyProfileCompletionStatusDto?>> GetCompanyProfileCompletionStatus(
             Guid userId, VerticalType vertical, CancellationToken cancellationToken = default)
         {
             try
             {
                 var url = $"/api/companyprofile/completionstatusbyuserId?userId={userId}&vertical={vertical}";
-                var response = await _dapr.InvokeMethodAsync<List<CompanyProfileCompletionStatusDto>>(
+
+                var response = await _dapr.InvokeMethodAsync<List<CompanyProfileCompletionStatusDto?>>(
                     HttpMethod.Get,
                     ConstantValues.CompanyServiceAppId,
                     url,
@@ -264,14 +266,8 @@ namespace QLN.Backend.API.Service.CompanyService
             try
             {
                 var allCompanies = await GetAllCompanies(cancellationToken);
-                var company = allCompanies.FirstOrDefault(c => c.Id == dto.CompanyId);
-
-                if (company == null)
-                    throw new KeyNotFoundException($"Company with ID {dto.CompanyId} not found.");
-
-                var user = await _userManager.FindByIdAsync(company.UserId.ToString());
-                if (user == null)
-                    throw new KeyNotFoundException($"User with ID {company.UserId} not found.");
+                var company = allCompanies.FirstOrDefault(c => c.Id == dto.CompanyId) ?? throw new KeyNotFoundException($"Company with ID {dto.CompanyId} not found.");
+                var user = await _userManager.FindByIdAsync(company.UserId.ToString()) ?? throw new KeyNotFoundException($"User with ID {company.UserId} not found.");
 
                 if (user.IsCompany == true && company.IsVerified == true)
                     throw new InvalidDataException("Company is already marked as approved.");
@@ -294,7 +290,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
                 if (response.StatusCode == HttpStatusCode.BadRequest)
                 {
-                    var errorJson = await response.Content.ReadAsStringAsync();
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
                     string errorMessage;
                     try
@@ -324,7 +320,8 @@ namespace QLN.Backend.API.Service.CompanyService
                     var htmlBody = _emailSender.GetApprovalEmailTemplate(company.BusinessName);
                     await _emailSender.SendEmail(company.Email, subject, htmlBody);
                 }
-                var rawJson = await response.Content.ReadAsStringAsync();
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
             }
             catch (KeyNotFoundException ex)
@@ -383,6 +380,8 @@ namespace QLN.Backend.API.Service.CompanyService
                 }
 
                 var json = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                // TODO: Possibly create this once and reuse it, not creating a new instance every time
                 return JsonSerializer.Deserialize<List<CompanyProfileVerificationStatusDto>>(json, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
@@ -414,6 +413,27 @@ namespace QLN.Backend.API.Service.CompanyService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving companies for token user");
+                throw;
+            }
+        }
+        public async Task<List<ProfileStatus>> GetStatusByTokenUser(Guid userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/companyprofile/statusByUserId?userId={userId}";
+
+                var companies = await _dapr.InvokeMethodAsync<List<ProfileStatus>>(
+                    HttpMethod.Get,
+                    ConstantValues.CompanyServiceAppId,
+                    url,
+                    cancellationToken
+                );
+
+                return companies ?? new();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get status by token user");
                 throw;
             }
         }

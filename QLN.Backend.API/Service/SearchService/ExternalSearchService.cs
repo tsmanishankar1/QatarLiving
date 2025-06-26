@@ -1,13 +1,9 @@
-﻿using System;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Dapr;
+﻿using Dapr;
 using Dapr.Client;
-using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.ISearchService;
+using System.Net;
 
 namespace QLN.Backend.API.Service.SearchService
 {
@@ -32,9 +28,9 @@ namespace QLN.Backend.API.Service.SearchService
         {
             if (string.IsNullOrWhiteSpace(vertical))
                 throw new ArgumentException("Vertical is required.", nameof(vertical));
-            if (request == null)
-                throw new ArgumentNullException(nameof(request));
-            
+
+            ArgumentNullException.ThrowIfNull(request);
+
             try
             {
                 var methodName = $"/api/{vertical}/search";
@@ -69,8 +65,7 @@ namespace QLN.Backend.API.Service.SearchService
         /// </summary>
         public async Task<string> UploadAsync(CommonIndexRequest request)
         {
-            if (request == null)
-                throw new ArgumentNullException(nameof(request));
+            ArgumentNullException.ThrowIfNull(request);
 
             try
             {

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using System.Linq;
 
 namespace QLN.Web.Shared.Components.MoreFilters
 {
@@ -11,14 +12,14 @@ namespace QLN.Web.Shared.Components.MoreFilters
         [Parameter] public Dictionary<string, bool> Selection { get; set; } = new();
 
         protected Dictionary<string, bool> confirmedSelection = new();
-        protected bool showFilters;
+        protected bool showFilters = false;
         protected int SelectedFilterCount => confirmedSelection.Count(x => x.Value);
 
         protected bool IsMobile = false;
         protected int windowWidth;
         protected bool _jsInitialized;
         protected const int MobileBreakpoint = 770;
-private IJSObjectReference? outsideClickHandler;
+        private IJSObjectReference? outsideClickHandler;
 
         [Inject] protected IJSRuntime JS { get; set; } = default!;
         protected DotNetObjectReference<MoreFiltersBase>? dotNetRef;
@@ -34,68 +35,75 @@ private IJSObjectReference? outsideClickHandler;
             {
                 dotNetRef = DotNetObjectReference.Create(this);
 
-                windowWidth = await JS.InvokeAsync<int>("getWindowWidth");
+                windowWidth = await JS.InvokeAsync<int>("blazorResize.getWidth");
                 IsMobile = windowWidth <= MobileBreakpoint;
 
+                await JS.InvokeVoidAsync("blazorResize.registerResizeCallback", dotNetRef);
                 await JS.InvokeVoidAsync("toggleBodyScroll", showFilters && IsMobile);
-                await JS.InvokeVoidAsync("registerResizeHandler", dotNetRef);
 
                 _jsInitialized = true;
                 StateHasChanged();
             }
         }
-
-       protected async void ToggleFilter()
-{
-    showFilters = !showFilters;
-
-    if (_jsInitialized)
-    {
-        await JS.InvokeVoidAsync("toggleBodyScroll", showFilters && IsMobile);
-
-        if (showFilters && !IsMobile)
+        protected async void ToggleFilter()
         {
-            outsideClickHandler = await JS.InvokeAsync<IJSObjectReference>(
-                "registerOutsideClickHandler", ".filter-panel", dotNetRef);
-        }
-        else
-        {
-            await DisposeOutsideClickHandler();
-        }
-    }
-}
+            bool wasOpen = showFilters;
+            showFilters = !showFilters;
 
-private async Task DisposeOutsideClickHandler()
-{
-    if (outsideClickHandler != null)
-    {
-        await outsideClickHandler.InvokeVoidAsync("dispose");
-        outsideClickHandler = null;
-    }
-}
+            if (_jsInitialized)
+            {
+                await JS.InvokeVoidAsync("toggleBodyScroll", showFilters && IsMobile);
+
+                if (showFilters && !IsMobile && !wasOpen)
+                {
+                    // Only register outside click if opening, and not already registered
+                    if (outsideClickHandler == null)
+                    {
+                        outsideClickHandler = await JS.InvokeAsync<IJSObjectReference>(
+                            "registerOutsideClickHandlerOut", ".filter-panel", dotNetRef);
+                    }
+                }
+                else if (!showFilters)
+                {
+                    await DisposeOutsideClickHandler();
+                }
+            }
+
+            StateHasChanged();
+        }
+
+
+        private async Task DisposeOutsideClickHandler()
+        {
+            if (outsideClickHandler != null)
+            {
+                await outsideClickHandler.InvokeVoidAsync("dispose");
+                outsideClickHandler = null;
+            }
+        }
 
         protected async Task ApplyFilters()
         {
             confirmedSelection = new Dictionary<string, bool>(Selection);
             showFilters = false;
             await JS.InvokeVoidAsync("toggleBodyScroll", false);
+            await DisposeOutsideClickHandler();
             await OnApply.InvokeAsync();
         }
-      [JSInvokable]
-public async Task CloseFilters()
-{
-    showFilters = false;
 
-    if (IsMobile)
-    {
-        await JS.InvokeVoidAsync("toggleBodyScroll", false);
-    }
+        [JSInvokable]
+        public async Task CloseFilters()
+        {
+            showFilters = false;
 
-    await DisposeOutsideClickHandler();
-    StateHasChanged();
-}
+            if (IsMobile)
+            {
+                await JS.InvokeVoidAsync("toggleBodyScroll", false);
+            }
 
-
+            await DisposeOutsideClickHandler();
+            StateHasChanged();
+        }
 
         protected async Task ResetFilters()
         {
@@ -107,7 +115,6 @@ public async Task CloseFilters()
             await OnReset.InvokeAsync();
         }
 
-
         [JSInvokable]
         public async Task UpdateWindowWidth(int width)
         {
@@ -117,13 +124,12 @@ public async Task CloseFilters()
             if (IsMobile != newIsMobile)
             {
                 IsMobile = newIsMobile;
-                await JS.InvokeVoidAsync("toggleBodyScroll", IsMobile);
+                await JS.InvokeVoidAsync("toggleBodyScroll", showFilters && IsMobile);
                 StateHasChanged();
             }
         }
-    
-   
-   public void Dispose()
+
+        public void Dispose()
         {
             dotNetRef?.Dispose();
         }

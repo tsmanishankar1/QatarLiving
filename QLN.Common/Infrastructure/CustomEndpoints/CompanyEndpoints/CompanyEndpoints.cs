@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using System.Security.Claims;
@@ -178,6 +179,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                     );
                 }
             })
+            .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" })
             .WithName("GetAllCompanyProfiles")
             .WithTags("Company")
             .WithSummary("Get all company profiles")
@@ -402,6 +404,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                     );
                 }
             })
+            .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" })
             .WithName("GetCompanyProfileCompletionStatus")
             .WithTags("Company")
             .WithSummary("Get company profile completion status")
@@ -616,6 +619,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                     );
                 }
             })
+            .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" })
             .WithName("GetCompanyApprovalInfo")
             .WithTags("Company")
             .WithSummary("Get approval info of a company")
@@ -818,6 +822,108 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .ExcludeFromDescription()
             .Produces<List<CompanyProfileDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+        public static RouteGroupBuilder MapGetStatusByTokenUser(this RouteGroupBuilder group)
+        {
+            group.MapGet("/profileStatus", async Task<IResult> (
+                HttpContext httpContext,
+                [FromQuery] VerticalType vertical,
+                [FromQuery] SubVertical subVertical,
+                [FromServices] ICompanyService service,
+                CancellationToken cancellationToken = default) =>
+            {
+                try
+                {
+                    var tokenUserId = httpContext.User.FindFirst("sub")?.Value
+                                    ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                    if (!Guid.TryParse(tokenUserId, out var userGuid))
+                        return TypedResults.Forbid();
+
+                    var companies = await service.GetStatusByTokenUser(userGuid, cancellationToken);
+
+                    var filtered = companies
+                        .Where(c => c.Vertical == vertical &&
+                                    c.SubVertical == subVertical &&
+                                    c.UserId == userGuid)
+                        .ToList();
+
+                    if (filtered.Count == 0)
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "No company profiles matched the given vertical and subvertical for this user.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+
+                    return TypedResults.Ok(filtered);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetCompanyStatusByTokenUser")
+            .WithTags("Company")
+            .WithSummary("Get filtered company profiles for token user")
+            .WithDescription("Returns company profiles matching vertical and subvertical for the current user.")
+            .Produces<List<ProfileStatus>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/statusByUserId", async Task<IResult> (
+                [FromQuery] Guid userId,
+                [FromServices] ICompanyService service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    if (userId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "UserId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var companies = await service.GetStatusByTokenUser(userId, cancellationToken);
+                    if (companies == null || companies.Count == 0)
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "No company profiles found for the provided user ID.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+
+                    return TypedResults.Ok(companies);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetCompanyStatusByUserId")
+            .WithTags("Company")
+            .WithSummary("Get all company profiles for given userId")
+            .WithDescription("Used for internal filtering of user companies")
+            .ExcludeFromDescription()
+            .Produces<List<ProfileStatus>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;

@@ -49,7 +49,7 @@ namespace QLN.Web.Shared.Components.Classifieds.FeaturedItemCard
 
         protected void HandleSelect(LandingFeaturedItemDto item)
         {
-            Navigation.NavigateTo($"/classifieds/items/details?id={item.Order}");
+            Navigation.NavigateTo($"/qln/classifieds/items/details/{item.Id}");
         }
     }
 }
