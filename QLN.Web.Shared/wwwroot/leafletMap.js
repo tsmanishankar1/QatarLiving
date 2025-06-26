@@ -1,5 +1,12 @@
 ﻿window.initMap = (lat, lng) => {
-    const map = L.map('map').setView([lat, lng], 16);
+   // const map = L.map('map-container').setView([lat, lng], 16);
+    console.log(lat,lng);
+
+    // initialize the map on the "map" div with a given center and zoom
+    var map = L.map('map-container', {
+        center: [lat, lng],
+        zoom: 13
+    });
     console.log(map);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'

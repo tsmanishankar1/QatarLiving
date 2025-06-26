@@ -76,7 +76,6 @@
         <script src="_content/Extensions.MudBlazor.StaticInput/NavigationObserver.js?v=3.2.0" defer></script> 
     *@
      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="@Assets["_content/QLN.Web.Shared/leafletMap.js"]"></script>
     <script>
         window.setVideoFirstFrame = function (videoElement) {
@@ -838,21 +837,21 @@
     </script>
     <script>
 
-        if (!window.__blazorStarted) {
-            window.__blazorStarted = true;
-            Blazor.start({
-                reconnectionOptions: {
-                    maxRetries: 5,
-                    retryIntervalMilliseconds: 4000
-                },
-                onConnectionDown: (options, error) => {
-                    console.warn('Connection down:', error);
-                    setTimeout(() => {
-                        location.reload();
-                    }, 30000); // reload after 30s if not reconnected
-                }
-            });
-        }
+        // if (!window.__blazorStarted) {
+        //     window.__blazorStarted = true;
+        //     Blazor.start({
+        //         reconnectionOptions: {
+        //             maxRetries: 5,
+        //             retryIntervalMilliseconds: 4000
+        //         },
+        //         onConnectionDown: (options, error) => {
+        //             console.warn('Connection down:', error);
+        //             setTimeout(() => {
+        //                 location.reload();
+        //             }, 30000); reload after 30s if not reconnected
+        //         }
+        //     });
+        // }
 
     </script>
     <script>
