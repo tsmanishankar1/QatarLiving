@@ -13,7 +13,6 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
     public class CreatePostComponentBase : ComponentBase
     {
         [Inject] private IClassifiedsServices _classifiedsService { get; set; } = default!;
-
         [Inject] private ILogger<CreatePostComponentBase> Logger { get; set; }
         protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
         protected bool IsLoadingCategories { get; set; } = true;
@@ -35,7 +34,10 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
                 new () { Label = "Classifieds", Url = "/qln/classifieds" },
                 new () { Label = "Create Form", Url = "/qln/classifieds/createform", IsLast = true }
             };
+
+
         }
+
         private Dictionary<string, string> dynamicFieldValues = new(); // Dynamic field values
 
         protected async void HandleCategoryChanged(string newValue)
@@ -47,7 +49,6 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
 
             StateHasChanged(); // Re-render after data is loaded
         }
-        [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
         public async Task LogObjectToConsoleAsync<T>(T obj)
         {
@@ -201,6 +202,8 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
                     StreetNumber = adPostModel.StreetNumber,
                     BuildingNumber = adPostModel.BuildingNumber,
                     TearmsAndCondition = adPostModel.IsAgreed,
+                    Latitude = adPostModel.Latitude,
+                    Longitude = adPostModel.Longitude,
 
                     AdImagesBase64 = photoUrls
                         .Where(url => !string.IsNullOrEmpty(url))
