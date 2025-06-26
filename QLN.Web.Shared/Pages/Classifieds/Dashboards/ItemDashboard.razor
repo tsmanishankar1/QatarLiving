@@ -352,18 +352,20 @@
                                             <MudIconButton Icon="@Icons.Material.Filled.MoreVert" />
                                         </ActivatorContent>
                                         <ChildContent>
-                                            <MudMenuItem @onclick="() => UnPublishAd(ad.Id)" Class="menu-item">
+                                            <MudMenuItem @onclick="() => UnPublishAd(ad.Id)" Class="menu-item-style">
                                                 <img src="/qln-images/subscription/unpublish.svg" class="menu-icon" />
                                                 <span>Unpublish</span>
                                             </MudMenuItem>
-                                            <MudMenuItem @onclick="() => OnEditAd(ad.Id)" Class="menu-item">
+                                            <MudMenuItem @onclick="() => OnEditAd(ad.Id)" Class="menu-item-style">
                                                 <img src="/qln-images/subscription/edit.svg" class="menu-icon" />
                                                 <span>Edit Ad</span>
                                             </MudMenuItem>
+                                              <MudMenuItem @onclick="() => onPreview(ad.Id)" Class="menu-item-style">
                                             <MudMenuItem @onclick="() => onPreview(ad.Id)" Class="menu-item">
                                                 <img src="/qln-images/subscription/preview.svg" class="menu-icon" />
                                                 <span>Preview </span>
                                             </MudMenuItem>
+                                              <MudMenuItem @onclick="() => onRemove(ad.Id)" Class="menu-item-style">
                                             <MudMenuItem @onclick="() => onRemove(ad.Id)" Class="menu-item">
                                                 <img src="/qln-images/subscription/remove.svg" class="menu-icon" />
                                                 <span>Remove </span>
@@ -913,11 +915,13 @@
         min-width: 200px;
     }
 
-    .menu-item {
+    .menu-item-style {
         display: flex;
         align-items: center;
         gap: 8px;
         padding: 8px 12px;
+        width: 150px;
+        padding-left: 20px;
     }
 
     .menu-icon {
