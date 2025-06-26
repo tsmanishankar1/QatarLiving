@@ -1,5 +1,5 @@
-﻿@page "/qln/classified/dashboard/items"
-@inherits ItemDashboardBase
+﻿@page "/qln/classified/dashboard/PreLoved"
+@inherits PreLovedDashboardBase
 @using MudBlazor
 @using QLN.Web.Shared.Components.BreadCrumb
 @using QLN.Web.Shared.Components.EmptyCard
@@ -8,20 +8,52 @@
 
 <div>
     <MudContainer MaxWidth="MaxWidth.Large" Class="dashboard-container">
-        <ClassifiedsDashboard SelectedDashboard="DashboardType.Items" />
-
+                         <ClassifiedsDashboard SelectedDashboard="DashboardType.PreLoved" />
 
         <div class="dashboard-header">
             <div class="dashboard-title-container">
                 <MudText class="dashboard-title">
-                    Items Dashboard
+                    PreLoved Dashboard
                 </MudText>
             </div>
-
+            @if (companyProfile == null)
+            {
+                <div class="dashboard-button-container">
+                    <MudButton Variant="Variant.Outlined" Class="font-semibold dashboard-edit-profile-button"
+                               OnClick="NavigateToCreateProfile">
+                        Create Profile
+                    </MudButton>
+                </div>
+            }
         </div>
 
         <!-- Your dashboard content would go here -->
-        <MudPaper Elevation="0" Class="p-4 rounded-xl dashboard-statistics-container">
+        <MudPaper Class="p-4 rounded-xl dashboard-statistics-container">
+
+            @if (isCompanyLoading)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Medium" Color="Color.Primary" />
+            }
+            else if (companyProfile != null)
+            {
+                <MudPaper Class="p-4 dashboard-company-container">
+                    <img src="@companyProfile.CompanyLogo" alt="Logo" class="dashboard-company-logo" />
+                    <MudText Typo="Typo.h6" Class="mt-2" Style="color:#004F9A; font-weight: bold;">
+                        @companyProfile.BusinessName
+                    </MudText>
+                    <MudText Typo="Typo.body2" Style="color: #5F6C7B;">
+@string.Join(", ", companyProfile.NatureOfBusiness
+    .Select(id => GetDisplayName((NatureOfBusiness)id))) - Company   </MudText>
+                    <MudText Typo="Typo.caption" Class="mt-1" Style="color: #5F6C7B;">Created on</MudText>
+                    <MudText Typo="Typo.caption" Style="color: #5F6C7B;">
+                        @companyProfile.CreatedUtc.ToString("MMM dd, yyyy")
+                    </MudText>
+                    <MudButton Variant="Variant.Outlined" Class="font-semibold mt-3 dashboard-edit-profile-button"
+                                         OnClick="@(() => NavigateToEditProfile(companyProfile.Id))">
+                        Edit Profile
+                    </MudButton>
+                </MudPaper>
+            }
             <!-- Summary Cards -->
             <div class="statistics-content">
                 <div class="statistics-header">
@@ -70,29 +102,7 @@
                             </MudItem>
                         }
                     </MudGrid>
-                    <!-- Promo Card Below -->
-                    <MudPaper Elevation="0" Class="d-flex align-items-center mt-4 px-4 py-3"
-                              Style="background-color: #FFFAF0; border-radius: 8px; justify-content: space-between;">
-                        <!-- Left Side: Icon and Text -->
-                        <div class="d-flex align-items-center" style="gap: 16px;">
-                            <img src="/qln-images/subscription/VisibilitySVG.svg" alt="Visibility Icon" style="width: 50px; height: 50px;" />
-                            <div>
-                                <MudText Typo="Typo.subtitle2" Class="fw-bold" Style="color: #1D1D1F;">Increase views on your listings</MudText>
-                                <MudText Typo="Typo.body2" Style="color: #4A4A4A;">Refresh your ad to list it at the top of the search results.</MudText>
-                            </div>
-                        </div>
-
-                        <!-- Right Side: +10% Visibility and Button -->
-                        <div class="d-flex align-items-center" style="gap: 20px;">
-                            <MudText Typo="Typo.subtitle2" Style="color: #1D1D1F;font-weight: 500;">+10% Visibility</MudText>
-                            <MudButton Style="background-color: #F26D1E; color: white; text-transform: none; font-weight: 500;"
-                                       OnClick="NavigateToPurshaseRefresh">
-                                <img src="/qln-images/subscription/BuyRefreshSVG.svg" alt="Add on Icon" style="width: 24px; height: 24px;margin-right:4px" />
-
-                                Buy Refreshes
-                            </MudButton>
-                        </div>
-                    </MudPaper>
+                
                 }
                 else
                 {
@@ -128,6 +138,7 @@
         </div>
 
         <!-- My Ads Section -->
+       <!-- My Ads Section -->
         <MudPaper Class="mt-4 p-5 rounded-xl" Style="background-color: white; box-shadow: none;padding:40px">
 
 
@@ -541,7 +552,7 @@
                                             @GetStatusLabel(ad.Status)
                                         </MudChip>
                                         <div Class="mt-1 px-2 py-1" Style="background-color: #EDFAFF; border-radius: 4px; display: inline-block;">
-                                            <img src="/qln-images/subscription/expire.svg" alt="Expire Icon" style="width: 14px; height: 14px;" />
+                                                            <img src="/qln-images/subscription/expire.svg" alt="Expire Icon" style="width: 14px; height: 14px;" />
 
                                             <MudText Typo="Typo.caption"
                                                      Style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 11px; color: #0071AF;">
@@ -628,7 +639,7 @@
                                                 Publish Ad
                                             </MudMenuItem>
                                             <MudMenuItem @onclick="() => OnEditAd(ad.Id)" Class="menu-item-style">
-                                                <img src="/qln-images/subscription/unpublish.svg" class="menu-icon" />
+                                                <img src="/qln-images/subscription/edit.svg" class="menu-icon" />
                                                 Edit Ad
                                             </MudMenuItem>
                                             <MudMenuItem @onclick="() => onPreview(ad.Id)" Class="menu-item-style">
@@ -639,7 +650,6 @@
                                                 <img src="/qln-images/subscription/remove.svg" class="menu-icon" />
                                                 <span>Remove </span>
                                             </MudMenuItem>
-                                         
                                         </ChildContent>
                                     </MudMenu>
                                 </div>
@@ -850,7 +860,7 @@
         align-items: center;
         gap: 20px;
         border-radius: 4px;
-        height: 140px !important;
+        height: 100px !important;
         background-color: #F9FAFB;
         padding: 16px;
     }
@@ -959,23 +969,6 @@
         padding-left: 8px;
     }
 
-    .custom-menu-width .mud-popover {
-        min-width: 200px;
-    }
-
-    .menu-item-style {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        width: 150px;
-        padding-left: 20px;
-    }
-
-    .menu-icon {
-        width: 18px;
-        height: 18px;
-    }
 
 
     .no-underline .mud-input-underline::before,
@@ -1045,6 +1038,24 @@
     .post-analytics-text-stat-value {
         color: #00426D;
         margin-left: 4px;
+    }
+
+    .custom-menu-width .mud-popover {
+        min-width: 200px;
+    }
+
+    .menu-item-style {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        width: 150px;
+        padding-left: 20px;
+    }
+
+    .menu-icon {
+        width: 18px;
+        height: 18px;
     }
 
 

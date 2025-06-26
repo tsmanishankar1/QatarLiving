@@ -35,23 +35,20 @@ namespace QLN.Web.Shared.Pages.Company
 
             };
         }
-
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
             {
-                var cookie = HttpContextAccessor.HttpContext?.Request.Cookies["qat"];
-                _authToken = cookie;
-                await LoadCompanyProfileAsync(id, _authToken);
+                
+                await LoadCompanyProfileAsync(id);
                 StateHasChanged();
 
-
             }
-
             await base.OnAfterRenderAsync(firstRender);
         }
 
-        protected async Task LoadCompanyProfileAsync(string id, string authToken)
+
+        protected async Task LoadCompanyProfileAsync(string id)
         {
             isCompanyLoading = true;
             companyProfile = null;
@@ -59,7 +56,7 @@ namespace QLN.Web.Shared.Pages.Company
 
             try
             {
-                companyProfile = await CompanyProfileService.GetCompanyProfileByIdAsync(id, authToken);
+                companyProfile = await CompanyProfileService.GetCompanyProfileByIdAsync(id);
                 if (companyProfile == null)
                 {
                     Snackbar.Add("Company profile not found", Severity.Warning);
@@ -88,11 +85,11 @@ namespace QLN.Web.Shared.Pages.Company
                 if (companyProfile != null)
                 {
                     Console.WriteLine($"Saving Company Profile: {companyProfile}");
-                    var updated = await CompanyProfileService.UpdateCompanyProfileAsync(companyProfile, _authToken);
+                    var updated = await CompanyProfileService.UpdateCompanyProfileAsync(companyProfile);
                     if (updated)
                     {
                         Snackbar.Add("Company profile updated successfully", Severity.Success);
-                        await LoadCompanyProfileAsync(id, _authToken);
+                        await LoadCompanyProfileAsync(id);
                     }
                     else
                     {

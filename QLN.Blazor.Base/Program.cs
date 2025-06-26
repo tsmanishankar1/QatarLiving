@@ -187,7 +187,8 @@ builder.Services.AddHttpClient<IClassifiedDashboardService, ClassfiedDashboardSe
 builder.Services.AddHttpClient<ICompanyProfileService, CompanyProfileService>(client =>
 {
     client.BaseAddress = new Uri(baseURL);
-});
+}).AddHttpMessageHandler<JwtTokenHeaderHandler>();
+
 
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ISimpleMemoryCache, SimpleMemoryCache>(); // add shared Banner Service
