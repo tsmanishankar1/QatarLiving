@@ -25,9 +25,9 @@ namespace QLN.Common.DTO_s
         public int CRNumber { get; set; }
         public bool? IsVerified { get; set; } = false;
         public bool IsActive { get; set; }
-        public Guid CreatedBy { get; set; }
+        public string CreatedBy { get; set; }
         public DateTime CreatedUtc { get; set; }
-        public Guid? UpdatedBy { get; set; }
+        public string? UpdatedBy { get; set; }
         public DateTime? UpdatedUtc { get; set; }
     }
 }
