@@ -903,9 +903,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-
-                    dto.UserId = uid;
-                    var response = await service.CreateClassifiedItemsAd(dto, token);
                     var imageUrls = new List<string>
                     {
                         "https://www.qatarliving.com/_next/image?url=%2Fimages%2Ftwo-iphone.jpeg&w=828&q=75",
@@ -925,11 +922,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     {
                         new ImageInfo
                         {
-                            AdImageFileNames = "random_image.jpg", 
+                            AdImageFileNames = "random_image.jpg",
                             Url = selectedImageUrl,
                             Order = 0
                         }
                     };
+                    dto.AdImagesBase64 = images;
+                    dto.UserId = uid;
+                    var response = await service.CreateClassifiedItemsAd(dto, token);
+
                     var classifiedsIndex = new ClassifiedsIndex
                     {
                         SubVertical = dto.SubVertical,
@@ -1117,9 +1118,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-
-                    dto.UserId = uid;
-                    var result = await service.CreateClassifiedPrelovedAd(dto, token);
                     var imageUrls = new List<string>
                     {
                         "https://c1.peakpx.com/wallpaper/573/909/315/store-clothes-clothing-line-fashion-wallpaper.jpg",
@@ -1142,6 +1140,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Order = 0
                         }
                     };
+                    dto.AdImagesBase64 = images;
+                    dto.UserId = uid;
+                    var result = await service.CreateClassifiedPrelovedAd(dto, token);
+                  
                     var prelovedIndex = new ClassifiedsIndex
                     {
                         SubVertical = dto.SubVertical,
@@ -1338,9 +1340,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-
-                    dto.UserId = uid;
-                    var result = await service.CreateClassifiedCollectiblesAd(dto, token);
                     var imageUrls = new List<string>
                      {
                          "https://th.bing.com/th/id/OIP.rRURrtCLR84TLl6BtRDg6QHaLP?rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3",
@@ -1365,6 +1364,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                              Order = 0
                          }
                      };
+                    dto.AdImagesBase64 = images;
+                    dto.UserId = uid;
+                    var result = await service.CreateClassifiedCollectiblesAd(dto, token);
+                    
                     var collectiblesIndex = new ClassifiedsIndex
                     {
                         SubVertical = dto.SubVertical,
