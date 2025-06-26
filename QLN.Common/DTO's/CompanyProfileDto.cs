@@ -11,7 +11,7 @@ namespace QLN.Common.Infrastructure.DTO_s
         [Required]
         public VerticalType Vertical { get; set; }
         public SubVertical? SubVertical { get; set; }
-        public Guid? UserId { get; set; }
+        public string? UserId { get; set; }
         [Required]
         public string Country { get; set; } = string.Empty;
         [Required]
@@ -73,7 +73,7 @@ namespace QLN.Common.Infrastructure.DTO_s
     public class ProfileStatus
     {
         public Guid? CompanyId { get; set; }
-        public Guid? UserId { get; set; }
+        public string? UserId { get; set; }
         public string BusinessName { get; set; } = string.Empty;
         public VerticalType Vertical { get; set; } 
         public SubVertical SubVertical { get; set; }

@@ -393,7 +393,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<List<CompanyProfileDto>> GetCompaniesByTokenUser(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<List<CompanyProfileDto>> GetCompaniesByTokenUser(string userId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -416,7 +416,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<List<ProfileStatus>> GetStatusByTokenUser(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<List<ProfileStatus>> GetStatusByTokenUser(string userId, CancellationToken cancellationToken = default)
         {
             try
             {
