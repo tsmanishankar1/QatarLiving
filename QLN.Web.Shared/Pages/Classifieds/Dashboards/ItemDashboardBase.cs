@@ -42,11 +42,17 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         protected CompanyProfileModel? companyProfile;
 
 
-        private int currentPage = 1;
-        private int pageSize = 12;
+    
         private string searchTerm = string.Empty;
         private int sortOption = 2;
 
+
+        public EventCallback<int> OnPageChange { get; set; }
+        public EventCallback<int> OnPageSizeChange { get; set; }
+        public int CurrentPage = 1;
+        public int PageSize = 12;
+
+        public int TotalItems = 10;
 
         protected override void OnInitialized()
         {
@@ -144,7 +150,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             try
             {
                 publishedAds = await ClassfiedDashboardService
-                    .GetPublishedAds(currentPage, pageSize, searchTerm, sortOption)
+                    .GetPublishedAds(CurrentPage, PageSize, searchTerm, sortOption)
                     ?? new();
             }
             catch (Exception ex)
@@ -168,7 +174,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             try
             {
                 unpublishedAds = await ClassfiedDashboardService
-                    .GetUnpublishedAds(currentPage, pageSize, searchTerm, sortOption)
+                    .GetUnpublishedAds(CurrentPage, PageSize, searchTerm, sortOption)
                     ?? new();
             }
             catch (Exception ex)
@@ -229,6 +235,15 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
                 Console.WriteLine("Error in OnPublishAd: " + ex.Message);
                 Snackbar.Add("An error occurred.", Severity.Error);
             }
+        }
+        protected async void HandlePageChange(int newPage)
+        {
+            await OnPageChange.InvokeAsync(newPage);
+        }
+
+        protected async void HandlePageSizeChange(int newSize)
+        {
+            await OnPageSizeChange.InvokeAsync(newSize);
         }
 
         protected void OnEditAd(string adId)
