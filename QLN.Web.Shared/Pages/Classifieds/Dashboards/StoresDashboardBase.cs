@@ -10,13 +10,13 @@ using static QLN.Web.Shared.Pages.Subscription.SubscriptionDetails;
 
 namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 {
-    public class PreLovedDashboardBase : ComponentBase
+    public class StoresDashboardBase : ComponentBase
     {
         [Inject] protected NavigationManager Navigation { get; set; } = default!;
-        [Inject] protected ISnackbar Snackbar { get; set; }
         [Inject] protected IClassifiedDashboardService ClassfiedDashboardService { get; set; }
         [Inject] protected ICompanyProfileService CompanyProfileService { get; set; }
         [Inject] private IHttpContextAccessor HttpContextAccessor { get; set; }
+        [Inject] protected ISnackbar Snackbar { get; set; }
 
         protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
         protected List<StatItem> stats = new();
@@ -31,6 +31,11 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         protected List<AdModal> unpublishedAds = new();
         protected bool _isLoading { get; set; } = true;
         private string _authToken;
+
+        protected bool isCompanyLoading;
+        protected CompanyProfileModel? companyProfile;
+
+
         private int currentPage = 1;
         private int pageSize = 12;
         private string searchTerm = string.Empty;
@@ -38,8 +43,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
         protected bool _isPublishedLoading = false;
         protected bool _isUnpublishedLoading = false;
-        protected bool isCompanyLoading;
-        protected CompanyProfileModel? companyProfile;
+
 
 
         protected override void OnInitialized()
@@ -54,7 +58,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         {
             if (firstRender)
             {
-               
+                
                 var subscriptionTask = LoadSubscriptionDetailsAsync(3);
                 var companyProfileTask = LoadCompanyProfileAsync();
                 await LoadPublishedAds();
@@ -84,6 +88,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
                 StateHasChanged();
             }
         }
+
 
 
         protected async Task LoadSubscriptionDetailsAsync(int verticalId)
@@ -138,7 +143,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             try
             {
                 publishedAds = await ClassfiedDashboardService
-                    .GetPreLovedPublishedAds(currentPage, pageSize, searchTerm, sortOption)
+                    .GetStoresPublishedAds(currentPage, pageSize, searchTerm, sortOption)
                     ?? new();
             }
             catch (Exception ex)
@@ -162,7 +167,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             try
             {
                 unpublishedAds = await ClassfiedDashboardService
-                    .GetPreLovedUnPublishedAds(currentPage, pageSize, searchTerm, sortOption)
+                    .GetStoresUnPublishedAds(currentPage, pageSize, searchTerm, sortOption)
                     ?? new();
             }
             catch (Exception ex)
@@ -177,29 +182,10 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
                 StateHasChanged();
             }
         }
-        protected async Task OnPublishAd(string adId)
+        protected void OnPublishAd(string adId)
         {
-            try
-            {
-                var result = await ClassfiedDashboardService.PublishAdAsync(adId);
-                if (result)
-                {
-                    Snackbar.Add("Ad published successfully", Severity.Success);
-                    await LoadUnpublishedAds(); 
-                    await LoadPublishedAds();  
-                }
-                else
-                {
-                    Snackbar.Add("Failed to publish ad.", Severity.Error);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error in OnPublishAd: " + ex.Message);
-                Snackbar.Add("An error occurred.", Severity.Error);
-            }
+            Console.WriteLine($"Publish clicked for ad ID: {adId}");
         }
-
 
         protected void OnEditAd(string adId)
         {

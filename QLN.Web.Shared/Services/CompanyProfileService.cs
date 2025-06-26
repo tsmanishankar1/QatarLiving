@@ -20,12 +20,11 @@ namespace QLN.Web.Shared.Services
         }
      
 
-        public async Task<CompanyProfileModel?> GetCompanyProfileAsync(string authToken)
+        public async Task<CompanyProfileModel?> GetCompanyProfileAsync()
         {
             try
             {
                 var request = new HttpRequestMessage(HttpMethod.Get, "api/companyprofile/getByTokenUser");
-                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authToken);
 
                 var response = await _httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode)
@@ -48,12 +47,11 @@ namespace QLN.Web.Shared.Services
             }
         }
 
-        public async Task<CompanyProfileModel?> GetCompanyProfileByIdAsync(string id, string authToken)
+        public async Task<CompanyProfileModel?> GetCompanyProfileByIdAsync(string id)
         {
             try
             {
                 var request = new HttpRequestMessage(HttpMethod.Get, $"api/companyprofile/getById?id={id}");
-                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authToken);
 
                 var response = await _httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode)
@@ -76,7 +74,7 @@ namespace QLN.Web.Shared.Services
             }
         }
 
-        public async Task<bool> UpdateCompanyProfileAsync(CompanyProfileModel model, string authToken)
+        public async Task<bool> UpdateCompanyProfileAsync(CompanyProfileModel model)
         {
             var options = new JsonSerializerOptions
             {
@@ -92,7 +90,6 @@ namespace QLN.Web.Shared.Services
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
 
                 var response = await _httpClient.SendAsync(request);
                 return response.IsSuccessStatusCode;
@@ -104,7 +101,7 @@ namespace QLN.Web.Shared.Services
             }
         }
 
-        public async Task<bool> CreateCompanyProfileAsync(CompanyProfileModelDto model, string authToken)
+        public async Task<bool> CreateCompanyProfileAsync(CompanyProfileModelDto model)
         {
             var options = new JsonSerializerOptions
             {
@@ -124,7 +121,6 @@ namespace QLN.Web.Shared.Services
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
 
                 var response = await _httpClient.SendAsync(request);
                 return response.IsSuccessStatusCode;

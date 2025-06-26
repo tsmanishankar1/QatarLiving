@@ -1,9 +1,12 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Http;
+using MudBlazor;
+using QLN.Common.DTO_s;
 using QLN.Web.Shared.Components.BreadCrumb;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
 using System.ComponentModel.DataAnnotations;
+using static QLN.Web.Shared.Models.ClassifiedsDashboardModel;
 using static QLN.Web.Shared.Pages.Subscription.SubscriptionDetails;
 
 namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
@@ -12,11 +15,13 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
     {
 
         [Inject] protected NavigationManager Navigation { get; set; } = default!;
+        [Inject] protected ISnackbar Snackbar { get; set; }
+
         [Inject] protected IClassifiedDashboardService ClassfiedDashboardService { get; set; }
         [Inject] protected ICompanyProfileService CompanyProfileService { get; set; }
         [Inject] private IHttpContextAccessor HttpContextAccessor { get; set; }
 
-        protected List<BreadcrumbItem> breadcrumbItems = new();
+        protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
         protected List<StatItem> stats = new();
 
         protected int _activeTabIndex;
@@ -28,10 +33,20 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         protected List<AdModal> publishedAds = new();
         protected List<AdModal> unpublishedAds = new();
         protected bool _isLoading { get; set; } = true;
+        protected bool _isPublishedLoading = false;
+        protected bool _isUnpublishedLoading = false;
+
         private string _authToken;
 
         protected bool isCompanyLoading;
         protected CompanyProfileModel? companyProfile;
+
+
+        private int currentPage = 1;
+        private int pageSize = 12;
+        private string searchTerm = string.Empty;
+        private int sortOption = 2;
+
 
         protected override void OnInitialized()
         {
@@ -46,15 +61,9 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         {
             if (firstRender)
             {
-                var cookie = HttpContextAccessor.HttpContext?.Request.Cookies["qat"];
-                _authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6Ijk3NTQ1NGI1LTAxMmItNGQ1NC1iMTUyLWUzMGYzNmYzNjNlMiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJNVUpBWSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6Im11amF5LmFAa3J5cHRvc2luZm9zeXMuY29tIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbW9iaWxlcGhvbmUiOiIrOTE3NzA4MjA0MDcxIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjpbIkNvbXBhbnkiLCJTdWJzY3JpYmVyIl0sIlVzZXJJZCI6Ijk3NTQ1NGI1LTAxMmItNGQ1NC1iMTUyLWUzMGYzNmYzNjNlMiIsIlVzZXJOYW1lIjoiTVVKQVkiLCJFbWFpbCI6Im11amF5LmFAa3J5cHRvc2luZm9zeXMuY29tIiwiUGhvbmVOdW1iZXIiOiIrOTE3NzA4MjA0MDcxIiwiZXhwIjoxNzUwODUwOTg5LCJpc3MiOiJodHRwczovL3Rlc3QucWF0YXJsaXZpbmcuY29tIiwiYXVkIjoiaHR0cHM6Ly90ZXN0LnFhdGFybGl2aW5nLmNvbSJ9.QfCXZnvd6FFVYPi4vX7j9777WJ_lgkKhJSFPijKoCCg";
-                await LoadSubscriptionDetailsAsync(3);
-                ////SetHardcodedBusinessProfile();
-                //await LoadCompanyProfileAsync();
-                //StateHasChanged();
-                //var subscriptionTask = LoadSubscriptionDetailsAsync(3);
-                //var companyProfileTask = LoadCompanyProfileAsync();
-                //await Task.WhenAll(subscriptionTask, companyProfileTask);
+                  await LoadSubscriptionDetailsAsync(3);
+                await LoadUnpublishedAds();
+                await LoadPublishedAds();
 
             }
 
@@ -68,7 +77,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
             try
             {
-                companyProfile = await CompanyProfileService.GetCompanyProfileAsync(_authToken);
+                companyProfile = await CompanyProfileService.GetCompanyProfileAsync();
             }
             catch (Exception ex)
             {
@@ -89,7 +98,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
             try
             {
-                var response = await ClassfiedDashboardService.GetItemDashboard(_authToken);
+                var response = await ClassfiedDashboardService.GetItemDashboard();
 
                 if (response?.ItemsDashboard != null)
                 {
@@ -104,8 +113,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
                 new() { Title = "WhatsApp", Value = $"{response.ItemsDashboard.WhatsAppClicks}", Icon = "WhatsApp.svg" },
                 new() { Title = "Calls", Value = $"{response.ItemsDashboard.Calls}", Icon = "Calls.svg" },
             };
-                    publishedAds = response.ItemsAds?.PublishedAds ?? new();
-
+                 
                 }
                 else
                 {
@@ -126,6 +134,115 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
 
             }
+        }
+
+        private async Task LoadPublishedAds()
+        {
+            _isPublishedLoading = true;
+            StateHasChanged();
+
+            try
+            {
+                publishedAds = await ClassfiedDashboardService
+                    .GetPublishedAds(currentPage, pageSize, searchTerm, sortOption)
+                    ?? new();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error loading published ads: " + ex.Message);
+                _errorMessage = "Something went wrong while loading published ads.";
+                publishedAds = new();
+            }
+            finally
+            {
+                _isPublishedLoading = false;
+                StateHasChanged();
+            }
+        }
+
+        private async Task LoadUnpublishedAds()
+        {
+            _isUnpublishedLoading = true;
+            StateHasChanged();
+
+            try
+            {
+                unpublishedAds = await ClassfiedDashboardService
+                    .GetUnpublishedAds(currentPage, pageSize, searchTerm, sortOption)
+                    ?? new();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error loading unpublished ads: " + ex.Message);
+                _errorMessage = "Something went wrong while loading unpublished ads.";
+                unpublishedAds = new();
+            }
+            finally
+            {
+                _isUnpublishedLoading = false;
+                StateHasChanged();
+            }
+        }
+
+        protected async Task OnPublishAd(string adId)
+        {
+            try
+            {
+                var result = await ClassfiedDashboardService.PublishAdAsync(adId);
+                if (result)
+                {
+                    Snackbar.Add("Ad published successfully", Severity.Success);
+                    await LoadUnpublishedAds();
+                    await LoadPublishedAds();  
+                }
+                else
+                {
+                    Snackbar.Add("Failed to publish ad.", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error in OnPublishAd: " + ex.Message);
+                Snackbar.Add("An error occurred.", Severity.Error);
+            }
+        }
+
+
+        protected async Task UnPublishAd(string adId)
+        {
+            try
+            {
+                var result = await ClassfiedDashboardService.UnPublishAdAsync(adId);
+                if (result)
+                {
+                    Snackbar.Add("Ad unpublished successfully", Severity.Success);
+                    await LoadUnpublishedAds();
+                    await LoadPublishedAds();
+                }
+                else
+                {
+                    Snackbar.Add("Failed to un-publish ad.", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error in OnPublishAd: " + ex.Message);
+                Snackbar.Add("An error occurred.", Severity.Error);
+            }
+        }
+
+        protected void OnEditAd(string adId)
+        {
+            Navigation.NavigateTo($"/qln/classifieds/editform{adId}");
+        }
+        protected void onPreview(string adId)
+        {
+            Navigation.NavigateTo($"/qln/classifieds/items/details/{adId}");
+        }
+
+        protected void onRemove(string adId)
+        {
+            throw new NotImplementedException("Remove functionality is not implemented yet.");
         }
         protected void SetTab(int index)
         {
@@ -150,7 +267,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
         protected void NavigateToAdPost()
         {
-            Navigation.NavigateTo("/classifieds/createform");
+            Navigation.NavigateTo("/qln/classifieds/createform");
         }
 
         protected void SetHardcodedBusinessProfile()

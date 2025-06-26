@@ -4,6 +4,7 @@ using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services;
 using QLN.Web.Shared.Services.Interface;
 using System.Text.Json.Serialization;
+using static QLN.Web.Shared.Models.ClassifiedsDashboardModel;
 
 namespace QLN.Web.Shared.Pages.Subscription
 {
@@ -56,12 +57,7 @@ namespace QLN.Web.Shared.Pages.Subscription
             await base.OnAfterRenderAsync(firstRender);
         }
 
-        public class StatItem
-        {
-            public string Title { get; set; }
-            public string Value { get; set; }
-            public string Icon { get; set; }
-        }
+     
 
         private void NavigateToEditProfile()
         {
@@ -93,7 +89,7 @@ namespace QLN.Web.Shared.Pages.Subscription
 
             try
             {
-                var response = await ClassfiedDashboardService.GetItemDashboard(_authToken);
+                var response = await ClassfiedDashboardService.GetItemDashboard();
 
                 if (response?.ItemsDashboard != null)
                 {
@@ -108,7 +104,7 @@ namespace QLN.Web.Shared.Pages.Subscription
                 new() { Title = "WhatsApp", Value = $"{response.ItemsDashboard.WhatsAppClicks}", Icon = "WhatsApp.svg" },
                 new() { Title = "Calls", Value = $"{response.ItemsDashboard.Calls}", Icon = "Calls.svg" },
             };
-                    publishedAds = response.ItemsAds?.PublishedAds ?? new();
+                    //publishedAds = response.ItemsAds?.PublishedAds ?? new();
 
                 }
                 else
@@ -131,211 +127,8 @@ namespace QLN.Web.Shared.Pages.Subscription
            }
 
 
-        public class SubscriptionDetailsResponse
-        {
-            public int CategoryId { get; set; }
-            public string CategoryName { get; set; }
-            public BusinessProfile BusinessProfile { get; set; }
-            public SubscriptionStatistics SubscriptionStatistics { get; set; }
-        }
-
-        public class SubscriptionStatistics
-        {
-            public UsageTotal PublishedAds { get; set; }
-            public UsageTotal PromotedAds { get; set; }
-            public UsageTotal FeaturedAds { get; set; }
-            public UsageTotal Refreshes { get; set; }
-        }
-
-        public class UsageTotal
-        {
-            public int Usage { get; set; }
-            public int Total { get; set; }
-        }
-
-        public class ItemDashboardResponse
-        {
-            [JsonPropertyName("itemsDashboard")]
-            public ItemsDashboard ItemsDashboard { get; set; }
-
-            [JsonPropertyName("itemsAds")]
-            public ItemsAds ItemsAds { get; set; }
-        }
-        public class PreLovedDashboardResponse
-        {
-            [JsonPropertyName("prelovedDashboard")]
-            public PreLovedDashboard preLovedDashboard { get; set; }
-
-            [JsonPropertyName("prelovedAds")]
-            public ItemsAds ItemsAds { get; set; }
-        }
-
-        public class PreLovedDashboard
-        {
-            [JsonPropertyName("publishedAds")]
-            public int PublishedAds { get; set; }
-
-            [JsonPropertyName("promotedAds")]
-            public int PromotedAds { get; set; }
-
-            [JsonPropertyName("featuredAds")]
-            public int FeaturedAds { get; set; }
-
-            [JsonPropertyName("refreshes")]
-            public int Refreshes { get; set; }
-
-            [JsonPropertyName("remainingRefreshes")]
-            public int RemainingRefreshes { get; set; }
-
-            [JsonPropertyName("totalAllowedRefreshes")]
-            public int TotalAllowedRefreshes { get; set; }
-
-          
-            [JsonPropertyName("impressions")]
-            public int Impressions { get; set; }
-
-            [JsonPropertyName("views")]
-            public int Views { get; set; }
-
-            [JsonPropertyName("whatsAppClicks")]
-            public int WhatsAppClicks { get; set; }
-
-            [JsonPropertyName("calls")]
-            public int Calls { get; set; }
-        }
-
-        public class PreLovedDashboardAds
-        {
-            [JsonPropertyName("publishedAds")]
-            public List<AdModal> PublishedAds { get; set; }
-
-            [JsonPropertyName("unpublishedAds")]
-            public List<AdModal> UnpublishedAds { get; set; }
-        }
-
-        public class ItemsDashboard
-        {
-            [JsonPropertyName("publishedAds")]
-            public int PublishedAds { get; set; }
-
-            [JsonPropertyName("promotedAds")]
-            public int PromotedAds { get; set; }
-
-            [JsonPropertyName("featuredAds")]
-            public int FeaturedAds { get; set; }
-
-            [JsonPropertyName("refreshes")]
-            public int Refreshes { get; set; }
-
-            [JsonPropertyName("remainingRefreshes")]
-            public int RemainingRefreshes { get; set; }
-
-            [JsonPropertyName("totalAllowedRefreshes")]
-            public int TotalAllowedRefreshes { get; set; }
-
-            [JsonPropertyName("refreshExpiry")]
-            public DateTime RefreshExpiry { get; set; }
-
-            [JsonPropertyName("impressions")]
-            public int Impressions { get; set; }
-
-            [JsonPropertyName("views")]
-            public int Views { get; set; }
-
-            [JsonPropertyName("whatsAppClicks")]
-            public int WhatsAppClicks { get; set; }
-
-            [JsonPropertyName("calls")]
-            public int Calls { get; set; }
-        }
-
-        public class ItemsAds
-        {
-            [JsonPropertyName("publishedAds")]
-            public List<AdModal> PublishedAds { get; set; }
-
-            [JsonPropertyName("unpublishedAds")]
-            public List<AdModal> UnpublishedAds { get; set; }
-        }
-
-        public class AdModal
-        {
-            [JsonPropertyName("id")]
-            public string Id { get; set; }
-
-            [JsonPropertyName("title")]
-            public string Title { get; set; }
-
-            [JsonPropertyName("category")]
-            public string Category { get; set; }
-
-            [JsonPropertyName("description")]
-            public string Description { get; set; }
-
-            [JsonPropertyName("location")]
-            public string Location { get; set; }
-
-            [JsonPropertyName("subVertical")]
-            public string SubVertical { get; set; }
-
-            [JsonPropertyName("price")]
-            public decimal Price { get; set; }
-
-            [JsonPropertyName("priceType")]
-            public string PriceType { get; set; }
-
-            [JsonPropertyName("phoneNumber")]
-            public string PhoneNumber { get; set; }
-
-            [JsonPropertyName("whatsappNumber")]
-            public string WhatsappNumber { get; set; }
-
-            [JsonPropertyName("createdDate")]
-            public DateTime CreatedDate { get; set; }
-
-            [JsonPropertyName("expiryDate")]
-            public DateTime ExpiryDate { get; set; }
-
-            [JsonPropertyName("userId")]
-            public string UserId { get; set; }
-
-            [JsonPropertyName("isFeatured")]
-            public bool IsFeatured { get; set; }
-
-            [JsonPropertyName("isPromoted")]
-            public bool IsPromoted { get; set; }
-
-            [JsonPropertyName("refreshExpiry")]
-            public DateTime? RefreshExpiry { get; set; }
-
-            [JsonPropertyName("remainingRefreshes")]
-            public int RemainingRefreshes { get; set; }
-
-            [JsonPropertyName("totalAllowedRefreshes")]
-            public int TotalAllowedRefreshes { get; set; }
-
-            [JsonPropertyName("impressions")]
-            public int Impressions { get; set; }
-
-            [JsonPropertyName("views")]
-            public int Views { get; set; }
-
-            [JsonPropertyName("calls")]
-            public int Calls { get; set; }
-
-            [JsonPropertyName("whatsAppClicks")]
-            public int WhatsAppClicks { get; set; }
-
-            [JsonPropertyName("shares")]
-            public int Shares { get; set; }
-
-            [JsonPropertyName("saves")]
-            public int Saves { get; set; }
-
-            [JsonPropertyName("imageUrls")]
-            public List<string> ImageUrls { get; set; }
-        }
-
+       
+        
     }
 
 

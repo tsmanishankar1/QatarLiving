@@ -1,12 +1,23 @@
-﻿using QLN.Web.Shared.Models;
-using static QLN.Web.Shared.Pages.Subscription.SubscriptionDetails;
+﻿using static QLN.Web.Shared.Models.ClassifiedsDashboardModel;
 
 namespace QLN.Web.Shared.Services.Interface
 {
     public interface IClassifiedDashboardService
     {
-        Task<ItemDashboardResponse?> GetItemDashboard(string authToken);
-        Task<PreLovedDashboardResponse?> GetPreLovedDashboard(string authToken);
+        Task<ItemDashboardResponse?> GetItemDashboard();
+        Task<PreLovedDashboardResponse?> GetPreLovedDashboard();
+        Task<List<AdModal>?> GetPublishedAds( int page, int pageSize, string search, int sortOption);
+        Task<List<AdModal>?> GetUnpublishedAds( int page, int pageSize, string search, int sortOption);
+        Task<List<AdModal>?> GetPreLovedPublishedAds(int page, int pageSize, string search, int sortOption);
+        Task<List<AdModal>?> GetPreLovedUnPublishedAds(int page, int pageSize, string search, int sortOption);
+        Task<List<AdModal>?> GetCollectiblesPublishedAds(int page, int pageSize, string search, int sortOption);
+        Task<List<AdModal>?> GetCollectiblesUnPublishedAds(int page, int pageSize, string search, int sortOption);
+        Task<List<AdModal>?> GetStoresPublishedAds(int page, int pageSize, string search, int sortOption);
+        Task<List<AdModal>?> GetStoresUnPublishedAds(int page, int pageSize, string search, int sortOption);
+        Task<List<AdModal>?> GetDealsPublishedAds(int page, int pageSize, string search, int sortOption);
+        Task<List<AdModal>?> GetDealsUnPublishedAds(int page, int pageSize, string search, int sortOption);
+        Task<bool> PublishAdAsync(string adId);
+        Task<bool> UnPublishAdAsync(string adId);
 
     }
 }

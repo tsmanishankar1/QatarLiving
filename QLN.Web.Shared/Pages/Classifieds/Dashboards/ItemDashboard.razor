@@ -16,7 +16,7 @@
                     Items Dashboard
                 </MudText>
             </div>
-            @if (showCreateButton)
+            @*   @if (showCreateButton)
             {
                 <div class="dashboard-button-container">
                     <MudButton Variant="Variant.Outlined" Class="font-semibold dashboard-edit-profile-button"
@@ -24,7 +24,7 @@
                         Create Profile
                     </MudButton>
                 </div>
-            }
+            } *@
         </div>
 
         <!-- Your dashboard content would go here -->
@@ -61,15 +61,15 @@
                         {
                             <MudItem xs="6" sm="4" md="3" Class="stat-item">
                                 <MudPaper Elevation="0" Class="p-3 d-flex align-items-center stat-paper"
-                                          Style="justify-content:center;align-items:center;gap: 20px; border-radius: 12px;height:100px; background-color: #F9FAFB;">
+                                Style="justify-content:center;align-items:center;gap: 20px; border-radius: 12px;height:100px; background-color: #F9FAFB;">
                                     <img src="/qln-images/subscription/@stat.Icon" class="stat-icon" />
                                     <div class="stat-content">
                                         <MudText Typo="Typo.caption"
-                                                 Class="stat-title">
+                                        Class="stat-title">
                                             @stat.Title
                                         </MudText>
                                         <MudText Typo="Typo.subtitle2"
-                                                 Class="stat-value">
+                                        Class="stat-value">
                                             @stat.Value
                                         </MudText>
                                     </div>
@@ -79,7 +79,7 @@
                     </MudGrid>
                     <!-- Promo Card Below -->
                     <MudPaper Elevation="0" Class="d-flex align-items-center mt-4 px-4 py-3"
-                              Style="background-color: #FFFAF0; border-radius: 8px; justify-content: space-between;">
+                    Style="background-color: #FFFAF0; border-radius: 8px; justify-content: space-between;">
                         <!-- Left Side: Icon and Text -->
                         <div class="d-flex align-items-center" style="gap: 16px;">
                             <img src="/qln-images/subscription/VisibilitySVG.svg" alt="Visibility Icon" style="width: 50px; height: 50px;" />
@@ -93,7 +93,7 @@
                         <div class="d-flex align-items-center" style="gap: 20px;">
                             <MudText Typo="Typo.subtitle2" Style="color: #1D1D1F;font-weight: 500;">+10% Visibility</MudText>
                             <MudButton Style="background-color: #F26D1E; color: white; text-transform: none; font-weight: 500;"
-                                       OnClick="NavigateToPurshaseRefresh">
+                            OnClick="NavigateToPurshaseRefresh">
                                 <img src="/qln-images/subscription/BuyRefreshSVG.svg" alt="Add on Icon" style="width: 24px; height: 24px;margin-right:4px" />
 
                                 Buy Refreshes
@@ -126,9 +126,9 @@
             <!-- Right side: Post Add button -->
             <div>
                 <MudButton Variant="Variant.Filled" Class="font-semibold mt-3" OnClick="@NavigateToAdPost"
-                           Style="border-radius: 8px; background-color: #F26D1E; color: white; width: 200px; display: flex; align-items: center; justify-content: center; gap: 8px;text-transform:none">
+                Style="border-radius: 8px; background-color: #F26D1E; color: white; width: 200px; display: flex; align-items: center; justify-content: center; gap: 8px;text-transform:none">
                     <MudIcon Icon="@Icons.Material.Filled.Add" />
-                    Post New Add
+                    Post New Ad
                 </MudButton>
             </div>
 
@@ -144,8 +144,8 @@
                 <div class="d-flex">
                     <!-- Published Tab (active style) -->
                     <MudButton Variant="Variant.Text" Class="@(_selectedAdsTab == 0 ? "active-tab" : "")"
-                               Style="text-transform: none; font-weight: 600; padding-bottom: 12px; margin-right: 24px; position: relative;"
-                               @onclick="() => _selectedAdsTab = 0">
+                    Style="text-transform: none; font-weight: 600; padding-bottom: 12px; margin-right: 24px; position: relative;"
+                    @onclick="() => _selectedAdsTab = 0">
                         Published (@publishedAds.Count)
                         @if (_selectedAdsTab == 0)
                         {
@@ -155,8 +155,8 @@
                     </MudButton>
                     <!-- Unpublished Tab -->
                     <MudButton Variant="Variant.Text" Class="@(_selectedAdsTab == 1 ? "active-tab" : "")"
-                               Style="text-transform: none; font-weight: 600; padding-bottom: 12px; position: relative;"
-                               @onclick="() => _selectedAdsTab = 1">
+                    Style="text-transform: none; font-weight: 600; padding-bottom: 12px; position: relative;"
+                    @onclick="() => _selectedAdsTab = 1">
                         Unpublished (@unpublishedAds.Count)
                         @if (_selectedAdsTab == 1)
                         {
@@ -172,19 +172,19 @@
                     <div class="search-wrapper mr-2">
                         <img src="/qln-images/subscription/Search.svg" />
                         <MudTextField T="string"
-                                      Placeholder="Search"
-                                      Class="no-outline"
-                                      Style="margin-left: 6px; max-width: 300px;"
-                                      DisableUnderLine="true" />
+                        Placeholder="Search"
+                        Class="no-outline"
+                        Style="margin-left: 6px; max-width: 300px;"
+                        DisableUnderLine="true" />
                     </div>
 
                     <!-- Sort Button with SVG Icon -->
                     <MudMenu AnchorOrigin="Origin.BottomRight"
-                             TransformOrigin="Origin.TopRight"
-                             OffsetY="true">
+                    TransformOrigin="Origin.TopRight"
+                    OffsetY="true">
                         <ActivatorContent>
                             <MudButton Variant="Variant.Text"
-                                       Style="text-transform: none; color: #344054; display: flex; align-items: center; gap: 8px;margin-right:4px">
+                            Style="text-transform: none; color: #344054; display: flex; align-items: center; gap: 8px;margin-right:4px">
                                 <img src="/qln-images/subscription/Sort.svg" style="width: 18px; height: 18px;" />
                                 Sort
                             </MudButton>
@@ -203,206 +203,471 @@
                     </MudMenu>
                 </div>
             </div>
-
-            <!-- Published Ads -->
-            @foreach (var ad in publishedAds)
+            @if (_selectedAdsTab == 0)
+{
+            @if (_isPublishedLoading)
             {
-                <MudPaper Class="ad-container d-flex flex-column flex-sm-row mt-4 "
-                          Style="border-radius: 0; border: none; border-bottom: 1px solid #EAECF0; box-shadow: none;">
-                    <!-- First Row (Image + Checkbox) - full width on mobile -->
-                    <div class="d-flex align-items-center mb-3 mb-sm-0 mr-sm-4">
-                        <MudCheckBox T="bool" @bind-Checked="_isChecked" Class="mr-2 ad-checkbox" />
-                        @*   <img src="/qln-images/subscription/Gucci.png" alt="Ad Image"
-                             style="width: 240px; max-width:100%; height: auto; max-height: 180px; border-radius: 4px;" /> *@
-                        @if (ad.ImageUrls != null && ad.ImageUrls.Any())
-                        {
-                            @*                             <img src="@ad.ImageUrls.First()" alt="Ad Image" style="width: 240px; max-width:100%; height: auto; max-height: 180px; border-radius: 4px;" />
- *@                         <div class="position-relative ad-image-wrapper">
-                                <img src="@ad.ImageUrls.First()" alt="Ad Image" class="ad-image" />
+                <div class="d-flex justify-content-center mt-4 mb-4">
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Medium" />
+                </div>
+            }
+            else if (publishedAds != null && publishedAds.Any())
+            {
 
+                <!-- Published Ads -->
+                @foreach (var ad in publishedAds)
+                {
+                    <MudPaper Class="ad-container d-flex flex-column flex-sm-row mt-4 "
+                    Style="border-radius: 0; border: none; border-bottom: 1px solid #EAECF0; box-shadow: none;">
+                        <!-- First Row (Image + Checkbox) - full width on mobile -->
+                        <div class="d-flex align-items-center mb-3 mb-sm-0 mr-sm-4">
+                            <MudCheckBox T="bool" @bind-Checked="_isChecked" Class="mr-2 ad-checkbox" />
+                            @*   <img src="/qln-images/subscription/Gucci.png" alt="Ad Image"
+                             style="width: 240px; max-width:100%; height: auto; max-height: 180px; border-radius: 4px;" /> *@
+                                @if (ad.ImageUrls != null && ad.ImageUrls.Any() && !string.IsNullOrEmpty(ad.ImageUrls.First().Url))
+                                {
+                             <div class="position-relative ad-image-wrapper">
+                                        <img src="@ad.ImageUrls.First().Url" alt="Ad Image" class="ad-image" />
+
+                                    @if (ad.IsFeatured)
+                                    {
+                                        <div class="promoted-badge">
+                                            <img src="/qln-images/subscription/Lightning.svg" style="width: 12px; height: 12px;" />
+                                            <span>Featured</span>
+                                        </div>
+                                    }
+                                    else if (ad.IsPromoted)
+                                    {
+                                        <div class="promoted-badge">
+                                            <img src="/qln-images/subscription/Lightning.svg" style="width: 12px; height: 12px;" />
+                                            <span>Promoted</span>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <img src="/qln-images/subscription/Gucci.png" alt="No Image" style="width: 240px; max-width:100%; height: auto; max-height: 180px; border-radius: 4px;" />
+                            }
+
+                        </div>
+
+                        <!-- Second Column (Main Content) -->
+                        <div style="flex:1">
+                            <!-- Category (Row 2) -->
+                            <MudText Typo="Typo.body2"
+                            Style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 11px; line-height: 12px; letter-spacing: 0; color: #646464; margin-bottom: 4px;">
+                                @ad.Category
+                            </MudText>
+
+                            <!-- Title (Row 3) -->
+                            <MudText Typo="Typo.h6"
+                            Style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 14px; line-height: 20px; letter-spacing: 0; color: #00426D; margin-bottom: 4px;">
+                                @ad.Title
+                            </MudText>
+
+                            <!-- Certificate + Location (Row 4) -->
+                            <div class="d-flex flex-column flex-sm-row align-items-sm-center mb-2">
+
+                                <div class="d-flex align-items-center ">
+                                    <MudIcon Icon="@Icons.Material.Outlined.Place" Size="Size.Small"
+                                    Style="color: #646464; margin-left: 0; margin-sm-left:4px;" />
+                                    <MudText Typo="Typo.caption"
+                                    Style="margin-left:4px;font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 11px; line-height: 12px; letter-spacing: 0; color: #646464;">
+                                        @ad.Location
+                                    </MudText>
+                                </div>
+                            </div>
+
+                            <!-- Price (Row 5) -->
+                            <MudText Typo="Typo.h6"
+                            Style="font-family: 'Public Sans', sans-serif; font-weight: 600; font-size: 20px; line-height: 34px; letter-spacing: 0; color: #242424;">
+                                @ad.Price @ad.PriceType
+                            </MudText>
+
+                            <!-- Buttons (Row 6) -->
+                            <div class="d-flex flex-wrap mt-2" style="gap: 8px;">
+                                <MudButton Variant="Variant.Text"
+                                Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424; display: flex; align-items: center;">
+                                    <img src="qln-images/subscription/Refresh.svg" alt="Gucci" style="margin-right: 8px;" />
+                                    <div>
+                                        Refresh
+                                        <div style="font-size: 0.7em; color: #5F6C7B;">(Exp: @ad.RefreshExpiry)</div>
+
+                                    </div>
+                                </MudButton>
+
+                                <!-- Promote Button -->
+                                @if (ad.IsPromoted)
+                                {
+                                    <MudButton Variant="Variant.Text"
+                                    Disabled="true"
+                                    Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color:#667085;">
+                                        <img src="qln-images/subscription/LightningGrey.svg" style="margin-right: 8px;" alt="Promoted" />
+
+                                        <div>
+                                            Promoted
+
+                                            <div style="font-size: 0.7em; color: #5F6C7B;">(Exp: @ad.RefreshExpiry)</div>
+
+                                        </div>
+                                    </MudButton>
+                                }
+                                else
+                                {
+                                    <MudButton Variant="Variant.Text"
+                                    Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424;">
+                                        <img src="qln-images/subscription/Feature.svg" style="margin-right: 8px;" alt="Promote" />
+                                        Pay to Promote
+                                    </MudButton>
+                                }
                                 @if (ad.IsFeatured)
                                 {
-                                    <div class="promoted-badge">
-                                        <img src="/qln-images/subscription/Lightning.svg" style="width: 12px; height: 12px;" />
-                                        <span>Featured</span>
-                                    </div>
+                                    <MudButton Variant="Variant.Text"
+                                    Disabled="true"
+                                    Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #667085;">
+                                        <img src="qln-images/subscription/LightningGrey.svg" style="margin-right: 8px;" alt="Featured" />
+                                        <div>
+                                            Featured
+
+                                            <div style="font-size: 0.7em; color: #5F6C7B;">(Exp: @ad.RefreshExpiry)</div>
+
+                                        </div>
+                                    </MudButton>
                                 }
-                                else if (ad.IsPromoted)
+                                else
                                 {
-                                    <div class="promoted-badge">
-                                        <img src="/qln-images/subscription/Lightning.svg" style="width: 12px; height: 12px;" />
-                                        <span>Promoted</span>
-                                    </div>
+                                    <MudButton Variant="Variant.Text"
+                                    Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424;">
+                                        <img src="qln-images/subscription/Feature.svg" style="margin-right: 8px;" alt="Feature" />
+                                        Pay to Feature
+                                    </MudButton>
                                 }
+                                    <MudMenu OffsetY="true"
+                                             AnchorOrigin="Origin.BottomRight"
+                                             TransformOrigin="Origin.BottomRight"
+                                    class="custom-menu-width">
+                                        <ActivatorContent>
+                                            <MudIconButton Icon="@Icons.Material.Filled.MoreVert" />
+                                        </ActivatorContent>
+                                        <ChildContent>
+                                            <MudMenuItem @onclick="() => UnPublishAd(ad.Id)" Class="menu-item">
+                                                <img src="/qln-images/subscription/unpublish.svg" class="menu-icon" />
+                                                <span>Unpublish</span>
+                                            </MudMenuItem>
+                                            <MudMenuItem @onclick="() => OnEditAd(ad.Id)" Class="menu-item">
+                                                <img src="/qln-images/subscription/edit.svg" class="menu-icon" />
+                                                <span>Edit Ad</span>
+                                            </MudMenuItem>
+                                              <MudMenuItem @onclick="() => onPreview(ad.Id)" Class="menu-item">
+                                                <img src="/qln-images/subscription/preview.svg" class="menu-icon" />
+                                                <span>Preview </span>
+                                            </MudMenuItem>
+                                              <MudMenuItem @onclick="() => onRemove(ad.Id)" Class="menu-item">
+                                                <img src="/qln-images/subscription/remove.svg" class="menu-icon" />
+                                                <span>Remove </span>
+                                            </MudMenuItem>
+                                        </ChildContent>
+                                    </MudMenu>
+                                </div>
+                        </div>
+                    </MudPaper>
+
+                    <!-- Stats + Status -->
+                    <MudPaper Class="d-flex flex-column flex-sm-row align-items-sm-center px-4 py-2 mb-4"
+                    Style="margin-top:10px;border-radius:0; border:none; border-bottom:1px solid #EAECF0; box-shadow:none;">
+                        <!-- Stats -->
+                        <div class="d-flex flex-wrap" style="flex: 1; gap: 16px;">
+                            <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
+                                <img src="qln-images/subscription/ImpressionBlue.svg" class="post-analytics-svg-icon" />
+                                <MudText Class="post-analytics-text" Style="margin: 0;">
+                                    <span class="stat-label">
+                                        Impressions :
+                                        <span class="stat-value">@ad.Impressions</span>
+                                    </span>
+                                </MudText>
                             </div>
-                        }
-                        else
-                        {
-                            <img src="/qln-images/subscription/Gucci.png" alt="No Image" style="width: 240px; max-width:100%; height: auto; max-height: 180px; border-radius: 4px;" />
-                        }
-
-                    </div>
-
-                    <!-- Second Column (Main Content) -->
-                    <div style="flex:1">
-                        <!-- Category (Row 2) -->
-                        <MudText Typo="Typo.body2"
-                                 Style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 11px; line-height: 12px; letter-spacing: 0; color: #646464; margin-bottom: 4px;">
-                            @ad.Category
-                        </MudText>
-
-                        <!-- Title (Row 3) -->
-                        <MudText Typo="Typo.h6"
-                                 Style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 14px; line-height: 20px; letter-spacing: 0; color: #00426D; margin-bottom: 4px;">
-                            @ad.Title
-                        </MudText>
-
-                        <!-- Certificate + Location (Row 4) -->
-                        <div class="d-flex flex-column flex-sm-row align-items-sm-center mb-2">
-
-                            <div class="d-flex align-items-center ">
-                                <MudIcon Icon="@Icons.Material.Outlined.Place" Size="Size.Small"
-                                         Style="color: #646464; margin-left: 0; margin-sm-left:4px;" />
-                                <MudText Typo="Typo.caption"
-                                         Style="margin-left:4px;font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 11px; line-height: 12px; letter-spacing: 0; color: #646464;">
-                                    @ad.Location
+                            <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
+                                <img src="qln-images/subscription/ViewBlue.svg" class="post-analytics-svg-icon" />
+                                <MudText Class="post-analytics-text" Style="margin: 0;">
+                                    <span class="stat-label">
+                                        Views:
+                                        <span class="stat-value"> @ad.Views</span>
+                                    </span>
+                                </MudText>
+                            </div>
+                            <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
+                                <img src="qln-images/subscription/CallBlue.svg" class="post-analytics-svg-icon" />
+                                <MudText Class="post-analytics-text" Style="margin: 0;">
+                                    <span class="stat-label">
+                                        Calls:
+                                        <span class="stat-value"> @ad.Calls</span>
+                                    </span>
+                                </MudText>
+                            </div>
+                            <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
+                                <img src="qln-images/subscription/WhatsappBlue.svg" class="post-analytics-svg-icon" />
+                                <MudText Class="post-analytics-text" Style="margin: 0;">
+                                    <span class="stat-label">
+                                        WhatsApp:
+                                        <span class="stat-value"> @ad.WhatsAppClicks</span>
+                                    </span>
+                                </MudText>
+                            </div>
+                            <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
+                                <img src="qln-images/subscription/ShareBlue.svg" class="post-analytics-svg-icon" />
+                                <MudText Class="post-analytics-text" Style="margin: 0;">
+                                    <span class="stat-label">
+                                        Shares:
+                                        <span class="stat-value"> @ad.Shares</span>
+                                    </span>
+                                </MudText>
+                            </div>
+                            <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
+                                <img src="qln-images/subscription/SaveBlue.svg" class="post-analytics-svg-icon" />
+                                <MudText Class="post-analytics-text" Style="margin: 0;">
+                                    <span class="stat-label">
+                                        Saves:
+                                        <span class="stat-value"> @ad.Saves</span>
+                                    </span>
                                 </MudText>
                             </div>
                         </div>
 
-                        <!-- Price (Row 5) -->
-                        <MudText Typo="Typo.h6"
-                                 Style="font-family: 'Public Sans', sans-serif; font-weight: 600; font-size: 20px; line-height: 34px; letter-spacing: 0; color: #242424;">
-                            @ad.Price @ad.PriceType
-                        </MudText>
-
-                        <!-- Buttons (Row 6) -->
-                        <div class="d-flex flex-wrap mt-2" style="gap: 8px;">
-                            <MudButton Variant="Variant.Text"
-                                       Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424; display: flex; align-items: center;">
-                                <img src="qln-images/subscription/Refresh.svg" alt="Gucci" style="margin-right: 8px;" />
-                                <div>
-                                    Refresh
-                                    <div style="font-size: 0.7em; color: #5F6C7B;">(Exp: @ad.RefreshExpiry)</div>
-
-                                </div>
-                            </MudButton>
-
-                            <!-- Promote Button -->
-                            @if (ad.IsPromoted)
-                            {
-                                <MudButton Variant="Variant.Text"
-                                           Disabled="true"
-                                           Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color:#667085;">
-                                    <img src="qln-images/subscription/LightningGrey.svg" style="margin-right: 8px;" alt="Promoted" />
-                                    
-                                    <div>
-                                        Promoted
-
-                                        <div style="font-size: 0.7em; color: #5F6C7B;">(Exp: @ad.RefreshExpiry)</div>
-
-                                    </div>
-                                </MudButton>
-                            }
-                            else
-                            {
-                                <MudButton Variant="Variant.Text"
-                                           Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424;">
-                                    <img src="qln-images/subscription/Feature.svg" style="margin-right: 8px;" alt="Promote" />
-                                    Pay to Promote
-                                </MudButton>
-                            }
-                            @if (ad.IsFeatured)
-                            {
-                                <MudButton Variant="Variant.Text"
-                                           Disabled="true"
-                                           Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #667085;">
-                                    <img src="qln-images/subscription/LightningGrey.svg" style="margin-right: 8px;" alt="Featured" />
-                                    <div>
-                                        Featured
-
-                                        <div style="font-size: 0.7em; color: #5F6C7B;">(Exp: @ad.RefreshExpiry)</div>
-
-                                    </div>
-                                </MudButton>
-                            }
-                            else
-                            {
-                                <MudButton Variant="Variant.Text"
-                                           Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424;">
-                                    <img src="qln-images/subscription/Feature.svg" style="margin-right: 8px;" alt="Feature" />
-                                    Pay to Feature
-                                </MudButton>
-                            }
-                            <MudIconButton Icon="@Icons.Material.Filled.MoreVert" />
-                        </div>
-                    </div>
-                </MudPaper>
-
-                <!-- Stats + Status -->
-                <MudPaper Class="d-flex flex-column flex-sm-row align-items-sm-center px-4 py-2 mb-4"
-                          Style="margin-top:10px;border-radius:0; border:none; border-bottom:1px solid #EAECF0; box-shadow:none;">
-                    <!-- Stats -->
-                    <div class="d-flex flex-wrap" style="flex: 1; gap: 16px;">
-                        <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
-                            <img src="qln-images/subscription/ImpressionBlue.svg" class="post-analytics-svg-icon" />
-                            <MudText Class="post-analytics-text" Style="margin: 0;">
-                                <span class="stat-label">
-                                    Impressions :
-                                    <span class="stat-value">@ad.Impressions</span>
-                                </span>
-                            </MudText>
-                        </div>
-                        <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
-                            <img src="qln-images/subscription/ViewBlue.svg" class="post-analytics-svg-icon" />
-                            <MudText Class="post-analytics-text" Style="margin: 0;">
-                                <span class="stat-label">
-                                    Views:
-                                    <span class="stat-value"> @ad.Views</span>
-                                </span>
-                            </MudText>
-                        </div>
-                        <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
-                            <img src="qln-images/subscription/CallBlue.svg" class="post-analytics-svg-icon" />
-                            <MudText Class="post-analytics-text" Style="margin: 0;">
-                                <span class="stat-label">
-                                    Calls:
-                                    <span class="stat-value"> @ad.Calls</span>
-                                </span>
-                            </MudText>
-                        </div>
-                        <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
-                            <img src="qln-images/subscription/WhatsappBlue.svg" class="post-analytics-svg-icon" />
-                            <MudText Class="post-analytics-text" Style="margin: 0;">
-                                <span class="stat-label">
-                                    WhatsApp:
-                                    <span class="stat-value"> @ad.WhatsAppClicks</span>
-                                </span>
-                            </MudText>
-                        </div>
-                        <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
-                            <img src="qln-images/subscription/ShareBlue.svg" class="post-analytics-svg-icon" />
-                            <MudText Class="post-analytics-text" Style="margin: 0;">
-                                <span class="stat-label">
-                                    Shares:
-                                    <span class="stat-value"> @ad.Shares</span>
-                                </span>
-                            </MudText>
-                        </div>
-                        <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
-                            <img src="qln-images/subscription/SaveBlue.svg" class="post-analytics-svg-icon" />
-                            <MudText Class="post-analytics-text" Style="margin: 0;">
-                                <span class="stat-label">
-                                    Saves:
-                                    <span class="stat-value"> @ad.Saves</span>
-                                </span>
-                            </MudText>
-                        </div>
-                    </div>
-
-                    <MudText Typo="Typo.caption" Class="mt-2 mt-sm-0" Style="color: #5F6C7B;">Listed on 01‑02‑2025</MudText>
-                </MudPaper>
+                            <MudText Typo="Typo.caption" Class="mt-2 mt-sm-0" Style="color: #5F6C7B;">Listed on @ad.CreatedDate</MudText>
+                    </MudPaper>
+                }
             }
+            else
+            {
+                <EmptyCard Title="No Published Ads" Subtitle="You have not published any ads yet." />
+
+            }}
+else if (_selectedAdsTab == 1)
+                    {@if (_isUnpublishedLoading)
+            {
+                <div class="d-flex justify-content-center mt-4 mb-4">
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Medium" />
+                </div>
+            }
+            else if (unpublishedAds != null && unpublishedAds.Any())
+            {
+
+                <!-- Published Ads -->
+                @foreach (var ad in unpublishedAds)
+                {
+                    <MudPaper Class="ad-container d-flex flex-column flex-sm-row mt-4 "
+                              Style="border-radius: 0; border: none; border-bottom: 1px solid #EAECF0; box-shadow: none;">
+                        <!-- First Row (Image + Checkbox) - full width on mobile -->
+                        <div class="d-flex align-items-center mb-3 mb-sm-0 mr-sm-4">
+                            <MudCheckBox T="bool" @bind-Checked="_isChecked" Class="mr-2 ad-checkbox" />
+                            @*   <img src="/qln-images/subscription/Gucci.png" alt="Ad Image"
+                             style="width: 240px; max-width:100%; height: auto; max-height: 180px; border-radius: 4px;" /> *@
+                                @if (ad.ImageUrls != null && ad.ImageUrls.Any() && !string.IsNullOrEmpty(ad.ImageUrls.First().Url))
+                            {
+                         <div class="position-relative ad-image-wrapper">
+                                    <img src="@ad.ImageUrls.First().Url" alt="Ad Image" class="ad-image" />
+
+                                    @if (ad.IsFeatured)
+                                    {
+                                        <div class="promoted-badge">
+                                            <img src="/qln-images/subscription/Lightning.svg" style="width: 12px; height: 12px;" />
+                                            <span>Featured</span>
+                                        </div>
+                                    }
+                                    else if (ad.IsPromoted)
+                                    {
+                                        <div class="promoted-badge">
+                                            <img src="/qln-images/subscription/Lightning.svg" style="width: 12px; height: 12px;" />
+                                            <span>Promoted</span>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <img src="/qln-images/subscription/Gucci.png" alt="No Image" style="width: 240px; max-width:100%; height: auto; max-height: 180px; border-radius: 4px;" />
+                            }
+
+                        </div>
+
+                        <!-- Second Column (Main Content) -->
+                        <div style="flex:1">
+                            <!-- Category (Row 2) -->
+                            <MudText Typo="Typo.body2"
+                                     Style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 11px; line-height: 12px; letter-spacing: 0; color: #646464; margin-bottom: 4px;">
+                                @ad.Category
+                            </MudText>
+
+                            <!-- Title (Row 3) -->
+                            <MudText Typo="Typo.h6"
+                                     Style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 14px; line-height: 20px; letter-spacing: 0; color: #00426D; margin-bottom: 4px;">
+                                @ad.Title
+                            </MudText>
+
+                            <!-- Certificate + Location (Row 4) -->
+                            <div class="d-flex flex-column flex-sm-row align-items-sm-center mb-2">
+
+                                <div class="d-flex align-items-center ">
+                                    <MudIcon Icon="@Icons.Material.Outlined.Place" Size="Size.Small"
+                                             Style="color: #646464; margin-left: 0; margin-sm-left:4px;" />
+                                    <MudText Typo="Typo.caption"
+                                             Style="margin-left:4px;font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 11px; line-height: 12px; letter-spacing: 0; color: #646464;">
+                                        @ad.Location
+                                    </MudText>
+                                </div>
+                            </div>
+
+                            <!-- Price (Row 5) -->
+                            <MudText Typo="Typo.h6"
+                                     Style="font-family: 'Public Sans', sans-serif; font-weight: 600; font-size: 20px; line-height: 34px; letter-spacing: 0; color: #242424;">
+                                @ad.Price @ad.PriceType
+                            </MudText>
+
+                            <!-- Buttons (Row 6) -->
+                            <div class="d-flex flex-wrap mt-2" style="gap: 8px;">
+                                <MudButton Variant="Variant.Text"
+                                           Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424; display: flex; align-items: center;">
+                                    <img src="qln-images/subscription/Refresh.svg" alt="Gucci" style="margin-right: 8px;" />
+                                    <div>
+                                        Refresh
+                                        <div style="font-size: 0.7em; color: #5F6C7B;">(Exp: @ad.RefreshExpiry)</div>
+
+                                    </div>
+                                </MudButton>
+
+                                <!-- Promote Button -->
+                                @if (ad.IsPromoted)
+                                {
+                                    <MudButton Variant="Variant.Text"
+                                               Disabled="true"
+                                               Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color:#667085;">
+                                        <img src="qln-images/subscription/LightningGrey.svg" style="margin-right: 8px;" alt="Promoted" />
+
+                                        <div>
+                                            Promoted
+
+                                            <div style="font-size: 0.7em; color: #5F6C7B;">(Exp: @ad.RefreshExpiry)</div>
+
+                                        </div>
+                                    </MudButton>
+                                }
+                                else
+                                {
+                                    <MudButton Variant="Variant.Text"
+                                               Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424;">
+                                        <img src="qln-images/subscription/Feature.svg" style="margin-right: 8px;" alt="Promote" />
+                                        Pay to Promote
+                                    </MudButton>
+                                }
+                                @if (ad.IsFeatured)
+                                {
+                                    <MudButton Variant="Variant.Text"
+                                               Disabled="true"
+                                               Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #667085;">
+                                        <img src="qln-images/subscription/LightningGrey.svg" style="margin-right: 8px;" alt="Featured" />
+                                        <div>
+                                            Featured
+
+                                            <div style="font-size: 0.7em; color: #5F6C7B;">(Exp: @ad.RefreshExpiry)</div>
+
+                                        </div>
+                                    </MudButton>
+                                }
+                                else
+                                {
+                                    <MudButton Variant="Variant.Text"
+                                               Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424;">
+                                        <img src="qln-images/subscription/Feature.svg" style="margin-right: 8px;" alt="Feature" />
+                                        Pay to Feature
+                                    </MudButton>
+                                }
+                                    <MudMenu OffsetY="true"
+                                             AnchorOrigin="Origin.TopRight"
+                                             TransformOrigin="Origin.TopRight">
+                                        <ActivatorContent>
+                                            <MudIconButton Icon="@Icons.Material.Filled.MoreVert" />
+                                        </ActivatorContent>
+                                        <ChildContent>
+                                            <MudMenuItem @onclick="() => OnPublishAd(ad.Id)">Publish Ad</MudMenuItem>
+                                            <MudMenuItem @onclick="() => OnEditAd(ad.Id)">Edit Ad</MudMenuItem>
+                                        </ChildContent>
+                                    </MudMenu>
+                                </div>
+                        </div>
+                    </MudPaper>
+
+                    <!-- Stats + Status -->
+                    <MudPaper Class="d-flex flex-column flex-sm-row align-items-sm-center px-4 py-2 mb-4"
+                              Style="margin-top:10px;border-radius:0; border:none; border-bottom:1px solid #EAECF0; box-shadow:none;">
+                        <!-- Stats -->
+                        <div class="d-flex flex-wrap" style="flex: 1; gap: 16px;">
+                            <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
+                                <img src="qln-images/subscription/ImpressionBlue.svg" class="post-analytics-svg-icon" />
+                                <MudText Class="post-analytics-text" Style="margin: 0;">
+                                    <span class="stat-label">
+                                        Impressions :
+                                        <span class="stat-value">@ad.Impressions</span>
+                                    </span>
+                                </MudText>
+                            </div>
+                            <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
+                                <img src="qln-images/subscription/ViewBlue.svg" class="post-analytics-svg-icon" />
+                                <MudText Class="post-analytics-text" Style="margin: 0;">
+                                    <span class="stat-label">
+                                        Views:
+                                        <span class="stat-value"> @ad.Views</span>
+                                    </span>
+                                </MudText>
+                            </div>
+                            <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
+                                <img src="qln-images/subscription/CallBlue.svg" class="post-analytics-svg-icon" />
+                                <MudText Class="post-analytics-text" Style="margin: 0;">
+                                    <span class="stat-label">
+                                        Calls:
+                                        <span class="stat-value"> @ad.Calls</span>
+                                    </span>
+                                </MudText>
+                            </div>
+                            <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
+                                <img src="qln-images/subscription/WhatsappBlue.svg" class="post-analytics-svg-icon" />
+                                <MudText Class="post-analytics-text" Style="margin: 0;">
+                                    <span class="stat-label">
+                                        WhatsApp:
+                                        <span class="stat-value"> @ad.WhatsAppClicks</span>
+                                    </span>
+                                </MudText>
+                            </div>
+                            <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
+                                <img src="qln-images/subscription/ShareBlue.svg" class="post-analytics-svg-icon" />
+                                <MudText Class="post-analytics-text" Style="margin: 0;">
+                                    <span class="stat-label">
+                                        Shares:
+                                        <span class="stat-value"> @ad.Shares</span>
+                                    </span>
+                                </MudText>
+                            </div>
+                            <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
+                                <img src="qln-images/subscription/SaveBlue.svg" class="post-analytics-svg-icon" />
+                                <MudText Class="post-analytics-text" Style="margin: 0;">
+                                    <span class="stat-label">
+                                        Saves:
+                                        <span class="stat-value"> @ad.Saves</span>
+                                    </span>
+                                </MudText>
+                            </div>
+                        </div>
+
+                        <MudText Typo="Typo.caption" Class="mt-2 mt-sm-0" Style="color: #5F6C7B;">Listed on @ad.CreatedDate</MudText>
+                    </MudPaper>
+                }
+            }
+            else
+            {
+                <EmptyCard Title="No Published Ads" Subtitle="You have not published any ads yet." />
+
+            }
+}
         </MudPaper>
 
 
@@ -636,6 +901,21 @@
         padding-left: 8px;
     }
 
+    .custom-menu-width .mud-popover {
+        min-width: 200px; 
+    }
+
+    .menu-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+    }
+
+    .menu-icon {
+        width: 18px;
+        height: 18px;
+    }
 
 
     .no-underline .mud-input-underline::before,

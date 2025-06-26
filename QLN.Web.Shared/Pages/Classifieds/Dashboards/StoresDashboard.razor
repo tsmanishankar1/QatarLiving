@@ -1,4 +1,4 @@
-﻿@page "/qln/classified/dashboard/PreLoved"
+﻿@page "/qln/classified/dashboard/Stores"
 @inherits PreLovedDashboardBase
 @using MudBlazor
 @using QLN.Web.Shared.Components.BreadCrumb
@@ -7,12 +7,12 @@
 
 <div>
     <MudContainer MaxWidth="MaxWidth.Large" Class="dashboard-container">
-                         <ClassifiedsDashboard SelectedDashboard="DashboardType.PreLoved" />
+                         <ClassifiedsDashboard SelectedDashboard="DashboardType.Stores" />
 
         <div class="dashboard-header">
             <div class="dashboard-title-container">
                 <MudText class="dashboard-title">
-                    PreLoved Dashboard
+                    Stores Dashboard
                 </MudText>
             </div>
             @if (showCreateButton)
@@ -110,7 +110,6 @@
 
             </div>
         </MudPaper>
-
         <div class="my-ad-section">
 
             <!-- Left side: 20% width tabs -->
