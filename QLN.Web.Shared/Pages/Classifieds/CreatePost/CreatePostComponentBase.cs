@@ -13,8 +13,6 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
     public class CreatePostComponentBase : ComponentBase
     {
         [Inject] private IClassifiedsServices _classifiedsService { get; set; } = default!;
-        [Inject] IJSRuntime JS { get; set; }
-
         [Inject] private ILogger<CreatePostComponentBase> Logger { get; set; }
         protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
         protected bool IsLoadingCategories { get; set; } = true;
@@ -38,21 +36,6 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
             };
 
 
-        }
-
-        protected override async Task OnAfterRenderAsync(bool firstRender)
-        {
-            if (firstRender)
-            {
-                await JS.InvokeVoidAsyncWithErrorHandling("initMap", 25.32, 51.54);
-            }
-        }
-
-      
-        public static Task UpdateLatLng(double lat, double lng)
-        {
-            Console.WriteLine($"New location: {lat}, {lng}");
-            return Task.CompletedTask;
         }
 
         private Dictionary<string, string> dynamicFieldValues = new(); // Dynamic field values

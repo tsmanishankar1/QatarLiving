@@ -4,7 +4,7 @@
 @using QLN.Web.Shared.Pages.Classifieds.CreatePost.Components
 @using QLN.Common.DTO_s;
 @using MudExRichTextEditor
-@inject IJSRuntime JS
+@inherits CreateFormListbase
 @typeparam TItem
 
 <div class="form-section">
@@ -145,6 +145,7 @@
 
     <div class="form-section">
         <h6 class="form-heading">Location</h6>
+        
         @if (adPostModel.SelectedVertical == "deals")
         {
             <div class="form-group">
@@ -166,6 +167,8 @@
             
         }
 
+        
+        <div @ref="mapDiv" id="map" style="height: 300px; width: 100%;"></div>
         <div class="checkbox-section">
             <div class="checkbox-left">
                 <MudCheckBox @bind-Value="adPostModel.IsAgreed" Color="Color.Primary" />
@@ -182,61 +185,6 @@
     </div>
 }
 
-@code {
-    [Parameter] public AdPost adPostModel { get; set; }
-    [Parameter] public List<CategoryTreeDto> CategoryTrees { get; set; }
-    [Parameter] public EventCallback<string> CategoryChanged { get; set; }
-    private string uploadedFileBase64;
-
-    private void HandleUpload((string FileName, string Base64) fileData)
-    {
-        uploadedFileBase64 = fileData.Base64;
-        adPostModel.Certificate = fileData.Base64;
-        adPostModel.CertificateFileName = fileData.FileName;
-    }
-
-    private async Task OnVerticalChanged(string newValue)
-    {
-        adPostModel.SelectedVertical = newValue;
-        await CategoryChanged.InvokeAsync(newValue);
-        StateHasChanged();
-    }
-
-    private async Task OnCategoryChanged(string newValue)
-    {
-        adPostModel.SelectedCategoryId = newValue;
-        adPostModel.SelectedSubcategoryId = null;
-        adPostModel.SelectedSubSubcategoryId = null;
-        StateHasChanged();
-    }
-
-    private async Task OnSubcategoryChanged(string newValue)
-    {
-        adPostModel.SelectedSubcategoryId = newValue;
-        adPostModel.SelectedSubSubcategoryId = null;
-        StateHasChanged();
-    }
-
-    private async Task OnSubSubcategoryChanged(string newValue)
-    {
-        adPostModel.SelectedSubSubcategoryId = newValue;
-        StateHasChanged();
-    }
-
-    public class OptionItem
-    {
-        public string Id { get; set; }
-        public string Label { get; set; }
-    }
-
-    public List<OptionItem> categoryOptions = new()
-    {
-        new OptionItem { Id = "items", Label = "Items" },
-        new OptionItem { Id = "preloved", Label = "Preloved" },
-        new OptionItem { Id = "collectibles", Label = "Collectibles" },
-        new OptionItem { Id = "deals", Label = "Deals" }
-    };
-}
 
 
 <style>

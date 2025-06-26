@@ -3,7 +3,7 @@
     console.log(lat,lng);
 
     // initialize the map on the "map" div with a given center and zoom
-    var map = L.map('map-container', {
+    var map = L.map('mapContainer', {
         center: [lat, lng],
         zoom: 13
     });
