@@ -9,16 +9,17 @@ public class SearchStateService
     public long? ItemMaxPrice { get; set; }
     public string ItemViewMode { get; set; } = "grid";
     public List<CategoryTreeDto> ItemCategoryTrees
-{
-    get => _itemCategoryTrees;
-    set
-    {
-        _itemCategoryTrees = value;
-        OnCategoryTreesChanged?.Invoke();
-    }
-}
+        {
+            get => _itemCategoryTrees;
+            set
+            {
+                _itemCategoryTrees = value;
+                OnCategoryTreesChanged?.Invoke();
+            }
+        }
     private List<CategoryTreeDto> _itemCategoryTrees = new();
-public event Action? OnCategoryTreesChanged;
+    public List<CategoryField> ItemCategoryFilters = new();
+    public event Action? OnCategoryTreesChanged;
 
     public string? ItemSortBy { get; set; }
     public bool IsSearchActive =>

@@ -36,6 +36,7 @@ namespace QLN.Web.Shared.Services.Interface
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetClassifiedWithSimilarAsync(string classifiedId, int similarPageSize);
 
-        
+        Task<HttpResponseMessage?> GetCategoryFiltersAsync(string vertical, Guid mainCategoryId);
+
     }
 }

@@ -16,8 +16,13 @@ public class SearchSectionBase : ComponentBase
     public string category { get; set; }
     [Inject] protected SearchStateService SearchState { get; set; }
     protected bool ShowSaveSearchPopup { get; set; } = false;
+    [Parameter]
+    public EventCallback<string> OnCategoryChanged { get; set; }
 
     protected List<CategoryTreeDto> CategoryTrees => SearchState.ItemCategoryTrees;
+
+    protected List<CategoryField> CategoryFilters => SearchState.ItemCategoryFilters;
+    protected List<BrandItem> _brands { get; set; } = new();
 
     [Parameter] public EventCallback<string> OnSearch { get; set; }
 
@@ -34,15 +39,7 @@ public class SearchSectionBase : ComponentBase
         new() { ImageUrl = "/qln-images/grid_icon.svg", Label = "Grid", Value = "grid" }
     };
 
-    protected List<BrandItem> _brands = new()
-    {
-        new() { Id="google", Label="Google" },
-        new() { Id="apple", Label="Apple" },
-        new() { Id="sony", Label="Sony" }
-    };
-
-
-
+  
     protected Task HandleSaveSearch()
     {
         // Implement actual save logic here — call backend or store locally
@@ -99,6 +96,34 @@ public class SearchSectionBase : ComponentBase
         if (OnSearch.HasDelegate)
         {
             await OnSearch.InvokeAsync(string.Empty); // pass empty string as the search text
+        }
+    }
+
+    protected async Task OnCategorySelected(string value)
+    {
+        SearchState.ItemCategory = value;
+
+        if (OnCategoryChanged.HasDelegate)
+        {
+            await OnCategoryChanged.InvokeAsync(value);
+        }
+         UpdateBrandOptions();
+        await PerformSearch(); // optional if you want search to also happen
+    }
+    private void UpdateBrandOptions()
+    {
+        var brandField = SearchState.ItemCategoryFilters
+            .FirstOrDefault(f => f.Name.Equals("Brands", StringComparison.OrdinalIgnoreCase));
+
+        if (brandField != null && brandField.Options != null)
+        {
+            _brands = brandField.Options
+                .Select(b => new BrandItem { Id = b.ToLowerInvariant(), Label = b })
+                .ToList();
+        }
+        else
+        {
+            _brands = new(); // Clear if not found
         }
     }
 

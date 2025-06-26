@@ -74,55 +74,55 @@ namespace QLN.Web.Shared.Services
             }
         }
 
-public async Task<HttpResponseMessage?> PostClassifiedItemAsync(string vertical, object payload, string authToken)
-{
-    try
-    {
-        var endpoint = $"/api/classified/{vertical}/post";
-
-        // Create request manually with correct headers
-        using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
+        public async Task<HttpResponseMessage?> PostClassifiedItemAsync(string vertical, object payload, string authToken)
         {
-            Content = JsonContent.Create(payload, options: new JsonSerializerOptions
+            try
             {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                WriteIndented = false
-            })
-        };
+                var endpoint = $"/api/classified/{vertical}/post";
 
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
+                // Create request manually with correct headers
+                using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
+                {
+                    Content = JsonContent.Create(payload, options: new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        WriteIndented = false
+                    })
+                };
 
-        // Send request
-        var response = await _httpClient.SendAsync(request);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
 
-        Console.WriteLine($"Post response status: {response.StatusCode}");
+                // Send request
+                var response = await _httpClient.SendAsync(request);
 
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorBody = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Error body: {errorBody}");
+                Console.WriteLine($"Post response status: {response.StatusCode}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorBody = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Error body: {errorBody}");
+                }
+
+                return response;
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"HttpRequestException: {ex.Message}");
+                return new HttpResponseMessage(HttpStatusCode.BadGateway);
+            }
+            catch (TaskCanceledException ex) when (!ex.CancellationToken.IsCancellationRequested)
+            {
+                Console.WriteLine("HTTP request timed out.");
+                return new HttpResponseMessage(HttpStatusCode.RequestTimeout);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unhandled error in PostClassifiedItemAsync: {ex}");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
         }
 
-        return response;
-    }
-    catch (HttpRequestException ex)
-    {
-        Console.WriteLine($"HttpRequestException: {ex.Message}");
-        return new HttpResponseMessage(HttpStatusCode.BadGateway);
-    }
-    catch (TaskCanceledException ex) when (!ex.CancellationToken.IsCancellationRequested)
-    {
-        Console.WriteLine("HTTP request timed out.");
-        return new HttpResponseMessage(HttpStatusCode.RequestTimeout);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Unhandled error in PostClassifiedItemAsync: {ex}");
-        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
-    }
-}
-
-       public async Task<HttpResponseMessage?> GetClassifiedWithSimilarAsync(string classifiedId, int similarPageSize)
+        public async Task<HttpResponseMessage?> GetClassifiedWithSimilarAsync(string classifiedId, int similarPageSize)
         {
             try
             {
@@ -133,6 +133,19 @@ public async Task<HttpResponseMessage?> PostClassifiedItemAsync(string vertical,
             catch (Exception ex)
             {
                 Console.WriteLine($"GetClassifiedWithSimilarAsync Error: {ex}");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> GetCategoryFiltersAsync(string vertical, Guid mainCategoryId)
+        {
+            try
+            {
+                var endpoint = $"/api/classified/category/{vertical}/{mainCategoryId}/filters";
+                return await _httpClient.GetAsync(endpoint);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"GetCategoryFiltersAsync Error: {ex}");
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
