@@ -4,6 +4,7 @@
 @using QLN.Web.Shared.Components.BreadCrumb
 @using QLN.Web.Shared.Components.EmptyCard
 @using QLN.Web.Shared.Pages.Classifieds.Dashboards
+@using QLN.Web.Shared.Components.PaginationFooter
 
 <div>
     <MudContainer MaxWidth="MaxWidth.Large" Class="dashboard-container">
@@ -640,6 +641,14 @@
                                             <MudMenuItem @onclick="() => OnEditAd(ad.Id)" Class="menu-item-style">
                                                 <img src="/qln-images/subscription/unpublish.svg" class="menu-icon" />
                                                 Edit Ad
+                                            </MudMenuItem>
+                                            <MudMenuItem @onclick="() => onPreview(ad.Id)" Class="menu-item-style">
+                                                <img src="/qln-images/subscription/preview.svg" class="menu-icon" />
+                                                <span>Preview </span>
+                                            </MudMenuItem>
+                                            <MudMenuItem @onclick="() => onRemove(ad.Id)" Class="menu-item-style">
+                                                <img src="/qln-images/subscription/remove.svg" class="menu-icon" />
+                                                <span>Remove </span>
                                             </MudMenuItem>
                                         </ChildContent>
                                     </MudMenu>

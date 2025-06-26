@@ -631,6 +631,15 @@
                                                 <img src="/qln-images/subscription/unpublish.svg" class="menu-icon" />
                                                 Edit Ad
                                             </MudMenuItem>
+                                            <MudMenuItem @onclick="() => onPreview(ad.Id)" Class="menu-item-style">
+                                                <img src="/qln-images/subscription/preview.svg" class="menu-icon" />
+                                                <span>Preview </span>
+                                            </MudMenuItem>
+                                            <MudMenuItem @onclick="() => onRemove(ad.Id)" Class="menu-item-style">
+                                                <img src="/qln-images/subscription/remove.svg" class="menu-icon" />
+                                                <span>Remove </span>
+                                            </MudMenuItem>
+                                         
                                         </ChildContent>
                                     </MudMenu>
                                 </div>

@@ -4,6 +4,7 @@
 @using QLN.Web.Shared.Components.BreadCrumb
 @using QLN.Web.Shared.Components.EmptyCard
 @using QLN.Web.Shared.Pages.Classifieds.Dashboards
+@using QLN.Web.Shared.Components.PaginationFooter
 
 <div>
     <MudContainer MaxWidth="MaxWidth.Large" Class="dashboard-container">
@@ -633,8 +634,22 @@
                                             <MudIconButton Icon="@Icons.Material.Filled.MoreVert" />
                                         </ActivatorContent>
                                         <ChildContent>
-                                            <MudMenuItem @onclick="() => OnPublishAd(ad.Id)" Class="menu-item-style">Publish Ad</MudMenuItem>
-                                            <MudMenuItem @onclick="() => OnEditAd(ad.Id)" Class="menu-item-style">Edit Ad</MudMenuItem>
+                                            <MudMenuItem @onclick="() => OnPublishAd(ad.Id)" Class="menu-item-style">
+                                                <img src="/qln-images/subscription/unpublish.svg" class="menu-icon" />
+                                                Publish Ad
+                                            </MudMenuItem>
+                                            <MudMenuItem @onclick="() => OnEditAd(ad.Id)" Class="menu-item-style">
+                                                <img src="/qln-images/subscription/unpublish.svg" class="menu-icon" />
+                                                Edit Ad
+                                            </MudMenuItem>
+                                            <MudMenuItem @onclick="() => onPreview(ad.Id)" Class="menu-item-style">
+                                                <img src="/qln-images/subscription/preview.svg" class="menu-icon" />
+                                                <span>Preview </span>
+                                            </MudMenuItem>
+                                            <MudMenuItem @onclick="() => onRemove(ad.Id)" Class="menu-item-style">
+                                                <img src="/qln-images/subscription/remove.svg" class="menu-icon" />
+                                                <span>Remove </span>
+                                            </MudMenuItem>
                                         </ChildContent>
                                     </MudMenu>
                                 </div>
