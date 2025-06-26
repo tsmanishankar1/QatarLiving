@@ -9,6 +9,6 @@ namespace QLN.Common.Infrastructure.IService
 {
     public interface IServicesService
     {
-        Task<ServiceDashboardWithAdsDto> GetDashboardAndAds(Guid userId, CancellationToken cancellationToken = default);
+        Task<ServiceDashboardWithAdsDto> GetDashboardAndAds(string userId, CancellationToken cancellationToken = default);
     }
 }
