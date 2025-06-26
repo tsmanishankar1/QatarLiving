@@ -24,12 +24,12 @@ namespace QLN.Common.DTO_s
         public TimeOnly StartTime { get; set; } 
         public TimeOnly EndTime { get; set; }  
     }
-    public class V2Category
-    {
-        public int Id { get; set; }
-        public string CategoryName { get; set; }
-        public List<V2EventSubCategory> SubCategories { get; set; }
-    }
+    //public class V2Category
+    //{
+    //    public int Id { get; set; }
+    //    public string CategoryName { get; set; }
+    //    public List<V2EventSubCategory> SubCategories { get; set; }
+    //}
     public class V2EventSubCategory
     {
         public int Id { get; set; }

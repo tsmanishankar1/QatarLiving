@@ -21,10 +21,8 @@ namespace QLN.Content.MS.Service.EventInternalService
         {
             try
             {
-                // Generate a new event ID
                 var id = Guid.NewGuid();
 
-                // Prepare the entity using the V2EventForm DTO
                 var entity = new V2EventResponse
                 {
                     Id = id,
@@ -32,6 +30,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                     EventTitle = dto.EventTitle,
                     EventType = dto.EventType,
                     Price = dto.Price,
+                    EventSchedule = dto.EventSchedule,
                     Location = dto.Location,
                     Venue = dto.Venue,
                     Longitude = dto.Longitude,
@@ -39,13 +38,10 @@ namespace QLN.Content.MS.Service.EventInternalService
                     RedirectionLink = dto.RedirectionLink,
                     EventDescription = dto.EventDescription,
                     CoverImage = dto.CoverImage,
-                    CreatedBy = userId,  // Set CreatedBy to the userId from the token
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedBy = userId,  // Set UpdatedBy to the userId
-                    UpdatedAt = DateTime.UtcNow,
+                    CreatedBy = userId,  
+                    CreatedAt = DateTime.UtcNow
                 };
 
-                // Save the event to the Dapr state store
                 await _dapr.SaveStateAsync(
                     ConstantValues.V2Content.ContentStoreName,
                     id.ToString(),
@@ -53,14 +49,12 @@ namespace QLN.Content.MS.Service.EventInternalService
                     cancellationToken: cancellationToken
                 );
 
-                // Retrieve existing event keys from Dapr state store (index)
                 var keys = await _dapr.GetStateAsync<List<string>>(
                     ConstantValues.V2Content.ContentStoreName,
                     ConstantValues.V2Content.EventIndexKey,
                     cancellationToken: cancellationToken
                 ) ?? new List<string>();
 
-                // Add the event ID to the event index if it's not already present
                 if (!keys.Contains(id.ToString()))
                 {
                     keys.Add(id.ToString());
@@ -152,6 +146,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                     EventTitle = dto.EventTitle,
                     EventType = dto.EventType,
                     Price = dto.Price,
+                    EventSchedule = dto.EventSchedule,
                     Location = dto.Location,
                     Venue = dto.Venue,
                     Longitude = dto.Longitude,

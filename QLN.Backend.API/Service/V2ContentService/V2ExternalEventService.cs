@@ -29,13 +29,9 @@ namespace QLN.Backend.API.Service.V2ContentService
             {
                 if (!string.IsNullOrWhiteSpace(dto.CoverImage))
                 {
-                    var (Extension, Base64) = Base64Helper.ParseBase64(dto.CoverImage);
-                    if (Extension is not ("png" or "jpg"))
-                        throw new ArgumentException("Cover Image must be in PNG, or JPG format.");
-
-                    FileName = $"{dto.EventTitle}_{userId}.{Extension}";
-                    var BlobUrl = await _blobStorage.SaveBase64File(Base64, FileName, "CoverImage", cancellationToken);
-                    dto.CoverImage = BlobUrl;
+                    var imageName = $"{dto.EventTitle}_{userId}.png";
+                    var blobUrl = await _blobStorage.SaveBase64File(dto.CoverImage, imageName, "imageurl", cancellationToken);
+                    dto.CoverImage = blobUrl;
                 }
                 var url = "/api/v2/event/createByUserId";
 
@@ -104,16 +100,11 @@ namespace QLN.Backend.API.Service.V2ContentService
             string? FileName = null;
             try
             {
-                var eventId = Guid.NewGuid();
                 if (!string.IsNullOrWhiteSpace(dto.CoverImage))
                 {
-                    var (Extension, Base64) = Base64Helper.ParseBase64(dto.CoverImage);
-                    if (Extension is not ("png" or "jpg"))
-                        throw new ArgumentException("Cover Image must be in PNG, or JPG format.");
-
-                    FileName = $"{dto.EventTitle}_{eventId}.{Extension}";
-                    var BlobUrl = await _blobStorage.SaveBase64File(Base64, FileName, "CoverImage", cancellationToken);
-                    dto.CoverImage = BlobUrl;
+                    var imageName = $"{dto.EventTitle}_{userId}.png";
+                    var blobUrl = await _blobStorage.SaveBase64File(dto.CoverImage, imageName, "imageurl", cancellationToken);
+                    dto.CoverImage = blobUrl;
                 }
                 var url = "/api/v2/event/updateByUserId";
 
