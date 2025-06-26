@@ -77,6 +77,20 @@
     *@
      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="@Assets["_content/QLN.Web.Shared/leafletMap.js"]"></script>
+
+    <!-- Mailchimp validation script -->
+    <script type="text/javascript" src="//s3.amazonaws.com/downloads.mailchimp.com/js/mc-validate.js"></script>
+    <script type="text/javascript">
+        (function($) {
+          window.fnames = new Array();
+          window.ftypes = new Array();
+          fnames[0]='EMAIL';ftypes[0]='email';
+          fnames[1]='FNAME';ftypes[1]='text';
+          fnames[2]='LNAME';ftypes[2]='text';
+        }(jQuery));
+        var $mcj = jQuery.noConflict(true);
+    </script>
+
     <script>
         window.setVideoFirstFrame = function (videoElement) {
             videoElement.addEventListener('loadedmetadata', function () {
