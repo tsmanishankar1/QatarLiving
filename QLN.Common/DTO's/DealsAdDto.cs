@@ -19,10 +19,12 @@ namespace QLN.Common.DTO_s
         public string PhoneNumber { get; set; }
         public string WhatsAppNumber { get; set; }
         public List<string> Location { get; set; }
-        public Guid UserId { get; set; }
+        public string UserId { get; set; }
         public bool IsFeatured { get; set; }
         public bool IsPromoted { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime RefreshExpiry { get; set; }
+        public string RefreshCount { get; set; }
         public AdStatus Status { get; set; }
     }
 

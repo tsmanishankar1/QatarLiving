@@ -191,6 +191,7 @@ builder.Services.AddSingleton<DaprClient>(_ =>
 
 builder.Services.AddDaprClient();
 #endregion
+
 builder.Services.AddActors(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());

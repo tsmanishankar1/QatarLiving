@@ -74,7 +74,7 @@ namespace QLN.Web.Shared.Services
             }
         }
 
-        public async Task<HttpResponseMessage?> PostClassifiedItemAsync(string vertical, object payload, string authToken)
+        public async Task<HttpResponseMessage?> PostClassifiedItemAsync(string vertical, object payload)
         {
             try
             {
@@ -89,8 +89,6 @@ namespace QLN.Web.Shared.Services
                         WriteIndented = false
                     })
                 };
-
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
 
                 // Send request
                 var response = await _httpClient.SendAsync(request);

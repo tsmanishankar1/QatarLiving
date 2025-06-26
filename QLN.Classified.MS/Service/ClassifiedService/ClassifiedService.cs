@@ -16,6 +16,7 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Service.FileStorage;
 using static Dapr.Client.Autogen.Grpc.v1.Dapr;
@@ -307,7 +308,7 @@ namespace QLN.Classified.MS.Service
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
-            if (dto.UserId == Guid.Empty) throw new ArgumentException("UserId is required.");
+            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
 
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
@@ -372,6 +373,8 @@ namespace QLN.Classified.MS.Service
                     dto.IsPromoted,
                     dto.TearmsAndCondition,
                     CreatedAt = DateTime.UtcNow,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiry = dto.RefreshExpiry,
                     Status = AdStatus.Draft
                 };
                 
@@ -380,55 +383,7 @@ namespace QLN.Classified.MS.Service
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
                 await _dapr.SaveStateAsync(UnifiedStore, ItemsIndexKey, index);
-                var classifiedsIndex = new ClassifiedsIndex
-                {
-                    Id = adId.ToString(),
-                    SubVertical = dto.SubVertical,
-                    Title = dto.Title,
-                    Description = dto.Description,
-                    CategoryId = dto.CategoryId.ToString(),
-                    Category = dto.Category,
-                    L1Category = dto.l1Category,
-                    L2Category = dto.L2Category,
-                    Price = (double?)dto.Price,
-                    PriceType = dto.PriceType,
-                    Location = dto.Location.FirstOrDefault(),
-                    PhoneNumber = dto.PhoneNumber,
-                    WhatsappNumber = dto.WhatsAppNumber,
-                    UserId = dto.UserId.ToString(),
-                    CreatedDate = DateTime.UtcNow,
-                    ModifiedDate = DateTime.UtcNow,
-                    Images = new List<ImageInfo>(),
-                    Make = dto.MakeType,
-                    Model = dto.Model,
-                    Brand = dto.Brand,
-                    Processor = dto.Processor,
-                    Ram = dto.Ram,
-                    SizeType = dto.Size,
-                    Size = dto.SizeValue,
-                    Status = "Active",
-                    StreetNumber = dto.StreetNumber,
-                    Zone = dto.Zone,
-                    Storage = dto.Capacity,
-                    BuildingNumber = dto.BuildingNumber,
-                    Colour = dto.Color,
-                    BatteryPercentage= dto.BatteryPercentage,
-                    
-                };
-
-               
-                var msg = new IndexMessage
-                {
-                    Vertical = ConstantValues.Verticals.Classifieds,
-                    Action = "Upsert", 
-                    UpsertRequest = new CommonIndexRequest
-                    {
-                        VerticalName = ConstantValues.Verticals.Classifieds, 
-                        ClassifiedsItem = classifiedsIndex
-                    }
-                };
-
-                await _dapr.PublishEventAsync(ConstantValues.PubSubName, ConstantValues.PubSubTopics.IndexUpdates, msg, cancellationToken);
+                      
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -463,7 +418,7 @@ namespace QLN.Classified.MS.Service
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
-            if (dto.UserId == Guid.Empty) throw new ArgumentException("UserId is required.");
+            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
 
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
@@ -523,6 +478,8 @@ namespace QLN.Classified.MS.Service
                     dto.IsFeatured,
                     dto.IsPromoted,
                     CreatedAt = DateTime.UtcNow,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiry = dto.RefreshExpiry,
                     Status = AdStatus.Draft
                 };
 
@@ -530,7 +487,7 @@ namespace QLN.Classified.MS.Service
                 index.Add(key);
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
-                await _dapr.SaveStateAsync(UnifiedStore, PrelovedIndexKey, index);
+                await _dapr.SaveStateAsync(UnifiedStore, PrelovedIndexKey, index);                              
 
                 var prelovedIndex = new ClassifiedsIndex
                 {
@@ -615,7 +572,7 @@ namespace QLN.Classified.MS.Service
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
-            if (dto.UserId == Guid.Empty) throw new ArgumentException("UserId is required.");
+            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
 
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
@@ -679,6 +636,8 @@ namespace QLN.Classified.MS.Service
                     dto.UserId,
                     dto.IsFeatured,
                     dto.IsPromoted,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiry = dto.RefreshExpiry,
                     CreatedAt = DateTime.UtcNow,
                     Status = AdStatus.Draft
                 };
@@ -716,20 +675,6 @@ namespace QLN.Classified.MS.Service
                     IsSigned = dto.Signed
                 };
 
-                // Publish the indexing message using Pub/Sub
-                var msg = new IndexMessage
-                {
-                    Vertical = ConstantValues.Verticals.Classifieds,
-                    Action = "Upsert",
-                    UpsertRequest = new CommonIndexRequest
-                    {
-                        VerticalName = ConstantValues.Verticals.Classifieds,
-                        ClassifiedsItem = collectiblesIndex
-                    }
-                };
-
-                await _dapr.PublishEventAsync(ConstantValues.PubSubName, ConstantValues.PubSubTopics.IndexUpdates, msg, cancellationToken);
-
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -765,7 +710,7 @@ namespace QLN.Classified.MS.Service
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
-            if (dto.UserId == Guid.Empty) throw new ArgumentException("UserId is required.");
+            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
 
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
@@ -801,6 +746,7 @@ namespace QLN.Classified.MS.Service
                     dto.IsFeatured,
                     dto.IsPromoted,
                     CreatedAt = DateTime.UtcNow,
+                    RefreshExpiry = dto.RefreshExpiry,
                     Status = AdStatus.Draft
                 };
 
@@ -1146,7 +1092,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<PaginatedAdResponseDto> GetUserPublishedItemsAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
+        public async Task<PaginatedAdResponseDto> GetUserPublishedItemsAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -1171,7 +1117,7 @@ namespace QLN.Classified.MS.Service
                         }
 
                         var subVertical = state.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
-                        var adUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+                        var adUserId = state.TryGetProperty("userId", out var uid) ? uid.GetString() : string.Empty;
 
                         if (!string.Equals(subVertical, "Items", StringComparison.OrdinalIgnoreCase) || adUserId != userId)
                             continue;
@@ -1249,7 +1195,10 @@ namespace QLN.Classified.MS.Service
                             IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
                             IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
                             Status = status,
-                            UserId = adUserId
+                            UserId = adUserId,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
                         publishedAds.Add(ad);
@@ -1288,7 +1237,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<PaginatedAdResponseDto> GetUserUnPublishedItemsAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
+        public async Task<PaginatedAdResponseDto> GetUserUnPublishedItemsAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -1309,7 +1258,7 @@ namespace QLN.Classified.MS.Service
                         if (state.ValueKind != JsonValueKind.Object) continue;
 
                         var subVertical = state.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
-                        var adUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+                        var adUserId = state.TryGetProperty("userId", out var uid) ? uid.GetString() : string.Empty;
 
                         if (string.IsNullOrWhiteSpace(subVertical) || !subVertical.Equals("Items", StringComparison.OrdinalIgnoreCase) || adUserId != userId)
                             continue;
@@ -1378,7 +1327,10 @@ namespace QLN.Classified.MS.Service
                             IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
                             IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
                             Status = status,
-                            UserId = adUserId
+                            UserId = adUserId,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
                         unpublishedAds.Add(ad);
@@ -1417,7 +1369,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<BulkAdActionResponse> BulkUnpublishItemsAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default)
+        public async Task<BulkAdActionResponse> BulkUnpublishItemsAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -1440,7 +1392,7 @@ namespace QLN.Classified.MS.Service
                         continue;
                     }
 
-                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetString() : string.Empty;
                     var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var val) ? (AdStatus)val : AdStatus.Draft;
 
                     if (userId != userId || status != AdStatus.Published)
@@ -1485,7 +1437,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<BulkAdActionResponse> BulkPublishItemsAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default)
+        public async Task<BulkAdActionResponse> BulkPublishItemsAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -1508,7 +1460,7 @@ namespace QLN.Classified.MS.Service
                         continue;
                     }
 
-                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetString() : string.Empty;
                     var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var val) ? (AdStatus)val : AdStatus.Draft;
 
                     if (storedUserId != userId || (status != AdStatus.Unpublished && status != AdStatus.Draft))
@@ -1554,7 +1506,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<PaginatedPrelovedAdResponseDto> GetUserPublishedPrelovedAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
+        public async Task<PaginatedPrelovedAdResponseDto> GetUserPublishedPrelovedAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -1572,7 +1524,7 @@ namespace QLN.Classified.MS.Service
                         if (state.ValueKind != JsonValueKind.Object) continue;
 
                         var subVertical = state.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
-                        var adUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+                        var adUserId = state.TryGetProperty("userId", out var uid) ? uid.GetString() : string.Empty;
 
                         if (!string.Equals(subVertical, "Preloved", StringComparison.OrdinalIgnoreCase) || adUserId != userId)
                             continue;
@@ -1635,7 +1587,10 @@ namespace QLN.Classified.MS.Service
                             IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
                             IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
                             Status = status,
-                            UserId = adUserId
+                            UserId = adUserId,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
                         published.Add(ad);
@@ -1675,7 +1630,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<PaginatedPrelovedAdResponseDto> GetUserUnPublishedPrelovedAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
+        public async Task<PaginatedPrelovedAdResponseDto> GetUserUnPublishedPrelovedAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -1693,7 +1648,7 @@ namespace QLN.Classified.MS.Service
                         if (state.ValueKind != JsonValueKind.Object) continue;
 
                         var subVertical = state.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
-                        var adUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+                        var adUserId = state.TryGetProperty("userId", out var uid) ? uid.GetString() : String.Empty;
 
                         if (string.IsNullOrWhiteSpace(subVertical) ||
                             !subVertical.Equals("Preloved", StringComparison.OrdinalIgnoreCase) ||
@@ -1757,7 +1712,10 @@ namespace QLN.Classified.MS.Service
                             IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
                             IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
                             Status = status,
-                            UserId = adUserId
+                            UserId = adUserId,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
                         unpublished.Add(ad);
@@ -1798,7 +1756,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<BulkAdActionResponse> BulkPublishPrelovedAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default)
+        public async Task<BulkAdActionResponse> BulkPublishPrelovedAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -1821,7 +1779,7 @@ namespace QLN.Classified.MS.Service
                         continue;
                     }
 
-                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetString() : String.Empty;
                     var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var val) ? (AdStatus)val : AdStatus.Draft;
 
                     if (storedUserId != userId || (status != AdStatus.Unpublished && status != AdStatus.Draft))
@@ -1866,7 +1824,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<BulkAdActionResponse> BulkUnpublishPrelovedAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default)
+        public async Task<BulkAdActionResponse> BulkUnpublishPrelovedAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -1889,7 +1847,7 @@ namespace QLN.Classified.MS.Service
                         continue;
                     }
 
-                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetString() : String.Empty;
                     var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var val) ? (AdStatus)val : AdStatus.Draft;
 
                     if (storedUserId != userId || status != AdStatus.Published)
@@ -1934,7 +1892,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<PaginatedDealsAdResponseDto> GetUserPublishedDealsAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
+        public async Task<PaginatedDealsAdResponseDto> GetUserPublishedDealsAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -1953,7 +1911,7 @@ namespace QLN.Classified.MS.Service
                         if (state.ValueKind != JsonValueKind.Object) continue;
 
                         var subVertical = state.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
-                        var adUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+                        var adUserId = state.TryGetProperty("userId", out var uid) ? uid.GetString() : String.Empty;
 
                         if (!string.Equals(subVertical, "Deals", StringComparison.OrdinalIgnoreCase) || adUserId != userId)
                             continue;
@@ -1999,7 +1957,9 @@ namespace QLN.Classified.MS.Service
                             CreatedAt = state.TryGetProperty("createdAt", out var created) && created.ValueKind == JsonValueKind.String
                                 ? created.GetDateTime()
                                 : DateTime.UtcNow,
-                            Status = status
+                            Status = status,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",                            
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
                         published.Add(ad);
@@ -2035,7 +1995,7 @@ namespace QLN.Classified.MS.Service
             }
         } 
 
-        public async Task<PaginatedDealsAdResponseDto> GetUserUnPublishedDealsAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
+        public async Task<PaginatedDealsAdResponseDto> GetUserUnPublishedDealsAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -2054,7 +2014,7 @@ namespace QLN.Classified.MS.Service
                         if (state.ValueKind != JsonValueKind.Object) continue;
 
                         var subVertical = state.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
-                        var adUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+                        var adUserId = state.TryGetProperty("userId", out var uid) ? uid.GetString() : String.Empty;
 
                         if (!string.Equals(subVertical, "Deals", StringComparison.OrdinalIgnoreCase) || adUserId != userId)
                             continue;
@@ -2100,7 +2060,9 @@ namespace QLN.Classified.MS.Service
                             CreatedAt = state.TryGetProperty("createdAt", out var created) && created.ValueKind == JsonValueKind.String
                                 ? created.GetDateTime()
                                 : DateTime.UtcNow,
-                            Status = status
+                            Status = status,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",                           
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
 
@@ -2138,7 +2100,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<BulkAdActionResponse> BulkPublishDealsAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default)
+        public async Task<BulkAdActionResponse> BulkPublishDealsAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -2161,7 +2123,7 @@ namespace QLN.Classified.MS.Service
                         continue;
                     }
 
-                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetString() : String.Empty;
                     var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var val) ? (AdStatus)val : AdStatus.Draft;
 
                     if (storedUserId != userId || (status != AdStatus.Unpublished && status != AdStatus.Draft))
@@ -2206,7 +2168,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<BulkAdActionResponse> BulkUnpublishDealsAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default)
+        public async Task<BulkAdActionResponse> BulkUnpublishDealsAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -2229,7 +2191,7 @@ namespace QLN.Classified.MS.Service
                         continue;
                     }
 
-                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetString() : String.Empty;
                     var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var val) ? (AdStatus)val : AdStatus.Draft;
 
                     if (storedUserId != userId || status != AdStatus.Published)
@@ -2274,7 +2236,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<PaginatedCollectiblesAdResponseDto> GetUserPublishedCollectiblesAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
+        public async Task<PaginatedCollectiblesAdResponseDto> GetUserPublishedCollectiblesAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -2292,7 +2254,7 @@ namespace QLN.Classified.MS.Service
                         if (state.ValueKind != JsonValueKind.Object) continue;
 
                         var subVertical = state.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
-                        var adUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+                        var adUserId = state.TryGetProperty("userId", out var uid) ? uid.GetString() : string.Empty;
 
                         if (!string.Equals(subVertical, "Collectibles", StringComparison.OrdinalIgnoreCase) || adUserId != userId)
                             continue;
@@ -2361,7 +2323,10 @@ namespace QLN.Classified.MS.Service
                             IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
                             IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
                             CreatedAt = state.GetProperty("createdAt").GetDateTime(),
-                            Status = status
+                            Status = status,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
                         published.Add(ad);
@@ -2399,7 +2364,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<PaginatedCollectiblesAdResponseDto> GetUserUnPublishedCollectiblesAds(Guid userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
+        public async Task<PaginatedCollectiblesAdResponseDto> GetUserUnPublishedCollectiblesAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -2417,7 +2382,7 @@ namespace QLN.Classified.MS.Service
                         if (state.ValueKind != JsonValueKind.Object) continue;
 
                         var subVertical = state.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
-                        var adUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+                        var adUserId = state.TryGetProperty("userId", out var uid) ? uid.GetString() : String.Empty;
 
                         if (!string.Equals(subVertical, "Collectibles", StringComparison.OrdinalIgnoreCase) || adUserId != userId)
                             continue;
@@ -2487,7 +2452,10 @@ namespace QLN.Classified.MS.Service
                             IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
                             IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
                             CreatedAt = state.GetProperty("createdAt").GetDateTime(),
-                            Status = status
+                            Status = status,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
 
                         unpublished.Add(ad);
@@ -2525,7 +2493,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<BulkAdActionResponse> BulkPublishCollectiblesAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default)
+        public async Task<BulkAdActionResponse> BulkPublishCollectiblesAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -2548,7 +2516,7 @@ namespace QLN.Classified.MS.Service
                         continue;
                     }
 
-                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetString() : String.Empty;
                     var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var val) ? (AdStatus)val : AdStatus.Draft;
 
                     if (storedUserId != userId || (status != AdStatus.Unpublished && status != AdStatus.Draft))
@@ -2593,7 +2561,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<BulkAdActionResponse> BulkUnpublishCollectiblesAds(Guid userId, List<Guid> adIds, CancellationToken cancellationToken = default)
+        public async Task<BulkAdActionResponse> BulkUnpublishCollectiblesAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -2616,7 +2584,7 @@ namespace QLN.Classified.MS.Service
                         continue;
                     }
 
-                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetGuid() : Guid.Empty;
+                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetString() : String.Empty;
                     var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var val) ? (AdStatus)val : AdStatus.Draft;
 
                     if (storedUserId != userId || status != AdStatus.Published)

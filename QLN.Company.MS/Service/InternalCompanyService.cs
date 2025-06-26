@@ -158,7 +158,7 @@ namespace QLN.Company.MS.Service
                 CRDocument = dto.CRDocument,
                 IsVerified = dto.IsVerified,
                 Status = dto.Status ?? CompanyStatus.Active,
-                CreatedBy = (Guid)dto.UserId,
+                CreatedBy = dto.UserId,
                 CreatedUtc = DateTime.UtcNow,
                 IsActive = true
             };
@@ -432,7 +432,7 @@ namespace QLN.Company.MS.Service
                 company.IsVerified = dto.IsVerified ?? false;
                 company.Status = dto.Status;
                 company.UpdatedUtc = DateTime.UtcNow;
-                company.UpdatedBy = userId;
+                //company.UpdatedBy = userId;
 
                 await _dapr.SaveStateAsync(
                     ConstantValues.CompanyStoreName,
@@ -509,7 +509,7 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<List<CompanyProfileDto>> GetCompaniesByTokenUser(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<List<CompanyProfileDto>> GetCompaniesByTokenUser(string userId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -523,7 +523,7 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<List<ProfileStatus>> GetStatusByTokenUser(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<List<ProfileStatus>> GetStatusByTokenUser(string userId, CancellationToken cancellationToken = default)
         {
             try
             {
