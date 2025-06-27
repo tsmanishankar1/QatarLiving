@@ -2,21 +2,18 @@
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Http;
 using MudBlazor;
+using QLN.Web.Shared.Components;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
-using System.ComponentModel.DataAnnotations;
 
 namespace QLN.Web.Shared.Pages.Company
 {
-    public partial class EditCompany : ComponentBase
+    public class EditCompanyBase : QLComponentBase
     {
-
         [Inject] private ICompanyProfileService CompanyProfileService { get; set; }
-        [Inject] protected ISnackbar Snackbar { get; set; }
-        [Inject] private IHttpContextAccessor HttpContextAccessor { get; set; }
         [Parameter] public string id { get; set; } = string.Empty;
 
-        protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
+        protected List<Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
 
         protected bool isCompanyLoading;
         private bool isSaving = false;
@@ -27,6 +24,7 @@ namespace QLN.Web.Shared.Pages.Company
 
         protected override void OnInitialized()
         {
+            AuthorizedPage();
             breadcrumbItems = new()
             {
                 new() { Label = "Classifieds", Url = "qln/classifieds" },
@@ -39,7 +37,7 @@ namespace QLN.Web.Shared.Pages.Company
         {
             if (firstRender)
             {
-                
+
                 await LoadCompanyProfileAsync(id);
                 StateHasChanged();
 
@@ -191,8 +189,5 @@ namespace QLN.Web.Shared.Pages.Company
             companyProfile.City = AvailableCities.FirstOrDefault();
         }
 
-
     }
-
 }
-
