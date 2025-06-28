@@ -11,6 +11,7 @@ namespace QLN.AIPOV.FrontEnd.ChatBot
         {
             services.AddScoped<ICvAnalyzerService, CVAnalyzerService>();
             services.AddScoped<IAzureSearchService, AzureSearchService>();
+            services.AddScoped<IFeatureService, FeatureService>();
             return services;
         }
 
