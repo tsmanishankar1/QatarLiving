@@ -2,109 +2,103 @@
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Http;
 using MudBlazor;
+using QLN.Web.Shared.Components;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
-using System.ComponentModel.DataAnnotations;
-
 
 namespace QLN.Web.Shared.Pages.Company
 {
-    public partial class AddCompany : ComponentBase
+    public class EditCompanyBase : QLComponentBase
     {
-
         [Inject] private ICompanyProfileService CompanyProfileService { get; set; }
-        [Inject] protected ISnackbar Snackbar { get; set; }
-        [Inject]
-        private IHttpContextAccessor HttpContextAccessor { get; set; }
+        [Parameter] public string id { get; set; } = string.Empty;
 
-        [Parameter]
-        public int VerticalId { get; set; }
+        protected List<Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
 
-        [Parameter]
-        public int CategoryId { get; set; }
-
-
-        protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
-
+        protected bool isCompanyLoading;
         private bool isSaving = false;
 
         private string _authToken;
 
-        protected CompanyProfileModelDto? companyProfile;
-
-
-        private string? crFileName;
-        private string? crDocumentBase64;
+        protected CompanyProfileModel? companyProfile;
 
         protected override void OnInitialized()
         {
+            AuthorizedPage();
             breadcrumbItems = new()
             {
                 new() { Label = "Classifieds", Url = "qln/classifieds" },
                 new() { Label = "Dashboard", Url = "/qln/classified/dashboard/items" },
-                new() { Label = "Create Company Profile", Url = $"/qln/dashboard/company/create",IsLast=true },
+                new() { Label = "Edit Company Profile", Url = $"/qln/dashboard/company/edit/{id}",IsLast=true },
 
-            };
-            companyProfile = new CompanyProfileModelDto
-            {
-                BranchLocations = new List<string> { "" },
-                Vertical = VerticalId,
-                SubVertical = CategoryId,
-                NatureOfBusiness = new List<int>()
             };
         }
-
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
             {
-                //_authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6Ijk3NTQ1NGI1LTAxMmItNGQ1NC1iMTUyLWUzMGYzNmYzNjNlMiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJNVUpBWSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6Im11amF5LmFAa3J5cHRvc2luZm9zeXMuY29tIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbW9iaWxlcGhvbmUiOiIrOTE3NzA4MjA0MDcxIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjpbIkNvbXBhbnkiLCJTdWJzY3JpYmVyIl0sIlVzZXJJZCI6Ijk3NTQ1NGI1LTAxMmItNGQ1NC1iMTUyLWUzMGYzNmYzNjNlMiIsIlVzZXJOYW1lIjoiTVVKQVkiLCJFbWFpbCI6Im11amF5LmFAa3J5cHRvc2luZm9zeXMuY29tIiwiUGhvbmVOdW1iZXIiOiIrOTE3NzA4MjA0MDcxIiwiZXhwIjoxNzUwNzQ3NjA2LCJpc3MiOiJodHRwczovL3Rlc3QucWF0YXJsaXZpbmcuY29tIiwiYXVkIjoiaHR0cHM6Ly90ZXN0LnFhdGFybGl2aW5nLmNvbSJ9.17Xor26xc4j82p5G0coQY_BYeo48MCp3N3hdRhyFinQ";
-                var cookie = HttpContextAccessor.HttpContext?.Request.Cookies["qat"];
-                _authToken = cookie;
 
+                await LoadCompanyProfileAsync(id);
                 StateHasChanged();
 
             }
-
             await base.OnAfterRenderAsync(firstRender);
         }
 
 
-        private async Task SaveCompanyProfileAsync()
+        protected async Task LoadCompanyProfileAsync(string id)
         {
-            if (string.IsNullOrEmpty(companyProfile.CompanyLogo))
-            {
-                Snackbar.Add("Company logo is required", Severity.Error);
-                return;
-            }
+            isCompanyLoading = true;
+            companyProfile = null;
+            StateHasChanged();
 
-            if (string.IsNullOrEmpty(crDocumentBase64))
-            {
-                Snackbar.Add("CR document is required", Severity.Error);
-                return;
-            }
             try
             {
+                companyProfile = await CompanyProfileService.GetCompanyProfileByIdAsync(id);
+                if (companyProfile == null)
+                {
+                    Snackbar.Add("Company profile not found", Severity.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading company profile: {ex.Message}");
+                Snackbar.Add("Failed to load company profile", Severity.Error);
+
+            }
+            finally
+            {
+                isCompanyLoading = false;
+                StateHasChanged();
+            }
+        }
+
+        private async Task SaveCompanyProfileAsync()
+        {
+            try
+            {
+
                 isSaving = true;
 
                 if (companyProfile != null)
                 {
                     Console.WriteLine($"Saving Company Profile: {companyProfile}");
-                    var updated = await CompanyProfileService.CreateCompanyProfileAsync(companyProfile, _authToken);
+                    var updated = await CompanyProfileService.UpdateCompanyProfileAsync(companyProfile);
                     if (updated)
                     {
-                        Snackbar.Add("Company profile created successfully", Severity.Success);
+                        Snackbar.Add("Company profile updated successfully", Severity.Success);
+                        await LoadCompanyProfileAsync(id);
                     }
                     else
                     {
-                        Snackbar.Add("Failed to create company profile", Severity.Error);
+                        Snackbar.Add("Failed to update company profile", Severity.Error);
                     }
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"SaveCompanyProfileAsync Exception: {ex.Message}");
-                Snackbar.Add("An error occurred while creating", Severity.Error);
+                Snackbar.Add("An error occurred while updating", Severity.Error);
             }
             finally
             {
@@ -134,6 +128,10 @@ namespace QLN.Web.Shared.Pages.Company
             companyProfile.CompanyLogo = null;
         }
 
+
+
+        private string? crFileName;
+        private string? crDocumentBase64;
 
         private async Task OnCrFileSelected(IBrowserFile file)
         {
@@ -166,7 +164,7 @@ namespace QLN.Web.Shared.Pages.Company
                                      .FirstOrDefault() as DisplayAttribute;
             return displayAttr?.Name ?? enumValue.ToString();
         }
-        private List<string> AvailableCities = new();
+
 
         private List<CountryCityModel> CountryCityList = new()
 {
@@ -177,6 +175,7 @@ namespace QLN.Web.Shared.Pages.Company
     new CountryCityModel { Country = "UK", Cities = new() { "London", "Manchester", "Birmingham", "Leeds", "Liverpool" }, CountryCode = "+44" }
 };
 
+        private List<string> AvailableCities = new();
 
         private void OnCountryChanged(string selectedCountry)
         {
@@ -190,9 +189,5 @@ namespace QLN.Web.Shared.Pages.Company
             companyProfile.City = AvailableCities.FirstOrDefault();
         }
 
-
-
     }
-
 }
-

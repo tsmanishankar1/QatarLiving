@@ -164,9 +164,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(certFileName);
                 dto.CertificateFileName = certUrl;
-                dto.CertificateBase64 = null;
+                //dto.CertificateBase64 = null;
 
-                // Upload images with order
+               /* // Upload images with order
                 for (int i = 0; i < dto.AdImagesBase64.Count; i++)
                 {
                     var image = dto.AdImagesBase64[i];
@@ -181,7 +181,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                     image.AdImageFileNames = customName;
                     image.Url = url;
-                }
+                }*/
 
                 _log.LogTrace($"Calling internal service with {dto.AdImagesBase64.Count} images");
 
@@ -249,7 +249,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(certFileName);
                 dto.CertificateFileName = certUrl;
-                dto.CertificateBase64 = null;
+               /* dto.CertificateBase64 = null;
 
                 for (int i = 0; i < dto.AdImagesBase64.Count; i++)
                 {
@@ -268,7 +268,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     image.Url = url;
                 }
 
-                _log.LogTrace($"Calling internal service with CertificateUrl: {dto.CertificateFileName} and {dto.AdImagesBase64.Count} images");
+                _log.LogTrace($"Calling internal service with CertificateUrl: {dto.CertificateFileName} and {dto.AdImagesBase64.Count} images");*/
 
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
@@ -335,7 +335,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(certFileName);
                 dto.CertificateFileName = certUrl;
-                dto.CertificateBase64 = null;
+               /* dto.CertificateBase64 = null;
 
                 for (int i = 0; i < dto.AdImagesBase64.Count; i++)
                 {
@@ -353,7 +353,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     image.Url = blobUrl;
                 }
 
-                _log.LogTrace($"Calling internal collectibles service with {dto.AdImagesBase64.Count} images and cert: {dto.CertificateFileName}");
+                _log.LogTrace($"Calling internal collectibles service with {dto.AdImagesBase64.Count} images and cert: {dto.CertificateFileName}");*/
 
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
@@ -483,7 +483,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (string.IsNullOrWhiteSpace(userId))
                     throw new ArgumentException("User ID is required", nameof(userId));
 
-                // Optional: log the request start
                 _log.LogException(new Exception($"Starting to fetch collectibles for userId: {userId}"));
 
                 var result = await _dapr.InvokeMethodAsync<CollectiblesResponse>(
@@ -493,7 +492,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     cancellationToken
                 );
 
-                // Optional: log success
                 _log.LogException(new Exception($"Successfully fetched collectibles for userId: {userId}"));
 
                 return result ?? new CollectiblesResponse();

@@ -36,5 +36,8 @@ namespace QLN.Web.Shared.Models
         // Agreement
         public bool IsAgreed { get; set; }
 
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+
     }
 }

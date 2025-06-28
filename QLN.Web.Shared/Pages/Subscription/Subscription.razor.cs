@@ -17,7 +17,6 @@ namespace QLN.Web.Shared.Pages.Subscription
         [Inject] private ISnackbar Snackbar { get; set; } = default!;
 
         [Inject] private NavigationManager Navigation { get; set; } = default!;
-        [Inject] private ApiService Api { get; set; } = default!;
         [Inject] private CookieAuthStateProvider CookieAuthenticationStateProvider { get; set; } = default!;
         [Inject] private IHttpContextAccessor HttpContextAccessor { get; set; }
 
@@ -47,18 +46,7 @@ namespace QLN.Web.Shared.Pages.Subscription
             await LoadSubscriptionPlansFromApi(3, 1);
            
         }
-        protected override async Task OnAfterRenderAsync(bool firstRender)
-        {
-            if (firstRender)
-            {
-                var cookie = HttpContextAccessor.HttpContext?.Request.Cookies["qat"];
-                _authToken = cookie;
-
-                Console.WriteLine("Access Token from cookie after render: " + _authToken);
-
-                StateHasChanged(); 
-            }
-        }
+     
 
         private List<BreadcrumbItem> breadcrumbItems = new();
         private List<SubscriptionPlan> _plans = new();
@@ -252,7 +240,7 @@ namespace QLN.Web.Shared.Pages.Subscription
         private void CloseSuccessPopup()
         {
             _actionSucess = false;
-            Navigation.NavigateTo("/add-company");
+            Navigation.NavigateTo("/qln/dashboard/company/create");
         }
 
         private void SelectPlan(SubscriptionPlan plan)
@@ -281,7 +269,6 @@ namespace QLN.Web.Shared.Pages.Subscription
             {
 
                 Console.WriteLine(JsonSerializer.Serialize(_model));
-                Console.WriteLine("Auth Token: " + _authToken);
 
                 try
                 {
@@ -305,7 +292,7 @@ namespace QLN.Web.Shared.Pages.Subscription
                     };
 
                     Console.WriteLine(JsonSerializer.Serialize(payload));
-                    var response = await SubscriptionService.PurchaseSubscription(payload, _authToken);
+                    var response = await SubscriptionService.PurchaseSubscription(payload);
                     if (response)
                     {
                         Snackbar.Add("Subscription added!", Severity.Success);

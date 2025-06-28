@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Http;
 using MudBlazor;
-using QLN.Common.DTO_s;
 using QLN.Web.Shared.Components.BreadCrumb;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
@@ -11,15 +10,13 @@ using static QLN.Web.Shared.Pages.Subscription.SubscriptionDetails;
 
 namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 {
-    public class ItemDashboardBase : ComponentBase
+    public class DealsDashboardBase : ComponentBase
     {
-
         [Inject] protected NavigationManager Navigation { get; set; } = default!;
-        [Inject] protected ISnackbar Snackbar { get; set; }
-
         [Inject] protected IClassifiedDashboardService ClassfiedDashboardService { get; set; }
         [Inject] protected ICompanyProfileService CompanyProfileService { get; set; }
         [Inject] private IHttpContextAccessor HttpContextAccessor { get; set; }
+        [Inject] protected ISnackbar Snackbar { get; set; }
 
         protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
         protected List<StatItem> stats = new();
@@ -33,16 +30,13 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         protected List<AdModal> publishedAds = new();
         protected List<AdModal> unpublishedAds = new();
         protected bool _isLoading { get; set; } = true;
-        protected bool _isPublishedLoading = false;
-        protected bool _isUnpublishedLoading = false;
-
         private string _authToken;
 
         protected bool isCompanyLoading;
         protected CompanyProfileModel? companyProfile;
 
 
-    
+     
         private string searchTerm = string.Empty;
         private int sortOption = 2;
 
@@ -53,29 +47,33 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         public int PageSize = 12;
 
         public int TotalItems = 10;
+        protected bool _isPublishedLoading = false;
+        protected bool _isUnpublishedLoading = false;
+
 
         protected override void OnInitialized()
         {
             breadcrumbItems = new()
             {
                 new() { Label = "Classifieds", Url = "qln/classifieds" },
-                new() { Label = "Dashboard", Url = "/qln/classified/dashboard/items", IsLast = true }
+                new() { Label = "Dashboard", Url = "/qln/classified/dashboard/preloved", IsLast = true }
             };
         }
-
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
             {
-                  await LoadSubscriptionDetailsAsync(3);
-                await LoadUnpublishedAds();
+                
+                var subscriptionTask = LoadSubscriptionDetailsAsync(3);
+                var companyProfileTask = LoadCompanyProfileAsync();
                 await LoadPublishedAds();
+                await LoadUnpublishedAds();
+                await Task.WhenAll(subscriptionTask, companyProfileTask);
 
             }
 
             await base.OnAfterRenderAsync(firstRender);
         }
-
         protected async Task LoadCompanyProfileAsync()
         {
             isCompanyLoading = true;
@@ -110,16 +108,15 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
                 {
                     stats = new List<StatItem>
             {
-                new() { Title = "Published Ads", Value = $"{response.ItemsDashboard.PublishedAds}", Icon = "PublishedAds.svg" },
-                new() { Title = "Promoted Ads", Value = $"{response.ItemsDashboard.PromotedAds}", Icon = "PromotedAds.svg" },
-                new() { Title = "Featured Ads", Value = $"{response.ItemsDashboard.FeaturedAds}", Icon = "FeaturedAds.svg" },
-                new() { Title = "Refreshes", Value = $"{response.ItemsDashboard.Refreshes} / {response.ItemsDashboard.TotalAllowedRefreshes}", Icon = "Refreshes.svg" },
+                new() { Title = "Published Deals", Value = $"{response.ItemsDashboard.PublishedAds}", Icon = "PublishedDeals.svg" },
                 new() { Title = "Impressions", Value = $"{response.ItemsDashboard.Impressions:N0}", Icon = "Impressions.svg" },
                 new() { Title = "Views", Value = $"{response.ItemsDashboard.Views:N0}", Icon = "Views.svg" },
+                   new() { Title = "Downloads", Value = $"{response.ItemsDashboard.WhatsAppClicks}", Icon = "Download_Statistics.svg" },
+
                 new() { Title = "WhatsApp", Value = $"{response.ItemsDashboard.WhatsAppClicks}", Icon = "WhatsApp.svg" },
                 new() { Title = "Calls", Value = $"{response.ItemsDashboard.Calls}", Icon = "Calls.svg" },
             };
-                 
+
                 }
                 else
                 {
@@ -141,7 +138,6 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
             }
         }
-
         private async Task LoadPublishedAds()
         {
             _isPublishedLoading = true;
@@ -150,7 +146,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             try
             {
                 publishedAds = await ClassfiedDashboardService
-                    .GetPublishedAds(CurrentPage, PageSize, searchTerm, sortOption)
+                    .GetDealsPublishedAds(CurrentPage, PageSize, searchTerm, sortOption)
                     ?? new();
             }
             catch (Exception ex)
@@ -174,7 +170,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             try
             {
                 unpublishedAds = await ClassfiedDashboardService
-                    .GetUnpublishedAds(CurrentPage, PageSize, searchTerm, sortOption)
+                    .GetDealsUnPublishedAds(CurrentPage, PageSize, searchTerm, sortOption)
                     ?? new();
             }
             catch (Exception ex)
@@ -189,17 +185,16 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
                 StateHasChanged();
             }
         }
-
         protected async Task OnPublishAd(string adId)
         {
             try
             {
-                var result = await ClassfiedDashboardService.PublishAdAsync(adId);
+                var result = await ClassfiedDashboardService.PublishDealsAdAsync(adId);
                 if (result)
                 {
                     Snackbar.Add("Ad published successfully", Severity.Success);
                     await LoadUnpublishedAds();
-                    await LoadPublishedAds();  
+                    await LoadPublishedAds();
                 }
                 else
                 {
@@ -213,12 +208,11 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             }
         }
 
-
         protected async Task UnPublishAd(string adId)
         {
             try
             {
-                var result = await ClassfiedDashboardService.UnPublishAdAsync(adId);
+                var result = await ClassfiedDashboardService.UnPublishDealsAdAsync(adId);
                 if (result)
                 {
                     Snackbar.Add("Ad unpublished successfully", Severity.Success);
@@ -236,15 +230,6 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
                 Snackbar.Add("An error occurred.", Severity.Error);
             }
         }
-        protected async void HandlePageChange(int newPage)
-        {
-            await OnPageChange.InvokeAsync(newPage);
-        }
-
-        protected async void HandlePageSizeChange(int newSize)
-        {
-            await OnPageSizeChange.InvokeAsync(newSize);
-        }
 
         protected void OnEditAd(string adId)
         {
@@ -259,6 +244,15 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         {
             throw new NotImplementedException("Remove functionality is not implemented yet.");
         }
+        protected async void HandlePageChange(int newPage)
+        {
+            await OnPageChange.InvokeAsync(newPage);
+        }
+
+        protected async void HandlePageSizeChange(int newSize)
+        {
+            await OnPageSizeChange.InvokeAsync(newSize);
+        }
         protected void SetTab(int index)
         {
             _activeTabIndex = index;
@@ -267,14 +261,10 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         {
             Navigation.NavigateTo($"/qln/dashboard/company/edit/{id}");
         }
-        protected void NavigateToPurshaseRefresh()
-        {
-            Navigation.NavigateTo("/qln/dashboard/refresh/purchase");
-        }
         protected void NavigateToCreateProfile()
         {
             var verticalId = 3;
-            var categoryId = 1;
+            var categoryId = 2;
 
 
             Navigation.NavigateTo($"/qln/dashboard/company/create/{verticalId}/{categoryId}");
@@ -282,21 +272,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
         protected void NavigateToAdPost()
         {
-            Navigation.NavigateTo("/qln/classifieds/createform");
-        }
-
-        protected void SetHardcodedBusinessProfile()
-        {
-            _businessProfile = new BusinessProfile
-            {
-                Name = "Luxury Store",
-                CategoryName = "Preloved",
-                Duration = "6 month Plus",
-                ValidFrom = "2025-04-27",
-                ValidTo = "2025-10-27",
-                LogoUrl = "qln-images/subscription/CompanyLogo.svg"
-            };
-            StateHasChanged();
+            Navigation.NavigateTo("/classifieds/createform");
         }
         public static string GetDisplayName<TEnum>(TEnum enumValue) where TEnum : Enum
         {
@@ -326,13 +302,13 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         {
             return status switch
             {
-                3 => "background-color: #E6F4EA; border: 1px solid #2E7D32; color: #2E7D32;", 
-                4 => "background-color: #FFF9E5; border: 1px solid #F9A825; color: #F9A825;", 
-                6 => "background-color: #FFEAEA; border: 1px solid #D32F2F; color: #D32F2F;", 
+                3 => "background-color: #E6F4EA; border: 1px solid #2E7D32; color: #2E7D32;",
+                4 => "background-color: #FFF9E5; border: 1px solid #F9A825; color: #F9A825;",
+                6 => "background-color: #FFEAEA; border: 1px solid #D32F2F; color: #D32F2F;",
                 1 => "background-color: #E3F2FD; border: 1px solid #1976D2; color: #1976D2;",
-                _ => "background-color: #F5F5F5; border: 1px solid #BDBDBD; color: #616161;"  
+                _ => "background-color: #F5F5F5; border: 1px solid #BDBDBD; color: #616161;"
             };
         }
-
     }
+
 }

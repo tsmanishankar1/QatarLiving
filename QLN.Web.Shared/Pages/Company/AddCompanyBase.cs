@@ -1,109 +1,91 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.AspNetCore.Http;
 using MudBlazor;
+using QLN.Web.Shared.Components;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
-using System.ComponentModel.DataAnnotations;
 
 namespace QLN.Web.Shared.Pages.Company
 {
-    public partial class EditCompany : ComponentBase
+    public class AddCompanyBase : QLComponentBase
     {
-
         [Inject] private ICompanyProfileService CompanyProfileService { get; set; }
-        [Inject] protected ISnackbar Snackbar { get; set; }
-        [Inject] private IHttpContextAccessor HttpContextAccessor { get; set; }
-        [Parameter] public string id { get; set; } = string.Empty;
 
-        protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
+        [Parameter]
+        public int VerticalId { get; set; }
 
-        protected bool isCompanyLoading;
+        [Parameter]
+        public int CategoryId { get; set; }
+
+
+        protected List<Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
+
         private bool isSaving = false;
 
         private string _authToken;
 
-        protected CompanyProfileModel? companyProfile;
+        protected CompanyProfileModelDto? companyProfile;
+
+
+        private string? crFileName;
+        private string? crDocumentBase64;
 
         protected override void OnInitialized()
         {
+            AuthorizedPage();
             breadcrumbItems = new()
             {
                 new() { Label = "Classifieds", Url = "qln/classifieds" },
                 new() { Label = "Dashboard", Url = "/qln/classified/dashboard/items" },
-                new() { Label = "Edit Company Profile", Url = $"/qln/dashboard/company/edit/{id}",IsLast=true },
+                new() { Label = "Create Company Profile", Url = $"/qln/dashboard/company/create",IsLast=true },
 
+            };
+            companyProfile = new CompanyProfileModelDto
+            {
+                BranchLocations = new List<string> { "" },
+                Vertical = VerticalId,
+                SubVertical = CategoryId,
+                NatureOfBusiness = new List<int>()
             };
         }
 
-        protected override async Task OnAfterRenderAsync(bool firstRender)
-        {
-            if (firstRender)
-            {
-                var cookie = HttpContextAccessor.HttpContext?.Request.Cookies["qat"];
-                _authToken = cookie;
-                await LoadCompanyProfileAsync(id, _authToken);
-                StateHasChanged();
 
-
-            }
-
-            await base.OnAfterRenderAsync(firstRender);
-        }
-
-        protected async Task LoadCompanyProfileAsync(string id, string authToken)
-        {
-            isCompanyLoading = true;
-            companyProfile = null;
-            StateHasChanged();
-
-            try
-            {
-                companyProfile = await CompanyProfileService.GetCompanyProfileByIdAsync(id, authToken);
-                if (companyProfile == null)
-                {
-                    Snackbar.Add("Company profile not found", Severity.Warning);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading company profile: {ex.Message}");
-                Snackbar.Add("Failed to load company profile", Severity.Error);
-
-            }
-            finally
-            {
-                isCompanyLoading = false;
-                StateHasChanged();
-            }
-        }
 
         private async Task SaveCompanyProfileAsync()
         {
+            if (string.IsNullOrEmpty(companyProfile.CompanyLogo))
+            {
+                Snackbar.Add("Company logo is required", Severity.Error);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(crDocumentBase64))
+            {
+                Snackbar.Add("CR document is required", Severity.Error);
+                return;
+            }
             try
             {
-
                 isSaving = true;
 
                 if (companyProfile != null)
                 {
                     Console.WriteLine($"Saving Company Profile: {companyProfile}");
-                    var updated = await CompanyProfileService.UpdateCompanyProfileAsync(companyProfile, _authToken);
+                    var updated = await CompanyProfileService.CreateCompanyProfileAsync(companyProfile);
                     if (updated)
                     {
-                        Snackbar.Add("Company profile updated successfully", Severity.Success);
-                        await LoadCompanyProfileAsync(id, _authToken);
+                        Snackbar.Add("Company profile created successfully", Severity.Success);
                     }
                     else
                     {
-                        Snackbar.Add("Failed to update company profile", Severity.Error);
+                        Snackbar.Add("Failed to create company profile", Severity.Error);
                     }
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"SaveCompanyProfileAsync Exception: {ex.Message}");
-                Snackbar.Add("An error occurred while updating", Severity.Error);
+                Snackbar.Add("An error occurred while creating", Severity.Error);
             }
             finally
             {
@@ -133,10 +115,6 @@ namespace QLN.Web.Shared.Pages.Company
             companyProfile.CompanyLogo = null;
         }
 
-
-
-        private string? crFileName;
-        private string? crDocumentBase64;
 
         private async Task OnCrFileSelected(IBrowserFile file)
         {
@@ -169,7 +147,7 @@ namespace QLN.Web.Shared.Pages.Company
                                      .FirstOrDefault() as DisplayAttribute;
             return displayAttr?.Name ?? enumValue.ToString();
         }
-
+        private List<string> AvailableCities = new();
 
         private List<CountryCityModel> CountryCityList = new()
 {
@@ -180,7 +158,6 @@ namespace QLN.Web.Shared.Pages.Company
     new CountryCityModel { Country = "UK", Cities = new() { "London", "Manchester", "Birmingham", "Leeds", "Liverpool" }, CountryCode = "+44" }
 };
 
-        private List<string> AvailableCities = new();
 
         private void OnCountryChanged(string selectedCountry)
         {
@@ -195,7 +172,6 @@ namespace QLN.Web.Shared.Pages.Company
         }
 
 
+
     }
-
 }
-
