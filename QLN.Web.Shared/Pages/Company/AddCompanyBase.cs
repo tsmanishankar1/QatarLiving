@@ -4,6 +4,7 @@ using MudBlazor;
 using QLN.Web.Shared.Components;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
+using System.ComponentModel.DataAnnotations;
 
 namespace QLN.Web.Shared.Pages.Company
 {
@@ -17,18 +18,26 @@ namespace QLN.Web.Shared.Pages.Company
         [Parameter]
         public int CategoryId { get; set; }
 
+        protected List<Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = [];
 
-        protected List<Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
-
-        private bool isSaving = false;
-
-        private string _authToken;
+        protected bool isSaving = false;
 
         protected CompanyProfileModelDto? companyProfile;
 
+        protected string? crFileName;
+        protected string? crDocumentBase64;
 
-        private string? crFileName;
-        private string? crDocumentBase64;
+        protected List<string> AvailableCities = [];
+
+        protected List<CountryCityModel> CountryCityList =
+                [
+                    new CountryCityModel { Country = "Qatar", Cities = new() { "Doha", "Al Wakrah", "Al Rayyan", "Lusail", "Umm Salal" }, CountryCode = "+974" },
+                    new CountryCityModel { Country = "UAE", Cities = new() { "Dubai", "Abu Dhabi", "Sharjah", "Ajman", "Fujairah" }, CountryCode = "+971" },
+                    new CountryCityModel { Country = "India", Cities = new() { "Mumbai", "Delhi", "Bangalore", "Chennai", "Hyderabad" }, CountryCode = "+91" },
+                    new CountryCityModel { Country = "USA", Cities = new() { "New York", "Los Angeles", "Chicago", "Houston", "Phoenix" }, CountryCode = "+1" },
+                    new CountryCityModel { Country = "UK", Cities = new() { "London", "Manchester", "Birmingham", "Leeds", "Liverpool" }, CountryCode = "+44" }
+                ];
+
 
         protected override void OnInitialized()
         {
@@ -49,9 +58,7 @@ namespace QLN.Web.Shared.Pages.Company
             };
         }
 
-
-
-        private async Task SaveCompanyProfileAsync()
+        protected async Task SaveCompanyProfileAsync()
         {
             if (string.IsNullOrEmpty(companyProfile.CompanyLogo))
             {
@@ -93,7 +100,8 @@ namespace QLN.Web.Shared.Pages.Company
                 StateHasChanged();
             }
         }
-        private async Task OnLogoFileSelected(IBrowserFile file)
+
+        protected async Task OnLogoFileSelected(IBrowserFile file)
         {
             if (file != null)
             {
@@ -110,13 +118,12 @@ namespace QLN.Web.Shared.Pages.Company
             }
         }
 
-        private void ClearLogo()
+        protected void ClearLogo()
         {
             companyProfile.CompanyLogo = null;
         }
 
-
-        private async Task OnCrFileSelected(IBrowserFile file)
+        protected async Task OnCrFileSelected(IBrowserFile file)
         {
             if (file.Size > 10 * 1024 * 1024)
             {
@@ -133,33 +140,23 @@ namespace QLN.Web.Shared.Pages.Company
 
             companyProfile.CrDocument = crDocumentBase64;
         }
-        private void ClearCrFile()
+
+        protected void ClearCrFile()
         {
             crFileName = null;
             crDocumentBase64 = null;
             companyProfile.CrDocument = null;
         }
 
-        public static string GetDisplayName<TEnum>(TEnum enumValue) where TEnum : Enum
+        protected static string GetDisplayName<TEnum>(TEnum enumValue) where TEnum : Enum
         {
             var member = typeof(TEnum).GetMember(enumValue.ToString()).FirstOrDefault();
             var displayAttr = member?.GetCustomAttributes(typeof(DisplayAttribute), false)
                                      .FirstOrDefault() as DisplayAttribute;
             return displayAttr?.Name ?? enumValue.ToString();
         }
-        private List<string> AvailableCities = new();
 
-        private List<CountryCityModel> CountryCityList = new()
-{
-    new CountryCityModel { Country = "Qatar", Cities = new() { "Doha", "Al Wakrah", "Al Rayyan", "Lusail", "Umm Salal" }, CountryCode = "+974" },
-    new CountryCityModel { Country = "UAE", Cities = new() { "Dubai", "Abu Dhabi", "Sharjah", "Ajman", "Fujairah" }, CountryCode = "+971" },
-    new CountryCityModel { Country = "India", Cities = new() { "Mumbai", "Delhi", "Bangalore", "Chennai", "Hyderabad" }, CountryCode = "+91" },
-    new CountryCityModel { Country = "USA", Cities = new() { "New York", "Los Angeles", "Chicago", "Houston", "Phoenix" }, CountryCode = "+1" },
-    new CountryCityModel { Country = "UK", Cities = new() { "London", "Manchester", "Birmingham", "Leeds", "Liverpool" }, CountryCode = "+44" }
-};
-
-
-        private void OnCountryChanged(string selectedCountry)
+        protected void OnCountryChanged(string selectedCountry)
         {
             companyProfile.Country = selectedCountry;
 
@@ -170,8 +167,5 @@ namespace QLN.Web.Shared.Pages.Company
 
             companyProfile.City = AvailableCities.FirstOrDefault();
         }
-
-
-
     }
 }
