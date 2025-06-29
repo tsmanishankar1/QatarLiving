@@ -8,6 +8,10 @@ using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Utilities;
+using static System.Net.Mime.MediaTypeNames;
+using System.Runtime.Intrinsics.Arm;
+using QLN.Common.Infrastructure.IService.ISearchService;
+using static QLN.Common.DTO_s.ClassifiedsIndex;
 
 namespace QLN.Backend.API.Service.ClassifiedService
 {
@@ -19,18 +23,20 @@ namespace QLN.Backend.API.Service.ClassifiedService
         private readonly DaprClient _dapr;
         private readonly IEventlogger _log;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly IFileStorageBlobService _fileStorageBlob;       
+        private readonly IFileStorageBlobService _fileStorageBlob;
+        private readonly ISearchService _searchService;
 
-        public ExternalClassifiedService(DaprClient dapr, IEventlogger log, IHttpContextAccessor httpContextAccessor, IFileStorageBlobService fileStorageBlob)
+        public ExternalClassifiedService(DaprClient dapr, IEventlogger log, IHttpContextAccessor httpContextAccessor, IFileStorageBlobService fileStorageBlob, ISearchService searchService)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
             _log = log ?? throw new ArgumentNullException(nameof(log));
             _httpContextAccessor = httpContextAccessor;
             _fileStorageBlob = fileStorageBlob;
+            _searchService = searchService ?? throw new ArgumentNullException(nameof(searchService));
         }
        
 
-        public async Task<ItemAdsAndDashboardResponse> GetUserItemsAdsWithDashboard(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<ItemAdsAndDashboardResponse> GetUserItemsAdsWithDashboard(string userId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -50,7 +56,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<PrelovedAdsAndDashboardResponse> GetUserPrelovedAdsAndDashboard(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<PrelovedAdsAndDashboardResponse> GetUserPrelovedAdsAndDashboard(string userId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -163,8 +169,8 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(certFileName);
-                dto.CertificateFileName = certUrl;
-                dto.CertificateBase64 = null;
+                dto.CertificateFileName = certFileName;
+                dto.CertificateBase64 = certUrl;
 
                 // Upload images with order
                 for (int i = 0; i < dto.AdImagesBase64.Count; i++)
@@ -192,7 +198,48 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     dto,
                     cancellationToken
                 );
-
+                var classifiedsIndex = new ClassifiedsIndex
+                {
+                    SubVertical = dto.SubVertical,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    CategoryId = dto.CategoryId.ToString(),
+                    Category = dto.Category,
+                    L1Category = dto.l1Category,
+                    L2Category = dto.L2Category,
+                    Price = (double?)dto.Price,
+                    PriceType = dto.PriceType,
+                    Location = dto.Location.FirstOrDefault(),
+                    PhoneNumber = dto.PhoneNumber,
+                    WhatsappNumber = dto.WhatsAppNumber,
+                    UserId = dto.UserId.ToString(),
+                    CreatedDate = DateTime.UtcNow,
+                    ModifiedDate = DateTime.UtcNow,
+                    Images = dto.AdImagesBase64,
+                    WarrantyCertificateUrl = dto.CertificateBase64,
+                    Make = dto.MakeType,
+                    Model = dto.Model,
+                    Brand = dto.Brand,
+                    Processor = dto.Processor,
+                    Ram = dto.Ram,
+                    SizeType = dto.Size,
+                    Size = dto.SizeValue,
+                    Status = "Published",
+                    StreetNumber = dto.StreetNumber,
+                    Zone = dto.Zone,
+                    Storage = dto.Capacity,
+                    BuildingNumber = dto.BuildingNumber,
+                    Colour = dto.Color,
+                    BatteryPercentage = dto.BatteryPercentage,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiryDate = dto.RefreshExpiry
+                };
+                var indexDocument = new CommonIndexRequest
+                {
+                    VerticalName = ConstantValues.Verticals.Classifieds,
+                    ClassifiedsItem = classifiedsIndex
+                };
+                var msg = await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -277,7 +324,47 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     dto,
                     cancellationToken
                 );
-
+                var prelovedIndex = new ClassifiedsIndex
+                {
+                    SubVertical = dto.SubVertical,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    CategoryId = dto.CategoryId.ToString(),
+                    Category = dto.Category,
+                    L1Category = dto.l1Category,
+                    L2Category = dto.L2Category,
+                    Price = (double?)dto.Price,
+                    PriceType = dto.PriceType,
+                    Location = dto.Location.FirstOrDefault(),
+                    PhoneNumber = dto.PhoneNumber,
+                    WhatsappNumber = dto.WhatsAppNumber,
+                    UserId = dto.UserId.ToString(),
+                    CreatedDate = DateTime.UtcNow,
+                    ModifiedDate = DateTime.UtcNow,
+                    Images = dto.AdImagesBase64,
+                    WarrantyCertificateUrl = dto.CertificateBase64,
+                    Status = "Published",
+                    Model = dto.Model,
+                    Brand = dto.Brand,
+                    Processor = dto.Processor,
+                    Ram = dto.Ram,
+                    SizeType = dto.Size,
+                    Size = dto.SizeValue,
+                    StreetNumber = dto.StreetNumber,
+                    Zone = dto.Zone,
+                    Storage = dto.Capacity,
+                    BuildingNumber = dto.BuildingNumber,
+                    Colour = dto.Color,
+                    BatteryPercentage = dto.BatteryPercentage,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiryDate = dto.RefreshExpiry
+                };
+                var indexDocument = new CommonIndexRequest
+                {
+                    VerticalName = ConstantValues.Verticals.Classifieds,
+                    ClassifiedsItem = prelovedIndex
+                };
+                var msg = await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -334,8 +421,8 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(certFileName);
-                dto.CertificateFileName = certUrl;
-                dto.CertificateBase64 = null;
+                dto.CertificateFileName = certFileName;
+                dto.CertificateBase64 = certUrl;
 
                 for (int i = 0; i < dto.AdImagesBase64.Count; i++)
                 {
@@ -362,7 +449,41 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     dto,
                     cancellationToken
                 );
-
+                var collectiblesIndex = new ClassifiedsIndex
+                {
+                    SubVertical = dto.SubVertical,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    CategoryId = dto.CategoryId.ToString(),
+                    Category = dto.Category,
+                    L1Category = dto.l1Category,
+                    L2Category = dto.L2Category,
+                    Price = (double?)dto.Price,
+                    PriceType = dto.PriceType,
+                    Location = dto.Location.FirstOrDefault(),
+                    PhoneNumber = dto.PhoneNumber,
+                    WhatsappNumber = dto.WhatsAppNumber,
+                    UserId = dto.UserId.ToString(),
+                    CreatedDate = DateTime.UtcNow,
+                    ModifiedDate = DateTime.UtcNow,
+                    Images = dto.AdImagesBase64,
+                    WarrantyCertificateUrl = dto.CertificateBase64,
+                    YearEra = dto.YearOrEra,
+                    Rarity = dto.Rarity,
+                    Material = dto.Material,
+                    Status = "Published",
+                    SerialNumber = dto.SerialNumber,
+                    SignedBy = dto.SignedBy,
+                    IsSigned = dto.Signed,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiryDate = dto.RefreshExpiry
+                };
+                var indexDocument = new CommonIndexRequest
+                {
+                    VerticalName = ConstantValues.Verticals.Classifieds,
+                    ClassifiedsItem = collectiblesIndex
+                };
+                var msg = await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -418,8 +539,8 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 var flyerUrl = await _fileStorageBlob.SaveBase64File(dto.FlyerFile, flyerName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(flyerName);
-                dto.FlyerFile = null;
-                dto.FlyerName = flyerUrl;
+                dto.FlyerFile = flyerUrl;
+                dto.FlyerName = flyerName;
 
                 for (int i = 0; i < dto.AdImagesBase64.Count; i++)
                 {
@@ -447,7 +568,27 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     dto,
                     cancellationToken
                 );
-
+                var dealsIndex = new ClassifiedsIndex
+                {
+                    SubVertical = dto.SubVertical,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    Location = dto.Location.FirstOrDefault(),
+                    CreatedDate = DateTime.UtcNow,
+                    Images = dto.AdImagesBase64,
+                    FlyerFileUrl = dto.FlyerFile,
+                    Status = "Published",
+                    FlyerFileName = dto.FlyerName,
+                    FlyerXmlLink = dto.XMLLink,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiryDate = dto.RefreshExpiry
+                };
+                var indexDocument = new CommonIndexRequest
+                {
+                    VerticalName = ConstantValues.Verticals.Classifieds,
+                    ClassifiedsItem = dealsIndex
+                };
+                var msg = await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -483,7 +624,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (string.IsNullOrWhiteSpace(userId))
                     throw new ArgumentException("User ID is required", nameof(userId));
 
-                // Optional: log the request start
                 _log.LogException(new Exception($"Starting to fetch collectibles for userId: {userId}"));
 
                 var result = await _dapr.InvokeMethodAsync<CollectiblesResponse>(
@@ -493,7 +633,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     cancellationToken
                 );
 
-                // Optional: log success
                 _log.LogException(new Exception($"Successfully fetched collectibles for userId: {userId}"));
 
                 return result ?? new CollectiblesResponse();
@@ -679,6 +818,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add("search", search);
+
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
                     : string.Empty;
@@ -715,6 +857,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
+                if (!string.IsNullOrWhiteSpace(search))  
+                    queryParams.Add("search", search);
+
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
                     : string.Empty;
@@ -750,6 +895,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
+
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add("search", search);
 
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
@@ -788,6 +936,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add("search", search);
+
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
                     : string.Empty;
@@ -821,6 +972,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add("search", search);
+
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
                     : string.Empty;
@@ -852,6 +1006,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
+
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add("search", search);
 
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
@@ -885,6 +1042,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add("search", search);
+
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
                     : string.Empty;
@@ -917,6 +1077,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
+
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add("search", search);
 
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
@@ -1059,7 +1222,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<BulkAdActionResponse> BulkUnpublishItemsAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
-            if (userId != null || adIds == null || adIds.Count == 0)
+            if (userId == null || adIds == null || adIds.Count == 0)
                 throw new ArgumentException("Invalid bulk publish request.");
 
             try
@@ -1082,7 +1245,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<BulkAdActionResponse> BulkPublishItemsAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
-            if (userId != null || adIds == null || adIds.Count == 0)
+            if (userId == null || adIds == null || adIds.Count == 0)
                 throw new ArgumentException("Invalid bulk publish request.");
 
             try
@@ -1105,7 +1268,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<BulkAdActionResponse> BulkPublishPrelovedAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
-            if (userId != null || adIds == null || adIds.Count == 0)
+            if (userId == null || adIds == null || adIds.Count == 0)
                 throw new ArgumentException("Invalid bulk publish request.");
 
             try
@@ -1128,7 +1291,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<BulkAdActionResponse> BulkUnpublishPrelovedAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
-            if (userId != null || adIds == null || adIds.Count == 0)
+            if (userId == null || adIds == null || adIds.Count == 0)
                 throw new ArgumentException("Invalid bulk unpublish request.");
 
             try
@@ -1151,7 +1314,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<BulkAdActionResponse> BulkPublishDealsAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
-            if (userId != null || adIds == null || adIds.Count == 0)
+            if (userId == null || adIds == null || adIds.Count == 0)
                 throw new ArgumentException("Invalid bulk publish request.");
 
             try
@@ -1174,7 +1337,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<BulkAdActionResponse> BulkUnpublishDealsAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
-            if (userId != null || adIds == null || adIds.Count == 0)
+            if (userId == null || adIds == null || adIds.Count == 0)
                 throw new ArgumentException("Invalid bulk unpublish request.");
 
             try
@@ -1197,7 +1360,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<BulkAdActionResponse> BulkPublishCollectiblesAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
-            if (userId != null || adIds == null || adIds.Count == 0)
+            if (userId == null || adIds == null || adIds.Count == 0)
                 throw new ArgumentException("Invalid bulk publish request.");
 
             try
@@ -1220,7 +1383,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<BulkAdActionResponse> BulkUnpublishCollectiblesAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
-            if (userId != null || adIds == null || adIds.Count == 0)
+            if (userId == null || adIds == null || adIds.Count == 0)
                 throw new ArgumentException("Invalid bulk unpublish request.");
 
             try

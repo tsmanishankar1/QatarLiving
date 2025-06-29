@@ -82,7 +82,7 @@ namespace QLN.Web.Shared.Services
             var response = await _httpClient.DeleteAsync($"api/subscription/delete/{id}");
             return response.IsSuccessStatusCode;
         }
-        public async Task<bool> PurchaseSubscription(object payload,string authToken)
+        public async Task<bool> PurchaseSubscription(object payload)
         {
 
             try
@@ -92,7 +92,6 @@ namespace QLN.Web.Shared.Services
                     Content = JsonContent.Create(payload)
                 };
 
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
                
 
                 var response = await _httpClient.SendAsync(request);

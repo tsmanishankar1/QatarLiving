@@ -385,7 +385,8 @@
 
         // Replace Alias
         ServicesProfileMenu = ReplaceUrlWithAlias(navigationPath.ServicesProfileMenu, Alias);
-        ClassifiedsProfileMenuUrl =  ReplaceUrlWithAlias(navigationPath.ClassifiedsProfileMenu, Alias);
+        @* ClassifiedsProfileMenuUrl =  ReplaceUrlWithAlias(navigationPath.ClassifiedsProfileMenu, Alias); *@
+        ClassifiedsProfileMenuUrl = "qln/classified/dashboard/items";
     }
 
     private List<MenuItem> postMenuItems = new List<MenuItem>

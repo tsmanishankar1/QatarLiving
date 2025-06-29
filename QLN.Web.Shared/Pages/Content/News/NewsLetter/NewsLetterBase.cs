@@ -3,21 +3,26 @@ using MudBlazor;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
 using Microsoft.JSInterop;
-using System.Net.Http;
-using System.Collections.Generic;
+using QLN.Web.Shared.Services;
 using System.Web;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
+using QLN.Web.Shared.Models;
 
 public class NewsLetterBase : ComponentBase
 {
     [Inject] INewsLetterSubscription newsLetterSubscriptionService { get; set; }
     [Inject] ISnackbar Snackbar { get; set; }
+    [Inject] NavigationManager NavigationManager { get; set; }
+    [Inject] ILogger<NewsCardBase> Logger { get; set; }
     [Inject] protected IJSRuntime JS { get; set; }
     [Inject] public HttpClient Http { get; set; }
     protected NewsLetterSubscriptionModel SubscriptionModel { get; set; } = new();
     protected string SubscriptionStatusMessage = string.Empty;
     protected bool IsSubscribingToNewsletter { get; set; } = false;
+    private QLAnalyticsCallProps? AnalyticsProps;
+    private string AnalyticsKey = Guid.NewGuid().ToString();
     protected MudForm _form;
 
     protected async Task SubscribeAsync()
@@ -47,13 +52,14 @@ public class NewsLetterBase : ComponentBase
                 query["_"] = cacheBuster;
 
                 string url = $"{baseUrl}?{query}";
-                
+
                 var request = new HttpRequestMessage(HttpMethod.Post, url);
                 request.Headers.Add("User-Agent", "Mozilla/5.0");
                 request.Headers.Add("Referer", "https://qatarliving.com/");
                 request.Headers.Add("Origin", "https://qatarliving.com");
                 var response = await Http.SendAsync(request);
                 var responseContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine("the response for the newletter subscriptions is"+responseContent);
                 var successPatteren = "Thank you for subscribing!";
 
                 var matches = Regex.Matches(responseContent, @"\((\{.*?\})\)");
@@ -77,6 +83,7 @@ public class NewsLetterBase : ComponentBase
 
                 {
                     Snackbar.Add($"Subscription submitted: {msg}", Severity.Success);
+                    await TrackSubscribeEvent();
                     SubscriptionStatusMessage = $"Subscription submitted: {msg}";
                     SubscriptionModel.Email = string.Empty;
                     StateHasChanged();
@@ -106,9 +113,28 @@ public class NewsLetterBase : ComponentBase
             {
                 IsSubscribingToNewsletter = false;
             }
-        } else
+        }
+        else
         {
             IsSubscribingToNewsletter = false;
         }
+    }
+    public Task TrackSubscribeEvent()
+    {
+        AnalyticsProps = new QLAnalyticsCallProps
+        {
+            Action = "NewletterSubscription",
+            AnalyticType = (int)AnalyticType.ACTION_TRACKING,
+            Url = new Uri(NavigationManager.Uri).AbsolutePath,
+            Lead = AnalyticsLead.CALL_CLICK,
+            VerticalTag = (int)VerticalTag.CONTENT,
+            AdditionalTag = new Dictionary<string, string>
+            {
+                { "subscriptionEmail", SubscriptionModel.Email}
+            }
+        };
+        AnalyticsKey = Guid.NewGuid().ToString();
+        StateHasChanged();
+        return Task.CompletedTask;
     }
 }

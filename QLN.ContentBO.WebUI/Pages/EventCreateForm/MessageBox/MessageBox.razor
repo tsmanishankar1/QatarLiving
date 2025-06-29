@@ -1,0 +1,64 @@
+@inherits MessageBoxBase
+
+<MudDialog Class="pa-2 custom-dialog">
+    <DialogContent>
+         <div class="d-flex justify-center">
+        <img class="icon-circle" src="/qln-images/search.svg" alt="search" />
+        </div>
+        <MudText Align="Align.Center" Class="mt-4 mb-2 title-style ">
+            @Title
+        </MudText>
+        <MudAutocomplete T="string"
+                 Label="@Placeholder"
+                 Variant="Variant.Outlined"
+                 @bind-Value="SelectedValue"
+                 Adornment="Adornment.None"
+                 SearchFunc="@( (string val, CancellationToken token) => SearchEventTitles(val, token) )"
+                 ToStringFunc="@(s => s)"
+                 ResetValueOnEmptyText="true"
+                 CoerceText="true">
+                 <ItemSelectedTemplate Context="s">  
+                <MudText Class="d-flex justify-space-between align-center">
+                   @($"{s}")<MudIcon Icon="@Icons.Material.Filled.Check" Class="ml-2" />
+                </MudText>
+            </ItemSelectedTemplate>
+         </MudAutocomplete>
+        <div class="mt-4 d-flex flex-column gap-2">
+        <MudButton Variant="Variant.Filled"  Class="mt-4 custom-add-btn" OnClick="AddClicked">
+            Add
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" Class="mt-2 custom-close-btn">
+            Close
+        </MudButton>
+        </div>
+    </DialogContent>
+</MudDialog>
+
+<style>
+    .title-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 18px;
+        font-weight: 600;
+        color: #242424;
+    }
+    .icon-circle {
+        width: 50px;
+        height: 50px;
+    }
+    .custom-add-btn {
+        background-color: #FF7F38;
+        font-size: 16px;
+        font-weight: 600;
+        color: white;
+        text-transform: none;
+    }
+    .custom-close-btn {
+        border-color: #D5D7DA;
+        color: #242424;
+        text-transform: none;
+    }
+    .custom-dialog {
+        width: 400px;
+        max-width: 90vw;
+    }
+</style>

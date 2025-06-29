@@ -1,19 +1,19 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
+using Microsoft.JSInterop;
+using MudBlazor;
 using QLN.Common.DTO_s;
-using System.Text.Json;
+using QLN.Web.Shared.Components;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
-using MudBlazor;
-using Microsoft.JSInterop;
+using System.Text.Json;
 
 namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
 {
-    public class CreatePostComponentBase : ComponentBase
+    public class CreatePostComponentBase : QLComponentBase
     {
         [Inject] private IClassifiedsServices _classifiedsService { get; set; } = default!;
-
         [Inject] private ILogger<CreatePostComponentBase> Logger { get; set; }
         protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
         protected bool IsLoadingCategories { get; set; } = true;
@@ -24,18 +24,26 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
 
         protected bool IsSaving { get; set; } = false;
         protected string SnackbarMessage { get; set; } = string.Empty;
-        [Inject] public ISnackbar Snackbar { get; set; } = default!;
 
         protected string selectedVertical;
 
         protected override void OnInitialized()
         {
-            breadcrumbItems = new()
+            try
             {
-                new () { Label = "Classifieds", Url = "/qln/classifieds" },
-                new () { Label = "Create Form", Url = "/qln/classifieds/createform", IsLast = true }
-            };
+                AuthorizedPage();
+                breadcrumbItems = new()
+                {
+                    new () { Label = "Classifieds", Url = "/qln/classifieds" },
+                    new () { Label = "Create Form", Url = "/qln/classifieds/createform", IsLast = true }
+                };
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitialized");
+            }
         }
+
         private Dictionary<string, string> dynamicFieldValues = new(); // Dynamic field values
 
         protected async void HandleCategoryChanged(string newValue)
@@ -47,7 +55,6 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
 
             StateHasChanged(); // Re-render after data is loaded
         }
-        [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
         public async Task LogObjectToConsoleAsync<T>(T obj)
         {
@@ -201,6 +208,8 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
                     StreetNumber = adPostModel.StreetNumber,
                     BuildingNumber = adPostModel.BuildingNumber,
                     TearmsAndCondition = adPostModel.IsAgreed,
+                    Latitude = adPostModel.Latitude,
+                    Longitude = adPostModel.Longitude,
 
                     AdImagesBase64 = photoUrls
                         .Where(url => !string.IsNullOrEmpty(url))

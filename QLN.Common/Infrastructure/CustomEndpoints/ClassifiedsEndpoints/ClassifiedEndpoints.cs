@@ -555,9 +555,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                var userId = context.User.GetId(); 
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                if (userId == null || userId == Guid.Empty)
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -569,7 +572,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.GetUserItemsAdsWithDashboard(userId, token);
+                    var result = await service.GetUserItemsAdsWithDashboard(uid, token);
 
                     if ((result?.ItemsAds.PublishedAds?.Any() != true) &&
                         (result?.ItemsAds.UnpublishedAds?.Any() != true))
@@ -577,7 +580,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         return TypedResults.NotFound(new ProblemDetails
                         {
                             Title = "No Ads Found",
-                            Detail = $"No ads were found for user ID '{userId}'.",
+                            Detail = $"No ads were found for user ID '{uid}'.",
                             Status = StatusCodes.Status404NotFound
                         });
                     }
@@ -631,13 +634,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapGet("itemsAd-dashboard-byId", async Task<IResult> (
-                [FromQuery] Guid userId,
+                [FromQuery] string userId,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    if (userId == Guid.Empty)
+                    if (userId == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -717,8 +720,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    var userId = httpContext.User.GetId(); 
-                    if (userId == Guid.Empty)
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+                    if (uid == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -728,7 +734,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    var result = await service.GetUserPrelovedAdsAndDashboard(userId, token);
+                    var result = await service.GetUserPrelovedAdsAndDashboard(uid, token);
 
                     if ((result?.PrelovedAds.PublishedAds?.Any() != true) &&
                         (result?.PrelovedAds.UnpublishedAds?.Any() != true))
@@ -790,13 +796,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
 
             group.MapGet("prelovedAd-dashboard-byId", async Task<IResult> (
-                Guid userId,
+                string userId,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    if (userId == Guid.Empty)
+                    if (userId == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -872,7 +878,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedItems dto,
                 IClassifiedService service,
-                [FromServices]ISearchService svc,
                 CancellationToken token) =>
             {
                 try
@@ -897,50 +902,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-
                     dto.UserId = uid;
                     var response = await service.CreateClassifiedItemsAd(dto, token);
-                    var classifiedsIndex = new ClassifiedsIndex
-                    {
-                        SubVertical = dto.SubVertical,
-                        Title = dto.Title,
-                        Description = dto.Description,
-                        CategoryId = dto.CategoryId.ToString(),
-                        Category = dto.Category,
-                        L1Category = dto.l1Category,
-                        L2Category = dto.L2Category,
-                        Price = (double?)dto.Price,
-                        PriceType = dto.PriceType,
-                        Location = dto.Location.FirstOrDefault(),
-                        PhoneNumber = dto.PhoneNumber,
-                        WhatsappNumber = dto.WhatsAppNumber,
-                        UserId = dto.UserId.ToString(),
-                        CreatedDate = DateTime.UtcNow,
-                        ModifiedDate = DateTime.UtcNow,
-                        Images = new List<ImageInfo>(),
-                        Make = dto.MakeType,
-                        Model = dto.Model,
-                        Brand = dto.Brand,
-                        Processor = dto.Processor,
-                        Ram = dto.Ram,
-                        SizeType = dto.Size,
-                        Size = dto.SizeValue,
-                        Status = "Active",
-                        StreetNumber = dto.StreetNumber,
-                        Zone = dto.Zone,
-                        Storage = dto.Capacity,
-                        BuildingNumber = dto.BuildingNumber,
-                        Colour = dto.Color,
-                        BatteryPercentage = dto.BatteryPercentage,
-                        ExpiryDate = dto.ExpiryDate,
-                        RefreshExpiryDate = dto.RefreshExpiry
-                    };
-                    var indexDocument = new CommonIndexRequest
-                    {
-                        VerticalName = ConstantValues.Verticals.Classifieds,
-                        ClassifiedsItem = classifiedsIndex
-                    };
-                    var msg = await svc.UploadAsync(indexDocument);
+
+                  
                     return TypedResults.Created($"/api/classifieds/items/user-ads-by-id/{response.AdId}", response);
 
                 }
@@ -1062,7 +1027,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedPreloved dto,
                 IClassifiedService service,
-                [FromServices] ISearchService svc,
                 CancellationToken token) =>
             {
                 try
@@ -1086,50 +1050,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Detail = "Authenticated user ID is missing or invalid.",
                             Status = StatusCodes.Status400BadRequest
                         });
-                    }
-
+                    }                 
                     dto.UserId = uid;
                     var result = await service.CreateClassifiedPrelovedAd(dto, token);
-                    var prelovedIndex = new ClassifiedsIndex
-                    {
-                        SubVertical = dto.SubVertical,
-                        Title = dto.Title,
-                        Description = dto.Description,
-                        CategoryId = dto.CategoryId.ToString(),
-                        Category = dto.Category,
-                        L1Category = dto.l1Category,
-                        L2Category = dto.L2Category,
-                        Price = (double?)dto.Price,
-                        PriceType = dto.PriceType,
-                        Location = dto.Location.FirstOrDefault(),
-                        PhoneNumber = dto.PhoneNumber,
-                        WhatsappNumber = dto.WhatsAppNumber,
-                        UserId = dto.UserId.ToString(),
-                        CreatedDate = DateTime.UtcNow,
-                        ModifiedDate = DateTime.UtcNow,
-                        Images = new List<ImageInfo>(),
-                        Status = "Active",
-                        Model = dto.Model,
-                        Brand = dto.Brand,
-                        Processor = dto.Processor,
-                        Ram = dto.Ram,
-                        SizeType = dto.Size,
-                        Size = dto.SizeValue,
-                        StreetNumber = dto.StreetNumber,
-                        Zone = dto.Zone,
-                        Storage = dto.Capacity,
-                        BuildingNumber = dto.BuildingNumber,
-                        Colour = dto.Color,
-                        BatteryPercentage = dto.BatteryPercentage,
-                        ExpiryDate = dto.ExpiryDate,
-                        RefreshExpiryDate = dto.RefreshExpiry
-                    };
-                    var indexDocument = new CommonIndexRequest
-                    {
-                        VerticalName = ConstantValues.Verticals.Classifieds,
-                        ClassifiedsItem = prelovedIndex
-                    };
-                    var msg = await svc.UploadAsync(indexDocument);
 
                     return TypedResults.Created(
            $"/api/classifieds/preloved/user-ads-by-id/{result.AdId}", result);
@@ -1261,7 +1184,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedCollectibles dto,
                 IClassifiedService service,
-                [FromServices]ISearchService svc,
                 CancellationToken token) =>
             {
                 try
@@ -1286,45 +1208,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-
                     dto.UserId = uid;
                     var result = await service.CreateClassifiedCollectiblesAd(dto, token);
-                    var collectiblesIndex = new ClassifiedsIndex
-                    {
-                        SubVertical = dto.SubVertical,
-                        Title = dto.Title,
-                        Description = dto.Description,
-                        CategoryId = dto.CategoryId.ToString(),
-                        Category = dto.Category,
-                        L1Category = dto.l1Category,
-                        L2Category = dto.L2Category,
-                        Price = (double?)dto.Price,
-                        PriceType = dto.PriceType,
-                        Location = dto.Location.FirstOrDefault(),
-                        PhoneNumber = dto.PhoneNumber,
-                        WhatsappNumber = dto.WhatsAppNumber,
-                        UserId = dto.UserId.ToString(),
-                        CreatedDate = DateTime.UtcNow,
-                        ModifiedDate = DateTime.UtcNow,
-                        Images = new List<ImageInfo>(),
-                        YearEra = dto.YearOrEra,
-                        Rarity = dto.Rarity,
-                        Material = dto.Material,
-                        Status = "Active",
-                        SerialNumber = dto.SerialNumber,
-                        SignedBy = dto.SignedBy,
-                        IsSigned = dto.Signed,
-                        ExpiryDate = dto.ExpiryDate,
-                        RefreshExpiryDate = dto.RefreshExpiry
-                    };
-                    var indexDocument = new CommonIndexRequest
-                    {
-                        VerticalName = ConstantValues.Verticals.Classifieds,
-                        ClassifiedsItem = collectiblesIndex
-                    };
-                    var msg = await svc.UploadAsync(indexDocument);
-
-
+                    
                     return TypedResults.Created(
                         $"/api/classifieds/collectibles/user-ads-by-id/{result.AdId}", result);
                 }
@@ -1426,7 +1312,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedDeals dto,
                 IClassifiedService service,
-                [FromServices]ISearchService svc,
                 CancellationToken token) =>
             {
                 try
@@ -1454,26 +1339,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     dto.UserId = uid;
                     var result = await service.CreateClassifiedDealsAd(dto, token);
-                    var dealsIndex = new ClassifiedsIndex
-                    {
-                        SubVertical = dto.SubVertical,
-                        Title = dto.Title,
-                        Description = dto.Description,
-                        Location = dto.Location.FirstOrDefault(),
-                        CreatedDate = DateTime.UtcNow,
-                        Images = new List<ImageInfo>(),
-                        Status = "Active",
-                        FlyerFileName = dto.FlyerName,
-                        FlyerXmlLink = dto.XMLLink,
-                        ExpiryDate = dto.ExpiryDate,
-                        RefreshExpiryDate = dto.RefreshExpiry
-                    };
-                    var indexDocument = new CommonIndexRequest
-                    {
-                        VerticalName = ConstantValues.Verticals.Classifieds,
-                        ClassifiedsItem = dealsIndex
-                    };
-                    var msg = await svc.UploadAsync(indexDocument);
 
                     return TypedResults.Created($"/api/classifieds/deals/user-ads-by-id/{result.AdId}", result);
 
@@ -1613,9 +1478,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 CancellationToken cancellationToken
             ) =>
             {
-                Guid? userId = context.User.GetId();
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                if (userId == null || userId == Guid.Empty)
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (uid == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -1628,7 +1496,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await service.GetCollectibles(userId.ToString(), cancellationToken);
+                    var result = await service.GetCollectibles(context.ToString(), cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (FileNotFoundException fileEx)
@@ -1664,13 +1532,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                   BadRequest<ProblemDetails>,
                   ProblemHttpResult>>
               (
-                  [Required][FromQuery] Guid userId,
+                  [Required][FromQuery] string userId,
                   IClassifiedService service,
                   HttpContext context,
                   CancellationToken cancellationToken
               ) =>
             {
-                if (userId == Guid.Empty)
+                if (userId == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
