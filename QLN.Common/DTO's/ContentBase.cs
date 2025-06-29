@@ -3,7 +3,7 @@
 namespace QLN.Common.Infrastructure.DTO_s
 {
     public class ContentBase
-    {
+    { 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("page_name")]
         public string PageName { get; set; }

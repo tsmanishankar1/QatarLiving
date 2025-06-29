@@ -7,6 +7,7 @@ using QLN.Content.MS.Service.NewsInternalService;
 using QLN.Content.MS.Service;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 using QLN.Common.Infrastructure.IService.IContentService;
+using QLN.Content.MS.Service.EventInternalService;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
@@ -52,7 +53,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-var eventGroup = app.MapGroup("v2/api/event");
+var eventGroup = app.MapGroup("/api/v2/event");
 eventGroup.MapEventEndpoints();
 app.MapGroup("/api/v2").MapContentBannerEndpoints()
     .MapContentNewsEndpoints();
