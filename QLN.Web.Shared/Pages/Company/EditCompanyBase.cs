@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
 using QLN.Web.Shared.Components;
 using QLN.Web.Shared.Models;
@@ -12,12 +12,15 @@ namespace QLN.Web.Shared.Pages.Company
     public class EditCompanyBase : QLComponentBase
     {
         [Inject] private ICompanyProfileService CompanyProfileService { get; set; }
+
+        [Inject] private ILogger<EditCompanyBase> Logger { get; set; }
+
         [Parameter] public string id { get; set; } = string.Empty;
 
         protected List<Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = [];
 
         protected bool isCompanyLoading;
-        
+
         protected bool isSaving = false;
 
         protected CompanyProfileModel? companyProfile;
@@ -39,14 +42,21 @@ namespace QLN.Web.Shared.Pages.Company
 
         protected override void OnInitialized()
         {
-            AuthorizedPage();
-            breadcrumbItems = new()
+            try
             {
-                new() { Label = "Classifieds", Url = "qln/classifieds" },
-                new() { Label = "Dashboard", Url = "/qln/classified/dashboard/items" },
-                new() { Label = "Edit Company Profile", Url = $"/qln/dashboard/company/edit/{id}",IsLast=true },
+                AuthorizedPage();
+                breadcrumbItems =
+                [
+                    new() { Label = "Classifieds", Url = "qln/classifieds" },
+                    new() { Label = "Dashboard", Url = "/qln/classified/dashboard/items" },
+                    new() { Label = "Edit Company Profile", Url = $"/qln/dashboard/company/edit/{id}",IsLast=true },
 
-            };
+                ];
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitialized");
+            }
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)

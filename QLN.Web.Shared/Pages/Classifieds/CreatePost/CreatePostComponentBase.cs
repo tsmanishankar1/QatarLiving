@@ -29,12 +29,19 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
 
         protected override void OnInitialized()
         {
-            AuthorizedPage();
-            breadcrumbItems = new()
+            try
             {
-                new () { Label = "Classifieds", Url = "/qln/classifieds" },
-                new () { Label = "Create Form", Url = "/qln/classifieds/createform", IsLast = true }
-            };
+                AuthorizedPage();
+                breadcrumbItems = new()
+                {
+                    new () { Label = "Classifieds", Url = "/qln/classifieds" },
+                    new () { Label = "Create Form", Url = "/qln/classifieds/createform", IsLast = true }
+                };
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitialized");
+            }
         }
 
         private Dictionary<string, string> dynamicFieldValues = new(); // Dynamic field values

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
 using QLN.Web.Shared.Components;
 using QLN.Web.Shared.Models;
@@ -11,6 +12,8 @@ namespace QLN.Web.Shared.Pages.Company
     public class AddCompanyBase : QLComponentBase
     {
         [Inject] private ICompanyProfileService CompanyProfileService { get; set; }
+
+        [Inject] private ILogger<AddCompanyBase> Logger { get; set; }
 
         [Parameter]
         public int VerticalId { get; set; }
@@ -41,21 +44,28 @@ namespace QLN.Web.Shared.Pages.Company
 
         protected override void OnInitialized()
         {
-            AuthorizedPage();
-            breadcrumbItems = new()
+            try
             {
-                new() { Label = "Classifieds", Url = "qln/classifieds" },
-                new() { Label = "Dashboard", Url = "/qln/classified/dashboard/items" },
-                new() { Label = "Create Company Profile", Url = $"/qln/dashboard/company/create",IsLast=true },
+                AuthorizedPage();
+                breadcrumbItems = new()
+                {
+                    new() { Label = "Classifieds", Url = "qln/classifieds" },
+                    new() { Label = "Dashboard", Url = "/qln/classified/dashboard/items" },
+                    new() { Label = "Create Company Profile", Url = $"/qln/dashboard/company/create",IsLast=true },
 
-            };
-            companyProfile = new CompanyProfileModelDto
+                };
+                companyProfile = new CompanyProfileModelDto
+                {
+                    BranchLocations = new List<string> { "" },
+                    Vertical = VerticalId,
+                    SubVertical = CategoryId,
+                    NatureOfBusiness = new List<int>()
+                };
+            }
+            catch (Exception ex)
             {
-                BranchLocations = new List<string> { "" },
-                Vertical = VerticalId,
-                SubVertical = CategoryId,
-                NatureOfBusiness = new List<int>()
-            };
+                Logger.LogError(ex, "OnInitialized");
+            }
         }
 
         protected async Task SaveCompanyProfileAsync()
