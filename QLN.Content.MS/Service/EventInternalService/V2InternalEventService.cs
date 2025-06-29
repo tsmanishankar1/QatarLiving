@@ -24,12 +24,12 @@ namespace QLN.Content.MS.Service.EventInternalService
                 if (dto.EventType == V2EventType.FeePrice)
                 {
                     if (dto.Price == null)
-                        throw new InvalidDataException("Price must be provided when the EventType is 'Fees'.");
+                        throw new ArgumentException("Price must be provided when the EventType is 'Fees'.");
                 }
                 else
                 {
                     if (dto.Price != null)
-                        throw new InvalidDataException("Price must not be entered for 'Free Access' or 'Open Registration' events.");
+                        throw new ArgumentException("Price must not be entered for 'Free Access' or 'Open Registration' events.");
                 }
                 var id = Guid.NewGuid();
 
@@ -138,16 +138,16 @@ namespace QLN.Content.MS.Service.EventInternalService
             try
             {
                 if (dto.Id == Guid.Empty)
-                    throw new InvalidDataException("Event ID is required for update.");
+                    throw new ArgumentException("Event ID is required for update.");
                 if (dto.EventType == V2EventType.FeePrice)
                 {
                     if (dto.Price == null)
-                        throw new InvalidDataException("Price must be provided when the EventType is 'Fees'.");
+                        throw new ArgumentException("Price must be provided when the EventType is 'Fees'.");
                 }
                 else
                 {
                     if (dto.Price != null)
-                        throw new InvalidDataException("Price must not be entered for 'Free Access' or 'Open Registration' events.");
+                        throw new ArgumentException("Price must not be entered for 'Free Access' or 'Open Registration' events.");
                 }
                 var existing = await _dapr.GetStateAsync<V2EventResponse>(
                     ConstantValues.V2Content.ContentStoreName,

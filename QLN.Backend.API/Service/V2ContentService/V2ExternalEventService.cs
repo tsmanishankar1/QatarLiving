@@ -51,6 +51,11 @@ namespace QLN.Backend.API.Service.V2ContentService
 
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
             }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid data provided for event creation.");
+                throw new InvalidDataException("Invalid data provided for event creation.", ex);
+            }
             catch (Exception ex)
             {
                 await CleanupUploadedFiles(FileName, cancellationToken);
@@ -92,6 +97,11 @@ namespace QLN.Backend.API.Service.V2ContentService
                     url,
                     cancellationToken);
             }
+            catch(KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Event with ID {Id} not found.", id);
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving event for Id : {Id}", id);
@@ -128,10 +138,10 @@ namespace QLN.Backend.API.Service.V2ContentService
 
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
             }
-            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            catch(ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Event with ID not found.");
-                return null;
+                _logger.LogWarning(ex, "Invalid data provided for event update.");
+                throw new InvalidDataException("Invalid data provided for event update.", ex);
             }
             catch (Exception ex)
             {
