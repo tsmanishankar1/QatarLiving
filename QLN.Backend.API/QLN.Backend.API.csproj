@@ -34,10 +34,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controller\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\QLN.Common\QLN.Common.csproj" />
   </ItemGroup>
 
