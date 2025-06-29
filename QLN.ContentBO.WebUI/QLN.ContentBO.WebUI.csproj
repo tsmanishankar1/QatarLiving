@@ -9,11 +9,6 @@
   <ItemGroup>
     <PackageReference Include="MudBlazor" Version="8.8.0" />
     <PackageReference Include="MudExRichTextEditor" Version="8.5.2" />
-    <PackageReference Include="NLog.Web.AspNetCore" Version="5.5.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="nlog.config" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,6 +17,12 @@
     <Folder Include="Components\Daily\" />
     <Folder Include="Components\Report\" />
     <Folder Include="wwwroot\qln-images\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\.dockerignore" Link=".dockerignore">
+      <DependentUpon>$(DockerDefaultDockerfile)</DependentUpon>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

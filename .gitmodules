@@ -1,6 +1,0 @@
-[submodule "External/MudEx"]
-	path = External/MudEx
-	url = https://github.com/fgilde/MudExRichTextEditor.git
-[submodule "QLN.ContentBO.WebUI/External/MudEx"]
-	path = QLN.ContentBO.WebUI/External/MudEx
-	url = https://github.com/fgilde/MudExRichTextEditor.git
