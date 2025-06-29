@@ -20,12 +20,17 @@
                     <h4 class="header-description">@Description</h4>
 
                     <div class="social-icons">
-                        @foreach (var link in SocialLinks)
+                            @foreach (var link in SocialLinks)
                             {
+                                var imageUrl = !string.IsNullOrWhiteSpace(link.ImageUrl) ? link.ImageUrl : link.Title == "Facebook" ? "/qln-images/classifieds/social_Facebook.svg": link.Title == "Instagram"
+                                    ? "/qln-images/classifieds/social_Instagram.svg"
+                                    : link.Title == "Youtube"
+                                    ? "/qln-images/classifieds/social_Youtube.svg"
+                                    : "/qln-images/classifieds/social_Youtube.svg";
                                 <a href="@link.RediectUrl"
                                 target="_blank"
-                                class="social-icon">
-                                    <img src="@link.ImageUrl" alt="@link.Title" />
+                                class="social-icon" style="@(string.IsNullOrWhiteSpace(link.ImageUrl) ? "width: 50px; height: 50px;" : null)">
+                                    <img src="@(string.IsNullOrWhiteSpace(link.ImageUrl) ? imageUrl : link.ImageUrl)" alt="@link.Title" />
                                 </a>
                             }
                     </div>
