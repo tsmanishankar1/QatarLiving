@@ -646,7 +646,7 @@ namespace QLN.Classified.MS.Service
                 index.Add(key);
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
-                await _dapr.SaveStateAsync(UnifiedStore, UnifiedIndexKey, index);
+                await _dapr.SaveStateAsync(UnifiedStore, CollectiblesIndexKey, index);
                 var collectiblesIndex = new ClassifiedsIndex
                 {
                     Id = adId.ToString(),
@@ -1133,6 +1133,7 @@ namespace QLN.Classified.MS.Service
                         {
                             var normalizedTitle = title.Trim().ToLowerInvariant();
                             var normalizedSearch = search.Trim().ToLowerInvariant();
+
                             if (!normalizedTitle.Contains(normalizedSearch))
                             {
                                 _logger.LogInformation("Ad with key {Key} skipped: title '{Title}' does not contain search term '{Search}'", key, title, search);
@@ -1273,9 +1274,22 @@ namespace QLN.Classified.MS.Service
                             continue;
 
                         var title = state.GetProperty("title").GetString();
-                        if (!string.IsNullOrWhiteSpace(search) &&
-                            (string.IsNullOrWhiteSpace(title) || !title.Contains(search, StringComparison.OrdinalIgnoreCase)))
-                            continue;
+                        if (!string.IsNullOrWhiteSpace(search))
+                        {
+                            var normalizedTitle = title.Trim().ToLowerInvariant();
+                            var normalizedSearch = search.Trim().ToLowerInvariant();
+
+                            if (!normalizedTitle.Contains(normalizedSearch)) 
+                            {
+                                _logger.LogInformation("Ad with key {Key} skipped: title '{Title}' does not contain search term '{Search}'", key, title, search);
+                                continue;
+                            }
+                            else
+                            {
+                                _logger.LogInformation("Ad with key {Key} included: title '{Title}' matches search '{Search}'", key, title, search);
+                            }
+                        }
+
 
                         var ad = new ItemAdDto
                         {
@@ -1536,9 +1550,21 @@ namespace QLN.Classified.MS.Service
                             continue;
 
                         var title = state.GetProperty("title").GetString();
-                        if (!string.IsNullOrWhiteSpace(search) &&
-                            (string.IsNullOrWhiteSpace(title) || !title.Contains(search, StringComparison.OrdinalIgnoreCase)))
-                            continue;
+                        if (!string.IsNullOrWhiteSpace(search))
+                        {
+                            var normalizedTitle = title.Trim().ToLowerInvariant();
+                            var normalizedSearch = search.Trim().ToLowerInvariant();
+
+                            if (!normalizedTitle.Contains(normalizedSearch))
+                            {
+                                _logger.LogInformation("Ad with key {Key} skipped: title '{Title}' does not contain search term '{Search}'", key, title, search);
+                                continue;
+                            }
+                            else
+                            {
+                                _logger.LogInformation("Ad with key {Key} included: title '{Title}' matches search '{Search}'", key, title, search);
+                            }
+                        }
 
                         var ad = new PrelovedAdDto
                         {
@@ -1662,8 +1688,22 @@ namespace QLN.Classified.MS.Service
                             continue;
 
                         var title = state.GetProperty("title").GetString();
-                        if (!string.IsNullOrWhiteSpace(search) && !title.Contains(search, StringComparison.OrdinalIgnoreCase))
-                            continue;
+
+                        if (!string.IsNullOrWhiteSpace(search))
+                        {
+                            var normalizedTitle = title.Trim().ToLowerInvariant();
+                            var normalizedSearch = search.Trim().ToLowerInvariant();
+
+                            if (!normalizedTitle.Contains(normalizedSearch))
+                            {
+                                _logger.LogInformation("Ad with key {Key} skipped: title '{Title}' does not contain search term '{Search}'", key, title, search);
+                                continue;
+                            }
+                            else
+                            {
+                                _logger.LogInformation("Ad with key {Key} included: title '{Title}' matches search '{Search}'", key, title, search);
+                            }
+                        }
 
                         var ad = new PrelovedAdDto
                         {
@@ -1923,8 +1963,22 @@ namespace QLN.Classified.MS.Service
                             continue;
 
                         var title = state.GetProperty("title").GetString();
-                        if (!string.IsNullOrWhiteSpace(search) && !title.Contains(search, StringComparison.OrdinalIgnoreCase))
-                            continue;
+
+                        if (!string.IsNullOrWhiteSpace(search))
+                        {
+                            var normalizedTitle = title.Trim().ToLowerInvariant();
+                            var normalizedSearch = search.Trim().ToLowerInvariant();
+
+                            if (!normalizedTitle.Contains(normalizedSearch))
+                            {
+                                _logger.LogInformation("Ad with key {Key} skipped: title '{Title}' does not contain search term '{Search}'", key, title, search);
+                                continue;
+                            }
+                            else
+                            {
+                                _logger.LogInformation("Ad with key {Key} included: title '{Title}' matches search '{Search}'", key, title, search);
+                            }
+                        }
 
                         var ad = new DealsAdDto
                         {
@@ -2026,9 +2080,22 @@ namespace QLN.Classified.MS.Service
                             continue;
 
                         var title = state.GetProperty("title").GetString();
-                        if (!string.IsNullOrWhiteSpace(search) && !title.Contains(search, StringComparison.OrdinalIgnoreCase))
-                            continue;
 
+                        if (!string.IsNullOrWhiteSpace(search))
+                        {
+                            var normalizedTitle = title.Trim().ToLowerInvariant();
+                            var normalizedSearch = search.Trim().ToLowerInvariant();
+
+                            if (!normalizedTitle.Contains(normalizedSearch))
+                            {
+                                _logger.LogInformation("Ad with key {Key} skipped: title '{Title}' does not contain search term '{Search}'", key, title, search);
+                                continue;
+                            }
+                            else
+                            {
+                                _logger.LogInformation("Ad with key {Key} included: title '{Title}' matches search '{Search}'", key, title, search);
+                            }
+                        }
                         var ad = new DealsAdDto
                         {
                             Id = state.GetProperty("id").GetGuid(),
@@ -2266,8 +2333,22 @@ namespace QLN.Classified.MS.Service
                             continue;
 
                         var title = state.GetProperty("title").GetString();
-                        if (!string.IsNullOrWhiteSpace(search) && !title.Contains(search, StringComparison.OrdinalIgnoreCase))
-                            continue;
+
+                        if (!string.IsNullOrWhiteSpace(search))
+                        {
+                            var normalizedTitle = title.Trim().ToLowerInvariant();
+                            var normalizedSearch = search.Trim().ToLowerInvariant();
+
+                            if (!normalizedTitle.Contains(normalizedSearch))
+                            {
+                                _logger.LogInformation("Ad with key {Key} skipped: title '{Title}' does not contain search term '{Search}'", key, title, search);
+                                continue;
+                            }
+                            else
+                            {
+                                _logger.LogInformation("Ad with key {Key} included: title '{Title}' matches search '{Search}'", key, title, search);
+                            }
+                        }
 
                         var ad = new CollectiblesAdDto
                         {
@@ -2391,9 +2472,22 @@ namespace QLN.Classified.MS.Service
                             ? (AdStatus)statusInt : AdStatus.Draft;
 
                         var title = state.GetProperty("title").GetString();
-                        if (!string.IsNullOrWhiteSpace(search) &&
-                            (string.IsNullOrWhiteSpace(title) || !title.Contains(search, StringComparison.OrdinalIgnoreCase)))
-                            continue;
+
+                        if (!string.IsNullOrWhiteSpace(search))
+                        {
+                            var normalizedTitle = title.Trim().ToLowerInvariant();
+                            var normalizedSearch = search.Trim().ToLowerInvariant();
+
+                            if (!normalizedTitle.Contains(normalizedSearch))
+                            {
+                                _logger.LogInformation("Ad with key {Key} skipped: title '{Title}' does not contain search term '{Search}'", key, title, search);
+                                continue;
+                            }
+                            else
+                            {
+                                _logger.LogInformation("Ad with key {Key} included: title '{Title}' matches search '{Search}'", key, title, search);
+                            }
+                        }
 
                         if (status == AdStatus.Published || status == AdStatus.Approved)
                             continue;

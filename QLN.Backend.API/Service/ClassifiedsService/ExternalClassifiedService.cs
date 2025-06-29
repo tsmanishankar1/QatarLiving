@@ -679,6 +679,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add("search", search);
+
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
                     : string.Empty;
@@ -715,6 +718,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
+                if (!string.IsNullOrWhiteSpace(search))  
+                    queryParams.Add("search", search);
+
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
                     : string.Empty;
@@ -750,6 +756,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
+
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add("search", search);
 
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
@@ -788,6 +797,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add("search", search);
+
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
                     : string.Empty;
@@ -821,6 +833,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add("search", search);
+
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
                     : string.Empty;
@@ -852,6 +867,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
+
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add("search", search);
 
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
@@ -885,6 +903,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add("search", search);
+
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
                     : string.Empty;
@@ -917,6 +938,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
+
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add("search", search);
 
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
