@@ -7,10 +7,10 @@ namespace QLN.Web.Shared.Services.Interface
     public interface ICompanyProfileService
     {
        
-        Task<CompanyProfileModel?> GetCompanyProfileAsync(string authToken);
-        Task<CompanyProfileModel?> GetCompanyProfileByIdAsync(string id, string authToken);
-        Task<bool> UpdateCompanyProfileAsync(CompanyProfileModel model, string authToken);
-        Task<bool> CreateCompanyProfileAsync(CompanyProfileModelDto model, string authToken);
+        Task<CompanyProfileModel?> GetCompanyProfileAsync();
+        Task<CompanyProfileModel?> GetCompanyProfileByIdAsync(string id );
+        Task<bool> UpdateCompanyProfileAsync(CompanyProfileModel model );
+        Task<bool> CreateCompanyProfileAsync(CompanyProfileModelDto model);
 
 
     }

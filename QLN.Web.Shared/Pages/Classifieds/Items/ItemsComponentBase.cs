@@ -125,13 +125,11 @@ public class ItemsComponentBase : ComponentBase
                 filters.Add("category", SearchState.ItemCategory);
             if (!string.IsNullOrWhiteSpace(SearchState.ItemBrand))
                 filters.Add("brand", SearchState.ItemBrand);
-            if (!string.IsNullOrWhiteSpace(SearchState.ItemSortBy))
-                filters.Add("orderBy", SearchState.ItemSortBy);
-
 
             var payload = new Dictionary<string, object>
             {
                 ["text"] = searchText ?? SearchState.ItemSearchText,
+                ["orderBy"] = SearchState.ItemSortBy,
                 ["filters"] = filters
             };
 
