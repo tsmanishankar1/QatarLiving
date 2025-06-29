@@ -1,13 +1,9 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Http;
 using MudBlazor;
-using QLN.Common.DTO_s;
-using QLN.Web.Shared.Components.BreadCrumb;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
 using System.ComponentModel.DataAnnotations;
 using static QLN.Web.Shared.Models.ClassifiedsDashboardModel;
-using static QLN.Web.Shared.Pages.Subscription.SubscriptionDetails;
 
 namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 {
@@ -19,7 +15,6 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
         [Inject] protected IClassifiedDashboardService ClassfiedDashboardService { get; set; }
         [Inject] protected ICompanyProfileService CompanyProfileService { get; set; }
-        [Inject] private IHttpContextAccessor HttpContextAccessor { get; set; }
 
         protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
         protected List<StatItem> stats = new();
@@ -36,14 +31,10 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         protected bool _isPublishedLoading = false;
         protected bool _isUnpublishedLoading = false;
 
-        private string _authToken;
-
-        protected bool isCompanyLoading;
-        protected CompanyProfileModel? companyProfile;
 
 
-    
-        private string searchTerm = string.Empty;
+        protected string searchTerm = string.Empty;
+
         private int sortOption = 2;
 
 
@@ -67,33 +58,13 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         {
             if (firstRender)
             {
-                  await LoadSubscriptionDetailsAsync(3);
+                await LoadSubscriptionDetailsAsync(3);
                 await LoadUnpublishedAds();
                 await LoadPublishedAds();
 
             }
 
             await base.OnAfterRenderAsync(firstRender);
-        }
-
-        protected async Task LoadCompanyProfileAsync()
-        {
-            isCompanyLoading = true;
-            StateHasChanged();
-
-            try
-            {
-                companyProfile = await CompanyProfileService.GetCompanyProfileAsync();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading company profile: {ex.Message}");
-            }
-            finally
-            {
-                isCompanyLoading = false;
-                StateHasChanged();
-            }
         }
 
 
@@ -119,7 +90,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
                 new() { Title = "WhatsApp", Value = $"{response.ItemsDashboard.WhatsAppClicks}", Icon = "WhatsApp.svg" },
                 new() { Title = "Calls", Value = $"{response.ItemsDashboard.Calls}", Icon = "Calls.svg" },
             };
-                 
+
                 }
                 else
                 {
@@ -145,6 +116,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         private async Task LoadPublishedAds()
         {
             _isPublishedLoading = true;
+            publishedAds.Clear();
             StateHasChanged();
 
             try
@@ -169,6 +141,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         private async Task LoadUnpublishedAds()
         {
             _isUnpublishedLoading = true;
+            unpublishedAds.Clear();
             StateHasChanged();
 
             try
@@ -190,6 +163,95 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             }
         }
 
+
+        protected async Task HandleSearch(string term)
+        {
+            Console.WriteLine($"[HandleSearch] Search term passed: {term}");
+            CurrentPage = 1;
+            await ReloadAds(term, sortOption);
+        }
+
+        protected async Task HandleSort(int option)
+        {
+            Console.WriteLine($"Sort option passed: {option}");
+            CurrentPage = 1;
+            await ReloadAds(searchTerm, option);
+        }
+
+        private async Task ReloadAds(string? search = null, int? sort = null)
+        {
+            var effectiveSearch = search ?? searchTerm;
+            var effectiveSort = sort ?? sortOption;
+
+            // Fetch only, do not clear current data yet
+            if (_selectedAdsTab == 0)
+            {
+                _isPublishedLoading = true;
+                StateHasChanged();
+
+                var newAds = await ClassfiedDashboardService
+                    .GetPublishedAds(CurrentPage, PageSize, effectiveSearch, effectiveSort)
+                    ?? new();
+
+                searchTerm = effectiveSearch;
+                sortOption = effectiveSort;
+
+                publishedAds = newAds;
+                _isPublishedLoading = false;
+            }
+            else
+            {
+                _isUnpublishedLoading = true;
+                StateHasChanged();
+
+                var newAds = await ClassfiedDashboardService
+                    .GetUnpublishedAds(CurrentPage, PageSize, effectiveSearch, effectiveSort)
+                    ?? new();
+
+                searchTerm = effectiveSearch;
+                sortOption = effectiveSort;
+
+                unpublishedAds = newAds;
+                _isUnpublishedLoading = false;
+            }
+
+            StateHasChanged();
+        }
+
+        protected async Task HandlePageChange(int page)
+        {
+            CurrentPage = page;
+            await ReloadAds();
+        }
+
+
+
+        protected async Task HandlePageSizeChange(int size)
+        {
+            PageSize = size;
+            CurrentPage = 1;
+            await ReloadAds();
+        }
+
+        private async Task ReloadAds()
+        {
+            Console.WriteLine($"[ReloadAds] Tab: {_selectedAdsTab}, Search: {searchTerm}, Sort: {sortOption}");
+
+            publishedAds.Clear();
+            unpublishedAds.Clear();
+            StateHasChanged();
+
+            if (_selectedAdsTab == 0)
+            {
+                await LoadPublishedAds();
+            }
+            else
+            {
+                await LoadUnpublishedAds();
+            }
+        }
+
+
         protected async Task OnPublishAd(string adId)
         {
             try
@@ -199,7 +261,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
                 {
                     Snackbar.Add("Ad published successfully", Severity.Success);
                     await LoadUnpublishedAds();
-                    await LoadPublishedAds();  
+                    await LoadPublishedAds();
                 }
                 else
                 {
@@ -236,19 +298,10 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
                 Snackbar.Add("An error occurred.", Severity.Error);
             }
         }
-        protected async void HandlePageChange(int newPage)
-        {
-            await OnPageChange.InvokeAsync(newPage);
-        }
-
-        protected async void HandlePageSizeChange(int newSize)
-        {
-            await OnPageSizeChange.InvokeAsync(newSize);
-        }
 
         protected void OnEditAd(string adId)
         {
-            Navigation.NavigateTo($"/qln/classifieds/editform{adId}");
+            Navigation.NavigateTo($"/qln/classifieds/editform/{adId}");
         }
         protected void onPreview(string adId)
         {
@@ -326,11 +379,11 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         {
             return status switch
             {
-                3 => "background-color: #E6F4EA; border: 1px solid #2E7D32; color: #2E7D32;", 
-                4 => "background-color: #FFF9E5; border: 1px solid #F9A825; color: #F9A825;", 
-                6 => "background-color: #FFEAEA; border: 1px solid #D32F2F; color: #D32F2F;", 
+                3 => "background-color: #E6F4EA; border: 1px solid #2E7D32; color: #2E7D32;",
+                4 => "background-color: #FFF9E5; border: 1px solid #F9A825; color: #F9A825;",
+                6 => "background-color: #FFEAEA; border: 1px solid #D32F2F; color: #D32F2F;",
                 1 => "background-color: #E3F2FD; border: 1px solid #1976D2; color: #1976D2;",
-                _ => "background-color: #F5F5F5; border: 1px solid #BDBDBD; color: #616161;"  
+                _ => "background-color: #F5F5F5; border: 1px solid #BDBDBD; color: #616161;"
             };
         }
 

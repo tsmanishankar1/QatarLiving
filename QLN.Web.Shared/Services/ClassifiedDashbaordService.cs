@@ -50,6 +50,8 @@ namespace QLN.Web.Shared.Services
             try
             {
                 var url = $"api/classified/items/user-ads/published?page={page}&pageSize={pageSize}&sortOption={sortOption}&search={search}";
+                Console.WriteLine($"[API CALL] GET {url}");
+
                 var request = new HttpRequestMessage(HttpMethod.Get, url);
 
                 var response = await _httpClient.SendAsync(request);
