@@ -1,11 +1,7 @@
-using System.Net.Http;
 using System.Net.Http.Json;
-using Microsoft.Extensions.Options;
 using System.Text.Json;
-using QLN.Web.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
-using Microsoft.JSInterop;
 using Microsoft.AspNetCore.Http;
 
 namespace QLN.Web.Shared.Services

@@ -1,21 +1,19 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
+using QLN.Web.Shared.Components;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
 using System.ComponentModel.DataAnnotations;
 
-
 namespace QLN.Web.Shared.Pages.Company
 {
-    public partial class AddCompany : ComponentBase
+    public class AddCompanyBase : QLComponentBase
     {
-
         [Inject] private ICompanyProfileService CompanyProfileService { get; set; }
-        [Inject] protected ISnackbar Snackbar { get; set; }
-        [Inject]
-        private IHttpContextAccessor HttpContextAccessor { get; set; }
+
+        [Inject] private ILogger<AddCompanyBase> Logger { get; set; }
 
         [Parameter]
         public int VerticalId { get; set; }
@@ -23,54 +21,54 @@ namespace QLN.Web.Shared.Pages.Company
         [Parameter]
         public int CategoryId { get; set; }
 
+        protected List<Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = [];
 
-        protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
-
-        private bool isSaving = false;
-
-        private string _authToken;
+        protected bool isSaving = false;
 
         protected CompanyProfileModelDto? companyProfile;
 
+        protected string? crFileName;
+        protected string? crDocumentBase64;
 
-        private string? crFileName;
-        private string? crDocumentBase64;
+        protected List<string> AvailableCities = [];
+
+        protected List<CountryCityModel> CountryCityList =
+                [
+                    new CountryCityModel { Country = "Qatar", Cities = new() { "Doha", "Al Wakrah", "Al Rayyan", "Lusail", "Umm Salal" }, CountryCode = "+974" },
+                    new CountryCityModel { Country = "UAE", Cities = new() { "Dubai", "Abu Dhabi", "Sharjah", "Ajman", "Fujairah" }, CountryCode = "+971" },
+                    new CountryCityModel { Country = "India", Cities = new() { "Mumbai", "Delhi", "Bangalore", "Chennai", "Hyderabad" }, CountryCode = "+91" },
+                    new CountryCityModel { Country = "USA", Cities = new() { "New York", "Los Angeles", "Chicago", "Houston", "Phoenix" }, CountryCode = "+1" },
+                    new CountryCityModel { Country = "UK", Cities = new() { "London", "Manchester", "Birmingham", "Leeds", "Liverpool" }, CountryCode = "+44" }
+                ];
+
 
         protected override void OnInitialized()
         {
-            breadcrumbItems = new()
+            try
             {
-                new() { Label = "Classifieds", Url = "qln/classifieds" },
-                new() { Label = "Dashboard", Url = "/qln/classified/dashboard/items" },
-                new() { Label = "Create Company Profile", Url = $"/qln/dashboard/company/create",IsLast=true },
+                AuthorizedPage();
+                breadcrumbItems = new()
+                {
+                    new() { Label = "Classifieds", Url = "qln/classifieds" },
+                    new() { Label = "Dashboard", Url = "/qln/classified/dashboard/items" },
+                    new() { Label = "Create Company Profile", Url = $"/qln/dashboard/company/create",IsLast=true },
 
-            };
-            companyProfile = new CompanyProfileModelDto
-            {
-                BranchLocations = new List<string> { "" },
-                Vertical = VerticalId,
-                SubVertical = CategoryId,
-                NatureOfBusiness = new List<int>()
-            };
-        }
-
-        protected override async Task OnAfterRenderAsync(bool firstRender)
-        {
-            if (firstRender)
-            {
-                //_authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6Ijk3NTQ1NGI1LTAxMmItNGQ1NC1iMTUyLWUzMGYzNmYzNjNlMiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJNVUpBWSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6Im11amF5LmFAa3J5cHRvc2luZm9zeXMuY29tIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbW9iaWxlcGhvbmUiOiIrOTE3NzA4MjA0MDcxIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjpbIkNvbXBhbnkiLCJTdWJzY3JpYmVyIl0sIlVzZXJJZCI6Ijk3NTQ1NGI1LTAxMmItNGQ1NC1iMTUyLWUzMGYzNmYzNjNlMiIsIlVzZXJOYW1lIjoiTVVKQVkiLCJFbWFpbCI6Im11amF5LmFAa3J5cHRvc2luZm9zeXMuY29tIiwiUGhvbmVOdW1iZXIiOiIrOTE3NzA4MjA0MDcxIiwiZXhwIjoxNzUwNzQ3NjA2LCJpc3MiOiJodHRwczovL3Rlc3QucWF0YXJsaXZpbmcuY29tIiwiYXVkIjoiaHR0cHM6Ly90ZXN0LnFhdGFybGl2aW5nLmNvbSJ9.17Xor26xc4j82p5G0coQY_BYeo48MCp3N3hdRhyFinQ";
-                var cookie = HttpContextAccessor.HttpContext?.Request.Cookies["qat"];
-                _authToken = cookie;
-
-                StateHasChanged();
-
+                };
+                companyProfile = new CompanyProfileModelDto
+                {
+                    BranchLocations = new List<string> { "" },
+                    Vertical = VerticalId,
+                    SubVertical = CategoryId,
+                    NatureOfBusiness = new List<int>()
+                };
             }
-
-            await base.OnAfterRenderAsync(firstRender);
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitialized");
+            }
         }
 
-
-        private async Task SaveCompanyProfileAsync()
+        protected async Task SaveCompanyProfileAsync()
         {
             if (string.IsNullOrEmpty(companyProfile.CompanyLogo))
             {
@@ -90,7 +88,7 @@ namespace QLN.Web.Shared.Pages.Company
                 if (companyProfile != null)
                 {
                     Console.WriteLine($"Saving Company Profile: {companyProfile}");
-                    var updated = await CompanyProfileService.CreateCompanyProfileAsync(companyProfile, _authToken);
+                    var updated = await CompanyProfileService.CreateCompanyProfileAsync(companyProfile);
                     if (updated)
                     {
                         Snackbar.Add("Company profile created successfully", Severity.Success);
@@ -112,7 +110,8 @@ namespace QLN.Web.Shared.Pages.Company
                 StateHasChanged();
             }
         }
-        private async Task OnLogoFileSelected(IBrowserFile file)
+
+        protected async Task OnLogoFileSelected(IBrowserFile file)
         {
             if (file != null)
             {
@@ -129,13 +128,12 @@ namespace QLN.Web.Shared.Pages.Company
             }
         }
 
-        private void ClearLogo()
+        protected void ClearLogo()
         {
             companyProfile.CompanyLogo = null;
         }
 
-
-        private async Task OnCrFileSelected(IBrowserFile file)
+        protected async Task OnCrFileSelected(IBrowserFile file)
         {
             if (file.Size > 10 * 1024 * 1024)
             {
@@ -152,33 +150,23 @@ namespace QLN.Web.Shared.Pages.Company
 
             companyProfile.CrDocument = crDocumentBase64;
         }
-        private void ClearCrFile()
+
+        protected void ClearCrFile()
         {
             crFileName = null;
             crDocumentBase64 = null;
             companyProfile.CrDocument = null;
         }
 
-        public static string GetDisplayName<TEnum>(TEnum enumValue) where TEnum : Enum
+        protected static string GetDisplayName<TEnum>(TEnum enumValue) where TEnum : Enum
         {
             var member = typeof(TEnum).GetMember(enumValue.ToString()).FirstOrDefault();
             var displayAttr = member?.GetCustomAttributes(typeof(DisplayAttribute), false)
                                      .FirstOrDefault() as DisplayAttribute;
             return displayAttr?.Name ?? enumValue.ToString();
         }
-        private List<string> AvailableCities = new();
 
-        private List<CountryCityModel> CountryCityList = new()
-{
-    new CountryCityModel { Country = "Qatar", Cities = new() { "Doha", "Al Wakrah", "Al Rayyan", "Lusail", "Umm Salal" }, CountryCode = "+974" },
-    new CountryCityModel { Country = "UAE", Cities = new() { "Dubai", "Abu Dhabi", "Sharjah", "Ajman", "Fujairah" }, CountryCode = "+971" },
-    new CountryCityModel { Country = "India", Cities = new() { "Mumbai", "Delhi", "Bangalore", "Chennai", "Hyderabad" }, CountryCode = "+91" },
-    new CountryCityModel { Country = "USA", Cities = new() { "New York", "Los Angeles", "Chicago", "Houston", "Phoenix" }, CountryCode = "+1" },
-    new CountryCityModel { Country = "UK", Cities = new() { "London", "Manchester", "Birmingham", "Leeds", "Liverpool" }, CountryCode = "+44" }
-};
-
-
-        private void OnCountryChanged(string selectedCountry)
+        protected void OnCountryChanged(string selectedCountry)
         {
             companyProfile.Country = selectedCountry;
 
@@ -189,10 +177,5 @@ namespace QLN.Web.Shared.Pages.Company
 
             companyProfile.City = AvailableCities.FirstOrDefault();
         }
-
-
-
     }
-
 }
-

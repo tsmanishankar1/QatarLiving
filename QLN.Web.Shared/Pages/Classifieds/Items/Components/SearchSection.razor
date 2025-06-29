@@ -51,7 +51,7 @@
                 <CustomSelectCategory TItem="CategoryTreeDto"
                     Items="@CategoryTrees"
                     SelectedId="@SearchState.ItemCategory"
-                    SelectedIdChanged="v => OnFilterChanged(nameof(SearchState.ItemCategory), v)"
+                    SelectedIdChanged="v => OnCategorySelected(v)"
                     GetId="x => x.Name"
                     GetLabel="x => x.Name"
                     Placeholder="Category"
