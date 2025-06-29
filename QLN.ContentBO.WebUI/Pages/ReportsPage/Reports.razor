@@ -1,0 +1,64 @@
+@page "/manage/reports"
+@inherits ReportsBase
+<MudGrid Style="padding-top: 18px">
+    <!-- Left Form Section -->
+    <MudItem xs="12" md="12">
+            <MudText Class="reports-style">Reports</MudText>
+            <MudTextField @bind-Value="@searchText"
+                Placeholder="Search"
+                Variant="Variant.Outlined"
+                Adornment="Adornment.Start"
+                AdornmentIcon="@Icons.Material.Filled.Search"
+                Class="report-content-style"/>
+                <MudTable Items="_posts" Hover="true" Style="padding-top: 20px;">
+                <HeaderContent>
+                <MudTh>Report ID</MudTh>
+                <MudTh>Post</MudTh>
+                <MudTh>Comment</MudTh>
+                <MudTh>Username</MudTh>
+                <MudTh>Comment Date</MudTh>
+                <MudTh>Reporter</MudTh>
+                <MudTh>Report Date</MudTh>
+                <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Number">@context.Number</MudTd>
+                    <MudTd DataLabel="Post Title">
+                    <MudLink Href="#">@context.PostTitle</MudLink>
+            </MudTd>
+            <MudTd DataLabel="Category">@context.Category</MudTd>
+            <MudTd DataLabel="Username">@context.Username</MudTd>
+            <MudTd DataLabel="Creation Date">@context.CreationDate.ToString("dd-MM-yyyy")</MudTd>
+            <MudTd DataLabel="Reported">@context.Reporter</MudTd>
+            <MudTd DataLabel="Report Date">@context.ReportDate.ToString("dd-MM-yyyy")</MudTd>
+            <MudTd>
+                               <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
+                                    <MudMenuItem >
+                                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="me-2" /> Keep
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => DeletePost(context.Number))" Class="mud-error-text">
+                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
+                                    </MudMenuItem>
+                                </MudMenu>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+    </MudItem>
+</MudGrid>
+
+<style>
+    .reports-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 30px;
+        font-weight: 600;
+        color: #242424;
+        text-transform: none;
+        padding-bottom: 32px;
+    }
+    .report-content-style {
+        background-color: #FFFFFF;
+        border-radius: 4px; 
+        width: 400px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);  
+    }
+</style>
