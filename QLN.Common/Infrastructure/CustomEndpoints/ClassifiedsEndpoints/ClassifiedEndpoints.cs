@@ -878,7 +878,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedItems dto,
                 IClassifiedService service,
-                [FromServices]ISearchService svc,
                 CancellationToken token) =>
             {
                 try
@@ -1028,7 +1027,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedPreloved dto,
                 IClassifiedService service,
-                [FromServices] ISearchService svc,
                 CancellationToken token) =>
             {
                 try
@@ -1186,7 +1184,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedCollectibles dto,
                 IClassifiedService service,
-                [FromServices]ISearchService svc,
                 CancellationToken token) =>
             {
                 try
@@ -1315,7 +1312,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedDeals dto,
                 IClassifiedService service,
-                [FromServices]ISearchService svc,
                 CancellationToken token) =>
             {
                 try
