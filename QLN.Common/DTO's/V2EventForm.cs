@@ -9,10 +9,7 @@ namespace QLN.Common.DTO_s
         [Required]
         public int CategoryId { get; set; }
         public V2EventType EventType { get; set; }
-
-        // Yet to Decide Event Types Free, Open Regisration, Fees
-        public int Price { get; set; }
-
+        public int? Price { get; set; }
         [Required]
         public string Location { get; set; }
         public string Venue { get; set; }
@@ -28,15 +25,14 @@ namespace QLN.Common.DTO_s
         public string CoverImage { get; set; }
         public string CreatedBy { get; set; }
         public DateTime CreatedAt { get; set; }
-        public string UpdatedBy { get; set; }
-        public DateTime UpdatedAt { get; set; }
+        public string? UpdatedBy { get; set; }
+        public DateTime? UpdatedAt { get; set; }
     }
-
     public class EventSchedule
     {
         public DateOnly? StartDate { get; set; }
         public DateOnly? EndDate { get; set; }
-        public string TimeSlotType { get; set; } // Yet to Decide
+        public V2EventTimeType TimeSlotType { get; set; }
         public TimeOnly? StartTime { get; set; }
         public TimeOnly? EndTime { get; set; }
         public List<TimeSlot> TimeSlots { get; set; } = [];
@@ -44,7 +40,7 @@ namespace QLN.Common.DTO_s
 
     public class TimeSlot
     {
-        public DayOfWeek DayOfWeek { get; set; }
+        public DayOfWeek? DayOfWeek { get; set; }
         public TimeOnly? StartTime { get; set; }
         public TimeOnly? EndTime { get; set; }
     }
@@ -60,5 +56,6 @@ namespace QLN.Common.DTO_s
     public class V2EventResponse : V2EventForm
     {
         public Guid Id { get; set; }
+        public bool? IsActive { get; set; }
     }
 }

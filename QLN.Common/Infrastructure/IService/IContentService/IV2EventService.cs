@@ -15,5 +15,6 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         Task<List<V2EventResponse>> GetAllEvents(CancellationToken cancellationToken = default);
         Task<string> UpdateEvent(string userId, V2UpdateRequest dto, CancellationToken cancellationToken = default);
         Task<string> DeleteEvent(Guid id, CancellationToken cancellationToken = default);
+        Task<List<EventsCategory>> GetAllCategories(CancellationToken cancellationToken = default);
     }
 }

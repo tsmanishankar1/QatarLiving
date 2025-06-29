@@ -21,6 +21,16 @@ namespace QLN.Content.MS.Service.EventInternalService
         {
             try
             {
+                if (dto.EventType == V2EventType.FeePrice)
+                {
+                    if (dto.Price == null)
+                        throw new InvalidDataException("Price must be provided when the EventType is 'Fees'.");
+                }
+                else
+                {
+                    if (dto.Price != null)
+                        throw new InvalidDataException("Price must not be entered for 'Free Access' or 'Open Registration' events.");
+                }
                 var id = Guid.NewGuid();
 
                 var entity = new V2EventResponse
@@ -38,7 +48,8 @@ namespace QLN.Content.MS.Service.EventInternalService
                     RedirectionLink = dto.RedirectionLink,
                     EventDescription = dto.EventDescription,
                     CoverImage = dto.CoverImage,
-                    CreatedBy = userId,  
+                    IsActive = true,
+                    CreatedBy = userId,
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -95,7 +106,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                     {
                         PropertyNameCaseInsensitive = true
                     }))
-                    .Where(e => e != null)
+                    .Where(e => e != null && e.IsActive == true)
                     .ToList();
 
                 return events;
@@ -113,10 +124,8 @@ namespace QLN.Content.MS.Service.EventInternalService
                     ConstantValues.V2Content.ContentStoreName,
                     id.ToString(),
                     cancellationToken: cancellationToken);
-                if (result != null)
-                {
-                    return null;
-                }
+                if (result == null || result.IsActive == false)
+                    throw new KeyNotFoundException($"Active event with ID '{id}' not found.");
                 return result;
             }
             catch (Exception ex)
@@ -129,8 +138,17 @@ namespace QLN.Content.MS.Service.EventInternalService
             try
             {
                 if (dto.Id == Guid.Empty)
-                    throw new ArgumentException("Event ID is required for update.");
-
+                    throw new InvalidDataException("Event ID is required for update.");
+                if (dto.EventType == V2EventType.FeePrice)
+                {
+                    if (dto.Price == null)
+                        throw new InvalidDataException("Price must be provided when the EventType is 'Fees'.");
+                }
+                else
+                {
+                    if (dto.Price != null)
+                        throw new InvalidDataException("Price must not be entered for 'Free Access' or 'Open Registration' events.");
+                }
                 var existing = await _dapr.GetStateAsync<V2EventResponse>(
                     ConstantValues.V2Content.ContentStoreName,
                     dto.Id.ToString(),
@@ -154,6 +172,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                     RedirectionLink = dto.RedirectionLink,
                     EventDescription = dto.EventDescription,
                     CoverImage = dto.CoverImage,
+                    IsActive = true,
                     CreatedBy = existing.CreatedBy, 
                     CreatedAt = existing.CreatedAt, 
                     UpdatedAt = DateTime.UtcNow,
@@ -184,7 +203,7 @@ namespace QLN.Content.MS.Service.EventInternalService
             if (existing == null)
                 throw new KeyNotFoundException($"Event with ID '{id}' not found.");
 
-            //existing.IsActive = false;
+            existing.IsActive = false;
             existing.UpdatedAt = DateTime.UtcNow;
 
             await _dapr.SaveStateAsync(
@@ -195,6 +214,27 @@ namespace QLN.Content.MS.Service.EventInternalService
                 cancellationToken: cancellationToken);
 
             return "Event Soft Deleted Successfully";
+        }
+        public async Task<List<EventsCategory>> GetAllCategories(CancellationToken cancellationToken = default)
+        {
+            return await Task.FromResult(new List<EventsCategory>
+           {
+               new EventsCategory { Id = 1, CategoryName = "Awareness" },
+               new EventsCategory { Id = 2, CategoryName = "Classes & Workshops" },
+               new EventsCategory { Id = 3, CategoryName = "Conferences" },
+               new EventsCategory { Id = 4, CategoryName = "Entertainment" },
+               new EventsCategory { Id = 5, CategoryName = "Exhibition" },
+               new EventsCategory { Id = 6, CategoryName = "Festivals" },
+               new EventsCategory { Id = 7, CategoryName = "Fundraisers" },
+               new EventsCategory { Id = 8, CategoryName = "Lifestyle" },
+               new EventsCategory { Id = 9, CategoryName = "Meetings & Networking" },
+               new EventsCategory { Id = 10, CategoryName = "Music" },
+               new EventsCategory { Id = 11, CategoryName = "Other" },
+               new EventsCategory { Id = 12, CategoryName = "Performing Arts" },
+               new EventsCategory { Id = 13, CategoryName = "Social Events" },
+               new EventsCategory { Id = 14, CategoryName = "Sports" },
+               new EventsCategory { Id = 15, CategoryName = "Training" }
+           });
         }
     }
 }

@@ -18,23 +18,6 @@ namespace QLN.Common.DTO_s
         GeneralTime = 1,
         PerDayTime = 2
     }
-    public class PerDayTime
-    {
-        public DayOfWeek Day { get; set; }   
-        public TimeOnly StartTime { get; set; } 
-        public TimeOnly EndTime { get; set; }  
-    }
-    //public class V2Category
-    //{
-    //    public int Id { get; set; }
-    //    public string CategoryName { get; set; }
-    //    public List<V2EventSubCategory> SubCategories { get; set; }
-    //}
-    public class V2EventSubCategory
-    {
-        public int Id { get; set; }
-        public string CategoryName { get; set; }
-    }
     public class V2Slot
     {
         public Slot Id { get; set; }

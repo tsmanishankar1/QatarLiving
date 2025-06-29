@@ -29,8 +29,11 @@ namespace QLN.Backend.API.Service.V2ContentService
             {
                 if (!string.IsNullOrWhiteSpace(dto.CoverImage))
                 {
-                    var imageName = $"{dto.EventTitle}_{userId}.png";
-                    var blobUrl = await _blobStorage.SaveBase64File(dto.CoverImage, imageName, "imageurl", cancellationToken);
+                    var (ext, base64Data) = Base64Helper.ParseBase64(dto.CoverImage);
+                    if (ext is not ("jpeg" or "png" or "jpg"))
+                        throw new ArgumentException("Cover Image must be in Jpeg, PNG, or JPG format.");
+                    var imageName = $"{dto.EventTitle}_{userId}.{ext}";
+                    var blobUrl = await _blobStorage.SaveBase64File(base64Data, imageName, "imageurl", cancellationToken);
                     dto.CoverImage = blobUrl;
                 }
                 var url = "/api/v2/event/createByUserId";
@@ -95,18 +98,21 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-
         public async Task<string> UpdateEvent(string userId, V2UpdateRequest dto, CancellationToken cancellationToken = default)
         {
             string? FileName = null;
             try
             {
-                if (!string.IsNullOrWhiteSpace(dto.CoverImage))
+                if (!string.IsNullOrWhiteSpace(dto.CoverImage) && !dto.CoverImage.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                 {
-                    var imageName = $"{dto.EventTitle}_{userId}.png";
-                    var blobUrl = await _blobStorage.SaveBase64File(dto.CoverImage, imageName, "imageurl", cancellationToken);
+                    var (ext, base64Data) = Base64Helper.ParseBase64(dto.CoverImage);
+                    if (ext is not ("jpeg" or "png" or "jpg"))
+                        throw new ArgumentException("Cover Image must be in Jpeg, PNG, or JPG format.");
+                    var imageName = $"{dto.EventTitle}_{userId}.{ext}";
+                    var blobUrl = await _blobStorage.SaveBase64File(base64Data, imageName, "imageurl", cancellationToken);
                     dto.CoverImage = blobUrl;
                 }
+
                 var url = "/api/v2/event/updateByUserId";
 
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.V2Content.ContentServiceAppId, url);
@@ -155,6 +161,23 @@ namespace QLN.Backend.API.Service.V2ContentService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting event with Id {id}", id);
+                throw;
+            }
+        }
+        public async Task<List<EventsCategory>> GetAllCategories(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _dapr.InvokeMethodAsync<List<EventsCategory>>(
+                    HttpMethod.Get,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    "/api/v2/event/getAllCategories",
+                    cancellationToken
+                ) ?? new List<EventsCategory>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all event categories.");
                 throw;
             }
         }

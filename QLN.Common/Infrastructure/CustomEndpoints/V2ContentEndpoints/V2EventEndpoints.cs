@@ -5,9 +5,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using QLN.Common.DTO_s;
-using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
-using QLN.Common.Infrastructure.Utilities;
 using System.Text.Json;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
@@ -34,10 +32,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var uid = userData.GetProperty("uid").GetString();
                     dto.CreatedBy = uid;
-                    //Guid? userId = httpContext.User.GetId();
-                    //if (!userId.HasValue)
-                    //    return TypedResults.Forbid();
-                    //dto.CreatedBy = userId.Value;
                     var result = await service.CreateEvent(uid, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
@@ -152,15 +146,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     try
                     {
                         var result = await service.GetEventById(id, cancellationToken);
-                        if (result == null)
-                        {
-                            return TypedResults.NotFound(new ProblemDetails
-                            {
-                                Title = "Not Found",
-                                Detail = $"Event with ID '{id}' not found.",
-                                Status = StatusCodes.Status404NotFound
-                            });
-                        }
+                        if (result == null || result.IsActive == false)
+                            throw new KeyNotFoundException($"Active event with ID '{id}' not found.");
                         return TypedResults.Ok(result);
                     }
                     catch (KeyNotFoundException ex)
@@ -206,10 +193,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var uid = userData.GetProperty("uid").GetString();
                     dto.UpdatedBy = uid;
-                    //Guid? userId = httpContext.User.GetId();
-                    //if (!userId.HasValue)
-                    //    return TypedResults.Forbid();
-                    //dto.UpdatedBy = userId.Value;
                     var result = await service.UpdateEvent(uid, dto, cancellationToken);
                     if (result == null)
                         throw new KeyNotFoundException($"Event with ID not found.");
@@ -328,5 +311,32 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
 
             return group;
         }
+        public static RouteGroupBuilder MapEventCategories(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getAllCategories", static async Task<Results<Ok<List<EventsCategory>>, ProblemHttpResult>> (
+                IV2EventService service,
+                CancellationToken cancellationToken = default
+            ) =>
+            {
+                try
+                {
+                    var eventCategories = await service.GetAllCategories(cancellationToken);
+                    return TypedResults.Ok(eventCategories);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("GetAllEventCategories")
+            .WithTags("Event")
+            .WithSummary("Get All Event Categories")
+            .WithDescription("Retrieves all event categories.")
+            .Produces<List<EventsCategory>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+
     }
 }
