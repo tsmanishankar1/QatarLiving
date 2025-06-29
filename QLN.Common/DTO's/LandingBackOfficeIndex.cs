@@ -16,7 +16,10 @@ namespace QLN.Common.DTO_s
         public string EntityType { get; set; } = default!;   
 
         [SearchableField(IsFilterable= true, IsSortable= true)]
-        public string Vertical { get; set; } = default!;  
+        public string Vertical { get; set; } = default!;
+
+        [SearchableField(IsFilterable = true, IsSortable = true)]
+        public string? Subvertical { get; set; }
 
         [SearchableField(IsFilterable= true, IsSortable= true)]
         public string Title { get; set; } = default!;
