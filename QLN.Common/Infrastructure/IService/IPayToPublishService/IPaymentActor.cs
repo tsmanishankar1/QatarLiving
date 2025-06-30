@@ -11,8 +11,16 @@ namespace QLN.Common.Infrastructure.IService.IPayToPublishService
 {
     public interface IPaymentActor : IActor
     {
-        Task<bool> FastSetDataAsync(PaymentDto data, CancellationToken cancellationToken = default);
         Task<bool> SetDataAsync(PaymentDto data, CancellationToken cancellationToken = default);
+        Task<bool> FastSetDataAsync(PaymentDto data, CancellationToken cancellationToken = default);
         Task<PaymentDto?> GetDataAsync(CancellationToken cancellationToken = default);
+        Task<bool> AddPaymentIdAsync(Guid paymentId, CancellationToken cancellationToken = default);
+        Task<List<Guid>> GetAllPaymentIdsAsync(CancellationToken cancellationToken = default);
+        Task<bool> DeleteDataAsync(CancellationToken cancellationToken = default);
+        Task<bool> SyncStateKeysAsync(CancellationToken cancellationToken = default);
+        Task<bool> TriggerExpiryCheckAsync();
+        Task<(bool IsActive, DateTime? EndDate, int? DaysRemaining)> GetSubscriptionStatusAsync();
+        Task<bool> RescheduleExpiryChecksAsync();
+        Task CheckPaytopublishExpiryAsync();
     }
 }

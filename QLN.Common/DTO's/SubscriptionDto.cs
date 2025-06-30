@@ -10,7 +10,7 @@ namespace QLN.Common.DTOs
     {
         public Guid Id { get; set; }
         public string subscriptionName { get; set; }
-        public DurationType Duration { get; set; }
+        public TimeSpan Duration { get; set; }
 
         public decimal? price { get; set; }
         public string? description { get; set; }
@@ -23,6 +23,7 @@ namespace QLN.Common.DTOs
         public Status StatusId { get; set; }
         public DateTime lastUpdated { get; set; }
     }
+
     public class MyMessage
     {
         public Guid Id { get; set; }
@@ -99,7 +100,7 @@ namespace QLN.Common.DTOs
         [Required]
         public string SubscriptionName { get; set; }
         [Required]
-        public DurationType DurationId { get; set; }
+        public TimeSpan Duration{ get; set; }
         [Required]
         public decimal? Price { get; set; }
         [Required]
@@ -136,19 +137,13 @@ namespace QLN.Common.DTOs
     public class SubscriptionResponseDto
     {
         public Guid Id { get; set; }
-
         public string? SubscriptionName { get; set; }
-
-        public int DurationId { get; set; }
         public string DurationName { get; set; } = string.Empty;
-
         public decimal? Price { get; set; }
-
         public string? Description { get; set; }
-
         public string? Currency { get; set; }
-
     }
+
 
     public class PaymentTransactionRequestDto
     {
@@ -210,6 +205,8 @@ namespace QLN.Common.DTOs
 
 
 }
+
+
 
 
 

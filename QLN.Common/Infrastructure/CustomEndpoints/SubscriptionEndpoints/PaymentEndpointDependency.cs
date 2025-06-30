@@ -13,6 +13,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
         {
             group.MapProcessPaymentEndpoint()
                 .MapProcessPaytoPublishPaymentEndpoint()
+                .MapProcessPaytoFeaturePaymentEndpoint()
                   .MapProcessAddonPaymentEndpoint();
 
 

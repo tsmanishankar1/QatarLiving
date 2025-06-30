@@ -1,6 +1,7 @@
 ﻿using Dapr.Actors.Runtime;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IPayToPublishService;
+using QLN.Common.Infrastructure.Subscriptions;
 
 namespace QLN.Subscriptions.Actor.ActorClass
 {
@@ -8,10 +9,11 @@ namespace QLN.Subscriptions.Actor.ActorClass
     {
         private const string StateKey = "paytopublish-payment-data";
         private const string BackupStateKey = "transaction-data";
+        private const string PaymentIdsStateKey = "payment-ids-collection";
         private const string DailyTimerName = "paytopublish-daily-timer";
         private const string SpecificTimerName = "paytopublish-specific-timer";
         private readonly ILogger<PayToPublishPaymentActor> _logger;
-        private static readonly TimeSpan DailyCheckTime = new TimeSpan(16, 24, 0);
+        private static readonly TimeSpan DailyCheckTime = new TimeSpan(00, 00, 0);
         private static readonly string TimeZoneId = "India Standard Time";
 
         public PayToPublishPaymentActor(ActorHost host, ILogger<PayToPublishPaymentActor> logger) : base(host)
@@ -21,31 +23,27 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
         public async Task<bool> SetDataAsync(PaymentDto data, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(data);
+            if (data == null) throw new ArgumentNullException(nameof(data));
 
             _logger.LogInformation("[PaymentActor {ActorId}] SetDataAsync called for user {UserId}", Id, data.UserId);
 
             try
             {
-                // Initialize IsExpired if null
+                
                 if (data.IsExpired == null)
                 {
                     data.IsExpired = false;
                 }
                 data.LastUpdated = DateTime.UtcNow;
 
-                // Store in both primary and backup state keys
+                
                 await StoreInPrimaryStateAsync(data, cancellationToken);
-                await StoreInBackupStateAsync(data, cancellationToken);
-
-                // Schedule expiry checks only if not expired and has valid end date
                 if (!data.IsExpired && data.EndDate > DateTime.UtcNow)
                 {
                     await ScheduleExpiryChecksAsync(data);
                 }
                 else if (data.IsExpired)
                 {
-                    // Clean up any existing timers for expired payments
                     await CleanupTimersAsync();
                 }
 
@@ -69,18 +67,14 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
-                // Try to get from primary state first
                 var primaryStateValue = await GetFromPrimaryStateAsync(cancellationToken);
                 if (primaryStateValue != null)
                 {
                     return primaryStateValue;
                 }
-
-                // If not found in primary state, try backup state
                 var backupStateValue = await GetFromBackupStateAsync(cancellationToken);
                 if (backupStateValue != null)
                 {
-                    // If found in backup state, also update primary state for consistency
                     await StoreInPrimaryStateAsync(backupStateValue, cancellationToken);
                     return backupStateValue;
                 }
@@ -91,6 +85,45 @@ namespace QLN.Subscriptions.Actor.ActorClass
             {
                 _logger.LogError(ex, "[PaymentActor {ActorId}] Error in GetDataAsync", Id);
                 throw;
+            }
+        }
+        public async Task<bool> AddPaymentIdAsync(Guid paymentId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var paymentIds = await GetPaymentIdsAsync(cancellationToken);
+                if (!paymentIds.Contains(paymentId))
+                {
+                    paymentIds.Add(paymentId);
+                    await StateManager.SetStateAsync(PaymentIdsStateKey, paymentIds, cancellationToken);
+                    await StateManager.SaveStateAsync(cancellationToken);
+                    _logger.LogInformation("Added payment ID {PaymentId} to actor {ActorId}", paymentId, Id);
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding payment ID {PaymentId} to actor {ActorId}", paymentId, Id);
+                return false;
+            }
+        }
+
+        public async Task<List<Guid>> GetAllPaymentIdsAsync(CancellationToken cancellationToken = default)
+        {
+            return await GetPaymentIdsAsync(cancellationToken);
+        }
+
+        private async Task<List<Guid>> GetPaymentIdsAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var result = await StateManager.TryGetStateAsync<List<Guid>>(PaymentIdsStateKey, cancellationToken);
+                return result.HasValue ? result.Value : new List<Guid>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting payment IDs from actor {ActorId}", Id);
+                return new List<Guid>();
             }
         }
 
@@ -167,13 +200,9 @@ namespace QLN.Subscriptions.Actor.ActorClass
             try
             {
                 _logger.LogInformation("[PaymentActor {ActorId}] DeleteDataAsync called", Id);
-
-                // Delete from both state keys
                 await StateManager.TryRemoveStateAsync(StateKey, cancellationToken);
                 await StateManager.TryRemoveStateAsync(BackupStateKey, cancellationToken);
                 await StateManager.SaveStateAsync(cancellationToken);
-
-                // Clean up timers
                 await CleanupTimersAsync();
 
                 _logger.LogInformation("[PaymentActor {ActorId}] Deleted data from both state keys and cleaned up timers", Id);
@@ -194,20 +223,17 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
                 var primaryData = await GetFromPrimaryStateAsync(cancellationToken);
                 var backupData = await GetFromBackupStateAsync(cancellationToken);
-
-                // If data exists in primary but not in backup, sync to backup
                 if (primaryData != null && backupData == null)
                 {
                     await StoreInBackupStateAsync(primaryData, cancellationToken);
                     _logger.LogInformation("[PaymentActor {ActorId}] Synced data from primary to backup state key", Id);
                 }
-                // If data exists in backup but not in primary, sync to primary
                 else if (backupData != null && primaryData == null)
                 {
                     await StoreInPrimaryStateAsync(backupData, cancellationToken);
                     _logger.LogInformation("[PaymentActor {ActorId}] Synced data from backup to primary state key", Id);
                 }
-                // If both exist, use the most recently updated one
+   
                 else if (primaryData != null && backupData != null)
                 {
                     if (primaryData.LastUpdated > backupData.LastUpdated)
@@ -235,13 +261,9 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             try
             {
-                // Clean up existing timers first
+
                 await CleanupTimersAsync();
-
-                // Schedule daily check
                 await ScheduleDailyExpiryCheckAsync();
-
-                // Schedule specific expiry check if needed
                 await ScheduleSpecificExpiryCheckIfNeeded(paymentData);
 
                 _logger.LogInformation("[PaymentActor {ActorId}] Scheduled expiry checks for user {UserId}, EndDate: {EndDate}",
@@ -265,7 +287,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 nameof(CheckPaytopublishExpiryAsync),
                 null,
                 dueTime,
-                TimeSpan.FromDays(1)); // Repeat daily
+                TimeSpan.FromDays(1));
         }
 
         private (DateTime nextCheckTime, TimeSpan dueTime) CalculateNextDailyCheckTime()
@@ -277,8 +299,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
             var nextCheckTime = nowIst <= todayCheckTime ? todayCheckTime : todayCheckTime.AddDays(1);
             var nextCheckTimeUtc = TimeZoneInfo.ConvertTimeToUtc(nextCheckTime, istTimeZone);
             var dueTime = nextCheckTimeUtc - DateTime.UtcNow;
-
-            // Ensure we don't have negative due time
             if (dueTime <= TimeSpan.Zero)
             {
                 nextCheckTime = nextCheckTime.AddDays(1);
@@ -302,8 +322,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     await CleanupTimersAsync();
                     return;
                 }
-
-                // Skip if already marked as expired
                 if (paymentData.IsExpired == true)
                 {
                     _logger.LogInformation("[PaymentActor {ActorId}] Payment already marked as expired for user {UserId}",
@@ -311,8 +329,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     await CleanupTimersAsync();
                     return;
                 }
-
-                // Check if subscription has expired
                 if (paymentData.EndDate <= DateTime.UtcNow)
                 {
                     await HandleSubscriptionExpiryAsync(paymentData);
@@ -323,7 +339,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     _logger.LogInformation("[PaymentActor {ActorId}] Pay-to-publish still active for user {UserId}. EndDate: {EndDate}, Days remaining: {DaysRemaining}",
                         Id, paymentData.UserId, paymentData.EndDate, daysRemaining);
 
-                    // Reschedule specific expiry check if needed
                     await ScheduleSpecificExpiryCheckIfNeeded(paymentData);
                 }
             }
@@ -337,12 +352,8 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             _logger.LogInformation("[PaymentActor {ActorId}] Pay-to-publish expired for user {UserId}. EndDate: {EndDate}",
                 Id, paymentData.UserId, paymentData.EndDate);
-
-            // Mark as expired
             paymentData.IsExpired = true;
             paymentData.LastUpdated = DateTime.UtcNow;
-
-            // Update both primary and backup states
             await StoreInPrimaryStateAsync(paymentData, default);
             await StoreInBackupStateAsync(paymentData, default);
 
@@ -357,17 +368,15 @@ namespace QLN.Subscriptions.Actor.ActorClass
             var timeUntilExpiry = paymentData.EndDate - DateTime.UtcNow;
             var (_, timeUntilNextDailyCheck) = CalculateNextDailyCheckTime();
 
-            // Schedule specific timer if expiry occurs before next daily check
             if (timeUntilExpiry < timeUntilNextDailyCheck && timeUntilExpiry > TimeSpan.Zero)
             {
-                // Add small buffer to ensure we check after expiry
+  
                 var bufferTime = TimeSpan.FromMinutes(2);
                 var specificDueTime = timeUntilExpiry.Add(bufferTime);
 
                 _logger.LogInformation("[PaymentActor {ActorId}] Scheduling specific expiry check in {TimeUntilExpiry} for user {UserId}",
                     Id, specificDueTime, paymentData.UserId);
 
-                // Unregister existing specific timer first
                 await UnregisterTimerSafelyAsync(SpecificTimerName);
 
                 await RegisterTimerAsync(
@@ -375,7 +384,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     nameof(CheckPaytopublishExpiryAsync),
                     null,
                     specificDueTime,
-                    TimeSpan.FromMilliseconds(-1)); // One-time execution
+                    TimeSpan.FromMilliseconds(-1)); 
             }
         }
 
@@ -404,7 +413,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
-                // Sync state keys first
                 await SyncStateKeysAsync();
 
                 var paymentData = await GetDataAsync();
@@ -420,8 +428,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     {
                         _logger.LogInformation("[PaymentActor {ActorId}] Subscription already expired or invalid. EndDate: {EndDate}, IsExpired: {IsExpired}",
                             Id, paymentData.EndDate, paymentData.IsExpired);
-
-                        // If subscription is expired but not marked, handle it
                         if (paymentData.EndDate <= DateTime.UtcNow && paymentData.IsExpired != true)
                         {
                             await HandleSubscriptionExpiryAsync(paymentData);

@@ -14,26 +14,26 @@ namespace QLN.Common.DTO_s
         SixMonths = 2,
         OneYear = 3,
         TwoMinutes=4,
-        OneWeek=5
+        OneWeek=5,
+        OneMonth=6,
     }
     public enum BasicPrice
     {
-        [Display(Name="200")]
-        BasicPrice_200 = 1,
-        [Display(Name = "50")]
-        BasicPrice_50 = 2,
+       
+        BasicPrice_200 = 200,
+        BasicPrice_50 = 50,
        
     }
+
 
     public class PayToPublishDto
     {
         public Guid Id { get; set; }
         public string PlanName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public DurationType Duration { get; set; } // Updated
+        public TimeSpan Duration { get; set; } // Updated
         public decimal Price { get; set; }
         public int TotalCount { get; set; }
-    // public BasicPrice BasicPriceId { get; set; }
         public string Currency { get; set; } = string.Empty;
         public Vertical VerticalTypeId { get; set; }
         public SubscriptionCategory CategoryId { get; set; }
@@ -41,6 +41,13 @@ namespace QLN.Common.DTO_s
         public Status StatusId { get; set; }
         public DateTime LastUpdated { get; set; }
 
+    }
+    public class PayToPublishDataDto
+    {
+        public Guid Id { get; set; }
+        public DateTime LastUpdated { get; set; }
+        public List<PayToPublishDto>? Plans { get; set; }
+        public List<BasicPriceDto>? BasicPrices { get; set; }
     }
     public class BasicPriceDto
     {
@@ -58,7 +65,7 @@ namespace QLN.Common.DTO_s
         public decimal Price { get; set; }
         public string Currency { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public int DurationId { get; set; }
+      
         public string DurationName { get; set; } = string.Empty;
         public bool IsFreeAd { get; set; } = false;
         public int VerticalId { get; set; }
@@ -97,7 +104,7 @@ namespace QLN.Common.DTO_s
         [Required]
         public string Description { get; set; } = string.Empty;
         [Required]
-        public DurationType DurationId { get; set; }
+        public TimeSpan Duration { get; set; }
 
    
         [Required]
@@ -120,7 +127,6 @@ namespace QLN.Common.DTO_s
         public decimal Price { get; set; }
         public string Currency { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public int DurationId { get; set; }
         public string DurationName { get; set; } = string.Empty;
         public bool IsFreeAd { get; set; } = false;
     }

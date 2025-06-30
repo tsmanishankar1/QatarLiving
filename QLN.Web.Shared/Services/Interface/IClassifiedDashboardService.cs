@@ -24,6 +24,11 @@ namespace QLN.Web.Shared.Services.Interface
         Task<bool> UnPublishCollectiblesAdAsync(string adId);
         Task<bool> PublishDealsAdAsync(string adId);
         Task<bool> UnPublishDealsAdAsync(string adId);
+        Task<bool> RemoveItemAdAsync(string adId);
+        Task<bool> RemoveCollectiblesAdAsync(string adId);
+        Task<bool> RemovePrelovedAsync(string adId);
+        Task<bool> RemoveDealsAdAsync(string adId);
+
 
     }
 }
