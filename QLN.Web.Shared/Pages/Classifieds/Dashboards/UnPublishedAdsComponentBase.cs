@@ -15,6 +15,10 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         [Parameter]
         public EventCallback<string> OnPublish { get; set; }
 
+
+        [Parameter]
+        public string DashboardType { get; set; }
+
         [Parameter]
         public EventCallback<string> OnEdit { get; set; }
 

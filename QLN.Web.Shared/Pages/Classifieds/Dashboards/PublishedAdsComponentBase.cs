@@ -13,6 +13,8 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         public bool _isPublishedLoading { get; set; }
 
         [Parameter]
+        public string DashboardType { get; set; }
+        [Parameter]
         public EventCallback<string> OnPublish { get; set; }
 
         [Parameter]
@@ -55,5 +57,43 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
                 _ => "background-color: #F5F5F5; border: 1px solid #BDBDBD; color: #616161;"
             };
         }
+        public List<string> SelectedAdIds { get; set; } = new();
+
+        protected void ToggleSelection(string adId, bool isSelected)
+        {
+            if (isSelected)
+            {
+                if (!SelectedAdIds.Contains(adId))
+                    SelectedAdIds.Add(adId);
+            }
+            else
+            {
+                SelectedAdIds.Remove(adId);
+            }
+        }
+
+        protected void SelectAll()
+        {
+            SelectedAdIds = Ads.Select(ad => ad.Id).ToList();
+        }
+
+        protected void UnselectAll()
+        {
+            SelectedAdIds.Clear();
+        }
+
+        protected async Task PublishAllSelected()
+        {
+            if (SelectedAdIds.Any())
+            {
+                foreach (var adId in SelectedAdIds)
+                {
+                    await OnPublish.InvokeAsync(adId);
+                }
+
+                SelectedAdIds.Clear(); 
+            }
+        }
+
     }
 }
