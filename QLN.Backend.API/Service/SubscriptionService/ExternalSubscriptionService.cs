@@ -56,17 +56,16 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 data.CategoryId == categoryEnum &&
                 data.StatusId != Status.Expired)
             {
-                var durationEnum = (DurationType)data.Duration;
+                var duration = TimeSpan.FromTicks(Convert.ToInt64(data.Duration)); // or however duration is stored
 
                 resultList.Add(new SubscriptionResponseDto
                 {
                     Id = data.Id,
                     SubscriptionName = data.subscriptionName,
+                    DurationName = DurationConverter.ConvertToReadableFormat(duration),
                     Price = data.price,
                     Currency = data.currency,
-                    Description = data.description,
-                    DurationId = (int)durationEnum,
-                    DurationName = durationEnum.ToString()
+                    Description = data.description
                 });
             }
         }
@@ -81,6 +80,23 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         };
     }
 
+
+    public static class DurationConverter
+    {
+        public static string ConvertToReadableFormat(TimeSpan duration)
+        {
+            var totalDays = duration.TotalDays;
+
+            return totalDays switch
+            {
+                90 => "3 Months",
+                180 => "6 Months",
+                365 => "1 Year",
+                _ => $"{(int)(totalDays / 30)} Months"
+            };
+        }
+    }
+
     public async Task CreateSubscriptionAsync(SubscriptionRequestDto request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -91,7 +107,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         {
             Id = id,
             subscriptionName = request.SubscriptionName,
-            Duration = request.DurationId,
+            Duration = request.Duration,
             price = request.Price,
             description = request.Description,
             currency = request.Currency,
@@ -153,15 +169,14 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 continue;
             }
 
-
-            var durationEnum = (DurationType)result.Duration;
+            // result.Duration is TimeSpan
+            var readableDuration = ConvertTimeSpanToReadableString(result.Duration);
 
             subscriptions.Add(new SubscriptionResponseDto
             {
                 Id = result.Id,
                 SubscriptionName = result.subscriptionName,
-                DurationId = (int)durationEnum,
-                DurationName = durationEnum.ToString(),
+                DurationName = readableDuration,
                 Price = result.price,
                 Description = result.description,
                 Currency = result.currency
@@ -170,8 +185,18 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
         return subscriptions;
     }
+    private string ConvertTimeSpanToReadableString(TimeSpan duration)
+    {
+        var totalDays = (int)duration.TotalDays;
 
-
+        return totalDays switch
+        {
+            90 => "3 Months",
+            180 => "6 Months",
+            365 => "1 Year",
+            _ => $"{totalDays} Days"
+        };
+    }
     public async Task<bool> UpdateSubscriptionAsync(Guid subscriptionId, SubscriptionRequestDto request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -180,7 +205,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         {
             Id = subscriptionId,
             subscriptionName = request.SubscriptionName,
-            Duration = request.DurationId,
+            Duration = request.Duration,
             price = request.Price,
             description = request.Description,
             currency = request.Currency,
@@ -241,22 +266,6 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         }
     }
 
-    // TODO: Test this replacement instead of the current that has the foreach
-    //private async Task<SubscriptionDto?> GetSubscriptionByIdAsync(Guid subscriptionId, CancellationToken cancellationToken)
-    //{
-    //    if (subscriptionId == Guid.Empty) return null;
-
-    //    var actor = GetActorProxy(subscriptionId);
-
-    //    var dto = await actor.GetDataAsync(cancellationToken);
-
-    //    // Return the DTO only if it's not expired
-    //    if (dto != null && dto.StatusId != Status.Expired)
-    //    {
-    //        return dto;
-    //    }
-    //    return null;
-    //}
 
     private async Task<SubscriptionDto?> GetSubscriptionByIdAsync(Guid subscriptionId, CancellationToken cancellationToken)
     {
@@ -286,6 +295,8 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         var id = Guid.NewGuid();
         var startDate = DateTime.UtcNow;
         DateTime? existingEndDate = null;
+
+        // Check for existing active subscriptions and determine the latest end date
         foreach (var existingId in _paymentTransactionIds.Keys)
         {
             var existingActor = GetPaymentTransactionActorProxy(existingId);
@@ -300,6 +311,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             }
         }
 
+        // If there's an existing subscription, set new one to start after it
         if (existingEndDate.HasValue)
         {
             startDate = existingEndDate.Value;
@@ -308,13 +320,12 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         }
 
         var subscriptionActor = GetActorProxy(request.SubscriptionId);
-        
-        var subscriptionData = await subscriptionActor.GetDataAsync(cancellationToken) ?? throw new Exception($"Subscription data not found for ID: {request.SubscriptionId}");
+        var subscriptionData = await subscriptionActor.GetDataAsync(cancellationToken)
+            ?? throw new Exception($"Subscription data not found for ID: {request.SubscriptionId}");
 
-        if (!Enum.TryParse<DurationType>(subscriptionData.Duration.ToString(), out var durationEnum))
-            throw new Exception($"Invalid subscription duration: {subscriptionData.Duration}");
-
-        var endDate = GetEndDateByDurationEnum(startDate, durationEnum);
+        // Calculate end date using TimeSpan
+        var duration = subscriptionData.Duration; // TimeSpan
+        var endDate = startDate.Add(duration);
 
         var dto = new PaymentTransactionDto
         {
@@ -331,7 +342,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             CardHolderName = request.CardDetails.CardHolderName,
             TransactionDate = DateTime.UtcNow,
             LastUpdated = DateTime.UtcNow,
-            IsExpired=false
+            IsExpired = false
         };
 
         var actor = GetPaymentTransactionActorProxy(dto.Id);
@@ -341,10 +352,10 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             throw new Exception("Payment transaction creation failed.");
 
         _paymentTransactionIds.TryAdd(dto.Id, 0);
+
         _logger.LogInformation("Payment transaction created with ID: {TransactionId}, Start Date: {StartDate}, End Date: {EndDate}",
             dto.Id, dto.StartDate, dto.EndDate);
 
-       
         if (!existingEndDate.HasValue)
         {
             await AssignSubscriberRoleAsync(userId);
@@ -357,19 +368,6 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
         return dto.Id;
     }
-
-    private DateTime GetEndDateByDurationEnum(DateTime startDate, DurationType duration)
-    {
-        return duration switch
-        {
-            DurationType.ThreeMonths => startDate.AddMonths(3),
-            DurationType.SixMonths => startDate.AddMonths(6),
-            DurationType.OneYear => startDate.AddYears(1),
-            DurationType.TwoMinutes => startDate.AddMinutes(2),
-            _ => throw new ArgumentException($"Unsupported DurationType: {duration}")
-        };
-    }
-
     private async Task AssignSubscriberRoleAsync(Guid userId)
     {
         const string subscriberRole = "Subscriber";
@@ -740,6 +738,19 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
 
     }
+    private DurationType MapTimeSpanToDurationType(TimeSpan duration)
+    {
+        var days = (int)duration.TotalDays;
+
+        return days switch
+        {
+            90 => DurationType.ThreeMonths,
+            180 => DurationType.SixMonths,
+            365 => DurationType.OneYear,
+            _ => throw new ArgumentOutOfRangeException(nameof(duration), $"Unsupported duration: {days} days")
+        };
+    }
+
     private IPaymentTransactionActor GetPaymentTransactionActorProxy(Guid id)
     {
         if (id == Guid.Empty)
@@ -805,7 +816,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
                     if (subscriptionData != null)
                     {
-                        var durationEnum = (DurationType)subscriptionData.Duration;
+                        var durationEnum = MapTimeSpanToDurationType(subscriptionData.Duration);
                         var isActive = payment.EndDate > DateTime.UtcNow;
 
                         // Remove from tracking if expired

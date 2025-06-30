@@ -17,13 +17,10 @@ namespace QLN.Subscriptions.Actor.ActorClass
         private readonly ILogger<PaymentTransactionActor> _logger;
         private readonly DaprClient _daprClient;
 
-        public PaymentTransactionActor(ActorHost host, ILogger<PaymentTransactionActor> logger) : base(host)
+        public PaymentTransactionActor(ActorHost host,DaprClient dapr, ILogger<PaymentTransactionActor> logger) : base(host)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
-            // Create DaprClient directly
-            var daprClientBuilder = new DaprClientBuilder();
-            _daprClient = daprClientBuilder.Build();
+            _daprClient = dapr;
         }
 
         public async Task<bool> SetDataAsync(PaymentTransactionDto data, CancellationToken cancellationToken = default)

@@ -19,12 +19,12 @@ namespace QLN.Common.DTO_s
     }
     public enum BasicPrice
     {
-        [Display(Name="200")]
-        BasicPrice_200 = 1,
-        [Display(Name = "50")]
-        BasicPrice_50 = 2,
+       
+        BasicPrice_200 = 200,
+        BasicPrice_50 = 50,
        
     }
+
 
     public class PayToPublishDto
     {

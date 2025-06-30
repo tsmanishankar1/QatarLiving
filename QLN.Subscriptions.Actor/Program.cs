@@ -1,12 +1,13 @@
-using QLN.Subscriptions.Actor.ActorClass;
+using Dapr.Client;
 using QLN.Backend.Actor.ActorClass;
+using QLN.Subscriptions.Actor.ActorClass;
 
 var builder = WebApplication.CreateBuilder(args);
 
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();                                 
-
+builder.Services.AddSwaggerGen();
+builder.Services.AddSingleton<DaprClient>(_ => new DaprClientBuilder().Build());
 ThreadPool.SetMinThreads(Environment.ProcessorCount * 4, Environment.ProcessorCount * 4);
 
 builder.WebHost.ConfigureKestrel(options =>
