@@ -1,10 +1,14 @@
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using QLN.Common.DTO_s;
 
 namespace QLN.Web.Shared.Models
 {
-    public class AdPost
+    public class AdPost 
     {
         // Category Selection
+        [Required]
         public string SelectedVertical { get; set; }
 
         public string SelectedCategoryId { get; set; }
@@ -16,17 +20,23 @@ namespace QLN.Web.Shared.Models
 
         // Description and Features
         public string Title { get; set; }
+
         public string Certificate { get; set; }
         public string CertificateFileName { get; set; }
-        public string BatteryPercentage { get; set; }
+        public int BatteryPercentage { get; set; }
+
         public string ItemDescription { get; set; }
         public string XmlLink { get; set; }
         public string FlyerLocation { get; set; }
 
-        public decimal Price { get; set; }
+        public int Price { get; set; }
+
         // Contact Details
-        public string Phone { get; set; }
-        public string Whatsapp { get; set; }
+        public string PhoneCode { get; set; }
+        public string PhoneNumber { get; set; }
+        public string WhatsappCode { get; set; }
+        public string WhatsappNumber { get; set; }
+
 
         // Location
         public string Zone { get; set; }
@@ -35,9 +45,13 @@ namespace QLN.Web.Shared.Models
 
         // Agreement
         public bool IsAgreed { get; set; }
-
+        
         public double Latitude { get; set; }
         public double Longitude { get; set; }
 
+        // Images (assuming image paths or IDs)
+         public List<string> PhotoUrls = new(){ "", "", "", "", "", "" };
+
+       
     }
 }

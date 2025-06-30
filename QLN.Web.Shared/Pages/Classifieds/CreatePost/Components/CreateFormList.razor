@@ -1,5 +1,6 @@
 @using MudBlazor
 @using QLN.Web.Shared.Components.NewCustomSelect
+@using QLN.Web.Shared.Components.PhoneNumberInput
 @using QLN.Web.Shared.Components.CustomInput
 @using QLN.Web.Shared.Pages.Classifieds.CreatePost.Components
 @using QLN.Common.DTO_s;
@@ -17,6 +18,7 @@
                          GetId="x => x.Id"
                          GetLabel="x => x.Label"
                          Label="Subvertical"
+                         For="@(() => adPostModel.SelectedVertical)"
                          Placeholder="Choose" />
     </div>
 </div>
@@ -41,6 +43,7 @@
                                  GetLabel="x => x.Name"
                                  Label="Category"
                                  Placeholder="Choose"
+                                 For="@(() => adPostModel.SelectedCategoryId)"
                                  SelectedId="@adPostModel.SelectedCategoryId"
                                  SelectedIdChanged="OnCategoryChanged" />
             </div>
@@ -53,6 +56,7 @@
                                      GetLabel="x => x.Name"
                                      Label="Subcategory"
                                      Placeholder="Choose"
+                                     For="@(() => adPostModel.SelectedSubcategoryId)"
                                      SelectedId="@adPostModel.SelectedSubcategoryId"
                                      SelectedIdChanged="OnSubcategoryChanged" />
                 </div>
@@ -67,6 +71,7 @@
                                      GetLabel="x => x.Name"
                                      Label="Sub Subcategory"
                                      Placeholder="Choose"
+                                     For="@(() => adPostModel.SelectedSubSubcategoryId)"
                                      SelectedId="@adPostModel.SelectedSubSubcategoryId"
                                      SelectedIdChanged="OnSubSubcategoryChanged" />
                 </div>
@@ -74,28 +79,38 @@
 
             @if (fields != null)
             {
-                @foreach (var field in fields)
-                {
-                    if (allowedFields.Contains(field.Name))
+               @foreach (var field in fields)
+{
+    if (allowedFields.Contains(field.Name))
+    {
+        var key = field.Name;
+        var selected = adPostModel.DynamicFields.ContainsKey(key) ? adPostModel.DynamicFields[key] : null;
+
+        <div class="form-group">
+            <NewCustomSelect TItem="OptionItem"
+                             Items="field.Options.Select(opt => new OptionItem { Id = opt, Label = opt }).ToList()"
+                             GetId="x => x.Id"
+                             GetLabel="x => x.Label"
+                             Label="@field.Name"
+                             Placeholder="Choose"
+                             SelectedId="@selected"
+                             SelectedIdChanged="@(val => OnDynamicFieldChanged(field.Name, val))" />
+
+            @if (GetDynamicFieldErrors(field.Name).Any())
+            {
+                    @foreach (var message in GetDynamicFieldErrors(field.Name))
                     {
-                        var key = field.Name;
-                        var selected = adPostModel.DynamicFields.ContainsKey(key) ? adPostModel.DynamicFields[key] : null;
-                        <div class="form-group">
-                            <NewCustomSelect TItem="OptionItem"
-                                             Items="field.Options.Select(opt => new OptionItem { Id = opt, Label = opt }).ToList()"
-                                             GetId="x => x.Id"
-                                             GetLabel="x => x.Label"
-                                             Label="@field.Name"
-                                             Placeholder="Choose"
-                                             SelectedId="@selected"
-                                             SelectedIdChanged="@(val => adPostModel.DynamicFields[key] = val)" />
-                        </div>
+                        <div class="error-text">@message</div>
                     }
+            }
+        </div>
+    }
+}
+
                 }
                 <div class="form-group">
-                    <CustomInput TItem="decimal" Placeholder="Price" @bind-Value="adPostModel.Price" TextRight="QAR" />
+                    <CustomInput TItem="int" MaxLength="50"   InputHtmlType="text" For="@(() => adPostModel.Price)" Placeholder="Price" @bind-Value="adPostModel.Price" TextRight="QAR" />
                 </div>
-            }
         </div>
     }
 
@@ -103,26 +118,30 @@
     <div class="form-section">
         <h6 class="form-heading">Description and Features</h6>
         <div class="form-group">
-            <CustomInput TItem="string" Placeholder="@(adPostModel.SelectedVertical == "deals" ? "Offer Title" : "Title")" @bind-Value="adPostModel.Title" />
+            <CustomInput TItem="string" MaxLength="50"   InputHtmlType="text" For="@(() => adPostModel.Title)" Placeholder="@(adPostModel.SelectedVertical == "deals" ? "Offer Title" : "Title")" @bind-Value="adPostModel.Title" />
         </div>
         @if (adPostModel.SelectedVertical != "deals")
         {
             <div class="form-group">
                 <MudExRichTextEdit @bind-Value="adPostModel.ItemDescription"
-                                   Height="300"
-                                   Class="description-input no-underline"
-                                   Placeholder="Write your business description..." />
+                                   Height="246"
+                                   Class="description-input-create-ad"
+                                   Placeholder="Description*" />
+              <ValidationMessage For="@(() => adPostModel.ItemDescription)" />
+                                 
             </div>
+
         }
         @if (adPostModel.SelectedVertical == "items")
         {
             <div class="form-group">
-                <CustomInput TItem="string" Placeholder="Battery Percentage" @bind-Value="adPostModel.BatteryPercentage" TextRight="%" />
+                <CustomInput TItem="int"  MaxLength="3"   InputHtmlType="number" For="@(() => adPostModel.BatteryPercentage)"Placeholder="Battery Percentage" @bind-Value="adPostModel.BatteryPercentage" TextRight="%" />
             </div>
         }
 
         <div class="form-group">
-            <FileUploader OnFileUploadedWithMeta="HandleUpload" LabelText="@(adPostModel.SelectedVertical == "deals" ? "Flyer File" : "Certificate / Warranty*")" />
+            <FileUploader OnFileUploadedWithMeta="HandleUpload"  For="@(() => adPostModel.Certificate)" Value="@adPostModel.Certificate"
+    ValueChanged="@((val) => adPostModel.Certificate = val)" LabelText="@(adPostModel.SelectedVertical == "deals" ? "Flyer File" : "Certificate / Warranty*")" />
         </div>
         @if (adPostModel.SelectedVertical == "deals")
         {
@@ -136,10 +155,24 @@
     <div class="form-section">
         <h6 class="form-heading">Contact Details</h6>
         <div class="form-group">
-            <CustomInput TItem="string" Placeholder="Phone Number" @bind-Value="adPostModel.Phone" />
+           <!-- Phone -->
+            <PhoneNumberInput
+                SelectedCountry="@SelectedPhoneCountry"
+                Placeholder="Phone Number*"
+                For="@(() => adPostModel.PhoneNumber)"
+                SelectedCountryChanged="@OnPhoneCountryChanged"
+                PhoneNumber="@adPostModel.PhoneNumber"
+                PhoneNumberChanged="@OnPhoneChanged" />
         </div>
         <div class="form-group">
-            <CustomInput TItem="string" Placeholder="WhatsApp Number" @bind-Value="adPostModel.Whatsapp" />
+            <!-- WhatsApp -->
+            <PhoneNumberInput
+                SelectedCountry="@SelectedWhatsappCountry"
+                Placeholder="WhatsApp Number"
+                For="@(() => adPostModel.WhatsappNumber)"
+                SelectedCountryChanged="@OnWhatsappCountryChanged"
+                PhoneNumber="@adPostModel.WhatsappNumber"
+                PhoneNumberChanged="@OnWhatsappChanged" />
         </div>
     </div>
 
@@ -155,13 +188,13 @@
         @if (adPostModel.SelectedVertical != "deals")
         {
             <div class="form-group">
-                <CustomInput TItem="string" Placeholder="Zone" @bind-Value="adPostModel.Zone" />
+                <CustomInput TItem="string" MaxLength="50"   InputHtmlType="text" For="@(() => adPostModel.Zone)" Placeholder="Zone" @bind-Value="adPostModel.Zone" />
             </div>
             <div class="form-group">
-                <CustomInput TItem="string" Placeholder="Street Number" @bind-Value="adPostModel.StreetNumber" />
+                <CustomInput TItem="string" MaxLength="50"   InputHtmlType="text" For="@(() => adPostModel.StreetNumber)"Placeholder="Street Number" @bind-Value="adPostModel.StreetNumber" />
             </div>
             <div class="form-group">
-                <CustomInput TItem="string" Placeholder="Building Number" @bind-Value="adPostModel.BuildingNumber" />
+                <CustomInput TItem="string" MaxLength="50"   InputHtmlType="text" For="@(() => adPostModel.BuildingNumber)" Placeholder="Building Number" @bind-Value="adPostModel.BuildingNumber" />
             </div>
             <div class="form-group">
                 <div @ref="mapDiv" id="map" style="height: 300px; width: 100%;"></div>
@@ -182,6 +215,7 @@
                 </span>
             </div>
         </div>
+        <ValidationMessage For="@(() => adPostModel.IsAgreed)" />
     </div>
 }
 
@@ -191,6 +225,12 @@
     .form-section {
         margin-bottom: 2rem;
         font-family: 'Public Sans', sans-serif;
+    }
+      .error-text {
+        color: red;
+        font-size: 12px;
+        margin-top: 4px;
+        padding-left: 4px;
     }
 
     .form-heading {
@@ -203,6 +243,9 @@
     .form-group {
         margin-bottom: 1rem;
     }
+   .description-input-create-ad {
+      border-radius: 4px;
+   }
 
     .map-container {
         width: 100%;
