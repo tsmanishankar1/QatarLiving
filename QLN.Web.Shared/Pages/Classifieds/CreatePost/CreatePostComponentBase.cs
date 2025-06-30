@@ -60,10 +60,10 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
                     messageStore.Add(() => adPostModel.Certificate, "Certificate is required for Deals.");
 
                 if (string.IsNullOrWhiteSpace(adPostModel.PhoneNumber))
-                    messageStore.Add(() => adPostModel.PhoneNumber, "Phone number is required for Deals.");
+                    messageStore.Add(() => adPostModel.PhoneNumber, "Phone number is required or must be a valid number.");
 
                 if (string.IsNullOrWhiteSpace(adPostModel.WhatsappNumber))
-                    messageStore.Add(() => adPostModel.WhatsappNumber, "Whatsapp number is required for Deals.");
+                    messageStore.Add(() => adPostModel.WhatsappNumber, "WhatsApp number is required or must be a valid number.");
 
                  var photoUrlsField = new FieldIdentifier(adPostModel, nameof(adPostModel.PhotoUrls));
 
@@ -111,10 +111,10 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
                     messageStore.Add(() => adPostModel.ItemDescription, "Description is required.");
 
                 if (string.IsNullOrWhiteSpace(adPostModel.PhoneNumber))
-                    messageStore.Add(() => adPostModel.PhoneNumber, "Phone number is required.");
+                    messageStore.Add(() => adPostModel.PhoneNumber, "Phone number is required or must be a valid number.");
 
                 if (string.IsNullOrWhiteSpace(adPostModel.WhatsappNumber))
-                    messageStore.Add(() => adPostModel.WhatsappNumber, "Whatsapp number is required.");
+                    messageStore.Add(() => adPostModel.WhatsappNumber, "WhatsApp number is required or must be a valid number.");
 
                 if (string.IsNullOrWhiteSpace(adPostModel.Certificate))
                     messageStore.Add(() => adPostModel.Certificate, "Certificate is required.");
