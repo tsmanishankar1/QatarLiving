@@ -17,13 +17,10 @@ namespace QLN.Subscriptions.Actor.ActorClass
         private readonly ILogger<PaymentTransactionActor> _logger;
         private readonly DaprClient _daprClient;
 
-        public PaymentTransactionActor(ActorHost host, ILogger<PaymentTransactionActor> logger) : base(host)
+        public PaymentTransactionActor(ActorHost host,DaprClient dapr, ILogger<PaymentTransactionActor> logger) : base(host)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
-            // Create DaprClient directly
-            var daprClientBuilder = new DaprClientBuilder();
-            _daprClient = daprClientBuilder.Build();
+            _daprClient = dapr;
         }
 
         public async Task<bool> SetDataAsync(PaymentTransactionDto data, CancellationToken cancellationToken = default)
@@ -232,7 +229,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             {
                 var istTimeZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time");
                 var nowIst = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, istTimeZone);
-                var today115Pm = new DateTime(nowIst.Year, nowIst.Month, nowIst.Day, 11, 06, 0);
+                var today115Pm = new DateTime(nowIst.Year, nowIst.Month, nowIst.Day, 00, 00, 0);
                 var next115Pm = nowIst <= today115Pm ? today115Pm : today115Pm.AddDays(1);
                 var next115PmUtc = TimeZoneInfo.ConvertTimeToUtc(next115Pm, istTimeZone);
                 var dueTime = next115PmUtc - DateTime.UtcNow;

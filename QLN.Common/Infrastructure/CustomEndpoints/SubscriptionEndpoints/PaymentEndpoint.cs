@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.IService.IAddonService;
+using QLN.Common.Infrastructure.IService.IPayToFeatureService;
 using QLN.Common.Infrastructure.IService.IPayToPublishService;
 using QLN.Common.Infrastructure.IService.ISubscriptionService;
 using System.Security.Claims;
@@ -379,6 +380,75 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            return group;
+        }
+        public static RouteGroupBuilder MapProcessPaytoFeaturePaymentEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapPost("/paytofeature", async (
+                PayToFeaturePaymentRequestDto request,
+                HttpContext context,
+                [FromServices] IPayToFeatureService service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)
+                                       ?? context.User.FindFirst("sub")
+                                       ?? context.User.FindFirst("userId");
+
+                    if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+                    {
+                        return Results.Unauthorized();
+                    }
+
+
+                    var transactionId = await service.CreatePaymentsAsync(request, userId, cancellationToken);
+
+
+
+                    return Results.Ok(new { Message = "Payment done successfully", TransactionId = transactionId });
+                }
+                catch (InvalidDataException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Payment Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    return Results.Unauthorized();
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Subscription Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Payment Processing Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("PaytoFeaturePayment")
+            .WithTags("Payment")
+            .WithSummary("Process PayToFeature payment")
+            .WithDescription("Processes payment for a PayToFeature and creates a payment transaction record.")
+            .Produces(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+           
             return group;
         }
     }

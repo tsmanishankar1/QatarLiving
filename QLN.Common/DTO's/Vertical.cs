@@ -16,7 +16,7 @@ namespace QLN.Common.Infrastructure.Subscriptions
     }
     public enum SubscriptionCategory
     {
-        Ittems=1,
+        Items=1,
         Deals = 2,
         Stores = 3,
         Preloved = 4,
