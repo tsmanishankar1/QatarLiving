@@ -276,7 +276,28 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
                 Snackbar.Add("An error occurred.", Severity.Error);
             }
         }
-
+        protected async void onRemove(string adId)
+        {
+            try
+            {
+                var result = await ClassfiedDashboardService.RemoveDealsAdAsync(adId);
+                if (result)
+                {
+                    Snackbar.Add("Ad removed successfully", Severity.Success);
+                    await LoadUnpublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
+                    await LoadPublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
+                }
+                else
+                {
+                    Snackbar.Add("Failed to remove ad.", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error in onRemove: " + ex.Message);
+                Snackbar.Add("An error occurred.", Severity.Error);
+            }
+        }
         protected void NavigateToAdPost()
         {
             Navigation.NavigateTo("/qln/classifieds/createform");
@@ -291,10 +312,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             Navigation.NavigateTo($"/qln/classifieds/items/details/{adId}");
         }
 
-        protected void onRemove(string adId)
-        {
-            Snackbar.Add("Remove functionality is not implemented yet.", Severity.Warning);
-        }
+    
 
         protected void SetTab(int index)
         {

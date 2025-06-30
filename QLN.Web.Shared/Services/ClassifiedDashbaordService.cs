@@ -465,5 +465,70 @@ namespace QLN.Web.Shared.Services
                 return false;
             }
         }
+        public async Task<bool> RemoveItemAdAsync(string adId)
+        {
+            try
+            {
+                var url = $"api/classified/items-ad/{adId}";
+                var request = new HttpRequestMessage(HttpMethod.Delete, url);
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("RemoveAdAsync Exception: " + ex.Message);
+                return false;
+            }
+        }
+        public async Task<bool> RemovePrelovedAsync(string adId)
+        {
+            try
+            {
+                var url = $"api/classified/preloved-ad/{adId}";
+                var request = new HttpRequestMessage(HttpMethod.Delete, url);
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("RemoveAdAsync Exception: " + ex.Message);
+                return false;
+            }
+        }
+        public async Task<bool> RemoveCollectiblesAdAsync(string adId)
+        {
+            try
+            {
+                var url = $"api/classified/collectibles-ad/{adId}";
+                var request = new HttpRequestMessage(HttpMethod.Delete, url);
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("RemoveAdAsync Exception: " + ex.Message);
+                return false;
+            }
+        }
+        public async Task<bool> RemoveDealsAdAsync(string adId)
+        {
+            try
+            {
+                var url = $"api/classified/deals-ad/{adId}";
+                var request = new HttpRequestMessage(HttpMethod.Delete, url);
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("RemoveAdAsync Exception: " + ex.Message);
+                return false;
+            }
+        }
+
     }
 }
