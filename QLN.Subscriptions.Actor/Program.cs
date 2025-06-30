@@ -22,6 +22,8 @@ builder.Services.AddActors(options =>
     options.Actors.RegisterActor<PaymentTransactionActor>();
     options.Actors.RegisterActor<PayToPublishPaymentActor>();
     options.Actors.RegisterActor<PayToPublishActor>();
+    options.Actors.RegisterActor<PayToFeatureActor>();
+    options.Actors.RegisterActor<PayToFeaturePaymentActor>();
     options.Actors.RegisterActor<AddonActor>();
     options.Actors.RegisterActor<AddonPaymentActor>();
     options.ActorIdleTimeout = TimeSpan.FromMinutes(60);

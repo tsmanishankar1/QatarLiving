@@ -1,30 +1,31 @@
 ﻿using Dapr.Actors.Runtime;
 using global::QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.IService.IPayToFeatureActor;
 using QLN.Common.Infrastructure.IService.IPayToPublicActor;
+using QLN.Common.Infrastructure.IService.ISubscriptionService;
 
 namespace QLN.Subscriptions.Actor.ActorClass
 {
-    public class PayToPublishActor : Dapr.Actors.Runtime.Actor, IPayToPublishActor
+    public class PayToFeatureActor : Dapr.Actors.Runtime.Actor, IPayToFeatureActor
     {
         private const string StateKey = "pay-to-publish-data";
         private const string BasicPriceStateName = "basicPriceData";
         private const string PlanIdsStateKey = "plan-ids-collection";
         private const string BasicPriceIdsStateKey = "basicprice-ids-collection";
         private const string PaymentIdsStateKey = "payment-ids-collection";
-        private const string PayToPublishDataStateKey = "paytopublish-data";
-        private const string PaymentDataStateKey = "payment-data";
-        private readonly ILogger<PayToPublishActor> _logger;
+        private const string PayToFeatureDataStateKey = "paytofeature-data";
+        private readonly ILogger<PayToFeatureActor> _logger;
 
-        public PayToPublishActor(ActorHost host, ILogger<PayToPublishActor> logger) : base(host)
+        public PayToFeatureActor(ActorHost host, ILogger<PayToFeatureActor> logger) : base(host)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<bool> SetDataAsync(PayToPublishDto data, CancellationToken cancellationToken = default)
+        public async Task<bool> SetDataAsync(PayToFeatureDto data, CancellationToken cancellationToken = default)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
 
-            _logger.LogInformation("[PayToPublishActor {ActorId}] SetDataAsync called", Id);
+            _logger.LogInformation("[PayToFeatureActor {ActorId}] SetDataAsync called", Id);
 
             await StateManager.SetStateAsync(StateKey, data, cancellationToken);
             await StateManager.SaveStateAsync(cancellationToken);
@@ -32,43 +33,43 @@ namespace QLN.Subscriptions.Actor.ActorClass
             return true;
         }
 
-        public async Task<bool> FastSetDataAsync(PayToPublishDto data, CancellationToken cancellationToken = default)
+        public async Task<bool> FastSetDataAsync(PayToFeatureDto data, CancellationToken cancellationToken = default)
         {
             // Same logic as SetDataAsync for now
             return await SetDataAsync(data, cancellationToken);
         }
 
-        public async Task<PayToPublishDto?> GetDataAsync(CancellationToken cancellationToken = default)
+        public async Task<PayToFeatureDto?> GetDataAsync(CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("[PayToPublishActor {ActorId}] GetDataAsync called", Id);
+            _logger.LogInformation("[PayToFeatureActor {ActorId}] GetDataAsync called", Id);
 
-            var result = await StateManager.TryGetStateAsync<PayToPublishDto>(StateKey, cancellationToken);
+            var result = await StateManager.TryGetStateAsync<PayToFeatureDto>(StateKey, cancellationToken);
 
             return result.HasValue ? result.Value : null;
         }
 
-        public async Task<bool> SetPayToPublishDataAsync(PayToPublishDataDto data, CancellationToken cancellationToken = default)
+        public async Task<bool> SetPayToFeatureDataAsync(PayToFeatureDataDto data, CancellationToken cancellationToken = default)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
 
-            _logger.LogInformation("[PayToPublishActor {ActorId}] SetPayToPublishDataAsync called", Id);
+            _logger.LogInformation("[PayToFeatureActor {ActorId}] SetPayToFeatureDataAsync called", Id);
 
-            await StateManager.SetStateAsync(PayToPublishDataStateKey, data, cancellationToken);
+            await StateManager.SetStateAsync(PayToFeatureDataStateKey, data, cancellationToken);
             await StateManager.SaveStateAsync(cancellationToken);
 
             return true;
         }
 
-        public async Task<PayToPublishDataDto?> GetPayToPublishDataAsync(CancellationToken cancellationToken = default)
+        public async Task<PayToFeatureDataDto?> GetPayToFeatureDataAsync(CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("[PayToPublishActor {ActorId}] GetPayToPublishDataAsync called", Id);
+            _logger.LogInformation("[PayToFeatureActor {ActorId}] GetPayToFeatureDataAsync called", Id);
 
-            var result = await StateManager.TryGetStateAsync<PayToPublishDataDto>(PayToPublishDataStateKey, cancellationToken);
+            var result = await StateManager.TryGetStateAsync<PayToFeatureDataDto>(PayToFeatureDataStateKey, cancellationToken);
 
             return result.HasValue ? result.Value : null;
         }
 
-        public async Task<bool> SetDatasAsync(BasicPriceDto data, CancellationToken cancellationToken = default)
+        public async Task<bool> SetDatasAsync(PayToFeatureBasicPriceDto data, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -93,13 +94,13 @@ namespace QLN.Subscriptions.Actor.ActorClass
             }
         }
 
-        public async Task<BasicPriceDto?> GetDatasAsync(CancellationToken cancellationToken = default)
+        public async Task<PayToFeatureBasicPriceDto?> GetDatasAsync(CancellationToken cancellationToken = default)
         {
             try
             {
                 _logger.LogDebug("Getting BasicPrice data for actor {ActorId}", Id);
 
-                var conditionalResult = await StateManager.TryGetStateAsync<BasicPriceDto>(
+                var conditionalResult = await StateManager.TryGetStateAsync<PayToFeatureBasicPriceDto>(
                     BasicPriceStateName,
                     cancellationToken);
 
@@ -118,8 +119,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 return null;
             }
         }
-
-        // Plan ID Management Methods
         public async Task<bool> AddPlanIdAsync(Guid planId, CancellationToken cancellationToken = default)
         {
             try
@@ -167,8 +166,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 return new List<Guid>();
             }
         }
-
-        // Basic Price ID Management Methods
         public async Task<bool> AddBasicPriceIdAsync(Guid basicPriceId, CancellationToken cancellationToken = default)
         {
             try
@@ -216,8 +213,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 return new List<Guid>();
             }
         }
-
-        // Payment ID Management Methods
         public async Task<bool> AddPaymentIdAsync(Guid paymentId, CancellationToken cancellationToken = default)
         {
             try
@@ -265,17 +260,15 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 return new List<Guid>();
             }
         }
-
-        // Actor lifecycle methods
         protected override Task OnActivateAsync()
         {
-            _logger.LogInformation("[PayToPublishActor {ActorId}] Activated", Id);
+            _logger.LogInformation("[PayToFeatureActor {ActorId}] Activated", Id);
             return base.OnActivateAsync();
         }
 
         protected override Task OnDeactivateAsync()
         {
-            _logger.LogInformation("[PayToPublishActor {ActorId}] Deactivated", Id);
+            _logger.LogInformation("[PayToFeatureActor {ActorId}] Deactivated", Id);
             return base.OnDeactivateAsync();
         }
     }
