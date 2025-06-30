@@ -3,11 +3,11 @@ using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Service.FileStorage;
-using QLN.Content.MS.Service.NewsInternalService;
-using QLN.Content.MS.Service;
+//using QLN.Content.MS.Service.NewsInternalService;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Content.MS.Service.EventInternalService;
+using QLN.Content.MS.Service.NewsInternalService;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
@@ -15,6 +15,8 @@ builder.Services.AddDaprClient();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IV2EventService, V2InternalEventService>();
+builder.Services.AddScoped<IV2NewsService, V2InternalNewsService>();
+
 builder.Services.AddSwaggerGen(opts =>
 {
     opts.SwaggerDoc("v1", new OpenApiInfo { Title = "QLN.Content.MS", Version = "v1" });
@@ -41,9 +43,8 @@ builder.Services.AddSwaggerGen(opts =>
 });
 
 builder.Services.AddDaprClient();
-builder.Services.AddScoped<IV2ContentNews, NewsInternalService>();
+builder.Services.AddScoped<IV2NewsService, V2InternalNewsService>();
 builder.Services.AddScoped<IV2EventService, V2InternalEventService>();
-builder.Services.AddScoped<IV2contentBannerService, V2InternalBannerService>();
 builder.Services.AddScoped<IFileStorageBlobService, FileStorageBlobService>();
 
 var app = builder.Build();
@@ -55,8 +56,10 @@ if (app.Environment.IsDevelopment())
 }
 var eventGroup = app.MapGroup("/api/v2/event");
 eventGroup.MapEventEndpoints();
-app.MapGroup("/api/v2").MapContentBannerEndpoints()
-    .MapContentNewsEndpoints();
+
+var newsGroup = app.MapGroup("/api/v2/news");
+newsGroup.MapNewsEndpoints();
+
 app.MapControllers();
 app.UseHttpsRedirection();
 app.Run();

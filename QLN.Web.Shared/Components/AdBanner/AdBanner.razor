@@ -18,7 +18,7 @@
                 {
                     <a href="@banner.Link" target="_blank" rel="noopener noreferrer">
                         <img class="ad-banner-image"
-                             src="@banner.ImageDesktopUrl"
+                             src="@banner.ImageDesktop"
                              alt="@banner.Alt"
                              @onclick="@(() => TriggerAnalytics(banner, "click"))" />
                     </a>
@@ -26,7 +26,7 @@
                 else
                 {
                     <img class="ad-banner-image"
-                         src="@banner.ImageDesktopUrl"
+                         src="@banner.ImageDesktop"
                          alt="@banner.Alt" />
                 }
             </div>

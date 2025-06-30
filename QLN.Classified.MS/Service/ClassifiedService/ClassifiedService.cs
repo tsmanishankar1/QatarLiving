@@ -315,7 +315,7 @@ namespace QLN.Classified.MS.Service
             if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
                 throw new ArgumentException("Image URLs must be provided.");
 
-            if (string.IsNullOrWhiteSpace(dto.CertificateFileName))
+            if (string.IsNullOrWhiteSpace(dto.CertificateBase64))
                 throw new ArgumentException("Certificate URL must be provided.");
 
             var adId = dto.Id != Guid.Empty ? dto.Id : throw new ArgumentException("Id must be provided");
@@ -359,7 +359,8 @@ namespace QLN.Classified.MS.Service
                     dto.Size,
                     dto.SizeValue,
                     dto.Gender,
-                    CertificateUrl = dto.CertificateFileName,
+                    dto.CertificateFileName,
+                    CertificateUrl = dto.CertificateBase64,
                     ImageUrls = dto.AdImagesBase64,
                     dto.PhoneNumber,
                     dto.WhatsAppNumber,
@@ -425,7 +426,7 @@ namespace QLN.Classified.MS.Service
             if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
                 throw new ArgumentException("Image URLs must be provided.");
 
-            if (string.IsNullOrWhiteSpace(dto.CertificateFileName))
+            if (string.IsNullOrWhiteSpace(dto.CertificateBase64))
                 throw new ArgumentException("Certificate URL must be provided.");
 
             var adId = dto.Id != Guid.Empty ? dto.Id : throw new ArgumentException("Id must be provided");
@@ -465,7 +466,8 @@ namespace QLN.Classified.MS.Service
                     dto.Size,
                     dto.SizeValue,
                     dto.Gender,
-                    CertificateUrl = dto.CertificateFileName,
+                    dto.CertificateFileName,
+                    CertificateUrl = dto.CertificateBase64,
                     ImageUrls = dto.AdImagesBase64,
                     dto.PhoneNumber,
                     dto.WhatsAppNumber,
@@ -531,7 +533,7 @@ namespace QLN.Classified.MS.Service
             if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
                 throw new ArgumentException("Image URLs must be provided.");
 
-            if (string.IsNullOrWhiteSpace(dto.CertificateFileName))
+            if (string.IsNullOrWhiteSpace(dto.CertificateBase64))
                 throw new ArgumentException("Certificate URL must be provided.");
 
             var adId = dto.Id != Guid.Empty ? dto.Id : throw new ArgumentException("Id must be provided.");
@@ -562,7 +564,8 @@ namespace QLN.Classified.MS.Service
                     dto.CountryOfOrigin,
                     dto.Language,
                     dto.HasAuthenticityCertificate,
-                    CertificateUrl = dto.CertificateFileName,
+                    dto.CertificateFileName,
+                    CertificateUrl = dto.CertificateBase64,
                     dto.YearOrEra,
                     dto.Rarity,
                     dto.Package,
@@ -642,7 +645,7 @@ namespace QLN.Classified.MS.Service
             if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
                 throw new ArgumentException("Image URLs must be provided.");
 
-            if (string.IsNullOrWhiteSpace(dto.FlyerName))
+            if (string.IsNullOrWhiteSpace(dto.FlyerFile))
                 throw new ArgumentException("Flyer URL must be provided.");
 
             var adId = dto.Id != Guid.Empty ? dto.Id : throw new ArgumentException("Id must be provided");
@@ -660,7 +663,8 @@ namespace QLN.Classified.MS.Service
                     Id = adId,
                     dto.SubVertical,
                     dto.Title,
-                    FlyerFile = dto.FlyerName,
+                    dto.FlyerName,
+                    FlyerFile = dto.FlyerFile,
                     ImageUrl = dto.AdImagesBase64,
                     dto.XMLLink,
                     dto.ExpiryDate,
@@ -1070,6 +1074,7 @@ namespace QLN.Classified.MS.Service
                             Size = state.TryGetProperty("size", out var size) ? size.GetString() ?? "" : "",
                             SizeValue = state.TryGetProperty("sizeValue", out var sizeVal) ? sizeVal.GetString() ?? "" : "",
                             Gender = state.TryGetProperty("gender", out var gender) ? gender.GetString() ?? "" : "",
+                            CertificateFileName = state.TryGetProperty("certificateFileName", out var certFileName) ? certFileName.GetString() ?? "" : "",
                             CertificateUrl = state.GetProperty("certificateUrl").GetString(),
                             ImageUrls = state.TryGetProperty("imageUrls", out var imgs) && imgs.ValueKind == JsonValueKind.Array
                             ? imgs.EnumerateArray().Select(img =>
@@ -1215,6 +1220,7 @@ namespace QLN.Classified.MS.Service
                             Size = state.TryGetProperty("size", out var size) ? size.GetString() ?? "" : "",
                             SizeValue = state.TryGetProperty("sizeValue", out var sizeVal) ? sizeVal.GetString() ?? "" : "",
                             Gender = state.TryGetProperty("gender", out var gender) ? gender.GetString() ?? "" : "",
+                            CertificateFileName = state.TryGetProperty("certificateFileName", out var certFileName) ? certFileName.GetString() ?? "" : "",
                             CertificateUrl = state.GetProperty("certificateUrl").GetString(),
                             ImageUrls = state.TryGetProperty("imageUrls", out var imgs) && imgs.ValueKind == JsonValueKind.Array
                             ? imgs.EnumerateArray().Select(img =>
@@ -1488,6 +1494,7 @@ namespace QLN.Classified.MS.Service
                             Size = state.TryGetProperty("size", out var size) ? size.GetString() ?? "" : "",
                             SizeValue = state.TryGetProperty("sizeValue", out var sizeVal) ? sizeVal.GetString() ?? "" : "",
                             Gender = state.TryGetProperty("gender", out var gender) ? gender.GetString() ?? "" : "",
+                            CertificateFileName = state.TryGetProperty("certificateFileName", out var certFileName) ? certFileName.GetString() ?? "" : "",
                             CertificateUrl = state.GetProperty("certificateUrl").GetString(),
                             ImageUrls = state.TryGetProperty("imageUrls", out var imgs) && imgs.ValueKind == JsonValueKind.Array
                             ? imgs.EnumerateArray().Select(img =>
@@ -1627,6 +1634,7 @@ namespace QLN.Classified.MS.Service
                             Size = state.TryGetProperty("size", out var size) ? size.GetString() ?? "" : "",
                             SizeValue = state.TryGetProperty("sizeValue", out var sizeVal) ? sizeVal.GetString() ?? "" : "",
                             Gender = state.TryGetProperty("gender", out var gender) ? gender.GetString() ?? "" : "",
+                            CertificateFileName = state.TryGetProperty("certificateFileName", out var certFileName) ? certFileName.GetString() ?? "" : "",
                             CertificateUrl = state.GetProperty("certificateUrl").GetString(),
                             ImageUrls = state.TryGetProperty("imageUrls", out var imgs) && imgs.ValueKind == JsonValueKind.Array
                             ? imgs.EnumerateArray().Select(img =>
@@ -1883,6 +1891,7 @@ namespace QLN.Classified.MS.Service
                             Id = state.GetProperty("id").GetGuid(),
                             Title = state.GetProperty("title").GetString(),
                             SubVertical = subVertical ?? "Deals",
+                            FlyerName = state.TryGetProperty("flyerName", out var flyerName) ? flyerName.GetString() ?? "" : "",
                             FlyerFile = state.TryGetProperty("flyerFile", out var flyer) ? flyer.GetString() ?? "" : "",
                             ImageUrl = state.TryGetProperty("imageUrl", out var imgs) && imgs.ValueKind == JsonValueKind.Array
                             ? imgs.EnumerateArray().Select(img =>
@@ -1999,6 +2008,7 @@ namespace QLN.Classified.MS.Service
                             Id = state.GetProperty("id").GetGuid(),
                             Title = state.GetProperty("title").GetString(),
                             SubVertical = subVertical ?? "Deals",
+                            FlyerName = state.TryGetProperty("flyerName", out var flyerName) ? flyerName.GetString() ?? "" : "",
                             FlyerFile = state.TryGetProperty("flyerFile", out var flyer) ? flyer.GetString() ?? "" : "",
                             ImageUrl = state.TryGetProperty("imageUrl", out var imgs) && imgs.ValueKind == JsonValueKind.Array
                             ? imgs.EnumerateArray().Select(img =>
@@ -2264,6 +2274,7 @@ namespace QLN.Classified.MS.Service
                             CountryOfOrigin = state.TryGetProperty("countryOfOrigin", out var origin) ? origin.GetString() : null,
                             Language = state.TryGetProperty("language", out var lang) ? lang.GetString() : null,
                             HasAuthenticityCertificate = state.TryGetProperty("hasAuthenticityCertificate", out var hasCert) && hasCert.GetBoolean(),
+                            CertificateFileName = state.TryGetProperty("certificateFileName", out var certFileName) ? certFileName.GetString() ?? "" : "",
                             AuthenticityCertificateUrl = state.TryGetProperty("certificateUrl", out var certUrl) ? certUrl.GetString() ?? "" : "",
                             YearOrEra = state.TryGetProperty("yearOrEra", out var era) ? era.GetString() : null,
                             Rarity = state.TryGetProperty("rarity", out var rarity) ? rarity.GetString() : null,
@@ -2406,6 +2417,7 @@ namespace QLN.Classified.MS.Service
                             CountryOfOrigin = state.TryGetProperty("countryOfOrigin", out var origin) ? origin.GetString() : null,
                             Language = state.TryGetProperty("language", out var lang) ? lang.GetString() : null,
                             HasAuthenticityCertificate = state.TryGetProperty("hasAuthenticityCertificate", out var hasCert) && hasCert.GetBoolean(),
+                            CertificateFileName = state.TryGetProperty("certificateFileName", out var certFileName) ? certFileName.GetString() ?? "" : "",
                             AuthenticityCertificateUrl = state.TryGetProperty("certificateUrl", out var certUrl) ? certUrl.GetString() ?? "" : "",
                             YearOrEra = state.TryGetProperty("yearOrEra", out var era) ? era.GetString() : null,
                             Rarity = state.TryGetProperty("rarity", out var rarity) ? rarity.GetString() : null,
