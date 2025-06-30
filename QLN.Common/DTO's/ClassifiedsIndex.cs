@@ -64,8 +64,14 @@ namespace QLN.Common.DTO_s
         [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string? Category { get; set; }
 
+        [SearchableField(IsFilterable = true)]
+        public string? L1CategoryId { get; set; }
+
         [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string? L1Category { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? L2CategoryId { get; set; }
 
         [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string? L2Category { get; set; }
