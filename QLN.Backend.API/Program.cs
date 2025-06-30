@@ -1,10 +1,8 @@
 ﻿using Azure.Core.Serialization;
 using Dapr.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using QLN.Backend.API.ServiceConfiguration;
@@ -22,14 +20,11 @@ using QLN.Common.Infrastructure.DbContext;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Common.Infrastructure.TokenProvider;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
-
 using QLN.Common.Infrastructure.CustomEndpoints.Wishlist;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
@@ -224,6 +219,8 @@ builder.Services.NewsConfiguration(builder.Configuration);
 builder.Services.AddonConfiguration(builder.Configuration);
 builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
+builder.Services.PayToFeatureConfiguration(builder.Configuration);
+builder.Services.AddonConfiguration(builder.Configuration);
 var app = builder.Build();
 #region DAPR Subscriptions
 
@@ -232,9 +229,6 @@ app.UseCloudEvents();
 app.MapSubscribeHandler();
 
 #endregion
-
-
-
 
 app.UseResponseCaching();                
 
@@ -281,8 +275,9 @@ app.MapGroup("/api/subscriptions")
 
 app.MapGroup("/api/payments")
  .MapPaymentEndpoints();
-   //.RequireAuthorization(); // so because you have authorize here, it means all these endpoints need authorization - I am overriding it later on by adding AllowAnonymous as an option on a per endpoint implementation
-
+//.RequireAuthorization(); // so because you have authorize here, it means all these endpoints need authorization - I am overriding it later on by adding AllowAnonymous as an option on a per endpoint implementation
+app.MapGroup("/api/paytofeature")
+ .MapPayToFeatureEndpoints();
 app.MapGroup("/api/paytopublish")
     .MapPayToPublishEndpoints();
 

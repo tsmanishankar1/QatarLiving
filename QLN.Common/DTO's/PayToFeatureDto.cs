@@ -8,25 +8,9 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.DTO_s
 {
-    public enum DurationType
-    {
-        ThreeMonths = 1,
-        SixMonths = 2,
-        OneYear = 3,
-        TwoMinutes=4,
-        OneWeek=5,
-        OneMonth=6,
-    }
-    public enum BasicPrice
-    {
-       
-        BasicPrice_200 = 200,
-        BasicPrice_50 = 50,
-       
-    }
+   
 
-
-    public class PayToPublishDto
+    public class PayToFeatureDto
     {
         public Guid Id { get; set; }
         public string PlanName { get; set; } = string.Empty;
@@ -34,22 +18,23 @@ namespace QLN.Common.DTO_s
         public DurationType Duration { get; set; } // Updated
         public decimal Price { get; set; }
         public int TotalCount { get; set; }
+        // public BasicPrice BasicPriceId { get; set; }
         public string Currency { get; set; } = string.Empty;
         public Vertical VerticalTypeId { get; set; }
         public SubscriptionCategory CategoryId { get; set; }
-        public bool IsFreeAd { get; set; }
+     
         public Status StatusId { get; set; }
         public DateTime LastUpdated { get; set; }
 
     }
-    public class PayToPublishDataDto
+    public class PayToFeatureDataDto
     {
         public Guid Id { get; set; }
         public DateTime LastUpdated { get; set; }
-        public List<PayToPublishDto>? Plans { get; set; }
-        public List<BasicPriceDto>? BasicPrices { get; set; }
+        public List<PayToFeatureDto> Plans { get; set; } = new();
+        public List<PayToFeatureBasicPriceDto> BasicPrices { get; set; } = new();
     }
-    public class BasicPriceDto
+    public class PayToFeatureBasicPriceDto
     {
         public Guid Id { get; set; }
         public Vertical VerticalTypeId { get; set; }
@@ -58,7 +43,7 @@ namespace QLN.Common.DTO_s
         public DateTime LastUpdated { get; set; }
 
     }
-    public class PayToPublishWithBasicPriceResponseDto
+    public class PayToFeatureWithBasicPriceResponseDto
     {
         public Guid Id { get; set; }
         public string PlanName { get; set; } = string.Empty;
@@ -67,7 +52,7 @@ namespace QLN.Common.DTO_s
         public string Description { get; set; } = string.Empty;
         public int DurationId { get; set; }
         public string DurationName { get; set; } = string.Empty;
-        public bool IsFreeAd { get; set; } = false;
+       
         public int VerticalId { get; set; }
         public string VerticalName { get; set; } = string.Empty;
         public int CategoryId { get; set; }
@@ -75,14 +60,14 @@ namespace QLN.Common.DTO_s
         public int? BasicPriceId { get; set; }
         public string? BasicPriceName { get; set; }
     }
-    public class BasicPriceRequestDto
+    public class PayToFeatureBasicPriceRequestDto
     {
         public Vertical VerticalTypeId { get; set; }
         public SubscriptionCategory CategoryId { get; set; }
         public BasicPrice BasicPriceId { get; set; }
     }
 
-    public class BasicPriceResponseDto
+    public class P2FBasicPriceResponseDto
     {
         public Guid Id { get; set; }
         public int VerticalTypeId { get; set; }
@@ -95,7 +80,7 @@ namespace QLN.Common.DTO_s
 
     }
 
-    public class PayToPublishRequestDto
+    public class PayToFeatureRequestDto
     {
         [Required]
         public string PlanName { get; set; } = string.Empty;
@@ -106,7 +91,7 @@ namespace QLN.Common.DTO_s
         [Required]
         public DurationType DurationId { get; set; }
 
-   
+
         [Required]
         public decimal Price { get; set; }
         [Required]
@@ -115,27 +100,27 @@ namespace QLN.Common.DTO_s
         public Vertical VerticalTypeId { get; set; }
 
         public SubscriptionCategory CategoryId { get; set; }
-        public bool IsFreeAd { get; set; }
+       
         [Required]
         public Status StatusId { get; set; }
     }
-    public class PayToPublishResponseDto
+    public class PayToFeatureResponseDto
     {
         public Guid Id { get; set; }
         public string PlanName { get; set; } = string.Empty;
-     
+
         public decimal Price { get; set; }
         public string Currency { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public int DurationId { get; set; }
         public string DurationName { get; set; } = string.Empty;
-        public bool IsFreeAd { get; set; } = false;
+       
     }
 
 
 
 
-    public class PayToPublishListResponseDto
+    public class PayToFeatureListResponseDto
     {
         public int VerticalId { get; set; }
         public string VerticalName { get; set; } = string.Empty;
@@ -144,12 +129,12 @@ namespace QLN.Common.DTO_s
         public List<PayToPublishResponseDto> PayToPublish { get; set; } = new();
     }
 
-    public class PaymentDto
+    public class PayToFeaturePaymentDto
     {
         public Guid Id { get; set; }
-        public Guid PayToPublishId { get; set; }
+        public Guid PayToFeatureId { get; set; }
         public int VerticalId { get; set; }
-      
+
         public int CategoryId { get; set; }
         public Guid UserId { get; set; }
         public DateTime StartDate { get; set; }
@@ -157,29 +142,29 @@ namespace QLN.Common.DTO_s
         public string CardNumber { get; set; } = string.Empty;
         public string ExpiryMonth { get; set; } = string.Empty;
         public string ExpiryYear { get; set; } = string.Empty;
-        public string Cvv { get; set; } = string.Empty; 
+        public string Cvv { get; set; } = string.Empty;
         public string CardHolderName { get; set; } = string.Empty;
         public bool IsExpired { get; set; } = false;
-     
+
         public DateTime LastUpdated { get; set; }
-        
+
     }
-    public class PaymentRequestDto
+    public class PayToFeaturePaymentRequestDto
     {
         [Required]
         public int VerticalId { get; set; }
 
         [Required]
         public int CategoryId { get; set; }
- 
+
         [Required]
-        public Guid PayToPublishId { get; set; }
+        public Guid PayToFeatureId { get; set; }
 
 
         public CardDetailPaymentDto CardDetails { get; set; } = new();
     }
 
-    public class CardDetailPaymentDto
+    public class PayToFeatureCardDetailPaymentDto
     {
         [Required]
 

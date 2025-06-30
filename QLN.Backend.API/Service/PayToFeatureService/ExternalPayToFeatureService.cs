@@ -1,42 +1,46 @@
 ﻿using Dapr.Actors.Client;
 using Dapr.Actors;
 using QLN.Common.DTO_s;
-using QLN.Common.Infrastructure.IService.IPayToPublicActor;
 using System.Collections.Concurrent;
-using QLN.Common.Infrastructure.IService.IPayToPublishService;
 using QLN.Common.Infrastructure.Subscriptions;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
+using QLN.Common.Infrastructure.IService.IPayToFeatureService;
+using QLN.Common.Infrastructure.IService.IPayToFeatureActor;
 
-namespace QLN.Backend.API.Service.PayToPublishService
+namespace QLN.Backend.API.Service.PayToFeatureService
 {
-    public class ExternalPayToPublishService : IPayToPublishService
+    public class ExternalPayToFeatureService : IPayToFeatureService
     {
-        private readonly ILogger<ExternalPayToPublishService> _logger;
+        private readonly ILogger<ExternalPayToFeatureService> _logger;
         private static readonly ConcurrentDictionary<string, Guid> _defaultIds = new();
-        private readonly Guid _masterActorId = Guid.Parse("00000000-0000-0000-0000-000000000004");
-        public ExternalPayToPublishService(ILogger<ExternalPayToPublishService> logger)
+        private readonly Guid _masterActorId = Guid.Parse("00000000-0000-0000-0000-000000000003");
+
+        public ExternalPayToFeatureService(ILogger<ExternalPayToFeatureService> logger)
         {
             _logger = logger;
-            _defaultIds.TryAdd("paytopublish_default", Guid.Parse("00000000-0000-0000-0000-000000000005"));
-            _defaultIds.TryAdd("paytopublish_payment_default", Guid.Parse("00000000-0000-0000-0000-000000000006"));
+
+           
+            _defaultIds.TryAdd("paytofeature_default", Guid.Parse("00000000-0000-0000-0000-000000000001"));
+            _defaultIds.TryAdd("payment_default", Guid.Parse("00000000-0000-0000-0000-000000000002"));
         }
 
-        private IPayToPublishActor GetActorProxy(Guid id)
+        private IPayToFeatureActor GetActorProxy(Guid id)
         {
-            return ActorProxy.Create<IPayToPublishActor>(new ActorId(id.ToString()), "PayToPublishActor");
+            return ActorProxy.Create<IPayToFeatureActor>(new ActorId(id.ToString()), "PayToFeatureActor");
         }
 
-        private IPayToPublishActor GetMasterActorProxy()
+        private IPayToFeatureActor GetMasterActorProxy()
         {
-            return ActorProxy.Create<IPayToPublishActor>(new ActorId(_masterActorId.ToString()), "PayToPublishActor");
+            return ActorProxy.Create<IPayToFeatureActor>(new ActorId(_masterActorId.ToString()), "PayToFeatureActor");
         }
 
-        public async Task<PayToPublishDataDto> SetPayToPublishDataAsync(PayToPublishDataDto data, CancellationToken cancellationToken = default)
+      
+        public async Task<PayToFeatureDataDto> SetPayToFeatureDataAsync(PayToFeatureDataDto data, CancellationToken cancellationToken = default)
         {
             var actor = GetActorProxy(data.Id);
 
-          
+           
             if (data.Plans != null)
             {
                 foreach (var plan in data.Plans)
@@ -47,7 +51,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 }
             }
 
-            
+            // Store basic prices individually and track their IDs
             if (data.BasicPrices != null)
             {
                 foreach (var basicPrice in data.BasicPrices)
@@ -61,12 +65,15 @@ namespace QLN.Backend.API.Service.PayToPublishService
             return data;
         }
 
-        public async Task<PayToPublishDataDto> GetPayToPublishDataAsync(CancellationToken cancellationToken = default)
+       
+        public async Task<PayToFeatureDataDto> GetPayToFeatureDataAsync(CancellationToken cancellationToken = default)
         {
-            var payToPublishId = _defaultIds["paytopublish_default"];
-            var actor = GetActorProxy(payToPublishId);
+            var payToFeatureId = _defaultIds["paytofeature_default"];
+            var actor = GetActorProxy(payToFeatureId);
+
+
             var planIds = await actor.GetAllPlansAsync(cancellationToken);
-            var plans = new List<PayToPublishDto>();
+            var plans = new List<PayToFeatureDto>();
 
             foreach (var planId in planIds)
             {
@@ -77,8 +84,10 @@ namespace QLN.Backend.API.Service.PayToPublishService
                     plans.Add(planData);
                 }
             }
+
+
             var basicPriceIds = await actor.GetAllBasicPriceIdsAsync(cancellationToken);
-            var basicPrices = new List<BasicPriceDto>();
+            var basicPrices = new List<PayToFeatureBasicPriceDto>();
 
             foreach (var basicPriceId in basicPriceIds)
             {
@@ -90,20 +99,19 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 }
             }
 
-            return new PayToPublishDataDto
+            return new PayToFeatureDataDto
             {
-                Id = payToPublishId,
+                Id = payToFeatureId,
                 LastUpdated = DateTime.UtcNow,
                 Plans = plans,
                 BasicPrices = basicPrices
             };
         }
-
-        public async Task CreateBasicPriceAsync(BasicPriceRequestDto request, CancellationToken cancellationToken = default)
+        public async Task CreateBasicPriceAsync(PayToFeatureBasicPriceRequestDto request, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var basicPrice = new BasicPriceDto
+            var basicPrice = new PayToFeatureBasicPriceDto
             {
                 Id = Guid.NewGuid(),
                 VerticalTypeId = request.VerticalTypeId,
@@ -111,20 +119,24 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 BasicPriceId = request.BasicPriceId,
                 LastUpdated = DateTime.UtcNow
             };
+
+
             var basicPriceActor = GetActorProxy(basicPrice.Id);
             await basicPriceActor.SetDatasAsync(basicPrice, cancellationToken);
-            var masterActor = GetActorProxy(_defaultIds["paytopublish_default"]);
+
+            
+            var masterActor = GetActorProxy(_defaultIds["paytofeature_default"]);
             await masterActor.AddBasicPriceIdAsync(basicPrice.Id, cancellationToken);
 
             _logger.LogInformation("Created basic price with ID: {BasicPriceId}, Vertical: {Vertical}, Category: {Category}",
                 basicPrice.Id, basicPrice.VerticalTypeId, basicPrice.CategoryId);
         }
 
-        public async Task CreatePlanAsync(PayToPublishRequestDto request, CancellationToken cancellationToken = default)
+        public async Task CreatePlanAsync(PayToFeatureRequestDto request, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var plan = new PayToPublishDto
+            var plan = new PayToFeatureDto
             {
                 Id = Guid.NewGuid(),
                 PlanName = request.PlanName,
@@ -136,23 +148,27 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 VerticalTypeId = request.VerticalTypeId,
                 CategoryId = request.CategoryId,
                 StatusId = request.StatusId,
-                IsFreeAd = request.IsFreeAd,
                 LastUpdated = DateTime.UtcNow
             };
+
+            
             var planActor = GetActorProxy(plan.Id);
             await planActor.SetDataAsync(plan, cancellationToken);
-            var masterActor = GetActorProxy(_defaultIds["paytopublish_default"]);
+
+           
+            var masterActor = GetActorProxy(_defaultIds["paytofeature_default"]);
             await masterActor.AddPlanIdAsync(plan.Id, cancellationToken);
-            _logger.LogInformation("PayToPublish plan created with ID: {PlanId}, Vertical: {Vertical}, Category: {Category}",
+
+            _logger.LogInformation("PayToFeature plan created with ID: {PlanId}, Vertical: {Vertical}, Category: {Category}",
                 plan.Id, plan.VerticalTypeId, plan.CategoryId);
         }
 
-        public async Task<List<PayToPublishWithBasicPriceResponseDto>> GetPlansByVerticalAndCategoryWithBasicPriceAsync(
+        public async Task<List<PayToFeatureWithBasicPriceResponseDto>> GetPlansByVerticalAndCategoryWithBasicPriceAsync(
             int verticalTypeId,
             int categoryId,
             CancellationToken cancellationToken = default)
         {
-            var resultList = new List<PayToPublishWithBasicPriceResponseDto>();
+            var resultList = new List<PayToFeatureWithBasicPriceResponseDto>();
 
             if (!Enum.IsDefined(typeof(Vertical), verticalTypeId))
             {
@@ -169,7 +185,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
             var verticalEnum = (Vertical)verticalTypeId;
             var categoryEnum = (SubscriptionCategory)categoryId;
 
-            var data = await GetPayToPublishDataAsync(cancellationToken);
+            var data = await GetPayToFeatureDataAsync(cancellationToken);
 
             _logger.LogInformation("Searching for plans with Vertical: {Vertical} ({VerticalId}), Category: {Category} ({CategoryId}). Total plans: {TotalPlans}",
                 verticalEnum, verticalTypeId, categoryEnum, categoryId, data.Plans?.Count ?? 0);
@@ -180,22 +196,21 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 return resultList;
             }
             var basicPriceLookup = data.BasicPrices?
-                .GroupBy(bp => $"{(int)bp.VerticalTypeId}_{(int)bp.CategoryId}")
-                .ToDictionary(g => g.Key, g => g.First()) ??
-                new Dictionary<string, BasicPriceDto>();
-
+            .GroupBy(bp => $"{(int)bp.VerticalTypeId}_{(int)bp.CategoryId}")
+            .ToDictionary(g => g.Key, g => g.First()) ??
+            new Dictionary<string, PayToFeatureBasicPriceDto>();
             var filteredPlans = data.Plans
-                .Where(plan => plan.VerticalTypeId == verticalEnum &&
-                              plan.CategoryId == categoryEnum &&
-                              plan.StatusId != Status.Expired)
-                .ToList();
+             .Where(plan => plan.VerticalTypeId == verticalEnum &&
+                           plan.CategoryId == categoryEnum &&
+                           plan.StatusId != Status.Expired)
+             .ToList();
 
             foreach (var plan in filteredPlans)
             {
                 var lookupKey = $"{(int)plan.VerticalTypeId}_{(int)plan.CategoryId}";
                 basicPriceLookup.TryGetValue(lookupKey, out var matchingBasicPrice);
 
-                resultList.Add(new PayToPublishWithBasicPriceResponseDto
+                resultList.Add(new PayToFeatureWithBasicPriceResponseDto
                 {
                     Id = plan.Id,
                     PlanName = plan.PlanName,
@@ -204,7 +219,6 @@ namespace QLN.Backend.API.Service.PayToPublishService
                     Description = plan.Description,
                     DurationId = (int)plan.Duration,
                     DurationName = GetEnumDisplayName(plan.Duration),
-                    IsFreeAd = plan.IsFreeAd,
                     VerticalId = (int)plan.VerticalTypeId,
                     VerticalName = GetEnumDisplayName(plan.VerticalTypeId),
                     CategoryId = (int)plan.CategoryId,
@@ -237,27 +251,30 @@ namespace QLN.Backend.API.Service.PayToPublishService
             }
         }
 
-        public async Task<List<PayToPublishWithBasicPriceResponseDto>> GetAllPlansWithBasicPriceAsync(CancellationToken cancellationToken = default)
+        public async Task<List<PayToFeatureWithBasicPriceResponseDto>> GetAllPlansWithBasicPriceAsync(CancellationToken cancellationToken = default)
         {
-            var data = await GetPayToPublishDataAsync(cancellationToken);
-            var plans = new List<PayToPublishWithBasicPriceResponseDto>();
+            var data = await GetPayToFeatureDataAsync(cancellationToken);
+            var plans = new List<PayToFeatureWithBasicPriceResponseDto>();
 
             if (data.Plans == null || !data.Plans.Any())
             {
                 _logger.LogInformation("No plans found");
                 return plans;
             }
+
+            // Create basic price lookup
             var basicPriceLookup = data.BasicPrices?
-                .GroupBy(bp => $"{(int)bp.VerticalTypeId}_{(int)bp.CategoryId}")
-                .ToDictionary(g => g.Key, g => g.First()) ??
-                new Dictionary<string, BasicPriceDto>();
+            .GroupBy(bp => $"{(int)bp.VerticalTypeId}_{(int)bp.CategoryId}")
+            .ToDictionary(g => g.Key, g => g.First()) ??
+            new Dictionary<string, PayToFeatureBasicPriceDto>();
 
             foreach (var plan in data.Plans.Where(p => p.StatusId != Status.Expired))
             {
+               
                 var lookupKey = $"{(int)plan.VerticalTypeId}_{(int)plan.CategoryId}";
                 basicPriceLookup.TryGetValue(lookupKey, out var matchingBasicPrice);
 
-                plans.Add(new PayToPublishWithBasicPriceResponseDto
+                plans.Add(new PayToFeatureWithBasicPriceResponseDto
                 {
                     Id = plan.Id,
                     PlanName = plan.PlanName,
@@ -266,7 +283,6 @@ namespace QLN.Backend.API.Service.PayToPublishService
                     Description = plan.Description,
                     DurationId = (int)plan.Duration,
                     DurationName = GetEnumDisplayName(plan.Duration),
-                    IsFreeAd = plan.IsFreeAd,
                     VerticalId = (int)plan.VerticalTypeId,
                     VerticalName = GetEnumDisplayName(plan.VerticalTypeId),
                     CategoryId = (int)plan.CategoryId,
@@ -280,7 +296,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
             return plans;
         }
 
-        public async Task<bool> UpdatePlanAsync(Guid id, PayToPublishRequestDto request, CancellationToken cancellationToken = default)
+        public async Task<bool> UpdatePlanAsync(Guid id, PayToFeatureRequestDto request, CancellationToken cancellationToken = default)
         {
             var planActor = GetActorProxy(id);
             var existingPlan = await planActor.GetDataAsync(cancellationToken);
@@ -299,7 +315,6 @@ namespace QLN.Backend.API.Service.PayToPublishService
             existingPlan.VerticalTypeId = request.VerticalTypeId;
             existingPlan.CategoryId = request.CategoryId;
             existingPlan.StatusId = request.StatusId;
-            existingPlan.IsFreeAd = request.IsFreeAd;
             existingPlan.LastUpdated = DateTime.UtcNow;
 
             await planActor.SetDataAsync(existingPlan, cancellationToken);
@@ -321,23 +336,20 @@ namespace QLN.Backend.API.Service.PayToPublishService
             return true;
         }
 
-        public async Task<Guid> CreatePaymentsAsync(PaymentRequestDto request, Guid userId, CancellationToken cancellationToken = default)
+        public async Task<Guid> CreatePaymentsAsync(PayToFeaturePaymentRequestDto request, Guid userId, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
-
-            var planActor = GetActorProxy(request.PayToPublishId);
-            var payToPublishPlan = await planActor.GetDataAsync(cancellationToken);
-            if (payToPublishPlan == null)
-                throw new Exception($"PayToPublish plan not found for ID: {request.PayToPublishId}");
-
+            var planActor = GetActorProxy(request.PayToFeatureId);
+            var payToFeaturePlan = await planActor.GetDataAsync(cancellationToken);
+            if (payToFeaturePlan == null)
+             throw new Exception($"PayToFeature plan not found for ID: {request.PayToFeatureId}");
             var id = Guid.NewGuid();
             var startDate = DateTime.UtcNow;
-            var endDate = GetEndDateByDurationEnum(startDate, payToPublishPlan.Duration);
-
-            var dto = new PaymentDto
+            var endDate = GetEndDateByDurationEnum(startDate, payToFeaturePlan.Duration);
+            var dto = new PayToFeaturePaymentDto
             {
                 Id = id,
-                PayToPublishId = request.PayToPublishId,
+                PayToFeatureId = request.PayToFeatureId,
                 VerticalId = request.VerticalId,
                 CategoryId = request.CategoryId,
                 CardNumber = request.CardDetails.CardNumber,
@@ -350,7 +362,6 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 LastUpdated = DateTime.UtcNow,
                 IsExpired = false
             };
-
             var actor = GetPaymentActorProxy(dto.Id);
             var result = await actor.FastSetDataAsync(dto, cancellationToken);
 
@@ -384,18 +395,17 @@ namespace QLN.Backend.API.Service.PayToPublishService
 
             return ActorProxy.Create<IPaymentActor>(
                 new ActorId(id.ToString()),
-                "PayToPublishPaymentActor");
+                "PayToFeaturePaymentActor");
         }
 
-        public async Task<PaymentDto?> GetPaymentAsync(Guid paymentId, CancellationToken cancellationToken = default)
+        public async Task<PayToFeaturePaymentDto?> GetPaymentAsync(Guid paymentId, CancellationToken cancellationToken = default)
         {
             var actor = GetPaymentActorProxy(paymentId);
             return await actor.GetDataAsync(cancellationToken);
         }
-
-        public async Task<List<PaymentDto>> GetActivePaymentsForUserAsync(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<List<PayToFeaturePaymentDto>> GetActivePaymentsForUserAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            var activePayments = new List<PaymentDto>();
+            var activePayments = new List<PayToFeaturePaymentDto>();
             var masterActor = GetMasterActorProxy();
             var paymentIds = await masterActor.GetAllPaymentIdsAsync(cancellationToken);
 
@@ -423,9 +433,9 @@ namespace QLN.Backend.API.Service.PayToPublishService
             return activePayments;
         }
 
-        public async Task<List<PaymentDto>> GetExpiredPaymentsForUserAsync(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<List<PayToFeaturePaymentDto>> GetExpiredPaymentsForUserAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            var expiredPayments = new List<PaymentDto>();
+            var expiredPayments = new List<PayToFeaturePaymentDto>();
             var masterActor = GetMasterActorProxy();
             var paymentIds = await masterActor.GetAllPaymentIdsAsync(cancellationToken);
 
@@ -452,7 +462,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
             return expiredPayments;
         }
 
-        public async Task<bool> HandlePaytopyblishExpiryAsync(Guid userId, Guid paymentId, CancellationToken cancellationToken = default)
+        public async Task<bool> HandlePaytoFeatureExpiryAsync(Guid userId, Guid paymentId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -467,9 +477,9 @@ namespace QLN.Backend.API.Service.PayToPublishService
             }
         }
 
-        public async Task<List<PaymentDto>> GetPaymentsByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<List<PayToFeaturePaymentDto>> GetPaymentsByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            var userPayments = new List<PaymentDto>();
+            var userPayments = new List<PayToFeaturePaymentDto>();
             var masterActor = GetMasterActorProxy();
             var paymentIds = await masterActor.GetAllPaymentIdsAsync(cancellationToken);
 
@@ -494,7 +504,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
             return userPayments.OrderByDescending(p => p.LastUpdated).ToList();
         }
 
-        public async Task<bool> HandlePaytopyblishExpiryAsync(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<bool> HandlePaytoFeatureExpiryAsync(Guid userId, CancellationToken cancellationToken = default)
         {
             try
             {

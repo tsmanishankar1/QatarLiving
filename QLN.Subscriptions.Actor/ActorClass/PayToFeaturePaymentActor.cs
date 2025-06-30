@@ -1,27 +1,26 @@
 ﻿using Dapr.Actors.Runtime;
 using QLN.Common.DTO_s;
-using QLN.Common.Infrastructure.IService.IPayToPublishService;
-using QLN.Common.Infrastructure.Subscriptions;
+using QLN.Common.Infrastructure.IService.IPayToFeatureService;
 
 namespace QLN.Subscriptions.Actor.ActorClass
 {
-    public class PayToPublishPaymentActor : Dapr.Actors.Runtime.Actor, IPaymentActor
+    public class PayToFeaturePaymentActor : Dapr.Actors.Runtime.Actor, IPaymentActor
     {
-        private const string StateKey = "paytopublish-payment-data";
+        private const string StateKey = "paytofeature-payment-data";
         private const string BackupStateKey = "transaction-data";
         private const string PaymentIdsStateKey = "payment-ids-collection";
-        private const string DailyTimerName = "paytopublish-daily-timer";
-        private const string SpecificTimerName = "paytopublish-specific-timer";
-        private readonly ILogger<PayToPublishPaymentActor> _logger;
+        private const string DailyTimerName = "paytofeature-daily-timer";
+        private const string SpecificTimerName = "paytofeature-specific-timer";
+        private readonly ILogger<PayToFeaturePaymentActor> _logger;
         private static readonly TimeSpan DailyCheckTime = new TimeSpan(00, 00, 0);
         private static readonly string TimeZoneId = "India Standard Time";
 
-        public PayToPublishPaymentActor(ActorHost host, ILogger<PayToPublishPaymentActor> logger) : base(host)
+        public PayToFeaturePaymentActor(ActorHost host, ILogger<PayToFeaturePaymentActor> logger) : base(host)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<bool> SetDataAsync(PaymentDto data, CancellationToken cancellationToken = default)
+        public async Task<bool> SetDataAsync(PayToFeaturePaymentDto data, CancellationToken cancellationToken = default)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
 
@@ -29,21 +28,23 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
-                
+               
                 if (data.IsExpired == null)
                 {
                     data.IsExpired = false;
                 }
                 data.LastUpdated = DateTime.UtcNow;
 
-                
+               
                 await StoreInPrimaryStateAsync(data, cancellationToken);
+                await StoreInBackupStateAsync(data, cancellationToken);
                 if (!data.IsExpired && data.EndDate > DateTime.UtcNow)
                 {
                     await ScheduleExpiryChecksAsync(data);
                 }
                 else if (data.IsExpired)
                 {
+
                     await CleanupTimersAsync();
                 }
 
@@ -56,25 +57,29 @@ namespace QLN.Subscriptions.Actor.ActorClass
             }
         }
 
-        public async Task<bool> FastSetDataAsync(PaymentDto data, CancellationToken cancellationToken = default)
+        public async Task<bool> FastSetDataAsync(PayToFeaturePaymentDto data, CancellationToken cancellationToken = default)
         {
             return await SetDataAsync(data, cancellationToken);
         }
 
-        public async Task<PaymentDto?> GetDataAsync(CancellationToken cancellationToken = default)
+        public async Task<PayToFeaturePaymentDto?> GetDataAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("[PaymentActor {ActorId}] GetDataAsync called", Id);
 
             try
             {
+                
                 var primaryStateValue = await GetFromPrimaryStateAsync(cancellationToken);
                 if (primaryStateValue != null)
                 {
                     return primaryStateValue;
                 }
+
+               
                 var backupStateValue = await GetFromBackupStateAsync(cancellationToken);
                 if (backupStateValue != null)
                 {
+                    
                     await StoreInPrimaryStateAsync(backupStateValue, cancellationToken);
                     return backupStateValue;
                 }
@@ -87,6 +92,8 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 throw;
             }
         }
+
+
         public async Task<bool> AddPaymentIdAsync(Guid paymentId, CancellationToken cancellationToken = default)
         {
             try
@@ -127,7 +134,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             }
         }
 
-        private async Task StoreInPrimaryStateAsync(PaymentDto data, CancellationToken cancellationToken)
+        private async Task StoreInPrimaryStateAsync(PayToFeaturePaymentDto data, CancellationToken cancellationToken)
         {
             try
             {
@@ -142,7 +149,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             }
         }
 
-        private async Task StoreInBackupStateAsync(PaymentDto data, CancellationToken cancellationToken)
+        private async Task StoreInBackupStateAsync(PayToFeaturePaymentDto data, CancellationToken cancellationToken)
         {
             try
             {
@@ -157,11 +164,11 @@ namespace QLN.Subscriptions.Actor.ActorClass
             }
         }
 
-        private async Task<PaymentDto?> GetFromPrimaryStateAsync(CancellationToken cancellationToken)
+        private async Task<PayToFeaturePaymentDto?> GetFromPrimaryStateAsync(CancellationToken cancellationToken)
         {
             try
             {
-                var conditionalValue = await StateManager.TryGetStateAsync<PaymentDto>(StateKey, cancellationToken);
+                var conditionalValue = await StateManager.TryGetStateAsync<PayToFeaturePaymentDto>(StateKey, cancellationToken);
                 if (conditionalValue.HasValue)
                 {
                     _logger.LogInformation("[PaymentActor {ActorId}] Retrieved data from primary state key '{StateKey}'", Id, StateKey);
@@ -176,11 +183,11 @@ namespace QLN.Subscriptions.Actor.ActorClass
             }
         }
 
-        private async Task<PaymentDto?> GetFromBackupStateAsync(CancellationToken cancellationToken)
+        private async Task<PayToFeaturePaymentDto?> GetFromBackupStateAsync(CancellationToken cancellationToken)
         {
             try
             {
-                var conditionalValue = await StateManager.TryGetStateAsync<PaymentDto>(BackupStateKey, cancellationToken);
+                var conditionalValue = await StateManager.TryGetStateAsync<PayToFeaturePaymentDto>(BackupStateKey, cancellationToken);
                 if (conditionalValue.HasValue)
                 {
                     _logger.LogInformation("[PaymentActor {ActorId}] Retrieved data from backup state key '{BackupStateKey}'", Id, BackupStateKey);
@@ -200,9 +207,13 @@ namespace QLN.Subscriptions.Actor.ActorClass
             try
             {
                 _logger.LogInformation("[PaymentActor {ActorId}] DeleteDataAsync called", Id);
+
+                
                 await StateManager.TryRemoveStateAsync(StateKey, cancellationToken);
                 await StateManager.TryRemoveStateAsync(BackupStateKey, cancellationToken);
                 await StateManager.SaveStateAsync(cancellationToken);
+
+                // Clean up timers
                 await CleanupTimersAsync();
 
                 _logger.LogInformation("[PaymentActor {ActorId}] Deleted data from both state keys and cleaned up timers", Id);
@@ -233,7 +244,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     await StoreInPrimaryStateAsync(backupData, cancellationToken);
                     _logger.LogInformation("[PaymentActor {ActorId}] Synced data from backup to primary state key", Id);
                 }
-   
                 else if (primaryData != null && backupData != null)
                 {
                     if (primaryData.LastUpdated > backupData.LastUpdated)
@@ -257,11 +267,10 @@ namespace QLN.Subscriptions.Actor.ActorClass
             }
         }
 
-        private async Task ScheduleExpiryChecksAsync(PaymentDto paymentData)
+        private async Task ScheduleExpiryChecksAsync(PayToFeaturePaymentDto paymentData)
         {
             try
             {
-
                 await CleanupTimersAsync();
                 await ScheduleDailyExpiryCheckAsync();
                 await ScheduleSpecificExpiryCheckIfNeeded(paymentData);
@@ -284,10 +293,10 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             await RegisterTimerAsync(
                 DailyTimerName,
-                nameof(CheckPaytopublishExpiryAsync),
+                nameof(CheckPaytoFeatureExpiryAsync),
                 null,
                 dueTime,
-                TimeSpan.FromDays(1));
+                TimeSpan.FromDays(1)); // Repeat daily
         }
 
         private (DateTime nextCheckTime, TimeSpan dueTime) CalculateNextDailyCheckTime()
@@ -309,7 +318,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             return (nextCheckTime, dueTime);
         }
 
-        public async Task CheckPaytopublishExpiryAsync()
+        public async Task CheckPaytoFeatureExpiryAsync()
         {
             try
             {
@@ -338,7 +347,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     var daysRemaining = (int)(paymentData.EndDate - DateTime.UtcNow).TotalDays;
                     _logger.LogInformation("[PaymentActor {ActorId}] Pay-to-publish still active for user {UserId}. EndDate: {EndDate}, Days remaining: {DaysRemaining}",
                         Id, paymentData.UserId, paymentData.EndDate, daysRemaining);
-
                     await ScheduleSpecificExpiryCheckIfNeeded(paymentData);
                 }
             }
@@ -348,7 +356,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             }
         }
 
-        private async Task HandleSubscriptionExpiryAsync(PaymentDto paymentData)
+        private async Task HandleSubscriptionExpiryAsync(PayToFeaturePaymentDto paymentData)
         {
             _logger.LogInformation("[PaymentActor {ActorId}] Pay-to-publish expired for user {UserId}. EndDate: {EndDate}",
                 Id, paymentData.UserId, paymentData.EndDate);
@@ -363,28 +371,25 @@ namespace QLN.Subscriptions.Actor.ActorClass
             _logger.LogInformation("[PaymentActor {ActorId}] Cleaned up timers for expired pay-to-publish", Id);
         }
 
-        private async Task ScheduleSpecificExpiryCheckIfNeeded(PaymentDto paymentData)
+        private async Task ScheduleSpecificExpiryCheckIfNeeded(PayToFeaturePaymentDto paymentData)
         {
             var timeUntilExpiry = paymentData.EndDate - DateTime.UtcNow;
             var (_, timeUntilNextDailyCheck) = CalculateNextDailyCheckTime();
-
             if (timeUntilExpiry < timeUntilNextDailyCheck && timeUntilExpiry > TimeSpan.Zero)
             {
-  
                 var bufferTime = TimeSpan.FromMinutes(2);
                 var specificDueTime = timeUntilExpiry.Add(bufferTime);
 
                 _logger.LogInformation("[PaymentActor {ActorId}] Scheduling specific expiry check in {TimeUntilExpiry} for user {UserId}",
                     Id, specificDueTime, paymentData.UserId);
-
                 await UnregisterTimerSafelyAsync(SpecificTimerName);
 
                 await RegisterTimerAsync(
                     SpecificTimerName,
-                    nameof(CheckPaytopublishExpiryAsync),
+                    nameof(CheckPaytoFeatureExpiryAsync),
                     null,
                     specificDueTime,
-                    TimeSpan.FromMilliseconds(-1)); 
+                    TimeSpan.FromMilliseconds(-1));
             }
         }
 
@@ -413,6 +418,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
+               
                 await SyncStateKeysAsync();
 
                 var paymentData = await GetDataAsync();
@@ -463,7 +469,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
         public async Task<bool> TriggerExpiryCheckAsync()
         {
             _logger.LogInformation("[PaymentActor {ActorId}] Manual expiry check triggered", Id);
-            await CheckPaytopublishExpiryAsync();
+            await CheckPaytoFeatureExpiryAsync();
             return true;
         }
 
@@ -478,7 +484,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             return (isActive, paymentData.EndDate, daysRemaining);
         }
-
         public async Task<bool> RescheduleExpiryChecksAsync()
         {
             try
