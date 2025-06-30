@@ -36,7 +36,7 @@
             <div class="nav-container">
                     <NavLink id="propertiesLink" href=@{navigationPath.Properties} class="nav-link">Properties</NavLink>
                     <NavLink id="vehiclesLink" href=@{navigationPath.Vehicles} class="nav-link">Vehicles</NavLink>
-                    <NavLink id="classifiedsLink" href="/qln/classifieds" class="nav-link">Classifieds</NavLink>
+                    <NavLink id="classifiedsLink" href=@{navigationPath.Classifieds} class="nav-link">Classifieds</NavLink>
                     <NavLink id="servicesLink" href=@{navigationPath.Services} class="nav-link">Services</NavLink>
                     <NavLink id="jobsLink" href=@{navigationPath.Jobs} class="nav-link">Jobs</NavLink>
                     <NavLink id="rewardsLink" href=@{navigationPath.Rewards} class="nav-link">Rewards</NavLink>
@@ -48,11 +48,11 @@
                         <MudButton id="headerPostButton" Variant="Variant.Filled"
                             Style="background-color: #FF7F38; color: white;" Size="Size.Medium"
                             StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn desktop-post-btn"
-                            @onclick="ToggleProfileMenu">
+                            @onclick="OnPostAdClicked">
                             <span class="post-ad-text">Post Ad</span>
                         </MudButton>
                     </ActivatorContent>
-                      <ChildContent>
+            @*           <ChildContent>
                 @foreach (var item in postMenuItems)
                 {
                   <MudMenuItem  OnClick="@(() => NavManager.NavigateTo(item.Route))" Class="menu-item">
@@ -62,7 +62,7 @@
                 </div>
             </MudMenuItem>
                     }
-                </ChildContent>
+                </ChildContent> *@
                 </MudMenu>
             </div>
         </div>
@@ -385,8 +385,8 @@
 
         // Replace Alias
         ServicesProfileMenu = ReplaceUrlWithAlias(navigationPath.ServicesProfileMenu, Alias);
-        @* ClassifiedsProfileMenuUrl =  ReplaceUrlWithAlias(navigationPath.ClassifiedsProfileMenu, Alias); *@
-        ClassifiedsProfileMenuUrl = "qln/classified/dashboard/items";
+        ClassifiedsProfileMenuUrl =  ReplaceUrlWithAlias(navigationPath.ClassifiedsProfileMenu, Alias);
+        // ClassifiedsProfileMenuUrl = "qln/classified/dashboard/items"; // reverting so we can release
     }
 
     private List<MenuItem> postMenuItems = new List<MenuItem>

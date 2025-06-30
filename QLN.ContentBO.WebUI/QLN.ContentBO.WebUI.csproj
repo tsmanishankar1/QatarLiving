@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MudBlazor" Version="8.8.0" />
+    <PackageReference Include="MudExRichTextEditor" Version="8.5.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Components\Events\" />
+    <Folder Include="Components\Community\" />
+    <Folder Include="Components\Daily\" />
+    <Folder Include="Components\Report\" />
+    <Folder Include="wwwroot\qln-images\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\.dockerignore" Link=".dockerignore">
+      <DependentUpon>$(DockerDefaultDockerfile)</DependentUpon>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\QLN.Common\QLN.Common.csproj" />
+  </ItemGroup>
+
+</Project>

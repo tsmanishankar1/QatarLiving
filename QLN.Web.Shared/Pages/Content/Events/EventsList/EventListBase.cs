@@ -19,7 +19,7 @@ namespace QLN.Web.Shared.Pages.Content.Events.EventsList
 
 protected IEnumerable<ContentEvent> FilteredEventItems => Items; // Apply filtering here if needed
 protected IEnumerable<ContentEvent> PagedFilteredEventItems => FilteredEventItems
-    .Skip((CurrentPage - 1) * PageSize)
+            .Skip((CurrentPage - 1) * PageSize)
     .Take(PageSize);
 protected async void HandlePageChange(int newPage)
 {

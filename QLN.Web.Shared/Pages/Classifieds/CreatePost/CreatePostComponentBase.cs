@@ -160,7 +160,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
 
     protected override void OnInitialized()
     {
-        // AuthorizedPage();
+        AuthorizedPage();
 
         adPostModel ??= new AdPost();
 
