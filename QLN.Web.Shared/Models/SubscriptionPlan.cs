@@ -6,7 +6,7 @@
         public string SubscriptionName { get; set; } = "";
         public decimal Price { get; set; }
         public string Currency { get; set; } = "";
-        public string Duration { get; set; } = "";
+        public string DurationName { get; set; } = "";
         public string Description { get; set; } = "";
 
         public int VerticalId { get; set; }

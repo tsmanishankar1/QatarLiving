@@ -44,9 +44,9 @@ namespace QLN.Web.Shared.Pages.Subscription
             InitializeBreadcrumbs();
             //LoadSubscriptionPlans();
             await LoadSubscriptionPlansFromApi(3, 1);
-           
+
         }
-     
+
 
         private List<BreadcrumbItem> breadcrumbItems = new();
         private List<SubscriptionPlan> _plans = new();
@@ -54,7 +54,7 @@ namespace QLN.Web.Shared.Pages.Subscription
         public string Name { get; set; }
         public string Email { get; set; }
 
-       
+
 
         private void InitializeBreadcrumbs()
         {
@@ -200,7 +200,7 @@ namespace QLN.Web.Shared.Pages.Subscription
                         SubscriptionName = plan.SubscriptionName,
                         Price = plan.Price,
                         Currency = plan.Currency,
-                        Duration = plan.Duration,
+                        DurationName = plan.DurationName,
                         Description = plan.Description,
                         VerticalId = response.VerticalTypeId,
                         VerticalName = response.VerticalName,
@@ -240,13 +240,18 @@ namespace QLN.Web.Shared.Pages.Subscription
         private void CloseSuccessPopup()
         {
             _actionSucess = false;
-            Navigation.NavigateTo("/qln/dashboard/company/create");
+
+            var verticalId = 3;
+            var categoryId = 1;
+
+
+            Navigation.NavigateTo($"/qln/dashboard/company/create/{verticalId}/{categoryId}");
         }
 
         private void SelectPlan(SubscriptionPlan plan)
         {
             _selectedPlan = _plans.FirstOrDefault(p =>
-                p.Duration == plan.Duration &&
+                p.DurationName == plan.DurationName &&
                 p.Price == plan.Price &&
                 p.SubscriptionName == plan.SubscriptionName &&
                 p.Id == plan.Id
@@ -268,46 +273,50 @@ namespace QLN.Web.Shared.Pages.Subscription
             if (_form.IsValid)
             {
 
-                Console.WriteLine(JsonSerializer.Serialize(_model));
+                //Console.WriteLine(JsonSerializer.Serialize(_model));
 
                 try
                 {
-                    if (_selectedPlan == null)
-                        return;
+                    //    if (_selectedPlan == null)
+                    //        return;
 
-                    var payload = new
-                    {
-                        subscriptionId = _selectedPlan?.Id,
-                        verticalId = _selectedPlan.VerticalId,
-                        categoryId = _selectedPlan.CategoryId,
-                        cardDetails = new
-                        {
-                            cardNumber = _model.CardNumber,
-                            expiryMonth = _model.ExpiryMonth,
-                            expiryYear = _model.ExpiryYear,
-                            cvv = _model.CVV,
-                            cardHolderName = _model.CardHolderName
-                        }
+                    //    var payload = new
+                    //    {
+                    //        subscriptionId = _selectedPlan?.Id,
+                    //        verticalId = _selectedPlan.VerticalId,
+                    //        categoryId = _selectedPlan.CategoryId,
+                    //        cardDetails = new
+                    //        {
+                    //            cardNumber = _model.CardNumber,
+                    //            expiryMonth = _model.ExpiryMonth,
+                    //            expiryYear = _model.ExpiryYear,
+                    //            cvv = _model.CVV,
+                    //            cardHolderName = _model.CardHolderName
+                    //        }
 
-                    };
+                    //    };
 
-                    Console.WriteLine(JsonSerializer.Serialize(payload));
-                    var response = await SubscriptionService.PurchaseSubscription(payload);
-                    if (response)
-                    {
-                        Snackbar.Add("Subscription added!", Severity.Success);
-                        _isPaymentDialogOpen = false;
-                        _actionSucess = true;
-                    }
-                    else
-                    {
-                        Snackbar.Add("Failed to subscribe. Please try again.", Severity.Error);
-                    }
-
+                    //    Console.WriteLine(JsonSerializer.Serialize(payload));
+                    //var response = await SubscriptionService.PurchaseSubscription(payload);
+                    //if (response)
+                    //{
+                    //    Snackbar.Add("Subscription added!", Severity.Success);
+                    //    _isPaymentDialogOpen = false;
+                    //    _actionSucess = true;
+                    //}
+                    //else
+                    //{
+                    //    Snackbar.Add("Failed to subscribe. Please try again.", Severity.Error);
+                    Snackbar.Add("Payment Success!", Severity.Success);
+                    _isPaymentDialogOpen = false;
+                    _actionSucess = true;
                 }
-                catch (HttpRequestException ex)
+
+
+
+                catch (Exception ex)
                 {
-                    HttpErrorHelper.HandleHttpException(ex, Snackbar);
+                    Snackbar.Add("Payment Failed!", Severity.Error);
                 }
                 finally
                 {

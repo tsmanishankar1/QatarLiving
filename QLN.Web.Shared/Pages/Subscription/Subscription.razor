@@ -111,7 +111,7 @@
                                 <SubscriptionCard Plan="plan"
                                                   IsSelected="_selectedPlan?.SubscriptionName == plan.SubscriptionName &&
                                               _selectedPlan?.Price == plan.Price &&
-                                              _selectedPlan?.Duration == plan.Duration"
+                                              _selectedPlan?.DurationName == plan.DurationName"
                                                   OnSelect="() => SelectPlan(plan)" />
                                 </div>
 
@@ -140,7 +140,7 @@
                             <div class="d-flex justify-space-between align-center mb-3">
                                 <div class="d-flex flex-column">
                                     <MudText Class="summary-title">@_selectedPlan.SubscriptionName</MudText>
-                                    <MudText Class="summary-duration">@_selectedPlan.Duration</MudText>
+                                    <MudText Class="summary-duration">@_selectedPlan.DurationName</MudText>
                                 </div>
                                 <MudText Class="summary-price">@_selectedPlan.Price QAR</MudText>
                             </div>
