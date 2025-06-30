@@ -110,6 +110,31 @@ namespace QLN.Web.Shared.Services
             }
 
         }
+        public async Task<List<PayToPublishPlan>?> GetPayToPublishPlansAsync(int verticalId, int categoryId)
+        {
+            try
+            {
+                var url = $"api/paytopublish/getpaytopublish?verticalTypeId={verticalId}&categoryId={categoryId}";
+                var response = await _httpClient.GetAsync(url);
+
+                if (!response.IsSuccessStatusCode)
+                    return null;
+
+                var result = await response.Content.ReadFromJsonAsync<List<PayToPublishPlan>>();
+                return result;
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"[PayToPublish] HTTP error: {ex.Message}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[PayToPublish] Unexpected error: {ex.Message}");
+                return null;
+            }
+        }
+
     }
 
 }

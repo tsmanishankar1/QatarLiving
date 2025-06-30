@@ -310,7 +310,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
         protected void onRemove(string adId)
         {
-            throw new NotImplementedException("Remove functionality is not implemented yet.");
+            Snackbar.Add("Remove functionality is not implemented yet.", Severity.Warning);
         }
         protected void SetTab(int index)
         {

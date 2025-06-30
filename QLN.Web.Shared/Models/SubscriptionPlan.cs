@@ -13,11 +13,26 @@
         public string VerticalName { get; set; } = "";
         public int CategoryId { get; set; }
         public string CategoryName { get; set; } = "";
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(SubscriptionName, Price, Duration);
-        }
+      
     }
+    public class PayToPublishPlan
+    {
+        public string Id { get; set; } = "";
+        public string PlanName { get; set; } = "";
+        public decimal Price { get; set; }
+        public string Currency { get; set; } = "";
+        public string Description { get; set; } = "";
+        public int DurationId { get; set; }
+        public string DurationName { get; set; } = "";
+        public bool IsFreeAd { get; set; }
+        public int VerticalId { get; set; }
+        public string VerticalName { get; set; } = "";
+        public int CategoryId { get; set; }
+        public string CategoryName { get; set; } = "";
+        public string? BasicPriceId { get; set; }
+        public string? BasicPriceName { get; set; }
+    }
+
 
 
     public class SubscriptionPaymentRequest
