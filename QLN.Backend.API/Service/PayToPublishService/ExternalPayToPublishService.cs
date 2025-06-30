@@ -130,7 +130,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 PlanName = request.PlanName,
                 TotalCount = request.TotalCount,
                 Description = request.Description,
-                Duration = request.DurationId,
+                Duration = request.Duration,
                 Price = request.Price,
                 Currency = request.Currency,
                 VerticalTypeId = request.VerticalTypeId,
@@ -202,8 +202,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
                     Price = plan.Price,
                     Currency = plan.Currency,
                     Description = plan.Description,
-                    DurationId = (int)plan.Duration,
-                    DurationName = GetEnumDisplayName(plan.Duration),
+                    DurationName = FormatDuration(plan.Duration),
                     IsFreeAd = plan.IsFreeAd,
                     VerticalId = (int)plan.VerticalTypeId,
                     VerticalName = GetEnumDisplayName(plan.VerticalTypeId),
@@ -219,6 +218,22 @@ namespace QLN.Backend.API.Service.PayToPublishService
             _logger.LogInformation("Found {Count} plans matching criteria out of {TotalPlans} total plans",
                 resultList.Count, data.Plans.Count);
             return resultList;
+        }
+        private static string FormatDuration(TimeSpan duration)
+        {
+            if (duration.TotalDays >= 365)
+                return $"{(int)(duration.TotalDays / 365)} Year{(duration.TotalDays >= 730 ? "s" : "")}";
+
+            if (duration.TotalDays >= 30)
+                return $"{(int)(duration.TotalDays / 30)} Month{(duration.TotalDays >= 60 ? "s" : "")}";
+
+            if (duration.TotalDays >= 1)
+                return $"{(int)duration.TotalDays} Day{(duration.TotalDays > 1 ? "s" : "")}";
+
+            if (duration.TotalHours >= 1)
+                return $"{(int)duration.TotalHours} Hour{(duration.TotalHours > 1 ? "s" : "")}";
+
+            return $"{(int)duration.TotalMinutes} Minute{(duration.TotalMinutes > 1 ? "s" : "")}";
         }
 
         private string GetEnumDisplayName<T>(T enumValue) where T : Enum
@@ -264,8 +279,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
                     Price = plan.Price,
                     Currency = plan.Currency,
                     Description = plan.Description,
-                    DurationId = (int)plan.Duration,
-                    DurationName = GetEnumDisplayName(plan.Duration),
+                    DurationName = FormatDuration(plan.Duration),
                     IsFreeAd = plan.IsFreeAd,
                     VerticalId = (int)plan.VerticalTypeId,
                     VerticalName = GetEnumDisplayName(plan.VerticalTypeId),
@@ -292,7 +306,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
 
             existingPlan.PlanName = request.PlanName;
             existingPlan.Description = request.Description;
-            existingPlan.Duration = request.DurationId;
+            existingPlan.Duration = request.Duration;
             existingPlan.Price = request.Price;
             existingPlan.TotalCount = request.TotalCount;
             existingPlan.Currency = request.Currency;
@@ -332,7 +346,9 @@ namespace QLN.Backend.API.Service.PayToPublishService
 
             var id = Guid.NewGuid();
             var startDate = DateTime.UtcNow;
-            var endDate = GetEndDateByDurationEnum(startDate, payToPublishPlan.Duration);
+
+            // ✅ Duration is TimeSpan, add directly
+            var endDate = startDate.Add(payToPublishPlan.Duration);
 
             var dto = new PaymentDto
             {
@@ -364,6 +380,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
 
             throw new Exception("Payment transaction creation failed.");
         }
+
 
         private DateTime GetEndDateByDurationEnum(DateTime startDate, DurationType duration)
         {
