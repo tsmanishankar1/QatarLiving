@@ -7,7 +7,6 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Dapr;
 using Dapr.Client;
-using Google.Api;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -414,13 +413,6 @@ namespace QLN.Classified.MS.Service
                 _logger.LogCritical(ex, "Unhandled error occurred during ad creation.");
                 throw new InvalidOperationException("An unexpected error occurred while creating the Items ad. Please try again later.", ex);
             }
-        }
-        public async Task<ClassifiedItems> GetClassifiedItemById(Guid adId)
-        {
-            var key = $"ad-{adId}";
-            var adItem = await _dapr.GetStateAsync<ClassifiedItems>(UnifiedStore, key);
-
-            return adItem;
         }
         public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, Guid adId, CancellationToken cancellationToken)
         {
