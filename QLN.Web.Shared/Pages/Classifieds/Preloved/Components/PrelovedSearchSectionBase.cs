@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using QLN.Web.Shared.Components.ViewToggleButtons;
 using MudBlazor;
 using QLN.Common.DTO_s;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Components.Routing;
 namespace QLN.Web.Shared.Pages.Classifieds.Preloved.Components;
@@ -9,8 +10,6 @@ public class PrelovedSearchSectionBase : ComponentBase
 {
     [Inject] protected SearchStateService SearchState { get; set; }
     protected bool ShowSaveSearchPopup { get; set; } = false;
-
-    protected List<CategoryTreeDto> CategoryTrees => SearchState.PrelovedCategoryTrees;
 
     [Parameter] public EventCallback<string> OnSearch { get; set; }
 
@@ -24,20 +23,64 @@ public class PrelovedSearchSectionBase : ComponentBase
         new() { ImageUrl = "/qln-images/list_icon.svg", Label = "List", Value = "list" },
         new() { ImageUrl = "/qln-images/grid_icon.svg", Label = "Grid", Value = "grid" }
     };
+    protected List<CategoryTreeDto> CategoryTrees => SearchState.PrelovedCategoryTrees;
+    protected CategoryTreeDto SelectedCategory =>
+        CategoryTrees.FirstOrDefault(x => x.Id.ToString() == SearchState.PrelovedCategory)
+        ?? new CategoryTreeDto { Children = new List<CategoryTreeDto>(), Fields = new List<CategoryField>() };
 
-    protected List<BrandItem> _brands = new()
+        protected CategoryTreeDto SelectedSubCategory =>
+            SelectedCategory.Children?.FirstOrDefault(x => x.Id.ToString() == SearchState.PrelovedSubCategory)
+            ?? new CategoryTreeDto { Children = new List<CategoryTreeDto>(), Fields = new List<CategoryField>() };
+
+        protected CategoryTreeDto SelectedSubSubCategory =>
+            SelectedSubCategory.Children?.FirstOrDefault(x => x.Id.ToString() == SearchState.PrelovedSubSubCategory)
+            ?? new CategoryTreeDto { Children = new List<CategoryTreeDto>(), Fields = new List<CategoryField>() };
+
+        protected List<CategoryField> SelectedFields
     {
-        new() { Id="google", Label="Google" },
-        new() { Id="apple", Label="Apple" },
-        new() { Id="sony", Label="Sony" }
-    };
-
-        protected Task HandleSaveSearch()
+        get
         {
-            // Implement actual save logic here — call backend or store locally
-            ShowSaveSearchPopup = false;
-            return Task.CompletedTask;
+            if (SelectedSubSubCategory?.Fields?.Any() == true)
+                return SelectedSubSubCategory.Fields;
+
+            if (SelectedSubCategory?.Fields?.Any() == true)
+                return SelectedSubCategory.Fields;
+
+            if (SelectedCategory?.Fields?.Any() == true)
+                return SelectedCategory.Fields;
+
+            return new();
         }
+    }
+
+    protected CategoryField? brandField;
+    protected bool isBrandFieldAvailable;
+
+     protected override void OnParametersSet()
+    {
+
+        if (SelectedFields is not null)
+        {
+            brandField = SelectedFields.FirstOrDefault(f =>
+            f.Name?.Trim().Equals("Brand", StringComparison.OrdinalIgnoreCase) == true &&
+            f.Type?.Trim().ToLower() == "dropdown");
+
+            isBrandFieldAvailable = brandField?.Options?.Any() == true;
+
+
+        }
+        else
+        {
+            brandField = null;
+            isBrandFieldAvailable = false;
+        }
+    }
+            protected Task HandleSaveSearch()
+    {
+        // Implement actual save logic here — call backend or store locally
+        ShowSaveSearchPopup = false;
+        return Task.CompletedTask;
+    }
 
         protected Task CloseSaveSearchPopup()
         {
@@ -54,7 +97,7 @@ public class PrelovedSearchSectionBase : ComponentBase
     {
        var path = new Uri(args.Location).AbsolutePath.ToLowerInvariant();
 
-    // Keep state if we're still under /qln/classifieds/items or its subpaths
+    // Keep state if we're still under /qln/classifieds/preloved or its subpaths
     if (!path.StartsWith("/qln/classifieds/preloved"))
         {
             SearchState.PrelovedSearchText = null;
@@ -63,7 +106,10 @@ public class PrelovedSearchSectionBase : ComponentBase
             SearchState.PrelovedMinPrice = null;
             SearchState.PrelovedMaxPrice = null;
             SearchState.PrelovedViewMode ??= "grid";
-
+            SearchState.PrelovedSubCategory = null;
+            SearchState.PrelovedSubSubCategory = null;
+            SearchState.PrelovedFilters.Clear();
+            SearchState.PrelovedHasWarrantyCertificate = false;
             StateHasChanged();
         }
     }
@@ -90,6 +136,31 @@ public class PrelovedSearchSectionBase : ComponentBase
             await OnSearch.InvokeAsync(string.Empty); // pass empty string as the search text
         }
     }
+   protected async Task OnCategorySelected(string categoryId)
+{
+    SearchState.PrelovedCategory = categoryId;
+    SearchState.PrelovedSubCategory = null;
+    SearchState.PrelovedSubSubCategory = null;
+    SearchState.PrelovedBrand = null;
+     StateHasChanged();
+    await PerformSearch();
+}
+protected async Task OnSubCategorySelected(string subId)
+{
+    SearchState.PrelovedSubCategory = subId;
+    SearchState.PrelovedSubSubCategory = null;
+    SearchState.PrelovedBrand = null;
+     StateHasChanged();
+    await PerformSearch();
+}
+
+protected async Task OnSubSubCategorySelected(string subSubId)
+{
+    SearchState.PrelovedSubSubCategory = subSubId;
+    SearchState.PrelovedBrand = null;
+     StateHasChanged();
+    await PerformSearch();
+}
 
     protected void SetViewMode(string mode)
     {

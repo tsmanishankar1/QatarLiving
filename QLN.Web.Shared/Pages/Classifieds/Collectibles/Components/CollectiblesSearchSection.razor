@@ -5,7 +5,7 @@
 @using QLN.Web.Shared.Components.SaveSearchPopup
 @using QLN.Web.Shared.Components.CustomSelectCategory
 @using QLN.Web.Shared.Components.PriceRangeSelect
-@using QLN.Web.Shared.Pages.Classifieds.Items.Components
+@using QLN.Web.Shared.Pages.Classifieds.Collectibles.Components
 @using QLN.Web.Shared.Helpers
 @using QLN.Common.DTO_s;
 
@@ -51,13 +51,26 @@
                 <CustomSelectCategory TItem="CategoryTreeDto"
                     Items="@CategoryTrees"
                     SelectedId="@SearchState.CollectiblesCategory"
-                    SelectedIdChanged="v => OnFilterChanged(nameof(SearchState.CollectiblesCategory), v)"
-                    GetId="x => x.Name"
+                    SelectedIdChanged="v => OnCategorySelected(v)"
+                    GetId="x => x.Id.ToString()"
                     GetLabel="x => x.Name"
                     Placeholder="Category"
                     BorderRadius="4px"
                     Padding="13px 10px" />
             </div>
+
+        <CustomSelectCategory TItem="CategoryTreeDto"
+            Items="@SelectedCategory.Children"
+            SelectedId="@SearchState.CollectiblesSubCategory"
+            SelectedIdChanged="v => OnSubCategorySelected(v)"
+            GetId="x => x.Id.ToString()"
+            GetLabel="x => x.Name"
+            BorderRadius="4px"
+            IsDisabled="@(!(SelectedCategory?.Children?.Any() ?? false))" 
+            Padding="13px 10px" 
+            Placeholder="Subcategory" />
+
+
             }
         </div>
 
@@ -66,18 +79,17 @@
             <!-- SECOND ROW: Brand + Price + More + Save Search -->
             <div class="second-row">
                 <!-- Brand -->
-                <div class="brand-select">
-                    <CustomSelectCategory TItem="BrandItem"
-                        Items="@_brands"
-                         SelectedId="@SearchState.CollectiblesCondition"
-                         SelectedIdChanged="v => OnFilterChanged(nameof(SearchState.CollectiblesCondition), v)"
-                        GetId="x => x.Id"
-                        GetLabel="x => x.Label"
-                        Placeholder="Condition"
-                        Padding="13px 10px"
-                        BorderRadius="4px"
-                        />
-                    
+                <div class="brand-select">              
+                <CustomSelectCategory TItem="CategoryTreeDto"
+                    Items="@SelectedSubCategory.Children"
+                    SelectedId="@SearchState.CollectiblesSubSubCategory"
+                    SelectedIdChanged="v => OnSubSubCategorySelected(v)"
+                    GetId="x => x.Id.ToString()"
+                    GetLabel="x => x.Name"
+                    BorderRadius="4px"
+                    Padding="13px 10px" 
+                    IsDisabled="@(!(SelectedSubCategory?.Children?.Any() ?? false))"
+                    Placeholder="Sub subcategory" />
                 </div>
 
                 <!-- Price -->
@@ -92,8 +104,8 @@
                 </div>
 
                 <!-- More -->
-                <div class="price-short-select">
-                        <MoreFiltersList  />
+                <div class="more-short-select">
+                        <MoreFiltersList SelectedFields="SelectedFields" OnFiltersChanged="PerformSearch" />
                 </div>
 
                 <!-- Save Search -->
@@ -166,7 +178,7 @@
         outline: none;
         font-size: 14px;
         padding: 6px 0;
-        width: 270px;
+        width: 170px;
     }
 
     .search-icon-left {
@@ -235,7 +247,11 @@
         }
         .price-short-select {
              width: 100%;
-             max-width: 110px;
+             max-width: 100px;
+         }
+         .more-short-select{
+             width: 100%;
+             max-width: 50px;
          }
 
         .save-search {

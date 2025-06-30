@@ -119,7 +119,7 @@ private Dictionary<string, Dictionary<string, bool>> ConfirmedOptions = new();
         foreach (var option in field.Options)
         {
             // If already saved in SearchState, restore the checked state
-            bool isChecked = SearchState.ItemFieldFilters.TryGetValue(field.Name, out var selectedList)
+            bool isChecked = SearchState.CollectiblesFilters.TryGetValue(field.Name, out var selectedList)
                              && selectedList.Contains(option);
 
             SelectedOptions[field.Name][option] = isChecked;
@@ -155,7 +155,7 @@ private Dictionary<string, Dictionary<string, bool>> ConfirmedOptions = new();
             kv => kv.Value.ToDictionary(e => e.Key, e => e.Value)
         );
 
-    SearchState.ItemFieldFilters = selectedFilterMap;
+    SearchState.CollectiblesFilters = selectedFilterMap;
    SearchState.ItemHasWarrantyCertificate = HasWarrantyCertificate;
     await OnFiltersChanged.InvokeAsync();
 }
@@ -170,16 +170,15 @@ private Dictionary<string, Dictionary<string, bool>> ConfirmedOptions = new();
         }
     }
 
-            SearchState.ItemFieldFilters.Clear();
-            SearchState.ItemSearchText = null;
-            SearchState.ItemCategory = null;
-            SearchState.ItemBrand = null;
-            SearchState.ItemMinPrice = null;
-            SearchState.ItemMaxPrice = null;
-            SearchState.ItemViewMode ??= "grid";
-            SearchState.ItemSubCategory = null;
-            SearchState.ItemSubSubCategory = null;
-            SearchState.ItemHasWarrantyCertificate = false;
+            SearchState.CollectiblesFilters.Clear();
+            SearchState.CollectiblesSearchText = null;
+            SearchState.CollectiblesCategory = null;
+            SearchState.CollectiblesMinPrice = null;
+            SearchState.CollectiblesMaxPrice = null;
+            SearchState.CollectiblesViewMode ??= "grid";
+            SearchState.CollectiblesSubCategory = null;
+            SearchState.CollectiblesSubSubCategory = null;
+            SearchState.CollectiblesHasAuthenticityCertificate = false;
 
     Console.WriteLine("Filters reset.");
     await OnFiltersChanged.InvokeAsync();

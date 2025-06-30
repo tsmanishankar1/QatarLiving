@@ -89,12 +89,26 @@ public class PrelovedComponentBase : ComponentBase
                 filters.Add("minPrice", SearchState.PrelovedMinPrice.Value);
             if (SearchState.PrelovedMaxPrice.HasValue)
                 filters.Add("maxPrice", SearchState.PrelovedMaxPrice.Value);
-            if (!string.IsNullOrWhiteSpace(SearchState.PrelovedCategory))
-                filters.Add("category", SearchState.PrelovedCategory);
+                 if (!string.IsNullOrWhiteSpace(SearchState.PrelovedCategory))
+                filters.Add("CategoryId", SearchState.PrelovedCategory);
+                 if (!string.IsNullOrWhiteSpace(SearchState.PrelovedSubCategory))
+                filters.Add("L1CategoryId", SearchState.PrelovedSubCategory);
+                 if (!string.IsNullOrWhiteSpace(SearchState.PrelovedSubSubCategory))
+                filters.Add("L2CategoryId", SearchState.PrelovedSubSubCategory);
             if (!string.IsNullOrWhiteSpace(SearchState.PrelovedBrand))
                 filters.Add("brand", SearchState.PrelovedBrand);
+            if (SearchState.PrelovedHasWarrantyCertificate)
+                        {
+                            filters["hasWarrantyCertificate"] = SearchState.PrelovedHasWarrantyCertificate;
+                        }
 
-
+            foreach (var fieldFilter in SearchState.PrelovedFilters)
+            {
+                if (fieldFilter.Value?.Any() == true)
+                {
+                    filters[fieldFilter.Key] = fieldFilter.Value;
+                }
+            }
 
             var payload = new Dictionary<string, object>
             {
