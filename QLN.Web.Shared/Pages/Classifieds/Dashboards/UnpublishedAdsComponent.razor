@@ -1,4 +1,5 @@
 ﻿@inherits UnPublishedAdsComponentBase
+@using QLN.Web.Shared.Components.EmptyCard
 
 @if (_isUnpublishedLoading)
 {
@@ -154,7 +155,7 @@ else if (Ads != null && Ads.Any())
                         <ChildContent>
                             <MudMenuItem @onclick="() => OnPublish.InvokeAsync(ad.Id)" Class="menu-item-style">
                                 <img src="/qln-images/subscription/unpublish.svg" class="menu-icon" />
-                                <span>Unpublish</span>
+                                <span>Publish</span>
                             </MudMenuItem>
                             <MudMenuItem @onclick="() => OnEdit.InvokeAsync(ad.Id)" Class="menu-item-style">
                                 <img src="/qln-images/subscription/edit.svg" class="menu-icon" />

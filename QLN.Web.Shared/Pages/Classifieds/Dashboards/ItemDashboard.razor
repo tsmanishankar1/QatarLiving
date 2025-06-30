@@ -160,7 +160,7 @@
                 </div>
 
                 <!-- Second Row (Search/Sort) - will stack below tabs on mobile -->
-                <div class="ml-sm-auto d-flex align-items-center mt-2 mt-sm-0">
+                <div class="ml-sm-auto d-flex align-items-center mb-2 ">
 
                     <div class="search-wrapper mr-2">
                         <img src="/qln-images/subscription/Search.svg" />
@@ -185,16 +185,45 @@
                             </MudButton>
                         </ActivatorContent>
                         <ChildContent>
-                            <MudMenuItem OnClick="@(() => HandleSort(1))">Default</MudMenuItem>
-                            <MudMenuItem OnClick="@(() => HandleSort(2))">Creation Date: Oldest</MudMenuItem>
-                            <MudMenuItem OnClick="@(() => HandleSort(3))">Creation Date: Recent</MudMenuItem>
-                            <MudMenuItem OnClick="@(() => HandleSort(4))">Expiry Date: Recent</MudMenuItem>
-                            <MudMenuItem OnClick="@(() => HandleSort(5))">Expiry Date: Oldest</MudMenuItem>
-                            <MudMenuItem OnClick="@(() => HandleSort(6))">Add-on Expiry Date: Oldest</MudMenuItem>
-                            <MudMenuItem OnClick="@(() => HandleSort(7))">Add-on Expiry Date: Recent</MudMenuItem>
-                            <MudMenuItem OnClick="@(() => HandleSort(8))">Price: High to Low</MudMenuItem>
-                            <MudMenuItem OnClick="@(() => HandleSort(9))">Price: Low to High</MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(1))"
+                                         Icon="@(sortOption == 1 ? Icons.Material.Filled.Check : null)">
+                                Default
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(2))"
+                                         Icon="@(sortOption == 2 ? Icons.Material.Filled.Check : null)">
+                                Creation Date: Oldest
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(3))"
+                                         Icon="@(sortOption == 3 ? Icons.Material.Filled.Check : null)">
+                                Creation Date: Recent
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(4))"
+                                         Icon="@(sortOption == 4 ? Icons.Material.Filled.Check : null)">
+                                Expiry Date: Recent
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(5))"
+                                         Icon="@(sortOption == 5 ? Icons.Material.Filled.Check : null)">
+                                Expiry Date: Oldest
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(6))"
+                                         Icon="@(sortOption == 6 ? Icons.Material.Filled.Check : null)">
+                                Add-on Expiry Date: Oldest
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(7))"
+                                         Icon="@(sortOption == 7 ? Icons.Material.Filled.Check : null)">
+                                Add-on Expiry Date: Recent
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(8))"
+                                         Icon="@(sortOption == 8 ? Icons.Material.Filled.Check : null)">
+                                Price: High to Low
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(9))"
+                                         Icon="@(sortOption == 9 ? Icons.Material.Filled.Check : null)">
+                                Price: Low to High
+                            </MudMenuItem>
+                           
                         </ChildContent>
+
                     </MudMenu>
                 </div>
             </div>
@@ -202,7 +231,7 @@
             {
                 <PublishedAdsComponent Ads="publishedAds"
                                        _isPublishedLoading="_isPublishedLoading"
-                                       OnPublish="OnPublishAd"
+                                       OnPublish="UnPublishAd"
                                        OnEdit="OnEditAd"
                                        OnPreview="onPreview"
                                        OnRemove="onRemove" />
@@ -211,12 +240,13 @@
             {
                 <UnpublishedAdsComponent Ads="unpublishedAds"
                                          _isUnpublishedLoading="_isUnpublishedLoading"
-                                         OnPublish="UnPublishAd"
+                                         OnPublish="OnPublishAd"
                                          OnEdit="OnEditAd"
                                          OnPreview="onPreview"
                                          OnRemove="onRemove" />
             }
         </MudPaper>
+      
         @if ((publishedAds?.Any() ?? false) || (unpublishedAds?.Any() ?? false))
         {
             <PaginationFooter TotalItems="@TotalItems"

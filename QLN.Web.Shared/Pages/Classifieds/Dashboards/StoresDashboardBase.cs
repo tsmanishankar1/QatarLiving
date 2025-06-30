@@ -35,12 +35,6 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         protected bool isCompanyLoading;
         protected CompanyProfileModel? companyProfile;
 
-
-        private int currentPage = 1;
-        private int pageSize = 12;
-        private string searchTerm = string.Empty;
-        private int sortOption = 2;
-
         protected bool _isPublishedLoading = false;
         protected bool _isUnpublishedLoading = false;
 
@@ -61,8 +55,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
                 
                 var subscriptionTask = LoadSubscriptionDetailsAsync(3);
                 var companyProfileTask = LoadCompanyProfileAsync();
-                await LoadPublishedAds();
-                await LoadUnpublishedAds();
+             
                 await Task.WhenAll(subscriptionTask, companyProfileTask);
 
             }
@@ -132,74 +125,13 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
             }
         }
-        private async Task LoadPublishedAds()
-        {
-            _isPublishedLoading = true;
-            StateHasChanged();
-
-            try
-            {
-                publishedAds = await ClassfiedDashboardService
-                    .GetStoresPublishedAds(currentPage, pageSize, searchTerm, sortOption)
-                    ?? new();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error loading published ads: " + ex.Message);
-                _errorMessage = "Something went wrong while loading published ads.";
-                publishedAds = new();
-            }
-            finally
-            {
-                _isPublishedLoading = false;
-                StateHasChanged();
-            }
-        }
-
-        private async Task LoadUnpublishedAds()
-        {
-            _isUnpublishedLoading = true;
-            StateHasChanged();
-
-            try
-            {
-                unpublishedAds = await ClassfiedDashboardService
-                    .GetStoresUnPublishedAds(currentPage, pageSize, searchTerm, sortOption)
-                    ?? new();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error loading unpublished ads: " + ex.Message);
-                _errorMessage = "Something went wrong while loading unpublished ads.";
-                unpublishedAds = new();
-            }
-            finally
-            {
-                _isUnpublishedLoading = false;
-                StateHasChanged();
-            }
-        }
-        protected void OnPublishAd(string adId)
-        {
-            Console.WriteLine($"Publish clicked for ad ID: {adId}");
-        }
-
-        protected void OnEditAd(string adId)
-        {
-            Navigation.NavigateTo($"/qln/dashboard/ad/edit/{adId}");
-        }
-        protected void UnPublishAd(string adId)
-        {
-            Console.WriteLine($"Publish clicked for ad ID: {adId}");
-        }
+   
+       
         protected void SetTab(int index)
         {
             _activeTabIndex = index;
         }
-        protected void NavigateToEditProfile(string id)
-        {
-            Navigation.NavigateTo($"/qln/dashboard/company/edit/{id}");
-        }
+    
         protected void NavigateToCreateProfile()
         {
             var verticalId = 3;
@@ -209,9 +141,24 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             Navigation.NavigateTo($"/qln/dashboard/company/create/{verticalId}/{categoryId}");
         }
 
+
         protected void NavigateToAdPost()
         {
-            Navigation.NavigateTo("/classifieds/createform");
+            Navigation.NavigateTo("/qln/classifieds/createform");
+        }
+
+        protected void OnEditAd(string adId)
+        {
+            Navigation.NavigateTo($"/qln/classifieds/editform/{adId}");
+        }
+        protected void onPreview(string adId)
+        {
+            Navigation.NavigateTo($"/qln/classifieds/items/details/{adId}");
+        }
+
+        protected void onRemove(string adId)
+        {
+            Snackbar.Add("Remove functionality is not implemented yet.", Severity.Warning);
         }
         public static string GetDisplayName<TEnum>(TEnum enumValue) where TEnum : Enum
         {

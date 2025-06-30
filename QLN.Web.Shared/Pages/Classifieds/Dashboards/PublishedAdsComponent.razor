@@ -1,4 +1,5 @@
 ﻿@inherits PublishedAdsComponentBase
+@using QLN.Web.Shared.Components.EmptyCard
 
 @if (_isPublishedLoading)
 {
@@ -59,7 +60,7 @@ else if (Ads != null && Ads.Any())
                 <!-- Certificate + Location + Status + Expiry (Row 4) -->
                 <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-2">
                     <!-- Left: Location -->
-                    <div class="d-flex align-items-center">
+                    <div class="d-flex align-items-center mb-4">
                         <MudIcon Icon="@Icons.Material.Outlined.Place" Size="Size.Small" Style="color: #646464;" />
                         <MudText Typo="Typo.caption"
                                  Style="margin-left:4px;font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 14px; line-height: 12px; letter-spacing: 0; color: #646464;">

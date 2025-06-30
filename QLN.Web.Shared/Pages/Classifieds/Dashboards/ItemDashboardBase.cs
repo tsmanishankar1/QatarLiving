@@ -34,8 +34,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
 
         protected string searchTerm = string.Empty;
-
-        private int sortOption = 2;
+        protected int sortOption = 1;
 
 
         public EventCallback<int> OnPageChange { get; set; }
@@ -59,8 +58,8 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             if (firstRender)
             {
                 await LoadSubscriptionDetailsAsync(3);
-                await LoadUnpublishedAds();
-                await LoadPublishedAds();
+                await LoadUnpublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
+                await LoadPublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
 
             }
 
@@ -113,17 +112,20 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             }
         }
 
-        private async Task LoadPublishedAds()
+        private async Task LoadPublishedAds(int page, int pageSize, string search, int sort)
         {
             _isPublishedLoading = true;
+
             publishedAds.Clear();
             StateHasChanged();
 
             try
             {
+
                 publishedAds = await ClassfiedDashboardService
                     .GetPublishedAds(CurrentPage, PageSize, searchTerm, sortOption)
                     ?? new();
+
             }
             catch (Exception ex)
             {
@@ -138,9 +140,10 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             }
         }
 
-        private async Task LoadUnpublishedAds()
+        private async Task LoadUnpublishedAds(int page, int pageSize, string search, int sort)
         {
             _isUnpublishedLoading = true;
+
             unpublishedAds.Clear();
             StateHasChanged();
 
@@ -162,106 +165,67 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
                 StateHasChanged();
             }
         }
+        private async Task ReloadAdsAsync(string? search = null, int? sort = null)
+        {
+            if (search != null) searchTerm = search;
+            if (sort.HasValue) sortOption = sort.Value;
+
+            Console.WriteLine($"[ReloadAdsAsync] Tab: {_selectedAdsTab}, Search: {searchTerm}, Sort: {sortOption}");
+
+            if (_selectedAdsTab == 0)
+            {
+                await LoadPublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
+            }
+            else
+            {
+                await LoadUnpublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
+            }
+
+            StateHasChanged();
+        }
 
 
         protected async Task HandleSearch(string term)
         {
             Console.WriteLine($"[HandleSearch] Search term passed: {term}");
             CurrentPage = 1;
-            await ReloadAds(term, sortOption);
+            await ReloadAdsAsync(search: term);
         }
 
         protected async Task HandleSort(int option)
         {
             Console.WriteLine($"Sort option passed: {option}");
             CurrentPage = 1;
-            await ReloadAds(searchTerm, option);
+            await ReloadAdsAsync(sort: option);
         }
 
-        private async Task ReloadAds(string? search = null, int? sort = null)
-        {
-            var effectiveSearch = search ?? searchTerm;
-            var effectiveSort = sort ?? sortOption;
-
-            // Fetch only, do not clear current data yet
-            if (_selectedAdsTab == 0)
-            {
-                _isPublishedLoading = true;
-                StateHasChanged();
-
-                var newAds = await ClassfiedDashboardService
-                    .GetPublishedAds(CurrentPage, PageSize, effectiveSearch, effectiveSort)
-                    ?? new();
-
-                searchTerm = effectiveSearch;
-                sortOption = effectiveSort;
-
-                publishedAds = newAds;
-                _isPublishedLoading = false;
-            }
-            else
-            {
-                _isUnpublishedLoading = true;
-                StateHasChanged();
-
-                var newAds = await ClassfiedDashboardService
-                    .GetUnpublishedAds(CurrentPage, PageSize, effectiveSearch, effectiveSort)
-                    ?? new();
-
-                searchTerm = effectiveSearch;
-                sortOption = effectiveSort;
-
-                unpublishedAds = newAds;
-                _isUnpublishedLoading = false;
-            }
-
-            StateHasChanged();
-        }
 
         protected async Task HandlePageChange(int page)
         {
             CurrentPage = page;
-            await ReloadAds();
+            await ReloadAdsAsync();
         }
-
-
 
         protected async Task HandlePageSizeChange(int size)
         {
             PageSize = size;
             CurrentPage = 1;
-            await ReloadAds();
+            await ReloadAdsAsync();
         }
 
-        private async Task ReloadAds()
-        {
-            Console.WriteLine($"[ReloadAds] Tab: {_selectedAdsTab}, Search: {searchTerm}, Sort: {sortOption}");
-
-            publishedAds.Clear();
-            unpublishedAds.Clear();
-            StateHasChanged();
-
-            if (_selectedAdsTab == 0)
-            {
-                await LoadPublishedAds();
-            }
-            else
-            {
-                await LoadUnpublishedAds();
-            }
-        }
 
 
         protected async Task OnPublishAd(string adId)
         {
+            Console.WriteLine("Publishing Ad with ID: " + adId);
             try
             {
                 var result = await ClassfiedDashboardService.PublishAdAsync(adId);
                 if (result)
                 {
                     Snackbar.Add("Ad published successfully", Severity.Success);
-                    await LoadUnpublishedAds();
-                    await LoadPublishedAds();
+                    await LoadUnpublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
+                    await LoadPublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
                 }
                 else
                 {
@@ -278,14 +242,15 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
         protected async Task UnPublishAd(string adId)
         {
+            Console.WriteLine("UnPublishing Ad with ID: " + adId);
             try
             {
                 var result = await ClassfiedDashboardService.UnPublishAdAsync(adId);
                 if (result)
                 {
                     Snackbar.Add("Ad unpublished successfully", Severity.Success);
-                    await LoadUnpublishedAds();
-                    await LoadPublishedAds();
+                    await LoadUnpublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
+                    await LoadPublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
                 }
                 else
                 {
@@ -297,6 +262,11 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
                 Console.WriteLine("Error in OnPublishAd: " + ex.Message);
                 Snackbar.Add("An error occurred.", Severity.Error);
             }
+        }
+
+        protected void NavigateToAdPost()
+        {
+            Navigation.NavigateTo("/qln/classifieds/createform");
         }
 
         protected void OnEditAd(string adId)
@@ -333,24 +303,8 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             Navigation.NavigateTo($"/qln/dashboard/company/create/{verticalId}/{categoryId}");
         }
 
-        protected void NavigateToAdPost()
-        {
-            Navigation.NavigateTo("/qln/classifieds/createform");
-        }
-
-        protected void SetHardcodedBusinessProfile()
-        {
-            _businessProfile = new BusinessProfile
-            {
-                Name = "Luxury Store",
-                CategoryName = "Preloved",
-                Duration = "6 month Plus",
-                ValidFrom = "2025-04-27",
-                ValidTo = "2025-10-27",
-                LogoUrl = "qln-images/subscription/CompanyLogo.svg"
-            };
-            StateHasChanged();
-        }
+    
+ 
         public static string GetDisplayName<TEnum>(TEnum enumValue) where TEnum : Enum
         {
             var member = typeof(TEnum).GetMember(enumValue.ToString()).FirstOrDefault();
