@@ -1,12 +1,8 @@
 ﻿using Dapr.Client;
-using Microsoft.AspNetCore.Http;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
-using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
-using System.Security.Claims;
 using System.Text.Json;
-using EventCategory = QLN.Common.DTO_s.EventCategory;
 
 namespace QLN.Content.MS.Service.EventInternalService
 {
@@ -17,7 +13,7 @@ namespace QLN.Content.MS.Service.EventInternalService
         {
             _dapr = dapr;
         }
-        public async Task<string> CreateEvent(string userId, V2EventForm dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateEvent(string userId, V2Events dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -33,7 +29,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                 }
                 var id = Guid.NewGuid();
 
-                var entity = new V2EventResponse
+                var entity = new V2Events
                 {
                     Id = id,
                     CategoryId = dto.CategoryId,
@@ -79,12 +75,16 @@ namespace QLN.Content.MS.Service.EventInternalService
 
                 return "Event created successfully.";
             }
+            catch (ArgumentException ex)
+            {
+                throw new InvalidDataException(ex.Message, ex);
+            }
             catch (Exception ex)
             {
                 throw new Exception("Error creating event", ex);
             }
         }
-        public async Task<List<V2EventResponse>> GetAllEvents(CancellationToken cancellationToken)
+        public async Task<List<V2Events>> GetAllEvents(CancellationToken cancellationToken)
         {
             try
             {
@@ -102,7 +102,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                 );
 
                 var events = items
-                    .Select(i => JsonSerializer.Deserialize<V2EventResponse>(i.Value, new JsonSerializerOptions
+                    .Select(i => JsonSerializer.Deserialize<V2Events>(i.Value, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     }))
@@ -116,16 +116,18 @@ namespace QLN.Content.MS.Service.EventInternalService
                 throw new Exception("Error occurred while retrieving all events", ex);
             }
         }
-        public async Task<V2EventResponse?> GetEventById(Guid id, CancellationToken cancellationToken = default)
+        public async Task<V2Events?> GetEventById(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.GetStateAsync<V2EventResponse>(
+                var result = await _dapr.GetStateAsync<V2Events>(
                     ConstantValues.V2Content.ContentStoreName,
                     id.ToString(),
                     cancellationToken: cancellationToken);
-                if (result == null || result.IsActive == false)
-                    throw new KeyNotFoundException($"Active event with ID '{id}' not found.");
+                if (result == null)
+                    throw new KeyNotFoundException($"Company with id '{id}' was not found.");
+                if (!result.IsActive)
+                    return null;
                 return result;
             }
             catch (Exception ex)
@@ -133,7 +135,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                 throw new Exception($"Error retrieving event with ID: {id}", ex);
             }
         }
-        public async Task<string> UpdateEvent(string userId, V2UpdateRequest dto, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateEvent(string userId, V2Events dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -149,7 +151,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                     if (dto.Price != null)
                         throw new ArgumentException("Price must not be entered for 'Free Access' or 'Open Registration' events.");
                 }
-                var existing = await _dapr.GetStateAsync<V2EventResponse>(
+                var existing = await _dapr.GetStateAsync<V2Events>(
                     ConstantValues.V2Content.ContentStoreName,
                     dto.Id.ToString(),
                     cancellationToken: cancellationToken);
@@ -157,7 +159,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                 if (existing == null)
                     throw new KeyNotFoundException($"Event with ID {dto.Id} not found.");
 
-                var updated = new V2EventResponse
+                var updated = new V2Events
                 {
                     Id = dto.Id,
                     CategoryId = dto.CategoryId,
@@ -187,15 +189,18 @@ namespace QLN.Content.MS.Service.EventInternalService
 
                 return "Event updated successfully";
             }
+            catch (ArgumentException ex)
+            {
+                throw new InvalidDataException(ex.Message, ex);
+            }
             catch (Exception ex)
             {
                 throw new Exception("Error updating events", ex);
             }
         }
-
         public async Task<string> DeleteEvent(Guid id, CancellationToken cancellationToken = default)
         {
-            var existing = await _dapr.GetStateAsync<V2EventResponse>(
+            var existing = await _dapr.GetStateAsync<V2Events>(
                 ConstantValues.V2Content.ContentStoreName,
                 id.ToString(),
                 cancellationToken: cancellationToken);
@@ -229,11 +234,11 @@ namespace QLN.Content.MS.Service.EventInternalService
                new EventsCategory { Id = 8, CategoryName = "Lifestyle" },
                new EventsCategory { Id = 9, CategoryName = "Meetings & Networking" },
                new EventsCategory { Id = 10, CategoryName = "Music" },
-               new EventsCategory { Id = 11, CategoryName = "Other" },
+               new EventsCategory { Id = 11, CategoryName = "Training" },
                new EventsCategory { Id = 12, CategoryName = "Performing Arts" },
                new EventsCategory { Id = 13, CategoryName = "Social Events" },
                new EventsCategory { Id = 14, CategoryName = "Sports" },
-               new EventsCategory { Id = 15, CategoryName = "Training" }
+               new EventsCategory { Id = 15, CategoryName = "Others" }
            });
         }
     }

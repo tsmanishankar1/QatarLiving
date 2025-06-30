@@ -1,5 +1,4 @@
-﻿using Google.Api;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -20,7 +19,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             BadRequest<ProblemDetails>,
             ProblemHttpResult>>
             (
-            V2EventForm dto,
+            V2Events dto,
             IV2EventService service,
             HttpContext httpContext,
             CancellationToken cancellationToken
@@ -64,7 +63,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             BadRequest<ProblemDetails>,
             ProblemHttpResult>>
             (
-            V2EventForm dto,
+            V2Events dto,
             IV2EventService service,
             HttpContext httpContext,
             CancellationToken cancellationToken
@@ -110,7 +109,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
         }
         public static RouteGroupBuilder MapGetAllEventEndpoints(this RouteGroupBuilder group)
         {
-            group.MapGet("/getAll", static async Task<Results<Ok<List<V2EventResponse>>, ProblemHttpResult>>
+            group.MapGet("/getAll", static async Task<Results<Ok<List<V2Events>>, ProblemHttpResult>>
             (
                 IV2EventService service,
                 CancellationToken cancellationToken
@@ -136,7 +135,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
         }
         public static RouteGroupBuilder MapGetEventEndpoints(this RouteGroupBuilder group)
         {
-            group.MapGet("/getById/{id:guid}", async Task<Results<Ok<V2EventResponse>, NotFound<ProblemDetails>, ProblemHttpResult>>
+            group.MapGet("/getById/{id:guid}", async Task<Results<Ok<V2Events>, NotFound<ProblemDetails>, ProblemHttpResult>>
                 (
                     Guid id,
                     IV2EventService service,
@@ -181,7 +180,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             NotFound<ProblemDetails>,
             ProblemHttpResult>>
             (
-            V2UpdateRequest dto,
+            V2Events dto,
             IV2EventService service,
             HttpContext httpContext,
             CancellationToken cancellationToken
@@ -235,7 +234,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             BadRequest<ProblemDetails>,
             ProblemHttpResult>>
             (
-            V2UpdateRequest dto,
+            V2Events dto,
             IV2EventService service,
             HttpContext httpContext,
             CancellationToken cancellationToken
@@ -337,6 +336,5 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
 
             return group;
         }
-
     }
 }

@@ -1,7 +1,7 @@
 ﻿using Dapr.Client;
+using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
-using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.Utilities;
@@ -22,7 +22,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             _logger = logger;
             _blobStorage = blobStorage;
         }
-        public async Task<string> CreateEvent(string userId, V2EventForm dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateEvent(string userId, V2Events dto, CancellationToken cancellationToken = default)
         {
             string? FileName = null;
             try
@@ -45,16 +45,28 @@ namespace QLN.Backend.API.Service.V2ContentService
                     "application/json");
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                if (response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+                    await CleanupUploadedFiles(FileName, cancellationToken);
+                    throw new InvalidDataException(errorMessage);
+                }
                 response.EnsureSuccessStatusCode();
 
                 var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid data provided for event creation.");
-                throw new InvalidDataException("Invalid data provided for event creation.", ex);
             }
             catch (Exception ex)
             {
@@ -68,16 +80,16 @@ namespace QLN.Backend.API.Service.V2ContentService
             if (!string.IsNullOrWhiteSpace(file))
                 await _blobStorage.DeleteFile(file, "CoverImage", cancellationToken);
         }
-        public async Task<List<V2EventResponse>> GetAllEvents(CancellationToken cancellationToken = default)
+        public async Task<List<V2Events>> GetAllEvents(CancellationToken cancellationToken = default)
         {
             try
             {
-                return await _dapr.InvokeMethodAsync<List<V2EventResponse>>(
+                return await _dapr.InvokeMethodAsync<List<V2Events>>(
                     HttpMethod.Get,
                     ConstantValues.V2Content.ContentServiceAppId,
                     "/api/v2/event/getAll",
                     cancellationToken
-                ) ?? new List<V2EventResponse>();
+                ) ?? new List<V2Events>();
             }
             catch (Exception ex)
             {
@@ -85,22 +97,21 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<V2EventResponse?> GetEventById(Guid id, CancellationToken cancellationToken = default)
+        public async Task<V2Events?> GetEventById(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
                 var url = $"/api/v2/event/getById/{id}";
 
-                return await _dapr.InvokeMethodAsync<V2EventResponse>(
+                return await _dapr.InvokeMethodAsync<V2Events>(
                     HttpMethod.Get,
                     ConstantValues.V2Content.ContentServiceAppId,
                     url,
                     cancellationToken);
             }
-            catch(KeyNotFoundException ex)
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                _logger.LogWarning(ex, "Event with ID {Id} not found.", id);
-                throw;
+                return null;
             }
             catch (Exception ex)
             {
@@ -108,7 +119,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<string> UpdateEvent(string userId, V2UpdateRequest dto, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateEvent(string userId, V2Events dto, CancellationToken cancellationToken = default)
         {
             string? FileName = null;
             try
@@ -132,16 +143,28 @@ namespace QLN.Backend.API.Service.V2ContentService
                     "application/json");
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                if (response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+                    await CleanupUploadedFiles(FileName, cancellationToken);
+                    throw new InvalidDataException(errorMessage);
+                }
                 response.EnsureSuccessStatusCode();
 
                 var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
-            }
-            catch(ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid data provided for event update.");
-                throw new InvalidDataException("Invalid data provided for event update.", ex);
             }
             catch (Exception ex)
             {

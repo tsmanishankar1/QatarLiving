@@ -2,8 +2,9 @@
 
 namespace QLN.Common.DTO_s
 {
-    public class V2EventForm
+    public class V2Events
     {
+        public Guid Id { get; set; }
         [Required]
         public string EventTitle { get; set; }
         [Required]
@@ -23,6 +24,8 @@ namespace QLN.Common.DTO_s
         [Required(ErrorMessage = "Event description is required.")]
         public string EventDescription { get; set; }
         public string CoverImage { get; set; }
+        [Required]
+        public bool IsActive { get; set; }
         public string CreatedBy { get; set; }
         public DateTime CreatedAt { get; set; }
         public string? UpdatedBy { get; set; }
@@ -48,14 +51,5 @@ namespace QLN.Common.DTO_s
     {
         public int Id { get; set; }
         public string CategoryName { get; set; }
-    }
-    public class V2UpdateRequest : V2EventForm
-    {
-        public Guid Id { get; set; }
-    }
-    public class V2EventResponse : V2EventForm
-    {
-        public Guid Id { get; set; }
-        public bool? IsActive { get; set; }
     }
 }
