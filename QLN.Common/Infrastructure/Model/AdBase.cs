@@ -32,7 +32,7 @@ namespace QLN.Common.Infrastructure.Model
         public string[]? ImageUrls { get; set; }
         public DateTime? CreatedDate { get; set; }
         public DateTime? ExpiryDate { get; set; }
-        public Guid UserId { get; set; }
+        public string UserId { get; set; }
         public bool? IsFeatured { get; set; }        
         public AdStatus Status { get; set; }
         public bool? IsPromoted { get; set; }

@@ -60,6 +60,11 @@ public static class Base64ImageHelper
             if (string.IsNullOrWhiteSpace(base64))
                 throw new ArgumentException("Input base64 string is null or empty.");
 
+            if (base64.StartsWith("data:application/pdf;base64,", StringComparison.OrdinalIgnoreCase))
+            {
+                base64 = base64["data:application/pdf;base64,".Length..];
+            }
+
             try
             {
                 byte[] bytes = Convert.FromBase64String(base64);

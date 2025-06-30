@@ -34,16 +34,10 @@ namespace QLN.Content.MS.Service
 
                 banners.Add(new BannerItem
                 {
-                    Category = dto.Category,
                     Code = dto.Code,
                     Alt = dto.Alt,
                     Duration = dto.Duration,
-                    ImageDesktopUrl = dto.ImageDesktopUrl,
-                    ImageMobileUrl = dto.ImageMobileUrl,
                     Link = dto.Link,
-                    CreatedBy = userId,
-                    QueueName = dto.QueueName,
-                    QueueLabel = dto.QueueLabel
                 });
 
                 await _daprClient.SaveStateAsync(StateStore, categoryKey, banners, cancellationToken: ct);
@@ -93,12 +87,11 @@ namespace QLN.Content.MS.Service
                 }
 
                 if (dto.Alt != null) banner.Alt = dto.Alt;
-                if (dto.Category != null) banner.Category = dto.Category;
                 if (dto.Code != null) banner.Code = dto.Code;
                 if (dto.Duration != null) banner.Duration = dto.Duration;
                 if (dto.Link != null) banner.Link = dto.Link;
-                if (dto.ImageDesktopBase64 != null) banner.ImageDesktopUrl = dto.ImageDesktopBase64;
-                if (dto.ImageMobileBase64 != null) banner.ImageMobileUrl = dto.ImageMobileBase64;
+                //if (dto.ImageDesktopBase64 != null) banner.ImageDesktop = dto.ImageDesktopBase64;
+                //if (dto.ImageMobileBase64 != null) banner.ImageMobile = dto.ImageMobileBase64;
 
                 await _daprClient.SaveStateAsync(StateStore, key, banners, cancellationToken: ct);
 
@@ -147,13 +140,13 @@ namespace QLN.Content.MS.Service
                 }
 
                 return allBanners
-                    .Where(x => !string.IsNullOrWhiteSpace(x.QueueName))
-                    .GroupBy(x => x.QueueName)
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Alt))
+                    .GroupBy(x => x.Alt)
                     .ToDictionary(
                         g => g.Key,
                         g => new BaseQueueResponse<BannerItem>
                         {
-                            QueueLabel = g.FirstOrDefault()?.QueueLabel ?? g.Key,
+                            QueueLabel = g.FirstOrDefault()?.Alt ?? g.Key,
                             Items = g.ToList()
                         });
             }

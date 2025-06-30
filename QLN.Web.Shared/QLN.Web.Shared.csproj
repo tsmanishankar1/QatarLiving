@@ -21,6 +21,10 @@
      
      
      <PackageReference Include="MudBlazor" Version="8.6.0" />
+     
+     
+     
+     <PackageReference Include="MudExRichTextEditor" Version="8.5.2" />
 	  
   </ItemGroup>
 
@@ -44,7 +48,6 @@
 		<PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.15" />
 		<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
 	</ItemGroup>
-
 	<ItemGroup>
     <ProjectReference Include="..\QLN.Common\QLN.Common.csproj" />
   </ItemGroup>

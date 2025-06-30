@@ -36,13 +36,15 @@ namespace QLN.Backend.API.Service.CompanyService
 
             try
             {
+                var id = Guid.NewGuid();
+                dto.Id = id;
                 if (!string.IsNullOrWhiteSpace(dto.CRDocument))
                 {
                     var (crExtension, crBase64) = Base64Helper.ParseBase64(dto.CRDocument);
                     if (crExtension is not ("pdf" or "png" or "jpg"))
                         throw new ArgumentException("CR Document must be in PDF, PNG, or JPG format.");
 
-                    crBlobFileName = $"{dto.BusinessName}_{dto.UserId}.{crExtension}";
+                    crBlobFileName = $"{dto.BusinessName}_{id}.{crExtension}";
                     var crBlobUrl = await _blobStorage.SaveBase64File(crBase64, crBlobFileName, "crdocument", cancellationToken);
                     dto.CRDocument = crBlobUrl;
                 }
@@ -56,7 +58,7 @@ namespace QLN.Backend.API.Service.CompanyService
                     if (logoExtension is not ("png" or "jpg"))
                         throw new ArgumentException("Company logo must be in PNG or JPG format.");
 
-                    logoBlobFileName = $"{dto.BusinessName}_{dto.UserId}.{logoExtension}";
+                    logoBlobFileName = $"{dto.BusinessName}_{id}.{logoExtension}";
                     var logoBlobUrl = await _blobStorage.SaveBase64File(logoBase64Data, logoBlobFileName, "companylogo", cancellationToken);
                     dto.CompanyLogo = logoBlobUrl;
                 }
@@ -150,27 +152,27 @@ namespace QLN.Backend.API.Service.CompanyService
             string? logoBlobFileName = null;
             try
             {
-                if (!string.IsNullOrWhiteSpace(dto.CRDocument))
+                var id = dto.Id != Guid.Empty ? dto.Id : Guid.NewGuid();
+                dto.Id = id;
+
+                if (!string.IsNullOrWhiteSpace(dto.CRDocument) && !dto.CRDocument.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                 {
                     var (crExtension, crBase64) = Base64Helper.ParseBase64(dto.CRDocument);
                     if (crExtension is not ("pdf" or "png" or "jpg"))
                         throw new ArgumentException("CR Document must be in PDF, PNG, or JPG format.");
 
-                    crBlobFileName = $"{dto.BusinessName}_{dto.UserId}.{crExtension}";
+                    crBlobFileName = $"{dto.BusinessName}_{id}.{crExtension}";
                     var crBlobUrl = await _blobStorage.SaveBase64File(crBase64, crBlobFileName, "crdocument", cancellationToken);
                     dto.CRDocument = crBlobUrl;
                 }
-                if (!string.IsNullOrWhiteSpace(dto.CompanyLogo))
+
+                if (!string.IsNullOrWhiteSpace(dto.CompanyLogo) && !dto.CompanyLogo.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                 {
-                    string logoExtension;
-                    string logoBase64Data;
-
-                    (logoExtension, logoBase64Data) = Base64Helper.ParseBase64(dto.CompanyLogo);
-
+                    var (logoExtension, logoBase64Data) = Base64Helper.ParseBase64(dto.CompanyLogo);
                     if (logoExtension is not ("png" or "jpg"))
                         throw new ArgumentException("Company logo must be in PNG or JPG format.");
 
-                    logoBlobFileName = $"{dto.BusinessName}_{dto.UserId}.{logoExtension}";
+                    logoBlobFileName = $"{dto.BusinessName}_{id}.{logoExtension}";
                     var logoBlobUrl = await _blobStorage.SaveBase64File(logoBase64Data, logoBlobFileName, "companylogo", cancellationToken);
                     dto.CompanyLogo = logoBlobUrl;
                 }
@@ -391,7 +393,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<List<CompanyProfileDto>> GetCompaniesByTokenUser(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<List<CompanyProfileDto>> GetCompaniesByTokenUser(string userId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -411,6 +413,27 @@ namespace QLN.Backend.API.Service.CompanyService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving companies for token user");
+                throw;
+            }
+        }
+        public async Task<List<ProfileStatus>> GetStatusByTokenUser(string userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/companyprofile/statusByUserId?userId={userId}";
+
+                var companies = await _dapr.InvokeMethodAsync<List<ProfileStatus>>(
+                    HttpMethod.Get,
+                    ConstantValues.CompanyServiceAppId,
+                    url,
+                    cancellationToken
+                );
+
+                return companies ?? new();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get status by token user");
                 throw;
             }
         }

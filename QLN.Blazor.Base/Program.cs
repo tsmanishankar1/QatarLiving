@@ -14,6 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 var contentVerticalAPIUrl = builder.Configuration["ServiceUrlPaths:ContentVerticalAPI"];
 var qatarLivingAPI = builder.Configuration["ServiceUrlPaths:QatarLivingAPI"];
 var baseURL = builder.Configuration["ServiceUrlPaths:BaseURL"];
+var classifiedsVerticalAPIUrl = builder.Configuration["ServiceUrlPaths:ClassifiedsVerticalAPI"];
 
 Console.WriteLine($"ContentVerticalAPI URL: {contentVerticalAPIUrl}");
 
@@ -34,12 +35,20 @@ if (string.IsNullOrWhiteSpace(baseURL))
     throw new InvalidOperationException("BaseURL URL is missing in configuration.");
 }
 
+Console.WriteLine($"ClassifiedsVerticalAPI URL: {classifiedsVerticalAPIUrl}");
+
+if (string.IsNullOrWhiteSpace(classifiedsVerticalAPIUrl))
+{
+    throw new InvalidOperationException("ClassifiedsVerticalAPI URL is missing in configuration.");
+}
+
 builder.Services.AddCors(options =>
 {
 
 
     string[] origins = { 
                 // add more as necessary
+                classifiedsVerticalAPIUrl,
                 contentVerticalAPIUrl,
                 qatarLivingAPI,
                 baseURL
@@ -151,7 +160,7 @@ builder.Services.AddHttpClient<IEventService, EventService>(client =>
 
 builder.Services.AddHttpClient<IClassifiedsServices, ClassifiedsServices>(client =>
 {
-    client.BaseAddress = new Uri(contentVerticalAPIUrl);
+    client.BaseAddress = new Uri(classifiedsVerticalAPIUrl);
 }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
 builder.Services.AddHttpClient<IPostDialogService, PostDialogService>(client =>
@@ -176,14 +185,18 @@ builder.Services.AddHttpClient<ApiService>(client =>
 
 builder.Services.AddHttpClient<ISubscriptionService, SubscriptionService>(client =>
 {
-    client.BaseAddress = new Uri(baseURL);
+    client.BaseAddress = new Uri(classifiedsVerticalAPIUrl);
 }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
 builder.Services.AddHttpClient<IClassifiedDashboardService, ClassfiedDashboardService>(client =>
 {
-    client.BaseAddress = new Uri(baseURL);
+    client.BaseAddress = new Uri(classifiedsVerticalAPIUrl);
 }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
+builder.Services.AddHttpClient<ICompanyProfileService, CompanyProfileService>(client =>
+{
+    client.BaseAddress = new Uri(classifiedsVerticalAPIUrl);
+}).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
 
 builder.Services.AddMemoryCache();
