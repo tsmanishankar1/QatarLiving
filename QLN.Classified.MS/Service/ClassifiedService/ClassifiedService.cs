@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Dapr;
 using Dapr.Client;
+using Google.Api;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -414,7 +415,54 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while creating the Items ad. Please try again later.", ex);
             }
         }
+        public async Task<ClassifiedItems> GetClassifiedItemById(Guid adId)
+        {
+            var key = $"ad-{adId}";
+            var adItem = await _dapr.GetStateAsync<ClassifiedItems>(UnifiedStore, key);
 
+            return adItem;
+        }
+        public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(Guid adId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var adItem = await GetClassifiedItemById(adId);
+
+                if (adItem == null)
+                {
+                    Console.WriteLine("Ad is null");
+                    throw new InvalidOperationException($"Ad with id {adId} not found.");
+
+                }
+
+                adItem.IsRefresh = true;
+                adItem.CreatedDate = DateTime.UtcNow;
+                adItem.RefreshExpiry = DateTime.UtcNow.AddHours(72);
+
+                var key = $"ad-{adItem.Id}";
+                await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
+                return new AdCreatedResponseDto
+                {
+                    AdId = adId,
+                    Message = "Ad successfully refreshed."
+                };
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation failed in refreshAd");
+                throw;
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Operation error while creating classified Preloved ad.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Unhandled error occurred during ad creation.");
+                throw new InvalidOperationException("An unexpected error occurred while creating the Preloved ad. Please try again later.", ex);
+            }
+        }
         public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));

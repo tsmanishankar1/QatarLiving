@@ -268,7 +268,55 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
             }
         }
+        public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(Guid adId, CancellationToken cancellationToken = default)
+        {
+            if (adId == Guid.Empty)
+            {
+                throw new ArgumentException("AdId is required.");
+            }
 
+            try
+            {
+                await _dapr.InvokeMethodAsync(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    $"/api/classifieds/items/refresh/{adId}",  
+                    cancellationToken 
+                );
+
+                return new AdCreatedResponseDto
+                {
+                    AdId = adId,
+                    Message = "Ad successfully refreshed."
+                };
+            }
+            catch (ArgumentException ex)
+            {
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "Validation Error",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return TypedResults.NotFound(new ProblemDetails
+                {
+                    Title = "Not Found",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status404NotFound
+                });
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem(
+                    title: "Internal Server Error",
+                    detail: ex.Message,
+                    statusCode: StatusCodes.Status500InternalServerError
+                );
+            }
+        }
         public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
