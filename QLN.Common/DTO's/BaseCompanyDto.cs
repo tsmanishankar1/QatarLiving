@@ -18,17 +18,16 @@ namespace QLN.Common.DTO_s
         [Required]
         public CompanySize CompanySize { get; set; }
         [Required]
-        public List<NatureOfBusiness> NatureOfBusiness { get; set; }
+        public List<NatureOfBusiness> NatureOfBusiness { get; set; } 
         [Required, MaxLength(300)]
         public string BusinessDescription { get; set; } = string.Empty;
-        public CompanyStatus? Status { get; set; }
         [Required]
         public int CRNumber { get; set; }
         public bool? IsVerified { get; set; } = false;
         public bool IsActive { get; set; }
-        public Guid CreatedBy { get; set; }
+        public string CreatedBy { get; set; }
         public DateTime CreatedUtc { get; set; }
-        public Guid? UpdatedBy { get; set; }
+        public string? UpdatedBy { get; set; }
         public DateTime? UpdatedUtc { get; set; }
     }
 }

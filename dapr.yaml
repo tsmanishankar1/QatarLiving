@@ -7,28 +7,31 @@ apps:
   - appID: qln-backend-api
     appDirPath: QLN.Backend.API
     appPort: 5200
-    command:
-      - dotnet
-      - run
-# - appDirPath: QLN.BusinessProfile.MS
-#   appID: qln-businessprofile-ms
-#   appPort: 5027
-#   command:
-#   - dotnet
-#   - run
-  - appID: qln-subscriptions-actor
-    appDirPath: QLN.Subscriptions.Actor
-    appPort: 5056
+    daprHTTPPort: 3500
+    daprGRPCPort: 50001
+    env:
+      ASPNETCORE_HTTPS_PORT: 7161
     command:
       - dotnet
       - run
 
-  - appID: qln-classified-ms
-    appDirPath: QLN.Classified.MS
-    appPort: 5276
+  - appID: qln-subscriptions-actor
+    appDirPath: QLN.Subscriptions.Actor
+    appPort: 5056
+    daprHTTPPort: 3501
+    daprGRPCPort: 50002
     command:
       - dotnet
       - run
+  - appID: qln-classified-ms
+    appDirPath: QLN.Classified.MS
+    appPort: 5276
+    daprHTTPPort: 3502
+    daprGRPCPort: 50003
+    command:
+    - dotnet
+    - run
+
 # - appDirPath: QLN.Blazor.Base
 #   appID: qln-blazor-base
 #   appPort: 5047
@@ -39,18 +42,24 @@ apps:
   - appID: qln-search-ms
     appDirPath: QLN.SearchService
     appPort: 5244
+    daprHTTPPort: 3503
+    daprGRPCPort: 50004
     command:
       - dotnet
       - run
   - appID: qln-company-ms
     appDirPath: QLN.Company.MS
     appPort: 5139
+    daprHTTPPort: 3504
+    daprGRPCPort: 50005
     command:
       - dotnet
       - run
   - appID: qln-content-ms
     appDirPath: QLN.Content.MS
     appPort: 5112
+    daprHTTPPort: 3505
+    daprGRPCPort: 50006
     command:
       - dotnet
       - run

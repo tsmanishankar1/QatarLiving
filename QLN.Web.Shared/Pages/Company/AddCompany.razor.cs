@@ -1,91 +1,184 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.JSInterop;
+using Microsoft.AspNetCore.Http;
 using MudBlazor;
-using QLN.Web.Shared.Models.QLN.Web.Shared.Models;
+using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
+using System.ComponentModel.DataAnnotations;
 
 
 namespace QLN.Web.Shared.Pages.Company
 {
-    public  partial class AddCompany : ComponentBase
+    public partial class AddCompany : ComponentBase
     {
 
-        [Inject] private IJSRuntime _jsRuntime { get; set; }
-        [Inject] private ICompanyProfileService CompanyProfileService { get; set; } = default!;
+        [Inject] private ICompanyProfileService CompanyProfileService { get; set; }
+        [Inject] protected ISnackbar Snackbar { get; set; }
+        [Inject]
+        private IHttpContextAccessor HttpContextAccessor { get; set; }
 
-        private IBrowserFile uploadedLogoFile;
-        private MudForm _form;
-        private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
-        private string logoPreviewUrl;
-        private CompanyModel _model = new();
+        [Parameter]
+        public int VerticalId { get; set; }
 
-        private  IBrowserFile? uploadedDocumentFile;
-        private string? documentPreviewBase64;
+        [Parameter]
+        public int CategoryId { get; set; }
+
+
+        protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
+
+        private bool isSaving = false;
+
+        private string _authToken;
+
+        protected CompanyProfileModelDto? companyProfile;
+
+
         private string? crFileName;
+        private string? crDocumentBase64;
 
         protected override void OnInitialized()
         {
             breadcrumbItems = new()
             {
-                new() { Label = "Classifieds", Url = "classifieds" },
-                new() { Label = "Company", Url = "/company" },
-                new() { Label = "Add Company", Url = "/add-company", IsLast = true },
-            };
-        }
+                new() { Label = "Classifieds", Url = "qln/classifieds" },
+                new() { Label = "Dashboard", Url = "/qln/classified/dashboard/items" },
+                new() { Label = "Create Company Profile", Url = $"/qln/dashboard/company/create",IsLast=true },
 
-        private async Task TriggerFileUpload()
-        {
-            await _jsRuntime.InvokeVoidAsync("document.getElementById('doc-upload').click");
+            };
+            companyProfile = new CompanyProfileModelDto
+            {
+                BranchLocations = new List<string> { "" },
+                Vertical = VerticalId,
+                SubVertical = CategoryId,
+                NatureOfBusiness = new List<int>()
+            };
         }
 
        
 
-        private async Task HandleLogoUpload(InputFileChangeEventArgs e)
+        private async Task SaveCompanyProfileAsync()
         {
-            uploadedLogoFile = e.File;
-
-            var buffer = new byte[uploadedLogoFile.Size];
-            await uploadedLogoFile.OpenReadStream().ReadAsync(buffer);
-            var imageType = uploadedLogoFile.ContentType;
-            logoPreviewUrl = $"data:{imageType};base64,{Convert.ToBase64String(buffer)}";
-        }
-      
-        private async Task HandleDocumentUpload(InputFileChangeEventArgs e)
-        {
-            uploadedDocumentFile = e.File;
-            crFileName = uploadedDocumentFile.Name;
-
-            var buffer = new byte[uploadedDocumentFile.Size];
-            await uploadedDocumentFile.OpenReadStream(10 * 1024 * 1024).ReadAsync(buffer);
-            var docType = uploadedDocumentFile.ContentType;
-            documentPreviewBase64 = $"data:{docType};base64,{Convert.ToBase64String(buffer)}";
-        }
-
-
-        private async Task SubmitCompanyAsync()
-        {
-            var token = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
-
-            if (string.IsNullOrWhiteSpace(token))
+            if (string.IsNullOrEmpty(companyProfile.CompanyLogo))
             {
-                Console.WriteLine("Auth token is missing.");
+                Snackbar.Add("Company logo is required", Severity.Error);
                 return;
             }
 
-            var success = await CompanyProfileService.CreateCompanyProfileAsync(
-                _model,
-                uploadedLogoFile,
-                uploadedDocumentFile,
-                token);
-
-            if (success)
+            if (string.IsNullOrEmpty(crDocumentBase64))
             {
+                Snackbar.Add("CR document is required", Severity.Error);
+                return;
+            }
+            try
+            {
+                isSaving = true;
+
+                if (companyProfile != null)
+                {
+                    Console.WriteLine($"Saving Company Profile: {companyProfile}");
+                    var updated = await CompanyProfileService.CreateCompanyProfileAsync(companyProfile);
+                    if (updated)
+                    {
+                        Snackbar.Add("Company profile created successfully", Severity.Success);
+                    }
+                    else
+                    {
+                        Snackbar.Add("Failed to create company profile", Severity.Error);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"SaveCompanyProfileAsync Exception: {ex.Message}");
+                Snackbar.Add("An error occurred while creating", Severity.Error);
+            }
+            finally
+            {
+                isSaving = false;
+                StateHasChanged();
+            }
+        }
+        private async Task OnLogoFileSelected(IBrowserFile file)
+        {
+            if (file != null)
+            {
+                if (file.Size > 10 * 1024 * 1024)
+                {
+                    Snackbar.Add("Logo must be less than 10MB", Severity.Warning);
+                    return;
+                }
+
+                using var ms = new MemoryStream();
+                await file.OpenReadStream(10 * 1024 * 1024).CopyToAsync(ms);
+                var base64 = Convert.ToBase64String(ms.ToArray());
+                companyProfile.CompanyLogo = base64;
             }
         }
 
-    }
+        private void ClearLogo()
+        {
+            companyProfile.CompanyLogo = null;
+        }
 
+
+        private async Task OnCrFileSelected(IBrowserFile file)
+        {
+            if (file.Size > 10 * 1024 * 1024)
+            {
+                Snackbar.Add("File too large. Max 10MB allowed.", Severity.Warning);
+                return;
+            }
+
+            using var stream = file.OpenReadStream();
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+
+            crDocumentBase64 = Convert.ToBase64String(ms.ToArray());
+            crFileName = file.Name;
+
+            companyProfile.CrDocument = crDocumentBase64;
+        }
+        private void ClearCrFile()
+        {
+            crFileName = null;
+            crDocumentBase64 = null;
+            companyProfile.CrDocument = null;
+        }
+
+        public static string GetDisplayName<TEnum>(TEnum enumValue) where TEnum : Enum
+        {
+            var member = typeof(TEnum).GetMember(enumValue.ToString()).FirstOrDefault();
+            var displayAttr = member?.GetCustomAttributes(typeof(DisplayAttribute), false)
+                                     .FirstOrDefault() as DisplayAttribute;
+            return displayAttr?.Name ?? enumValue.ToString();
+        }
+        private List<string> AvailableCities = new();
+
+        private List<CountryCityModel> CountryCityList = new()
+{
+    new CountryCityModel { Country = "Qatar", Cities = new() { "Doha", "Al Wakrah", "Al Rayyan", "Lusail", "Umm Salal" }, CountryCode = "+974" },
+    new CountryCityModel { Country = "UAE", Cities = new() { "Dubai", "Abu Dhabi", "Sharjah", "Ajman", "Fujairah" }, CountryCode = "+971" },
+    new CountryCityModel { Country = "India", Cities = new() { "Mumbai", "Delhi", "Bangalore", "Chennai", "Hyderabad" }, CountryCode = "+91" },
+    new CountryCityModel { Country = "USA", Cities = new() { "New York", "Los Angeles", "Chicago", "Houston", "Phoenix" }, CountryCode = "+1" },
+    new CountryCityModel { Country = "UK", Cities = new() { "London", "Manchester", "Birmingham", "Leeds", "Liverpool" }, CountryCode = "+44" }
+};
+
+
+        private void OnCountryChanged(string selectedCountry)
+        {
+            companyProfile.Country = selectedCountry;
+
+            var match = CountryCityList.FirstOrDefault(c => c.Country == selectedCountry);
+            AvailableCities = match?.Cities ?? new();
+            companyProfile.PhoneNumberCountryCode = match?.CountryCode ?? "";
+            companyProfile.WhatsAppCountryCode = match?.CountryCode ?? "";
+
+            companyProfile.City = AvailableCities.FirstOrDefault();
+        }
+
+
+
+    }
 
 }
 

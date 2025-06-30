@@ -1,26 +1,13 @@
 using GoogleAnalytics.Blazor;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.ResponseCompression;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
-using MudBlazor;
 using MudBlazor.Services;
-using QLN.Web.Shared;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Middleware;
 using QLN.Web.Shared.MockServices;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Pages;
-using QLN.Web.Shared.Pages.Services;
 using QLN.Web.Shared.Services;
 using QLN.Web.Shared.Services.Interface;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -197,6 +184,10 @@ builder.Services.AddHttpClient<IClassifiedDashboardService, ClassfiedDashboardSe
     client.BaseAddress = new Uri(baseURL);
 }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
+builder.Services.AddHttpClient<ICompanyProfileService, CompanyProfileService>(client =>
+{
+    client.BaseAddress = new Uri(baseURL);
+}).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
 
 builder.Services.AddMemoryCache();

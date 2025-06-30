@@ -1,8 +1,8 @@
 ﻿using Dapr.Actors.Runtime;
+using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.Subscriptions;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
-using QLN.Common.DTOs;
 
 namespace QLN.Subscriptions.Actor.ActorClass
 {
@@ -23,7 +23,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
         public async Task<bool> FastSetDataAsync(SubscriptionDto data, CancellationToken cancellationToken = default)
         {
-            if (data == null) throw new ArgumentNullException(nameof(data));
+            ArgumentNullException.ThrowIfNull(data);
             var start = DateTime.UtcNow;
             var actorKey = Id.ToString();
 

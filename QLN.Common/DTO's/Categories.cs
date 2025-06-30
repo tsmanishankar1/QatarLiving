@@ -35,6 +35,8 @@ namespace QLN.Common.DTO_s
         public string Name { get; set; } = default!;
         public List<CategoryField> Fields { get; set; } = new();
         public List<CategoryTreeDto> Children { get; set; } = new();
-    }
-
+    }   
 }
+
+
+
