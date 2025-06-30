@@ -37,7 +37,7 @@ public static class V2NewsEndpoints
          .Produces<Dictionary<string, string>>(StatusCodes.Status200OK)
          .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        group.MapGet("/getcategories", async Task<Results<
+       group.MapGet("/getcategories", async Task<Results<
       Ok<List<V2NewsCategory>>,
       ProblemHttpResult>>
       (
@@ -62,130 +62,129 @@ public static class V2NewsEndpoints
       .Produces<List<V2NewsCategory>>(StatusCodes.Status200OK)
       .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        group.MapPost("/createNewsArticle", async Task<Results<
-            Ok<CreateNewsArticleResponseDto>,
-            ForbidHttpResult,
-            BadRequest<ProblemDetails>,
-            ProblemHttpResult>>
-         (
-        V2NewsArticleDTO dto,
-        IV2NewsService service,
-        HttpContext httpContext,
+        group.MapGet("/slots", async Task<Results<Ok<List<V2Slot>>, ProblemHttpResult>> (
+        IV2NewsService slotService,
         CancellationToken cancellationToken
         ) =>
-        {
-            try
-            {
-                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                var uid = userData.GetProperty("uid").GetString();
-                dto.UpdatedBy = uid;
-
-
-                dto.CreatedBy = uid;
-                dto.UpdatedBy = uid;
-                dto.CreatedAt = DateTime.UtcNow;
-                dto.UpdatedAt = DateTime.UtcNow;
-
-                var result = await service.CreateNewsArticleAsync(uid, dto, cancellationToken);
-                return TypedResults.Ok(result);
-            }
-            catch (InvalidDataException ex)
-            {
-                return TypedResults.BadRequest(new ProblemDetails
                 {
-                    Title = "Invalid Data",
-                    Detail = ex.Message,
-                    Status = StatusCodes.Status400BadRequest
-                });
-            }
-            catch (Exception ex)
-            {
-                return TypedResults.Problem("Internal Server Error", ex.Message);
-            }
-        })
-         .WithName("CreateNewsArticle")
-         .WithTags("News")
-         .WithSummary("Create News Article")
-         .WithDescription("Creates a news article using authenticated user ID and name from token.")
-         .Produces<CreateNewsArticleResponseDto>(StatusCodes.Status200OK)
-         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-         .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
-         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                    try
+                    {
+                        var result = await slotService.GetAllSlotsAsync(cancellationToken);
+                        return TypedResults.Ok(result);
+                    }
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem($"Unexpected error: {ex.Message}");
+                    }
+                })
+        .WithName("GetAllSlots")
+        .WithTags("News")
+        .WithSummary("Get All Slot Options")
+        .WithDescription("Returns a list of all slot enum values and names.")
+        .Produces<List<V2Slot>>(StatusCodes.Status200OK)
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        group.MapGet("/slots", async Task<Results<Ok<List<V2Slot>>, ProblemHttpResult>> (
-    IV2NewsService slotService,
-    CancellationToken cancellationToken
-) =>
-        {
-            try
+        group.MapPost("/createNewsArticle", async Task<Results<
+          Ok<string>,
+          ForbidHttpResult,
+          BadRequest<ProblemDetails>,
+          ProblemHttpResult>>
+      (
+          V2NewsArticleDTO dto,
+          IV2NewsService service,
+          HttpContext httpContext,
+          CancellationToken cancellationToken
+      ) =>
             {
-                var result = await slotService.GetAllSlotsAsync(cancellationToken);
-                return TypedResults.Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return TypedResults.Problem($"Unexpected error: {ex.Message}");
-            }
-        })
-.WithName("GetAllSlots")
-.WithTags("News")
-.WithSummary("Get All Slot Options")
-.WithDescription("Returns a list of all slot enum values and names.")
-.Produces<List<V2Slot>>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+                    var name = userData.GetProperty("name").GetString();
 
+                    dto.CreatedBy = uid;
+                    dto.UpdatedBy = uid;
+                    dto.CreatedAt = DateTime.UtcNow;
+                    dto.UpdatedAt = DateTime.UtcNow;
+                    dto.authorName = name;
 
-        group.MapPost("/createNewsArticleById", async Task<Results<
-            Ok<CreateNewsArticleResponseDto>,
-            BadRequest<ProblemDetails>,
-            ProblemHttpResult>>
-        (
-            V2NewsArticleDTO dto,
-            IV2NewsService service,
-            CancellationToken cancellationToken
-        ) =>
-        {
-            try
-            {
-                if (dto.CreatedBy == string.Empty || dto.UpdatedBy == string.Empty)
+                    var result = await service.CreateNewsArticleAsync(uid, dto, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
-                        Title = "Validation Error",
-                        Detail = "CreatedBy and UpdatedBy must be provided in the payload.",
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
                         Status = StatusCodes.Status400BadRequest
                     });
                 }
-
-                dto.CreatedAt = DateTime.UtcNow;
-                dto.UpdatedAt = DateTime.UtcNow;
-
-                var result = await service.CreateNewsArticleAsync(dto.CreatedBy, dto, cancellationToken);
-                return TypedResults.Ok(result);
-            }
-            catch (InvalidDataException ex)
-            {
-                return TypedResults.BadRequest(new ProblemDetails
+                catch (Exception ex)
                 {
-                    Title = "Invalid Data",
-                    Detail = ex.Message,
-                    Status = StatusCodes.Status400BadRequest
-                });
-            }
-            catch (Exception ex)
-            {
-                return TypedResults.Problem("Internal Server Error", ex.Message);
-            }
-        })
-        .ExcludeFromDescription()
-        .WithName("CreateNewsArticleByUserId")
-        .WithTags("News")
-        .WithSummary("Create News Article By UserId")
-        .WithDescription("Creates a news article using CreatedBy and UpdatedBy passed explicitly.")
-        .Produces<CreateNewsArticleResponseDto>(StatusCodes.Status200OK)
-        .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+      .WithName("CreateNewsArticle")
+      .WithTags("News")
+      .WithSummary("Create News Article")
+      .WithDescription("Creates a news article and returns only success message.")
+      .Produces<string>(StatusCodes.Status200OK)
+      .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+      .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+      .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        group.MapPost("/createNewsArticleById", async Task<Results<
+             Ok<string>,
+             BadRequest<ProblemDetails>,
+             ProblemHttpResult>>
+         (
+             V2NewsArticleDTO dto,
+             IV2NewsService service,
+             CancellationToken cancellationToken
+         ) =>
+                {
+                    try
+                    {
+                        if (string.IsNullOrWhiteSpace(dto.CreatedBy) || string.IsNullOrWhiteSpace(dto.UpdatedBy))
+                        {
+                            return TypedResults.BadRequest(new ProblemDetails
+                            {
+                                Title = "Validation Error",
+                                Detail = "CreatedBy and UpdatedBy must be provided in the payload.",
+                                Status = StatusCodes.Status400BadRequest
+                            });
+                        }
+
+                        dto.CreatedAt = DateTime.UtcNow;
+                        dto.UpdatedAt = DateTime.UtcNow;
+
+                        var result = await service.CreateNewsArticleAsync(dto.CreatedBy, dto, cancellationToken);
+                        return TypedResults.Ok(result); 
+                    }
+                    catch (InvalidDataException ex)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Data",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem("Internal Server Error", ex.Message);
+                    }
+                })
+         .ExcludeFromDescription()
+         .WithName("CreateNewsArticleByUserId")
+         .WithTags("News")
+         .WithSummary("Create News Article By UserId")
+         .WithDescription("Creates a news article using CreatedBy and UpdatedBy passed explicitly.")
+         .Produces<string>(StatusCodes.Status200OK)
+         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         group.MapGet("/getAllNewsArticle", async Task<Results<
             Ok<List<V2NewsArticleDTO>>,
@@ -213,25 +212,25 @@ public static class V2NewsEndpoints
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         group.MapGet("/byCategory/{categoryId:int}", async Task<Results<Ok<List<V2NewsArticleDTO>>, ProblemHttpResult>> (
-    int categoryId,
-    IV2NewsService service,
-    CancellationToken cancellationToken
-) =>
-        {
-            try
-            {
-                var result = await service.GetArticlesByCategoryIdAsync(categoryId, cancellationToken);
-                return TypedResults.Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return TypedResults.Problem("Internal Server Error", ex.Message);
-            }
-        })
-.WithName("GetArticlesByCategory")
-.WithTags("News")
-.Produces<List<V2NewsArticleDTO>>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            int categoryId,
+            IV2NewsService service,
+            CancellationToken cancellationToken
+        ) =>
+                {
+                    try
+                    {
+                        var result = await service.GetArticlesByCategoryIdAsync(categoryId, cancellationToken);
+                        return TypedResults.Ok(result);
+                    }
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem("Internal Server Error", ex.Message);
+                    }
+                })
+        .WithName("GetArticlesByCategory")
+        .WithTags("News")
+        .Produces<List<V2NewsArticleDTO>>(StatusCodes.Status200OK)
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         group.MapGet("/byCategory/{categoryId:int}/sub/{subCategoryId:int}", async Task<Results<Ok<List<V2NewsArticleDTO>>, ProblemHttpResult>> (
             int categoryId,
@@ -256,133 +255,133 @@ public static class V2NewsEndpoints
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-        group.MapPut("/updateNewsArticle", async Task<Results<
-     Ok<string>,
-     ForbidHttpResult,
-     BadRequest<ProblemDetails>,
-     NotFound<ProblemDetails>,
-     ProblemHttpResult>>
- (
-     V2NewsArticleDTO dto,
-     IV2NewsService service,
-     HttpContext httpContext,
-     CancellationToken cancellationToken
- ) =>
-        {
-            try
-            {
-                // ✅ Extract user from token
-                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                var uid = userData.GetProperty("uid").GetString();
-                dto.UpdatedBy = uid;
-
-                // ✅ Basic validation
-                if (dto.Id == Guid.Empty)
-                    return TypedResults.BadRequest(new ProblemDetails
+         group.MapPut("/updateNewsArticle", async Task<Results<
+             Ok<string>,
+             ForbidHttpResult,
+             BadRequest<ProblemDetails>,
+             NotFound<ProblemDetails>,
+             ProblemHttpResult>>
+         (
+             V2NewsArticleDTO dto,
+             IV2NewsService service,
+             HttpContext httpContext,
+             CancellationToken cancellationToken
+         ) =>
+                {
+                    try
                     {
-                        Title = "Validation Error",
-                        Detail = "News ID must be provided.",
-                        Status = 400
-                    });
+                        // ✅ Extract user from token
+                        var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                        var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                        var uid = userData.GetProperty("uid").GetString();
+                        dto.UpdatedBy = uid;
 
-                dto.UserId = uid;
-                dto.authorName = uid;
-                dto.UpdatedBy = uid;
-                dto.UpdatedAt = DateTime.UtcNow;
+                        // ✅ Basic validation
+                        if (dto.Id == Guid.Empty)
+                            return TypedResults.BadRequest(new ProblemDetails
+                            {
+                                Title = "Validation Error",
+                                Detail = "News ID must be provided.",
+                                Status = 400
+                            });
 
-                var result = await service.UpdateNewsArticleAsync(dto, cancellationToken);
+                        dto.UserId = uid;
+                        dto.authorName = uid;
+                        dto.UpdatedBy = uid;
+                        dto.UpdatedAt = DateTime.UtcNow;
 
-                return TypedResults.Ok(result); // result should be a success message
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return TypedResults.NotFound(new ProblemDetails
-                {
-                    Title = "Not Found",
-                    Detail = ex.Message,
-                    Status = 404
-                });
-            }
-            catch (InvalidDataException ex)
-            {
-                return TypedResults.BadRequest(new ProblemDetails
-                {
-                    Title = "Invalid Data",
-                    Detail = ex.Message,
-                    Status = 400
-                });
-            }
-            catch (Exception ex)
-            {
-                return TypedResults.Problem("Internal Server Error", ex.Message);
-            }
-        })
- .WithName("UpdateNewsArticles")
- .WithTags("News")
- .WithSummary("Update News (Authenticated)")
- .WithDescription("Updates a news entry using DTO and assigns the user info from access token.")
- .Produces<string>(StatusCodes.Status200OK)
- .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
- .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
- .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
- .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                        var result = await service.UpdateNewsArticleAsync(dto, cancellationToken);
+
+                        return TypedResults.Ok(result); // result should be a success message
+                    }
+                    catch (KeyNotFoundException ex)
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = ex.Message,
+                            Status = 404
+                        });
+                    }
+                    catch (InvalidDataException ex)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Data",
+                            Detail = ex.Message,
+                            Status = 400
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem("Internal Server Error", ex.Message);
+                    }
+                })
+         .WithName("UpdateNewsArticles")
+         .WithTags("News")
+         .WithSummary("Update News (Authenticated)")
+         .WithDescription("Updates a news entry using DTO and assigns the user info from access token.")
+         .Produces<string>(StatusCodes.Status200OK)
+         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+         .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+         .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
         group.MapPut("/updateNewsarticleByUserId", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, NotFound<ProblemDetails>, ProblemHttpResult>>
-(
-    V2NewsArticleDTO dto,
-    IV2NewsService service,
-    CancellationToken cancellationToken
-) =>
-           {
-               try
-               {
-                   if (dto.UserId == string.Empty || string.IsNullOrWhiteSpace(dto.authorName))
-                   {
-                       return TypedResults.BadRequest(new ProblemDetails
-                       {
-                           Title = "Validation Error",
-                           Detail = "UserId and authorName must be provided.",
-                           Status = 400
-                       });
-                   }
+        (
+            V2NewsArticleDTO dto,
+            IV2NewsService service,
+            CancellationToken cancellationToken
+        ) =>
+                    {
+                        try
+                        {
+                            if (dto.UserId == string.Empty || string.IsNullOrWhiteSpace(dto.authorName))
+                            {
+                                return TypedResults.BadRequest(new ProblemDetails
+                                {
+                                    Title = "Validation Error",
+                                    Detail = "UserId and authorName must be provided.",
+                                    Status = 400
+                                });
+                            }
 
-                   var result = await service.UpdateNewsArticleAsync(dto, cancellationToken);
-                   return TypedResults.Ok(result);
-               }
-               catch (KeyNotFoundException ex)
-               {
-                   return TypedResults.NotFound(new ProblemDetails
-                   {
-                       Title = "Not Found",
-                       Detail = ex.Message,
-                       Status = 404
-                   });
-               }
-               catch (InvalidDataException ex)
-               {
-                   return TypedResults.BadRequest(new ProblemDetails
-                   {
-                       Title = "Invalid Data",
-                       Detail = ex.Message,
-                       Status = 400
-                   });
-               }
-               catch (Exception ex)
-               {
-                   return TypedResults.Problem("Internal Server Error", ex.Message);
-               }
-           })
-.WithName("UpdateArtcleNewsByUserId")
-.WithTags("News")
-.WithSummary("Update News Article")
-.WithDescription("Updates a news article based on provided payload without using ID in URL.")
-.Produces<string>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-         .ExcludeFromDescription();
+                            var result = await service.UpdateNewsArticleAsync(dto, cancellationToken);
+                            return TypedResults.Ok(result);
+                        }
+                        catch (KeyNotFoundException ex)
+                        {
+                            return TypedResults.NotFound(new ProblemDetails
+                            {
+                                Title = "Not Found",
+                                Detail = ex.Message,
+                                Status = 404
+                            });
+                        }
+                        catch (InvalidDataException ex)
+                        {
+                            return TypedResults.BadRequest(new ProblemDetails
+                            {
+                                Title = "Invalid Data",
+                                Detail = ex.Message,
+                                Status = 400
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            return TypedResults.Problem("Internal Server Error", ex.Message);
+                        }
+                    })
+        .WithName("UpdateArtcleNewsByUserId")
+        .WithTags("News")
+        .WithSummary("Update News Article")
+        .WithDescription("Updates a news article based on provided payload without using ID in URL.")
+        .Produces<string>(StatusCodes.Status200OK)
+        .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+        .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+        .ExcludeFromDescription();
 
         return group;
     }

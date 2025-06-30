@@ -29,7 +29,7 @@ namespace QLN.Common.DTO_s
         public string WriterTag { get; set; }
 
         public string? CoverImageUrl { get; set; }
-
+        public string Slug { get; set; }
         public List<string> InlineImageUrls { get; set; } = [];
 
         public List<V2ArticleCategory> Categories { get; set; } = [];
