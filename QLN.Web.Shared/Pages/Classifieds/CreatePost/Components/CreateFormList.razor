@@ -109,7 +109,7 @@
 
                 }
                 <div class="form-group">
-                    <CustomInput TItem="int" MaxLength="50"   InputHtmlType="text" For="@(() => adPostModel.Price)" Placeholder="Price" @bind-Value="adPostModel.Price" TextRight="QAR" />
+                    <CustomInput TItem="int?" MaxLength="50"   InputHtmlType="text" For="@(() => adPostModel.Price)" Placeholder="Price" @bind-Value="adPostModel.Price" TextRight="QAR" />
                 </div>
         </div>
     }
@@ -135,7 +135,7 @@
         @if (adPostModel.SelectedVertical == "items")
         {
             <div class="form-group">
-                <CustomInput TItem="int"  MaxLength="3"   InputHtmlType="number" For="@(() => adPostModel.BatteryPercentage)"Placeholder="Battery Percentage" @bind-Value="adPostModel.BatteryPercentage" TextRight="%" />
+                <CustomInput TItem="int?"  MaxLength="3"   InputHtmlType="number" For="@(() => adPostModel.BatteryPercentage)"Placeholder="Battery Percentage" @bind-Value="adPostModel.BatteryPercentage" TextRight="%" />
             </div>
         }
 
