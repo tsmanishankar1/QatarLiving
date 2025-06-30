@@ -93,14 +93,11 @@ namespace QLN.Common.Infrastructure.Constants
         public static class V2Content
         {
             public const string ContentStoreName = "contentstatestore";
-            public const string EventIndexKey = "event-index";
-            public const string ContentServiceAppId = "qln-content-ms"; 
-        }
-        public static class V2ContentNews
-        {
-            public const string v2contentnews = "contentstatestore";
-            public const string v2contentServiceAppId = "qln-content-ms";
             public const string ContentServiceAppId = "qln-content-ms";
+            public const string NewsIndexKey = "news-index";
+            public const string EventIndexKey = "event-index";
+
         }
+
     }
 }

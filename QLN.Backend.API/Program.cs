@@ -26,6 +26,8 @@ using System.Text.Json.Serialization;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.Wishlist;
+using QLN.Common.Infrastructure.IService.IContentService;
+using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
 var builder = WebApplication.CreateBuilder(args);
 
 #region Kestrel For Dev Testing via dapr.yaml
@@ -213,13 +215,13 @@ builder.Services.BannerServicesConfiguration(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
 builder.Services.EventConfiguration(builder.Configuration);
+builder.Services.NewsConfiguration(builder.Configuration);
+builder.Services.AddonConfiguration(builder.Configuration);
 builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
 builder.Services.PayToFeatureConfiguration(builder.Configuration);
-builder.Services.ContentConfiguration(builder.Configuration);
 builder.Services.AddonConfiguration(builder.Configuration);
 var app = builder.Build();
-
 #region DAPR Subscriptions
 
 app.UseCloudEvents();
@@ -279,14 +281,13 @@ app.MapGroup("/api/paytofeature")
 app.MapGroup("/api/paytopublish")
     .MapPayToPublishEndpoints();
 
-app.MapGroup("/api/v2/content")
-    .MapNewsContentEndpoints();
-
-
 app.MapGroup("/api/addon")
  .MapAddonEndpoints();
 
 
+var newsGroup = app.MapGroup("/api/v2/news");
+newsGroup.MapNewsEndpoints()
+     .RequireAuthorization();
 app.MapAllBackOfficeEndpoints();
 app.MapLandingPageEndpoints();
 
