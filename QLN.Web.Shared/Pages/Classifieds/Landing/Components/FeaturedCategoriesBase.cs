@@ -14,6 +14,8 @@ namespace QLN.Web.Shared.Components.Classifieds.FeaturedCategoryCard
 
         [Inject]
         protected IJSRuntime JSRuntime { get; set; } = default!;
+       [Inject]
+        protected NavigationManager NavigationManager { get; set; } = default!;
 
         private bool _swiperInitialized = false;
         private bool _shouldInitSwiper = false;
@@ -39,9 +41,13 @@ namespace QLN.Web.Shared.Components.Classifieds.FeaturedCategoryCard
             }
         }
 
-        protected void HandleCategoryClick(LandingBackOfficeIndex category)
-        {
-            Console.WriteLine($"Clicked category: {category.Title}");
-        }
+          protected void HandleCategoryClick(LandingBackOfficeIndex category)
+         {
+        if (category?.EntityId == null)
+            return;
+
+        var url = $"/qln/classifieds/items?categoryId={category.EntityId}";
+        NavigationManager.NavigateTo(url);
+    }
     }
 }

@@ -4,19 +4,25 @@ public class SearchStateService
 {
     public string ItemSearchText { get; set; }
     public string ItemCategory { get; set; }
+    public string ItemSubCategory { get; set; } 
+    public string ItemSubSubCategory { get; set; }  
     public string ItemBrand { get; set; }
     public long? ItemMinPrice { get; set; }
     public long? ItemMaxPrice { get; set; }
     public string ItemViewMode { get; set; } = "grid";
+    public bool ItemHasWarrantyCertificate { get; set; } = false;
+
+    public Dictionary<string, List<string>> ItemFieldFilters { get; set; } = new();
+
     public List<CategoryTreeDto> ItemCategoryTrees
+    {
+        get => _itemCategoryTrees;
+        set
         {
-            get => _itemCategoryTrees;
-            set
-            {
-                _itemCategoryTrees = value;
-                OnCategoryTreesChanged?.Invoke();
-            }
+            _itemCategoryTrees = value;
+            OnCategoryTreesChanged?.Invoke();
         }
+    }
     private List<CategoryTreeDto> _itemCategoryTrees = new();
     public List<CategoryField> ItemCategoryFilters = new();
     public event Action? OnCategoryTreesChanged;
@@ -33,10 +39,14 @@ public class SearchStateService
 
     public string CollectiblesSearchText { get; set; }
     public string CollectiblesCategory { get; set; }
+    public string CollectiblesSubCategory { get; set; } 
+    public string CollectiblesSubSubCategory { get; set; }  
     public string CollectiblesCondition { get; set; }
     public long? CollectiblesMinPrice { get; set; }
     public long? CollectiblesMaxPrice { get; set; }
     public string CollectiblesViewMode { get; set; } = "grid";
+    public Dictionary<string, List<string>> CollectiblesFilters { get; set; } = new();
+    public bool CollectiblesHasAuthenticityCertificate { get; set; } = false;
     public List<CategoryTreeDto> CollectiblesCategoryTrees { get; set; } = new();
 
     public string? CollectiblesSortBy { get; set; }
@@ -50,10 +60,14 @@ public class SearchStateService
 
     public string PrelovedSearchText { get; set; }
     public string PrelovedCategory { get; set; }
+    public string PrelovedSubCategory { get; set; } 
+    public string PrelovedSubSubCategory { get; set; }  
     public string PrelovedBrand { get; set; }
     public long? PrelovedMinPrice { get; set; }
     public long? PrelovedMaxPrice { get; set; }
     public string PrelovedViewMode { get; set; } = "grid";
+    public Dictionary<string, List<string>> PrelovedFilters { get; set; } = new();
+    public bool PrelovedHasWarrantyCertificate { get; set; } = false;
     public List<CategoryTreeDto> PrelovedCategoryTrees { get; set; } = new();
 
     public string? PrelovedSortBy { get; set; }
