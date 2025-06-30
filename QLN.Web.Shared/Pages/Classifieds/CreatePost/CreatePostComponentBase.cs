@@ -33,8 +33,6 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
         private void HandleValidationRequested(object? sender, ValidationRequestedEventArgs args)
         {
             messageStore?.Clear();
-            Logger?.LogInformation("Running custom validation...");
-
 
             if (adPostModel == null)
             {
@@ -79,9 +77,9 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
             // Items-specific validation
             else if (vertical == "items")
             {
-               if (adPostModel.BatteryPercentage < 1 || adPostModel.BatteryPercentage > 200)
+               if (adPostModel.BatteryPercentage < 1 || adPostModel.BatteryPercentage > 100)
                 {
-                    messageStore.Add(new FieldIdentifier(adPostModel, nameof(adPostModel.BatteryPercentage)), "Battery Percentage must be between 1 and 200.");
+                    messageStore.Add(new FieldIdentifier(adPostModel, nameof(adPostModel.BatteryPercentage)), "Battery Percentage must be between 1 and 100.");
                 }
 
             }
