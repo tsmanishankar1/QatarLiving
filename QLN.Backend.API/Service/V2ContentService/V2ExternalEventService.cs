@@ -1,8 +1,11 @@
 ﻿using Dapr.Client;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.Utilities;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 
@@ -19,20 +22,23 @@ namespace QLN.Backend.API.Service.V2ContentService
             _logger = logger;
             _blobStorage = blobStorage;
         }
-
-        public async Task<string> CreateEvent(V2ContentEventDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateEvent(string userId, V2EventForm dto, CancellationToken cancellationToken = default)
         {
+            string? FileName = null;
             try
             {
-                if (!string.IsNullOrWhiteSpace(dto.Image_url))
+                if (!string.IsNullOrWhiteSpace(dto.CoverImage))
                 {
-                    var imageName = $"{dto.Title} _ {dto.User_id}.png";
-                    var BlobUrl = await _blobStorage.SaveBase64File(dto.Image_url, imageName, "imageurl", cancellationToken);
-                    dto.Image_url = BlobUrl;
+                    var (ext, base64Data) = Base64Helper.ParseBase64(dto.CoverImage);
+                    if (ext is not ("jpeg" or "png" or "jpg"))
+                        throw new ArgumentException("Cover Image must be in Jpeg, PNG, or JPG format.");
+                    var imageName = $"{dto.EventTitle}_{userId}.{ext}";
+                    var blobUrl = await _blobStorage.SaveBase64File(base64Data, imageName, "imageurl", cancellationToken);
+                    dto.CoverImage = blobUrl;
                 }
-                var url = "/v2/api/event/createByUserId";
+                var url = "/api/v2/event/createByUserId";
 
-                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2ContentEvents.ContentServiceAppId, url);
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
                 request.Content = new StringContent(
                     JsonSerializer.Serialize(dto),
                     Encoding.UTF8,
@@ -45,23 +51,33 @@ namespace QLN.Backend.API.Service.V2ContentService
 
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
             }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid data provided for event creation.");
+                throw new InvalidDataException("Invalid data provided for event creation.", ex);
+            }
             catch (Exception ex)
             {
+                await CleanupUploadedFiles(FileName, cancellationToken);
                 _logger.LogError(ex, "Error creating event");
                 throw;
             }
         }
-
-        public async Task<List<V2ContentEventDto>> GetAllEvents(CancellationToken cancellationToken = default)
+        private async Task CleanupUploadedFiles(string? file, CancellationToken cancellationToken)
+        {
+            if (!string.IsNullOrWhiteSpace(file))
+                await _blobStorage.DeleteFile(file, "CoverImage", cancellationToken);
+        }
+        public async Task<List<V2EventResponse>> GetAllEvents(CancellationToken cancellationToken = default)
         {
             try
             {
-                return await _dapr.InvokeMethodAsync<List<V2ContentEventDto>>(
+                return await _dapr.InvokeMethodAsync<List<V2EventResponse>>(
                     HttpMethod.Get,
-                    ConstantValues.V2ContentEvents.ContentServiceAppId,
-                    "/v2/api/event/getAll",
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    "/api/v2/event/getAll",
                     cancellationToken
-                ) ?? new List<V2ContentEventDto>();
+                ) ?? new List<V2EventResponse>();
             }
             catch (Exception ex)
             {
@@ -69,23 +85,22 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-
-        public async Task<V2ContentEventDto?> GetEventById(Guid id, CancellationToken cancellationToken = default)
+        public async Task<V2EventResponse?> GetEventById(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = $"/v2/api/event/getById/{id}";
+                var url = $"/api/v2/event/getById/{id}";
 
-                return await _dapr.InvokeMethodAsync<V2ContentEventDto>(
+                return await _dapr.InvokeMethodAsync<V2EventResponse>(
                     HttpMethod.Get,
-                    ConstantValues.V2ContentEvents.ContentServiceAppId,
+                    ConstantValues.V2Content.ContentServiceAppId,
                     url,
                     cancellationToken);
             }
-            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            catch(KeyNotFoundException ex)
             {
-                _logger.LogWarning(ex, "Event with id '{id}' not found.", id);
-                return null;
+                _logger.LogWarning(ex, "Event with ID {Id} not found.", id);
+                throw;
             }
             catch (Exception ex)
             {
@@ -93,20 +108,24 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-
-        public async Task<string> UpdateEvent(V2ContentEventDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateEvent(string userId, V2UpdateRequest dto, CancellationToken cancellationToken = default)
         {
+            string? FileName = null;
             try
             {
-                if (!string.IsNullOrWhiteSpace(dto.Image_url))
+                if (!string.IsNullOrWhiteSpace(dto.CoverImage) && !dto.CoverImage.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                 {
-                    var imageName = $"{dto.Title}_{dto.User_id}.png";
-                    var BlobUrl = await _blobStorage.SaveBase64File(dto.Image_url, imageName, "imageurl", cancellationToken);
-                    dto.Image_url = BlobUrl;
+                    var (ext, base64Data) = Base64Helper.ParseBase64(dto.CoverImage);
+                    if (ext is not ("jpeg" or "png" or "jpg"))
+                        throw new ArgumentException("Cover Image must be in Jpeg, PNG, or JPG format.");
+                    var imageName = $"{dto.EventTitle}_{userId}.{ext}";
+                    var blobUrl = await _blobStorage.SaveBase64File(base64Data, imageName, "imageurl", cancellationToken);
+                    dto.CoverImage = blobUrl;
                 }
-                var url = "/v2/api/event/updateByUserId";
 
-                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.V2ContentEvents.ContentServiceAppId, url);
+                var url = "/api/v2/event/updateByUserId";
+
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.V2Content.ContentServiceAppId, url);
                 request.Content = new StringContent(
                     JsonSerializer.Serialize(dto),
                     Encoding.UTF8,
@@ -119,27 +138,27 @@ namespace QLN.Backend.API.Service.V2ContentService
 
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
             }
-            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            catch(ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Event with ID not found.");
-                return null;
+                _logger.LogWarning(ex, "Invalid data provided for event update.");
+                throw new InvalidDataException("Invalid data provided for event update.", ex);
             }
             catch (Exception ex)
             {
+                await CleanupUploadedFiles(FileName, cancellationToken);
                 _logger.LogError(ex, "Error updating event");
                 throw;
             }
         }
-
         public async Task<string> DeleteEvent(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = $"/v2/api/event/delete/{id}";
+                var url = $"/api/v2/event/delete/{id}";
 
                 return await _dapr.InvokeMethodAsync<string>(
                     HttpMethod.Delete,
-                    ConstantValues.V2ContentEvents.ContentServiceAppId,
+                    ConstantValues.V2Content.ContentServiceAppId,
                     url,
                     cancellationToken
                 );
@@ -152,6 +171,23 @@ namespace QLN.Backend.API.Service.V2ContentService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting event with Id {id}", id);
+                throw;
+            }
+        }
+        public async Task<List<EventsCategory>> GetAllCategories(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _dapr.InvokeMethodAsync<List<EventsCategory>>(
+                    HttpMethod.Get,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    "/api/v2/event/getAllCategories",
+                    cancellationToken
+                ) ?? new List<EventsCategory>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all event categories.");
                 throw;
             }
         }

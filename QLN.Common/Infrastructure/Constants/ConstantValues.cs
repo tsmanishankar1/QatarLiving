@@ -90,18 +90,12 @@ namespace QLN.Common.Infrastructure.Constants
             public const string Classifieds = "classifieds";
             public const string Services = "services";
         }
-        public static class V2ContentEvents
-        {
-            public const string ContentStoreName = "v2eventstatestore";
-            public const string EventIndexKey = "event-index";
-            // renaming this to content as all content will go to this MS - it may have multiple state stores for data though, so leaving in place the event statestore
-            public const string ContentServiceAppId = "qln-content-ms"; 
-        }
         public static class V2Content
         {
             public const string ContentStoreName = "contentstatestore";
             public const string ContentServiceAppId = "qln-content-ms";
             public const string NewsIndexKey = "news-index";
+            public const string EventIndexKey = "event-index";
 
         }
 

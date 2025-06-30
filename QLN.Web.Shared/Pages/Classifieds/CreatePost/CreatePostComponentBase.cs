@@ -1,16 +1,17 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
+using Microsoft.JSInterop;
+using MudBlazor;
 using QLN.Common.DTO_s;
-using System.Text.Json;
+using QLN.Web.Shared.Components;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
-using MudBlazor;
-using Microsoft.JSInterop;
+using System.Text.Json;
 
 namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
 {
-    public class CreatePostComponentBase : ComponentBase
+    public class CreatePostComponentBase : QLComponentBase
     {
         [Inject] private IClassifiedsServices _classifiedsService { get; set; } = default!;
         [Inject] private ILogger<CreatePostComponentBase> Logger { get; set; }
@@ -23,19 +24,24 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
 
         protected bool IsSaving { get; set; } = false;
         protected string SnackbarMessage { get; set; } = string.Empty;
-        [Inject] public ISnackbar Snackbar { get; set; } = default!;
 
         protected string selectedVertical;
 
         protected override void OnInitialized()
         {
-            breadcrumbItems = new()
+            try
             {
-                new () { Label = "Classifieds", Url = "/qln/classifieds" },
-                new () { Label = "Create Form", Url = "/qln/classifieds/createform", IsLast = true }
-            };
-
-
+                AuthorizedPage();
+                breadcrumbItems = new()
+                {
+                    new () { Label = "Classifieds", Url = "/qln/classifieds" },
+                    new () { Label = "Create Form", Url = "/qln/classifieds/createform", IsLast = true }
+                };
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitialized");
+            }
         }
 
         private Dictionary<string, string> dynamicFieldValues = new(); // Dynamic field values

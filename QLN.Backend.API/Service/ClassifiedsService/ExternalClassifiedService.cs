@@ -8,6 +8,10 @@ using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Utilities;
+using static System.Net.Mime.MediaTypeNames;
+using System.Runtime.Intrinsics.Arm;
+using QLN.Common.Infrastructure.IService.ISearchService;
+using static QLN.Common.DTO_s.ClassifiedsIndex;
 
 namespace QLN.Backend.API.Service.ClassifiedService
 {
@@ -19,14 +23,16 @@ namespace QLN.Backend.API.Service.ClassifiedService
         private readonly DaprClient _dapr;
         private readonly IEventlogger _log;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly IFileStorageBlobService _fileStorageBlob;       
+        private readonly IFileStorageBlobService _fileStorageBlob;
+        private readonly ISearchService _searchService;
 
-        public ExternalClassifiedService(DaprClient dapr, IEventlogger log, IHttpContextAccessor httpContextAccessor, IFileStorageBlobService fileStorageBlob)
+        public ExternalClassifiedService(DaprClient dapr, IEventlogger log, IHttpContextAccessor httpContextAccessor, IFileStorageBlobService fileStorageBlob, ISearchService searchService)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
             _log = log ?? throw new ArgumentNullException(nameof(log));
             _httpContextAccessor = httpContextAccessor;
             _fileStorageBlob = fileStorageBlob;
+            _searchService = searchService ?? throw new ArgumentNullException(nameof(searchService));
         }
        
 
@@ -163,10 +169,10 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(certFileName);
-                dto.CertificateFileName = certUrl;
-                //dto.CertificateBase64 = null;
+                dto.CertificateFileName = certFileName;
+                dto.CertificateBase64 = certUrl;
 
-               /* // Upload images with order
+                // Upload images with order
                 for (int i = 0; i < dto.AdImagesBase64.Count; i++)
                 {
                     var image = dto.AdImagesBase64[i];
@@ -181,7 +187,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                     image.AdImageFileNames = customName;
                     image.Url = url;
-                }*/
+                }
 
                 _log.LogTrace($"Calling internal service with {dto.AdImagesBase64.Count} images");
 
@@ -192,7 +198,50 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     dto,
                     cancellationToken
                 );
-
+                var classifiedsIndex = new ClassifiedsIndex
+                {
+                    SubVertical = dto.SubVertical,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    CategoryId = dto.CategoryId.ToString(),
+                    Category = dto.Category,
+                    L1Category = dto.l1Category,
+                    L1CategoryId = dto.L1CategoryId.ToString(),
+                    L2Category = dto.L2Category,
+                    L2CategoryId = dto.L2CategoryId.ToString(),
+                    Price = (double?)dto.Price,
+                    PriceType = dto.PriceType,
+                    Location = dto.Location.FirstOrDefault(),
+                    PhoneNumber = dto.PhoneNumber,
+                    WhatsappNumber = dto.WhatsAppNumber,
+                    UserId = dto.UserId.ToString(),
+                    CreatedDate = DateTime.UtcNow,
+                    ModifiedDate = DateTime.UtcNow,
+                    Images = dto.AdImagesBase64,
+                    WarrantyCertificateUrl = dto.CertificateBase64,
+                    Make = dto.MakeType,
+                    Model = dto.Model,
+                    Brand = dto.Brand,
+                    Processor = dto.Processor,
+                    Ram = dto.Ram,
+                    SizeType = dto.Size,
+                    Size = dto.SizeValue,
+                    Status = "Published",
+                    StreetNumber = dto.StreetNumber,
+                    Zone = dto.Zone,
+                    Storage = dto.Capacity,
+                    BuildingNumber = dto.BuildingNumber,
+                    Colour = dto.Color,
+                    BatteryPercentage = dto.BatteryPercentage,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiryDate = dto.RefreshExpiry
+                };
+                var indexDocument = new CommonIndexRequest
+                {
+                    VerticalName = ConstantValues.Verticals.Classifieds,
+                    ClassifiedsItem = classifiedsIndex
+                };
+                var msg = await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -249,7 +298,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(certFileName);
                 dto.CertificateFileName = certUrl;
-               /* dto.CertificateBase64 = null;
+                dto.CertificateBase64 = null;
 
                 for (int i = 0; i < dto.AdImagesBase64.Count; i++)
                 {
@@ -268,7 +317,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     image.Url = url;
                 }
 
-                _log.LogTrace($"Calling internal service with CertificateUrl: {dto.CertificateFileName} and {dto.AdImagesBase64.Count} images");*/
+                _log.LogTrace($"Calling internal service with CertificateUrl: {dto.CertificateFileName} and {dto.AdImagesBase64.Count} images");
 
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
@@ -277,7 +326,49 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     dto,
                     cancellationToken
                 );
-
+                var prelovedIndex = new ClassifiedsIndex
+                {
+                    SubVertical = dto.SubVertical,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    CategoryId = dto.CategoryId.ToString(),
+                    Category = dto.Category,
+                    L1Category = dto.l1Category,
+                    L1CategoryId = dto.L1CategoryId.ToString(),
+                    L2Category = dto.L2Category,
+                    L2CategoryId = dto.L2CategoryId.ToString(),
+                    Price = (double?)dto.Price,
+                    PriceType = dto.PriceType,
+                    Location = dto.Location.FirstOrDefault(),
+                    PhoneNumber = dto.PhoneNumber,
+                    WhatsappNumber = dto.WhatsAppNumber,
+                    UserId = dto.UserId.ToString(),
+                    CreatedDate = DateTime.UtcNow,
+                    ModifiedDate = DateTime.UtcNow,
+                    Images = dto.AdImagesBase64,
+                    WarrantyCertificateUrl = dto.CertificateBase64,
+                    Status = "Published",
+                    Model = dto.Model,
+                    Brand = dto.Brand,
+                    Processor = dto.Processor,
+                    Ram = dto.Ram,
+                    SizeType = dto.Size,
+                    Size = dto.SizeValue,
+                    StreetNumber = dto.StreetNumber,
+                    Zone = dto.Zone,
+                    Storage = dto.Capacity,
+                    BuildingNumber = dto.BuildingNumber,
+                    Colour = dto.Color,
+                    BatteryPercentage = dto.BatteryPercentage,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiryDate = dto.RefreshExpiry
+                };
+                var indexDocument = new CommonIndexRequest
+                {
+                    VerticalName = ConstantValues.Verticals.Classifieds,
+                    ClassifiedsItem = prelovedIndex
+                };
+                var msg = await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -334,8 +425,8 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(certFileName);
-                dto.CertificateFileName = certUrl;
-               /* dto.CertificateBase64 = null;
+                dto.CertificateFileName = certFileName;
+                dto.CertificateBase64 = certUrl;
 
                 for (int i = 0; i < dto.AdImagesBase64.Count; i++)
                 {
@@ -353,7 +444,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     image.Url = blobUrl;
                 }
 
-                _log.LogTrace($"Calling internal collectibles service with {dto.AdImagesBase64.Count} images and cert: {dto.CertificateFileName}");*/
+                _log.LogTrace($"Calling internal collectibles service with {dto.AdImagesBase64.Count} images and cert: {dto.CertificateFileName}");
 
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
@@ -362,7 +453,43 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     dto,
                     cancellationToken
                 );
-
+                var collectiblesIndex = new ClassifiedsIndex
+                {
+                    SubVertical = dto.SubVertical,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    CategoryId = dto.CategoryId.ToString(),
+                    Category = dto.Category,
+                    L1Category = dto.l1Category,
+                    L1CategoryId = dto.L1CategoryId.ToString(),
+                    L2Category = dto.L2Category,
+                    L2CategoryId = dto.L2CategoryId.ToString(),
+                    Price = (double?)dto.Price,
+                    PriceType = dto.PriceType,
+                    Location = dto.Location.FirstOrDefault(),
+                    PhoneNumber = dto.PhoneNumber,
+                    WhatsappNumber = dto.WhatsAppNumber,
+                    UserId = dto.UserId.ToString(),
+                    CreatedDate = DateTime.UtcNow,
+                    ModifiedDate = DateTime.UtcNow,
+                    Images = dto.AdImagesBase64,
+                    WarrantyCertificateUrl = dto.CertificateBase64,
+                    YearEra = dto.YearOrEra,
+                    Rarity = dto.Rarity,
+                    Material = dto.Material,
+                    Status = "Published",
+                    SerialNumber = dto.SerialNumber,
+                    SignedBy = dto.SignedBy,
+                    IsSigned = dto.Signed,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiryDate = dto.RefreshExpiry
+                };
+                var indexDocument = new CommonIndexRequest
+                {
+                    VerticalName = ConstantValues.Verticals.Classifieds,
+                    ClassifiedsItem = collectiblesIndex
+                };
+                var msg = await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -418,8 +545,8 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 var flyerUrl = await _fileStorageBlob.SaveBase64File(dto.FlyerFile, flyerName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(flyerName);
-                dto.FlyerFile = null;
-                dto.FlyerName = flyerUrl;
+                dto.FlyerFile = flyerUrl;
+                dto.FlyerName = flyerName;
 
                 for (int i = 0; i < dto.AdImagesBase64.Count; i++)
                 {
@@ -447,7 +574,27 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     dto,
                     cancellationToken
                 );
-
+                var dealsIndex = new ClassifiedsIndex
+                {
+                    SubVertical = dto.SubVertical,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    Location = dto.Location.FirstOrDefault(),
+                    CreatedDate = DateTime.UtcNow,
+                    Images = dto.AdImagesBase64,
+                    FlyerFileUrl = dto.FlyerFile,
+                    Status = "Published",
+                    FlyerFileName = dto.FlyerName,
+                    FlyerXmlLink = dto.XMLLink,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiryDate = dto.RefreshExpiry
+                };
+                var indexDocument = new CommonIndexRequest
+                {
+                    VerticalName = ConstantValues.Verticals.Classifieds,
+                    ClassifiedsItem = dealsIndex
+                };
+                var msg = await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -677,6 +824,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add("search", search);
+
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
                     : string.Empty;
@@ -713,6 +863,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
+                if (!string.IsNullOrWhiteSpace(search))  
+                    queryParams.Add("search", search);
+
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
                     : string.Empty;
@@ -748,6 +901,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
+
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add("search", search);
 
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
@@ -786,6 +942,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add("search", search);
+
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
                     : string.Empty;
@@ -819,6 +978,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add("search", search);
+
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
                     : string.Empty;
@@ -850,6 +1012,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
+
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add("search", search);
 
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
@@ -883,6 +1048,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add("search", search);
+
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
                     : string.Empty;
@@ -915,6 +1083,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
+
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add("search", search);
 
                 var queryString = queryParams.Count > 0
                     ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))

@@ -12,7 +12,6 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["nuget.config", "."]
 COPY ["QLN.Subscriptions.Actor/QLN.Subscriptions.Actor.csproj", "QLN.Subscriptions.Actor/"]
 COPY ["QLN.Backend.API/QLN.Backend.API.csproj", "QLN.Backend.API/"]
 COPY ["QLN.Common/QLN.Common.csproj", "QLN.Common/"]
