@@ -221,12 +221,21 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
 builder.Services.EventConfiguration(builder.Configuration);
 builder.Services.NewsConfiguration(builder.Configuration);
-
-
+builder.Services.AddonConfiguration(builder.Configuration);
 builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
+var app = builder.Build();
+#region DAPR Subscriptions
 
-var app= builder.Build();
+app.UseCloudEvents();
+
+app.MapSubscribeHandler();
+
+#endregion
+
+
+
+
 app.UseResponseCaching();                
 
 if (!app.Environment.IsDevelopment())
@@ -276,10 +285,6 @@ app.MapGroup("/api/payments")
 
 app.MapGroup("/api/paytopublish")
     .MapPayToPublishEndpoints();
-
-//app.MapGroup("/api/v2/content")
-//    .MapNewsContentEndpoints();
-
 
 app.MapGroup("/api/addon")
  .MapAddonEndpoints();

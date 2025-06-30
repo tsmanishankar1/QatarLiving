@@ -13,7 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
-namespace QLN.Content.MS.Service
+namespace QLN.Content.MS.Service.NewsInternalService
 {
     public class V2InternalNewsService : IV2NewsService
     {
@@ -105,11 +105,11 @@ namespace QLN.Content.MS.Service
             _logger.LogInformation("Returning static writer tags as key-value JSON");
             return await Task.FromResult(newsCateg);
         }
-        public async Task<List<V2Slot>> GetAllSlotsAsync(CancellationToken cancellationToken = default)
+        public async Task<List<V2NewsSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default)
         {
-            var slots = Enum.GetValues(typeof(Slot))
-                .Cast<Slot>()
-                .Select(s => new V2Slot
+            var slots = Enum.GetValues(typeof(NewsSlot))
+                .Cast<NewsSlot>()
+                .Select(s => new V2NewsSlot
                 {
                     Id = (int)s,
                     Name = s.ToString()
@@ -237,13 +237,13 @@ namespace QLN.Content.MS.Service
             try
             {
                 var keys = await _dapr.GetStateAsync<List<string>>(
-                    ConstantValues.V2Content.ContentStoreName,
-                    ConstantValues.V2Content.NewsIndexKey,
+                    V2Content.ContentStoreName,
+                    V2Content.NewsIndexKey,
                     cancellationToken: cancellationToken) ?? new();
 
                 _logger.LogInformation("Fetched {Count} keys from index", keys.Count);
 
-                var items = await _dapr.GetBulkStateAsync(ConstantValues.V2Content.ContentStoreName, keys, null, cancellationToken: cancellationToken);
+                var items = await _dapr.GetBulkStateAsync(V2Content.ContentStoreName, keys, null, cancellationToken: cancellationToken);
 
                 var articles = items
                     .Select(i => JsonSerializer.Deserialize<V2NewsArticleDTO>(i.Value, new JsonSerializerOptions

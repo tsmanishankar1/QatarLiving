@@ -4,16 +4,15 @@ using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Service.FileStorage;
 //using QLN.Content.MS.Service.NewsInternalService;
-using QLN.Content.MS.Service;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Content.MS.Service.EventInternalService;
+using QLN.Content.MS.Service.NewsInternalService;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddDaprClient();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddAuthorization();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IV2EventService, V2InternalEventService>();
 builder.Services.AddScoped<IV2NewsService, V2InternalNewsService>();

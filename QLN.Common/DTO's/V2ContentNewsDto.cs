@@ -58,13 +58,13 @@ namespace QLN.Common.DTO_s
         public int Id { get; set; }
         public string CategoryName { get; set; }
     }
-    public class V2Slot
+    public class V2NewsSlot
     {
         public int Id { get; set; }
 
         public string Name { get; set; } = string.Empty;
     }
-    public enum Slot
+    public enum NewsSlot
     {
         Slot1 = 1,
         Slot2 = 2,

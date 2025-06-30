@@ -65,14 +65,14 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<List<V2Slot>> GetAllSlotsAsync(CancellationToken cancellationToken = default)
+        public async Task<List<V2NewsSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default)
         {
             try
             {
                 var appId = ConstantValues.V2Content.ContentServiceAppId;
                 var path = "/api/v2/news/slots";
 
-                return await _dapr.InvokeMethodAsync<List<V2Slot>>(
+                return await _dapr.InvokeMethodAsync<List<V2NewsSlot>>(
                HttpMethod.Get,
                appId,
                path,

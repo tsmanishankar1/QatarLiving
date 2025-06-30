@@ -62,7 +62,7 @@ public static class V2NewsEndpoints
       .Produces<List<V2NewsCategory>>(StatusCodes.Status200OK)
       .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        group.MapGet("/slots", async Task<Results<Ok<List<V2Slot>>, ProblemHttpResult>> (
+        group.MapGet("/slots", async Task<Results<Ok<List<V2NewsSlot>>, ProblemHttpResult>> (
         IV2NewsService slotService,
         CancellationToken cancellationToken
         ) =>
