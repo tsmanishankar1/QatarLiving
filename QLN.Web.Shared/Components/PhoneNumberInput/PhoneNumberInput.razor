@@ -150,7 +150,9 @@ private List<CountryModel> FilteredCountries => GetFilteredCountries();
         Countries = await FetchCountriesAsync();
         if (SelectedCountry == null && Countries.Count > 0)
         {
-            SelectedCountry = Countries.FirstOrDefault(c => c.Code == "+1") ?? Countries.First();
+             SelectedCountry = Countries.FirstOrDefault(c => c.Name == "Qatar")
+                      ?? Countries.FirstOrDefault(c => c.Code == "+974") // Qatar's code
+                      ?? Countries.First();
             await SelectedCountryChanged.InvokeAsync(SelectedCountry);
         }
     }
