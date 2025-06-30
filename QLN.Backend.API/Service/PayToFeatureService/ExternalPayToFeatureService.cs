@@ -142,7 +142,7 @@ namespace QLN.Backend.API.Service.PayToFeatureService
                 PlanName = request.PlanName,
                 TotalCount = request.TotalCount,
                 Description = request.Description,
-                Duration = request.DurationId,
+                Duration = request.Duration,
                 Price = request.Price,
                 Currency = request.Currency,
                 VerticalTypeId = request.VerticalTypeId,
@@ -162,7 +162,22 @@ namespace QLN.Backend.API.Service.PayToFeatureService
             _logger.LogInformation("PayToFeature plan created with ID: {PlanId}, Vertical: {Vertical}, Category: {Category}",
                 plan.Id, plan.VerticalTypeId, plan.CategoryId);
         }
+        public static string ConvertToReadableFormat(TimeSpan duration)
+        {
+            var totalDays = (int)duration.TotalDays;
 
+            return totalDays switch
+            {
+                90 => "3 Months",
+                180 => "6 Months",
+                365 => "1 Year",
+                730 => "2 Years",
+                60 => "2 Months",
+                30 => "1 Month",
+                _ when totalDays < 30 => $"{totalDays} Days",
+                _ => $"{(int)(totalDays / 30)} Months"
+            };
+        }
         public async Task<List<PayToFeatureWithBasicPriceResponseDto>> GetPlansByVerticalAndCategoryWithBasicPriceAsync(
             int verticalTypeId,
             int categoryId,
@@ -217,8 +232,7 @@ namespace QLN.Backend.API.Service.PayToFeatureService
                     Price = plan.Price,
                     Currency = plan.Currency,
                     Description = plan.Description,
-                    DurationId = (int)plan.Duration,
-                    DurationName = GetEnumDisplayName(plan.Duration),
+                    DurationName = ConvertToReadableFormat(plan.Duration),
                     VerticalId = (int)plan.VerticalTypeId,
                     VerticalName = GetEnumDisplayName(plan.VerticalTypeId),
                     CategoryId = (int)plan.CategoryId,
@@ -281,8 +295,8 @@ namespace QLN.Backend.API.Service.PayToFeatureService
                     Price = plan.Price,
                     Currency = plan.Currency,
                     Description = plan.Description,
-                    DurationId = (int)plan.Duration,
-                    DurationName = GetEnumDisplayName(plan.Duration),
+                  
+                    DurationName = ConvertToReadableFormat(plan.Duration),
                     VerticalId = (int)plan.VerticalTypeId,
                     VerticalName = GetEnumDisplayName(plan.VerticalTypeId),
                     CategoryId = (int)plan.CategoryId,
@@ -308,7 +322,7 @@ namespace QLN.Backend.API.Service.PayToFeatureService
 
             existingPlan.PlanName = request.PlanName;
             existingPlan.Description = request.Description;
-            existingPlan.Duration = request.DurationId;
+            existingPlan.Duration = request.Duration;
             existingPlan.Price = request.Price;
             existingPlan.TotalCount = request.TotalCount;
             existingPlan.Currency = request.Currency;
@@ -339,13 +353,24 @@ namespace QLN.Backend.API.Service.PayToFeatureService
         public async Task<Guid> CreatePaymentsAsync(PayToFeaturePaymentRequestDto request, Guid userId, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
+
             var planActor = GetActorProxy(request.PayToFeatureId);
             var payToFeaturePlan = await planActor.GetDataAsync(cancellationToken);
             if (payToFeaturePlan == null)
-             throw new Exception($"PayToFeature plan not found for ID: {request.PayToFeatureId}");
+                throw new Exception($"PayToFeature plan not found for ID: {request.PayToFeatureId}");
+
             var id = Guid.NewGuid();
+
+            // Start from now
             var startDate = DateTime.UtcNow;
-            var endDate = GetEndDateByDurationEnum(startDate, payToFeaturePlan.Duration);
+
+            // Duration is stored as TimeSpan (make sure it's not null)
+            if (payToFeaturePlan.Duration == default)
+                throw new Exception("Duration is missing or invalid in the plan.");
+
+            // End date = start + duration
+            var endDate = startDate.Add(payToFeaturePlan.Duration);
+
             var dto = new PayToFeaturePaymentDto
             {
                 Id = id,
@@ -362,6 +387,7 @@ namespace QLN.Backend.API.Service.PayToFeatureService
                 LastUpdated = DateTime.UtcNow,
                 IsExpired = false
             };
+
             var actor = GetPaymentActorProxy(dto.Id);
             var result = await actor.FastSetDataAsync(dto, cancellationToken);
 
@@ -374,18 +400,6 @@ namespace QLN.Backend.API.Service.PayToFeatureService
             }
 
             throw new Exception("Payment transaction creation failed.");
-        }
-
-        private DateTime GetEndDateByDurationEnum(DateTime startDate, DurationType duration)
-        {
-            return duration switch
-            {
-                DurationType.ThreeMonths => startDate.AddMonths(3),
-                DurationType.SixMonths => startDate.AddMonths(6),
-                DurationType.OneYear => startDate.AddYears(1),
-                DurationType.TwoMinutes => startDate.AddMinutes(2),
-                _ => throw new ArgumentException($"Unsupported DurationType: {duration}")
-            };
         }
 
         private IPaymentActor GetPaymentActorProxy(Guid id)

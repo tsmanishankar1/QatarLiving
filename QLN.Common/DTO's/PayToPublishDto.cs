@@ -31,7 +31,7 @@ namespace QLN.Common.DTO_s
         public Guid Id { get; set; }
         public string PlanName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public DurationType Duration { get; set; } // Updated
+        public TimeSpan Duration { get; set; } // Updated
         public decimal Price { get; set; }
         public int TotalCount { get; set; }
         public string Currency { get; set; } = string.Empty;
@@ -65,7 +65,7 @@ namespace QLN.Common.DTO_s
         public decimal Price { get; set; }
         public string Currency { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public int DurationId { get; set; }
+      
         public string DurationName { get; set; } = string.Empty;
         public bool IsFreeAd { get; set; } = false;
         public int VerticalId { get; set; }
@@ -104,7 +104,7 @@ namespace QLN.Common.DTO_s
         [Required]
         public string Description { get; set; } = string.Empty;
         [Required]
-        public DurationType DurationId { get; set; }
+        public TimeSpan Duration { get; set; }
 
    
         [Required]
@@ -127,7 +127,6 @@ namespace QLN.Common.DTO_s
         public decimal Price { get; set; }
         public string Currency { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public int DurationId { get; set; }
         public string DurationName { get; set; } = string.Empty;
         public bool IsFreeAd { get; set; } = false;
     }
