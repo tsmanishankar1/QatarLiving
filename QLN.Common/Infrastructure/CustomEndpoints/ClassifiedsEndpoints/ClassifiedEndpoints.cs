@@ -878,7 +878,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedItems dto,
                 IClassifiedService service,
-                [FromServices]ISearchService svc,
                 CancellationToken token) =>
             {
                 try
@@ -903,75 +902,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-                    var imageUrls = new List<string>
-                    {
-                        "https://www.qatarliving.com/_next/image?url=%2Fimages%2Ftwo-iphone.jpeg&w=828&q=75",
-                        "https://www.qatarliving.com/_next/image?url=https%3A%2F%2Fwww.qatarliving.com%2Fq%2Fs3%2Ffiles%2Fstyles%2Fvehicle_listing_v3%2Fs3%2Fvehicles%2F2025%2F06%2F14%2F10081967%2FWhatsApp%20Image%202025-06-14%20at%2011.53.41_84673a0e.jpg&w=384&q=75",
-                        "https://th.bing.com/th/id/OIP.UCezLikSjxX91hGZNpCZQgHaHa?rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3",
-                        "https://i.pinimg.com/originals/82/32/27/823227eb85d3f43ede612e28e53a9d7c.jpg",
-                        "https://www.techspot.com/images2/news/bigimage/2023/11/2023-11-14-image-9.jpg",
-                        "https://th.bing.com/th/id/OIP.HgPa0rOyQFm1dCuGRzjc0AHaFj?rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3"
-                    };
-
-                    // Randomly select 1 or more images from the list
-                    var random = new Random();
-                    var selectedImageUrl = imageUrls[random.Next(imageUrls.Count)];
-
-                    // Create ImageInfo object and add to the list of images
-                    var images = new List<ImageInfo>
-                    {
-                        new ImageInfo
-                        {
-                            AdImageFileNames = "random_image.jpg",
-                            Url = selectedImageUrl,
-                            Order = 0
-                        }
-                    };
-                    dto.AdImagesBase64 = images;
                     dto.UserId = uid;
                     var response = await service.CreateClassifiedItemsAd(dto, token);
 
-                    var classifiedsIndex = new ClassifiedsIndex
-                    {
-                        SubVertical = dto.SubVertical,
-                        Title = dto.Title,
-                        Description = dto.Description,
-                        CategoryId = dto.CategoryId.ToString(),
-                        Category = dto.Category,
-                        L1Category = dto.l1Category,
-                        L2Category = dto.L2Category,
-                        Price = (double?)dto.Price,
-                        PriceType = dto.PriceType,
-                        Location = dto.Location.FirstOrDefault(),
-                        PhoneNumber = dto.PhoneNumber,
-                        WhatsappNumber = dto.WhatsAppNumber,
-                        UserId = dto.UserId.ToString(),
-                        CreatedDate = DateTime.UtcNow,
-                        ModifiedDate = DateTime.UtcNow,
-                        Images = images,
-                        Make = dto.MakeType,
-                        Model = dto.Model,
-                        Brand = dto.Brand,
-                        Processor = dto.Processor,
-                        Ram = dto.Ram,
-                        SizeType = dto.Size,
-                        Size = dto.SizeValue,
-                        Status = "Published",
-                        StreetNumber = dto.StreetNumber,
-                        Zone = dto.Zone,
-                        Storage = dto.Capacity,
-                        BuildingNumber = dto.BuildingNumber,
-                        Colour = dto.Color,
-                        BatteryPercentage = dto.BatteryPercentage,
-                        ExpiryDate = dto.ExpiryDate,
-                        RefreshExpiryDate = dto.RefreshExpiry
-                    };
-                    var indexDocument = new CommonIndexRequest
-                    {
-                        VerticalName = ConstantValues.Verticals.Classifieds,
-                        ClassifiedsItem = classifiedsIndex
-                    };
-                    var msg = await svc.UploadAsync(indexDocument);
+                  
                     return TypedResults.Created($"/api/classifieds/items/user-ads-by-id/{response.AdId}", response);
 
                 }
@@ -1093,7 +1027,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedPreloved dto,
                 IClassifiedService service,
-                [FromServices] ISearchService svc,
                 CancellationToken token) =>
             {
                 try
@@ -1117,73 +1050,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Detail = "Authenticated user ID is missing or invalid.",
                             Status = StatusCodes.Status400BadRequest
                         });
-                    }
-                    var imageUrls = new List<string>
-                    {
-                        "https://c1.peakpx.com/wallpaper/573/909/315/store-clothes-clothing-line-fashion-wallpaper.jpg",
-                        "https://th.bing.com/th/id/OIP.dIIn08vqRRAvYi2isTbtYwHaFg?r=0&rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3",
-                        "https://static.vecteezy.com/system/resources/thumbnails/007/974/855/small_2x/top-view-travel-accessories-with-shoes-map-smartphone-with-mockup-screen-hat-tourist-essentials-photo.jpg",
-                        "https://images.pexels.com/photos/190819/pexels-photo-190819.jpeg?_gl=1*wt5o9r*_ga*MTMzOTU2OTc5NC4xNzUwOTMyNzcz*_ga_8JE65Q40S6*czE3NTA5MzI3NzIkbzEkZzEkdDE3NTA5MzI3ODQkajQ4JGwwJGgw"
-                    };
-
-                    // Randomly select 1 or more images from the list
-                    var random = new Random();
-                    var selectedImageUrl = imageUrls[random.Next(imageUrls.Count)];
-
-                    // Create ImageInfo object and add to the list of images
-                    var images = new List<ImageInfo>
-                    {
-                        new ImageInfo
-                        {
-                            AdImageFileNames = "random_image.jpg",
-                            Url = selectedImageUrl,
-                            Order = 0
-                        }
-                    };
-                    dto.AdImagesBase64 = images;
+                    }                 
                     dto.UserId = uid;
                     var result = await service.CreateClassifiedPrelovedAd(dto, token);
-                  
-                    var prelovedIndex = new ClassifiedsIndex
-                    {
-                        SubVertical = dto.SubVertical,
-                        Title = dto.Title,
-                        Description = dto.Description,
-                        CategoryId = dto.CategoryId.ToString(),
-                        Category = dto.Category,
-                        L1Category = dto.l1Category,
-                        L2Category = dto.L2Category,
-                        Price = (double?)dto.Price,
-                        PriceType = dto.PriceType,
-                        Location = dto.Location.FirstOrDefault(),
-                        PhoneNumber = dto.PhoneNumber,
-                        WhatsappNumber = dto.WhatsAppNumber,
-                        UserId = dto.UserId.ToString(),
-                        CreatedDate = DateTime.UtcNow,
-                        ModifiedDate = DateTime.UtcNow,
-                        Images = images,
-                        Status = "Published",
-                        Model = dto.Model,
-                        Brand = dto.Brand,
-                        Processor = dto.Processor,
-                        Ram = dto.Ram,
-                        SizeType = dto.Size,
-                        Size = dto.SizeValue,
-                        StreetNumber = dto.StreetNumber,
-                        Zone = dto.Zone,
-                        Storage = dto.Capacity,
-                        BuildingNumber = dto.BuildingNumber,
-                        Colour = dto.Color,
-                        BatteryPercentage = dto.BatteryPercentage,
-                        ExpiryDate = dto.ExpiryDate,
-                        RefreshExpiryDate = dto.RefreshExpiry
-                    };
-                    var indexDocument = new CommonIndexRequest
-                    {
-                        VerticalName = ConstantValues.Verticals.Classifieds,
-                        ClassifiedsItem = prelovedIndex
-                    };
-                    var msg = await svc.UploadAsync(indexDocument);
 
                     return TypedResults.Created(
            $"/api/classifieds/preloved/user-ads-by-id/{result.AdId}", result);
@@ -1315,7 +1184,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedCollectibles dto,
                 IClassifiedService service,
-                [FromServices]ISearchService svc,
                 CancellationToken token) =>
             {
                 try
@@ -1340,70 +1208,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-                    var imageUrls = new List<string>
-                     {
-                         "https://th.bing.com/th/id/OIP.rRURrtCLR84TLl6BtRDg6QHaLP?rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3",
-                         "https://th.bing.com/th/id/OIP.ExXF6fVNd4kVBOaRbB9XZAHaE7?rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3",
-                         "https://th.bing.com/th/id/OIP.ExXF6fVNd4kVBOaRbB9XZAHaE7?rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3",
-                         "https://th.bing.com/th/id/OIP.Z5p8VdDROPhS8U4UGe-GyQHaKV?rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3",
-                         "https://th.bing.com/th/id/OIP.q-bSUmHCaDClmwnHvGoXmAAAAA?rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3",
-                         "https://th.bing.com/th/id/OIP.bYWgM5Cfjha-cw-FLxpvygHaEa?rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3"
-                     };
-
-                    // Randomly select 1 or more images from the list
-                    var random = new Random();
-                    var selectedImageUrl = imageUrls[random.Next(imageUrls.Count)];
-
-                    // Create ImageInfo object and add to the list of images
-                    var images = new List<ImageInfo>
-                     {
-                         new ImageInfo
-                         {
-                             AdImageFileNames = "random_image.jpg",
-                             Url = selectedImageUrl,
-                             Order = 0
-                         }
-                     };
-                    dto.AdImagesBase64 = images;
                     dto.UserId = uid;
                     var result = await service.CreateClassifiedCollectiblesAd(dto, token);
                     
-                    var collectiblesIndex = new ClassifiedsIndex
-                    {
-                        SubVertical = dto.SubVertical,
-                        Title = dto.Title,
-                        Description = dto.Description,
-                        CategoryId = dto.CategoryId.ToString(),
-                        Category = dto.Category,
-                        L1Category = dto.l1Category,
-                        L2Category = dto.L2Category,
-                        Price = (double?)dto.Price,
-                        PriceType = dto.PriceType,
-                        Location = dto.Location.FirstOrDefault(),
-                        PhoneNumber = dto.PhoneNumber,
-                        WhatsappNumber = dto.WhatsAppNumber,
-                        UserId = dto.UserId.ToString(),
-                        CreatedDate = DateTime.UtcNow,
-                        ModifiedDate = DateTime.UtcNow,
-                        Images = images,
-                        YearEra = dto.YearOrEra,
-                        Rarity = dto.Rarity,
-                        Material = dto.Material,
-                        Status = "Published",
-                        SerialNumber = dto.SerialNumber,
-                        SignedBy = dto.SignedBy,
-                        IsSigned = dto.Signed,
-                        ExpiryDate = dto.ExpiryDate,
-                        RefreshExpiryDate = dto.RefreshExpiry
-                    };
-                    var indexDocument = new CommonIndexRequest
-                    {
-                        VerticalName = ConstantValues.Verticals.Classifieds,
-                        ClassifiedsItem = collectiblesIndex
-                    };
-                    var msg = await svc.UploadAsync(indexDocument);
-
-
                     return TypedResults.Created(
                         $"/api/classifieds/collectibles/user-ads-by-id/{result.AdId}", result);
                 }
@@ -1505,7 +1312,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedDeals dto,
                 IClassifiedService service,
-                [FromServices]ISearchService svc,
                 CancellationToken token) =>
             {
                 try
@@ -1533,26 +1339,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     dto.UserId = uid;
                     var result = await service.CreateClassifiedDealsAd(dto, token);
-                    var dealsIndex = new ClassifiedsIndex
-                    {
-                        SubVertical = dto.SubVertical,
-                        Title = dto.Title,
-                        Description = dto.Description,
-                        Location = dto.Location.FirstOrDefault(),
-                        CreatedDate = DateTime.UtcNow,
-                        Images = new List<ImageInfo>(),
-                        Status = "Published",
-                        FlyerFileName = dto.FlyerName,
-                        FlyerXmlLink = dto.XMLLink,
-                        ExpiryDate = dto.ExpiryDate,
-                        RefreshExpiryDate = dto.RefreshExpiry
-                    };
-                    var indexDocument = new CommonIndexRequest
-                    {
-                        VerticalName = ConstantValues.Verticals.Classifieds,
-                        ClassifiedsItem = dealsIndex
-                    };
-                    var msg = await svc.UploadAsync(indexDocument);
 
                     return TypedResults.Created($"/api/classifieds/deals/user-ads-by-id/{result.AdId}", result);
 

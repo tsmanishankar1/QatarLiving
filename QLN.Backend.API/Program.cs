@@ -263,7 +263,7 @@ var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedsEndpoints();
 var servicesGroup = app.MapGroup("/api/services");
 servicesGroup.MapServicesEndpoints();
-var eventGroup = app.MapGroup("v2/api/event");
+var eventGroup = app.MapGroup("/api/v2/event");
 eventGroup.MapEventEndpoints()
     .RequireAuthorization();
 var contentGroup = app.MapGroup("/api/content");
