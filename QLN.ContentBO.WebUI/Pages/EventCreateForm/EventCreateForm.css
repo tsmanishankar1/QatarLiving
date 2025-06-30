@@ -1,0 +1,23 @@
+
+    .form-title{
+        font-family: 'Public Sans', sans-serif;
+        font-size: 18px;
+        font-weight: 600;
+        color: #00426D;
+        text-transform: none;
+    }
+    .custom-add {
+        background-color: #FF7F38;
+        font-family: 'Public Sans', sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        color: white;
+        text-transform: none;
+    }
+    .custom-close {
+        border-color: #D5D7DA;
+        color: #242424;
+        text-transform: none;
+    }
+
+

@@ -426,24 +426,21 @@ namespace QLN.Classified.MS.Service
         {
             try
             {
-                ClassifiedItems adItem = null;
+                object adItem = null;
 
                 switch (subVertical)
                 {
                     case SubVertical.Items:
-                        adItem = await GetClassifiedItemById(adId); 
+                        adItem = await GetItemAdById(adId, cancellationToken);
                         break;
                     case SubVertical.Preloved:
-                        adItem = await GetClassifiedItemByPreloved(adId); 
+                        adItem = await GetPrelovedAdById(adId, cancellationToken);
                         break;
                     case SubVertical.Collectibles:
-                        adItem = await GetClassifiedItemByCollectibles(adId); 
+                        adItem = await GetCollectiblesAdById(adId, cancellationToken);
                         break;
                     case SubVertical.Deals:
-                        adItem = await GetClassifiedItemByDeals(adId);
-                        break;
-                    case SubVertical.Services:
-                        adItem = await GetClassifiedItemByServices(adId);
+                        adItem = await GetDealsAdById(adId, cancellationToken);
                         break;
                     default:
                         throw new InvalidOperationException($"Invalid SubVertical: {subVertical}");
@@ -455,12 +452,39 @@ namespace QLN.Classified.MS.Service
                     throw new InvalidOperationException($"Ad with id {adId} not found.");
                 }
 
-                adItem.IsRefresh = true;
-                adItem.CreatedDate = DateTime.UtcNow;
-                adItem.RefreshExpiry = DateTime.UtcNow.AddHours(72);
+                if (adItem is ClassifiedItems itemAd)
+                {
+                    itemAd.IsRefresh = true;
+                    itemAd.CreatedDate = DateTime.UtcNow;
+                    itemAd.RefreshExpiry = DateTime.UtcNow.AddHours(72);
+                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{itemAd.Id}", itemAd);
+                }
+                else if (adItem is ClassifiedPreloved prelovedAd)
+                {
+                    prelovedAd.IsRefresh = true;
+                    prelovedAd.CreatedDate = DateTime.UtcNow;
+                    prelovedAd.RefreshExpiry = DateTime.UtcNow.AddHours(72);
+                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{prelovedAd.Id}", prelovedAd);
+                }
+                else if (adItem is ClassifiedCollectibles collectiblesAd)
+                {
+                    collectiblesAd.IsRefresh = true;
+                    collectiblesAd.CreatedDate = DateTime.UtcNow;
+                    collectiblesAd.RefreshExpiry = DateTime.UtcNow.AddHours(72);
+                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{collectiblesAd.Id}", collectiblesAd);
+                }
+                else if (adItem is ClassifiedDeals dealsAd)
+                {
+                    dealsAd.IsRefresh = true;
+                    dealsAd.CreatedDate = DateTime.UtcNow;
+                    dealsAd.RefreshExpiry = DateTime.UtcNow.AddHours(72);
+                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{dealsAd.Id}", dealsAd);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Unsupported ad type: {adItem.GetType().Name}");
+                }
 
-                var key = $"ad-{adItem.Id}";
-                await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -469,18 +493,18 @@ namespace QLN.Classified.MS.Service
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Validation failed in refreshAd");
+                _logger.LogWarning(ex, "Validation error occurred while refreshing ad.");
                 throw;
             }
             catch (InvalidOperationException ex)
             {
-                _logger.LogError(ex, "Operation error while creating classified Preloved ad.");
+                _logger.LogError(ex, "Ad not found or operation error while refreshing ad.");
                 throw;
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, "Unhandled error occurred during ad creation.");
-                throw new InvalidOperationException("An unexpected error occurred while creating the Preloved ad. Please try again later.", ex);
+                _logger.LogCritical(ex, "Unhandled error occurred while refreshing ad.");
+                throw new InvalidOperationException("Failed to refresh the ad due to an unexpected error.", ex);
             }
         }
         public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)
@@ -1352,6 +1376,66 @@ namespace QLN.Classified.MS.Service
             catch (Exception ex)
             {
                 throw new InvalidOperationException("Failed to retrieve user items ads", ex);
+            }
+        }
+
+        public async Task<ClassifiedItems?> GetItemAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var key = $"ad-{adId}";
+                var adItem = await _dapr.GetStateAsync<ClassifiedItems>(UnifiedStore, key);
+                return adItem;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching ad details by adId: {AdId}", adId);
+                throw new InvalidOperationException("Failed to fetch published item ad by ID.", ex);
+            }
+        }
+
+        public async Task<ClassifiedPreloved?> GetPrelovedAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var key = $"ad-{adId}";
+                var adItem = await _dapr.GetStateAsync<ClassifiedPreloved>(UnifiedStore, key);
+                return adItem;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching Preloved ad by Id: {AdId}", adId);
+                throw new InvalidOperationException("Failed to fetch published Preloved ad by ID.", ex);
+            }
+        }
+
+        public async Task<ClassifiedDeals?> GetDealsAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var key = $"ad-{adId}";
+                var adItem = await _dapr.GetStateAsync<ClassifiedDeals>(UnifiedStore, key);
+                return adItem;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching Deals ad by Id: {AdId}", adId);
+                throw new InvalidOperationException("Failed to fetch published Deals ad by ID.", ex);
+            }
+        }
+
+        public async Task<ClassifiedCollectibles?> GetCollectiblesAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var key = $"ad-{adId}";
+                var adItem = await _dapr.GetStateAsync<ClassifiedCollectibles>(UnifiedStore, key);
+                return adItem;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching Collectibles ad by Id: {AdId}", adId);
+                throw new InvalidOperationException("Failed to fetch published Collectibles ad by ID.", ex);
             }
         }
 

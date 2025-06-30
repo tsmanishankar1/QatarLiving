@@ -30,6 +30,7 @@
         public string TermsOfUse { get; set; } = "https://www.qatarliving.com/terms-of-use";
         public string PostingRules { get; set; } = "https://www.qatarliving.com/rules-advertising";
         public string HelpLink { get; set; } = "https://www.qatarliving.com/help";
+        public string ContactUs { get; set; } = "https://www.qatarliving.com/contact";
         public string SocialFacebook { get; set; } = "https://www.facebook.com/QatarLiving";
         public string SocialTwitter { get; set; } = "https://twitter.com/qatarliving/";
         public string SocialInstagram { get; set; } = "https://www.instagram.com/qatarliving/";
