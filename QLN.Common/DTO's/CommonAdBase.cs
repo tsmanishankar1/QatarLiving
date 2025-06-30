@@ -41,6 +41,7 @@ namespace QLN.Common.DTO_s
         public string PhoneNumber { get; set; }
         public string WhatsAppNumber { get; set; }
         public string? ContactEmail { get; set; }
+        public DateTime? CreatedDate { get; set; } = DateTime.UtcNow;
         public DateTime? ModifiedDate { get; set; }
         public DateTime ExpiryDate { get; set; } = DateTime.UtcNow.AddDays(30);
         public string? CountryOfOrigin { get; set; }
@@ -51,7 +52,8 @@ namespace QLN.Common.DTO_s
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
         public List<string>? Location { get; set; }
-        public bool? TearmsAndCondition { get; set; }        
+        public bool? TearmsAndCondition { get; set; }       
+        public bool? IsRefresh { get; set; } = false; 
         public DateTime RefreshExpiry { get; set; } = DateTime.UtcNow.AddDays(30);
         public string RefreshCount { get; set; } = "80";
         public string UserId { get; set; }
