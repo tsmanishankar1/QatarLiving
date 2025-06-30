@@ -22,13 +22,13 @@ namespace QLN.Web.Shared.Models
 
         public string? Certificate { get; set; }
         public string? CertificateFileName { get; set; }
-        public int? BatteryPercentage { get; set; }
+        public int BatteryPercentage { get; set; }
 
         public string? ItemDescription { get; set; }
         public string? XmlLink { get; set; }
         public string? FlyerLocation { get; set; }
 
-        public int? Price { get; set; }
+        public int Price { get; set; }
 
         // Contact Details
         public string? PhoneCode { get; set; }

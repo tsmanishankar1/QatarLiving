@@ -286,10 +286,10 @@ private void ResetForm(string newVertical)
                     Gender = dynamicFieldValues.TryGetValue("Gender", out var gender) ? gender : null,
 
 
-                    Price = adPostModel.Price ?? 0,
+                    Price = adPostModel.Price,
                     CertificateBase64 = adPostModel.Certificate,
                     CertificateFileName = adPostModel.CertificateFileName,
-                    BatteryPercentage = adPostModel.BatteryPercentage ?? 0,
+                    BatteryPercentage = adPostModel.BatteryPercentage,
                     PhoneNumber = $"{adPostModel.PhoneCode}{adPostModel.PhoneNumber}",
                     WhatsAppNumber = $"{adPostModel.WhatsappCode}{adPostModel.WhatsappNumber}",
                     Zone = adPostModel.Zone,
