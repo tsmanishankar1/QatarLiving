@@ -1287,6 +1287,393 @@ namespace QLN.Classified.MS.Service
             }
         }
 
+        public async Task<ItemAdDto?> GetItemAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, ItemsIndexKey) ?? new();
+
+                _logger.LogInformation("Searching for Ad ID: {AdId} in index list of size: {Count}", adId, index.Count);
+
+                foreach (var key in index)
+                {
+                    try
+                    {
+                        var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key);
+
+                        if (state.ValueKind != JsonValueKind.Object)
+                            continue;
+
+                        var currentAdId = state.GetProperty("id").GetGuid();
+
+                        if (currentAdId != adId)
+                            continue;
+
+                        var subVertical = state.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
+
+                        _logger.LogInformation("Found matching ad ID: {AdId} with subVertical: {SubVertical}", currentAdId, subVertical);
+
+                        var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var statusInt)
+                            ? (AdStatus)statusInt : AdStatus.Draft;
+
+                        if (currentAdId != adId || !string.Equals(subVertical, "Items", StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        _logger.LogInformation("Checking adId: {CurrentId} against requested: {RequestedId}, subVertical: {SubVertical}", currentAdId, adId, subVertical);
+
+
+                        var ad = new ItemAdDto
+                        {
+                            Id = currentAdId,
+                            Title = state.GetProperty("title").GetString(),
+                            SubVertical = subVertical,
+                            Description = state.GetProperty("description").GetString(),
+                            Category = state.GetProperty("category").GetString(),
+                            L1Category = state.GetProperty("l1Category").GetString(),
+                            L2Category = state.TryGetProperty("l2Category", out var l2c) ? l2c.GetString() ?? "" : "",
+                            Brand = state.GetProperty("brand").GetString(),
+                            Model = state.GetProperty("model").GetString(),
+                            Price = state.GetProperty("price").GetDecimal(),
+                            PriceType = state.GetProperty("priceType").GetString(),
+                            Condition = state.GetProperty("condition").GetString(),
+                            Color = state.GetProperty("color").GetString(),
+                            AcceptsOffers = state.TryGetProperty("acceptsOffers", out var offers) ? offers.GetString() ?? "" : "",
+                            MakeType = state.TryGetProperty("makeType", out var make) ? make.GetString() ?? "" : "",
+                            Capacity = state.TryGetProperty("capacity", out var capacity) ? capacity.GetString() ?? "" : "",
+                            Processor = state.TryGetProperty("processor", out var processor) ? processor.GetString() ?? "" : "",
+                            Coverage = state.TryGetProperty("coverage", out var coverage) ? coverage.GetString() ?? "" : "",
+                            Ram = state.TryGetProperty("ram", out var ram) ? ram.GetString() ?? "" : "",
+                            Resolution = state.TryGetProperty("resolution", out var res) ? res.GetString() ?? "" : "",
+                            BatteryPercentage = state.TryGetProperty("batteryPercentage", out var battery) ? battery.GetRawText() : "",
+                            Size = state.TryGetProperty("size", out var size) ? size.GetString() ?? "" : "",
+                            SizeValue = state.TryGetProperty("sizeValue", out var sizeVal) ? sizeVal.GetString() ?? "" : "",
+                            Gender = state.TryGetProperty("gender", out var gender) ? gender.GetString() ?? "" : "",
+                            CertificateFileName = state.TryGetProperty("certificateFileName", out var certFileName) ? certFileName.GetString() ?? "" : "",
+                            CertificateUrl = state.GetProperty("certificateUrl").GetString(),
+                            ImageUrls = state.TryGetProperty("imageUrls", out var imgs) && imgs.ValueKind == JsonValueKind.Array
+                                ? imgs.EnumerateArray().Select(img =>
+                                {
+                                    return new ImageInfo
+                                    {
+                                        AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() ?? "" : "",
+                                        Url = img.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "",
+                                        Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
+                                    };
+                                }).Where(i => !string.IsNullOrEmpty(i.Url)).ToList()
+                                : new(),
+                            Phone = state.TryGetProperty("phoneNumber", out var phone) ? phone.GetString() ?? "" : "",
+                            WhatsAppNumber = state.TryGetProperty("whatsAppNumber", out var whatsapp) ? whatsapp.GetString() ?? "" : "",
+                            Zone = state.TryGetProperty("zone", out var zone) ? zone.GetString() ?? "" : "",
+                            StreetName = state.TryGetProperty("streetNumber", out var street) ? street.GetString() ?? "" : "",
+                            BuildingNumber = state.TryGetProperty("buildingNumber", out var building) ? building.GetString() ?? "" : "",
+                            Latitude = state.TryGetProperty("latitude", out var lat) ? lat.GetRawText() : "",
+                            Longitude = state.TryGetProperty("longitude", out var lng) ? lng.GetRawText() : "",
+                            CreatedAt = state.GetProperty("createdAt").GetDateTime(),
+                            IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
+                            IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
+                            Status = status,
+                            UserId = state.TryGetProperty("userId", out var uid) ? uid.GetString() ?? "" : "",
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
+                        };
+
+                        return ad;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to process ad with key: {Key}", key);
+                        continue;
+                    }
+                }
+
+                return null; 
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching ad details by adId: {AdId}", adId);
+                throw new InvalidOperationException("Failed to fetch published item ad by ID.", ex);
+            }
+        }
+
+        public async Task<PrelovedAdDto?> GetPrelovedAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, PrelovedIndexKey) ?? new();
+
+                foreach (var key in index)
+                {
+                    try
+                    {
+                        var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key);
+
+                        if (state.ValueKind != JsonValueKind.Object)
+                            continue;
+
+                        var currentAdId = state.GetProperty("id").GetGuid();
+                        var subVertical = state.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
+
+                        if (currentAdId != adId || !string.Equals(subVertical, "Preloved", StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var statusInt)
+                            ? (AdStatus)statusInt : AdStatus.Draft;
+
+                        var ad = new PrelovedAdDto
+                        {
+                            Id = currentAdId,
+                            Title = state.GetProperty("title").GetString(),
+                            SubVertical = subVertical,
+                            Description = state.GetProperty("description").GetString(),
+                            Category = state.GetProperty("category").GetString(),
+                            L1Category = state.GetProperty("l1Category").GetString(),
+                            L2Category = state.TryGetProperty("l2Category", out var l2) ? l2.GetString() ?? "" : "",
+                            Brand = state.GetProperty("brand").GetString(),
+                            Model = state.GetProperty("model").GetString(),
+                            Price = state.GetProperty("price").GetDecimal(),
+                            PriceType = state.GetProperty("priceType").GetString(),
+                            Condition = state.GetProperty("condition").GetString(),
+                            Color = state.GetProperty("color").GetString(),
+                            Capacity = state.TryGetProperty("capacity", out var capacity) ? capacity.GetString() ?? "" : "",
+                            Processor = state.TryGetProperty("processor", out var processor) ? processor.GetString() ?? "" : "",
+                            Coverage = state.TryGetProperty("coverage", out var coverage) ? coverage.GetString() ?? "" : "",
+                            Ram = state.TryGetProperty("ram", out var ram) ? ram.GetString() ?? "" : "",
+                            Resolution = state.TryGetProperty("resolution", out var resolution) ? resolution.GetString() ?? "" : "",
+                            BatteryPercentage = state.TryGetProperty("batteryPercentage", out var battery) ? battery.GetRawText() : "",
+                            Size = state.TryGetProperty("size", out var size) ? size.GetString() ?? "" : "",
+                            SizeValue = state.TryGetProperty("sizeValue", out var sizeVal) ? sizeVal.GetString() ?? "" : "",
+                            Gender = state.TryGetProperty("gender", out var gender) ? gender.GetString() ?? "" : "",
+                            CertificateFileName = state.TryGetProperty("certificateFileName", out var certFileName) ? certFileName.GetString() ?? "" : "",
+                            CertificateUrl = state.GetProperty("certificateUrl").GetString(),
+                            ImageUrls = state.TryGetProperty("imageUrls", out var imgs) && imgs.ValueKind == JsonValueKind.Array
+                                ? imgs.EnumerateArray().Select(img =>
+                                {
+                                    return new ImageInfo
+                                    {
+                                        AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() ?? "" : "",
+                                        Url = img.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "",
+                                        Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
+                                    };
+                                }).Where(i => !string.IsNullOrWhiteSpace(i.Url)).ToList()
+                                : new(),
+                            PhoneNumber = state.TryGetProperty("phoneNumber", out var phone) ? phone.GetString() ?? "" : "",
+                            WhatsAppNumber = state.TryGetProperty("whatsAppNumber", out var whatsapp) ? whatsapp.GetString() ?? "" : "",
+                            Zone = state.TryGetProperty("zone", out var zone) ? zone.GetString() ?? "" : "",
+                            StreetNumber = state.TryGetProperty("streetNumber", out var street) ? street.GetString() ?? "" : "",
+                            BuildingNumber = state.TryGetProperty("buildingNumber", out var building) ? building.GetString() ?? "" : "",
+                            Latitude = state.TryGetProperty("latitude", out var lat) ? lat.GetRawText() : "",
+                            Longitude = state.TryGetProperty("longitude", out var lng) ? lng.GetRawText() : "",
+                            CreatedAt = state.GetProperty("createdAt").GetDateTime(),
+                            IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
+                            IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
+                            Status = status,
+                            UserId = state.TryGetProperty("userId", out var uid) ? uid.GetString() ?? "" : "",
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
+                        };
+
+                        return ad;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error processing ad for key: {Key}", key);
+                    }
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching Preloved ad by Id: {AdId}", adId);
+                throw new InvalidOperationException("Failed to fetch published Preloved ad by ID.", ex);
+            }
+        }
+
+        public async Task<DealsAdDto?> GetDealsAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, DealsIndexKey) ?? new();
+
+                foreach (var key in index)
+                {
+                    try
+                    {
+                        var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key);
+
+                        if (state.ValueKind != JsonValueKind.Object)
+                            continue;
+
+                        var currentAdId = state.GetProperty("id").GetGuid();
+                        var subVertical = state.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
+
+                        if (currentAdId != adId || !string.Equals(subVertical, "Deals", StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var statusInt)
+                            ? (AdStatus)statusInt : AdStatus.Draft;
+
+                        var ad = new DealsAdDto
+                        {
+                            Id = currentAdId,
+                            Title = state.GetProperty("title").GetString(),
+                            SubVertical = subVertical ?? "Deals",
+                            FlyerName = state.TryGetProperty("flyerName", out var flyerName) ? flyerName.GetString() ?? "" : "",
+                            FlyerFile = state.TryGetProperty("flyerFile", out var flyer) ? flyer.GetString() ?? "" : "",
+                            ImageUrl = state.TryGetProperty("imageUrl", out var imgs) && imgs.ValueKind == JsonValueKind.Array
+                                ? imgs.EnumerateArray().Select(img =>
+                                {
+                                    return new ImageInfo
+                                    {
+                                        AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() ?? "" : "",
+                                        Url = img.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "",
+                                        Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
+                                    };
+                                }).Where(i => !string.IsNullOrWhiteSpace(i.Url)).ToList()
+                                : new(),
+                            XMLLink = state.TryGetProperty("xmlLink", out var xml) ? xml.GetString() ?? "" : "",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiry) && expiry.ValueKind == JsonValueKind.String
+                                ? expiry.GetDateTime()
+                                : DateTime.MinValue,
+                            PhoneNumber = state.TryGetProperty("phoneNumber", out var phone) ? phone.GetString() ?? "" : "",
+                            WhatsAppNumber = state.TryGetProperty("whatsAppNumber", out var whatsapp) ? whatsapp.GetString() ?? "" : "",
+                            Location = state.TryGetProperty("location", out var loc) && loc.ValueKind == JsonValueKind.Array
+                                ? loc.EnumerateArray().Select(x => x.GetString()).Where(x => !string.IsNullOrEmpty(x)).ToList()
+                                : new(),
+                            UserId = state.TryGetProperty("userId", out var uid) ? uid.GetString() ?? "" : "",
+                            IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
+                            IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
+                            CreatedAt = state.TryGetProperty("createdAt", out var created) && created.ValueKind == JsonValueKind.String
+                                ? created.GetDateTime()
+                                : DateTime.UtcNow,
+                            Status = status,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
+                        };
+
+                        return ad;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error processing deals ad for key: {Key}", key);
+                    }
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching Deals ad by Id: {AdId}", adId);
+                throw new InvalidOperationException("Failed to fetch published Deals ad by ID.", ex);
+            }
+        }
+
+        public async Task<CollectiblesAdDto?> GetCollectiblesAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, CollectiblesIndexKey) ?? new();
+
+                foreach (var key in index)
+                {
+                    try
+                    {
+                        var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key);
+
+                        if (state.ValueKind != JsonValueKind.Object)
+                            continue;
+
+                        var currentAdId = state.GetProperty("id").GetGuid();
+                        var subVertical = state.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
+
+                        if (currentAdId != adId || !string.Equals(subVertical, "Collectibles", StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        var status = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var statusInt)
+                            ? (AdStatus)statusInt : AdStatus.Draft;
+
+                        var adUserId = state.TryGetProperty("userId", out var uid) ? uid.GetString() : "";
+
+                        var ad = new CollectiblesAdDto
+                        {
+                            Id = currentAdId,
+                            Title = state.GetProperty("title").GetString(),
+                            Description = state.GetProperty("description").GetString(),
+                            SubVertical = subVertical,
+                            Category = state.GetProperty("category").GetString(),
+                            L1Category = state.GetProperty("l1Category").GetString(),
+                            L2Category = state.TryGetProperty("l2Category", out var l2) ? l2.GetString() : null,
+                            Brand = state.TryGetProperty("brand", out var brand) ? brand.GetString() : null,
+                            Price = state.GetProperty("price").GetDecimal(),
+                            PriceType = state.GetProperty("priceType").GetString(),
+                            Condition = state.GetProperty("condition").GetString(),
+                            CountryOfOrigin = state.TryGetProperty("countryOfOrigin", out var origin) ? origin.GetString() : null,
+                            Language = state.TryGetProperty("language", out var lang) ? lang.GetString() : null,
+                            HasAuthenticityCertificate = state.TryGetProperty("hasAuthenticityCertificate", out var hasCert) && hasCert.GetBoolean(),
+                            CertificateFileName = state.TryGetProperty("certificateFileName", out var certFileName) ? certFileName.GetString() ?? "" : "",
+                            AuthenticityCertificateUrl = state.TryGetProperty("certificateUrl", out var certUrl) ? certUrl.GetString() ?? "" : "",
+                            YearOrEra = state.TryGetProperty("yearOrEra", out var era) ? era.GetString() : null,
+                            Rarity = state.TryGetProperty("rarity", out var rarity) ? rarity.GetString() : null,
+                            Package = state.TryGetProperty("package", out var pkg) ? pkg.GetString() : null,
+                            IsGraded = state.TryGetProperty("isGraded", out var graded) ? graded.GetBoolean() : null,
+                            GradingCompany = state.TryGetProperty("gradingCompany", out var gradeCo) ? gradeCo.GetString() : null,
+                            Grades = state.TryGetProperty("grades", out var grades) ? grades.GetString() : null,
+                            Material = state.TryGetProperty("material", out var material) ? material.GetString() : null,
+                            Scale = state.TryGetProperty("scale", out var scale) ? scale.GetString() : null,
+                            SerialNumber = state.TryGetProperty("serialNumber", out var serial) ? serial.GetString() ?? "" : "",
+                            Signed = state.TryGetProperty("signed", out var signed) ? signed.GetBoolean() : null,
+                            SignedBy = state.TryGetProperty("signedBy", out var signedBy) ? signedBy.GetString() : null,
+                            FramedBy = state.TryGetProperty("framedBy", out var framedBy) ? framedBy.GetString() : null,
+                            ImageUrls = state.TryGetProperty("imageUrls", out var imgs) && imgs.ValueKind == JsonValueKind.Array
+                                ? imgs.EnumerateArray().Select(img =>
+                                {
+                                    return new ImageInfo
+                                    {
+                                        AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() ?? "" : "",
+                                        Url = img.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "",
+                                        Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
+                                    };
+                                }).Where(i => !string.IsNullOrWhiteSpace(i.Url)).ToList() : new(),
+                            PhoneNumber = state.TryGetProperty("phoneNumber", out var phone) ? phone.GetString() ?? "" : "",
+                            WhatsAppNumber = state.TryGetProperty("whatsAppNumber", out var whatsapp) ? whatsapp.GetString() ?? "" : "",
+                            ContactEmail = state.TryGetProperty("contactEmail", out var email) ? email.GetString() : "",
+                            Location = state.TryGetProperty("location", out var loc) && loc.ValueKind == JsonValueKind.Array
+                                ? loc.EnumerateArray().Select(x => x.GetString()).Where(x => !string.IsNullOrEmpty(x)).ToList()
+                                : new(),
+                            StreetNumber = state.TryGetProperty("streetNumber", out var street) ? street.GetString() ?? "" : "",
+                            BuildingNumber = state.TryGetProperty("buildingNumber", out var building) ? building.GetString() : null,
+                            HasWarranty = state.TryGetProperty("hasWarranty", out var warranty) && warranty.GetBoolean(),
+                            IsHandmade = state.TryGetProperty("isHandmade", out var handmade) && handmade.GetBoolean(),
+                            TearmsAndCondition = state.TryGetProperty("tearmsAndCondition", out var terms) && terms.GetBoolean(),
+                            UserId = adUserId,
+                            IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
+                            IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
+                            CreatedAt = state.GetProperty("createdAt").GetDateTime(),
+                            Status = status,
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
+                        };
+
+                        return ad;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error processing collectibles ad for key: {Key}", key);
+                    }
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching Collectibles ad by Id: {AdId}", adId);
+                throw new InvalidOperationException("Failed to fetch published Collectibles ad by ID.", ex);
+            }
+        }
+
         public async Task<BulkAdActionResponse> BulkUnpublishItemsAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
             try

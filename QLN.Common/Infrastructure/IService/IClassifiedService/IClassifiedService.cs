@@ -27,6 +27,10 @@ namespace QLN.Common.Infrastructure.IService
         Task<DeleteAdResponseDto> DeleteClassifiedDealsAd(Guid adId, CancellationToken cancellationToken = default);
         Task<PaginatedAdResponseDto> GetUserPublishedItemsAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default);
         Task<PaginatedAdResponseDto> GetUserUnPublishedItemsAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default);
+        Task<ItemAdDto?> GetItemAdById(Guid adId, CancellationToken cancellationToken = default);
+        Task<PrelovedAdDto?> GetPrelovedAdById(Guid adId, CancellationToken cancellationToken = default);
+        Task<DealsAdDto?> GetDealsAdById(Guid adId, CancellationToken cancellationToken = default);
+        Task<CollectiblesAdDto?> GetCollectiblesAdById(Guid adId, CancellationToken cancellationToken = default);
         Task<PaginatedPrelovedAdResponseDto> GetUserPublishedPrelovedAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default);
         Task<PaginatedPrelovedAdResponseDto> GetUserUnPublishedPrelovedAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default);
         Task<BulkAdActionResponse> BulkUnpublishItemsAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default);

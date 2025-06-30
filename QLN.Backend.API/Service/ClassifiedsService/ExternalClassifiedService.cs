@@ -806,6 +806,94 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
+        public async Task<ItemAdDto?> GetItemAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            if (adId == Guid.Empty)
+                throw new ArgumentException("Ad ID must not be empty.");
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<ItemAdDto>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID, 
+                    $"api/classifieds/items/ads/{adId}",
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException($"Failed to retrieve ad details for Ad ID: {adId} from classified microservice.", ex);
+            }
+        }
+
+        public async Task<PrelovedAdDto?> GetPrelovedAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            if (adId == Guid.Empty)
+                throw new ArgumentException("Ad ID must not be empty.");
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<PrelovedAdDto>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID, 
+                    $"api/classifieds/preloved/ad/{adId}",
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to retrieve Preloved ad from classified microservice.", ex);
+            }
+        }
+
+        public async Task<DealsAdDto?> GetDealsAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            if (adId == Guid.Empty)
+                throw new ArgumentException("Ad ID must not be empty.");
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<DealsAdDto>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID, 
+                    $"api/classifieds/deals/ad/{adId}",
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex); 
+                throw new InvalidOperationException("Failed to retrieve Deals ad from classified microservice.", ex);
+            }
+        }
+
+        public async Task<CollectiblesAdDto?> GetCollectiblesAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            if (adId == Guid.Empty)
+                throw new ArgumentException("Ad ID must not be empty.");
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<CollectiblesAdDto>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/collectibles/ad/{adId}",
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to retrieve Collectibles ad from classified microservice.", ex);
+            }
+        }
+
         public async Task<PaginatedAdResponseDto> GetUserPublishedItemsAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             if (userId == null)
