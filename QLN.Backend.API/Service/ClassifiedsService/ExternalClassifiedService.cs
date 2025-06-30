@@ -277,7 +277,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             try
             {
-                await _dapr.InvokeMethodAsync(
+                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
                     $"/api/classifieds/items/refresh/{adId}",  
@@ -292,29 +292,23 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
             catch (ArgumentException ex)
             {
-                return TypedResults.BadRequest(new ProblemDetails
-                {
-                    Title = "Validation Error",
-                    Detail = ex.Message,
-                    Status = StatusCodes.Status400BadRequest
-                });
+                _log.LogException(ex);
+                throw new InvalidOperationException("AdId is required and must be valid.", ex);
             }
-            catch (InvalidOperationException ex)
+            catch (DaprException daprEx)
             {
-                return TypedResults.NotFound(new ProblemDetails
-                {
-                    Title = "Not Found",
-                    Detail = ex.Message,
-                    Status = StatusCodes.Status404NotFound
-                });
+                _log.LogException(daprEx);
+                throw new InvalidOperationException("Failed to invoke internal service through Dapr.", daprEx);
+            }
+            catch (HttpRequestException httpEx)
+            {
+                _log.LogException(httpEx);
+                throw new InvalidOperationException("Failed to communicate with the internal service.", httpEx);
             }
             catch (Exception ex)
             {
-                return TypedResults.Problem(
-                    title: "Internal Server Error",
-                    detail: ex.Message,
-                    statusCode: StatusCodes.Status500InternalServerError
-                );
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to refresh the ad due to an unexpected error.", ex);
             }
         }
         public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)

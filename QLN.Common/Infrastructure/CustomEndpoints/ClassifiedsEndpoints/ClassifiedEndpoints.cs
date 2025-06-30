@@ -1024,6 +1024,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             group.MapPost("/items/refresh/{adId:guid}", async Task<IResult> (
                 Guid adId, 
+                [FromQuery]SubVertical subVertical,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -1039,7 +1040,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    await service.RefreshClassifiedItemsAd(adId, token);
+                    await service.RefreshClassifiedItemsAd(subVertical, adId, token);
 
                     return TypedResults.Ok(new
                     {

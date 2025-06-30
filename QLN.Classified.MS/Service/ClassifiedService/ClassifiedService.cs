@@ -422,17 +422,37 @@ namespace QLN.Classified.MS.Service
 
             return adItem;
         }
-        public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(Guid adId, CancellationToken cancellationToken)
+        public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, Guid adId, CancellationToken cancellationToken)
         {
             try
             {
-                var adItem = await GetClassifiedItemById(adId);
+                ClassifiedItems adItem = null;
+
+                switch (subVertical)
+                {
+                    case SubVertical.Items:
+                        adItem = await GetClassifiedItemById(adId); 
+                        break;
+                    case SubVertical.Preloved:
+                        adItem = await GetClassifiedItemByPreloved(adId); 
+                        break;
+                    case SubVertical.Collectibles:
+                        adItem = await GetClassifiedItemByCollectibles(adId); 
+                        break;
+                    case SubVertical.Deals:
+                        adItem = await GetClassifiedItemByDeals(adId);
+                        break;
+                    case SubVertical.Services:
+                        adItem = await GetClassifiedItemByServices(adId);
+                        break;
+                    default:
+                        throw new InvalidOperationException($"Invalid SubVertical: {subVertical}");
+                }
 
                 if (adItem == null)
                 {
-                    Console.WriteLine("Ad is null");
+                    _logger.LogError($"Ad with id {adId} not found in the {subVertical} vertical.");
                     throw new InvalidOperationException($"Ad with id {adId} not found.");
-
                 }
 
                 adItem.IsRefresh = true;
