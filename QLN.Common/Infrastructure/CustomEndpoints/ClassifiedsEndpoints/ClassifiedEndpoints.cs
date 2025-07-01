@@ -1241,6 +1241,521 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .ExcludeFromDescription();
 
+
+            group.MapPut("items/update", async Task<IResult> (
+                HttpContext httpContext,
+                ClassifiedItems dto,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                try
+                {
+                    // Retrieve user claim from the token
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return Results.Unauthorized();
+                    }
+
+                    // Deserialize the user data from the claim
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+
+                    if (uid == null)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Authenticated user ID is missing or invalid.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    dto.UserId = uid;
+
+                    var result = await service.UpdateClassifiedItemsAd(dto, token);
+
+                    return TypedResults.Ok(result);
+                }               
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "Requested resource or reference was not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+                .WithName("UpdateItemsClassifiedAd")
+                .WithTags("Classified")
+                .WithSummary("Update items classified ad using authenticated user")
+                .WithDescription("Updates the ad details")
+                .Produces<AdUpdatedResponseDto>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .RequireAuthorization();
+
+            group.MapPut("items/update-by-id", async Task<IResult> (
+                ClassifiedItems dto,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                try
+                {
+                    if (dto.UserId == null)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "User ID must not be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.UpdateClassifiedItemsAd(dto, token);
+
+                    return TypedResults.Ok(result);
+                }               
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "Requested resource or reference was not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+                .WithName("UpdateItemsClassifiedAdById")
+                .WithTags("Classified")
+                .WithSummary("Update items classified ad using provided UserId")
+                .WithDescription("For admin or service scenarios where the UserId is passed explicitly.")
+                .Produces<AdUpdatedResponseDto>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .ExcludeFromDescription();
+
+            group.MapPut("preloved/update", async Task<IResult> (
+                HttpContext httpContext,
+                ClassifiedPreloved dto,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return Results.Unauthorized();
+                    }
+                    
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+
+                    if (uid == null)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Authenticated user ID is missing or invalid.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    dto.UserId = uid;
+
+                    var result = await service.UpdateClassifiedPrelovedAd(dto, token);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "Requested resource or reference was not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+                .WithName("UpdatePrelovedClassifiedAd")
+                .WithTags("Classified")
+                .WithSummary("Update preloved classified ad using authenticated user")
+                .WithDescription("Updates the ad details")
+                .Produces<AdUpdatedResponseDto>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .RequireAuthorization();
+
+            group.MapPut("preloved/update-by-id", async Task<IResult> (
+                ClassifiedPreloved dto,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                try
+                {
+                    if (dto.UserId == null)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "User ID must not be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.UpdateClassifiedPrelovedAd(dto, token);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "Requested resource or reference was not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+                .WithName("UpdatePrelovedClassifiedAdById")
+                .WithTags("Classified")
+                .WithSummary("Update preloved classified ad using provided UserId")
+                .WithDescription("For admin or service scenarios where the UserId is passed explicitly.")
+                .Produces<AdUpdatedResponseDto>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .ExcludeFromDescription();
+
+            group.MapPut("collectibles/update", async Task<IResult> (
+               HttpContext httpContext,
+               ClassifiedCollectibles dto,
+               IClassifiedService service,
+               CancellationToken token) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return Results.Unauthorized();
+                    }
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+
+                    if (uid == null)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Authenticated user ID is missing or invalid.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    dto.UserId = uid;
+
+                    var result = await service.UpdateClassifiedCollectiblesAd(dto, token);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "Requested resource or reference was not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+               .WithName("UpdateCollectiblesClassifiedAd")
+               .WithTags("Classified")
+               .WithSummary("Update collectibles classified ad using authenticated user")
+               .WithDescription("Updates the ad details")
+               .Produces<AdUpdatedResponseDto>(StatusCodes.Status200OK)
+               .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+               .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+               .RequireAuthorization();
+
+            group.MapPut("collectibles/update-by-id", async Task<IResult> (
+                ClassifiedCollectibles dto,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                try
+                {
+                    if (dto.UserId == null)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "User ID must not be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.UpdateClassifiedCollectiblesAd(dto, token);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "Requested resource or reference was not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+                .WithName("UpdateCollectiblesClassifiedAdById")
+                .WithTags("Classified")
+                .WithSummary("Update collectibles classified ad using provided UserId")
+                .WithDescription("For admin or service scenarios where the UserId is passed explicitly.")
+                .Produces<AdUpdatedResponseDto>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .ExcludeFromDescription();
+
+            group.MapPut("deals/update", async Task<IResult> (
+             HttpContext httpContext,
+             ClassifiedDeals dto,
+             IClassifiedService service,
+             CancellationToken token) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return Results.Unauthorized();
+                    }
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+
+                    if (uid == null)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Authenticated user ID is missing or invalid.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    dto.UserId = uid;
+
+                    var result = await service.UpdateClassifiedDealsAd(dto, token);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "Requested resource or reference was not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+             .WithName("UpdateDealsClassifiedAd")
+             .WithTags("Classified")
+             .WithSummary("Update Deals classified ad using authenticated user")
+             .WithDescription("Updates the ad details")
+             .Produces<AdUpdatedResponseDto>(StatusCodes.Status200OK)
+             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+             .RequireAuthorization();
+
+            group.MapPut("deals/update-by-id", async Task<IResult> (
+                ClassifiedDeals dto,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                try
+                {
+                    if (dto.UserId == null)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "User ID must not be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.UpdateClassifiedDealsAd(dto, token);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "Requested resource or reference was not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+                .WithName("UpdateDealsClassifiedAdById")
+                .WithTags("Classified")
+                .WithSummary("Update Deals classified ad using provided UserId")
+                .WithDescription("For admin or service scenarios where the UserId is passed explicitly.")
+                .Produces<AdUpdatedResponseDto>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .ExcludeFromDescription();
+
             group.MapPost("collectibles/post", async Task<IResult> (
                 HttpContext httpContext,
                 ClassifiedCollectibles dto,
@@ -3073,7 +3588,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .WithTags("Classified")
                 .WithSummary("Get a published item ad by ID")
                 .WithDescription("Retrieves the full published item ad details based on the provided Ad ID.")
-                .Produces<ItemAdDto>(StatusCodes.Status200OK)
+                .Produces<ClassifiedItems>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)                
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
@@ -3131,7 +3646,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .WithTags("Classified")
                 .WithSummary("Get a single Preloved Ad by ID")
                 .WithDescription("Fetches the details of a specific Preloved ad using the provided adId.")
-                .Produces<PrelovedAdDto>(StatusCodes.Status200OK)
+                .Produces<ClassifiedPreloved>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
@@ -3188,7 +3703,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .WithTags("Classified")
                 .WithSummary("Get a single Deals Ad by ID")
                 .WithDescription("Fetches the details of a specific Deals ad using the provided adId.")
-                .Produces<DealsAdDto>(StatusCodes.Status200OK)
+                .Produces<ClassifiedDeals>(StatusCodes.Status200OK)
                 .Produces<DealsAdDto>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
@@ -3246,7 +3761,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .WithTags("Classified")
                 .WithSummary("Get a single Collectibles Ad by ID")
                 .WithDescription("Fetches the details of a specific Collectibles ad using the provided adId.")
-                .Produces<CollectiblesAdDto>(StatusCodes.Status200OK)
+                .Produces<ClassifiedCollectibles>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);

@@ -198,6 +198,7 @@ namespace QLN.Web.Shared.Models
 
             [JsonPropertyName("imageUrls")]
             public List<ImageUrlItem> ImageUrls { get; set; }
+            public bool IsSelected { get; set; }
         }
         public class ImageUrlItem
         {
