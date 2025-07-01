@@ -30,43 +30,75 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public async Task<HttpResponseMessage> GetAllArticle(int id)
+        public async Task<HttpResponseMessage> GetAllArticles()
         {
             try
             {
-                var response = await GetAsync($"api/GetAllArticles");
+                var response = await GetAsync($"api/v2/news/getAllNewsArticle");
                 return response;
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "GetAllArticle");
+                Logger.LogError(ex, "GetAllArticles");
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
 
-        public Task<HttpResponseMessage> GetAllArticles()
+        public async Task<HttpResponseMessage> GetNewsCategories()
         {
-            throw new NotImplementedException();
+            try
+            {
+                var response = await GetAsync($"api/v2/news/getCategories");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetNewsCategories");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
         }
 
-        public Task<HttpResponseMessage> GetNewsCategories()
+        public async Task<HttpResponseMessage> GetSlots()
         {
-            throw new NotImplementedException();
+            try
+            {
+                var response = await GetAsync($"api/v2/news/slots");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetSlots");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
         }
 
-        public Task<HttpResponseMessage> GetSlots()
+        public async Task<HttpResponseMessage> GetWriterTags()
         {
-            throw new NotImplementedException();
+            try
+            {
+                var response = await GetAsync($"api/v2/news/getWriterTags");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetWriterTags");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
         }
 
-        public Task<HttpResponseMessage> GetWriterTags()
+        public async Task<HttpResponseMessage> UpdateArticle(NewsArticleDTO newsArticle)
         {
-            throw new NotImplementedException();
-        }
-
-        public Task<HttpResponseMessage> UpdateArticle(NewsArticleDTO newsArticle)
-        {
-            throw new NotImplementedException();
+            try
+            {
+                var newsArticleJson = new StringContent(JsonSerializer.Serialize(newsArticle), Encoding.UTF8, "application/json");
+                var response = await PostAsync("api/v2/news/updateNewsArticle", newsArticleJson);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "UpdateArticle");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
         }
     }
 }
