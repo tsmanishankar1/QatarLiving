@@ -3153,3 +3153,52 @@ body {
             display: none !important;
         }
     }
+
+    /* CreateForm */
+
+     .create-max-container {
+            max-width: 1170px;
+            margin: 0 auto;
+        }
+    .create-save-button-container {
+        display: flex;
+        justify-content: flex-end;
+        padding: 5px;
+        gap: 10px;
+        margin-top: 1rem; 
+    }
+
+    .create-form-container {
+        padding: 10px 5px;
+        background-color: transparent;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .create-close-button {
+        background-color: var(--color-background);
+        color: var(--color-text-heading);
+        border-radius: 6px;
+        width: 200px;
+        font-weight: 600;
+        padding: 8px 10px;
+        font-weight: 500;
+        border: 1px solid var(--color-captcha-box);
+    }
+
+    .create-save-button {
+        background-color: var(--color-accent);
+        color: var(--color-background);
+        border-radius: 6px;
+        width: 200px;
+        font-weight: 600;
+        font-weight: 500;
+        padding: 8px 10px;
+    }
+
+    @media (min-width: 960px) {
+        .create-form-container .mud-grid {
+            align-items: start;
+        }
+    }
