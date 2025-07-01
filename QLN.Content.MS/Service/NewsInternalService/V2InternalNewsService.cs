@@ -92,18 +92,23 @@ namespace QLN.Content.MS.Service.NewsInternalService
             _logger = logger;
         }
 
-        public async Task<List<string>> GetWriterTagsAsync(CancellationToken cancellationToken = default)
+        public Task<WriterTagsResponse> GetWriterTagsAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Returning static writer tags as key-value JSON");
 
-            //var tagDict = writerTags.ToDictionary(tag => tag, tag => tag);
-            return await  Task.FromResult(writerTags);
+            var response = new WriterTagsResponse
+            {
+                Tags = writerTags
+            };
+
+            return Task.FromResult(response);
         }
 
-        public async Task<List<V2NewsCategory>> GetNewsCategoriesAsync(CancellationToken cancellationToken = default)
+
+        public Task<List<V2NewsCategory>> GetNewsCategoriesAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Returning static writer tags as key-value JSON");
-            return await Task.FromResult(newsCateg);
+            return Task.FromResult(newsCateg);
         }
         public async Task<List<V2NewsSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default)
         {
@@ -374,5 +379,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 throw;
             }
         }
+
     }
 }

@@ -472,7 +472,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
                 var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                 var userId = userData.GetProperty("uid").GetString();
-                var name = userData.GetProperty("name").GetString();
                 if (userId == null )
                 {
                     return TypedResults.BadRequest(new ProblemDetails
