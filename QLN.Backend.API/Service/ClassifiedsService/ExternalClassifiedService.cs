@@ -1581,6 +1581,101 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default)
+        {
+            if(dto.Id == null)
+            {
+                throw new ArgumentException("Id must be specified.");
+            }
+            try
+            {                
+                var response = await _dapr.InvokeMethodAsync<ClassifiedItems,AdUpdatedResponseDto>(
+                    HttpMethod.Put,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/items/update-by-id",
+                    dto,
+                    cancellationToken);
+
+                return response;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to update classified item ad in the classifieds microservice.", ex);
+            }
+        }
+
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)
+        {
+            if (dto.Id == null)
+            {
+                throw new ArgumentException("Id must be specified.");
+            }
+            try
+            {
+                var response = await _dapr.InvokeMethodAsync<ClassifiedPreloved, AdUpdatedResponseDto>(
+                    HttpMethod.Put,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/preloved/update-by-id",
+                    dto,
+                    cancellationToken);
+
+                return response;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to update classified preloved ad in the classifieds microservice.", ex);
+            }
+        }
+
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedCollectiblesAd(ClassifiedCollectibles dto, CancellationToken cancellationToken = default)
+        {
+            if (dto.Id == null)
+            {
+                throw new ArgumentException("Id must be specified.");
+            }
+            try
+            {
+                var response = await _dapr.InvokeMethodAsync<ClassifiedCollectibles, AdUpdatedResponseDto>(
+                    HttpMethod.Put,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/collectibles/update-by-id",
+                    dto,
+                    cancellationToken);
+
+                return response;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to update classified collectibles ad in the classifieds microservice.", ex);
+            }
+        }
+
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedDealsAd(ClassifiedDeals dto, CancellationToken cancellationToken = default)
+        {
+            if (dto.Id == null)
+            {
+                throw new ArgumentException("Id must be specified.");
+            }
+            try
+            {
+                var response = await _dapr.InvokeMethodAsync<ClassifiedDeals, AdUpdatedResponseDto>(
+                    HttpMethod.Put,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/deals/update-by-id",
+                    dto,
+                    cancellationToken);
+
+                return response;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to update classified collectibles ad in the classifieds microservice.", ex);
+            }
+        }
 
     }
 }

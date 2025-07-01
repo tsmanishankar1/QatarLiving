@@ -3129,5 +3129,281 @@ namespace QLN.Classified.MS.Service
             }
         }
 
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
+            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+
+            var key = $"ad-{dto.Id}"; 
+
+            try
+            {
+                var existingAd = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
+                if (existingAd.ValueKind != JsonValueKind.Object)
+                {
+                    throw new InvalidOperationException($"Ad with key {key} does not exist.");
+                }
+
+                if (!string.Equals(dto.SubVertical, "Items", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("This service only supports updating ads under the 'Items' vertical.");
+                }
+                dto.ImageUrls = existingAd.GetProperty("imageUrls").EnumerateArray().Select(img =>
+                {
+                    return new ImageInfo
+                    {
+                        AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() : "",
+                        Url = img.TryGetProperty("url", out var u) ? u.GetString() : "",
+                        Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
+                    };
+                }).ToList();
+
+                dto.CertificateUrl = existingAd.GetProperty("certificateUrl").GetString();
+             
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, dto);
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, ItemsIndexKey) ?? new();
+                if (!index.Contains(key))
+                {
+                    index.Add(key);
+                }
+
+                await _dapr.SaveStateAsync(UnifiedStore, ItemsIndexKey, index);
+
+                return new AdUpdatedResponseDto
+                {
+                    AdId = dto.Id,
+                    Title = dto.Title ?? existingAd.GetProperty("title").GetString(),
+                    UpdatedAt = DateTime.UtcNow,
+                    Message = "Items Ad updated successfully"
+                };
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Ad not found or conflict occurred during update.");
+                throw new InvalidOperationException("Ad does not exist or conflict occurred.", ex);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation failed during ad update.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during ad update.");
+                throw new InvalidOperationException("An unexpected error occurred while updating the ad. Please try again later.", ex);
+            }
+        }
+
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
+            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+
+            var key = $"ad-{dto.Id}";
+
+            try
+            {
+                var existingAd = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
+
+                if (existingAd.ValueKind != JsonValueKind.Object)
+                {
+                    throw new InvalidOperationException($"Ad with key {key} does not exist.");
+                }
+
+                if (!string.Equals(dto.SubVertical, "Preloved", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("This service only supports updating ads under the 'Preloved' vertical.");
+                }
+
+                dto.ImageUrls = existingAd.GetProperty("imageUrls").EnumerateArray().Select(img =>
+                {
+                    return new ImageInfo
+                    {
+                        AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() : "",
+                        Url = img.TryGetProperty("url", out var u) ? u.GetString() : "",
+                        Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
+                    };
+                }).ToList();
+
+                dto.CertificateUrl = existingAd.GetProperty("certificateUrl").GetString();
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, dto);
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, PrelovedIndexKey) ?? new();
+                if (!index.Contains(key))
+                {
+                    index.Add(key);
+                }
+
+                await _dapr.SaveStateAsync(UnifiedStore, PrelovedIndexKey, index);
+
+                return new AdUpdatedResponseDto
+                {
+                    AdId = dto.Id,
+                    Title = dto.Title ?? existingAd.GetProperty("title").GetString(),
+                    UpdatedAt = DateTime.UtcNow,
+                    Message = "Preloved Ad updated successfully"
+                };
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Ad not found or conflict occurred during update.");
+                throw new InvalidOperationException("Ad does not exist or conflict occurred.", ex);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation failed during ad update.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during ad update.");
+                throw new InvalidOperationException("An unexpected error occurred while updating the ad. Please try again later.", ex);
+            }
+        }
+
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedCollectiblesAd(ClassifiedCollectibles dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
+            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+
+            var key = $"ad-{dto.Id}";
+
+            try
+            {
+                var existingAd = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
+
+                if (existingAd.ValueKind != JsonValueKind.Object)
+                {
+                    throw new InvalidOperationException($"Ad with key {key} does not exist.");
+                }
+
+                if (!string.Equals(dto.SubVertical, "Collectibles", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("This service only supports updating ads under the 'Collectibles' vertical.");
+                }
+
+                dto.ImageUrls = existingAd.GetProperty("imageUrls").EnumerateArray().Select(img =>
+                {
+                    return new ImageInfo
+                    {
+                        AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() : "",
+                        Url = img.TryGetProperty("url", out var u) ? u.GetString() : "",
+                        Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
+                    };
+                }).ToList();
+
+                dto.CertificateUrl = existingAd.GetProperty("certificateUrl").GetString();
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, dto);
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, CollectiblesIndexKey) ?? new();
+                if (!index.Contains(key))
+                {
+                    index.Add(key);
+                }
+
+                await _dapr.SaveStateAsync(UnifiedStore, CollectiblesIndexKey, index);
+
+                return new AdUpdatedResponseDto
+                {
+                    AdId = dto.Id,
+                    Title = dto.Title ?? existingAd.GetProperty("title").GetString(),
+                    UpdatedAt = DateTime.UtcNow,
+                    Message = "Collectibles Ad updated successfully"
+                };
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Ad not found or conflict occurred during update.");
+                throw new InvalidOperationException("Ad does not exist or conflict occurred.", ex);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation failed during ad update.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during ad update.");
+                throw new InvalidOperationException("An unexpected error occurred while updating the ad. Please try again later.", ex);
+            }
+        }
+
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedDealsAd(ClassifiedDeals dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
+            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+
+            var key = $"ad-{dto.Id}";
+
+            try
+            {
+                var existingAd = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
+
+                if (existingAd.ValueKind != JsonValueKind.Object)
+                {
+                    throw new InvalidOperationException($"Ad with key {key} does not exist.");
+                }
+
+                if (!string.Equals(dto.SubVertical, "Deals", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("This service only supports updating ads under the 'Deals' vertical.");
+                }
+
+                dto.ImageUrls = existingAd.GetProperty("imageUrls").EnumerateArray().Select(img =>
+                {
+                    return new ImageInfo
+                    {
+                        AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() : "",
+                        Url = img.TryGetProperty("url", out var u) ? u.GetString() : "",
+                        Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
+                    };
+                }).ToList();
+
+                dto.CertificateUrl = existingAd.GetProperty("certificateUrl").GetString();
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, dto);
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, DealsIndexKey) ?? new();
+                if (!index.Contains(key))
+                {
+                    index.Add(key);
+                }
+
+                await _dapr.SaveStateAsync(UnifiedStore, DealsIndexKey, index);
+
+                return new AdUpdatedResponseDto
+                {
+                    AdId = dto.Id,
+                    Title = dto.Title ?? existingAd.GetProperty("title").GetString(),
+                    UpdatedAt = DateTime.UtcNow,
+                    Message = "Deals Ad updated successfully"
+                };
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Ad not found or conflict occurred during update.");
+                throw new InvalidOperationException("Ad does not exist or conflict occurred.", ex);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation failed during ad update.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during ad update.");
+                throw new InvalidOperationException("An unexpected error occurred while updating the ad. Please try again later.", ex);
+            }
+        }
+
+
     }
 }
