@@ -286,8 +286,8 @@ app.MapGroup("/api/addon")
 
 
 var newsGroup = app.MapGroup("/api/v2/news");
-newsGroup.MapNewsEndpoints()
-     .RequireAuthorization();
+newsGroup.MapNewsEndpoints();
+     //.RequireAuthorization(); Add this back once we have Login flow for BO.
 app.MapAllBackOfficeEndpoints();
 app.MapLandingPageEndpoints();
 

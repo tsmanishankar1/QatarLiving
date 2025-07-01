@@ -8,6 +8,10 @@ using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Pages;
 using QLN.Web.Shared.Services;
 using QLN.Web.Shared.Services.Interface;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using MudExtensions.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -83,6 +87,7 @@ builder.Services.AddRazorComponents()
     });
 
 builder.Services.AddMudServices();
+builder.Services.AddMudExtensions();
 
 builder.Services.AddLocalization();
 
