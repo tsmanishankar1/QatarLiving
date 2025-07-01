@@ -107,11 +107,12 @@
     </div>
     }
 </div>
+ <ValidationMessage For="@(() => adPostModel.PhotoUrls)" />
 
 @code {
     [Parameter]
     public List<string> PhotoUrls { get; set; } = new() { "", "", "", "", "", "" };
-
+ [Parameter] public AdPost adPostModel { get; set; }
         [Parameter] public string selectedVertical { get; set; } = "default";
   protected override async Task OnAfterRenderAsync(bool firstRender)
 {

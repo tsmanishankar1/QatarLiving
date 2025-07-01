@@ -52,14 +52,39 @@
                     Items="@CategoryTrees"
                     SelectedId="@SearchState.ItemCategory"
                     SelectedIdChanged="v => OnCategorySelected(v)"
-                    GetId="x => x.Name"
+                    GetId="x => x.Id.ToString()"
                     GetLabel="x => x.Name"
                     Placeholder="Category"
                     BorderRadius="4px"
                     Padding="13px 10px" />
             </div>
+
+        <CustomSelectCategory TItem="CategoryTreeDto"
+            Items="@SelectedCategory.Children"
+            SelectedId="@SearchState.ItemSubCategory"
+            SelectedIdChanged="v => OnSubCategorySelected(v)"
+            GetId="x => x.Id.ToString()"
+            GetLabel="x => x.Name"
+            BorderRadius="4px"
+            IsDisabled="@(!(SelectedCategory?.Children?.Any() ?? false))" 
+            Padding="13px 10px" 
+            Placeholder="Subcategory" />
+
+
+    <CustomSelectCategory TItem="CategoryTreeDto"
+        Items="@SelectedSubCategory.Children"
+        SelectedId="@SearchState.ItemSubSubCategory"
+        SelectedIdChanged="v => OnSubSubCategorySelected(v)"
+        GetId="x => x.Id.ToString()"
+        GetLabel="x => x.Name"
+        BorderRadius="4px"
+        Padding="13px 10px" 
+        IsDisabled="@(!(SelectedSubCategory?.Children?.Any() ?? false))"
+        Placeholder="Sub subcategory" />
+
             }
         </div>
+      
 
         @if (!_isSearchFocused)
         {
@@ -67,16 +92,17 @@
             <div class="item-second-row">
                 <!-- Brand -->
                 <div class="item-brand-select">
-                    <NewCustomSelect TItem="BrandItem"
-                        Items="@_brands"
-                         SelectedId="@SearchState.ItemBrand"
-                         SelectedIdChanged="v => OnFilterChanged(nameof(SearchState.ItemBrand), v)"
-                        GetId="x => x.Id"
-                        GetLabel="x => x.Label"
-                        Placeholder="Brand"
-                        Padding="13px 10px"
-                        BorderRadius="4px"
-                        IsDisabled="@string.IsNullOrWhiteSpace(SearchState.ItemCategory)" />
+                    <CustomSelectCategory TItem="string"
+                    Items="brandField?.Options"
+                    SelectedId="@SearchState.ItemBrand"
+                    SelectedIdChanged="v => OnFilterChanged(nameof(SearchState.ItemBrand), v)"
+                    GetId="x => x"
+                    GetLabel="x => x"
+                    BorderRadius="4px"
+                    Padding="13px 10px"
+                    IsDisabled="@(!isBrandFieldAvailable)"
+                    Placeholder="Brand" />
+              
                 </div>
 
                 <!-- Price -->
@@ -91,8 +117,8 @@
                 </div>
 
                 <!-- More -->
-                <div class="item-price-short-select">
-                        <MoreFiltersList OnFiltersChanged="PerformSearch" />
+                <div class="more-short-select">
+                        <MoreFiltersList SelectedFields="SelectedFields" OnFiltersChanged="PerformSearch"/>
                 </div>
 
                 <!-- Save Search -->

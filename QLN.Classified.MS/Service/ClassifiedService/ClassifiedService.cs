@@ -315,7 +315,7 @@ namespace QLN.Classified.MS.Service
             if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
                 throw new ArgumentException("Image URLs must be provided.");
 
-            if (string.IsNullOrWhiteSpace(dto.CertificateFileName))
+            if (string.IsNullOrWhiteSpace(dto.CertificateBase64))
                 throw new ArgumentException("Certificate URL must be provided.");
 
             var adId = dto.Id != Guid.Empty ? dto.Id : throw new ArgumentException("Id must be provided");
@@ -359,7 +359,8 @@ namespace QLN.Classified.MS.Service
                     dto.Size,
                     dto.SizeValue,
                     dto.Gender,
-                    CertificateUrl = dto.CertificateFileName,
+                    dto.CertificateFileName,
+                    CertificateUrl = dto.CertificateBase64,
                     ImageUrls = dto.AdImagesBase64,
                     dto.PhoneNumber,
                     dto.WhatsAppNumber,
@@ -413,7 +414,91 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while creating the Items ad. Please try again later.", ex);
             }
         }
+        public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, Guid adId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                object adItem = null;
 
+                switch (subVertical)
+                {
+                    case SubVertical.Items:
+                        adItem = await GetItemAdById(adId, cancellationToken);
+                        break;
+                    case SubVertical.Preloved:
+                        adItem = await GetPrelovedAdById(adId, cancellationToken);
+                        break;
+                    case SubVertical.Collectibles:
+                        adItem = await GetCollectiblesAdById(adId, cancellationToken);
+                        break;
+                    case SubVertical.Deals:
+                        adItem = await GetDealsAdById(adId, cancellationToken);
+                        break;
+                    default:
+                        throw new InvalidOperationException($"Invalid SubVertical: {subVertical}");
+                }
+
+                if (adItem == null)
+                {
+                    _logger.LogError($"Ad with id {adId} not found in the {subVertical} vertical.");
+                    throw new InvalidOperationException($"Ad with id {adId} not found.");
+                }
+
+                if (adItem is ClassifiedItems itemAd)
+                {
+                    itemAd.IsRefresh = true;
+                    itemAd.CreatedDate = DateTime.UtcNow;
+                    itemAd.RefreshExpiry = DateTime.UtcNow.AddHours(72);
+                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{itemAd.Id}", itemAd);
+                }
+                else if (adItem is ClassifiedPreloved prelovedAd)
+                {
+                    prelovedAd.IsRefresh = true;
+                    prelovedAd.CreatedDate = DateTime.UtcNow;
+                    prelovedAd.RefreshExpiry = DateTime.UtcNow.AddHours(72);
+                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{prelovedAd.Id}", prelovedAd);
+                }
+                else if (adItem is ClassifiedCollectibles collectiblesAd)
+                {
+                    collectiblesAd.IsRefresh = true;
+                    collectiblesAd.CreatedDate = DateTime.UtcNow;
+                    collectiblesAd.RefreshExpiry = DateTime.UtcNow.AddHours(72);
+                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{collectiblesAd.Id}", collectiblesAd);
+                }
+                else if (adItem is ClassifiedDeals dealsAd)
+                {
+                    dealsAd.IsRefresh = true;
+                    dealsAd.CreatedDate = DateTime.UtcNow;
+                    dealsAd.RefreshExpiry = DateTime.UtcNow.AddHours(72);
+                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{dealsAd.Id}", dealsAd);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Unsupported ad type: {adItem.GetType().Name}");
+                }
+
+                return new AdCreatedResponseDto
+                {
+                    AdId = adId,
+                    Message = "Ad successfully refreshed."
+                };
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation error occurred while refreshing ad.");
+                throw;
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Ad not found or operation error while refreshing ad.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Unhandled error occurred while refreshing ad.");
+                throw new InvalidOperationException("Failed to refresh the ad due to an unexpected error.", ex);
+            }
+        }
         public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
@@ -425,7 +510,7 @@ namespace QLN.Classified.MS.Service
             if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
                 throw new ArgumentException("Image URLs must be provided.");
 
-            if (string.IsNullOrWhiteSpace(dto.CertificateFileName))
+            if (string.IsNullOrWhiteSpace(dto.CertificateBase64))
                 throw new ArgumentException("Certificate URL must be provided.");
 
             var adId = dto.Id != Guid.Empty ? dto.Id : throw new ArgumentException("Id must be provided");
@@ -465,7 +550,8 @@ namespace QLN.Classified.MS.Service
                     dto.Size,
                     dto.SizeValue,
                     dto.Gender,
-                    CertificateUrl = dto.CertificateFileName,
+                    dto.CertificateFileName,
+                    CertificateUrl = dto.CertificateBase64,
                     ImageUrls = dto.AdImagesBase64,
                     dto.PhoneNumber,
                     dto.WhatsAppNumber,
@@ -531,7 +617,7 @@ namespace QLN.Classified.MS.Service
             if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
                 throw new ArgumentException("Image URLs must be provided.");
 
-            if (string.IsNullOrWhiteSpace(dto.CertificateFileName))
+            if (string.IsNullOrWhiteSpace(dto.CertificateBase64))
                 throw new ArgumentException("Certificate URL must be provided.");
 
             var adId = dto.Id != Guid.Empty ? dto.Id : throw new ArgumentException("Id must be provided.");
@@ -562,7 +648,8 @@ namespace QLN.Classified.MS.Service
                     dto.CountryOfOrigin,
                     dto.Language,
                     dto.HasAuthenticityCertificate,
-                    CertificateUrl = dto.CertificateFileName,
+                    dto.CertificateFileName,
+                    CertificateUrl = dto.CertificateBase64,
                     dto.YearOrEra,
                     dto.Rarity,
                     dto.Package,
@@ -642,7 +729,7 @@ namespace QLN.Classified.MS.Service
             if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
                 throw new ArgumentException("Image URLs must be provided.");
 
-            if (string.IsNullOrWhiteSpace(dto.FlyerName))
+            if (string.IsNullOrWhiteSpace(dto.FlyerFile))
                 throw new ArgumentException("Flyer URL must be provided.");
 
             var adId = dto.Id != Guid.Empty ? dto.Id : throw new ArgumentException("Id must be provided");
@@ -660,7 +747,8 @@ namespace QLN.Classified.MS.Service
                     Id = adId,
                     dto.SubVertical,
                     dto.Title,
-                    FlyerFile = dto.FlyerName,
+                    dto.FlyerName,
+                    FlyerFile = dto.FlyerFile,
                     ImageUrl = dto.AdImagesBase64,
                     dto.XMLLink,
                     dto.ExpiryDate,
@@ -1070,6 +1158,7 @@ namespace QLN.Classified.MS.Service
                             Size = state.TryGetProperty("size", out var size) ? size.GetString() ?? "" : "",
                             SizeValue = state.TryGetProperty("sizeValue", out var sizeVal) ? sizeVal.GetString() ?? "" : "",
                             Gender = state.TryGetProperty("gender", out var gender) ? gender.GetString() ?? "" : "",
+                            CertificateFileName = state.TryGetProperty("certificateFileName", out var certFileName) ? certFileName.GetString() ?? "" : "",
                             CertificateUrl = state.GetProperty("certificateUrl").GetString(),
                             ImageUrls = state.TryGetProperty("imageUrls", out var imgs) && imgs.ValueKind == JsonValueKind.Array
                             ? imgs.EnumerateArray().Select(img =>
@@ -1215,6 +1304,7 @@ namespace QLN.Classified.MS.Service
                             Size = state.TryGetProperty("size", out var size) ? size.GetString() ?? "" : "",
                             SizeValue = state.TryGetProperty("sizeValue", out var sizeVal) ? sizeVal.GetString() ?? "" : "",
                             Gender = state.TryGetProperty("gender", out var gender) ? gender.GetString() ?? "" : "",
+                            CertificateFileName = state.TryGetProperty("certificateFileName", out var certFileName) ? certFileName.GetString() ?? "" : "",
                             CertificateUrl = state.GetProperty("certificateUrl").GetString(),
                             ImageUrls = state.TryGetProperty("imageUrls", out var imgs) && imgs.ValueKind == JsonValueKind.Array
                             ? imgs.EnumerateArray().Select(img =>
@@ -1278,6 +1368,66 @@ namespace QLN.Classified.MS.Service
             catch (Exception ex)
             {
                 throw new InvalidOperationException("Failed to retrieve user items ads", ex);
+            }
+        }
+
+        public async Task<ClassifiedItems?> GetItemAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var key = $"ad-{adId}";
+                var adItem = await _dapr.GetStateAsync<ClassifiedItems>(UnifiedStore, key);
+                return adItem;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching ad details by adId: {AdId}", adId);
+                throw new InvalidOperationException("Failed to fetch published item ad by ID.", ex);
+            }
+        }
+
+        public async Task<ClassifiedPreloved?> GetPrelovedAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var key = $"ad-{adId}";
+                var adItem = await _dapr.GetStateAsync<ClassifiedPreloved>(UnifiedStore, key);
+                return adItem;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching Preloved ad by Id: {AdId}", adId);
+                throw new InvalidOperationException("Failed to fetch published Preloved ad by ID.", ex);
+            }
+        }
+
+        public async Task<ClassifiedDeals?> GetDealsAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var key = $"ad-{adId}";
+                var adItem = await _dapr.GetStateAsync<ClassifiedDeals>(UnifiedStore, key);
+                return adItem;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching Deals ad by Id: {AdId}", adId);
+                throw new InvalidOperationException("Failed to fetch published Deals ad by ID.", ex);
+            }
+        }
+
+        public async Task<ClassifiedCollectibles?> GetCollectiblesAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var key = $"ad-{adId}";
+                var adItem = await _dapr.GetStateAsync<ClassifiedCollectibles>(UnifiedStore, key);
+                return adItem;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching Collectibles ad by Id: {AdId}", adId);
+                throw new InvalidOperationException("Failed to fetch published Collectibles ad by ID.", ex);
             }
         }
 
@@ -1488,6 +1638,7 @@ namespace QLN.Classified.MS.Service
                             Size = state.TryGetProperty("size", out var size) ? size.GetString() ?? "" : "",
                             SizeValue = state.TryGetProperty("sizeValue", out var sizeVal) ? sizeVal.GetString() ?? "" : "",
                             Gender = state.TryGetProperty("gender", out var gender) ? gender.GetString() ?? "" : "",
+                            CertificateFileName = state.TryGetProperty("certificateFileName", out var certFileName) ? certFileName.GetString() ?? "" : "",
                             CertificateUrl = state.GetProperty("certificateUrl").GetString(),
                             ImageUrls = state.TryGetProperty("imageUrls", out var imgs) && imgs.ValueKind == JsonValueKind.Array
                             ? imgs.EnumerateArray().Select(img =>
@@ -1627,6 +1778,7 @@ namespace QLN.Classified.MS.Service
                             Size = state.TryGetProperty("size", out var size) ? size.GetString() ?? "" : "",
                             SizeValue = state.TryGetProperty("sizeValue", out var sizeVal) ? sizeVal.GetString() ?? "" : "",
                             Gender = state.TryGetProperty("gender", out var gender) ? gender.GetString() ?? "" : "",
+                            CertificateFileName = state.TryGetProperty("certificateFileName", out var certFileName) ? certFileName.GetString() ?? "" : "",
                             CertificateUrl = state.GetProperty("certificateUrl").GetString(),
                             ImageUrls = state.TryGetProperty("imageUrls", out var imgs) && imgs.ValueKind == JsonValueKind.Array
                             ? imgs.EnumerateArray().Select(img =>
@@ -1883,6 +2035,7 @@ namespace QLN.Classified.MS.Service
                             Id = state.GetProperty("id").GetGuid(),
                             Title = state.GetProperty("title").GetString(),
                             SubVertical = subVertical ?? "Deals",
+                            FlyerName = state.TryGetProperty("flyerName", out var flyerName) ? flyerName.GetString() ?? "" : "",
                             FlyerFile = state.TryGetProperty("flyerFile", out var flyer) ? flyer.GetString() ?? "" : "",
                             ImageUrl = state.TryGetProperty("imageUrl", out var imgs) && imgs.ValueKind == JsonValueKind.Array
                             ? imgs.EnumerateArray().Select(img =>
@@ -1999,6 +2152,7 @@ namespace QLN.Classified.MS.Service
                             Id = state.GetProperty("id").GetGuid(),
                             Title = state.GetProperty("title").GetString(),
                             SubVertical = subVertical ?? "Deals",
+                            FlyerName = state.TryGetProperty("flyerName", out var flyerName) ? flyerName.GetString() ?? "" : "",
                             FlyerFile = state.TryGetProperty("flyerFile", out var flyer) ? flyer.GetString() ?? "" : "",
                             ImageUrl = state.TryGetProperty("imageUrl", out var imgs) && imgs.ValueKind == JsonValueKind.Array
                             ? imgs.EnumerateArray().Select(img =>
@@ -2264,6 +2418,7 @@ namespace QLN.Classified.MS.Service
                             CountryOfOrigin = state.TryGetProperty("countryOfOrigin", out var origin) ? origin.GetString() : null,
                             Language = state.TryGetProperty("language", out var lang) ? lang.GetString() : null,
                             HasAuthenticityCertificate = state.TryGetProperty("hasAuthenticityCertificate", out var hasCert) && hasCert.GetBoolean(),
+                            CertificateFileName = state.TryGetProperty("certificateFileName", out var certFileName) ? certFileName.GetString() ?? "" : "",
                             AuthenticityCertificateUrl = state.TryGetProperty("certificateUrl", out var certUrl) ? certUrl.GetString() ?? "" : "",
                             YearOrEra = state.TryGetProperty("yearOrEra", out var era) ? era.GetString() : null,
                             Rarity = state.TryGetProperty("rarity", out var rarity) ? rarity.GetString() : null,
@@ -2406,6 +2561,7 @@ namespace QLN.Classified.MS.Service
                             CountryOfOrigin = state.TryGetProperty("countryOfOrigin", out var origin) ? origin.GetString() : null,
                             Language = state.TryGetProperty("language", out var lang) ? lang.GetString() : null,
                             HasAuthenticityCertificate = state.TryGetProperty("hasAuthenticityCertificate", out var hasCert) && hasCert.GetBoolean(),
+                            CertificateFileName = state.TryGetProperty("certificateFileName", out var certFileName) ? certFileName.GetString() ?? "" : "",
                             AuthenticityCertificateUrl = state.TryGetProperty("certificateUrl", out var certUrl) ? certUrl.GetString() ?? "" : "",
                             YearOrEra = state.TryGetProperty("yearOrEra", out var era) ? era.GetString() : null,
                             Rarity = state.TryGetProperty("rarity", out var rarity) ? rarity.GetString() : null,

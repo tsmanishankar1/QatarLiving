@@ -1,193 +1,169 @@
+@using QLN.Common.DTO_s
 @using QLN.Web.Shared.Components.MoreFilters
-@using QLN.Common.DTO_s;
-<MoreFilters Selection="@modelSelection" OnApply="ApplyFilters" OnReset="ResetFilters">
-    @foreach (var category in CategoryFilters)
-    {
-        @if(category.Name != "Brands" || category.Name != "Brand" ){
-        <div class="filter-section">
-        <label class="section-label">@category.Name</label>
 
-        @if (category.Options != null && category.Options.Any())
+<MoreFilters HasWarrantyCertificate="HasWarrantyCertificate"ConfirmedOptions="ConfirmedOptions" OnApply="ApplyFilters" OnReset="ResetFilters">
+    <div>
+   @foreach (var field in SelectedFields)
+{
+    if (field.Name == "Brands" || field.Name == "Brand") continue;
+
+    <div class="filter-section">
+        <label class="section-label">@field.Name</label>
+
+        @if (field.Name == "Model")
         {
-           @foreach (var option in category.Options)
-            {
-                var cat = category.Name;
-                var opt = option;
-                <label class="checkbox-item">
-                    <MudCheckBox T="bool"
-                    Color="Color.Primary"
-                    Value="modelSelection[opt]" 
-                    UncheckedColor="Color.Default"
-                    ValueChanged="@(() => ToggleOption(cat,opt,modelSelection[opt]))"
-                    Class="mb-1"/>
-                    @opt
-                </label>
-            }
+            <div class="model-filter-wrapper">
+                <input placeholder="Search"
+       class="model-search"
+       @bind="ModelSearchTerm"
+       @bind:event="oninput" />
+
+                <div class="model-list-scroll">
+                    <div class="model-subheading">All</div>
+
+                   @foreach (var option in GetFilteredModels(field))
+
+                    {
+                        // Add condition to segment if needed (e.g. POPULAR vs All)
+
+                        <div class="checkbox-item model-item">
+                            <MudCheckBox @bind-Value="SelectedOptions[field.Name][option]"
+                                         Color="Color.Primary"
+                                         UncheckedColor="Color.Default"
+                                         Class="mb-1" />
+                            <span class="option-text">@option</span>
+                        </div>
+                    }
+                </div>
+            </div>
         }
-         </div>
-         }
-    } 
+        else
+        {
+            <div class="option-grid">
+                @foreach (var option in field.Options)
+                {
+                    <div class="checkbox-item">
+                        <MudCheckBox @bind-Value="SelectedOptions[field.Name][option]"
+                                     Color="Color.Primary"
+                                     UncheckedColor="Color.Default"
+                                     Class="mb-1" />
+                        @if (field.Name == "Colour")
+                        {
+                            <span class="color-dot" style="background-color:@option.ToLower();"></span>
+                        }
+                        <span class="option-text">@option</span>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+<div class="checkbox-item">
+  <MudCheckBox @bind-Value="HasWarrantyCertificate"
+             Color="Color.Primary"
+             UncheckedColor="Color.Default"
+             Class="mb-1" />
+<span class="option-text">Ads with an active warranty</span>
+
+</div>
+
+</div>
 </MoreFilters>
 
+
 @code {
-    [Parameter]
-    public EventCallback OnFiltersChanged { get; set; }
     private Dictionary<string, bool> modelSelection = new();
-    private Dictionary<string, List<string>> selectedFilters = new();
-    private Dictionary<string, Dictionary<string, bool>> categorySelections = new();
-    protected List<CategoryField> CategoryFilters => SearchState.ItemCategoryFilters;
+ protected List<CategoryField> CategoryFilters => SearchState.ItemCategoryFilters;
     [Inject] protected SearchStateService SearchState { get; set; }
-    private List<string> PopularModels = new() { "iPhone 16 Pro Max", "iPhone 15 Pro Max" };
+    private string ModelSearchTerm = "";
+private bool HasWarrantyCertificate { get; set; }
+
 
     protected override void OnInitialized()
     {
-       foreach (var category in CategoryFilters)
-    {
-        if (!modelSelection.ContainsKey(category.Name))
-        {
-            modelSelection[category.Name] = false;
-        }
-    }
-        
+        foreach (var item in PopularModels)
+            modelSelection[item] = false;
     }
 
-    private async Task ApplyFilters()
-{
-    SearchState.SelectedCategoryFields = GetSelectedCategoryFields();
-    foreach (var category in SearchState.SelectedCategoryFields)
+    private Task ApplyFilters()
     {
-        Console.WriteLine($"{category.Name}: {string.Join(", ", category.Options)}");
+        Console.WriteLine("Filters applied.");
+        return Task.CompletedTask;
     }
 
-    await OnFiltersChanged.InvokeAsync();
-}
     private Task ResetFilters()
     {
         Console.WriteLine("Filters reset.");
         return Task.CompletedTask;
     }
-
-private async Task ToggleOption(string category, string option, bool isChecked)
-{
-    Console.WriteLine($"ToggleOption - {category} => {option}: {isChecked}");
-    switch (category)
-    {
-        case "Accept Offers":
-            UpdateList(SearchState.ItemAcceptOffers, option, isChecked);
-            break;
-        case "Location":
-            UpdateList(SearchState.ItemLocations, option, isChecked);
-            break;
-        case "Storage":
-            UpdateList(SearchState.ItemStorge, option, isChecked);
-            break;
-        case "Condition":
-            UpdateList(SearchState.ItemConditions, option, isChecked);
-            break;
-        case "Coverage":
-            UpdateList(SearchState.ItemCoverage, option, isChecked);
-            break;
-        case "Model":
-            UpdateList(SearchState.ItemModels, option, isChecked);
-            break;
-        case "Capacity":
-            UpdateList(SearchState.ItemCapacity, option, isChecked);
-            break;
-        case "Make / Type":
-            UpdateList(SearchState.ItemMakeType, option, isChecked);
-            break;
-        case "Colour":
-            UpdateList(SearchState.ItemColor, option, isChecked);
-            break;
-         case "Warranty":
-            UpdateList(SearchState.ItemWarranty, option, isChecked);
-            break;
-         case "Battery Life":
-            UpdateList(SearchState.ItemBatteryLife, option, isChecked);
-            break;
-         case "Ram":
-            UpdateList(SearchState.ItemRam, option, isChecked);
-            break;
-         default:
-            Console.WriteLine($"Unhandled category: {category}");
-            break;
-    }
-    await Task.CompletedTask; 
-}
-private bool GetBoundValue(string category, string option)
-{
-    return IsOptionSelected(category, option);
 }
 
-private Action<bool> GetBoundValue(string category, string option, out bool value)
-{
-    value = IsOptionSelected(category, option);
-    return isChecked => ToggleOption(category, option, isChecked);
-}
-private bool IsOptionSelected(string category, string option)
-{
-    return category switch
-    {
-        "Accept Offers" => SearchState.ItemAcceptOffers.Contains(option),
-        "Location" => SearchState.ItemLocations.Contains(option),
-        "Storage" => SearchState.ItemStorge.Contains(option),
-        "Condition" => SearchState.ItemConditions.Contains(option),
-        "Coverage" => SearchState.ItemCoverage.Contains(option),
-        "Model" => SearchState.ItemModels.Contains(option),
-        "Capacity" => SearchState.ItemCapacity.Contains(option),
-        "Make / Type" => SearchState.ItemMakeType.Contains(option),
-        "Colour" => SearchState.ItemColor.Contains(option),
-        "Warranty" => SearchState.ItemWarranty.Contains(option),
-        "Battery Life" => SearchState.ItemBatteryLife.Contains(option),
-        "Ram" => SearchState.ItemRam.Contains(option),
-        _ => false
-    };
-}
-private void UpdateList(List<string> list, string option, bool isChecked)
-{
-    if (isChecked)
-    {
-        if (!list.Contains(option))
-            list.Add(option);
-    }
-    else
-    {
-        list.Remove(option);
-    }
-}
-private void OnCheckboxChanged(string category, string option, bool isChecked)
-{
-    Console.WriteLine($"[Checkbox] Category: {category}, Option: {option}, Checked: {isChecked}");
-    ToggleOption(category, option, isChecked);
-    StateHasChanged();
-}
-private List<CategoryField> GetSelectedCategoryFields()
-{
-    var selectedFields = new List<CategoryField>();
+<style>
 
-    foreach (var category in CategoryFilters)
-    {
-        if (category.Options == null || !category.Options.Any())
-            continue;
-
-        var selectedOptions = category.Options
-            .Where(opt => modelSelection.ContainsKey(opt) && modelSelection[opt])
-            .ToList();
-
-        if (selectedOptions.Any())
-        {
-            selectedFields.Add(new CategoryField
-            {
-                Name = category.Name,
-                Type = category.Type,
-                Options = selectedOptions
-            });
-        }
+    .section-label {
+        font-weight: 500;
+        font-size: 15px;
+        color: #FF7F38;
+        margin-bottom: 6px;
+        display: block;
     }
 
-    return selectedFields;
-}
-}
+    .search-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: #f4f4f4;
+        padding: 6px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+    }
 
+    .search-box {
+        flex: 1;
+        border: none;
+        outline: none;
+        background: transparent;
+    }
 
+    .filter-group-label {
+        font-weight: 500;
+        margin-top: 8px;
+        margin-bottom: 4px;
+        background: #F6F6F6;
+        padding: 4px 8px;
+        font-size: 15px;
+        border-radius: 4px;
+        color: #454545;
+    }
 
+    .filter-section {
+        margin-bottom: 16px;
+    }
+
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        font-size: 15px;
+        fount-weight: 400;
+        color: #242424;
+        padding: 4px 0;
+        gap: 8px;
+    }
+
+    .color-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .color-item {
+        border: 1px solid #ddd;
+        padding: 4px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+    }
+
+</style>

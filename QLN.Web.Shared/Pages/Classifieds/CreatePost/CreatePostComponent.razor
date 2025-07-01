@@ -4,6 +4,8 @@
 @using MudBlazor
 @inherits CreatePostComponentBase
 
+<EditForm EditContext="@editContext" OnSubmit="HandleSubmit">
+   <DataAnnotationsValidator />
 <div class="form-wrapper">
      <div class="max-container">
     <Breadcrumb Items="breadcrumbItems" />
@@ -11,41 +13,38 @@
     <div Class="form-container">
         <MudGrid GutterSize="24px">
             <MudItem xs="12" md="5">
-                <CreateFormList TItem="string" adPostModel="adPostModel"  CategoryTrees="CategoryTrees" CategoryChanged="HandleCategoryChanged" />
+                <CreateFormList TItem="string"  EditContext="editContext"
+                                        adPostModel="adPostModel" CategoryTrees="CategoryTrees" CategoryChanged="HandleCategoryChanged"  />
             </MudItem>
 
             <MudItem xs="12" md="7">
                 @if (!string.IsNullOrWhiteSpace(selectedVertical))
                 {
-                    <UploadPhotos PhotoUrls="@photoUrls" selectedVertical="@selectedVertical" />
+                    <UploadPhotos adPostModel="adPostModel"PhotoUrls="@adPostModel.PhotoUrls" selectedVertical="@selectedVertical" />
                 }
             </MudItem>
         </MudGrid>
         </div>
     </div>
-
-    @if (!string.IsNullOrWhiteSpace(selectedVertical))
-    {
-        <div class="save-button-container">
-            <MudButton Variant="Variant.Outlined" Class="close-button">Close</MudButton>
-         <MudButton Class="ml-2 save-button"
-           Variant="Variant.Filled"
-           Disabled="@IsSaving"
-           OnClick="SaveForm">
-                @if (IsSaving)
+ @if (!string.IsNullOrWhiteSpace(selectedVertical))
                 {
-                     <MudProgressCircular Color="Color.Inherit"
-                             Size="Size.Small"
-                             Indeterminate="true" />
-                }
-                else
-                {
-                    <span>Save & Publish</span>
-                }
-            </MudButton>
-
-        </div>
-    }
+         <div class="save-button-container">
+                    <button class="close-button">Close</button>
+                    <button class="save-button" type="submit">
+                        @if (IsSaving)
+                        {
+                            <MudProgressCircular Color="Color.Inherit"
+                                                 Size="Size.Small"
+                                                 Indeterminate="true" />
+                        }
+                        else
+                        {
+                            <span>Save & Publish</span>
+                        }
+                    </button>
+                </div>
+}
 </div>
+</EditForm>
 
 

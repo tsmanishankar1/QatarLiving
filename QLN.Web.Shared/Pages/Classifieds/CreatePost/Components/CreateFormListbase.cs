@@ -2,6 +2,7 @@
 using Microsoft.JSInterop;
 using MudBlazor;
 using QLN.Common.DTO_s;
+using Microsoft.AspNetCore.Components.Forms;
 using QLN.Web.Shared.Models;
 
 namespace QLN.Web.Shared.Pages.Classifieds.CreatePost.Components
@@ -10,8 +11,40 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost.Components
     {
         [Inject] private IJSRuntime JS { get; set; }
         [Parameter] public AdPost adPostModel { get; set; }
+        [Parameter] public EditContext EditContext { get; set; }
+        protected CountryModel SelectedPhoneCountry;
+        protected CountryModel SelectedWhatsappCountry;
+
+        protected Task OnPhoneCountryChanged(CountryModel model)
+        {
+            SelectedPhoneCountry = model;
+            adPostModel.PhoneCode = model.Code;
+            return Task.CompletedTask;
+        }
+
+        protected Task OnWhatsappCountryChanged(CountryModel model)
+        {
+            SelectedWhatsappCountry = model;
+            adPostModel.WhatsappCode = model.Code;
+            return Task.CompletedTask;
+        }
+
+        protected Task OnPhoneChanged(string phone)
+        {
+            adPostModel.PhoneNumber = phone;
+            return Task.CompletedTask;
+        }
+
+        protected Task OnWhatsappChanged(string phone)
+        {
+            adPostModel.WhatsappNumber = phone;
+            return Task.CompletedTask;
+        }
+
+
         [Parameter] public List<CategoryTreeDto> CategoryTrees { get; set; }
         [Parameter] public EventCallback<string> CategoryChanged { get; set; }
+        
         protected string uploadedFileBase64;
 
         public List<OptionItem> categoryOptions = new()
@@ -62,6 +95,20 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost.Components
             adPostModel.SelectedSubSubcategoryId = null;
             StateHasChanged();
         }
+    protected string dummyField { get; set; }
+
+   protected void OnDynamicFieldChanged(string fieldKey, string newVal)
+    {
+        adPostModel.DynamicFields[fieldKey] = newVal;
+
+        var fi = new FieldIdentifier(adPostModel.DynamicFields, fieldKey);
+        EditContext?.NotifyFieldChanged(fi);
+    }
+      protected IEnumerable<string> GetDynamicFieldErrors(string key)
+{
+    var fieldIdentifier = new FieldIdentifier(adPostModel.DynamicFields, key);
+    return EditContext.GetValidationMessages(fieldIdentifier);
+}
 
         protected async Task OnSubSubcategoryChanged(string newValue)
         {

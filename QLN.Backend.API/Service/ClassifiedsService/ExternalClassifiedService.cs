@@ -206,7 +206,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     CategoryId = dto.CategoryId.ToString(),
                     Category = dto.Category,
                     L1Category = dto.l1Category,
+                    L1CategoryId = dto.L1CategoryId.ToString(),
                     L2Category = dto.L2Category,
+                    L2CategoryId = dto.L2CategoryId.ToString(),
                     Price = (double?)dto.Price,
                     PriceType = dto.PriceType,
                     Location = dto.Location.FirstOrDefault(),
@@ -239,7 +241,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     VerticalName = ConstantValues.Verticals.Classifieds,
                     ClassifiedsItem = classifiedsIndex
                 };
-                var msg = await _searchService.UploadAsync(indexDocument);
+                await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -266,7 +268,65 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
             }
         }
+        public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, Guid adId, CancellationToken cancellationToken = default)
+        {
+            if (adId == Guid.Empty)
+            {
+                throw new ArgumentException("AdId is required.");
+            }
 
+            try
+            {
+                 await _dapr.InvokeMethodAsync(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    $"/api/classifieds/items/refresh/{adId}?subVertical={subVertical}",
+                    cancellationToken 
+                );
+                var item = await _searchService.GetByIdAsync<ClassifiedsIndex>(ConstantValues.Verticals.Classifieds, adId.ToString());
+                if (item == null)
+                {
+                    throw new InvalidOperationException($"Ad with ID {adId} not found.");
+                }
+
+                item.IsRefreshed = true;
+                item.CreatedDate = DateTime.UtcNow;
+                item.RefreshExpiryDate = DateTime.UtcNow.AddHours(72);
+                var indexDocument = new CommonIndexRequest
+                {
+                    VerticalName = ConstantValues.Verticals.Classifieds,
+                    ClassifiedsItem = item
+                };
+
+                await _searchService.UploadAsync(indexDocument);
+
+                return new AdCreatedResponseDto
+                {
+                    AdId = adId,
+                    Message = "Ad successfully refreshed."
+                };
+            }
+            catch (ArgumentException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("AdId is required and must be valid.", ex);
+            }
+            catch (DaprException daprEx)
+            {
+                _log.LogException(daprEx);
+                throw new InvalidOperationException("Failed to invoke internal service through Dapr.", daprEx);
+            }
+            catch (HttpRequestException httpEx)
+            {
+                _log.LogException(httpEx);
+                throw new InvalidOperationException("Failed to communicate with the internal service.", httpEx);
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to refresh the ad due to an unexpected error.", ex);
+            }
+        }
         public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
@@ -332,7 +392,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     CategoryId = dto.CategoryId.ToString(),
                     Category = dto.Category,
                     L1Category = dto.l1Category,
+                    L1CategoryId = dto.L1CategoryId.ToString(),
                     L2Category = dto.L2Category,
+                    L2CategoryId = dto.L2CategoryId.ToString(),
                     Price = (double?)dto.Price,
                     PriceType = dto.PriceType,
                     Location = dto.Location.FirstOrDefault(),
@@ -364,7 +426,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     VerticalName = ConstantValues.Verticals.Classifieds,
                     ClassifiedsItem = prelovedIndex
                 };
-                var msg = await _searchService.UploadAsync(indexDocument);
+                await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -457,7 +519,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     CategoryId = dto.CategoryId.ToString(),
                     Category = dto.Category,
                     L1Category = dto.l1Category,
+                    L1CategoryId = dto.L1CategoryId.ToString(),
                     L2Category = dto.L2Category,
+                    L2CategoryId = dto.L2CategoryId.ToString(),
                     Price = (double?)dto.Price,
                     PriceType = dto.PriceType,
                     Location = dto.Location.FirstOrDefault(),
@@ -483,7 +547,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     VerticalName = ConstantValues.Verticals.Classifieds,
                     ClassifiedsItem = collectiblesIndex
                 };
-                var msg = await _searchService.UploadAsync(indexDocument);
+                await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -588,7 +652,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     VerticalName = ConstantValues.Verticals.Classifieds,
                     ClassifiedsItem = dealsIndex
                 };
-                var msg = await _searchService.UploadAsync(indexDocument);
+                await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -797,6 +861,94 @@ namespace QLN.Backend.API.Service.ClassifiedService
             {
                 _log.LogException(ex);
                 throw new InvalidOperationException("Failed to delete Classified Deals Ad.", ex);
+            }
+        }
+
+        public async Task<ClassifiedItems?> GetItemAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            if (adId == Guid.Empty)
+                throw new ArgumentException("Ad ID must not be empty.");
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<ClassifiedItems>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID, 
+                    $"api/classifieds/items/ads/{adId}",
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException($"Failed to retrieve ad details for Ad ID: {adId} from classified microservice.", ex);
+            }
+        }
+
+        public async Task<ClassifiedPreloved?> GetPrelovedAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            if (adId == Guid.Empty)
+                throw new ArgumentException("Ad ID must not be empty.");
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<ClassifiedPreloved>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID, 
+                    $"api/classifieds/preloved/ad/{adId}",
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to retrieve Preloved ad from classified microservice.", ex);
+            }
+        }
+
+        public async Task<ClassifiedDeals?> GetDealsAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            if (adId == Guid.Empty)
+                throw new ArgumentException("Ad ID must not be empty.");
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<ClassifiedDeals>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID, 
+                    $"api/classifieds/deals/ad/{adId}",
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex); 
+                throw new InvalidOperationException("Failed to retrieve Deals ad from classified microservice.", ex);
+            }
+        }
+
+        public async Task<ClassifiedCollectibles?> GetCollectiblesAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            if (adId == Guid.Empty)
+                throw new ArgumentException("Ad ID must not be empty.");
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<ClassifiedCollectibles>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/collectibles/ad/{adId}",
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to retrieve Collectibles ad from classified microservice.", ex);
             }
         }
 

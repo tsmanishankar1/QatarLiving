@@ -122,35 +122,26 @@ public class ItemsComponentBase : ComponentBase
             if (SearchState.ItemMaxPrice.HasValue)
                 filters.Add("maxPrice", SearchState.ItemMaxPrice.Value);
             if (!string.IsNullOrWhiteSpace(SearchState.ItemCategory))
-                filters.Add("category", SearchState.ItemCategory);
+                filters.Add("CategoryId", SearchState.ItemCategory);
+            if (!string.IsNullOrWhiteSpace(SearchState.ItemSubCategory))
+                filters.Add("L1CategoryId", SearchState.ItemSubCategory);
+            if (!string.IsNullOrWhiteSpace(SearchState.ItemSubSubCategory))
+                filters.Add("L2CategoryId", SearchState.ItemSubSubCategory);
             if (!string.IsNullOrWhiteSpace(SearchState.ItemBrand))
                 filters.Add("brand", SearchState.ItemBrand);
-
-            foreach (var field in SearchState.SelectedCategoryFields)
+          if (SearchState.ItemHasWarrantyCertificate)
             {
-                if (field.Options != null && field.Options.Any())
+                filters["hasWarrantyCertificate"] = SearchState.ItemHasWarrantyCertificate;
+            }
+
+
+            foreach (var fieldFilter in SearchState.ItemFieldFilters)
+            {
+                if (fieldFilter.Value?.Any() == true)
                 {
-        var key = field.Name switch
-        {
-            "Make / Type" => "make",
-            "Battery Life" => "batteryPercentage",
-            "Colour" => "color",
-            "Ram" => "ram",
-            "Storage" => "storage",
-            "Condition" => "condition",
-            "Coverage" => "coverage",
-            "Model" => "model",
-            "Capacity" => "capacity",
-            "Warranty" => "warranty",
-            "Location" => "location", 
-            _ => field.Name.ToLowerInvariant().Replace(" ", "").Replace("/", "")
-        };
-
-        filters[key] = field.Options.ToArray();
-    }
-}
-
-
+                    filters[fieldFilter.Key] = fieldFilter.Value;
+                }
+            }
             var payload = new Dictionary<string, object>
             {
                 ["text"] = searchText ?? SearchState.ItemSearchText,
@@ -159,6 +150,7 @@ public class ItemsComponentBase : ComponentBase
             };
 
             var payloadJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+           // Logger.LogInformation("Sending search payload: {Payload}", payloadJson);
 
             var responses = await _classifiedsService.SearchClassifiedsAsync(payload);
             var firstResponse = responses.FirstOrDefault();
