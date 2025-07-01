@@ -11,5 +11,6 @@ namespace QLN.Common.Infrastructure.IService.IFileStorage
         Task<string> SaveBase64File(string base64Content, string fileName, string containerName, CancellationToken cancellationToken = default);
         Task<byte[]> ReadFile(string blobName, string containerName, CancellationToken cancellationToken = default);
         Task DeleteFile(string blobName, string containerName, CancellationToken cancellationToken = default);
+        Task<string> SaveFile(byte[] fileBytes, string fileName, string containerName, CancellationToken cancellationToken = default);
     }
 }

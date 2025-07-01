@@ -1,9 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.Service.FileStorage;
+using QLN.Common.Infrastructure.Utilities;
 using QLN.DataMigration.Models;
 using QLN.DataMigration.Services;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Threading;
+using static System.Net.Mime.MediaTypeNames;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +22,8 @@ builder.Services.AddHttpClient<IDrupalSourceServices, DrupalSourceServices>(); /
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+builder.Services.AddSingleton<IFileStorageBlobService, FileStorageBlobService>();
 
 var app = builder.Build();
 
@@ -66,6 +73,7 @@ app.MapGet("/migrate_categories", async (
 app.MapGet("/migrate_items", async (
     [FromServices] IMigrationService migrationService,
     [FromServices] IDrupalSourceServices drupalSourceServices,
+    [FromServices] IFileStorageBlobService fileStorageBlobService,
     [FromQuery] string environment,
     [FromQuery(Name = "category_id")] int categoryId,
     [FromQuery(Name = "sort_field")] string sortField,
@@ -105,10 +113,12 @@ app.MapGet("/migrate_items", async (
         .ToList();
 
     // Review this 
-    List<DrupalCategory> consolidatedCategories = new List<DrupalCategory>();
-    consolidatedCategories.AddRange(categoryParents);
-    consolidatedCategories.AddRange(categories);
-    consolidatedCategories.AddRange(linkedCategories);
+    List<DrupalCategory> consolidatedCategories =
+    [
+        .. categoryParents,
+        .. categories,
+        .. linkedCategories,
+    ];
 
     consolidatedCategories = consolidatedCategories
     .Distinct(new DrupalCategoryTidComparer())
@@ -130,6 +140,44 @@ app.MapGet("/migrate_items", async (
         .Select(i => i.Offer)
         .Distinct(new DrupalOfferTidComparer())
         .ToList();
+
+    // Upload the files to blob storage
+    // Create a distinct list of images to fetch from existing URLs
+    
+    // to an image upload function from 
+
+    List<string> sourceFiles = drupalItems.Items
+        .SelectMany(i => i.Images)
+        .Distinct()
+        .ToList();
+
+    foreach (var item in sourceFiles)
+    {
+        // Check if the item is a valid URL
+        if (Uri.TryCreate(item, UriKind.Absolute, out var uriResult) &&
+            (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps))
+        {
+            try
+            {
+                using var httpClient = new HttpClient();
+                var fileBytes = await httpClient.GetByteArrayAsync(item);
+
+                // Generate a custom file name from the URL
+                var customName = Path.GetFileName(uriResult.LocalPath);
+
+                // Upload to blob storage
+                var url = await fileStorageBlobService.SaveFile(fileBytes, customName, "migration-images");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to process image URL '{item}': {ex.Message}");
+            }
+        }
+        else
+        {
+            Console.WriteLine($"Skipped non-URL item: {item}");
+        }
+    }
 
     // this would create the items we actually want to migrate - I have
     // implemented a data normalization process to "flatten" the data,
