@@ -15,7 +15,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddMudServices();
 
-builder.Services.AddHttpClient<INewsService, NewsMockService>(client =>
+builder.Services.AddHttpClient<INewsService, NewsService>(client =>
 {
     client.BaseAddress = new Uri(contentBOAPIURL);
 });

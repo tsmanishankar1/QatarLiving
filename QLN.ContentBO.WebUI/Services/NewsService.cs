@@ -20,7 +20,7 @@ namespace QLN.ContentBO.WebUI.Services
             try
             {
                 var newsArticleJson = new StringContent(JsonSerializer.Serialize(newsArticle), Encoding.UTF8, "application/json");
-                var response = await PostAsync("api/CreateArticle", newsArticleJson);
+                var response = await PostAsync("api/v2/news/createNewsArticle", newsArticleJson);
                 return response;
             }
             catch (Exception ex)
