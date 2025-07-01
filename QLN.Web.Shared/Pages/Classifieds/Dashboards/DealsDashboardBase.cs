@@ -5,6 +5,7 @@ using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
 using System.ComponentModel.DataAnnotations;
 using static QLN.Web.Shared.Models.ClassifiedsDashboardModel;
+using static QLN.Web.Shared.Models.VerticalConstants;
 
 namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 {
@@ -318,11 +319,10 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         }
         protected void NavigateToCreateProfile()
         {
-            var verticalId = 3;
-            var categoryId = 2;
+            var verticalId = VerticalId.Classifieds;
+            var categoryId = SubVerticalId.Deals;
 
-
-            Navigation.NavigateTo($"/qln/dashboard/company/create/{verticalId}/{categoryId}");
+            Navigation.NavigateTo($"/qln/dashboard/company/create/{(int)verticalId}/{(int)categoryId}");
         }
 
 

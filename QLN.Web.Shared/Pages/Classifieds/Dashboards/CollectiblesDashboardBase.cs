@@ -8,6 +8,7 @@ using QLN.Web.Shared.Services;
 using QLN.Web.Shared.Services.Interface;
 using System.ComponentModel.DataAnnotations;
 using static QLN.Web.Shared.Models.ClassifiedsDashboardModel;
+using static QLN.Web.Shared.Models.VerticalConstants;
 using static QLN.Web.Shared.Pages.Subscription.SubscriptionDetails;
 
 namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
@@ -325,16 +326,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         {
             Navigation.NavigateTo($"/qln/dashboard/company/edit/{id}");
         }
-        protected void NavigateToCreateProfile()
-        {
-            var verticalId = 3;
-            var categoryId = 2;
 
-
-            Navigation.NavigateTo($"/qln/dashboard/company/create/{verticalId}/{categoryId}");
-        }
-
-    
         public static string GetDisplayName<TEnum>(TEnum enumValue) where TEnum : Enum
         {
             var member = typeof(TEnum).GetMember(enumValue.ToString()).FirstOrDefault();
