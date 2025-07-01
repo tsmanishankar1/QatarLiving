@@ -119,37 +119,19 @@
                 <MudText Class="mb-4 title-style">Images</MudText>
 
                 <!-- Cover Image Upload -->
-                <InputFile id="cover-upload" OnChange="HandleCoverImageChange" style="display:none" />
-
-                <MudFileUpload T="IBrowserFile" Accept="image/*" FilesChanged="HandleCoverImageChange" MaxFileSize="10485760">
+                <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="10485760">
                     <ActivatorContent>
-                        <MudPaper Class="pa-6 d-flex flex-column align-center justify-center" Style="min-height: 200px; border: 1px dashed #ccc; cursor: pointer;" OnClick="TriggerCoverUpload">
+                        <MudPaper Class="pa-6 d-flex flex-column align-center justify-center" Style="min-height: 200px; border: 1px dashed #ccc; cursor: pointer;">
                             <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Size="Size.Large" Color="Color.Primary" />
                             <div class="mt-2" style="color: #ff5722;">Cover Image</div>
                             <MudText Typo="Typo.caption" Class="mt-2">Recommended image size: 1600 x 900 pixels</MudText>
                         </MudPaper>
 
-                        <MudPaper Elevation="1"
-                                  Class="d-flex flex-column align-center justify-center mt-4 p-2"
-                                  Style="height: 240px; width:240px; border: 2px dashed #ccc; cursor: pointer;">
                             @if (!string.IsNullOrEmpty(article.CoverImageUrl))
                             {
-                                <img src="@($"data:image/*;base64,{article.CoverImageUrl}")"
-                                     alt="Company Logo"
-                                     style="max-height: 100%; max-width: 100%; object-fit: contain;" />
-                                <div style=" position: absolute;bottom: 0;color:white;width:240px;  height: 24px; background-color: #000000CC;display: flex;justify-content: center; align-items: center;gap: 8px;">
+                            <img src="@article.CoverImageUrl" alt="Cover Image Preview" style="width: 100%; max-height: 200px; object-fit: cover;" />
 
-                                </div>
                             }
-                            else
-                            {
-                                <div style="width: 64px; height: 64px; background-color: #E0E0E0; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                    <img src="/qln-images/Upload.svg" alt="Upload" style="height: 48px;" />
-                                </div>
-                                <MudText style="margin-top: 8px; color: #FF7F38; font-size: 14px; font-weight: 500;">Upload image</MudText>
-                            }
-
-                        </MudPaper>
 
                     </ActivatorContent>
                 </MudFileUpload>
