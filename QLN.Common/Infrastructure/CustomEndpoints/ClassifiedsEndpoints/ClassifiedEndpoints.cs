@@ -20,6 +20,7 @@ using Microsoft.AspNetCore.Authorization;
 using Azure;
 using System.Text.Json;
 using static QLN.Common.DTO_s.ClassifiedsIndex;
+using System.Net.Http;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 {
@@ -307,8 +308,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext context
             ) =>
             {
-                Guid userId = context.User.GetId();
-                if (userId == null || userId == Guid.Empty)
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var userId = userData.GetProperty("uid").GetString();
+                var name = userData.GetProperty("name").GetString();
+                if (userId == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -387,7 +391,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext context
             ) =>
             {
-                if (dto.UserId == null || dto.UserId == Guid.Empty)
+                if (dto.UserId == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -465,8 +469,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext context
             ) =>
             {
-                Guid? userId = context.User.GetId();
-                if (userId == null || userId == Guid.Empty)
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var userId = userData.GetProperty("uid").GetString();
+                var name = userData.GetProperty("name").GetString();
+                if (userId == null )
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -508,12 +515,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
             (
-                [Required][FromQuery] Guid userId,
+                [Required][FromQuery] string userId,
                 IClassifiedService service,
                 HttpContext context
             ) =>
             {
-                if (userId == Guid.Empty)
+                if (userId == string.Empty)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {

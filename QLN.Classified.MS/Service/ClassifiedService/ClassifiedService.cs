@@ -130,7 +130,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public Task<bool> SaveSearch(SaveSearchRequestDto dto, Guid userId, CancellationToken cancellationToken = default)
+        public Task<bool> SaveSearch(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

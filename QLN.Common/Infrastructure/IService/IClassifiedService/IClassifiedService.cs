@@ -11,7 +11,7 @@ namespace QLN.Common.Infrastructure.IService
 {
     public interface IClassifiedService
     {        
-        Task<bool> SaveSearch(SaveSearchRequestDto dto, Guid userId, CancellationToken cancellationToken = default);
+        Task<bool> SaveSearch(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default);
         Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default);
         Task<List<SavedSearchResponseDto>> GetSearches(string userId, CancellationToken cancellationToken = default);
         Task<ItemAdsAndDashboardResponse> GetUserItemsAdsWithDashboard(string userId, CancellationToken cancellationToken = default);
