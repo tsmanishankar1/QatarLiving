@@ -54,14 +54,27 @@
                             <MudPaper Elevation="1"
                                       Class="d-flex flex-column align-center justify-center mt-4 p-2"
                                       Style="height: 240px; width:240px; border: 2px dashed #ccc; cursor: pointer;">
-                                @if (!string.IsNullOrEmpty(companyProfile.CompanyLogo))
+                                @if (!string.IsNullOrEmpty(_localLogoBase64))
                                 {
-                                    <img src="@($"data:image/*;base64,{companyProfile.CompanyLogo}")"
+                                    <img src="@($"data:image/*;base64,{_localLogoBase64}")"
                                          alt="Company Logo"
                                          style="max-height: 100%; max-width: 100%; object-fit: contain;" />
-                                    <div style=" position: absolute; bottom: 0;color:white;width:240px; height: 24px;background-color: #000000CC; display: flex; justify-content: center; align-items: center;gap: 8px;">
 
+                                    <div style="position: absolute; bottom: 0; color:white; width:240px; height: 24px; background-color: #000000CC; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                                        <MudIconButton Icon="@Icons.Material.Outlined.Edit"
+                                                       Style="color: white; padding: 0;" />
+                                        <MudIconButton Icon="@Icons.Material.Outlined.Delete"
+                                                       Style="color: white; padding: 0;"
+                                                       OnClick="ClearLogo" />
+                                    </div>
+                                }
+                                else if (!string.IsNullOrEmpty(companyProfile.CompanyLogo))
+                                {
+                                    <img src="@companyProfile.CompanyLogo"
+                                         alt="Company Logo"
+                                         style="max-height: 100%; max-width: 100%; object-fit: contain;" />
 
+                                    <div style="position: absolute; bottom: 0; color:white; width:240px; height: 24px; background-color: #000000CC; display: flex; justify-content: center; align-items: center; gap: 8px;">
                                         <MudIconButton Icon="@Icons.Material.Outlined.Edit"
                                                        Style="color: white; padding: 0;" />
                                         <MudIconButton Icon="@Icons.Material.Outlined.Delete"
