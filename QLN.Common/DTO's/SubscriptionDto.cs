@@ -138,7 +138,6 @@ namespace QLN.Common.DTOs
     {
         public Guid Id { get; set; }
         public string? SubscriptionName { get; set; }
-        public int DurationId { get; set; }
         public string DurationName { get; set; } = string.Empty;
         public decimal? Price { get; set; }
         public string? Description { get; set; }

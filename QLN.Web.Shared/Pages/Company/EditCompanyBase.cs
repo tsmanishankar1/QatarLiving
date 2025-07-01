@@ -28,6 +28,7 @@ namespace QLN.Web.Shared.Pages.Company
         protected string? crFileName;
 
         protected string? crDocumentBase64;
+        protected string? _localLogoBase64;
 
         protected List<CountryCityModel> CountryCityList =
         [
@@ -145,6 +146,7 @@ namespace QLN.Web.Shared.Pages.Company
                 using var ms = new MemoryStream();
                 await file.OpenReadStream(10 * 1024 * 1024).CopyToAsync(ms);
                 var base64 = Convert.ToBase64String(ms.ToArray());
+                _localLogoBase64 = base64;
                 companyProfile.CompanyLogo = base64;
             }
         }

@@ -95,68 +95,14 @@ else if (Ads != null && Ads.Any())
 
                 <!-- Buttons (Row 6) -->
                 <div class="d-flex flex-wrap mt-2" style="gap: 8px;">
-                    @if (DashboardType != "Deals")
-                    {
-                        <MudButton Variant="Variant.Text"
-                        Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424; display: flex; align-items: center;">
-                            <img src="qln-images/subscription/Refresh.svg" alt="Gucci" style="margin-right: 8px;" />
-                            <div>
-                                Refresh
-                                <div style="font-size: 0.7em; color: #5F6C7B;">(Exp: @ad.RefreshExpiry)</div>
-                            </div>
-                        </MudButton>
-
-                        @if (ad.IsPromoted)
-                        {
-                            <MudButton Variant="Variant.Text"
-                            Disabled="true"
-                            Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color:#667085;">
-                                <img src="qln-images/subscription/LightningGrey.svg" style="margin-right: 8px;" alt="Promoted" />
-                                <div>
-                                    Promoted
-                                    <div style="font-size: 0.7em; color: #5F6C7B;">(Exp: @ad.RefreshExpiry)</div>
-                                </div>
-                            </MudButton>
-                        }
-                        else
-                        {
-                            <MudButton Variant="Variant.Text"
-                            Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424;">
-                                <img src="qln-images/subscription/Feature.svg" style="margin-right: 8px;" alt="Promote" />
-                                Pay to Promote
-                            </MudButton>
-                        }
-
-                        @if (ad.IsFeatured)
-                        {
-                            <MudButton Variant="Variant.Text"
-                            Disabled="true"
-                            Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #667085;">
-                                <img src="qln-images/subscription/LightningGrey.svg" style="margin-right: 8px;" alt="Featured" />
-                                <div>
-                                    Featured
-                                    <div style="font-size: 0.7em; color: #5F6C7B;">(Exp: @ad.RefreshExpiry)</div>
-                                </div>
-                            </MudButton>
-                        }
-                        else
-                        {
-                            <MudButton Variant="Variant.Text"
-                            Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424;">
-                                <img src="qln-images/subscription/Feature.svg" style="margin-right: 8px;" alt="Feature" />
-                                Pay to Feature
-                            </MudButton>
-                        }
-                    }
-                    else
-                    {
+                   
                         <MudButton @onclick="() => OnPublish.InvokeAsync(ad.Id)"
                                    Variant="Variant.Text"
                                    Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424;">
                             <img src="/qln-images/subscription/unpublish.svg" style="margin-right: 8px;" alt="Publish" />
                             Publish
                         </MudButton>
-                    }
+                    
 
                     <MudMenu OffsetY="true"
                              AnchorOrigin="Origin.BottomRight"

@@ -12,14 +12,21 @@ public class CategoryAdSectionBase : ComponentBase
 
     [Parameter]
     public EventCallback<LandingBackOfficeIndex> OnCategoryClick { get; set; }
+    [Inject]
+    protected NavigationManager NavigationManager { get; set; } = default!;
 
     [Parameter]
     public bool Loading { get; set; }
 
-    protected Task HandleClick(LandingBackOfficeIndex item)
+   protected void HandleClick(LandingBackOfficeIndex item)
     {
-        return OnCategoryClick.InvokeAsync(item);
+        if (item?.EntityId == null)
+            return;
+
+        var url = $"/qln/classifieds/items?categoryId={item.EntityId}";
+        NavigationManager.NavigateTo(url);
     }
+
 
   protected override void OnParametersSet()
 {
