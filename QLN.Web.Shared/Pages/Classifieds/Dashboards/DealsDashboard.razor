@@ -8,7 +8,7 @@
 
 <div>
     <MudContainer MaxWidth="MaxWidth.Large" Class="dashboard-container">
-                         <ClassifiedsDashboard SelectedDashboard="DashboardType.Deals" />
+        <ClassifiedsDashboard SelectedDashboard="DashboardType.Deals" />
 
         <div class="dashboard-header">
             <div class="dashboard-title-container">
@@ -42,14 +42,15 @@
                         @companyProfile.BusinessName
                     </MudText>
                     <MudText Typo="Typo.body2" Style="color: #5F6C7B;">
-@string.Join(", ", companyProfile.NatureOfBusiness
-    .Select(id => GetDisplayName((NatureOfBusiness)id))) - Company   </MudText>
+                        @string.Join(", ", companyProfile.NatureOfBusiness
+                                 .Select(id => GetDisplayName((NatureOfBusiness)id))) - Company
+                    </MudText>
                     <MudText Typo="Typo.caption" Class="mt-1" Style="color: #5F6C7B;">Created on</MudText>
                     <MudText Typo="Typo.caption" Style="color: #5F6C7B;">
                         @companyProfile.CreatedUtc.ToString("MMM dd, yyyy")
                     </MudText>
                     <MudButton Variant="Variant.Outlined" Class="font-semibold mt-3 dashboard-edit-profile-button"
-                                         OnClick="@(() => NavigateToEditProfile(companyProfile.Id))">
+                               OnClick="@(() => NavigateToEditProfile(companyProfile.Id))">
                         Edit Profile
                     </MudButton>
                 </MudPaper>
@@ -102,7 +103,7 @@
                             </MudItem>
                         }
                     </MudGrid>
-                
+
                 }
                 else
                 {
@@ -131,7 +132,7 @@
                 <MudButton Variant="Variant.Filled" Class="font-semibold mt-3" OnClick="@NavigateToAdPost"
                            Style="border-radius: 8px; background-color: #F26D1E; color: white; width: 200px; display: flex; align-items: center; justify-content: center; gap: 8px;text-transform:none">
                     <MudIcon Icon="@Icons.Material.Filled.Add" />
-                    Post New Ad
+                    Add New Deal
                 </MudButton>
             </div>
 
@@ -245,7 +246,7 @@
                                        OnEdit="OnEditAd"
                                        OnPreview="onPreview"
                                        OnRemove="onRemove"
-                                       DashboardType="Deals"/>
+                                       DashboardType="Deals" />
             }
             else if (_selectedAdsTab == 1)
             {
@@ -578,9 +579,9 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 8px 12px;
+        padding: 8px 12px !important;
         width: 150px;
-        padding-left: 20px;
+        padding-left: 20px !important;
     }
 
     .menu-icon {

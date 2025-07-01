@@ -79,3 +79,4 @@ public class SearchStateService
     PrelovedMaxPrice.HasValue;
 
 }
+

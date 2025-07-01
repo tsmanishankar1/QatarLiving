@@ -60,6 +60,6 @@ eventGroup.MapEventEndpoints();
 var newsGroup = app.MapGroup("/api/v2/news");
 newsGroup.MapNewsEndpoints();
 
-app.MapControllers();
+// app.MapControllers(); / disabling to trigger a build, but we dont use controllers anyhow
 app.UseHttpsRedirection();
 app.Run();
