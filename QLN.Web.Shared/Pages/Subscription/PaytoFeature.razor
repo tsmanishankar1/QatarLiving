@@ -1,6 +1,6 @@
-﻿@page "/qln/PaytoPublish"
+﻿@page "/qln/PaytoFeature"
 
-@inherits PaytoPublishBase
+@inherits PaytoFeatureBase
 
 @using QLN.Web.Shared.Components.ModalDialog
 @using QLN.Web.Shared.Components.BreadCrumb
@@ -214,7 +214,7 @@
                         }
                     </MudPaper>
                     <MudPaper Class="payment-container">
-                        @*                         <img src="your-payment.gif" alt="Payment" class="payment-gif" />
+@*                         <img src="your-payment.gif" alt="Payment" class="payment-gif" />
  *@                  
                       </MudPaper>
 
@@ -317,7 +317,7 @@
         align-items: center;
         justify-content: center;
         border-radius: 8px;
-        margin-top: 18px;
+        margin-top:18px;
     }
 
     .payment-gif {
@@ -325,7 +325,6 @@
         max-height: 100%;
         object-fit: contain;
     }
-
     @@media (max-width: 600px) {
         .vertical-tabs-toolbar {
             display: flex;

@@ -28,6 +28,7 @@ namespace QLN.Web.Shared.Services.Interface
         Task<bool> RemoveCollectiblesAdAsync(string adId);
         Task<bool> RemovePrelovedAsync(string adId);
         Task<bool> RemoveDealsAdAsync(string adId);
+        Task<bool> PublishBulkAdsAsync(List<string> adIds);
 
 
     }

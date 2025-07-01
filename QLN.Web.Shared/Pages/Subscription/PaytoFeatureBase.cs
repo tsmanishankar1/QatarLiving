@@ -8,7 +8,7 @@ using System.Text.Json;
 
 namespace QLN.Web.Shared.Pages.Subscription
 {
-    public class PaytoPublishBase :ComponentBase
+    public class PaytoFeatureBase : ComponentBase
     {
         [Inject] private ISnackbar Snackbar { get; set; } = default!;
 
@@ -50,7 +50,7 @@ namespace QLN.Web.Shared.Pages.Subscription
             breadcrumbItems = new()
         {
             new() { Label = "Classifieds", Url = "/qln/classifieds" },
-            new() { Label = "PaytoPublish", Url = "/qln/PaytoPublish", IsLast = true },
+            new() { Label = "Pay to Feature", Url = "/qln/paytofeature", IsLast = true },
         };
         }
 
@@ -64,7 +64,7 @@ namespace QLN.Web.Shared.Pages.Subscription
                 HasError = false;
 
 
-                var response = await SubscriptionService.GetPayToPublishPlansAsync(verticalId, categoryId);
+                var response = await SubscriptionService.GetPayToFeatureAsync(verticalId, categoryId);
 
                 if (response != null && response.Any())
                 {
@@ -130,7 +130,6 @@ namespace QLN.Web.Shared.Pages.Subscription
             if (_form.IsValid)
             {
 
-                Console.WriteLine(JsonSerializer.Serialize(_model));
 
                 try
                 {
@@ -153,8 +152,7 @@ namespace QLN.Web.Shared.Pages.Subscription
 
                     };
 
-                    Console.WriteLine(JsonSerializer.Serialize(payload));
-                    var response = await SubscriptionService.PurchaseSubscription(payload);
+                    //var response = await SubscriptionService.PurchaseSubscription(payload);
                     //if (response)
                     //{
                     //    Snackbar.Add("Subscription added!", Severity.Success);
@@ -168,7 +166,6 @@ namespace QLN.Web.Shared.Pages.Subscription
                     Snackbar.Add("Payment Success!", Severity.Success);
                     _isPaymentDialogOpen = false;
                     _actionSucess = true;
-
 
                 }
                 catch (HttpRequestException ex)

@@ -323,6 +323,26 @@ namespace QLN.Web.Shared.Services
                 return false;
             }
         }
+        public async Task<bool> PublishBulkAdsAsync(List<string> adIds)
+        {
+            try
+            {
+                var url = "api/classified/items/user-ads/unpublish";
+                var request = new HttpRequestMessage(HttpMethod.Post, url);
+
+                var json = JsonSerializer.Serialize(adIds); 
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("PublishBulkAdsAsync Exception: " + ex.Message);
+                return false;
+            }
+        }
+
         public async Task<bool> UnPublishAdAsync(string adId)
         {
             try

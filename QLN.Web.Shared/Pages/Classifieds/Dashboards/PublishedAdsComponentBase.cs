@@ -26,8 +26,38 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         [Parameter]
         public EventCallback<string> OnRemove { get; set; }
 
-        protected bool _isChecked;
+        [Parameter]
+        public EventCallback<List<string>> OnBulkPublish { get; set; }
 
+        protected bool isChecked { get; set; }
+        protected bool _isChecked
+        {
+            get => isChecked;
+            set
+            {
+                if (isChecked != value)
+                {
+                    isChecked = value;
+                    ToggleAllAds(isChecked);
+                }
+            }
+        }
+        private void ToggleAllAds(bool select)
+        {
+            foreach (var ad in Ads)
+            {
+                ad.IsSelected = select;
+            }
+
+            UpdateSelectedAdIds();
+            StateHasChanged();
+        }
+
+        public class AdSelectionModel
+{
+    public string AdId { get; set; }
+    public bool IsSelected { get; set; }
+}
 
         public enum AdStatus
         {
@@ -57,43 +87,65 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
                 _ => "background-color: #F5F5F5; border: 1px solid #BDBDBD; color: #616161;"
             };
         }
-        public List<string> SelectedAdIds { get; set; } = new();
-
-        protected void ToggleSelection(string adId, bool isSelected)
-        {
-            if (isSelected)
-            {
-                if (!SelectedAdIds.Contains(adId))
-                    SelectedAdIds.Add(adId);
-            }
-            else
-            {
-                SelectedAdIds.Remove(adId);
-            }
-        }
+        public List<string> SelectedAdIds = new();
 
         protected void SelectAll()
         {
-            SelectedAdIds = Ads.Select(ad => ad.Id).ToList();
+            foreach (var ad in Ads)
+                ad.IsSelected = true;
+
+            UpdateSelectedAdIds();
+            isChecked = true;
+            StateHasChanged();
+        }
+
+        protected void OnAdToggled(AdModal ad, bool value)
+        {
+            ad.IsSelected = value;
+            UpdateSelectedAdIds();
+            isChecked = Ads.All(a => a.IsSelected);
+        }
+
+        protected void ToggleSelectAll(bool value)
+        {
+            isChecked = value;
+
+            foreach (var ad in Ads)
+                ad.IsSelected = value;
+
+            UpdateSelectedAdIds();
         }
 
         protected void UnselectAll()
         {
+            foreach (var ad in Ads)
+                ad.IsSelected = false;
+
             SelectedAdIds.Clear();
+            isChecked = false;
+            StateHasChanged();
+        }
+
+        private void UpdateSelectedAdIds()
+        {
+            SelectedAdIds = Ads.Where(a => a.IsSelected).Select(a => a.Id).ToList();
         }
 
         protected async Task PublishAllSelected()
         {
             if (SelectedAdIds.Any())
             {
-                foreach (var adId in SelectedAdIds)
-                {
-                    await OnPublish.InvokeAsync(adId);
-                }
+                await OnBulkPublish.InvokeAsync(SelectedAdIds);
+                SelectedAdIds.Clear();
+                isChecked = false;
 
-                SelectedAdIds.Clear(); 
+                foreach (var ad in Ads)
+                    ad.IsSelected = false;
+
+                StateHasChanged();
             }
         }
+
 
     }
 }
