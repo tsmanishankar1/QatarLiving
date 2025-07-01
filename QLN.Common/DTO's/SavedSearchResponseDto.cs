@@ -14,6 +14,8 @@ namespace QLN.Common.Infrastructure.DTO_s
         public string Name { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public CommonSearchRequest SearchQuery { get; set; } = new();
+        public string subVertical { get; set; }
+
     }
 
 

@@ -27,6 +27,8 @@ namespace QLN.Common.Infrastructure.DTO_s
         public string UserId { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public CommonSearchRequest SearchQuery { get; set; } = new();
+        public string subVertical { get; set; }
+
     }
 
 
