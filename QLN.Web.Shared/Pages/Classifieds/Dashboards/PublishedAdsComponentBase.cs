@@ -29,6 +29,9 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         [Parameter]
         public EventCallback<List<string>> OnBulkPublish { get; set; }
 
+        [Inject]
+        protected NavigationManager Navigation { get; set; }
+
         protected bool isChecked { get; set; }
         protected bool _isChecked
         {
@@ -144,6 +147,10 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
                 StateHasChanged();
             }
+        }
+        protected void NavigateToFeaturePage()
+        {
+            Navigation.NavigateTo("/qln/paytofeature");
         }
 
 
