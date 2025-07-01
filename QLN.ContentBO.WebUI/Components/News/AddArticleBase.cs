@@ -59,12 +59,7 @@ namespace QLN.ContentBO.WebUI.Components.News
             }
         }
 
-        protected void HandleCoverImageChange(InputFileChangeEventArgs e)
-        {
-
-        }
-
-        protected void HandleInlineImagesChange(InputFileChangeEventArgs e)
+        protected void HandleCoverImageChange()
         {
 
         }
