@@ -8,15 +8,28 @@ public class SearchStateService
     public long? ItemMinPrice { get; set; }
     public long? ItemMaxPrice { get; set; }
     public string ItemViewMode { get; set; } = "grid";
+    public List<CategoryField> SelectedCategoryFields { get; set; } = new();
+    public List<string> ItemAcceptOffers { get; set; } = new();
+    public List<string> ItemLocations { get; set; } = new();
+    public List<string> ItemConditions { get; set; } = new();
+    public List<string> ItemCoverage { get; set; } = new();
+    public List<string> ItemModels { get; set; } = new();
+    public List<string> ItemCapacity { get; set; } = new();
+    public List<string> ItemMakeType { get; set; } = new();
+    public List<string> ItemStorge { get; set; } = new();
+    public List<string> ItemColor { get; set; } = new();
+    public List<string> ItemWarranty { get; set; } = new();
+    public List<string> ItemBatteryLife { get; set; } = new();
+    public List<string> ItemRam { get; set; } = new();
     public List<CategoryTreeDto> ItemCategoryTrees
+    {
+        get => _itemCategoryTrees;
+        set
         {
-            get => _itemCategoryTrees;
-            set
-            {
-                _itemCategoryTrees = value;
-                OnCategoryTreesChanged?.Invoke();
-            }
+            _itemCategoryTrees = value;
+            OnCategoryTreesChanged?.Invoke();
         }
+    }
     private List<CategoryTreeDto> _itemCategoryTrees = new();
     public List<CategoryField> ItemCategoryFilters = new();
     public event Action? OnCategoryTreesChanged;
@@ -65,3 +78,4 @@ public class SearchStateService
     PrelovedMaxPrice.HasValue;
 
 }
+

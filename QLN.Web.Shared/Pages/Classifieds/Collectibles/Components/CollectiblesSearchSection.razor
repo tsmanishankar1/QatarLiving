@@ -9,45 +9,45 @@
 @using QLN.Web.Shared.Helpers
 @using QLN.Common.DTO_s;
 
-<div class="search-container">
-    <div class="search-row">
+<div class="collectibles-search-container">
+    <div class="collectibles-search-row">
 
         <!-- FIRST ROW: Search + Category -->
-        <div class="first-row">
+        <div class="collectibles-first-row">
             <!-- Search Input -->
-            <div class="search-bar" @onfocusin="() => _isSearchFocused = true" @onfocusout="() => _isSearchFocused = false">
+            <div class="collectibles-search-section-bar" @onfocusin="() => _isSearchFocused = true" @onfocusout="() => _isSearchFocused = false">
                 @if (!_isSearchFocused)
                 {
-                    <div class="search-icon-left">
-                        <img src="/qln-images/classifieds/iteam_search_icon.svg" alt="Search-left" class="action-icon-img-left" />
+                    <div class="collectibles-search-icon-left">
+                        <img src="/qln-images/classifieds/iteam_search_icon.svg" alt="Search-left" class="collectibles-action-icon-img-left" />
                     </div>
                 }
 
-                <input id="itemSearch" type="text" class="search-input" placeholder="Search..." @bind="SearchState.CollectiblesSearchText" @bind:event="oninput" />
+                <input id="itemSearch" type="text" class="collectibles-search-input" placeholder="Search..." @bind="SearchState.CollectiblesSearchText" @bind:event="oninput" />
 
                 @if (!string.IsNullOrWhiteSpace(SearchState.CollectiblesSearchText))
                 {
-                    <div class="search-actions">
-                        <MudIconButton OnClick="PerformSearch" Class="search-action-btn search-btn">
-                            <div class="search-icon-container">
+                    <div class="collectibles-search-actions">
+                        <MudIconButton OnClick="PerformSearch" Class="collectibles-search-action-btn collectibles-search-btn">
+                            <div class="collectibles-search-icon-container">
                                 @if (Loading)
                                 {
                                     <MudProgressCircular Indeterminate="true" Style="color: white;width: 20px; height: 20px;" />
                                 }
                                 else
                                 {
-                                    <img src="/qln-images/classifieds/search_icon.svg" alt="Search" class="action-icon-img" />
+                                    <img src="/qln-images/classifieds/search_icon.svg" alt="Search" class="collectibles-action-icon-img" />
                                 }
                             </div>
                         </MudIconButton>
-                        <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="ClearSearch" Class="search-action-btn" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="ClearSearch" Class="collectibles-search-action-btn" />
                     </div>
                 }
             </div>
   @if (!_isSearchFocused)
         {
             <!-- Category -->
-            <div class="short-select">
+            <div class="collectibles-short-select">
                 <CustomSelectCategory TItem="CategoryTreeDto"
                     Items="@CategoryTrees"
                     SelectedId="@SearchState.CollectiblesCategory"
@@ -64,7 +64,7 @@
         @if (!_isSearchFocused)
         {
             <!-- SECOND ROW: Brand + Price + More + Save Search -->
-            <div class="second-row">
+            <div class="collectibles-second-row">
                 <!-- Brand -->
                 <div class="brand-select">
                     <CustomSelectCategory TItem="BrandItem"
@@ -81,7 +81,7 @@
                 </div>
 
                 <!-- Price -->
-                <div class="price-short-select">
+                <div class="collectibles-price-short-select">
                    <PriceRangeSelect SelectedMin="SearchState.CollectiblesMinPrice"
                         SelectedMax="SearchState.CollectiblesMaxPrice"
                         SelectedMinChanged="v => SearchState.CollectiblesMinPrice = v"
@@ -92,19 +92,19 @@
                 </div>
 
                 <!-- More -->
-                <div class="price-short-select">
+                <div class="collectibles-price-short-select">
                         <MoreFiltersList  />
                 </div>
 
                 <!-- Save Search -->
-                <div class="save-search">
+                <div class="collectibles-save-search">
                     <button class="save-search-btn" @onclick="() => ShowSaveSearchPopup = true">Save Search</button>
                 </div>
             </div>
         }
 
         <!-- View Toggle Buttons (Hidden on Mobile) -->
-        <div class="right-actions">
+        <div class="collectibles-right-actions">
             <ViewToggleButtons Items="@_viewOptions" Height="48px" SelectedValue="@SearchState.CollectiblesViewMode" OnSelected="SetViewMode" />
         </div>
 
@@ -122,4 +122,5 @@
 }
 
 </div>
+
 

@@ -95,7 +95,7 @@ public class SearchSectionBase : ComponentBase
 
         if (OnSearch.HasDelegate)
         {
-            await OnSearch.InvokeAsync(string.Empty); // pass empty string as the search text
+            await OnSearch.InvokeAsync(string.Empty); 
         }
     }
 

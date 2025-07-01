@@ -126,11 +126,36 @@ public class ItemsComponentBase : ComponentBase
             if (!string.IsNullOrWhiteSpace(SearchState.ItemBrand))
                 filters.Add("brand", SearchState.ItemBrand);
 
+            foreach (var field in SearchState.SelectedCategoryFields)
+            {
+                if (field.Options != null && field.Options.Any())
+                {
+        var key = field.Name switch
+        {
+            "Make / Type" => "make",
+            "Battery Life" => "batteryPercentage",
+            "Colour" => "color",
+            "Ram" => "ram",
+            "Storage" => "storage",
+            "Condition" => "condition",
+            "Coverage" => "coverage",
+            "Model" => "model",
+            "Capacity" => "capacity",
+            "Warranty" => "warranty",
+            "Location" => "location", 
+            _ => field.Name.ToLowerInvariant().Replace(" ", "").Replace("/", "")
+        };
+
+        filters[key] = field.Options.ToArray();
+    }
+}
+
+
             var payload = new Dictionary<string, object>
             {
                 ["text"] = searchText ?? SearchState.ItemSearchText,
                 ["orderBy"] = SearchState.ItemSortBy,
-                ["filters"] = filters
+                ["filters"] = filters,    
             };
 
             var payloadJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
