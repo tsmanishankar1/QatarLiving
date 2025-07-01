@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
 using QLN.Web.Shared.Helpers;
 using QLN.Web.Shared.Models;
@@ -14,6 +15,7 @@ namespace QLN.Web.Shared.Pages.Subscription
 
         [Inject] private NavigationManager Navigation { get; set; } = default!;
         [Inject] protected ISubscriptionService SubscriptionService { get; set; }
+        [Inject] protected ILogger<PaytoPublishBase> Logger { get; set; }
 
         protected MudForm _form;
         protected bool _isLoading = false;
@@ -76,9 +78,9 @@ namespace QLN.Web.Shared.Pages.Subscription
                 }
 
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex)
             {
-                Snackbar.Add($"Error fetching plans: {ex.Message}", Severity.Error);
+                Logger.LogError($"Error loading Subscription details: {ex}");
                 HasError = true;
                 IsPayPlansLoading = false;
 

@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using Amazon.Runtime.Internal.Util;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
 using QLN.Web.Shared.Helpers;
 using QLN.Web.Shared.Models;
+using QLN.Web.Shared.Pages.Classifieds.Dashboards;
 using QLN.Web.Shared.Services.Interface;
 using System.Text.Json;
 
@@ -14,6 +17,7 @@ namespace QLN.Web.Shared.Pages.Subscription
 
         [Inject] private NavigationManager Navigation { get; set; } = default!;
         [Inject] protected ISubscriptionService SubscriptionService { get; set; }
+        [Inject] protected ILogger<PaytoFeatureBase> Logger { get; set; }
 
         protected MudForm _form;
         protected bool _isLoading = false;
@@ -63,7 +67,6 @@ namespace QLN.Web.Shared.Pages.Subscription
                 IsPayPlansLoading = true;
                 HasError = false;
 
-
                 var response = await SubscriptionService.GetPayToFeatureAsync(verticalId, categoryId);
 
                 if (response != null && response.Any())
@@ -76,9 +79,9 @@ namespace QLN.Web.Shared.Pages.Subscription
                 }
 
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex)
             {
-                Snackbar.Add($"Error fetching plans: {ex.Message}", Severity.Error);
+                Logger.LogError($"Error loading Subscription details: {ex}");
                 HasError = true;
                 IsPayPlansLoading = false;
 

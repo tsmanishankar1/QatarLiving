@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
 using QLN.Web.Shared.Components.BreadCrumb;
 using QLN.Web.Shared.Models;
+using QLN.Web.Shared.Services;
 using QLN.Web.Shared.Services.Interface;
 using System.ComponentModel.DataAnnotations;
 using static QLN.Web.Shared.Models.ClassifiedsDashboardModel;
@@ -17,6 +19,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         [Inject] protected ICompanyProfileService CompanyProfileService { get; set; }
         [Inject] private IHttpContextAccessor HttpContextAccessor { get; set; }
         [Inject] protected ISnackbar Snackbar { get; set; }
+        [Inject] protected ILogger<CollectiblesDashboardBase> Logger { get; set; }
 
         protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
         protected List<StatItem> stats = new();
@@ -82,7 +85,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading company profile: {ex.Message}");
+                Logger.LogError(ex, "Error loading company profile");
             }
             finally
             {
@@ -124,7 +127,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error loading subscription details: " + ex.Message);
+                Logger.LogError(ex, "Error loading subscription details");
                 _errorMessage = "Something went wrong while loading subscription stats.";
                 stats = new();
             }
@@ -149,7 +152,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error loading published ads: " + ex.Message);
+                Logger.LogError("Error loading published ads: " + ex.Message);
                 _errorMessage = "Something went wrong while loading published ads.";
                 publishedAds = new();
             }
@@ -173,7 +176,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error loading unpublished ads: " + ex.Message);
+                Logger.LogError("Error loading unpublished ads: " + ex.Message);
                 _errorMessage = "Something went wrong while loading unpublished ads.";
                 unpublishedAds = new();
             }
@@ -189,7 +192,6 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             if (search != null) searchTerm = search;
             if (sort.HasValue) sortOption = sort.Value;
 
-            Console.WriteLine($"[ReloadAdsAsync] Tab: {_selectedAdsTab}, Search: {searchTerm}, Sort: {sortOption}");
 
             if (_selectedAdsTab == 0)
             {
@@ -206,14 +208,12 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
         protected async Task HandleSearch(string term)
         {
-            Console.WriteLine($"[HandleSearch] Search term passed: {term}");
             CurrentPage = 1;
             await ReloadAdsAsync(search: term);
         }
 
         protected async Task HandleSort(int option)
         {
-            Console.WriteLine($"Sort option passed: {option}");
             CurrentPage = 1;
             await ReloadAdsAsync(sort: option);
         }
@@ -251,7 +251,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error in OnPublishAd: " + ex.Message);
+                Logger.LogError("Error in OnPublishAd: " + ex.Message);
                 Snackbar.Add("An error occurred.", Severity.Error);
             }
         }
@@ -274,7 +274,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error in OnPublishAd: " + ex.Message);
+                Logger.LogError("Error in OnPublishAd: " + ex.Message);
                 Snackbar.Add("An error occurred.", Severity.Error);
             }
         }
@@ -297,7 +297,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error in onRemove: " + ex.Message);
+                Logger.LogError("Error in onRemove: " + ex.Message);
                 Snackbar.Add("An error occurred.", Severity.Error);
             }
         }
