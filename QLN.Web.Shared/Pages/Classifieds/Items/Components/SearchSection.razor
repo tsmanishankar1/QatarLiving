@@ -9,38 +9,38 @@
 @using QLN.Web.Shared.Helpers
 @using QLN.Common.DTO_s;
 
-<div class="search-container">
-    <div class="search-row">
+<div class="item-search-container">
+    <div class="item-search-row">
 
         <!-- FIRST ROW: Search + Category -->
-        <div class="first-row">
+        <div class="item-first-row">
             <!-- Search Input -->
-            <div class="search-bar" @onfocusin="() => _isSearchFocused = true" @onfocusout="() => _isSearchFocused = false">
+            <div class="item-search-bar" @onfocusin="() => _isSearchFocused = true" @onfocusout="() => _isSearchFocused = false">
                 @if (!_isSearchFocused)
                 {
-                    <div class="search-icon-left">
-                        <img src="/qln-images/classifieds/iteam_search_icon.svg" alt="Search-left" class="action-icon-img-left" />
+                    <div class="item-search-icon-left">
+                        <img src="/qln-images/classifieds/iteam_search_icon.svg" alt="Search-left" class="item-action-icon-img-left" />
                     </div>
                 }
 
-                <input id="itemSearch" type="text" class="search-input" placeholder="Search..." @bind="SearchState.ItemSearchText" @bind:event="oninput" />
+                <input id="itemSearch" type="text" class="item-search-input" placeholder="Search..." @bind="SearchState.ItemSearchText" @bind:event="oninput" />
 
                 @if (!string.IsNullOrWhiteSpace(SearchState.ItemSearchText))
                 {
-                    <div class="search-actions">
-                        <MudIconButton OnClick="PerformSearch" Class="search-action-btn search-btn">
-                            <div class="search-icon-container">
+                    <div class="item-search-actions">
+                        <MudIconButton OnClick="PerformSearch" Class="item-search-action-btn item-search-btn">
+                            <div class="item-search-icon-container">
                                 @if (Loading)
                                 {
                                     <MudProgressCircular Indeterminate="true" Style="color: white;width: 20px; height: 20px;" />
                                 }
                                 else
                                 {
-                                    <img src="/qln-images/classifieds/search_icon.svg" alt="Search" class="action-icon-img" />
+                                    <img src="/qln-images/classifieds/search_icon.svg" alt="Search" class="item-action-icon-img" />
                                 }
                             </div>
                         </MudIconButton>
-                        <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="ClearSearch" Class="search-action-btn" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="ClearSearch" Class="item-search-action-btn" />
                     </div>
                 }
             </div>
@@ -89,9 +89,9 @@
         @if (!_isSearchFocused)
         {
             <!-- SECOND ROW: Brand + Price + More + Save Search -->
-            <div class="second-row">
+            <div class="item-second-row">
                 <!-- Brand -->
-                <div class="brand-select">
+                <div class="item-brand-select">
                     <CustomSelectCategory TItem="string"
                     Items="brandField?.Options"
                     SelectedId="@SearchState.ItemBrand"
@@ -106,7 +106,7 @@
                 </div>
 
                 <!-- Price -->
-                <div class="price-short-select">
+                <div class="item-price-short-select">
                    <PriceRangeSelect SelectedMin="SearchState.ItemMinPrice"
                         SelectedMax="SearchState.ItemMaxPrice"
                         SelectedMinChanged="v => SearchState.ItemMinPrice = v"
@@ -122,14 +122,14 @@
                 </div>
 
                 <!-- Save Search -->
-                <div class="save-search">
-                    <button class="save-search-btn" @onclick="() => ShowSaveSearchPopup = true">Save Search</button>
+                <div class="item-save-search">
+                    <button class="item-save-search-btn" @onclick="() => ShowSaveSearchPopup = true">Save Search</button>
                 </div>
             </div>
         }
 
         <!-- View Toggle Buttons (Hidden on Mobile) -->
-        <div class="right-actions">
+        <div class="item-right-actions">
             <ViewToggleButtons Items="@_viewOptions" Height="48px" SelectedValue="@SearchState.ItemViewMode" OnSelected="SetViewMode" />
         </div>
 
@@ -148,177 +148,3 @@
 
 </div>
 
-<style>
-    .search-container {
-        width: 100%;
-        padding: 10px 0;
-    }
-
-    .search-row {
-        display: flex;
-        flex-direction: row;
-        gap:5px;
-        width: 100%;
-    }
-
-    .first-row,
-    .second-row {
-        display: flex;
-        flex-direction: row;
-        width: 100%;
-        gap:5px
-    }
-
-    .search-bar {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        width: 270px;
-        background-color: white;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        padding: 8px 12px;
-        transition: width 0.3s ease;
-    }
-
-    .search-bar:focus-within {
-        width: 100%;
-    }
-
-    .search-input {
-        flex: 1;
-        border: none;
-        outline: none;
-        font-size: 14px;
-        padding: 6px 0;
-        width: 170px;
-    }
-
-    .search-icon-left {
-        display: flex;
-        align-items: center;
-        color: #888;
-    }
-
-    .search-actions {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 4px;
-        margin-left: auto;
-    }
-
-    .search-btn {
-        padding: 1px 8px;
-        min-width: auto;
-        background: linear-gradient(90deg, #0A426B 0%, #35B7EF 100%);
-        border-radius: 50px;
-        width: 32px;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s ease;
-    }
-
-    .search-icon-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 100%;
-    }
-
-    .action-icon-img {
-        width: 16px;
-        height: 16px;
-        filter: brightness(0) invert(1);
-    }
-
-    .action-icon-img-left {
-        width: 20px;
-        height: 20px;
-    }
-
-    .search-btn:hover {
-        background: linear-gradient(90deg, #0A426B 0%, #35B7EF 80%);
-        transform: scale(1.05);
-    }
-
-    .search-btn:active {
-        transform: scale(0.95);
-    }
-
-   
-        .short-select,
-        .save-search {
-            width: 100%;
-        }
-        .brand-select{
-            width: 100%;
-            max-width: 180px;
-        }
-        .price-short-select {
-             width: 100%;
-             max-width: 100px;
-         }
-         .more-short-select{
-             width: 100%;
-             max-width: 50px;
-         }
-
-        .save-search {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        }
-    .save-search-btn {
-        font-size: 14px;
-        font-weight: 500;
-        text-align: center;
-        color: var(--color-accent);
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 4px 8px;
-        text-transform: capitalize;
-    }
-
-    .right-actions {
-        margin-left: auto;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    /* Responsive Mobile Rules */
-    @@media (max-width: 992px) {
-        .search-container{
-            padding: 10px;
-        }
-        .search-row {
-           display: flex;
-           flex-direction: column;
-           gap: 12px;
-        }
-
-        .first-row,
-        .second-row {
-            display: flex;
-            flex-direction: row;
-            gap: 10px;
-        }
-
-        .search-bar,
-        .search-input,
-        .price-short-select,
-        .short-select,
-        .save-search {
-            width: 100%;
-        }
-
-        .right-actions {
-            display: none !important;
-        }
-    }
-</style>

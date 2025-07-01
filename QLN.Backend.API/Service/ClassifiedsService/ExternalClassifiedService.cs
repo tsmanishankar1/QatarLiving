@@ -159,17 +159,19 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var adId = Guid.NewGuid();
                 dto.Id = adId;
 
+                long guidHash = Math.Abs(adId.GetHashCode()); 
+                string tenDigitGuid = guidHash.ToString().Substring(0, 10);  
+
 
                 var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateUrl);
 
                 // Upload certificate
                 var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
-                    ? dto.CertificateFileName
-                    : $"certificate_{dto.UserId}_{adId}.{certExt}";
+                    ? $"{tenDigitGuid}_{dto.CertificateFileName}"
+                    : $"{tenDigitGuid}_certificate_{dto.UserId}_{adId}.{certExt}";
 
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
-                uploadedBlobKeys.Add(certFileName);
-                dto.CertificateFileName = certFileName;
+                uploadedBlobKeys.Add(certFileName);                
                 dto.CertificateUrl = certUrl;
 
                 // Upload images with order
@@ -268,6 +270,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
             }
         }
+
         public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, Guid adId, CancellationToken cancellationToken = default)
         {
             if (adId == Guid.Empty)
@@ -327,6 +330,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw new InvalidOperationException("Failed to refresh the ad due to an unexpected error.", ex);
             }
         }
+
         public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
@@ -347,15 +351,17 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var adId = Guid.NewGuid();
                 dto.Id = adId;
 
+                long guidHash = Math.Abs(adId.GetHashCode());
+                string tenDigitGuid = guidHash.ToString().Substring(0, 10);
+
                 var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateUrl);
 
                 var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
-                    ? dto.CertificateFileName
-                    : $"certificate_{dto.UserId}_{adId}.{certExt}";
+                    ? $"{tenDigitGuid}_{dto.CertificateFileName}"
+                    : $"{tenDigitGuid}_certificate_{dto.UserId}_{adId}.{certExt}";
 
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
-                uploadedBlobKeys.Add(certFileName);
-                dto.CertificateFileName = certFileName;
+                uploadedBlobKeys.Add(certFileName);                
                 dto.CertificateUrl = certUrl;
 
                 for (int i = 0; i < dto.ImageUrls.Count; i++)
@@ -474,16 +480,17 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var adId = Guid.NewGuid();
                 dto.Id = adId;
 
+                long guidHash = Math.Abs(adId.GetHashCode()); 
+                string tenDigitGuid = guidHash.ToString().Substring(0, 10);
 
                 var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateUrl);
 
                 var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
-                    ? dto.CertificateFileName
-                    : $"certificate_{dto.UserId}_{adId}.{certExt}";
+                    ? $"{tenDigitGuid}_{dto.CertificateFileName}"
+                    : $"{tenDigitGuid}_certificate_{dto.UserId}_{adId}.{certExt}";
 
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(certFileName);
-                dto.CertificateFileName = certFileName;
                 dto.CertificateUrl = certUrl;
 
                 for (int i = 0; i < dto.ImageUrls.Count; i++)
@@ -595,16 +602,18 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var adId = Guid.NewGuid();
                 dto.Id = adId;
 
+                long guidHash = Math.Abs(adId.GetHashCode()); 
+                string tenDigitGuid = guidHash.ToString().Substring(0, 10);
+
                 var (flyerExt, flyerBase64) = Base64ImageHelper.ParsePdfFile(dto.FlyerFile);
 
                 var flyerName = !string.IsNullOrWhiteSpace(dto.FlyerName)
-                    ? dto.FlyerName
-                    : $"deals_flyer_{dto.UserId}_{adId}.{flyerExt}";
+                    ? $"{tenDigitGuid}_{dto.FlyerName}"
+                    : $"{tenDigitGuid}_Flyer_{dto.UserId}_{adId}.{flyerExt}";
 
                 var flyerUrl = await _fileStorageBlob.SaveBase64File(dto.FlyerFile, flyerName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(flyerName);
-                dto.FlyerFile = flyerUrl;
-                dto.FlyerName = flyerName;
+                dto.FlyerFile = flyerUrl;                
 
                 for (int i = 0; i < dto.ImageUrls.Count; i++)
                 {

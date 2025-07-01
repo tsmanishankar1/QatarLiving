@@ -146,7 +146,7 @@ public class ItemsComponentBase : ComponentBase
             {
                 ["text"] = searchText ?? SearchState.ItemSearchText,
                 ["orderBy"] = SearchState.ItemSortBy,
-                ["filters"] = filters
+                ["filters"] = filters,    
             };
 
             var payloadJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });

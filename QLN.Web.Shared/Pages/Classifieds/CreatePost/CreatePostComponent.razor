@@ -6,11 +6,11 @@
 
 <EditForm EditContext="@editContext" OnSubmit="HandleSubmit">
    <DataAnnotationsValidator />
-<div class="form-wrapper">
-     <div class="max-container">
+<div class="create-form-wrapper">
+     <div class="create-max-container">
     <Breadcrumb Items="breadcrumbItems" />
 
-    <div Class="form-container">
+    <div Class="create-form-container">
         <MudGrid GutterSize="24px">
             <MudItem xs="12" md="5">
                 <CreateFormList TItem="string"  EditContext="editContext"
@@ -28,9 +28,9 @@
     </div>
  @if (!string.IsNullOrWhiteSpace(selectedVertical))
                 {
-         <div class="save-button-container">
-                    <button class="close-button">Close</button>
-                    <button class="save-button" type="submit">
+         <div class="create-save-button-container">
+                    <button class="create-close-button">Close</button>
+                    <button class="create-save-button" type="submit">
                         @if (IsSaving)
                         {
                             <MudProgressCircular Color="Color.Inherit"
@@ -47,58 +47,4 @@
 </div>
 </EditForm>
 
-<style>
-    .form-wrapper {
-        background-color: var(--color-secondary-background);
-        padding: 10px 0;
-        font-family: 'Public Sans', sans-serif;
 
-    }
-
-   .max-container {
-            max-width: 1170px;
-            margin: 0 auto;
-        }
-    .save-button-container {
-        display: flex;
-        justify-content: flex-end;
-        padding: 5px;
-        gap: 10px;
-        margin-top: 1rem; 
-    }
-
-    .form-container {
-        padding: 10px 5px;
-        background-color: transparent;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-    }
-
-    .close-button {
-        background-color: var(--color-background);
-        color: var(--color-text-heading);
-        border-radius: 6px;
-        width: 200px;
-        font-weight: 600;
-        padding: 8px 10px;
-        font-weight: 500;
-        border: 1px solid var(--color-captcha-box);
-    }
-
-    .save-button {
-        background-color: var(--color-accent);
-        color: var(--color-background);
-        border-radius: 6px;
-        width: 200px;
-        font-weight: 600;
-        font-weight: 500;
-        padding: 8px 10px;
-    }
-
-    @@media (min-width: 960px) {
-        .form-container .mud-grid {
-            align-items: start;
-        }
-    }
-</style>
