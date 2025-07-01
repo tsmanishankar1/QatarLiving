@@ -1180,6 +1180,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .ExcludeFromDescription();
 
+
+
             group.MapPost("collectibles/post", async Task<IResult> (
                 HttpContext httpContext,
                 ClassifiedCollectibles dto,
@@ -3012,7 +3014,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .WithTags("Classified")
                 .WithSummary("Get a published item ad by ID")
                 .WithDescription("Retrieves the full published item ad details based on the provided Ad ID.")
-                .Produces<ItemAdDto>(StatusCodes.Status200OK)
+                .Produces<ClassifiedItems>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)                
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
@@ -3070,7 +3072,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .WithTags("Classified")
                 .WithSummary("Get a single Preloved Ad by ID")
                 .WithDescription("Fetches the details of a specific Preloved ad using the provided adId.")
-                .Produces<PrelovedAdDto>(StatusCodes.Status200OK)
+                .Produces<ClassifiedPreloved>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
@@ -3127,7 +3129,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .WithTags("Classified")
                 .WithSummary("Get a single Deals Ad by ID")
                 .WithDescription("Fetches the details of a specific Deals ad using the provided adId.")
-                .Produces<DealsAdDto>(StatusCodes.Status200OK)
+                .Produces<ClassifiedDeals>(StatusCodes.Status200OK)
                 .Produces<DealsAdDto>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
@@ -3185,7 +3187,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .WithTags("Classified")
                 .WithSummary("Get a single Collectibles Ad by ID")
                 .WithDescription("Fetches the details of a specific Collectibles ad using the provided adId.")
-                .Produces<CollectiblesAdDto>(StatusCodes.Status200OK)
+                .Produces<ClassifiedCollectibles>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);

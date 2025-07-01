@@ -16,7 +16,7 @@ namespace QLN.Common.DTO_s
         public Guid? CategoryId { get; set; }
         public string? Category { get; set; }
         public Guid? L1CategoryId { get; set; }
-        public string? l1Category { get; set; }
+        public string? L1Category { get; set; }
         public Guid? L2CategoryId { get; set; }
         public string? L2Category { get; set; }
         public string? Section { get; set; }
@@ -35,9 +35,9 @@ namespace QLN.Common.DTO_s
         public string? Gender { get; set; }
         public string? Size { get; set; }
         public string? SizeValue { get; set; }        
-        public string? CertificateBase64 { get; set; }
+        public string? CertificateUrl { get; set; }
         public string? CertificateFileName { get; set; }       
-        public IList<ImageInfo> AdImagesBase64 { get; set; } 
+        public IList<ImageInfo> ImageUrls { get; set; } 
         public string PhoneNumber { get; set; }
         public string WhatsAppNumber { get; set; }
         public string? ContactEmail { get; set; }
@@ -57,6 +57,7 @@ namespace QLN.Common.DTO_s
         public string UserId { get; set; }
         [DefaultValue(false)]
         public bool? IsFeatured { get; set; } = false;
+        public DateTime CreatedAt { get;set; }
         [DefaultValue(false)]
         public bool? IsPromoted { get; set; } = false;
         public AdStatus Status { get; set; }

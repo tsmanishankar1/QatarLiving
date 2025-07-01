@@ -144,9 +144,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
-            if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
+            if (dto.ImageUrls == null || dto.ImageUrls.Count == 0)
                 throw new ArgumentException("At least one ad image is required.");
-            if (string.IsNullOrWhiteSpace(dto.CertificateBase64))
+            if (string.IsNullOrWhiteSpace(dto.CertificateUrl))
                 throw new ArgumentException("Certificate image is required.");
 
             if (!string.Equals(dto.SubVertical, "Items", StringComparison.OrdinalIgnoreCase))
@@ -160,7 +160,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 dto.Id = adId;
 
 
-                var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateBase64);
+                var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateUrl);
 
                 // Upload certificate
                 var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
@@ -170,12 +170,12 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(certFileName);
                 dto.CertificateFileName = certFileName;
-                dto.CertificateBase64 = certUrl;
+                dto.CertificateUrl = certUrl;
 
                 // Upload images with order
-                for (int i = 0; i < dto.AdImagesBase64.Count; i++)
+                for (int i = 0; i < dto.ImageUrls.Count; i++)
                 {
-                    var image = dto.AdImagesBase64[i];
+                    var image = dto.ImageUrls[i];
                     var (imgExt, base64Image) = Base64ImageHelper.ParseBase64Image(image.Url);
 
                     var customName = !string.IsNullOrWhiteSpace(image.AdImageFileNames)
@@ -189,7 +189,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     image.Url = url;
                 }
 
-                _log.LogTrace($"Calling internal service with {dto.AdImagesBase64.Count} images");
+                _log.LogTrace($"Calling internal service with {dto.ImageUrls.Count} images");
 
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
@@ -205,7 +205,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     Description = dto.Description,
                     CategoryId = dto.CategoryId.ToString(),
                     Category = dto.Category,
-                    L1Category = dto.l1Category,
+                    L1Category = dto.L1Category,
                     L1CategoryId = dto.L1CategoryId.ToString(),
                     L2Category = dto.L2Category,
                     L2CategoryId = dto.L2CategoryId.ToString(),
@@ -217,8 +217,8 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     UserId = dto.UserId.ToString(),
                     CreatedDate = DateTime.UtcNow,
                     ModifiedDate = DateTime.UtcNow,
-                    Images = dto.AdImagesBase64,
-                    WarrantyCertificateUrl = dto.CertificateBase64,
+                    Images = dto.ImageUrls,
+                    WarrantyCertificateUrl = dto.CertificateUrl,
                     Make = dto.MakeType,
                     Model = dto.Model,
                     Brand = dto.Brand,
@@ -268,15 +268,15 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
             }
         }
-
+     
         public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
-            if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
+            if (dto.ImageUrls == null || dto.ImageUrls.Count == 0)
                 throw new ArgumentException("At least one ad image is required.");
-            if (string.IsNullOrWhiteSpace(dto.CertificateBase64))
+            if (string.IsNullOrWhiteSpace(dto.CertificateUrl))
                 throw new ArgumentException("Certificate image is required.");
 
             if (!string.Equals(dto.SubVertical, "Preloved", StringComparison.OrdinalIgnoreCase))
@@ -289,7 +289,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var adId = Guid.NewGuid();
                 dto.Id = adId;
 
-                var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateBase64);
+                var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateUrl);
 
                 var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
                     ? dto.CertificateFileName
@@ -297,12 +297,12 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(certFileName);
-                dto.CertificateFileName = certUrl;
-                dto.CertificateBase64 = null;
+                dto.CertificateFileName = certFileName;
+                dto.CertificateUrl = certUrl;
 
-                for (int i = 0; i < dto.AdImagesBase64.Count; i++)
+                for (int i = 0; i < dto.ImageUrls.Count; i++)
                 {
-                    var image = dto.AdImagesBase64[i];
+                    var image = dto.ImageUrls[i];
 
                     var (imgExt, base64Image) = Base64ImageHelper.ParseBase64Image(image.Url);
 
@@ -317,7 +317,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     image.Url = url;
                 }
 
-                _log.LogTrace($"Calling internal service with CertificateUrl: {dto.CertificateFileName} and {dto.AdImagesBase64.Count} images");
+                _log.LogTrace($"Calling internal service with CertificateUrl: {dto.CertificateFileName} and {dto.ImageUrls.Count} images");
 
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
@@ -333,7 +333,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     Description = dto.Description,
                     CategoryId = dto.CategoryId.ToString(),
                     Category = dto.Category,
-                    L1Category = dto.l1Category,
+                    L1Category = dto.L1Category,
                     L1CategoryId = dto.L1CategoryId.ToString(),
                     L2Category = dto.L2Category,
                     L2CategoryId = dto.L2CategoryId.ToString(),
@@ -345,8 +345,8 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     UserId = dto.UserId.ToString(),
                     CreatedDate = DateTime.UtcNow,
                     ModifiedDate = DateTime.UtcNow,
-                    Images = dto.AdImagesBase64,
-                    WarrantyCertificateUrl = dto.CertificateBase64,
+                    Images = dto.ImageUrls,
+                    WarrantyCertificateUrl = dto.CertificateUrl,
                     Status = "Published",
                     Model = dto.Model,
                     Brand = dto.Brand,
@@ -401,9 +401,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
             ArgumentNullException.ThrowIfNull(dto);
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
-            if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
+            if (dto.ImageUrls == null || dto.ImageUrls.Count == 0)
                 throw new ArgumentException("At least one ad image is required.");
-            if (string.IsNullOrWhiteSpace(dto.CertificateBase64))
+            if (string.IsNullOrWhiteSpace(dto.CertificateUrl))
                 throw new ArgumentException("Certificate image is required.");
 
             if (!string.Equals(dto.SubVertical, "Collectibles", StringComparison.OrdinalIgnoreCase))
@@ -417,7 +417,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 dto.Id = adId;
 
 
-                var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateBase64);
+                var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateUrl);
 
                 var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
                     ? dto.CertificateFileName
@@ -426,11 +426,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(certFileName);
                 dto.CertificateFileName = certFileName;
-                dto.CertificateBase64 = certUrl;
+                dto.CertificateUrl = certUrl;
 
-                for (int i = 0; i < dto.AdImagesBase64.Count; i++)
+                for (int i = 0; i < dto.ImageUrls.Count; i++)
                 {
-                    var image = dto.AdImagesBase64[i];
+                    var image = dto.ImageUrls[i];
                     var (imgExt, base64Image) = Base64ImageHelper.ParseBase64Image(image.Url);
 
                     var fileName = !string.IsNullOrWhiteSpace(image.AdImageFileNames)
@@ -444,7 +444,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     image.Url = blobUrl;
                 }
 
-                _log.LogTrace($"Calling internal collectibles service with {dto.AdImagesBase64.Count} images and cert: {dto.CertificateFileName}");
+                _log.LogTrace($"Calling internal collectibles service with {dto.ImageUrls.Count} images and cert: {dto.CertificateFileName}");
 
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
@@ -460,7 +460,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     Description = dto.Description,
                     CategoryId = dto.CategoryId.ToString(),
                     Category = dto.Category,
-                    L1Category = dto.l1Category,
+                    L1Category = dto.L1Category,
                     L1CategoryId = dto.L1CategoryId.ToString(),
                     L2Category = dto.L2Category,
                     L2CategoryId = dto.L2CategoryId.ToString(),
@@ -472,8 +472,8 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     UserId = dto.UserId.ToString(),
                     CreatedDate = DateTime.UtcNow,
                     ModifiedDate = DateTime.UtcNow,
-                    Images = dto.AdImagesBase64,
-                    WarrantyCertificateUrl = dto.CertificateBase64,
+                    Images = dto.ImageUrls,
+                    WarrantyCertificateUrl = dto.CertificateUrl,
                     YearEra = dto.YearOrEra,
                     Rarity = dto.Rarity,
                     Material = dto.Material,
@@ -522,7 +522,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             ArgumentNullException.ThrowIfNull(dto);
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
-            if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
+            if (dto.ImageUrls == null || dto.ImageUrls.Count == 0)
                 throw new ArgumentException("At least one ad image is required.");
             if (string.IsNullOrWhiteSpace(dto.FlyerFile))
                 throw new ArgumentException("FlyerFile image is required.");
@@ -548,9 +548,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 dto.FlyerFile = flyerUrl;
                 dto.FlyerName = flyerName;
 
-                for (int i = 0; i < dto.AdImagesBase64.Count; i++)
+                for (int i = 0; i < dto.ImageUrls.Count; i++)
                 {
-                    var image = dto.AdImagesBase64[i];
+                    var image = dto.ImageUrls[i];
 
                     var (imgExt, base64Image) = Base64ImageHelper.ParseBase64Image(image.Url);
 
@@ -565,7 +565,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     image.Url = url;
                 }
 
-                _log.LogTrace($"Calling internal deals service with flyer: {dto.FlyerName} and {dto.AdImagesBase64.Count} images");
+                _log.LogTrace($"Calling internal deals service with flyer: {dto.FlyerName} and {dto.ImageUrls.Count} images");
 
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
@@ -581,7 +581,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     Description = dto.Description,
                     Location = dto.Location.FirstOrDefault(),
                     CreatedDate = DateTime.UtcNow,
-                    Images = dto.AdImagesBase64,
+                    Images = dto.ImageUrls,
                     FlyerFileUrl = dto.FlyerFile,
                     Status = "Published",
                     FlyerFileName = dto.FlyerName,
@@ -805,15 +805,15 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw new InvalidOperationException("Failed to delete Classified Deals Ad.", ex);
             }
         }
-
-        public async Task<ItemAdDto?> GetItemAdById(Guid adId, CancellationToken cancellationToken = default)
+  
+        public async Task<ClassifiedItems> GetItemAdById(Guid adId, CancellationToken cancellationToken = default)
         {
             if (adId == Guid.Empty)
                 throw new ArgumentException("Ad ID must not be empty.");
 
             try
             {
-                var result = await _dapr.InvokeMethodAsync<ItemAdDto>(
+                var result = await _dapr.InvokeMethodAsync<ClassifiedItems>(
                     HttpMethod.Get,
                     SERVICE_APP_ID, 
                     $"api/classifieds/items/ads/{adId}",
@@ -828,14 +828,14 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<PrelovedAdDto?> GetPrelovedAdById(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedPreloved> GetPrelovedAdById(Guid adId, CancellationToken cancellationToken = default)
         {
             if (adId == Guid.Empty)
                 throw new ArgumentException("Ad ID must not be empty.");
 
             try
             {
-                var result = await _dapr.InvokeMethodAsync<PrelovedAdDto>(
+                var result = await _dapr.InvokeMethodAsync<ClassifiedPreloved>(
                     HttpMethod.Get,
                     SERVICE_APP_ID, 
                     $"api/classifieds/preloved/ad/{adId}",
@@ -850,14 +850,14 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<DealsAdDto?> GetDealsAdById(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedDeals> GetDealsAdById(Guid adId, CancellationToken cancellationToken = default)
         {
             if (adId == Guid.Empty)
                 throw new ArgumentException("Ad ID must not be empty.");
 
             try
             {
-                var result = await _dapr.InvokeMethodAsync<DealsAdDto>(
+                var result = await _dapr.InvokeMethodAsync<ClassifiedDeals>(
                     HttpMethod.Get,
                     SERVICE_APP_ID, 
                     $"api/classifieds/deals/ad/{adId}",
@@ -872,14 +872,14 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<CollectiblesAdDto?> GetCollectiblesAdById(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedCollectibles> GetCollectiblesAdById(Guid adId, CancellationToken cancellationToken = default)
         {
             if (adId == Guid.Empty)
                 throw new ArgumentException("Ad ID must not be empty.");
 
             try
             {
-                var result = await _dapr.InvokeMethodAsync<CollectiblesAdDto>(
+                var result = await _dapr.InvokeMethodAsync<ClassifiedCollectibles>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/classifieds/collectibles/ad/{adId}",
