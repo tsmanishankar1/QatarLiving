@@ -3203,3 +3203,95 @@ body {
             align-items: start;
         }
     }
+
+    /* LandingPage */
+
+     .landing-search-bar {
+        gap: 0px;
+        width: 100%;
+        padding: 65px 10px 40px 10px;
+        display: flex;
+        border-radius: 8px;
+        align-items: center;
+        justify-content: center;
+        flex-direction: row;
+        background-color: var(--color-secondary-grey-container);
+        margin-top: 20px;
+    }
+
+    .landing-search-field {
+        display: flex;
+        align-items: center;
+        border: 1px solid #D0D5DD;
+        border-radius: 6px 0 0 6px;
+        padding: 0 12px;
+        background-color: white;
+        height: 100%;
+    }
+
+    .landing-text-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        font-size: 16px;
+        background: transparent;
+        margin-left: 10px;
+    }
+
+    .landing-search-button {
+        width: 100%;
+        background-color: var(--color-accent);
+        color: white;
+        border: none;
+        font-size: 16px;
+        cursor: pointer;
+        text-transform: capitalize;
+        height: 100%;
+        border-radius: 0 6px 6px 0;
+    }
+
+    .landing-search-field-container {
+        width: 532px;
+        height: 56px;
+    }
+
+    .landing-category-field-container {
+        width: 220px;
+        height: 56px;
+    }
+
+    .landing-button-container {
+        width: 268px;
+        height: 56px;
+    }
+
+    /* Medium screens (1000px to 1199px) */
+    @media (max-width: 1199px) and (min-width: 1000px) {
+        .landing-search-field-container {
+            width: 337px;
+        }
+    }
+
+    
+    @media (max-width: 999px) {
+        .landing-search-bar {
+            gap:5px;
+            flex-direction: column !important;
+            align-items: stretch !important;
+        }
+
+        .landing-search-field-container,
+        .landing-category-field-container,
+        .landing-button-container {
+            width: 100%;
+            height: 56px;
+        }
+
+        .landing-search-field {
+            border-radius: 6px;
+        }
+
+        .landing-search-button {
+            border-radius: 6px;
+        }
+    }
