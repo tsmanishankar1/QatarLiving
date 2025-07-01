@@ -198,7 +198,7 @@
                                 Creation Date: Recent
                             </MudMenuItem>
                             <MudMenuItem OnClick="@(() => HandleSort(4))"
-                                         Icon="@(sortOption == 4 ? Icons.Material.Filled.Check : null)">
+                                         Icon="@(sortOption == 4 ? Icons.Material.Filled.Check : null)">u item
                                 Expiry Date: Recent
                             </MudMenuItem>
                             <MudMenuItem OnClick="@(() => HandleSort(5))"
@@ -498,9 +498,9 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 8px 12px;
+        padding: 8px 12px !important;
         width: 150px;
-        padding-left: 20px;
+        padding-left: 20px !important;
     }
 
     .menu-icon {

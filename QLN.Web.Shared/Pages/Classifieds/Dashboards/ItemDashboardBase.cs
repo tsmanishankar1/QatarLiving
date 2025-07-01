@@ -330,6 +330,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         {
             Navigation.NavigateTo($"/qln/dashboard/company/edit/{id}");
         }
+
         protected void NavigateToPurshaseRefresh()
         {
             Navigation.NavigateTo("/qln/dashboard/refresh/purchase");
