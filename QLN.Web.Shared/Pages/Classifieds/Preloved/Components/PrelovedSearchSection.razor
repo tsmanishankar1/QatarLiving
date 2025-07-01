@@ -5,7 +5,7 @@
 @using QLN.Web.Shared.Components.SaveSearchPopup
 @using QLN.Web.Shared.Components.CustomSelectCategory
 @using QLN.Web.Shared.Components.PriceRangeSelect
-@using QLN.Web.Shared.Pages.Classifieds.Items.Components
+@using QLN.Web.Shared.Pages.Classifieds.Preloved.Components
 @using QLN.Web.Shared.Helpers
 @using QLN.Common.DTO_s;
 
@@ -47,17 +47,40 @@
   @if (!_isSearchFocused)
         {
             <!-- Category -->
-            <div class="short-select">
+              <div class="short-select">
                 <CustomSelectCategory TItem="CategoryTreeDto"
                     Items="@CategoryTrees"
                     SelectedId="@SearchState.PrelovedCategory"
-                    SelectedIdChanged="v => OnFilterChanged(nameof(SearchState.PrelovedCategory), v)"
-                    GetId="x => x.Name"
+                    SelectedIdChanged="v => OnCategorySelected(v)"
+                    GetId="x => x.Id.ToString()"
                     GetLabel="x => x.Name"
                     Placeholder="Category"
                     BorderRadius="4px"
                     Padding="13px 10px" />
             </div>
+           <CustomSelectCategory TItem="CategoryTreeDto"
+            Items="@SelectedCategory.Children"
+            SelectedId="@SearchState.PrelovedSubCategory"
+            SelectedIdChanged="v => OnSubCategorySelected(v)"
+            GetId="x => x.Id.ToString()"
+            GetLabel="x => x.Name"
+            BorderRadius="4px"
+            IsDisabled="@(!(SelectedCategory?.Children?.Any() ?? false))" 
+            Padding="13px 10px" 
+            Placeholder="Subcategory" />
+
+
+    <CustomSelectCategory TItem="CategoryTreeDto"
+        Items="@SelectedSubCategory.Children"
+        SelectedId="@SearchState.PrelovedSubSubCategory"
+        SelectedIdChanged="v => OnSubSubCategorySelected(v)"
+        GetId="x => x.Id.ToString()"
+        GetLabel="x => x.Name"
+        BorderRadius="4px"
+        Padding="13px 10px" 
+        IsDisabled="@(!(SelectedSubCategory?.Children?.Any() ?? false))"
+        Placeholder="Sub subcategory" />
+
             }
         </div>
 
@@ -67,16 +90,16 @@
             <div class="second-row">
                 <!-- Brand -->
                 <div class="brand-select">
-                    <NewCustomSelect TItem="BrandItem"
-                        Items="@_brands"
-                         SelectedId="@SearchState.PrelovedBrand"
-                         SelectedIdChanged="v => OnFilterChanged(nameof(SearchState.PrelovedBrand), v)"
-                        GetId="x => x.Id"
-                        GetLabel="x => x.Label"
-                        Placeholder="Brand"
-                        Padding="13px 10px"
-                        BorderRadius="4px"
-                        IsDisabled="@string.IsNullOrWhiteSpace(SearchState.PrelovedCategory)" />
+                       <CustomSelectCategory TItem="string"
+                    Items="brandField?.Options"
+                    SelectedId="@SearchState.PrelovedBrand"
+                    SelectedIdChanged="v => OnFilterChanged(nameof(SearchState.PrelovedBrand), v)"
+                    GetId="x => x"
+                    GetLabel="x => x"
+                    BorderRadius="4px"
+                    Padding="13px 10px"
+                    IsDisabled="@(!isBrandFieldAvailable)"
+                    Placeholder="Brand" />
                 </div>
 
                 <!-- Price -->
@@ -92,7 +115,7 @@
 
                 <!-- More -->
                 <div class="price-short-select">
-                        <MoreFiltersList  />
+                        <MoreFiltersList SelectedFields="SelectedFields" OnFiltersChanged="PerformSearch" />
                 </div>
 
                 <!-- Save Search -->
@@ -165,7 +188,7 @@
         outline: none;
         font-size: 14px;
         padding: 6px 0;
-        width: 270px;
+        width: 170px;
     }
 
     .search-icon-left {
@@ -234,7 +257,11 @@
         }
         .price-short-select {
              width: 100%;
-             max-width: 110px;
+             max-width: 100px;
+         }
+         .more-short-select{
+             width: 100%;
+             max-width: 50px;
          }
 
         .save-search {

@@ -1021,8 +1021,69 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .ExcludeFromDescription();
-            
-            
+
+            group.MapPost("/items/refresh/{adId:guid}", async Task<IResult> (
+                Guid adId, 
+                [FromQuery]SubVertical subVertical,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                try
+                {
+                    if (adId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "AdId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    await service.RefreshClassifiedItemsAd(subVertical, adId, token);
+
+                    return TypedResults.Ok(new
+                    {
+                        AdId = adId,
+                        Message = "Ad successfully refreshed."
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("RefreshItemsAd")
+            .WithTags("Classified")
+            .WithSummary("Refresh the ad's 'IsRefreshed' field, set the 'CreatedDate' to current, and 'RefreshExpiryDate' to 72 hours from now.")
+            .WithDescription("Updates the ad's 'IsRefreshed' field to true, the 'CreatedDate' to the current date, and 'RefreshExpiryDate' to 72 hours from now.")
+            .Produces(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             group.MapPost("preloved/post", async Task<IResult> (
                 HttpContext httpContext,
                 ClassifiedPreloved dto,

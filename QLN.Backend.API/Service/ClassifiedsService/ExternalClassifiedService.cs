@@ -241,7 +241,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     VerticalName = ConstantValues.Verticals.Classifieds,
                     ClassifiedsItem = classifiedsIndex
                 };
-                var msg = await _searchService.UploadAsync(indexDocument);
+                await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -268,7 +268,65 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
             }
         }
-     
+        public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, Guid adId, CancellationToken cancellationToken = default)
+        {
+            if (adId == Guid.Empty)
+            {
+                throw new ArgumentException("AdId is required.");
+            }
+
+            try
+            {
+                 await _dapr.InvokeMethodAsync(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    $"/api/classifieds/items/refresh/{adId}?subVertical={subVertical}",
+                    cancellationToken 
+                );
+                var item = await _searchService.GetByIdAsync<ClassifiedsIndex>(ConstantValues.Verticals.Classifieds, adId.ToString());
+                if (item == null)
+                {
+                    throw new InvalidOperationException($"Ad with ID {adId} not found.");
+                }
+
+                item.IsRefreshed = true;
+                item.CreatedDate = DateTime.UtcNow;
+                item.RefreshExpiryDate = DateTime.UtcNow.AddHours(72);
+                var indexDocument = new CommonIndexRequest
+                {
+                    VerticalName = ConstantValues.Verticals.Classifieds,
+                    ClassifiedsItem = item
+                };
+
+                await _searchService.UploadAsync(indexDocument);
+
+                return new AdCreatedResponseDto
+                {
+                    AdId = adId,
+                    Message = "Ad successfully refreshed."
+                };
+            }
+            catch (ArgumentException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("AdId is required and must be valid.", ex);
+            }
+            catch (DaprException daprEx)
+            {
+                _log.LogException(daprEx);
+                throw new InvalidOperationException("Failed to invoke internal service through Dapr.", daprEx);
+            }
+            catch (HttpRequestException httpEx)
+            {
+                _log.LogException(httpEx);
+                throw new InvalidOperationException("Failed to communicate with the internal service.", httpEx);
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to refresh the ad due to an unexpected error.", ex);
+            }
+        }
         public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
@@ -368,7 +426,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     VerticalName = ConstantValues.Verticals.Classifieds,
                     ClassifiedsItem = prelovedIndex
                 };
-                var msg = await _searchService.UploadAsync(indexDocument);
+                await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -489,7 +547,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     VerticalName = ConstantValues.Verticals.Classifieds,
                     ClassifiedsItem = collectiblesIndex
                 };
-                var msg = await _searchService.UploadAsync(indexDocument);
+                await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -594,7 +652,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     VerticalName = ConstantValues.Verticals.Classifieds,
                     ClassifiedsItem = dealsIndex
                 };
-                var msg = await _searchService.UploadAsync(indexDocument);
+                await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,

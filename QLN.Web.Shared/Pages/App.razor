@@ -997,7 +997,23 @@
         };
 
     </script>
+    <script>
+        window.preventNonDigitInput = () => {
+    const inputElement = document.getElementById('phone-input');
 
+    if (!inputElement) {
+        console.warn('phone-input not found.');
+        return;
+    }
+
+    inputElement.addEventListener('keypress', function (e) {
+        if (!/[0-9]/.test(e.key)) {
+            e.preventDefault();
+        }
+    });
+};
+
+    </script>
 </body>
 
 </html>

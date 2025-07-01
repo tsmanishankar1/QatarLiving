@@ -12,7 +12,7 @@ namespace QLN.Common.DTO_s
         public string Section { get; set; }
         public string Brand { get; set; }
         public string Model { get; set; }
-        public decimal Price { get; set; }
+        public int Price { get; set; }
         public string PriceType { get; set; }
         public string Condition { get; set; }
         public string Color { get; set; }

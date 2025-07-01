@@ -17,7 +17,7 @@
             <!-- Category Dropdown -->
             <div class="category-field-container">
                 <NewCustomSelect TItem="CategoryTreeDto" Items="@CategoryTrees" SelectedId="@selectedCategory"
-                                 SelectedIdChanged="v => selectedCategory = v"  GetId="x => x.Name"
+                                 SelectedIdChanged="v => selectedCategory = v"   GetId="x => x.Id.ToString()"
                                   GetLabel="x => x.Name"
                                  Label="Category" Placeholder="Choose" Padding="8px 10px 7.5px 10px" BorderRadius="0px" />
             </div>

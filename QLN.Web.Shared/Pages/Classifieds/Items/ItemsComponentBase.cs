@@ -122,10 +122,26 @@ public class ItemsComponentBase : ComponentBase
             if (SearchState.ItemMaxPrice.HasValue)
                 filters.Add("maxPrice", SearchState.ItemMaxPrice.Value);
             if (!string.IsNullOrWhiteSpace(SearchState.ItemCategory))
-                filters.Add("category", SearchState.ItemCategory);
+                filters.Add("CategoryId", SearchState.ItemCategory);
+            if (!string.IsNullOrWhiteSpace(SearchState.ItemSubCategory))
+                filters.Add("L1CategoryId", SearchState.ItemSubCategory);
+            if (!string.IsNullOrWhiteSpace(SearchState.ItemSubSubCategory))
+                filters.Add("L2CategoryId", SearchState.ItemSubSubCategory);
             if (!string.IsNullOrWhiteSpace(SearchState.ItemBrand))
                 filters.Add("brand", SearchState.ItemBrand);
+          if (SearchState.ItemHasWarrantyCertificate)
+            {
+                filters["hasWarrantyCertificate"] = SearchState.ItemHasWarrantyCertificate;
+            }
 
+
+            foreach (var fieldFilter in SearchState.ItemFieldFilters)
+            {
+                if (fieldFilter.Value?.Any() == true)
+                {
+                    filters[fieldFilter.Key] = fieldFilter.Value;
+                }
+            }
             var payload = new Dictionary<string, object>
             {
                 ["text"] = searchText ?? SearchState.ItemSearchText,
@@ -134,6 +150,7 @@ public class ItemsComponentBase : ComponentBase
             };
 
             var payloadJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+           // Logger.LogInformation("Sending search payload: {Payload}", payloadJson);
 
             var responses = await _classifiedsService.SearchClassifiedsAsync(payload);
             var firstResponse = responses.FirstOrDefault();

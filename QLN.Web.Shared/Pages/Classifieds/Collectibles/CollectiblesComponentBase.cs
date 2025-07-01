@@ -89,12 +89,27 @@ public class CollectiblesComponentBase : ComponentBase
                 filters.Add("minPrice", SearchState.CollectiblesMinPrice.Value);
             if (SearchState.CollectiblesMaxPrice.HasValue)
                 filters.Add("maxPrice", SearchState.CollectiblesMaxPrice.Value);
-            if (!string.IsNullOrWhiteSpace(SearchState.CollectiblesCategory))
-                filters.Add("category", SearchState.CollectiblesCategory);
             if (!string.IsNullOrWhiteSpace(SearchState.CollectiblesCondition))
                 filters.Add("condition", SearchState.CollectiblesCondition);
+             if (!string.IsNullOrWhiteSpace(SearchState.CollectiblesCategory))
+                filters.Add("CategoryId", SearchState.CollectiblesCategory);
+                 if (!string.IsNullOrWhiteSpace(SearchState.CollectiblesSubCategory))
+                filters.Add("L1CategoryId", SearchState.CollectiblesSubCategory);
+                 if (!string.IsNullOrWhiteSpace(SearchState.CollectiblesSubSubCategory))
+                filters.Add("L2CategoryId", SearchState.CollectiblesSubSubCategory);
+             if (SearchState.CollectiblesHasAuthenticityCertificate)
+            {
+                filters["HasAuthenticityCertificate"] = SearchState.CollectiblesHasAuthenticityCertificate;
+            }
 
 
+            foreach (var fieldFilter in SearchState.CollectiblesFilters)
+            {
+                if (fieldFilter.Value?.Any() == true)
+                {
+                    filters[fieldFilter.Key] = fieldFilter.Value;
+                }
+            }
             var payload = new Dictionary<string, object>
             {
                 ["text"] = searchText ?? SearchState.CollectiblesSearchText,
