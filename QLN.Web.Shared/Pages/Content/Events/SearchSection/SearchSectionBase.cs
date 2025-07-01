@@ -5,6 +5,7 @@ using Microsoft.JSInterop;
 using MudBlazor;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Pages.Content.News;
+using QLN.Web.Shared.Components.LocationSelect;
 
 namespace QLN.Web.Shared.Components.NewCustomSelect
 {
@@ -16,7 +17,7 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
         [Inject] protected NavigationManager NavigationManager { get; set; }
 
         [Parameter] public EventCallback<string> OnCategoryChanged { get; set; }
-        [Parameter] public EventCallback<string> OnLocationChanged { get; set; }
+        [Parameter] public EventCallback<List<string>> OnLocationChanged { get; set; }
 
         [Parameter] public List<EventCategory> Categories { get; set; } = [];
         [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
@@ -27,13 +28,14 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
         protected string SelectedPropertyTypeId;
         private string _fromDate;
         private string _toDate;
+        protected LocationSelect<Area> _locationSelectRef;
 
         protected bool ShouldShowClearAll =>
             !string.IsNullOrEmpty(SelectedPropertyTypeId)
             || SelectedAreas.Any()
             || !string.IsNullOrEmpty(SelectedDateLabel);
 
-        protected string SelectedLocationId;
+        protected List<string> SelectedLocationIds { get; set; } = new();
 
         protected bool _showDatePicker = false;
         protected string SelectedDateLabel;
@@ -108,11 +110,15 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
         protected async Task ClearAllFilters()
         {
             SelectedPropertyTypeId = null;
-            SelectedLocationId = null;
+            SelectedLocationIds.Clear();
             SelectedAreas.Clear();
             FilteredAreas = Areas;
             _selectedDate = null;
             SelectedDateLabel = string.Empty;
+            if (_locationSelectRef != null)
+            {
+                await _locationSelectRef.ClearSelection();
+            }
 
             await OnCategoryChanged.InvokeAsync(null);
             await OnLocationChanged.InvokeAsync(null);
@@ -125,11 +131,15 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
         {
             SelectedAreas = selected;
 
-            var selectedId = SelectedAreas.FirstOrDefault()?.Id;
+            var selectedIds = SelectedAreas.Select(a => a.Id).ToList();
 
-            if (!string.IsNullOrWhiteSpace(selectedId))
+            if (selectedIds.Any())
             {
-                await OnLocationChanged.InvokeAsync(selectedId);
+                await OnLocationChanged.InvokeAsync(selectedIds);
+            }
+            else
+            {
+                await OnLocationChanged.InvokeAsync(null);
             }
         }
         protected async void CancelDatePicker()
@@ -156,9 +166,9 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
 
         protected async Task HandleLocationChanged(string location)
         {
-            SelectedLocationId = location;
+            SelectedLocationIds = new List<string> { location };
 
-            await OnLocationChanged.InvokeAsync(location);
+            await OnLocationChanged.InvokeAsync(SelectedLocationIds);
 
             StateHasChanged();
 
@@ -166,10 +176,10 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
 
         protected async Task CallApiForLocationChange(List<Area> selected)
         {
-            var selectedId = selected.FirstOrDefault()?.Id;
-            if (!string.IsNullOrWhiteSpace(selectedId))
+            var selectedIds = selected.Select(a => a.Id).ToList();
+            if (selectedIds.Any())
             {
-                await OnLocationChanged.InvokeAsync(selectedId);
+                await OnLocationChanged.InvokeAsync(selectedIds);
             }
             else
             {
