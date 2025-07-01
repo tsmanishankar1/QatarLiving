@@ -8,6 +8,7 @@ using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Content.MS.Service.EventInternalService;
 using QLN.Content.MS.Service.NewsInternalService;
+using QLN.Content.MS.Service.CommunityInternalService;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
@@ -46,7 +47,7 @@ builder.Services.AddDaprClient();
 builder.Services.AddScoped<IV2NewsService, V2InternalNewsService>();
 builder.Services.AddScoped<IV2EventService, V2InternalEventService>();
 builder.Services.AddScoped<IFileStorageBlobService, FileStorageBlobService>();
-
+builder.Services.AddScoped<V2IContentCommunity, V2InternalCommunityService>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -60,6 +61,8 @@ eventGroup.MapEventEndpoints();
 var newsGroup = app.MapGroup("/api/v2/news");
 newsGroup.MapNewsEndpoints();
 
+var CommunityGroup = app.MapGroup("/api/v2/community");
+CommunityGroup.MapCommunityEndpoints();
 app.MapControllers();
 app.UseHttpsRedirection();
 app.Run();

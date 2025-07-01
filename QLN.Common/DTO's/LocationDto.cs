@@ -1,0 +1,26 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace QLN.Common.DTO_s
+{
+    public class LocationDto
+    {
+        public class LocationZoneDto
+        {
+            public string Id { get; set; } = string.Empty;
+            public string Name { get; set; } = string.Empty;
+        }
+        public class LocationZoneListDto
+        {
+            public List<LocationZoneDto> Zones { get; set; } = new();
+        }
+
+        public class AddressResponseDto
+        {
+            public List<string> Coordinates { get; set; }
+        }
+    }
+}

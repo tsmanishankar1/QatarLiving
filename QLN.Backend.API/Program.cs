@@ -216,6 +216,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
 builder.Services.EventConfiguration(builder.Configuration);
 builder.Services.NewsConfiguration(builder.Configuration);
+builder.Services.CommunityConfiguration(builder.Configuration);
 builder.Services.AddonConfiguration(builder.Configuration);
 builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
@@ -288,6 +289,9 @@ app.MapGroup("/api/addon")
 var newsGroup = app.MapGroup("/api/v2/news");
 newsGroup.MapNewsEndpoints()
      .RequireAuthorization();
+var communityGroup = app.MapGroup("/api/v2/community");
+communityGroup.MapCommunityEndpoints();
+
 app.MapAllBackOfficeEndpoints();
 app.MapLandingPageEndpoints();
 
