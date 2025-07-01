@@ -2,102 +2,49 @@
 @using QLN.Web.Shared.Components.BreadCrumb
 @using QLN.Web.Shared.Pages.Classifieds.CreatePost.Components
 @using MudBlazor
+@inherits CreatePostComponentBase
 
-<div class="form-wrapper">
+<EditForm EditContext="@editContext" OnSubmit="HandleSubmit">
+   <DataAnnotationsValidator />
+<div class="create-form-wrapper">
+     <div class="create-max-container">
     <Breadcrumb Items="breadcrumbItems" />
 
-    <div Class="form-container">
+    <div Class="create-form-container">
         <MudGrid GutterSize="24px">
             <MudItem xs="12" md="5">
-                <CreateFormList TItem="string" @ref="formRef" CategoryChanged="HandleCategoryChanged" />
+                <CreateFormList TItem="string"  EditContext="editContext"
+                                        adPostModel="adPostModel" CategoryTrees="CategoryTrees" CategoryChanged="HandleCategoryChanged"  />
             </MudItem>
 
             <MudItem xs="12" md="7">
-                @if (!string.IsNullOrWhiteSpace(selectedCategoryFromChild))
+                @if (!string.IsNullOrWhiteSpace(selectedVertical))
                 {
-                    <UploadPhotos @ref="photoRef" />
+                    <UploadPhotos adPostModel="adPostModel"PhotoUrls="@adPostModel.PhotoUrls" selectedVertical="@selectedVertical" />
                 }
             </MudItem>
         </MudGrid>
-    </div>
-
-    @if (!string.IsNullOrWhiteSpace(selectedCategoryFromChild))
-    {
-        <div class="d-flex justify-end mt-4">
-            <MudButton Variant="Variant.Outlined" Class="close-button">Close</MudButton>
-            <MudButton Class="ml-2 save-button" Variant="Variant.Filled" OnClick="SaveForm">
-                Save & Publish
-            </MudButton>
         </div>
-    }
-</div>
-
-@code {
-    private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
-    private CreateFormList<string> formRef;
-    private UploadPhotos photoRef;
-    private string selectedCategoryFromChild;
-
-    private void HandleCategoryChanged(string category)
-    {
-        selectedCategoryFromChild = category;
-    }
-
-    protected override void OnInitialized()
-    {
-        breadcrumbItems = new()
-{
-new() { Label = "Classifieds", Url = "/qln/classifieds" },
-new() { Label = "Create Form", Url = "/qln/classifieds/createform", IsLast = true }
-};
-    }
-
-    private void SaveForm()
-    {
-        var formData = formRef?.GetFormData();
-        var photoUrls = photoRef?.GetPhotoUrls();
-        // Handle save logic here
-    }
+    </div>
+ @if (!string.IsNullOrWhiteSpace(selectedVertical))
+                {
+         <div class="create-save-button-container">
+                    <button class="create-close-button">Close</button>
+                    <button class="create-save-button" type="submit">
+                        @if (IsSaving)
+                        {
+                            <MudProgressCircular Color="Color.Inherit"
+                                                 Size="Size.Small"
+                                                 Indeterminate="true" />
+                        }
+                        else
+                        {
+                            <span>Save & Publish</span>
+                        }
+                    </button>
+                </div>
 }
-<style>
-    .form-wrapper {
-        background-color: var(--color-secondary-background);
-        padding: 10px 5px;
-        border-radius: 8px;
-        font-family: 'Public Sans', sans-serif;
+</div>
+</EditForm>
 
-    }
 
-    .form-container {
-        padding: 10px 20px;
-        background-color: transparent;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-    }
-
-    .close-button {
-        background-color: var(--color-background);
-        color: var(--color-text-heading);
-        border-radius: 6px;
-        width: 200px;
-        font-weight: 600;
-        text-transform: capitalize;
-        border: 1px solid var(--color-captcha-box);
-    }
-
-    .save-button {
-        background-color: var(--color-accent);
-        color: var(--color-background);
-        border-radius: 6px;
-        width: 200px;
-        font-weight: 600;
-        text-transform: capitalize;
-    }
-
-    @@media (min-width: 960px) {
-        .form-container .mud-grid {
-            align-items: start;
-        }
-    }
-</style>

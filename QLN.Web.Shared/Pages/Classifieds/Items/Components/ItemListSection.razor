@@ -1,0 +1,111 @@
+@using MudBlazor
+@using QLN.Web.Shared.Components.Classifieds.PromotedItemCards
+@using QLN.Web.Shared.Pages.Classifieds.Skeletons
+@using QLN.Web.Shared.Components.EmptyCard
+@using QLN.Web.Shared.Components.SearchNotFound
+@using QLN.Web.Shared.Components.PriceSelect
+@using QLN.Web.Shared.Components.BreadCrumb
+@using QLN.Web.Shared.Components.PaginationFooter
+@using QLN.Web.Shared.Components.CustomSelect
+@inject NavigationManager NavigationManager
+@inherits ItemListSectionBase
+
+<Breadcrumb Items="breadcrumbItems" />
+
+<div class="item-list">
+     <div class="item-list-header">
+        <h1 class="item-list-header-title">@($"Items in Qatar ({Items.Count} results)")</h1>
+        <div class="item-list-header-sort-section">
+            <label class="item-list-header-sort-label">Sort by:</label>
+            <div class="item-list-header-sort-dropdown">
+                <PriceSelect TItem="SortOption"
+             Label=""
+             Placeholder="Default"
+             Items="sortOptions"
+             SelectedId="@selectedSort"
+             SelectedIdChanged="OnSortChanged"
+             GetId="option => option.Id"
+             GetLabel="option => option.Label" />
+
+            </div>
+        </div>
+</div>
+<div class="max-width-List">
+    @if (Loading)
+    {
+        <MudGrid GutterSize="3" >
+            @for (int i = 0; i < 9; i++)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <FeaturedItemSkeletonCard />
+                </MudItem>
+            }
+        </MudGrid>
+    }
+   else if (PagedItems == null || !PagedItems.Any())
+{
+    <div class="empty-wrapper">
+        @if (IsSearchPerformed)
+        {
+            <SearchNotFound 
+                Title="No results found" 
+                Subtitle="Try adjusting your filters or keywords"
+                ButtonText="Clear Search"
+                OnClearSearch="ClearSearch" />
+        }
+        else
+        {
+            <EmptyCard Title="No items found." Subtitle="Browse the categories or check back later." />
+        }
+    </div>
+}
+
+    else
+    {
+        @if (ViewMode == "grid")
+        {
+             <MudGrid GutterSize="3" >
+                @{
+                    int index = 0;
+                }
+                @foreach (var item in PagedItems)
+                {
+                    <MudItem xs="12" sm="6" md="4">
+                        <PromotedItemGridCard Item="item" OnClickCard="OnClickCardItem" />
+                    </MudItem>
+                    if (index == 1) 
+                    {
+                        <MudItem xs="12" sm="6" md="4">
+                            <img src="/qln-images/classifieds/ad_image.svg" alt="Ad Banner" class="grid-ad-image" />
+                        </MudItem>
+                    }
+                        index++;
+                }
+            </MudGrid>
+        }
+        else if (ViewMode == "list")
+        {
+            <div class="list-view-wrapper">
+                <div class="list-view-left">
+                    @foreach (var item in PagedItems)
+                    {
+                        <PromotedItemListCard Item="item" OnClickCard="OnClickCardItem"/>
+                    }
+                </div>
+
+                <div class="list-view-right">
+                    <img src="/qln-images/classifieds/ad_image.svg" alt="Ad Banner" class="ad-image" />
+                </div>
+            </div>
+
+        }
+        <!-- Pagination -->
+        <PaginationFooter TotalItems="@Items.Count" CurrentPage="@currentPage" PageSize="@pageSize"
+            OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
+
+    }
+
+    </div>
+
+</div>
+

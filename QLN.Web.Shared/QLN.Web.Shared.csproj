@@ -16,6 +16,10 @@
      
      
      
+     <PackageReference Include="CodeBeam.MudBlazor.Extensions" Version="8.2.3" />
+     
+     
+     
      <PackageReference Include="GoogleAnalytics.Blazor" Version="1.0.3" />
      
      
@@ -29,7 +33,7 @@
   </ItemGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
-		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.1" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.6" />
 		<PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="9.0.1" />
 		 <PackageReference Include="Google.Apis.YouTube.v3" Version="1.69.0.3764" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.4" />
@@ -48,7 +52,6 @@
 		<PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.15" />
 		<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
 	</ItemGroup>
-
 	<ItemGroup>
     <ProjectReference Include="..\QLN.Common\QLN.Common.csproj" />
   </ItemGroup>

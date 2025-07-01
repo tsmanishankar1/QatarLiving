@@ -1,0 +1,159 @@
+@page "/manage/events"
+@inherits EventsBase
+<MudGrid Style="padding-top: 18px">
+    <MudItem xs="12" md="12">  
+            <MudText Class="events-style">Events</MudText>
+            <MudTabs @bind-ActivePanelIndex="@activeIndex" Rounded="false" Centered="false" Class="custom-tabs" Style="background-color: #FAFAFA;" DisableSlideAnimation="true">
+                @foreach (var tab in categories)
+                {
+                     <MudTabPanel Text="@tab" />
+                }
+            </MudTabs>
+            <MudGrid AlignItems="Center" Class="padding-top:16px">
+                <MudItem xs="12" md="12">
+                    <div class="events-button-container">
+                        <MudButton StartIcon="@Icons.Material.Outlined.Add" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button" OnClick="NavigateToAddEvent">
+                            Add Event
+                        </MudButton>
+                        <MudTextField @bind-Value="searchText"
+                        Placeholder="Search for Events"
+                        Variant="Variant.Outlined"
+                        Adornment="Adornment.Start"
+                        AdornmentIcon="@Icons.Material.Filled.Search"
+                        Class="search-field" />
+                        <div class="sort-by-wrapper">
+                            <MudButton StartIcon="@Icons.Material.Filled.FilterList"
+                            Variant="Variant.Outlined"
+                            Class="sort-by-style">
+                            Sort by
+                            </MudButton>
+                        </div>
+                    </div>
+
+
+            <MudTable Items="_posts" Hover="true" Style="padding-top: 20px;">
+                <HeaderContent>
+                <MudTh>Number</MudTh>
+                <MudTh>Title</MudTh>
+                <MudTh>Category</MudTh>
+                <MudTh>Creation Date</MudTh>
+                <MudTh>Expiry Date</MudTh>
+                <MudTh>Live for</MudTh>
+                <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Number">@context.Number</MudTd>
+                    <MudTd DataLabel="Post Title">
+                    <MudLink Href="#">@context.PostTitle</MudLink>
+            </MudTd>
+            <MudTd DataLabel="Category">@context.Category</MudTd>
+            <MudTd DataLabel="Creation Date">@context.CreationDate.ToString("dd-MM-yyyy")</MudTd>
+            <MudTd DataLabel="Expiry Date">@context.ReportDate.ToString("dd-MM-yyyy")</MudTd>
+            <MudTd DataLabel="Live for">@context.LiveFor</MudTd>
+            <MudTd>
+                               <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
+                                    <MudMenuItem >
+                                    <MudIcon Icon="@Icons.Material.Outlined.Edit" Class="me-2" /> Edit
+                                    </MudMenuItem>
+                                    <MudMenuItem >
+                                    <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Class="me-2" /> Unpublish
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => DeletePost(context.Number))" Class="mud-error-text">
+                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
+                                    </MudMenuItem>
+                                </MudMenu>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+                </MudItem>
+            </MudGrid>
+    </MudItem>
+</MudGrid>
+
+<style>
+    .events-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 30px;
+        font-weight: 600;
+        color: #242424;
+        text-transform: none;
+    }
+    .custom-tabs {
+        background-color: #FAFAFA !important;
+        border-bottom: 1px solid #f0f0f0;
+        margin-bottom: 8px;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .custom-tabs .mud-tab {
+        font-weight: 600;
+        font-size: 14px;
+        color: #A1A1A1;
+        text-transform: none;
+        padding: 12px 20px;
+    }
+
+    .custom-tabs .mud-tab.mud-tab-active {
+        color: #FF7F38 !important; 
+        font-weight: 600;
+        border-bottom: 3px solid #FF7F38;
+    }
+
+    .custom-tabs .mud-tabs-toolbar {
+        border-bottom: none; 
+    }
+    .custom-tabs .mud-tab {
+        transition: color 0.3s ease, border-bottom 0.3s ease;
+    }
+    .search-field{
+        background-color: #FFFFFF;
+        max-width: 400px;
+    }
+    .events-button-container {
+        display: flex;
+        gap: 16px; 
+        align-items: center;
+        padding-top: 16px;
+    }
+    .compact-button {
+        min-width: unset !important;
+        width: auto !important;
+        padding: 6px 16px; 
+        white-space: nowrap; 
+        height: 44px;
+    }
+    .sort-by-style {
+        color: #646464; 
+        border-radius: 8px; 
+        box-shadow: 0px 1px 2px rgba(16, 24, 40, 0.05); 
+        text-transform: none;
+        height: 44px;
+        background-color: #FFFFFF;
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+    }
+    .sort-by-wrapper {
+        margin-left: auto; 
+    }
+     .mud-button-group {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .mud-button {
+        min-width: 120px;
+        font-weight: 500;
+    }
+    .custom-tab-active {
+        background-color: #FF7F38; 
+        color: white !important;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+
+    .custom-tab-default {
+        color: rgba(0, 0, 0, 0.6);
+        font-weight: 500;
+    }
+</style>

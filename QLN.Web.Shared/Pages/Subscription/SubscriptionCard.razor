@@ -24,7 +24,7 @@
                  Style="font-family: 'Public Sans', sans-serif; font-size: 25px; line-height: 26px; color: #00426D;">
             @($"{Plan.Price:N0} QAR") /  <MudText Class="text-center font-medium"
                                                   Style="font-family: 'Public Sans', sans-serif; font-size: 14px; line-height: 22px; color: #646464;">
-                @Plan.Duration
+                @Plan.DurationName
             </MudText>
         </MudText>
 
@@ -97,7 +97,7 @@
     }
     private async Task HandleSelect()
     {
-        Console.WriteLine($"[SELECT] Plan Id: {Plan?.Id} Plan clicked: {Plan?.SubscriptionName} SubscriptionName - {Plan?.Price} QAR - Duration: {Plan?.Duration}");
+        Console.WriteLine($"[SELECT] Plan Id: {Plan?.Id} Plan clicked: {Plan?.SubscriptionName} SubscriptionName - {Plan?.Price} QAR - Duration: {Plan?.DurationName}");
 
         await OnSelect.InvokeAsync(Plan);
     }

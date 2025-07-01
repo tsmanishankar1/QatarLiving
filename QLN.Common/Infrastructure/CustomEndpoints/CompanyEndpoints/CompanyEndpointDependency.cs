@@ -13,6 +13,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
         {
             group.MapGetAllCompanyProfiles()
                 .MapGetCompanyProfilesByTokenUser()
+                .MapGetStatusByTokenUser()
                 .MapGetCompanyProfile()
                 .MapCreateCompanyProfile()
                 .MapUpdateCompanyProfile()

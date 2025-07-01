@@ -1,0 +1,709 @@
+﻿@page "/qln/classified/dashboard/Collectibles"
+@inherits CollectiblesDashboardBase
+@using MudBlazor
+@using QLN.Web.Shared.Components.BreadCrumb
+@using QLN.Web.Shared.Components.EmptyCard
+@using QLN.Web.Shared.Pages.Classifieds.Dashboards
+@using QLN.Web.Shared.Components.PaginationFooter
+
+<div>
+    <MudContainer MaxWidth="MaxWidth.Large" Class="dashboard-container">
+                         <ClassifiedsDashboard SelectedDashboard="DashboardType.Collectibles" />
+
+        <div class="dashboard-header">
+            <div class="dashboard-title-container">
+                <MudText class="dashboard-title">
+                    Collectibles Dashboard
+                </MudText>
+            </div>
+           
+        </div>
+
+        <!-- Your dashboard content would go here -->
+        <MudPaper Class="p-4 rounded-xl dashboard-statistics-container">
+
+            <!-- Summary Cards -->
+            <div class="statistics-content">
+                <div class="statistics-header">
+                    <MudText Typo="Typo.caption" Class="dashboard-statistics-title">Summary & Statistics</MudText>
+
+                    <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #FF7F38; border-radius: 6px; padding: 8px 12px; width: fit-content;">
+                        <img src="/qln-images/subscription/Download.svg" alt="Download" style="width: 24px;" />
+                        <span style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 14px; line-height: 22px; color: #FF7F38;">
+                            Download Report
+                        </span>
+                    </div>
+
+
+                </div>
+
+                @if (_isLoading)
+                {
+                    <div class="d-flex justify-content-center mt-5">
+                        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+                    </div>
+                }
+                else if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <EmptyCard Title="Subscription statistics not found for you account " Subtitle="Please check back later for updates." />
+                }
+                else if (stats != null && stats.Any())
+                {
+                    <MudGrid Class="mt-3">
+                        @foreach (var stat in stats)
+                        {
+                            <MudItem xs="6" sm="4" md="3" Class="stat-item">
+                                <MudPaper Elevation="0" Class="p-3 d-flex align-items-center stat-paper"
+                                          Style="justify-content:center;align-items:center;gap: 20px; border-radius: 12px;height:100px; background-color: #F9FAFB;">
+                                    <img src="/qln-images/subscription/@stat.Icon" class="stat-icon" />
+                                    <div class="stat-content">
+                                        <MudText Typo="Typo.caption"
+                                                 Class="stat-title">
+                                            @stat.Title
+                                        </MudText>
+                                        <MudText Typo="Typo.subtitle2"
+                                                 Class="stat-value">
+                                            @stat.Value
+                                        </MudText>
+                                    </div>
+                                </MudPaper>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                
+                }
+                else
+                {
+                    <EmptyCard Title="Subscription statistics not found for you account " Subtitle="Please check back later for updates." />
+                }
+
+            </div>
+        </MudPaper>
+
+        <div class="my-ad-section">
+
+            <!-- Left side: 20% width tabs -->
+            <div class="my-ad-toolbar-section">
+                <div class="tabs-toolbar">
+                    <div class="tab @( _activeTabIndex == 0 ? "active" : "" )" @onclick="() => SetTab(0)">
+                        <div style="display: flex; flex-direction: row; gap: 10px;">
+                            <span class="dashboard-tab-text">My Ads</span>
+                        </div>
+                        <div class="dashboard-tab-indicator"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right side: Post Add button -->
+            <div>
+                <MudButton Variant="Variant.Filled" Class="font-semibold mt-3" OnClick="@NavigateToAdPost"
+                           Style="border-radius: 8px; background-color: #F26D1E; color: white; width: 200px; display: flex; align-items: center; justify-content: center; gap: 8px;text-transform:none">
+                    <MudIcon Icon="@Icons.Material.Filled.Add" />
+                    Post New Ad
+                </MudButton>
+            </div>
+
+        </div>
+
+        <!-- My Ads Section -->
+        <MudPaper Class="mt-4 p-5 rounded-xl" Style="background-color: white; box-shadow: none;padding:40px">
+
+
+            <!-- Tabs + Search/Sort -->
+            <div class="d-flex flex-column flex-sm-row mb-4" style="border-bottom: 1px solid #EAECF0;">
+                <!-- First Row (Tabs) -->
+                <div class="d-flex">
+                    <!-- Published Tab (active style) -->
+                    <MudButton Variant="Variant.Text" Class="@(_selectedAdsTab == 0 ? "active-tab" : "")"
+                               Style="text-transform: none; font-weight: 600; padding-bottom: 12px; margin-right: 24px; position: relative;"
+                               @onclick="() => _selectedAdsTab = 0">
+                        Published (@publishedAds.Count)
+                        @if (_selectedAdsTab == 0)
+                        {
+                            <div style="position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background-color: #F26D1E;">
+                            </div>
+                        }
+                    </MudButton>
+                    <!-- Unpublished Tab -->
+                    <MudButton Variant="Variant.Text" Class="@(_selectedAdsTab == 1 ? "active-tab" : "")"
+                               Style="text-transform: none; font-weight: 600; padding-bottom: 12px; position: relative;"
+                               @onclick="() => _selectedAdsTab = 1">
+                        Unpublished (@unpublishedAds.Count)
+                        @if (_selectedAdsTab == 1)
+                        {
+                            <div style="position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background-color: #F26D1E;">
+                            </div>
+                        }
+                    </MudButton>
+                </div>
+
+                <!-- Second Row (Search/Sort) - will stack below tabs on mobile -->
+                <div class="ml-sm-auto d-flex align-items-center mb-2 ">
+
+                    <div class="search-wrapper mr-2">
+                        <img src="/qln-images/subscription/Search.svg" />
+                        <MudTextField T="string"
+                                      Value="@searchTerm"
+                                      ValueChanged="HandleSearch"
+                                      Placeholder="Search"
+                                      Class="no-underline"
+                                      Style="margin-left: 6px; max-width: 300px;"
+                                      Immediate="true" />
+                    </div>
+
+                    <!-- Sort Button with SVG Icon -->
+                    <MudMenu AnchorOrigin="Origin.BottomRight"
+                             TransformOrigin="Origin.TopRight"
+                             OffsetY="true">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Text"
+                                       Style="text-transform: none; color: #344054; display: flex; align-items: center; gap: 8px;margin-right:4px">
+                                <img src="/qln-images/subscription/Sort.svg" style="width: 18px; height: 18px;" />
+                                Sort
+                            </MudButton>
+                        </ActivatorContent>
+                        <ChildContent>
+                            <MudMenuItem OnClick="@(() => HandleSort(1))"
+                                         Icon="@(sortOption == 1 ? Icons.Material.Filled.Check : null)">
+                                Default
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(2))"
+                                         Icon="@(sortOption == 2 ? Icons.Material.Filled.Check : null)">
+                                Creation Date: Oldest
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(3))"
+                                         Icon="@(sortOption == 3 ? Icons.Material.Filled.Check : null)">
+                                Creation Date: Recent
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(4))"
+                                         Icon="@(sortOption == 4 ? Icons.Material.Filled.Check : null)">
+                                Expiry Date: Recent
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(5))"
+                                         Icon="@(sortOption == 5 ? Icons.Material.Filled.Check : null)">
+                                Expiry Date: Oldest
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(6))"
+                                         Icon="@(sortOption == 6 ? Icons.Material.Filled.Check : null)">
+                                Add-on Expiry Date: Oldest
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(7))"
+                                         Icon="@(sortOption == 7 ? Icons.Material.Filled.Check : null)">
+                                Add-on Expiry Date: Recent
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(8))"
+                                         Icon="@(sortOption == 8 ? Icons.Material.Filled.Check : null)">
+                                Price: High to Low
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(9))"
+                                         Icon="@(sortOption == 9 ? Icons.Material.Filled.Check : null)">
+                                Price: Low to High
+                            </MudMenuItem>
+
+                        </ChildContent>
+
+                    </MudMenu>
+                </div>
+            </div>
+            @if (_selectedAdsTab == 0)
+            {
+                <PublishedAdsComponent Ads="publishedAds"
+                                       _isPublishedLoading="_isPublishedLoading"
+                                       OnPublish="UnPublishAd"
+                                       OnEdit="OnEditAd"
+                                       OnPreview="onPreview"
+                                       OnRemove="onRemove"
+                                       DashboardType="Collectibles" />
+            }
+            else if (_selectedAdsTab == 1)
+            {
+                <UnpublishedAdsComponent Ads="unpublishedAds"
+                                         _isUnpublishedLoading="_isUnpublishedLoading"
+                                         OnPublish="OnPublishAd"
+                                         OnEdit="OnEditAd"
+                                         OnPreview="onPreview"
+                                         OnRemove="onRemove"
+                                         DashboardType="Collectibles" />
+            }
+        </MudPaper>
+
+
+        @if ((publishedAds?.Any() ?? false) || (unpublishedAds?.Any() ?? false))
+        {
+            <PaginationFooter TotalItems="@TotalItems"
+                              CurrentPage="@CurrentPage"
+                              PageSize="@PageSize"
+                              OnPageChange="HandlePageChange"
+                              OnPageSizeChange="HandlePageSizeChange" />
+        }
+
+
+    </MudContainer>
+</div>
+
+<style>
+    .dashboard-container {
+        padding: 20px 40px;
+        background-color: #F2F4F7;
+    }
+
+    .dashboard-option {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 16px;
+        padding: 0px 20px;
+    }
+
+    .dashboard-text {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 16px;
+        line-height: 24px;
+        color: #454545;
+        vertical-align: middle;
+    }
+
+    .dropdown-icon {
+        color: #454545;
+        font-size: 24px;
+    }
+
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 12px;
+        width: 100%;
+    }
+
+    .dashboard-title-container {
+        flex: 1;
+        text-align: center;
+    }
+
+    .dashboard-title {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 25px;
+        line-height: 26px;
+        color: #242424;
+    }
+
+    .dashboard-button-container {
+        margin-left: auto;
+    }
+
+    .dashboard-edit-profile-button {
+        margin-top: 12px;
+    }
+
+    .dashboard-statistics-container {
+        padding: 16px;
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        background-color: white;
+        margin-top: 24px;
+    }
+
+    .dashboard-company-container {
+        width: 260px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border-radius: 12px;
+        background-color: #FAFAFA;
+    }
+
+    .dashboard-company-logo {
+        width: 80px;
+        height: 80px;
+    }
+
+    .dashboard-edit-profile-button {
+        border-radius: 8px;
+        border: 1px solid #F26D1E;
+        background-color: white;
+        color: #F26D1E;
+        width: 200px;
+    }
+
+    .statistics-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .statistics-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 16px;
+    }
+
+    .dashboard-statistics-title {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 18px;
+        line-height: 26px;
+        letter-spacing: 0;
+        vertical-align: middle;
+        color: #242424;
+    }
+
+    .stat-paper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        border-radius: 4px;
+        height: 100px !important;
+        background-color: #F9FAFB;
+        padding: 16px;
+    }
+
+    .stat-icon {
+        width: 32px;
+        height: 32px;
+    }
+
+    .stat-title {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 24px;
+        color: #242424;
+        margin-bottom: 4px;
+    }
+
+    .stat-value {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 14px;
+        color: #004F9A;
+        text-align: center;
+    }
+
+    .my-ad-section {
+        display: flex;
+        width: 100%;
+        margin-top: 40px;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .my-ad-toolbar-section {
+        width: 20%
+    }
+
+    .dashboard-tabs-toolbar {
+        display: flex;
+        width: 100%;
+        background-color: rgb(245, 245, 245);
+        padding: 0px;
+        border-radius: 4px 4px 0px 0px;
+        overflow: hidden;
+    }
+
+    .dashboard-tab {
+        min-width: 0px;
+        text-align: center;
+        color: rgb(102, 102, 102);
+        text-transform: none;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        background-color: rgb(245, 245, 245);
+        flex: 1 1 0%;
+        padding: 12px 0px;
+        margin: 0px;
+        transition: 0.3s;
+    }
+
+        .dashboard-tab.active {
+            background-color: white;
+            color: #F26D1E;
+            font-weight: 600;
+        }
+
+    .dashboard-tab-text {
+        color: #F26D1E;
+    }
+
+    .ad-container {
+        padding: 16px 0px;
+    }
+
+    .dashboard-tab-indicator {
+        position: absolute;
+        bottom: 0px;
+        height: 3px;
+        background-color: #F26D1E;
+        width: 100%;
+        transition: transform 0.3s;
+    }
+
+    .search-wrapper {
+        display: flex;
+        align-items: center;
+        border: 1px solid #D0D5DD;
+        border-radius: 6px;
+        padding: 4px 8px;
+        max-width: 300px;
+        background-color: white;
+    }
+
+    .search-icon {
+        width: 18px;
+        height: 18px;
+    }
+
+    .custom-search-field input {
+        padding-left: 8px;
+    }
+
+
+
+    .no-underline .mud-input-underline::before,
+    .no-underline .mud-input-underline::after {
+        border-bottom: none !important;
+    }
+
+
+    .ad-checkbox input[type="checkbox"]:checked + .mud-checkbox-background {
+        background-color: #D0D5DD !important;
+        border-color: #D0D5DD !important;
+    }
+
+    .ad-checkbox .mud-icon-root.mud-svg-icon {
+        fill: #D0D5DD !important;
+    }
+
+    .post-analytics-svg-icon {
+        width: 16px;
+        height: 16px;
+        color: #00426D;
+    }
+
+    .ad-image-wrapper {
+        position: relative;
+    }
+
+    .ad-image {
+        width: 240px;
+        max-width: 100%;
+        height: auto;
+        max-height: 180px;
+        border-radius: 4px;
+    }
+
+    /* Badge styles */
+    .promoted-badge {
+        position: absolute;
+        top: 12px;
+        left: 0;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        background-color: #FF7F38;
+        color: white;
+        padding: 4px 6px;
+        border-radius: 0px 4px 4px 0px;
+        font-size: 12px;
+        font-weight: 500;
+        width: fit-content;
+        height: 20px;
+    }
+
+    .post-analytics-text {
+        font-family: 'Public Sans'/sans-serif;
+        font-weight: 500;
+        font-size: 13px;
+        line-height: 22px;
+        letter-spacing: 0;
+        text-align: center;
+    }
+
+    .post-analytics-text-stat-label {
+        color: #242424;
+    }
+
+    .post-analytics-text-stat-value {
+        color: #00426D;
+        margin-left: 4px;
+    }
+
+        .custom-menu-width .mud-popover {
+        min-width: 200px;
+    }
+
+    .menu-item-style {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px !important;
+        width: 150px;
+        padding-left: 20px !important;
+    }
+
+    .menu-icon {
+        width: 18px;
+        height: 18px;
+    }
+
+    .custom-menu-width .mud-popover {
+        min-width: 200px;
+    }
+
+    .menu-item-style {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        width: 150px;
+        padding-left: 20px;
+    }
+
+    .menu-icon {
+        width: 18px;
+        height: 18px;
+    }
+
+
+    @@media (max-width: 1007px) {
+        .dashboard-container {
+            padding-left: 0px;
+            padding-right: 0px;
+        }
+    }
+
+
+    @@media (max-width: 800px) {
+        .dashboard-statistics-container {
+            flex-direction: column;
+        }
+
+        .dashboard-company-container {
+            width: 100%;
+        }
+
+        .statistics-content {
+            width: 100%;
+        }
+    }
+
+    @@media (min-width: 530px) and (max-width: 800px) {
+        .stat-item {
+            flex-basis: 50% !important;
+            max-width: 50% !important;
+        }
+    }
+
+    @@media (max-width: 600px) {
+        .stat-item {
+            padding: 8px !important;
+        }
+
+        .stat-paper {
+            height: 90px;
+            gap: 16px;
+            padding: 12px;
+        }
+    }
+
+
+    /* For screens 393px and below (mobile) */
+    @@media (max-width: 393px) {
+        .dashboard-container {
+            padding-left: 0;
+            padding-right: 0;
+            padding-top: 16px;
+            padding-bottom: 16px;
+        }
+
+        .stat-paper {
+            flex-direction: column;
+            height: auto;
+            gap: 8px;
+            padding: 16px 8px;
+        }
+
+        .stat-icon {
+            margin-bottom: 8px;
+        }
+
+        .stat-title,
+        .stat-value {
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .my-ad-section {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .my-ad-toolbar-section {
+            width: 100%
+        }
+
+
+        .d-flex.flex-column.flex-sm-row {
+            flex-direction: column !important;
+        }
+
+        .ml-sm-auto {
+            margin-left: 0 !important;
+        }
+
+        .mt-2.mt-sm-0 {
+            margin-top: 8px !important;
+        }
+
+        .d-flex.flex-column.flex-sm-row {
+            flex-direction: column !important;
+        }
+
+        .mb-3.mb-sm-0 {
+            margin-bottom: 12px !important;
+        }
+
+        .mr-sm-4 {
+            margin-right: 0 !important;
+        }
+
+        img {
+            max-width: 100% !important;
+            height: auto !important;
+        }
+
+        .d-flex.flex-wrap {
+            gap: 8px !important;
+        }
+        /* Stats section */
+        .d-flex.flex-column.flex-sm-row.align-items-sm-center {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+        }
+
+        .mt-2.mt-sm-0 {
+            margin-top: 8px !important;
+        }
+
+        .ad-checkbox {
+            display: none !important;
+        }
+
+        .ad-container {
+            padding: 0.5rem !important;
+        }
+    }
+</style>

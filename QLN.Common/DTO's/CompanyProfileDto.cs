@@ -7,10 +7,11 @@ namespace QLN.Common.Infrastructure.DTO_s
 {
     public class CompanyProfileDto : BaseCompanyDto
     {
+        public CompanyStatus? Status { get; set; }
         [Required]
         public VerticalType Vertical { get; set; }
         public SubVertical? SubVertical { get; set; }
-        public Guid? UserId { get; set; }
+        public string? UserId { get; set; }
         [Required]
         public string Country { get; set; } = string.Empty;
         [Required]
@@ -68,5 +69,14 @@ namespace QLN.Common.Infrastructure.DTO_s
         public CompanyStatus? StatusId { get; set; }
         public string StatusName { get; set; } = string.Empty;
         public DateTime? UpdatedUtc { get; set; }
+    }
+    public class ProfileStatus
+    {
+        public Guid? CompanyId { get; set; }
+        public string? UserId { get; set; }
+        public string BusinessName { get; set; } = string.Empty;
+        public VerticalType Vertical { get; set; } 
+        public SubVertical SubVertical { get; set; }
+        public bool IsActive { get; set; }
     }
 }

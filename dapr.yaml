@@ -36,6 +36,27 @@ apps:
 #   - dotnet
 #   - run
 
+  - appID: qln-search-ms
+    appDirPath: QLN.SearchService
+    appPort: 5244
+    daprHTTPPort: 3503
+    daprGRPCPort: 50004
+    command:
+      - dotnet
+      - run
+  - appID: qln-company-ms
+    appDirPath: QLN.Company.MS
+    appPort: 5139
+    daprHTTPPort: 3504
+    daprGRPCPort: 50005
+    command:
+      - dotnet
+      - run
+  - appID: qln-content-ms
+    appDirPath: QLN.Content.MS
+    appPort: 5112
+    daprHTTPPort: 3505
+    daprGRPCPort: 50006
   - appID: qln-datamigration
     appDirPath: QLN.DataMigration
     appPort: 5084

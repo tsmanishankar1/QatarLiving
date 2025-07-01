@@ -12,10 +12,12 @@ namespace QLN.Common.DTO_s
     {
         public string SubVertical { get; set; }
         public string Title { get; set; }
-        public string? Description { get; set; }
-        public Guid CategoryId { get; set; }
+        public string? Description { get; set; }    
+        public Guid? CategoryId { get; set; }
         public string? Category { get; set; }
-        public string? SubCategory { get; set; }
+        public Guid? L1CategoryId { get; set; }
+        public string? L1Category { get; set; }
+        public Guid? L2CategoryId { get; set; }
         public string? L2Category { get; set; }
         public string? Section { get; set; }
         public string? Brand { get; set; }
@@ -33,14 +35,15 @@ namespace QLN.Common.DTO_s
         public string? Gender { get; set; }
         public string? Size { get; set; }
         public string? SizeValue { get; set; }        
-        public string? CertificateBase64 { get; set; }
+        public string? CertificateUrl { get; set; }
         public string? CertificateFileName { get; set; }       
-        public IList<ImageInfo> AdImagesBase64 { get; set; } 
+        public IList<ImageInfo> ImageUrls { get; set; } 
         public string PhoneNumber { get; set; }
         public string WhatsAppNumber { get; set; }
         public string? ContactEmail { get; set; }
+        public DateTime? CreatedDate { get; set; } = DateTime.UtcNow;
         public DateTime? ModifiedDate { get; set; }
-        public DateTime? ExpiryDate { get; set; }
+        public DateTime ExpiryDate { get; set; } = DateTime.UtcNow.AddDays(30);
         public string? CountryOfOrigin { get; set; }
         public string? Language { get; set; }
         public string? Zone { get; set; }
@@ -49,10 +52,14 @@ namespace QLN.Common.DTO_s
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
         public List<string>? Location { get; set; }
-        public bool? TearmsAndCondition { get; set; }
-        public Guid UserId { get; set; }
+        public bool? TearmsAndCondition { get; set; }       
+        public bool? IsRefresh { get; set; } = false; 
+        public DateTime RefreshExpiry { get; set; } = DateTime.UtcNow.AddDays(30);
+        public string RefreshCount { get; set; } = "80";
+        public string UserId { get; set; }
         [DefaultValue(false)]
         public bool? IsFeatured { get; set; } = false;
+        public DateTime CreatedAt { get;set; }
         [DefaultValue(false)]
         public bool? IsPromoted { get; set; } = false;
         public AdStatus Status { get; set; }

@@ -1,9 +1,82 @@
-@QLN.Backend.API_HostAddress = https://localhost:7161
+@QLN.Backend.API_HostAddress = http://localhost:5200
+# @QLN.Backend.API_HostAddress = https://localhost:7161
 # @QLN.Backend.API_HostAddress = https://qlc-bo-dev.qatarliving.com
 # @QLN.Backend.API_HostAddress = https://qlc-bo-qa.qatarliving.com
 # @QLN.Backend.API_HostAddress = https://qlm-bo.qatarliving.com
 
-@DrupalQueue = qln_news_finance_market_update
+
+###
+# @name login1
+POST {{QLN.Backend.API_HostAddress}}/auth/login
+Accept: application/json
+Content-Type: application/json
+{
+  "usernameOrEmailOrPhone": "Madhumitha",
+  "password": "Test@1234"
+}
+
+###
+POST {{QLN.Backend.API_HostAddress}}/api/subscriptions/add
+Accept: application/json
+Authorization: Bearer {{login1.response.body.$.accessToken}}
+Content-Type: application/json
+{
+  "subscriptionName": "Flyer 1",
+  "durationId": 4,
+  "price": 0,
+  "adsbudget": 0,
+  "promotebudget": 0,
+  "refreshbudget": 0,
+  "description": "string",
+  "currency": "string",
+  "categoryId": 1,
+  "statusId": 0,
+  "verticalTypeId": 3
+}
+
+###
+# @name subscription
+GET {{QLN.Backend.API_HostAddress}}/api/subscriptions/getAll
+Authorization: Bearer {{login1.response.body.$.accessToken}}
+Content-Type: application/json
+
+
+###
+# @name login2
+POST {{QLN.Backend.API_HostAddress}}/auth/login
+Accept: application/json
+Content-Type: application/json
+{
+  "usernameOrEmailOrPhone": "MUJAY",
+  "password": "Mujaymujay@1234"
+}
+
+
+###
+POST {{QLN.Backend.API_HostAddress}}/api/payments/subscribe
+Accept: application/json
+Authorization: Bearer {{login2.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "subscriptionId": "{{subscription.response.body.$.id}}",
+  "verticalId": 3,
+  "categoryId": 1,
+  "cardDetails": {
+    "cardNumber": "string",
+    "expiryMonth": "string",
+    "expiryYear": "string",
+    "cvv": "string",
+    "cardHolderName": "string"
+  }
+}
+
+
+
+##########
+
+
+@DrupalQueue = qln_news_news_qatar
 
 GET {{QLN.Backend.API_HostAddress}}/api/content/{{DrupalQueue}}/landing
 Accept: application/json

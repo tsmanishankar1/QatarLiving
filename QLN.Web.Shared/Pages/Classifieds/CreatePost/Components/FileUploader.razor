@@ -1,0 +1,109 @@
+@inject IJSRuntime JS
+@using System.Linq.Expressions
+@using Microsoft.AspNetCore.Components.Forms
+<div class="file-upload-container">
+
+    <div class="file-upload-wrapper @(HasValidationError ? "has-error" : "")">
+        <input type="file"
+               @ref="fileInput"
+               style="display:none"
+               @onchange="OnFileSelected"
+               accept=".pdf,.png,.jpg,.jpeg" />
+
+        <div class="file-input-box">
+            <span class="@(!string.IsNullOrEmpty(FileName) ? "file-name" : "placeholder-text")">
+                @(!string.IsNullOrEmpty(FileName) ? FileName : LabelText)
+            </span>
+        </div>
+
+        <button class="upload-btn" @onclick="TriggerFileUpload">
+            Upload
+            <img src="/qln-images/Classifieds/cloudUpload_icon.svg" style="width: 24px; margin-right: 6px;" />
+        </button>
+    </div>
+
+    <div class="file-note">Supported file formats: PDF, PNG and JPG. Maximum file size: 10MB.</div>
+
+   @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="error-text">@ErrorMessage</div>
+    }
+    else if (HasValidationError)
+    {
+        <div class="error-text">@ValidationMessage</div>
+    }
+</div>
+@code {
+    private ElementReference fileInput;
+    private string FileName = string.Empty;
+    [Parameter] public string Value { get; set; }
+[Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    private string ErrorMessage;
+
+    [Parameter] public EventCallback<(string Name, string Base64)> OnFileUploadedWithMeta { get; set; }
+ [Parameter] public Expression<Func<string>> For { get; set; }
+    [CascadingParameter] private EditContext CascadedEditContext { get; set; }
+
+    private FieldIdentifier _fieldIdentifier;
+
+    private bool HasValidationError =>
+        For != null && CascadedEditContext != null &&
+        CascadedEditContext.GetValidationMessages(_fieldIdentifier).Any();
+
+    private string ValidationMessage =>
+        CascadedEditContext?.GetValidationMessages(_fieldIdentifier).FirstOrDefault();
+
+    protected override void OnInitialized()
+    {
+        if (CascadedEditContext == null)
+        {
+            Console.WriteLine("⚠️ EditContext not found.");
+            return;
+        }
+
+        if (For == null)
+        {
+            Console.WriteLine("⚠️ 'For' parameter is required.");
+            return;
+        }
+
+        _fieldIdentifier = FieldIdentifier.Create(For);
+    }
+
+    [Parameter] public string LabelText { get; set; } = "Certificate / Warranty*";
+
+    private async Task TriggerFileUpload()
+    {
+        await JS.InvokeVoidAsync("FileUploader.triggerFileInput", fileInput);
+    }
+
+    private async Task OnFileSelected(ChangeEventArgs e)
+    {
+        try
+        {
+            ErrorMessage = string.Empty;
+
+            var fileData = await JS.InvokeAsync<string>("FileUploader.readFileAsBase64", fileInput);
+            FileName = await JS.InvokeAsync<string>("FileUploader.getFileName", fileInput);
+
+            if (!string.IsNullOrEmpty(fileData))
+            {
+                        // Update bound model value
+            await ValueChanged.InvokeAsync(fileData); 
+          if (_fieldIdentifier.Model != null && !string.IsNullOrEmpty(_fieldIdentifier.FieldName))
+    {
+        CascadedEditContext?.NotifyFieldChanged(_fieldIdentifier);
+        CascadedEditContext?.Validate();
+    }
+            await OnFileUploadedWithMeta.InvokeAsync((FileName, fileData));
+
+            }
+        }
+        catch (JSException ex)
+        {
+            ErrorMessage = "Failed to read file: " + ex.Message;
+        }
+    }
+}
+

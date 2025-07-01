@@ -1,0 +1,106 @@
+@using MudBlazor
+@using QLN.Common.DTO_s
+@using QLN.Web.Shared.Components.Classifieds.PromotedItemCards
+@using QLN.Web.Shared.Components.Classifieds.ItemDetailsImage
+@using QLN.Web.Shared.Components.Classifieds.ItemInfo
+@using QLN.Web.Shared.Components.Classifieds.OverviewCard
+@using QLN.Web.Shared.Components.Classifieds.DescriptionBox
+@using QLN.Web.Shared.Components.BreadCrumb
+@inherits ItemDetailsSectionBase
+
+@inject NavigationManager NavigationManager
+
+<Breadcrumb Items="breadcrumbItems" />
+    <div class="item-main-details">
+        <div class="row-container">
+            <div class="icon-label-container">
+            <h3 class="title-item-name">@Item?.Title</h3>
+            </div>
+            <div class="icon-label-container">
+
+                <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu"
+                    AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight">
+                <ActivatorContent>
+                    <div class="icon-label">
+                        <img src="/qln-images/classifieds/share.svg" alt="Share Icon" class="icon-image" />
+                        <span class="icon-text">Share</span>
+                    </div>
+                </ActivatorContent>
+                <ChildContent>
+                    @foreach (var item in ShareMenuItems)
+                    {
+                        if (item.OnClick != null)
+                        {
+                            <MudMenuItem OnClick="@item.OnClick">
+                                <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                            </MudMenuItem>
+                        }
+                        else
+                        {
+                            <MudMenuItem Href="@item.Route" Target="@(item.OpenInNewTab ? "_blank" : "_self")">
+                                <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                            </MudMenuItem>
+                        }
+                    }
+                </ChildContent>
+            </MudMenu>
+
+                <div id="saveButton" class="icon-label" @onclick="OnSaveClicked">
+                    <img src="@HeartIcon" alt="Save Icon" class="icon-image" />
+                    <span class="icon-text">@(isSaved ? "Saved" : "Save")</span>
+                </div>
+            </div>
+        </div>
+
+    <MudGrid Class="py-4" GutterSize="16px" >
+        <!-- Main Content -->
+        <MudItem xs="12" md="7">
+                <ItemDetailsImage Item="Item" />
+                <div class="info-mobile-container">
+                <ItemInfo Item="Item" />
+                </div>
+                <OverviewCard Item="Item" />
+                <DescriptionBox Item="Item" />
+            </MudItem>
+
+            <MudItem xs="12" md="5">
+        <div class="info-container">
+            <div class="info-ad-container">
+                <div class="info-desktop-container">
+                <ItemInfo Item="Item" />
+                </div>
+                <div class="item-main-image-container">
+                <img src="/qln-images/classifieds/detail_ad.svg" alt="Product Image" class="main-image" />
+                </div>
+            </div>
+            <div class="info-side-container">
+                <img src="/qln-images/classifieds/side_banner.svg" alt="Side Banner" />
+            </div>
+        </div>
+    </MudItem>
+    </MudGrid>
+    @if (Simler?.Count > 0)
+{
+    <div class="similar-items-section">
+        <div class="similar-items-header">
+            <h4 class="similar-title">Similar Items</h4>
+            <a href="/qln/classifieds/items" class="view-all-link">View All</a>
+        </div>
+
+        <div class="similar-items-grid">
+            @foreach (var item in Simler)
+            {
+                <div class="similar-card-wrapper">
+                    <PromotedItemGridCard Item="item" OnClickCard="OnClickCardItem" />
+                </div>
+            }
+        </div>
+
+    </div>
+}
+
+    
+
+</div>
+
+

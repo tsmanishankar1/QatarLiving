@@ -12,7 +12,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
         public static RouteGroupBuilder MapPaymentEndpoints(this RouteGroupBuilder group)
         {
             group.MapProcessPaymentEndpoint()
-               .MapProcessPaytoPublishPaymentEndpoint();
+                .MapProcessPaytoPublishPaymentEndpoint()
+                .MapProcessPaytoFeaturePaymentEndpoint()
+                  .MapProcessAddonPaymentEndpoint();
 
 
             return group;
