@@ -151,6 +151,8 @@ app.MapGet("/migrate_items", async (
         .Distinct()
         .ToList();
 
+    var uploadedBlobKeys = new List<string>();
+
     foreach (var item in sourceFiles)
     {
         // Check if the item is a valid URL
@@ -167,6 +169,10 @@ app.MapGet("/migrate_items", async (
 
                 // Upload to blob storage
                 var url = await fileStorageBlobService.SaveFile(fileBytes, customName, "migration-images");
+
+                Console.WriteLine($"Uploaded {customName} @ {DateTime.UtcNow}");
+
+                uploadedBlobKeys.Add(url);
             }
             catch (Exception ex)
             {
@@ -194,7 +200,8 @@ app.MapGet("/migrate_items", async (
         Categories = consolidatedCategories,
         Locations = locations,
         Zones = zones,
-        Offers = offers
+        Offers = offers,
+        UploadedBlobs = uploadedBlobKeys
     });
 });
 
