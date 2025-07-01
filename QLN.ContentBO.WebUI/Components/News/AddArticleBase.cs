@@ -7,7 +7,7 @@ using QLN.ContentBO.WebUI.Models;
 
 namespace QLN.ContentBO.WebUI.Components.News
 {
-    public class AddArticleBase : ComponentBase
+    public class AddArticleBase : QLComponentBase
     {
         [Inject] INewsService newsService { get; set; }
         [Inject] ILogger<AddArticleBase> Logger { get; set; }
@@ -39,7 +39,7 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected void RemoveCategory(ArticleCategory articleCategory)
         {
-            if(TempCategoryList.Count > 0)
+            if (TempCategoryList.Count > 0)
             {
                 TempCategoryList.Remove(articleCategory);
                 Category = new();
