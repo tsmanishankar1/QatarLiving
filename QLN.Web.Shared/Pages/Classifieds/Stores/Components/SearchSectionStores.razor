@@ -1,21 +1,23 @@
 <div class="search-stores-section">
     <!-- Search Input -->
-    <MudTextField @bind-Value="searchText" Placeholder="Search" Adornment="Adornment.Start"
-        AdornmentIcon="@Icons.Material.Filled.Search" Class="search-input" HideSpinButtons="true" Immediate="true"
-        Variant="Variant.Outlined" Style="background-color: var(--color-background);" />
+    <div class="input-group search-input">
+        <span class="left-icon">
+            <img src="/qln-images/content/Search.svg" alt="search icon" class="left-search-icon" width="23" height="23" />
+        </span>
+        <input type="text" placeholder="Search" @bind="searchText" />
+    </div>
 
     <!-- Location Input -->
-    <MudTextField @bind-Value="locationText" Placeholder="Location" Adornment="Adornment.End"
-        AdornmentIcon="@Icons.Material.Filled.LocationOn" Class="location-input" HideSpinButtons="true"
-        Variant="Variant.Outlined" Style="background-color: var(--color-background);" />
+    <div class="input-group location-input">
+        <input type="text" placeholder="Location" @bind="locationText" />
+        <span class="right-icon">
+            <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Medium" />
+        </span>
+    </div>
 
     <!-- Search Button -->
-    <MudButton Variant="Variant.Filled" Class="search-button-store" OnClick="OnSearch">
-        Search
-    </MudButton>
+    <button class="search-button-store" @onclick="OnSearch">Search</button>
 </div>
-
-
 
 @code {
     private string searchText = "";
@@ -28,50 +30,84 @@
 }
 
 
-
 <style>
     .search-stores-section {
         display: flex;
-        align-items: center;
+        flex-wrap: nowrap;
         gap: 12px;
-        padding: 12px 40px;
+        padding: 12px 0;
         background-color: var(--color-background-secondary-grey-medium);
         font-family: 'Public Sans', sans-serif;
     }
 
-    .search-input,
-    .location-input,
-    .search-button-store {
-        min-width: 0;
+    .input-group {
+        display: flex;
+        align-items: center;
+        background-color: var(--color-background);
+        border: 1px solid var(--color-border);
+        border-radius: 4px;
+        padding: 0 12px;
+        height: 48px;
+    }
+
+    .input-group input {
+        flex: 1;
+        border: none;
+        outline: none;
+        background-color: transparent;
+        font-size: 16px;
+    }
+
+    .left-icon,
+    .right-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 8px;
+        color: var(--color-accent);
+    }
+
+    .left-icon img {
+        display: block;
     }
 
     .search-input {
-        flex: 0 0 60%;
+        flex: 1 1 60%;
+        min-width: 200px;
+        height: 48px;
     }
 
     .location-input {
-        flex: 0 0 25%;
+        flex: 1 1 25%;
+        min-width: 150px;
+        height: 48px;
     }
 
     .search-button-store {
-        flex: 0 0 15%;
-        height: 56px;
-        min-width: 100px;
+        flex: 1 1 15%;
+        min-width: 120px;
+        height: 48px;
         color: var(--color-text-white);
-        border-radius: 5px;
         background-color: var(--color-accent);
-        text-transform: capitalize;
+        border: none;
+        border-radius: 3px;
         font-weight: 600;
+        text-transform: capitalize;
+        cursor: pointer;
         white-space: nowrap;
     }
 
-    /* Optional: make the inputs fill their flex containers */
-    .search-input .mud-input,
-    .location-input .mud-input {
-        width: 100%;
-    }
+    @@media screen and (max-width: 770px) {
+        .search-stores-section {
+            flex-direction: column;
+            align-items: stretch;
+        }
 
-    .mud-input-adornment .mud-icon-root {
-        color: var(--color-accent);
+        .search-input,
+        .location-input,
+        .search-button-store {
+            width: 100%;
+             flex: none;
+        }
     }
 </style>

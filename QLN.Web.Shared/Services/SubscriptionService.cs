@@ -82,7 +82,7 @@ namespace QLN.Web.Shared.Services
             var response = await _httpClient.DeleteAsync($"api/subscription/delete/{id}");
             return response.IsSuccessStatusCode;
         }
-        public async Task<bool> PurchaseSubscription(object payload,string authToken)
+        public async Task<bool> PurchaseSubscription(object payload)
         {
 
             try
@@ -92,7 +92,6 @@ namespace QLN.Web.Shared.Services
                     Content = JsonContent.Create(payload)
                 };
 
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
                
 
                 var response = await _httpClient.SendAsync(request);
@@ -111,6 +110,31 @@ namespace QLN.Web.Shared.Services
             }
 
         }
+        public async Task<List<PayToPublishPlan>?> GetPayToPublishPlansAsync(int verticalId, int categoryId)
+        {
+            try
+            {
+                var url = $"api/paytopublish/getpaytopublish?verticalTypeId={verticalId}&categoryId={categoryId}";
+                var response = await _httpClient.GetAsync(url);
+
+                if (!response.IsSuccessStatusCode)
+                    return null;
+
+                var result = await response.Content.ReadFromJsonAsync<List<PayToPublishPlan>>();
+                return result;
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"[PayToPublish] HTTP error: {ex.Message}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[PayToPublish] Unexpected error: {ex.Message}");
+                return null;
+            }
+        }
+
     }
 
 }

@@ -3,15 +3,13 @@
 @using MudBlazor
 @using QLN.Web.Shared.Components.BreadCrumb
 @using QLN.Web.Shared.Components.EmptyCard
+@using QLN.Web.Shared.Pages.Classifieds.Dashboards
+@using QLN.Web.Shared.Components.PaginationFooter
 
 <div>
     <MudContainer MaxWidth="MaxWidth.Large" Class="dashboard-container">
-        <Breadcrumb Items="breadcrumbItems" />
+        <ClassifiedsDashboard SelectedDashboard="DashboardType.Items" />
 
-        <div class="dashboard-option">
-            <span class="dashboard-text">Dashboard: Items</span>
-            <MudIcon Icon="@Icons.Material.Filled.ArrowDropDown" Class="dropdown-icon" />
-        </div>
 
         <div class="dashboard-header">
             <div class="dashboard-title-container">
@@ -19,47 +17,11 @@
                     Items Dashboard
                 </MudText>
             </div>
-            @if (showCreateButton)
-            {
-                <div class="dashboard-button-container">
-                    <MudButton Variant="Variant.Outlined" Class="font-semibold dashboard-edit-profile-button"
-                               OnClick="NavigateToCreateProfile">
-                        Create Profile
-                    </MudButton>
-                </div>
-            }
+
         </div>
 
         <!-- Your dashboard content would go here -->
-        <MudPaper Class="p-4 rounded-xl dashboard-statistics-container">
-
-            @if (isCompanyLoading)
-            {
-                <MudProgressCircular Indeterminate="true" Size="Size.Medium" Color="Color.Primary" />
-            }
-            else if (companyProfile != null)
-            {
-                <MudPaper Class="p-4 dashboard-company-container">
-                    <img src="@companyProfile.CompanyLogo" alt="Logo" class="dashboard-company-logo" />
-                    <MudText Typo="Typo.h6" Class="mt-2" Style="color:#004F9A; font-weight: bold;">
-                        @companyProfile.BusinessName
-                    </MudText>
-                    <MudText Typo="Typo.body2" Style="color: #5F6C7B;">
-                        @companyProfile.NatureOfBusiness - Company
-                    </MudText>
-                    <MudText Typo="Typo.caption" Class="mt-1" Style="color: #5F6C7B;">Created on</MudText>
-                    <MudText Typo="Typo.caption" Style="color: #5F6C7B;">
-                        @companyProfile.CreatedUtc.ToString("MMM dd, yyyy")
-                    </MudText>
-                    <MudButton Variant="Variant.Outlined" Class="font-semibold mt-3 dashboard-edit-profile-button"
-                                         OnClick="@(() => NavigateToEditProfile(companyProfile.Id))">
-                        Edit Profile
-                    </MudButton>
-                </MudPaper>
-            }
-
-
-
+        <MudPaper Elevation="0" Class="p-4 rounded-xl dashboard-statistics-container">
             <!-- Summary Cards -->
             <div class="statistics-content">
                 <div class="statistics-header">
@@ -91,7 +53,7 @@
                         @foreach (var stat in stats)
                         {
                             <MudItem xs="6" sm="4" md="3" Class="stat-item">
-                                <MudPaper Class="p-3 d-flex align-items-center stat-paper"
+                                <MudPaper Elevation="0" Class="p-3 d-flex align-items-center stat-paper"
                                           Style="justify-content:center;align-items:center;gap: 20px; border-radius: 12px;height:100px; background-color: #F9FAFB;">
                                     <img src="/qln-images/subscription/@stat.Icon" class="stat-icon" />
                                     <div class="stat-content">
@@ -108,6 +70,29 @@
                             </MudItem>
                         }
                     </MudGrid>
+                    <!-- Promo Card Below -->
+                    <MudPaper Elevation="0" Class="d-flex align-items-center mt-4 px-4 py-3"
+                              Style="background-color: #FFFAF0; border-radius: 8px; justify-content: space-between;">
+                        <!-- Left Side: Icon and Text -->
+                        <div class="d-flex align-items-center" style="gap: 16px;">
+                            <img src="/qln-images/subscription/VisibilitySVG.svg" alt="Visibility Icon" style="width: 50px; height: 50px;" />
+                            <div>
+                                <MudText Typo="Typo.subtitle2" Class="fw-bold" Style="color: #1D1D1F;">Increase views on your listings</MudText>
+                                <MudText Typo="Typo.body2" Style="color: #4A4A4A;">Refresh your ad to list it at the top of the search results.</MudText>
+                            </div>
+                        </div>
+
+                        <!-- Right Side: +10% Visibility and Button -->
+                        <div class="d-flex align-items-center" style="gap: 20px;">
+                            <MudText Typo="Typo.subtitle2" Style="color: #1D1D1F;font-weight: 500;">+10% Visibility</MudText>
+                            <MudButton Style="background-color: #F26D1E; color: white; text-transform: none; font-weight: 500;"
+                                       OnClick="NavigateToPurshaseRefresh">
+                                <img src="/qln-images/subscription/BuyRefreshSVG.svg" alt="Add on Icon" style="width: 24px; height: 24px;margin-right:4px" />
+
+                                Buy Refreshes
+                            </MudButton>
+                        </div>
+                    </MudPaper>
                 }
                 else
                 {
@@ -124,9 +109,9 @@
                 <div class="tabs-toolbar">
                     <div class="tab @( _activeTabIndex == 0 ? "active" : "" )" @onclick="() => SetTab(0)">
                         <div style="display: flex; flex-direction: row; gap: 10px;">
-                            <span class="tab-text">My Ads</span>
+                            <span class="dashboard-tab-text">My Ads</span>
                         </div>
-                        <div class="tab-indicator"></div>
+                        <div class="dashboard-tab-indicator"></div>
                     </div>
                 </div>
             </div>
@@ -134,9 +119,9 @@
             <!-- Right side: Post Add button -->
             <div>
                 <MudButton Variant="Variant.Filled" Class="font-semibold mt-3" OnClick="@NavigateToAdPost"
-                           Style="border-radius: 8px; background-color: #F26D1E; color: white; width: 200px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                           Style="border-radius: 8px; background-color: #F26D1E; color: white; width: 200px; display: flex; align-items: center; justify-content: center; gap: 8px;text-transform:none">
                     <MudIcon Icon="@Icons.Material.Filled.Add" />
-                    Post Add
+                    Post New Ad
                 </MudButton>
             </div>
 
@@ -175,151 +160,103 @@
                 </div>
 
                 <!-- Second Row (Search/Sort) - will stack below tabs on mobile -->
-                <div class="ml-sm-auto d-flex align-items-center mt-2 mt-sm-0">
-                    <MudTextField T="string" Placeholder="Search" Adornment="Adornment.Start"
-                                  AdornmentIcon="@Icons.Material.Filled.Search" HideSpinButtons="true" Class="mr-2"
-                                  Style="width: 200px;" />
-                    <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Sort"
-                               Style="text-transform: none; color: #344054;">
-                        Sort
-                    </MudButton>
+                <div class="ml-sm-auto d-flex align-items-center mb-2 ">
+
+                    <div class="search-wrapper mr-2">
+                        <img src="/qln-images/subscription/Search.svg" />
+                        <MudTextField T="string"
+                                      Value="@searchTerm"
+                                      ValueChanged="HandleSearch"
+                                      Placeholder="Search"
+                                      Class="no-underline"
+                                      Style="margin-left: 6px; max-width: 300px;"
+                                      Immediate="true" />
+                    </div>
+
+                    <!-- Sort Button with SVG Icon -->
+                    <MudMenu AnchorOrigin="Origin.BottomRight"
+                             TransformOrigin="Origin.TopRight"
+                             OffsetY="true">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Text"
+                                       Style="text-transform: none; color: #344054; display: flex; align-items: center; gap: 8px;margin-right:4px">
+                                <img src="/qln-images/subscription/Sort.svg" style="width: 18px; height: 18px;" />
+                                Sort
+                            </MudButton>
+                        </ActivatorContent>
+                        <ChildContent>
+                            <MudMenuItem OnClick="@(() => HandleSort(1))"
+                                         Icon="@(sortOption == 1 ? Icons.Material.Filled.Check : null)">
+                                Default
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(2))"
+                                         Icon="@(sortOption == 2 ? Icons.Material.Filled.Check : null)">
+                                Creation Date: Oldest
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(3))"
+                                         Icon="@(sortOption == 3 ? Icons.Material.Filled.Check : null)">
+                                Creation Date: Recent
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(4))"
+                                         Icon="@(sortOption == 4 ? Icons.Material.Filled.Check : null)">
+                                Expiry Date: Recent
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(5))"
+                                         Icon="@(sortOption == 5 ? Icons.Material.Filled.Check : null)">
+                                Expiry Date: Oldest
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(6))"
+                                         Icon="@(sortOption == 6 ? Icons.Material.Filled.Check : null)">
+                                Add-on Expiry Date: Oldest
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(7))"
+                                         Icon="@(sortOption == 7 ? Icons.Material.Filled.Check : null)">
+                                Add-on Expiry Date: Recent
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(8))"
+                                         Icon="@(sortOption == 8 ? Icons.Material.Filled.Check : null)">
+                                Price: High to Low
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => HandleSort(9))"
+                                         Icon="@(sortOption == 9 ? Icons.Material.Filled.Check : null)">
+                                Price: Low to High
+                            </MudMenuItem>
+                           
+                        </ChildContent>
+
+                    </MudMenu>
                 </div>
             </div>
-
-            <!-- Published Ads -->
-            @foreach (var ad in publishedAds)
+            @if (_selectedAdsTab == 0)
             {
-                <MudPaper Class="ad-container d-flex flex-column flex-sm-row mt-4 "
-                          Style="border-radius: 0; border: none; border-bottom: 1px solid #EAECF0; box-shadow: none;">
-                    <!-- First Row (Image + Checkbox) - full width on mobile -->
-                    <div class="d-flex align-items-center mb-3 mb-sm-0 mr-sm-4">
-                        <MudCheckBox T="bool" @bind-Checked="_isChecked" Class="mr-2 ad-checkbox" />
-                      @*   <img src="/qln-images/subscription/Gucci.png" alt="Ad Image"
-                             style="width: 240px; max-width:100%; height: auto; max-height: 180px; border-radius: 4px;" /> *@
-                        @if (ad.ImageUrls != null && ad.ImageUrls.Any())
-                        {
-                            <img src="@ad.ImageUrls.First()" alt="Ad Image" style="width: 240px; max-width:100%; height: auto; max-height: 180px; border-radius: 4px;" />
-                        }
-                        else
-                        {
-                            <img src="/qln-images/subscription/Gucci.png" alt="No Image" style="width: 240px; max-width:100%; height: auto; max-height: 180px; border-radius: 4px;" />
-                        }
-
-                    </div>
-
-                    <!-- Second Column (Main Content) -->
-                    <div style="flex:1">
-                        <!-- Category (Row 2) -->
-                        <MudText Typo="Typo.body2"
-                                 Style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 11px; line-height: 12px; letter-spacing: 0; color: #646464; margin-bottom: 4px;">
-                            @ad.Category
-                        </MudText>
-
-                        <!-- Title (Row 3) -->
-                        <MudText Typo="Typo.h6"
-                                 Style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 14px; line-height: 20px; letter-spacing: 0; color: #00426D; margin-bottom: 4px;">
-                            @ad.Title
-                        </MudText>
-
-                        <!-- Certificate + Location (Row 4) -->
-                        <div class="d-flex flex-column flex-sm-row align-items-sm-center mb-2">
-                            <div class="d-flex align-items-center mb-2 mb-sm-0">
-                                <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" Color="Color.Primary"
-                                         Style="margin-right:4px" />
-                                <MudLink Href="#"
-                                         Style="margin-left:4px;font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 12px; line-height: 18px; letter-spacing: 0; color: #0065A8;">
-                                    Certificate.pdf
-                                </MudLink>
-                            </div>
-                            <div class="d-flex align-items-center ml-2">
-                                <MudIcon Icon="@Icons.Material.Outlined.Place" Size="Size.Small"
-                                         Style="color: #646464; margin-left: 0; margin-sm-left:4px;" />
-                                <MudText Typo="Typo.caption"
-                                         Style="margin-left:4px;font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 11px; line-height: 12px; letter-spacing: 0; color: #646464;">
-                                    @ad.Location
-                                </MudText>
-                            </div>
-                        </div>
-
-                        <!-- Price (Row 5) -->
-                        <MudText Typo="Typo.h6"
-                                 Style="font-family: 'Public Sans', sans-serif; font-weight: 600; font-size: 20px; line-height: 34px; letter-spacing: 0; color: #242424;">
-                            @ad.Price @ad.PriceType
-                        </MudText>
-
-                        <!-- Buttons (Row 6) -->
-                        <div class="d-flex flex-wrap mt-2" style="gap: 8px;">
-                            <MudButton Variant="Variant.Text"
-                                       Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424; display: flex; align-items: center;">
-                                <img src="qln-images/subscription/Refresh.svg" alt="Gucci" style="margin-right: 8px;" />
-                                <div>
-                                    Refresh
-@*                                     <div style="font-size: 0.7em; color: #5F6C7B;">(Exp: @ad.ExpiryDate)</div>
- *@                               
-                                   </div>
-                            </MudButton>
-
-                            @if (ad.IsFeatured)
-                            {
-                                <MudButton Variant="Variant.Text"
-                                           Style="text-transform: none;background-color:#F5F6FA;border-radius:4px; color: #242424;">
-                                    <img src="qln-images/subscription/Feature.svg" style="margin-right: 8px;" alt="Feature" />
-                                    Unfeature
-                                </MudButton>
-                            }
-                            else
-                            {
-                                <MudButton Variant="Variant.Text"
-                                           Style="text-transform: none;background-color:#F5F6FA;border-radius:4px; color: #242424;">
-                                    <img src="qln-images/subscription/Feature.svg" style="margin-right: 8px;" alt="Feature" />
-                                    Pay to Feature
-                                </MudButton>
-                            }
-                            <MudButton Variant="Variant.Text"
-                                       Style="text-transform: none;background-color:#F5F6FA;border-radius:4px; color: #242424;">
-                                <img src="qln-images/subscription/Feature.svg" style="margin-right: 8px;" alt="Feature" />
-                                Promote
-                            </MudButton>
-                            <MudIconButton Icon="@Icons.Material.Filled.MoreVert" />
-                        </div>
-                    </div>
-                </MudPaper>
-
-                <!-- Stats + Status -->
-                <MudPaper Class="d-flex flex-column flex-sm-row align-items-sm-center px-4 py-2 mb-4"
-                          Style="margin-top:10px;border-radius:0; border:none; border-bottom:1px solid #EAECF0; box-shadow:none;">
-                    <!-- Stats -->
-                    <div class="d-flex flex-wrap" style="flex: 1; gap: 16px;">
-                        <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
-                            <img src="qln-images/subscription/Impressions.svg" style="width: 16px; height: 16px; color: #00426D;" />
-                            <MudText Typo="Typo.caption" Style="margin: 0;">Impressions: @ad.Impressions</MudText>
-                        </div>
-                        <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
-                            <img src="qln-images/subscription/Views.svg" style="width: 16px; height: 16px; color: #00426D;" />
-                            <MudText Typo="Typo.caption" Style="margin: 0;">Views: @ad.Views</MudText>
-                        </div>
-                        <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
-                            <img src="qln-images/subscription/Calls.svg" style="width: 16px; height: 16px; color: #00426D;" />
-                            <MudText Typo="Typo.caption" Style="margin: 0;">Calls: @ad.Calls</MudText>
-                        </div>
-                        <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
-                            <img src="qln-images/subscription/WhatsApp.svg" style="width: 16px; height: 16px; color: #00426D;" />
-                            <MudText Typo="Typo.caption" Style="margin: 0;">WhatsApp: @ad.WhatsAppClicks</MudText>
-                        </div>
-                        <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
-                            <img src="qln-images/subscription/PromotedAds.svg" style="width: 16px; height: 16px; color: #00426D;" />
-                            <MudText Typo="Typo.caption" Style="margin: 0;">Shares: @ad.Shares</MudText>
-                        </div>
-                        <div class="d-flex align-items-center" style="gap: 6px; color: #5F6C7B;">
-                            <img src="qln-images/subscription/FeaturedAds.svg" style="width: 16px; height: 16px; color: #00426D;" />
-                            <MudText Typo="Typo.caption" Style="margin: 0;">Saves: @ad.Saves</MudText>
-                        </div>
-                    </div>
-
-                    <MudText Typo="Typo.caption" Class="mt-2 mt-sm-0" Style="color: #5F6C7B;">Listed on 01‑02‑2025</MudText>
-                </MudPaper>
+                <PublishedAdsComponent Ads="publishedAds"
+                                       _isPublishedLoading="_isPublishedLoading"
+                                       OnPublish="UnPublishAd"
+                                       OnEdit="OnEditAd"
+                                       OnPreview="onPreview"
+                                       OnRemove="onRemove"
+                                       DashboardType="Item" />
+            }
+            else if (_selectedAdsTab == 1)
+            {
+                <UnpublishedAdsComponent Ads="unpublishedAds"
+                                         _isUnpublishedLoading="_isUnpublishedLoading"
+                                         OnPublish="OnPublishAd"
+                                         OnEdit="OnEditAd"
+                                         OnPreview="onPreview"
+                                         OnRemove="onRemove"
+                                         DashboardType="Item" />
             }
         </MudPaper>
+      
+        @if ((publishedAds?.Any() ?? false) || (unpublishedAds?.Any() ?? false))
+        {
+            <PaginationFooter TotalItems="@TotalItems"
+                              CurrentPage="@CurrentPage"
+                              PageSize="@PageSize"
+                              OnPageChange="HandlePageChange"
+                              OnPageSizeChange="HandlePageSizeChange" />
+        }
 
 
     </MudContainer>
@@ -336,7 +273,7 @@
         align-items: center;
         gap: 4px;
         margin-top: 16px;
-        padding : 0px 20px;
+        padding: 0px 20px;
     }
 
     .dashboard-text {
@@ -357,7 +294,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-top: 24px;
+        margin-top: 12px;
         width: 100%;
     }
 
@@ -381,6 +318,7 @@
     .dashboard-edit-profile-button {
         margin-top: 12px;
     }
+
     .dashboard-statistics-container {
         padding: 16px;
         display: flex;
@@ -390,7 +328,8 @@
         background-color: white;
         margin-top: 24px;
     }
-    .dashboard-company-container{
+
+    .dashboard-company-container {
         width: 260px;
         padding: 16px;
         display: flex;
@@ -400,11 +339,12 @@
         background-color: #FAFAFA;
     }
 
-    .dashboard-company-logo{
+    .dashboard-company-logo {
         width: 80px;
         height: 80px;
     }
-    .dashboard-edit-profile-button{
+
+    .dashboard-edit-profile-button {
         border-radius: 8px;
         border: 1px solid #F26D1E;
         background-color: white;
@@ -417,7 +357,7 @@
         min-width: 0;
     }
 
-   .statistics-header {
+    .statistics-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -439,15 +379,15 @@
         justify-content: center;
         align-items: center;
         gap: 20px;
-        border-radius: 12px;
-        height: 100px;
+        border-radius: 4px;
+        height: 140px !important;
         background-color: #F9FAFB;
         padding: 16px;
     }
 
     .stat-icon {
-        width: 24px;
-        height: 24px;
+        width: 32px;
+        height: 32px;
     }
 
     .stat-title {
@@ -467,21 +407,176 @@
         text-align: center;
     }
 
-    .my-ad-section{
+    .my-ad-section {
         display: flex;
         width: 100%;
         margin-top: 40px;
         justify-content: space-between;
         align-items: center;
     }
-    .my-ad-toolbar-section{
-        width:20%
+
+    .my-ad-toolbar-section {
+        width: 20%
     }
 
-    ad-container
-    {
-        padding:16px
+    .dashboard-tabs-toolbar {
+        display: flex;
+        width: 100%;
+        background-color: rgb(245, 245, 245);
+        padding: 0px;
+        border-radius: 4px 4px 0px 0px;
+        overflow: hidden;
     }
+
+    .dashboard-tab {
+        min-width: 0px;
+        text-align: center;
+        color: rgb(102, 102, 102);
+        text-transform: none;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        background-color: rgb(245, 245, 245);
+        flex: 1 1 0%;
+        padding: 12px 0px;
+        margin: 0px;
+        transition: 0.3s;
+    }
+
+        .dashboard-tab.active {
+            background-color: white;
+            color: #F26D1E;
+            font-weight: 600;
+        }
+
+    .dashboard-tab-text {
+        color: #F26D1E;
+    }
+
+    .ad-container {
+        padding: 16px 0px;
+    }
+
+    .dashboard-tab-indicator {
+        position: absolute;
+        bottom: 0px;
+        height: 3px;
+        background-color: #F26D1E;
+        width: 100%;
+        transition: transform 0.3s;
+    }
+
+    .search-wrapper {
+        display: flex;
+        align-items: center;
+        border: 1px solid #D0D5DD;
+        border-radius: 6px;
+        padding: 4px 8px;
+        max-width: 300px;
+        background-color: white;
+    }
+
+    .search-icon {
+        width: 18px;
+        height: 18px;
+    }
+
+    .custom-search-field input {
+        padding-left: 8px;
+    }
+
+    .custom-menu-width .mud-popover {
+        min-width: 200px;
+    }
+
+    .menu-item-style {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        width: 150px;
+        padding-left: 20px;
+    }
+
+    .menu-icon {
+        width: 18px;
+        height: 18px;
+    }
+
+
+    .no-underline .mud-input-underline::before,
+    .no-underline .mud-input-underline::after {
+        border-bottom: none !important;
+    }
+
+
+    .ad-checkbox input[type="checkbox"]:checked + .mud-checkbox-background {
+        background-color: #D0D5DD !important;
+        border-color: #D0D5DD !important;
+    }
+
+    .ad-checkbox .mud-icon-root.mud-svg-icon {
+        fill: #D0D5DD !important;
+    }
+
+    .post-analytics-svg-icon {
+        width: 16px;
+        height: 16px;
+        color: #00426D;
+    }
+
+    .ad-image-wrapper {
+        position: relative;
+    }
+
+    .ad-image {
+        width: 240px;
+        max-width: 100%;
+        height: auto;
+        max-height: 180px;
+        border-radius: 4px;
+    }
+
+    /* Badge styles */
+    .promoted-badge {
+        position: absolute;
+        top: 12px;
+        left: 0;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        background-color: #FF7F38;
+        color: white;
+        padding: 4px 6px;
+        border-radius: 0px 4px 4px 0px;
+        font-size: 12px;
+        font-weight: 500;
+        width: fit-content;
+        height: 20px;
+    }
+
+    .post-analytics-text {
+        font-family: 'Public Sans'/sans-serif;
+        font-weight: 500;
+        font-size: 13px;
+        line-height: 22px;
+        letter-spacing: 0;
+        text-align: center;
+    }
+
+    .post-analytics-text-stat-label {
+        color: #242424;
+    }
+
+    .post-analytics-text-stat-value {
+        color: #00426D;
+        margin-left: 4px;
+    }
+
 
     @@media (max-width: 1007px) {
         .dashboard-container {
@@ -553,10 +648,9 @@
 
         .my-ad-section {
             display: flex;
-            flex-direction:row;
+            flex-direction: row;
             width: 100%;
             margin-top: 20px;
-
         }
 
         .my-ad-toolbar-section {

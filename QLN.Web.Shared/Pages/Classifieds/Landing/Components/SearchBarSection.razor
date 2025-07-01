@@ -1,7 +1,7 @@
 @using MudBlazor
 @inherits SearchBarSectionBase
 @using QLN.Web.Shared.Components.NewCustomSelect
-
+@using QLN.Common.DTO_s;
         <div class="search-bar">
             <!-- Search Field -->
             <div class="search-field-container">
@@ -16,8 +16,9 @@
 
             <!-- Category Dropdown -->
             <div class="category-field-container">
-                <NewCustomSelect TItem="CategoryItem" Items="@categoryOptions" SelectedId="@selectedCategory"
-                                 SelectedIdChanged="v => selectedCategory = v" GetLabel="x => x.Label" GetId="x => x.Id"
+                <NewCustomSelect TItem="CategoryTreeDto" Items="@CategoryTrees" SelectedId="@selectedCategory"
+                                 SelectedIdChanged="v => selectedCategory = v"   GetId="x => x.Id.ToString()"
+                                  GetLabel="x => x.Name"
                                  Label="Category" Placeholder="Choose" Padding="8px 10px 7.5px 10px" BorderRadius="0px" />
             </div>
 

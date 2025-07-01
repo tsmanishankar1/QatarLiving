@@ -4,6 +4,21 @@ namespace QLN.Common.Infrastructure.DTO_s
 {
     public class ContentPost : ContentBase
     {
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public Guid Id { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public Guid User_id { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool IsActive { get; set; } = true;
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public Guid CreatedBy { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public DateTime CreatedAt { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public Guid? UpdatedBy { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public DateTime? UpdatedAt { get; set; }
+
         [JsonPropertyName("nid")]
         public string Nid { get; set; }
 

@@ -211,8 +211,8 @@ namespace QLN.SearchService.Service
             {
                 var raw = FormatRawValue(val);
                 return isMin
-                    ? $"{field} ge {raw}"
-                    : $"{field} le {raw}";
+                    ? $"Price ge {raw}"
+                    : $"Price le {raw}";
             }
 
             switch (val)

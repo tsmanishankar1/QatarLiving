@@ -1,0 +1,265 @@
+@using QLN.Common.DTO_s
+@using QLN.Web.Shared.Components.MoreFilters
+
+<MoreFilters HasWarrantyCertificate="HasWarrantyCertificate"ConfirmedOptions="ConfirmedOptions" OnApply="ApplyFilters" OnReset="ResetFilters">
+    <div>
+   @foreach (var field in SelectedFields)
+{
+    if (field.Name == "Brands" || field.Name == "Brand") continue;
+
+    <div class="filter-section">
+        <label class="section-label">@field.Name</label>
+
+        @if (field.Name == "Model")
+        {
+            <div class="model-filter-wrapper">
+                <input placeholder="Search"
+       class="model-search"
+       @bind="ModelSearchTerm"
+       @bind:event="oninput" />
+
+                <div class="model-list-scroll">
+                    <div class="model-subheading">All</div>
+
+                   @foreach (var option in GetFilteredModels(field))
+
+                    {
+                        // Add condition to segment if needed (e.g. POPULAR vs All)
+
+                        <div class="checkbox-item model-item">
+                            <MudCheckBox @bind-Value="SelectedOptions[field.Name][option]"
+                                         Color="Color.Primary"
+                                         UncheckedColor="Color.Default"
+                                         Class="mb-1" />
+                            <span class="option-text">@option</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="option-grid">
+                @foreach (var option in field.Options)
+                {
+                    <div class="checkbox-item">
+                        <MudCheckBox @bind-Value="SelectedOptions[field.Name][option]"
+                                     Color="Color.Primary"
+                                     UncheckedColor="Color.Default"
+                                     Class="mb-1" />
+                        @if (field.Name == "Colour")
+                        {
+                            <span class="color-dot" style="background-color:@option.ToLower();"></span>
+                        }
+                        <span class="option-text">@option</span>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+<div class="checkbox-item">
+  <MudCheckBox @bind-Value="HasWarrantyCertificate"
+             Color="Color.Primary"
+             UncheckedColor="Color.Default"
+             Class="mb-1" />
+<span class="option-text">Ads with an active warranty</span>
+
+</div>
+
+</div>
+</MoreFilters>
+
+
+@code {
+    [Parameter]
+    public List<CategoryField> SelectedFields { get; set; }
+        
+[Parameter]
+    public EventCallback OnFiltersChanged { get; set; }
+
+    // Dictionary to hold selection state
+   private Dictionary<string, Dictionary<string, bool>> SelectedOptions = new();
+
+
+    [Inject] protected SearchStateService SearchState { get; set; }
+    private string ModelSearchTerm = "";
+private bool HasWarrantyCertificate { get; set; }
+
+
+protected override void OnInitialized()
+{
+    HasWarrantyCertificate = SearchState.ItemHasWarrantyCertificate;
+}
+
+private List<string> GetFilteredModels(CategoryField field)
+{
+    if (string.IsNullOrWhiteSpace(ModelSearchTerm))
+        return field.Options;
+
+    // Prioritize matches that start with the search term
+    return field.Options
+        .OrderByDescending(option => option.StartsWith(ModelSearchTerm, StringComparison.OrdinalIgnoreCase))
+        .ThenBy(option => option.IndexOf(ModelSearchTerm, StringComparison.OrdinalIgnoreCase))
+        .ToList();
+}
+private Dictionary<string, Dictionary<string, bool>> ConfirmedOptions = new();
+
+ protected override void OnParametersSet()
+{
+    if (SelectedFields == null)
+        return;
+
+    SelectedOptions.Clear();
+
+    foreach (var field in SelectedFields)
+    {
+        SelectedOptions[field.Name] = new Dictionary<string, bool>();
+
+        foreach (var option in field.Options)
+        {
+            // If already saved in SearchState, restore the checked state
+            bool isChecked = SearchState.PrelovedFilters.TryGetValue(field.Name, out var selectedList)
+                             && selectedList.Contains(option);
+
+            SelectedOptions[field.Name][option] = isChecked;
+        }
+    }
+}
+
+
+  private async Task ApplyFilters()
+{
+    Console.WriteLine("Selected Filters:");
+
+    var selectedFilterMap = new Dictionary<string, List<string>>();
+
+    foreach (var field in SelectedOptions)
+    {
+        var selectedOptions = field.Value
+            .Where(x => x.Value)
+            .Select(x => x.Key)
+            .ToList();
+
+        if (selectedOptions.Any())
+        {
+            selectedFilterMap[field.Key] = selectedOptions;
+            Console.WriteLine($"{field.Key}: {string.Join(", ", selectedOptions)}");
+        }
+    }
+
+    // ✅ Always update ConfirmedOptions from SelectedOptions
+    ConfirmedOptions = SelectedOptions
+        .ToDictionary(
+            kv => kv.Key,
+            kv => kv.Value.ToDictionary(e => e.Key, e => e.Value)
+        );
+
+    SearchState.PrelovedFilters = selectedFilterMap;
+   SearchState.ItemHasWarrantyCertificate = HasWarrantyCertificate;
+    await OnFiltersChanged.InvokeAsync();
+}
+
+ private async Task ResetFilters()
+{
+    foreach (var field in SelectedOptions.Keys.ToList())
+    {
+        foreach (var option in SelectedOptions[field].Keys.ToList())
+        {
+            SelectedOptions[field][option] = false;
+        }
+    }
+
+            SearchState.PrelovedFilters.Clear();
+            SearchState.PrelovedSearchText = null;
+            SearchState.PrelovedCategory = null;
+            SearchState.PrelovedBrand = null;
+            SearchState.PrelovedMinPrice = null;
+            SearchState.PrelovedMaxPrice = null;
+            SearchState.PrelovedViewMode ??= "grid";
+            SearchState.PrelovedSubCategory = null;
+            SearchState.PrelovedSubSubCategory = null;
+            SearchState.PrelovedHasWarrantyCertificate = false;
+
+    Console.WriteLine("Filters reset.");
+    await OnFiltersChanged.InvokeAsync();
+}
+
+}
+<style>
+    .model-filter-wrapper {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.model-search {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.model-subheading {
+    font-size: 12px;
+    font-weight: 600;
+    color: #999;
+    padding: 4px 0;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+.model-list-scroll {
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.model-item {
+    margin-bottom: 4px;
+}
+
+    .filter-section {
+    margin-bottom: 1.5rem;
+}
+
+.section-label {
+    font-weight: 500;
+    margin-bottom: 3px;
+    font-size: 14px;
+    color: var(--color-accent);
+    display: block;
+    line-height: 26px;
+    letter-spacing: 0;
+}
+
+.option-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem 1rem;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+}
+.option-text{
+    color: var(--color-text-heading);
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 26px;
+    letter-spacing: 0;
+}
+.color-dot {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    margin-right: 6px;
+    border: 1px solid #ccc;
+}
+
+</style>

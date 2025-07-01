@@ -2,74 +2,73 @@
 @using QLN.Web.Shared.Components.BreadCrumb
 @using QLN.Web.Shared.Pages.Classifieds.CreatePost.Components
 @using MudBlazor
+@inherits CreatePostComponentBase
 
+<EditForm EditContext="@editContext" OnSubmit="HandleSubmit">
+   <DataAnnotationsValidator />
 <div class="form-wrapper">
+     <div class="max-container">
     <Breadcrumb Items="breadcrumbItems" />
 
     <div Class="form-container">
         <MudGrid GutterSize="24px">
             <MudItem xs="12" md="5">
-                <CreateFormList TItem="string" @ref="formRef" CategoryChanged="HandleCategoryChanged" />
+                <CreateFormList TItem="string"  EditContext="editContext"
+                                        adPostModel="adPostModel" CategoryTrees="CategoryTrees" CategoryChanged="HandleCategoryChanged"  />
             </MudItem>
 
             <MudItem xs="12" md="7">
-                @if (!string.IsNullOrWhiteSpace(selectedCategoryFromChild))
+                @if (!string.IsNullOrWhiteSpace(selectedVertical))
                 {
-                    <UploadPhotos @ref="photoRef" />
+                    <UploadPhotos adPostModel="adPostModel"PhotoUrls="@adPostModel.PhotoUrls" selectedVertical="@selectedVertical" />
                 }
             </MudItem>
         </MudGrid>
-    </div>
-
-    @if (!string.IsNullOrWhiteSpace(selectedCategoryFromChild))
-    {
-        <div class="d-flex justify-end mt-4">
-            <MudButton Variant="Variant.Outlined" Class="close-button">Close</MudButton>
-            <MudButton Class="ml-2 save-button" Variant="Variant.Filled" OnClick="SaveForm">
-                Save & Publish
-            </MudButton>
         </div>
-    }
-</div>
-
-@code {
-    private List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
-    private CreateFormList<string> formRef;
-    private UploadPhotos photoRef;
-    private string selectedCategoryFromChild;
-
-    private void HandleCategoryChanged(string category)
-    {
-        selectedCategoryFromChild = category;
-    }
-
-    protected override void OnInitialized()
-    {
-        breadcrumbItems = new()
-{
-new() { Label = "Classifieds", Url = "/qln/classifieds" },
-new() { Label = "Create Form", Url = "/qln/classifieds/createform", IsLast = true }
-};
-    }
-
-    private void SaveForm()
-    {
-        var formData = formRef?.GetFormData();
-        var photoUrls = photoRef?.GetPhotoUrls();
-        // Handle save logic here
-    }
+    </div>
+ @if (!string.IsNullOrWhiteSpace(selectedVertical))
+                {
+         <div class="save-button-container">
+                    <button class="close-button">Close</button>
+                    <button class="save-button" type="submit">
+                        @if (IsSaving)
+                        {
+                            <MudProgressCircular Color="Color.Inherit"
+                                                 Size="Size.Small"
+                                                 Indeterminate="true" />
+                        }
+                        else
+                        {
+                            <span>Save & Publish</span>
+                        }
+                    </button>
+                </div>
 }
+</div>
+</EditForm>
+
 <style>
     .form-wrapper {
         background-color: var(--color-secondary-background);
-        padding: 10px 5px;
-        border-radius: 8px;
+        padding: 10px 0;
         font-family: 'Public Sans', sans-serif;
 
     }
 
+   .max-container {
+            max-width: 1170px;
+            margin: 0 auto;
+        }
+    .save-button-container {
+        display: flex;
+        justify-content: flex-end;
+        padding: 5px;
+        gap: 10px;
+        margin-top: 1rem; 
+    }
+
     .form-container {
-        padding: 10px 20px;
+        padding: 10px 5px;
         background-color: transparent;
         display: flex;
         flex-direction: column;
@@ -82,7 +81,8 @@ new() { Label = "Create Form", Url = "/qln/classifieds/createform", IsLast = tru
         border-radius: 6px;
         width: 200px;
         font-weight: 600;
-        text-transform: capitalize;
+        padding: 8px 10px;
+        font-weight: 500;
         border: 1px solid var(--color-captcha-box);
     }
 
@@ -92,7 +92,8 @@ new() { Label = "Create Form", Url = "/qln/classifieds/createform", IsLast = tru
         border-radius: 6px;
         width: 200px;
         font-weight: 600;
-        text-transform: capitalize;
+        font-weight: 500;
+        padding: 8px 10px;
     }
 
     @@media (min-width: 960px) {

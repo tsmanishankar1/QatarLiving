@@ -1,9 +1,10 @@
 @typeparam TItem
+@using System.Linq.Expressions
 
 <div class="custom-select-wrapper @(IsDisabled ? "disabled" : "")" @onfocusout="HandleFocusOut" tabindex="0" @onkeydown="HandleKeyDown">
 
     <div class="select-display @(IsOpen ? "focused" : "")" @onclick="() => { if (!IsDisabled) ToggleDropdown(); }"
-        style="@($"border-radius:{BorderRadius}; border-color:{(IsOpen ? "#FF7F38" : "#D0D5DD")}; padding:{Padding};")">
+        style="@($"border-radius:{BorderRadius}; border-color:{GetBorderColor()}; padding:{Padding};")">
 
 
         <div class="select-label-column">
@@ -29,13 +30,22 @@
             Class="arrow-icon" />
 
     </div>
+    @if (CascadedEditContext != null && _fieldIdentifier.FieldName != null)
+{
+    var messages = CascadedEditContext.GetValidationMessages(_fieldIdentifier);
+    if (messages.Any())
+    {
+        <div class="validation-message">@messages.First()</div>
+    }
+}
+
 
     @if (IsOpen && !IsDisabled)
     {
         <div class="select-dropdown animate-dropdown">
             @if (!string.IsNullOrEmpty(Placeholder))
             {
-                <div class="dropdown-item disabled">@Placeholder</div>
+                <div class="dropdown-item-placeholder disabled">@Placeholder</div>
             }
 
             @foreach (var item in Items)
@@ -64,7 +74,36 @@
     [Parameter] public bool IsDisabled { get; set; } = false;
     [Parameter] public Func<TItem, string> GetLabel { get; set; }
     [Parameter] public Func<TItem, string> GetId { get; set; }
+[Parameter] public Expression<Func<string>> For { get; set; }
+[CascadingParameter] EditContext CascadedEditContext { get; set; }
 
+private FieldIdentifier _fieldIdentifier;protected override void OnInitialized()
+{
+    if (CascadedEditContext is null)
+    {
+        Console.WriteLine("⚠️ EditContext not found. NewCustomSelect should be inside an EditForm.");
+        return;
+    }
+
+    if (For != null)
+    {
+        _fieldIdentifier = FieldIdentifier.Create(For);
+    }
+}
+
+
+private string GetBorderColor()
+{
+    if (CascadedEditContext != null && _fieldIdentifier.FieldName != null)
+    {
+        var messages = CascadedEditContext.GetValidationMessages(_fieldIdentifier);
+        if (messages.Any())
+        {
+            return "red";
+        }
+    }
+    return IsOpen ? "#FF7F38" : "#D0D5DD";
+}
     private bool IsOpen = false;
 
     private string SelectedLabel => Items.FirstOrDefault(x => GetId(x) == SelectedId) is TItem selected
@@ -79,6 +118,13 @@
         SelectedId = GetId(item);
         IsOpen = false;
         await SelectedIdChanged.InvokeAsync(SelectedId);
+    if (_fieldIdentifier.Model != null && !string.IsNullOrEmpty(_fieldIdentifier.FieldName))
+    {
+        CascadedEditContext?.NotifyFieldChanged(_fieldIdentifier);
+        CascadedEditContext?.Validate();
+    }
+
+    StateHasChanged(); // force component to re-render
     }
 
     private void HandleFocusOut(FocusEventArgs e) => IsOpen = false;
@@ -105,8 +151,14 @@
         pointer-events: none;
         opacity: 0.6;
     }
+.validation-message {
+    color: red;
+    font-size: 12px;
+    margin-top: 4px;
+}
 
     .custom-select-wrapper.disabled .select-display {
+          box-shadow: 0 0 0 1px rgba(255, 0, 0, 0.15);
         background-color: var(--color-background-secondary-grey-light);
         cursor: not-allowed;
     }
@@ -148,7 +200,16 @@
     }
 
     .select-value-placeholder {
-        color: #787878;
+        color: #A1A1A1;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
+    }
+    .select-value-placeholder {
+        color: #A1A1A1;
         display: -webkit-box;
         -webkit-line-clamp: 1;
         -webkit-box-orient: vertical;
@@ -157,9 +218,11 @@
         white-space: normal;
     }
 
-    .select-value-selected {
+    .dropdown-item-placeholder {
+        margin: 0;
+        padding: 0 5px;
         width: 100%;
-        color: #242424;
+        color: #A1A1A1;
         display: -webkit-box;
         -webkit-line-clamp: 1;
         -webkit-box-orient: vertical;
@@ -215,8 +278,9 @@
         cursor: pointer;
         white-space: nowrap;
     }
-
+ 
     .dropdown-text {
+        margin: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         -webkit-line-clamp: 1;

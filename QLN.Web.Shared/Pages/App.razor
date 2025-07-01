@@ -15,9 +15,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap"
-        rel="stylesheet" as="style">
-    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" media="print"
-        onload="this.media='all'">
+          rel="stylesheet" as="style">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.css" media="print"
+          onload="this.media='all'" />
 
     @* <link rel="preload" href="fonts/PublicSans.woff2" as="font" type="font/woff2" crossorigin="anonymous"> *@
 
@@ -25,8 +25,11 @@
     @* <noscript>
         <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet" as="style">
     </noscript> *@
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
     <link rel="icon" type="image/svg+xml" href="fav-icon.svg">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <HeadOutlet />
     <ImportMap />
 </head>
@@ -68,13 +71,66 @@
     @* <div id="reconnect-modal" style="display: none;"></div> *@
     <script src="@Assets["_framework/blazor.web.js"]"></script>
     @* <script src="js/boot.js"></script> *@
-    <script src="https://unpkg.com/swiper/swiper-bundle.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.js" defer></script>
     <script src="@Assets["_content/GoogleAnalytics.Blazor/googleanalytics.blazor.js"]" defer></script>
     <script src="_content/CodeBeam.MudBlazor.Extensions/MudExtensions.min.js"></script>
     @* 
         Script is MIA, not needed maybe?
         <script src="_content/Extensions.MudBlazor.StaticInput/NavigationObserver.js?v=3.2.0" defer></script> 
     *@
+    <script>
+        window.initializeMap = function (dotnetHelper) {
+            // Prevent re-initialization
+            if (window._leafletMap) {
+                return;
+            }
+
+            const map = L.map('map').setView([25.276987, 55.296249], 10); // Dubai
+            window._leafletMap = map;
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            // ✅ Custom icon
+            const customIcon = L.icon({
+                iconUrl: '/qln-images/location_pin.svg',
+                iconSize: [32, 48],
+                iconAnchor: [16, 48],
+                popupAnchor: [0, -40],
+                shadowUrl: null
+            });
+
+            let marker;
+
+            map.on('click', function (e) {
+                const lat = e.latlng.lat;
+                const lng = e.latlng.lng;
+
+                if (marker) {
+                    marker.setLatLng(e.latlng);
+                } else {
+                    // ✅ Use custom icon here
+                    marker = L.marker(e.latlng, { icon: customIcon }).addTo(map);
+                }
+
+                dotnetHelper.invokeMethodAsync('SetCoordinates', lat, lng);
+            });
+        };
+    </script>
+
+    <!-- Mailchimp validation script -->
+    <script type="text/javascript" src="//s3.amazonaws.com/downloads.mailchimp.com/js/mc-validate.js"></script>
+    <script type="text/javascript">
+        (function($) {
+          window.fnames = new Array();
+          window.ftypes = new Array();
+          fnames[0]='EMAIL';ftypes[0]='email';
+          fnames[1]='FNAME';ftypes[1]='text';
+          fnames[2]='LNAME';ftypes[2]='text';
+        }(jQuery));
+        var $mcj = jQuery.noConflict(true);
+    </script>
 
     <script>
         window.setVideoFirstFrame = function (videoElement) {
@@ -118,6 +174,47 @@
             });
         };
     </script>
+    <script>
+        window.carouselUtils = {
+            checkOverflow: (viewportSelector, trackSelector) => {
+                const viewport = document.querySelector(viewportSelector);
+                const track = document.querySelector(trackSelector);
+                if (!viewport || !track) return { canScrollLeft: false, canScrollRight: false };
+
+                const canScrollLeft = viewport.scrollLeft > 0;
+                const canScrollRight = track.scrollWidth > viewport.clientWidth + viewport.scrollLeft;
+
+                return {
+                    canScrollLeft,
+                    canScrollRight
+                };
+            },
+
+            scrollLeft: (selector) => {
+                const el = document.querySelector(selector);
+                if (el) el.scrollBy({ left: -150, behavior: 'smooth' });
+            },
+
+            scrollRight: (selector) => {
+                const el = document.querySelector(selector);
+                if (el) el.scrollBy({ left: 150, behavior: 'smooth' });
+            },
+
+            scrollImageIntoView: (index) => {
+                const cards = document.querySelectorAll('.item-image-card');
+                if (cards[index]) {
+                    cards[index].scrollIntoView({ behavior: 'smooth', inline: 'center' });
+                }
+            },
+
+            registerResizeHandler: (dotNetHelper) => {
+                window.addEventListener('resize', () => {
+                    dotNetHelper.invokeMethodAsync('UpdateWindowWidth', window.innerWidth);
+                });
+            }
+        };
+    </script>
+
     <script>
         function updateBannerImagesForScreen() {
             const isMobile = window.innerWidth <= 768;
@@ -193,235 +290,502 @@
             if (element) element.click();
         };
     </script>
-   
-<script>
-    window.registerOutsideClickHandlerPrice = (panelSelector, dotNetRef) => {
-        function onClick(event) {
-            const panel = document.querySelector(panelSelector);
-            if (panel && !panel.contains(event.target)) {
-                dotNetRef.invokeMethodAsync('CloseDropdownFromJs');
+
+    <script>
+        window.registerOutsideClickHandlerPrice = (panelSelector, dotNetRef) => {
+            function onClick(event) {
+                const panel = document.querySelector(panelSelector);
+                if (panel && !panel.contains(event.target)) {
+                    dotNetRef.invokeMethodAsync('CloseDropdownFromJs');
+                }
             }
-        }
 
-        document.addEventListener('mousedown', onClick);
+            document.addEventListener('mousedown', onClick);
 
-        // Store handler reference globally using the panelSelector as key
-        window._outsideClickHandlers = window._outsideClickHandlers || {};
-        window._outsideClickHandlers[panelSelector] = onClick;
+            // Store handler reference globally using the panelSelector as key
+            window._outsideClickHandlers = window._outsideClickHandlers || {};
+            window._outsideClickHandlers[panelSelector] = onClick;
 
-        return {
-            dispose: () => {
-                document.removeEventListener('mousedown', onClick);
+            return {
+                dispose: () => {
+                    document.removeEventListener('mousedown', onClick);
+                    delete window._outsideClickHandlers[panelSelector];
+                }
+            };
+        };
+
+        window.unregisterOutsideClickHandler = (panelSelector) => {
+            const handler = window._outsideClickHandlers?.[panelSelector];
+            if (handler) {
+                document.removeEventListener('mousedown', handler);
                 delete window._outsideClickHandlers[panelSelector];
             }
         };
-    };
+    </script>
 
-    window.unregisterOutsideClickHandler = (panelSelector) => {
-        const handler = window._outsideClickHandlers?.[panelSelector];
-        if (handler) {
-            document.removeEventListener('mousedown', handler);
-            delete window._outsideClickHandlers[panelSelector];
-        }
-    };
-</script>
-
-
-<script>
-     window.registerOutsideClickHandler = (panelSelector, dotNetRef) => {
-    function onClick(event) {
-        const panel = document.querySelector(panelSelector);
-        if (panel && !panel.contains(event.target)) {
-            dotNetRef.invokeMethodAsync('CloseFilters');
-        }
-    }
-
-    document.addEventListener('mousedown', onClick);
-
-    return {
-        dispose: () => document.removeEventListener('mousedown', onClick)
-    };
-};
-</script>
     <script>
-        let seasonalSwiperInstance;
-        window.initSeasonalSwiper = () => {
-            if (seasonalSwiperInstance) {
-                seasonalSwiperInstance.destroy(true, true);
-            }
+            window.registerOutsideClickHandlerOut = function (selector, dotnetHelper) {
+            const handler = (event) => {
+                const panel = document.querySelector(selector);
+                const toggleButton = document.querySelector(".filter-toggle-button");
 
-            const swiperEl = document.querySelector('.swiper-seasonal');
-            if (!swiperEl) {
-                console.warn("Seasonal Swiper element not found");
-                return;
-            }
-
-            seasonalSwiperInstance = new Swiper(swiperEl, {
-                slidesPerView: 'auto',
-                spaceBetween: 10,
-                navigation: {
-                    nextEl: '.swiper-seasonal-button-next',
-                    prevEl: '.swiper-seasonal-button-prev'
-                },
-                breakpoints: {
-                    320: { slidesPerView: 1, spaceBetween: 10 },
-                    340: { slidesPerView: 1, spaceBetween: 10 },
-                    480: { slidesPerView: 1, spaceBetween: 10 },
-                    640: { slidesPerView: 1.5, spaceBetween: 12 },
-                    768: { slidesPerView: 2, spaceBetween: 14 },
-                    860: { slidesPerView: 2.5, spaceBetween: 16 },
-                    1024: { slidesPerView: 3, spaceBetween: 18 },
-                    1200: { slidesPerView: 3, spaceBetween: 18 }
+                // If click is outside panel and not on the toggle button
+                if (
+                    panel && !panel.contains(event.target) &&
+                    toggleButton && !toggleButton.contains(event.target)
+                ) {
+                    dotnetHelper.invokeMethodAsync("CloseFilters");
                 }
-            });
-        };
-        let featuredSwiperInstance;
+            };
 
-        function initFeaturedSwiper() {
-            if (featuredSwiperInstance) {
-                featuredSwiperInstance.destroy(true, true);
-            }
+            document.addEventListener("click", handler);
 
-            const swiperEl = document.querySelector('.swiper-featured');
-            if (!swiperEl) {
-                console.warn("Swiper element not found");
-                return;
-            }
-
-            featuredSwiperInstance = new Swiper(swiperEl, {
-                slidesPerView: 'auto',
-                spaceBetween: 10,
-                navigation: {
-                    nextEl: ".swiper-featured-button-next",
-                    prevEl: ".swiper-featured-button-prev",
-                },
-                pagination: {
-                    el: ".swiper-featured-pagination",
-                    clickable: true,
-                },
-                breakpoints: {
-                    480: { slidesPerView: 1.2, spaceBetween: 12 },
-                    640: { slidesPerView: 1.8, spaceBetween: 12 },
-                    768: { slidesPerView: 2.5, spaceBetween: 14 },
-                    860: { slidesPerView: 2.8, spaceBetween: 16 },
-                    1024: { slidesPerView: 3.2, spaceBetween: 18 },
-                    1120: { slidesPerView: 4, spaceBetween: 10 },
-                    1200: { slidesPerView: 4, spaceBetween: 10 },
+            return {
+                dispose: () => {
+                    document.removeEventListener("click", handler);
                 }
-
-            });
-        }
-        let categoriesSwiperInstance;
-
-        function initCategoriesSwiper() {
-            if (categoriesSwiperInstance) {
-                categoriesSwiperInstance.destroy(true, true);
-            }
-
-            const swiperEl = document.querySelector('.swiper-categories');
-            if (!swiperEl) {
-                console.warn("Categories swiper element not found");
-                return;
-            }
-
-            categoriesSwiperInstance = new Swiper(swiperEl, {
-                slidesPerView: 'auto',
-                spaceBetween: 10,
-                navigation: {
-                    nextEl: ".swiper-categories-button-next",
-                    prevEl: ".swiper-categories-button-prev",
-                },
-                pagination: {
-                    el: '.swiper-categories-pagination',
-                    clickable: true,
-                    dynamicBullets: true,
-                    dynamicMainBullets: 7
-
-                },
-                breakpoints: {
-                    480: { slidesPerView: 2, spaceBetween: 5 },
-                    540: { slidesPerView: 2.8, spaceBetween: 5 },
-                    640: { slidesPerView: 3.8, spaceBetween: 6 },
-                    768: { slidesPerView: 4, spaceBetween: 7 },
-                    860: { slidesPerView: 4.8, spaceBetween: 7 },
-                    1024: { slidesPerView: 4.9, spaceBetween: 10 },
-                    1120: { slidesPerView: 5.3, spaceBetween: 10 },
-                    1200: { slidesPerView: 5.8, spaceBetween: 10 },
-                },
-                on: {
-                    afterInit: function (swiper) {
-                        const totalSlides = swiper.slides.length;
-                        const visibleSlides = swiper.params.slidesPerView;
-
-                        const nextBtn = document.querySelector(".swiper-categories-button-next");
-                        const prevBtn = document.querySelector(".swiper-categories-button-prev");
-
-                        // If all slides fit into view, hide arrows
-                        if (totalSlides <= visibleSlides) {
-                            nextBtn.style.display = "none";
-                            prevBtn.style.display = "none";
-                        } else {
-                            nextBtn.style.display = "";
-                            prevBtn.style.display = "";
-                        }
-                    },
-                }
-            });
-        }
-
-        let storeSwiperInstance;
-        window.initStoreSwiper = () => {
-            if (storeSwiperInstance) {
-                storeSwiperInstance.destroy(true, true);
-            }
-
-            const swiperEl = document.querySelector('.swiper-store');
-            if (!swiperEl) {
-                console.warn("Store Swiper element not found");
-                return;
-            }
-
-            storeSwiperInstance = new Swiper(swiperEl, {
-                slidesPerView: 'auto',
-                spaceBetween: 10,
-                navigation: {
-                    nextEl: '.swiper-store-button-next',
-                    prevEl: '.swiper-store-button-prev'
-                },
-                breakpoints: {
-                    320: { slidesPerView: 1.8, spaceBetween: 5 },
-                    340: { slidesPerView: 1.8, spaceBetween: 5 },
-                    480: { slidesPerView: 2.5, spaceBetween: 10 },
-                    640: { slidesPerView: 3, spaceBetween: 10 },
-                    768: { slidesPerView: 4.5, spaceBetween: 10 },
-                    860: { slidesPerView: 5, spaceBetween: 10 },
-                    1024: { slidesPerView: 6, spaceBetween: 10 },
-                    1200: { slidesPerView: 6, spaceBetween: 10 }
-                    },
-                        on: {
-                            afterInit: function (swiper) {
-                                const totalSlides = swiper.slides.length;
-                                const visibleSlides = swiper.params.slidesPerView;
-
-                                const nextBtn = document.querySelector(".swiper-store-button-next");
-                                const prevBtn = document.querySelector(".swiper-store-button-prev");
-
-                                // If all slides fit into view, hide arrows
-                                if (totalSlides <= visibleSlides) {
-                                    nextBtn.style.display = "none";
-                                    prevBtn.style.display = "none";
-                                } else {
-                                    nextBtn.style.display = "";
-                                    prevBtn.style.display = "";
-                                }
-                            },
-                        }
-            });
+            };
         };
 
     </script>
+    <script>
+             window.registerOutsideClickHandler = (panelSelector, dotNetRef) => {
+            function onClick(event) {
+                const panel = document.querySelector(panelSelector);
+                if (panel && !panel.contains(event.target)) {
+                    dotNetRef.invokeMethodAsync('CloseFilters');
+                }
+            }
 
-        <script>
+            document.addEventListener('mousedown', onClick);
+
+            return {
+                dispose: () => document.removeEventListener('mousedown', onClick)
+            };
+        };
+    </script>
+    <script>
+        let mainSwiperInstance;
+         let thumbsSwiperInstance;
+
+         window.initializeSwiperGallery = (dotNetRef, uniqueId) => {
+             const container = document.getElementById(uniqueId);
+             if (!container) {
+                 console.warn("Swiper container not found:", uniqueId);
+                 return;
+             }
+
+             // Destroy previous Swiper instances if they exist
+             if (mainSwiperInstance) {
+                 mainSwiperInstance.destroy(true, true);
+                 mainSwiperInstance = null;
+             }
+             if (thumbsSwiperInstance) {
+                 thumbsSwiperInstance.destroy(true, true);
+                 thumbsSwiperInstance = null;
+             }
+
+             const thumbSlides = container.querySelectorAll('.swiper-thumbs .swiper-slide');
+             const thumbCount = thumbSlides.length;
+
+             const thumbsWrapper = container.querySelector(".swiper-thumbs .swiper-wrapper");
+             const thumbsPrev = container.querySelector(".thumbs-prev");
+             const thumbsNext = container.querySelector(".thumbs-next");
+
+             // Base config
+             const thumbsConfig = {
+                 spaceBetween: 10,
+                 navigation: {
+                     nextEl: thumbsNext,
+                     prevEl: thumbsPrev,
+                 },
+                 breakpoints: {
+                     380: { slidesPerView: 2.6 },
+                     450: { slidesPerView: 3 },
+                     640: { slidesPerView: 4 },
+                     768: { slidesPerView: 5 },
+                     1024: { slidesPerView: 5 }
+                 }
+             };
+
+             if (thumbCount <= 5) {
+                 thumbsConfig.slidesPerView = thumbCount;
+                 thumbsConfig.loop = false;
+
+                 // Add helper class and hide arrows
+                 thumbsWrapper?.classList.add("few-thumbs");
+                 if (thumbsPrev) thumbsPrev.style.display = "none";
+                 if (thumbsNext) thumbsNext.style.display = "none";
+             } else {
+                 thumbsConfig.slidesPerView = "auto";
+             }
+
+             // Initialize thumbnail swiper
+             thumbsSwiperInstance = new Swiper(container.querySelector(".swiper-thumbs"), thumbsConfig);
+
+             // Initialize main swiper
+             mainSwiperInstance = new Swiper(container.querySelector(".swiper-main"), {
+                 spaceBetween: 10,
+                 pagination: {
+                     el: container.querySelector(".swiper-pagination"),
+                     clickable: true,
+                     dynamicBullets: true,
+                     dynamicMainBullets: 4,
+                 },
+                 thumbs: {
+                     swiper: thumbsSwiperInstance,
+                 },
+                 on: {
+                     slideChange: function () {
+                         dotNetRef?.invokeMethodAsync("UpdateActiveIndex", this.realIndex);
+                     }
+                 }
+             });
+
+             // Thumbnail click = main slider move
+             thumbsSwiperInstance.on("click", function (swiper) {
+                 if (typeof swiper.clickedIndex !== "undefined") {
+                     mainSwiperInstance.slideTo(swiper.clickedIndex);
+                 }
+             });
+
+             // Manual next/prev using thumbs buttons
+             thumbsNext?.addEventListener("click", () => {
+                 const nextIndex = Math.min(mainSwiperInstance.realIndex + 1, mainSwiperInstance.slides.length - 1);
+                 mainSwiperInstance.slideTo(nextIndex);
+             });
+
+             thumbsPrev?.addEventListener("click", () => {
+                 const prevIndex = Math.max(mainSwiperInstance.realIndex - 1, 0);
+                 mainSwiperInstance.slideTo(prevIndex);
+             });
+
+             // Allow external control
+             window.goToSlide = (index) => {
+                 if (mainSwiperInstance && typeof index === "number") {
+                     mainSwiperInstance.slideTo(index);
+                 }
+             };
+         };
+
+         let mainImagePreviewSwiperInstance;
+         let thumbsImagePreviewSwiperInstance;
+
+         window.initializeSwiperImagePreview = (dotNetRef, uniqueId) => {
+             const container = document.getElementById(uniqueId);
+             if (!container) {
+                 console.warn("Swiper Image Preview container not found:", uniqueId);
+                 return;
+             }
+
+             if (mainImagePreviewSwiperInstance) mainImagePreviewSwiperInstance.destroy(true, true);
+             if (thumbsImagePreviewSwiperInstance) thumbsImagePreviewSwiperInstance.destroy(true, true);
+
+             const thumbSlides = container.querySelectorAll('.swiper-thumbs-preview .swiper-slide');
+             const thumbCount = thumbSlides.length;
+
+             const thumbsConfig = {
+                 spaceBetween: 10,
+                 navigation: {
+                     nextEl: container.querySelector(".thumbs-next-preview"),
+                     prevEl: container.querySelector(".thumbs-prev-preview"),
+                 },
+                 breakpoints: {
+                     380: { slidesPerView: 2.6 },
+                     450: { slidesPerView: 3 },
+                     640: { slidesPerView: 4 },
+                     768: { slidesPerView: 5 },
+                     1024: { slidesPerView: 5 },
+                 }
+             };
+
+             if (thumbCount <= 5) {
+                 thumbsConfig.slidesPerView = thumbCount;
+                 thumbsConfig.loop = false;
+
+                 container.querySelector(".swiper-thumbs-preview .swiper-wrapper")?.classList.add("few-thumbs");
+
+                 container.querySelector(".thumbs-prev-preview").style.display = "none";
+                 container.querySelector(".thumbs-next-preview").style.display = "none";
+             } else {
+                 thumbsConfig.slidesPerView = "auto";
+             }
+
+             // Initialize thumbnail swiper
+             thumbsImagePreviewSwiperInstance = new Swiper(container.querySelector(".swiper-thumbs-preview"), thumbsConfig);
+
+             // Initialize main swiper
+             mainImagePreviewSwiperInstance = new Swiper(container.querySelector(".swiper-main-preview"), {
+                 spaceBetween: 10,
+                 pagination: {
+                     el: container.querySelector(".swiper-pagination-preview"),
+                     clickable: true,
+                     dynamicBullets: true,
+                     dynamicMainBullets: 4,
+                 },
+                 thumbs: {
+                     swiper: thumbsImagePreviewSwiperInstance,
+                 },
+                 on: {
+                     slideChange: function () {
+                         dotNetRef?.invokeMethodAsync("UpdateActiveIndex", this.realIndex);
+                     }
+                 }
+             });
+
+             thumbsImagePreviewSwiperInstance.on('click', function (swiper) {
+                 if (typeof swiper.clickedIndex !== 'undefined') {
+                     mainImagePreviewSwiperInstance.slideTo(swiper.clickedIndex);
+                 }
+             });
+
+             container.querySelector(".thumbs-next-preview")?.addEventListener("click", () => {
+                 const currentIndex = mainImagePreviewSwiperInstance.realIndex;
+                 const nextIndex = Math.min(currentIndex + 1, mainImagePreviewSwiperInstance.slides.length - 1);
+                 mainImagePreviewSwiperInstance.slideTo(nextIndex);
+             });
+
+             container.querySelector(".thumbs-prev-preview")?.addEventListener("click", () => {
+                 const currentIndex = mainImagePreviewSwiperInstance.realIndex;
+                 const prevIndex = Math.max(currentIndex - 1, 0);
+                 mainImagePreviewSwiperInstance.slideTo(prevIndex);
+             });
+
+             // External control
+             window.goToImagePreviewSlide = (index) => {
+                 if (mainImagePreviewSwiperInstance && typeof index === 'number') {
+                     mainImagePreviewSwiperInstance.slideTo(index);
+                 }
+             };
+         };
+
+             let seasonalSwiperInstance;
+             window.initSeasonalSwiper = () => {
+                 if (seasonalSwiperInstance) {
+                     seasonalSwiperInstance.destroy(true, true);
+                 }
+
+                 const swiperEl = document.querySelector('.swiper-seasonal');
+                 if (!swiperEl) {
+                     console.warn("Seasonal Swiper element not found");
+                     return;
+                 }
+
+                 seasonalSwiperInstance = new Swiper(swiperEl, {
+                     slidesPerView: 'auto',
+                     spaceBetween: 10,
+                     navigation: {
+                         nextEl: '.swiper-seasonal-button-next',
+                         prevEl: '.swiper-seasonal-button-prev'
+                     },
+                     breakpoints: {
+                         320: { slidesPerView: 1, spaceBetween: 10 },
+                         340: { slidesPerView: 1, spaceBetween: 10 },
+                         480: { slidesPerView: 1, spaceBetween: 10 },
+                         640: { slidesPerView: 1.5, spaceBetween: 12 },
+                         768: { slidesPerView: 2, spaceBetween: 14 },
+                         860: { slidesPerView: 2.5, spaceBetween: 16 },
+                         1024: { slidesPerView: 3, spaceBetween: 18 },
+                         1200: { slidesPerView: 3, spaceBetween: 18 }
+                     }
+                 });
+             };
+             let featuredSwiperInstance;
+
+             function initFeaturedSwiper() {
+                 if (featuredSwiperInstance) {
+                     featuredSwiperInstance.destroy(true, true);
+                 }
+
+                 const swiperEl = document.querySelector('.swiper-featured');
+                 if (!swiperEl) {
+                     console.warn("Swiper element not found");
+                     return;
+                 }
+
+                 featuredSwiperInstance = new Swiper(swiperEl, {
+                     slidesPerView: 'auto',
+                     spaceBetween: 10,
+                     navigation: {
+                         nextEl: ".swiper-featured-button-next",
+                         prevEl: ".swiper-featured-button-prev",
+                     },
+                     pagination: {
+                         el: ".swiper-featured-pagination",
+                         clickable: true,
+                     },
+                     breakpoints: {
+                         480: { slidesPerView: 1.2, spaceBetween: 12 },
+                         640: { slidesPerView: 1.8, spaceBetween: 12 },
+                         768: { slidesPerView: 2.5, spaceBetween: 14 },
+                         860: { slidesPerView: 2.8, spaceBetween: 16 },
+                         1024: { slidesPerView: 3.2, spaceBetween: 18 },
+                         1120: { slidesPerView: 4, spaceBetween: 10 },
+                         1200: { slidesPerView: 4, spaceBetween: 10 },
+                     }
+
+                 });
+             }
+             let categoriesSwiperInstance;
+
+             function initCategoriesSwiper() {
+                 if (categoriesSwiperInstance) {
+                     categoriesSwiperInstance.destroy(true, true);
+                 }
+
+                 const swiperEl = document.querySelector('.swiper-categories');
+                 if (!swiperEl) {
+                     console.warn("Categories swiper element not found");
+                     return;
+                 }
+
+                 categoriesSwiperInstance = new Swiper(swiperEl, {
+                     slidesPerView: 'auto',
+                     spaceBetween: 10,
+                     navigation: {
+                         nextEl: ".swiper-categories-button-next",
+                         prevEl: ".swiper-categories-button-prev",
+                     },
+                     pagination: {
+                         el: '.swiper-categories-pagination',
+                         clickable: true,
+                         dynamicBullets: true,
+                         dynamicMainBullets: 7
+
+                     },
+                     breakpoints: {
+                         480: { slidesPerView: 2, spaceBetween: 5 },
+                         540: { slidesPerView: 2.8, spaceBetween: 5 },
+                         640: { slidesPerView: 3.8, spaceBetween: 6 },
+                         768: { slidesPerView: 4, spaceBetween: 7 },
+                         860: { slidesPerView: 4.8, spaceBetween: 7 },
+                         1024: { slidesPerView: 4.9, spaceBetween: 10 },
+                         1120: { slidesPerView: 5.3, spaceBetween: 10 },
+                         1200: { slidesPerView: 5.8, spaceBetween: 10 },
+                     },
+                     on: {
+                         afterInit: function (swiper) {
+                             const totalSlides = swiper.slides.length;
+                             const visibleSlides = swiper.params.slidesPerView;
+
+                             const nextBtn = document.querySelector(".swiper-categories-button-next");
+                             const prevBtn = document.querySelector(".swiper-categories-button-prev");
+
+                             // If all slides fit into view, hide arrows
+                             if (totalSlides <= visibleSlides) {
+                                 nextBtn.style.display = "none";
+                                 prevBtn.style.display = "none";
+                             } else {
+                                 nextBtn.style.display = "";
+                                 prevBtn.style.display = "";
+                             }
+                         },
+                     }
+                 });
+             }
+
+             let storeSwiperInstance;
+             window.initStoreSwiper = () => {
+                 if (storeSwiperInstance) {
+                     storeSwiperInstance.destroy(true, true);
+                 }
+
+                 const swiperEl = document.querySelector('.swiper-store');
+                 if (!swiperEl) {
+                     console.warn("Store Swiper element not found");
+                     return;
+                 }
+
+                 storeSwiperInstance = new Swiper(swiperEl, {
+                     slidesPerView: 'auto',
+                     spaceBetween: 10,
+                     navigation: {
+                         nextEl: '.swiper-store-button-next',
+                         prevEl: '.swiper-store-button-prev'
+                     },
+                     breakpoints: {
+                         320: { slidesPerView: 1.8, spaceBetween: 5 },
+                         340: { slidesPerView: 1.8, spaceBetween: 5 },
+                         480: { slidesPerView: 2.5, spaceBetween: 10 },
+                         640: { slidesPerView: 3, spaceBetween: 10 },
+                         768: { slidesPerView: 4.5, spaceBetween: 10 },
+                         860: { slidesPerView: 5, spaceBetween: 10 },
+                         1024: { slidesPerView: 6, spaceBetween: 10 },
+                         1200: { slidesPerView: 6, spaceBetween: 10 }
+                         },
+                             on: {
+                                 afterInit: function (swiper) {
+                                     const totalSlides = swiper.slides.length;
+                                     const visibleSlides = swiper.params.slidesPerView;
+
+                                     const nextBtn = document.querySelector(".swiper-store-button-next");
+                                     const prevBtn = document.querySelector(".swiper-store-button-prev");
+
+                                     // If all slides fit into view, hide arrows
+                                     if (totalSlides <= visibleSlides) {
+                                         nextBtn.style.display = "none";
+                                         prevBtn.style.display = "none";
+                                     } else {
+                                         nextBtn.style.display = "";
+                                         prevBtn.style.display = "";
+                                     }
+                                 },
+                             }
+                 });
+             };
+             let dealsStoreSwiperInstance;
+             window.initDealsStoreSwiper = () => {
+                 if (dealsStoreSwiperInstance) {
+                     dealsStoreSwiperInstance.destroy(true, true);
+                 }
+
+                 const swiperEl = document.querySelector('.swiper-deals-store');
+                 if (!swiperEl) {
+                     console.warn("Store Swiper element not found");
+                     return;
+                 }
+
+                 dealsStoreSwiperInstance = new Swiper(swiperEl, {
+                     slidesPerView: 'auto',
+                     spaceBetween: 10,
+                     navigation: {
+                         nextEl: '.swiper-store-button-next-deals',
+                         prevEl: '.swiper-store-button-prev-deals'
+                     },
+                     breakpoints: {
+                         300: { slidesPerView: 2, spaceBetween: 5 },
+                         320: { slidesPerView: 2, spaceBetween: 5 },
+                         340: { slidesPerView: 3, spaceBetween: 5 },
+                         480: { slidesPerView: 4.5, spaceBetween: 10 },
+                         640: { slidesPerView: 5, spaceBetween: 10 },
+                         768: { slidesPerView: 6, spaceBetween: 10 },
+                         860: { slidesPerView: 8, spaceBetween: 10 },
+                         1024: { slidesPerView: 9, spaceBetween: 10 },
+                         1200: { slidesPerView: 9, spaceBetween: 10 }
+                         },
+                             on: {
+                                 afterInit: function (swiper) {
+                                     const totalSlides = swiper.slides.length;
+                                     const visibleSlides = swiper.params.slidesPerView;
+
+                                     const nextBtn = document.querySelector(".swiper-store-button-next-deals");
+                                     const prevBtn = document.querySelector(".swiper-store-button-prev-deals");
+
+                                     // If all slides fit into view, hide arrows
+                                     if (totalSlides <= visibleSlides) {
+                                         nextBtn.style.display = "none";
+                                         prevBtn.style.display = "none";
+                                     } else {
+                                         nextBtn.style.display = "";
+                                         prevBtn.style.display = "";
+                                     }
+                                 },
+                             }
+                 });
+             };
+    </script>
+
+    <script>
             window.setupHeroBannerTracking = function (dotNetHelper) {
                 const slides = document.querySelectorAll('.carousel-slide');
 
@@ -501,14 +865,14 @@
                     });
                 });
             };
-        </script>
-        <script>
-            document.querySelectorAll('.mud-popover').forEach(pop => {
-            if (pop.innerHTML.includes('share-icon')) {
-                pop.classList.add('share-popover');
-            }
-            });
-        </script>
+    </script>
+    <script>
+        document.querySelectorAll('.mud-popover').forEach(pop => {
+        if (pop.innerHTML.includes('share-icon')) {
+            pop.classList.add('share-popover');
+        }
+        });
+    </script>
 
     <GBAnchor />
     <script>
@@ -528,21 +892,21 @@
     </script>
     <script>
 
-        if (!window.__blazorStarted) {
-            window.__blazorStarted = true;
-            Blazor.start({
-                reconnectionOptions: {
-                    maxRetries: 5,
-                    retryIntervalMilliseconds: 4000
-                },
-                onConnectionDown: (options, error) => {
-                    console.warn('Connection down:', error);
-                    setTimeout(() => {
-                        location.reload();
-                    }, 30000); // reload after 30s if not reconnected
-                }
-            });
-        }
+        // if (!window.__blazorStarted) {
+        //     window.__blazorStarted = true;
+        //     Blazor.start({
+        //         reconnectionOptions: {
+        //             maxRetries: 5,
+        //             retryIntervalMilliseconds: 4000
+        //         },
+        //         onConnectionDown: (options, error) => {
+        //             console.warn('Connection down:', error);
+        //             setTimeout(() => {
+        //                 location.reload();
+        //             }, 30000); reload after 30s if not reconnected
+        //         }
+        //     });
+        // }
 
     </script>
     <script>
@@ -553,7 +917,104 @@
             }
         }
     </script>
+    <script>
+        window.blazorResize = {
+            callbacks: [],
+            registerResizeCallback: function (dotnetHelper) {
+                function resizeHandler() {
+                    dotnetHelper.invokeMethodAsync('UpdateWindowWidth', window.innerWidth);
+                }
 
+                // Initial call
+                resizeHandler();
+
+                // Listen to resize
+                window.addEventListener("resize", resizeHandler);
+            },
+            getWidth: () => window.innerWidth
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+    <script>
+          window.initSortable = (elementId, dotNetHelper) => {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+
+            new Sortable(el, {
+                animation: 150,
+                onEnd: function (evt) {
+                    const oldIndex = evt.oldIndex;
+                    const newIndex = evt.newIndex;
+
+                    // Call Blazor C# method
+                    dotNetHelper.invokeMethodAsync('OnReorder', oldIndex, newIndex);
+                }
+            });
+        };
+
+    </script>
+    <script>
+          window.FileUploader = {
+            triggerFileInput: function (element) {
+                if (element && element.click) {
+                    element.click();
+                }
+            },
+
+            readFileAsBase64: function (inputElement) {
+                return new Promise((resolve, reject) => {
+                    const file = inputElement.files[0];
+                    if (!file) {
+                        resolve(null);
+                        return;
+                    }
+
+                    const validTypes = ['application/pdf', 'image/png', 'image/jpeg'];
+                    if (!validTypes.includes(file.type)) {
+                        reject("Unsupported file type. Please upload PDF, PNG, or JPG.");
+                        return;
+                    }
+
+                    const maxSizeMB = 10;
+                    if (file.size > maxSizeMB * 1024 * 1024) {
+                        reject("File size exceeds 10MB limit.");
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const base64String = reader.result.split(',')[1];
+                        resolve(base64String);
+                    };
+                    reader.onerror = error => reject("Error reading file.");
+                    reader.readAsDataURL(file);
+                });
+            },
+
+            getFileName: function (inputElement) {
+                return inputElement?.files?.length > 0 ? inputElement.files[0].name : '';
+            }
+        };
+
+    </script>
+    <script>
+        window.preventNonDigitInput = () => {
+    const inputElement = document.getElementById('phone-input');
+
+    if (!inputElement) {
+        console.warn('phone-input not found.');
+        return;
+    }
+
+    inputElement.addEventListener('keypress', function (e) {
+        if (!/[0-9]/.test(e.key)) {
+            e.preventDefault();
+        }
+    });
+};
+
+    </script>
 </body>
 
 </html>

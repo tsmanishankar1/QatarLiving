@@ -52,8 +52,7 @@
                     @onclick="() => ToggleVideoPlay(video)"
                     @onmouseenter="() => ShowPlayButton(video)"
                     @onmouseleave="() => HidePlayButton(video)">
-                    @if (video.IsValid)
-                    {
+                 
                     <!-- Video -->
                     <video width="100%" height="100%" 
                         muted loop
@@ -61,11 +60,7 @@
                         src="@video.VideoUrl"
                         @ref="video.VideoElement">
                     </video>
-                        }
-                        else
-                        {
-                            <div class="no-video-found">Video not found</div>
-                        }
+                      
                     <!-- Play button -->
                     @if (video.ShowPlayButton)
                     {

@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Http;
-using QLN.Web.Shared.Components.BreadCrumb;
+using MudBlazor;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
-using static QLN.Web.Shared.Pages.Subscription.SubscriptionDetails;
+using System.ComponentModel.DataAnnotations;
+using static QLN.Web.Shared.Models.ClassifiedsDashboardModel;
 
 namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 {
@@ -11,11 +11,12 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
     {
 
         [Inject] protected NavigationManager Navigation { get; set; } = default!;
+        [Inject] protected ISnackbar Snackbar { get; set; }
+
         [Inject] protected IClassifiedDashboardService ClassfiedDashboardService { get; set; }
         [Inject] protected ICompanyProfileService CompanyProfileService { get; set; }
-        [Inject] private IHttpContextAccessor HttpContextAccessor { get; set; }
 
-        protected List<BreadcrumbItem> breadcrumbItems = new();
+        protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
         protected List<StatItem> stats = new();
 
         protected int _activeTabIndex;
@@ -27,10 +28,21 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         protected List<AdModal> publishedAds = new();
         protected List<AdModal> unpublishedAds = new();
         protected bool _isLoading { get; set; } = true;
-        private string _authToken;
+        protected bool _isPublishedLoading = false;
+        protected bool _isUnpublishedLoading = false;
 
-        protected bool isCompanyLoading;
-        protected CompanyProfileModel? companyProfile;
+
+
+        protected string searchTerm = string.Empty;
+        protected int sortOption = 1;
+
+
+        public EventCallback<int> OnPageChange { get; set; }
+        public EventCallback<int> OnPageSizeChange { get; set; }
+        public int CurrentPage = 1;
+        public int PageSize = 12;
+
+        public int TotalItems = 10;
 
         protected override void OnInitialized()
         {
@@ -45,39 +57,13 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         {
             if (firstRender)
             {
-                var cookie = HttpContextAccessor.HttpContext?.Request.Cookies["qat"];
-                _authToken = cookie;
-                //await LoadSubscriptionDetailsAsync(3);
-                ////SetHardcodedBusinessProfile();
-                //await LoadCompanyProfileAsync();
-                //StateHasChanged();
-                var subscriptionTask = LoadSubscriptionDetailsAsync(3);
-                var companyProfileTask = LoadCompanyProfileAsync();
-                await Task.WhenAll(subscriptionTask, companyProfileTask);
+                await LoadSubscriptionDetailsAsync(3);
+                await LoadUnpublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
+                await LoadPublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
 
             }
 
             await base.OnAfterRenderAsync(firstRender);
-        }
-
-        protected async Task LoadCompanyProfileAsync()
-        {
-            isCompanyLoading = true;
-            StateHasChanged();
-
-            try
-            {
-                companyProfile = await CompanyProfileService.GetCompanyProfileAsync(_authToken);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading company profile: {ex.Message}");
-            }
-            finally
-            {
-                isCompanyLoading = false;
-                StateHasChanged();
-            }
         }
 
 
@@ -88,7 +74,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
             try
             {
-                var response = await ClassfiedDashboardService.GetItemDashboard(_authToken);
+                var response = await ClassfiedDashboardService.GetItemDashboard();
 
                 if (response?.ItemsDashboard != null)
                 {
@@ -103,7 +89,6 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
                 new() { Title = "WhatsApp", Value = $"{response.ItemsDashboard.WhatsAppClicks}", Icon = "WhatsApp.svg" },
                 new() { Title = "Calls", Value = $"{response.ItemsDashboard.Calls}", Icon = "Calls.svg" },
             };
-                    publishedAds = response.ItemsAds?.PublishedAds ?? new();
 
                 }
                 else
@@ -126,6 +111,197 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
             }
         }
+
+        private async Task LoadPublishedAds(int page, int pageSize, string search, int sort)
+        {
+            _isPublishedLoading = true;
+
+            publishedAds.Clear();
+            StateHasChanged();
+
+            try
+            {
+
+                publishedAds = await ClassfiedDashboardService
+                    .GetPublishedAds(CurrentPage, PageSize, searchTerm, sortOption)
+                    ?? new();
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error loading published ads: " + ex.Message);
+                _errorMessage = "Something went wrong while loading published ads.";
+                publishedAds = new();
+            }
+            finally
+            {
+                _isPublishedLoading = false;
+                StateHasChanged();
+            }
+        }
+
+        private async Task LoadUnpublishedAds(int page, int pageSize, string search, int sort)
+        {
+            _isUnpublishedLoading = true;
+
+            unpublishedAds.Clear();
+            StateHasChanged();
+
+            try
+            {
+                unpublishedAds = await ClassfiedDashboardService
+                    .GetUnpublishedAds(CurrentPage, PageSize, searchTerm, sortOption)
+                    ?? new();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error loading unpublished ads: " + ex.Message);
+                _errorMessage = "Something went wrong while loading unpublished ads.";
+                unpublishedAds = new();
+            }
+            finally
+            {
+                _isUnpublishedLoading = false;
+                StateHasChanged();
+            }
+        }
+        private async Task ReloadAdsAsync(string? search = null, int? sort = null)
+        {
+            if (search != null) searchTerm = search;
+            if (sort.HasValue) sortOption = sort.Value;
+
+            Console.WriteLine($"[ReloadAdsAsync] Tab: {_selectedAdsTab}, Search: {searchTerm}, Sort: {sortOption}");
+
+            if (_selectedAdsTab == 0)
+            {
+                await LoadPublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
+            }
+            else
+            {
+                await LoadUnpublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
+            }
+
+            StateHasChanged();
+        }
+
+
+        protected async Task HandleSearch(string term)
+        {
+            Console.WriteLine($"[HandleSearch] Search term passed: {term}");
+            CurrentPage = 1;
+            await ReloadAdsAsync(search: term);
+        }
+
+        protected async Task HandleSort(int option)
+        {
+            Console.WriteLine($"Sort option passed: {option}");
+            CurrentPage = 1;
+            await ReloadAdsAsync(sort: option);
+        }
+
+
+        protected async Task HandlePageChange(int page)
+        {
+            CurrentPage = page;
+            await ReloadAdsAsync();
+        }
+
+        protected async Task HandlePageSizeChange(int size)
+        {
+            PageSize = size;
+            CurrentPage = 1;
+            await ReloadAdsAsync();
+        }
+
+
+
+        protected async Task OnPublishAd(string adId)
+        {
+            Console.WriteLine("Publishing Ad with ID: " + adId);
+            try
+            {
+                var result = await ClassfiedDashboardService.PublishAdAsync(adId);
+                if (result)
+                {
+                    Snackbar.Add("Ad published successfully", Severity.Success);
+                    await LoadUnpublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
+                    await LoadPublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
+                }
+                else
+                {
+                    Snackbar.Add("Failed to publish ad.", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error in OnPublishAd: " + ex.Message);
+                Snackbar.Add("An error occurred.", Severity.Error);
+            }
+        }
+
+
+        protected async Task UnPublishAd(string adId)
+        {
+            Console.WriteLine("UnPublishing Ad with ID: " + adId);
+            try
+            {
+                var result = await ClassfiedDashboardService.UnPublishAdAsync(adId);
+                if (result)
+                {
+                    Snackbar.Add("Ad unpublished successfully", Severity.Success);
+                    await LoadUnpublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
+                    await LoadPublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
+                }
+                else
+                {
+                    Snackbar.Add("Failed to un-publish ad.", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error in OnPublishAd: " + ex.Message);
+                Snackbar.Add("An error occurred.", Severity.Error);
+            }
+        }
+
+        protected async void onRemove(string adId)
+        {
+            try
+            {
+                var result = await ClassfiedDashboardService.RemoveItemAdAsync(adId);
+                if (result)
+                {
+                    Snackbar.Add("Ad removed successfully", Severity.Success);
+                    await LoadUnpublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
+                    await LoadPublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
+                }
+                else
+                {
+                    Snackbar.Add("Failed to remove ad.", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error in onRemove: " + ex.Message);
+                Snackbar.Add("An error occurred.", Severity.Error);
+            }
+        }
+
+        protected void NavigateToAdPost()
+        {
+            Navigation.NavigateTo("/qln/classifieds/createform");
+        }
+
+        protected void OnEditAd(string adId)
+        {
+            Navigation.NavigateTo($"/qln/classifieds/editform/{adId}");
+        }
+        protected void onPreview(string adId)
+        {
+            Navigation.NavigateTo($"/qln/classifieds/items/details/{adId}");
+        }
+
+   
         protected void SetTab(int index)
         {
             _activeTabIndex = index;
@@ -133,6 +309,10 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         protected void NavigateToEditProfile(string id)
         {
             Navigation.NavigateTo($"/qln/dashboard/company/edit/{id}");
+        }
+        protected void NavigateToPurshaseRefresh()
+        {
+            Navigation.NavigateTo("/qln/dashboard/refresh/purchase");
         }
         protected void NavigateToCreateProfile()
         {
@@ -143,23 +323,42 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             Navigation.NavigateTo($"/qln/dashboard/company/create/{verticalId}/{categoryId}");
         }
 
-        protected void NavigateToAdPost()
+    
+ 
+        public static string GetDisplayName<TEnum>(TEnum enumValue) where TEnum : Enum
         {
-            Navigation.NavigateTo("/classifieds/createform");
+            var member = typeof(TEnum).GetMember(enumValue.ToString()).FirstOrDefault();
+            var displayAttr = member?.GetCustomAttributes(typeof(DisplayAttribute), false)
+                                     .FirstOrDefault() as DisplayAttribute;
+            return displayAttr?.Name ?? enumValue.ToString();
+        }
+        public enum AdStatus
+        {
+            Draft = 0,
+            PendingApproval = 1,
+            Approved = 2,
+            Published = 3,
+            Unpublished = 4,
+            Rejected = 5,
+            Expired = 6,
+            NeedsModification = 7
         }
 
-        protected void SetHardcodedBusinessProfile()
+        protected string GetStatusLabel(int status)
         {
-            _businessProfile = new BusinessProfile
+            return Enum.IsDefined(typeof(AdStatus), status) ? ((AdStatus)status).ToString() : "Unknown";
+        }
+
+        protected string GetStatusStyle(int status)
+        {
+            return status switch
             {
-                Name = "Luxury Store",
-                CategoryName = "Preloved",
-                Duration = "6 month Plus",
-                ValidFrom = "2025-04-27",
-                ValidTo = "2025-10-27",
-                LogoUrl = "qln-images/subscription/CompanyLogo.svg"
+                3 => "background-color: #E6F4EA; border: 1px solid #2E7D32; color: #2E7D32;",
+                4 => "background-color: #FFF9E5; border: 1px solid #F9A825; color: #F9A825;",
+                6 => "background-color: #FFEAEA; border: 1px solid #D32F2F; color: #D32F2F;",
+                1 => "background-color: #E3F2FD; border: 1px solid #1976D2; color: #1976D2;",
+                _ => "background-color: #F5F5F5; border: 1px solid #BDBDBD; color: #616161;"
             };
-            StateHasChanged();
         }
 
     }

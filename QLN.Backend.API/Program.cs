@@ -1,14 +1,13 @@
 ﻿using Azure.Core.Serialization;
 using Dapr.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using QLN.Backend.API.ServiceConfiguration;
 using QLN.Common.Infrastructure.CustomEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
@@ -21,18 +20,33 @@ using QLN.Common.Infrastructure.DbContext;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Common.Infrastructure.TokenProvider;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
-
 using QLN.Common.Infrastructure.CustomEndpoints.Wishlist;
+using QLN.Common.Infrastructure.IService.IContentService;
+using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+#region Kestrel For Dev Testing via dapr.yaml
+// disabling as this should check if I am running local, 
+// not IsDevelopment as our dev environment uses Is
+//if (builder.Environment.IsDevelopment())
+//{
+//    builder.WebHost.ConfigureKestrel(options =>
+//   {
+//        options.ListenAnyIP(5200); // HTTP
+//        options.ListenAnyIP(7161, listenOptions =>
+//        {
+//          listenOptions.UseHttps(); // HTTPS
+//        });
+//    });
+//}
+#endregion
+
+//builder.Services.AddControllers(); // disabling as we dont use controllers
 builder.Services.AddEndpointsApiExplorer();
 
 #region Configure HttpClient with increased timeout for Dapr
@@ -174,6 +188,7 @@ builder.Services.AddSingleton<DaprClient>(_ =>
 
 builder.Services.AddDaprClient();
 #endregion
+
 builder.Services.AddActors(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
@@ -200,13 +215,22 @@ builder.Services.BannerServicesConfiguration(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
 builder.Services.EventConfiguration(builder.Configuration);
+builder.Services.NewsConfiguration(builder.Configuration);
+builder.Services.AddonConfiguration(builder.Configuration);
 builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
-builder.Services.ContentConfiguration(builder.Configuration);
-
+builder.Services.PayToFeatureConfiguration(builder.Configuration);
+builder.Services.AddonConfiguration(builder.Configuration);
 var app = builder.Build();
+#region DAPR Subscriptions
 
-app.UseResponseCaching();
+app.UseCloudEvents();
+
+app.MapSubscribeHandler();
+
+#endregion
+
+app.UseResponseCaching();                
 
 if (!app.Environment.IsDevelopment())
 {
@@ -237,7 +261,7 @@ var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedsEndpoints();
 var servicesGroup = app.MapGroup("/api/services");
 servicesGroup.MapServicesEndpoints();
-var eventGroup = app.MapGroup("v2/api/event");
+var eventGroup = app.MapGroup("/api/v2/event");
 eventGroup.MapEventEndpoints()
     .RequireAuthorization();
 var contentGroup = app.MapGroup("/api/content");
@@ -248,17 +272,22 @@ var analyticGroup = app.MapGroup("/api/analytics");
 analyticGroup.MapAnalyticsEndpoints();
 app.MapGroup("/api/subscriptions")
    .MapSubscriptionEndpoints();
-   app.MapGroup("/api/payments")
-    .MapPaymentEndpoints()
-    .RequireAuthorization();
-app.MapGroup("/api/PayToPublish")
+
+app.MapGroup("/api/payments")
+ .MapPaymentEndpoints();
+//.RequireAuthorization(); // so because you have authorize here, it means all these endpoints need authorization - I am overriding it later on by adding AllowAnonymous as an option on a per endpoint implementation
+app.MapGroup("/api/paytofeature")
+ .MapPayToFeatureEndpoints();
+app.MapGroup("/api/paytopublish")
     .MapPayToPublishEndpoints();
 
-app.MapGroup("/api/v2/content")
-    .MapNewsContentEndpoints();
+app.MapGroup("/api/addon")
+ .MapAddonEndpoints();
 
 
-
+var newsGroup = app.MapGroup("/api/v2/news");
+newsGroup.MapNewsEndpoints()
+     .RequireAuthorization();
 app.MapAllBackOfficeEndpoints();
 app.MapLandingPageEndpoints();
 

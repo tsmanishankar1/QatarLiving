@@ -1,104 +1,116 @@
 @using MudBlazor
 
 <div class="main-layout">
-    <div class="left-column">
-        <div class="carousel-container">
-            <div class="item-title-container d-flex justify-space-between align-center">
-                <MudSkeleton Height="40px" Width="300px" />
+           <MudSkeleton Height="40px" Width="280px" />
+            <div class="row-container">
+                <div>
+                <MudSkeleton Height="40px" Width="310px" />
+                </div>
                 <div class="icon-label-container d-flex gap-2">
                     <MudSkeleton Height="40px" Width="60px" />
                     <MudSkeleton Height="40px" Width="60px" />
                 </div>
             </div>
 
-            @* <MudGrid AlignItems="Center" Justify="Justify.FlexStart" GutterSize="3px"> *@
-            @* <MudItem xs="12" md="8"> *@
-            <MudGrid GutterSize="24px" AlignItems="Center">
+            <MudGrid Class="py-4" GutterSize="16px" >
                 <!-- Left Side: Large Skeleton -->
                 <MudItem xs="12" md="7">
                     <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="490px"
                         Style="border-radius: 4px;" />
+                          <div class="carousel-container mt-4 d-flex align-center">
+                        @for (int i = 0; i < 5; i++)
+                        {
+                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="135px" Height="90px" Class="me-2" />
+                        }
+                    </div>
+                    <div  class="mobile-sleteton-card">
+                        <MudSkeleton Width="80px" Height="16px" />
+                        <MudSkeleton Width="100%" Height="28px" />
+                        <MudSkeleton Width="80px" Height="24px" />
+                        <MudSkeleton Width="100%" Height="28px" />
+                        <MudSkeleton Width="80px" Height="24px" />
+                    </div>
+                       <MudSkeleton Width="100px" Height="26px" />
+                        <div class="over-view-sleteton" Style="background-color:#f7f8fa;">
+                        <MudGrid GutterSize="16px">
+                            @for (int i = 0; i < 8; i++)
+                            {
+                                <MudItem xs="6" sm="6" md="4">
+                                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="48px" Style="border-radius: 4px;" />
+                                </MudItem>
+                            }
+                    </MudGrid>
+                </div>
                 </MudItem>
 
                 <!-- Right Side: Details Card -->
                 <MudItem xs="12" md="5">
-                    <MudPaper Elevation="0" Width="300px" Class="custom-card pa-4">
+                    <div  Width="300px" class="custom-card-skeleton">
                         <MudSkeleton Width="80px" Height="16px" />
                         <MudSkeleton Width="100%" Height="28px" />
                         <MudSkeleton Width="80px" Height="24px" />
 
-                        <div class="button-group mt-3 d-flex gap-2">
-                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100px" Height="40px" />
-                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100px" Height="40px" />
+                        <div class="button-group-sleteton">
+                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="40px" Style="border-radius: 4px;"  />
+                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="40px" Style="border-radius: 4px;"  />
                         </div>
 
-                        <div class="posted-by-container mt-4">
-                            <MudSkeleton Width="100px" Height="16px" />
-                            <div class="d-flex gap-2 mt-2">
-                                <MudSkeleton Width="40px" Height="40px" />
-                                <div>
-                                    <MudSkeleton Width="120px" Height="16px" />
-                                    <MudSkeleton Width="100px" Height="12px" />
-                                </div>
-                            </div>
-                        </div>
-                    </MudPaper>
+                        <MudSkeleton Width="100%" Height="28px" />
+                        <MudSkeleton Width="80px" Height="24px" />
+                        <MudSkeleton Width="100%" Height="28px" />
+                        <MudSkeleton Width="80px" Height="24px" />
+                    </div>
                     <div class="mt-4">
-                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="300px" Height="250px"
-                            Style="object-fit: contain;" />
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="300px" Height="350px"
+                             />
                     </div>
                 </MudItem>
             </MudGrid>
-            <div class="carousel-container mt-4 d-flex align-center">
-                @for (int i = 0; i < 5; i++)
-                {
-                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="145px" Height="90px" Class="me-2" />
-                }
-            </div>
-            <MudPaper Class="pa-4" Elevation="0" Style="background-color:#f7f8fa;">
-                <MudSkeleton Width="150px" Height="50px" Class="mb-4" />
-
-                <MudGrid GutterSize="0" Width="200px">
-                    @for (int i = 0; i < 8; i++)
-                    {
-                        <MudItem xs="12" sm="6" md="4">
-                            <MudSkeleton Width="170px" Height="48px" />
-                        </MudItem>
-                    }
-                </MudGrid>
-            </MudPaper>
-
-            <MudSkeleton Width="150px" Height="50px" Class="mb-4" />
-
-
-
-
-
-
-
-
-
-            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="704px" Height="370px" Class="mt-4" />
+          
+        
         </div>
-    </div>
-</div>
-
-<MudGrid GutterSize="16px" Class="my-4">
-    @for (int i = 0; i < 4; i++)
-    {
-        <MudItem xs="12" sm="6" md="3">
-            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="342px" />
-        </MudItem>
-    }
-</MudGrid>
-
 <style>
-    .custom-mudpaper {
+     .row-container {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+        width: 100%;
+        max-width: 960px;
+    }
+
+    .button-group-sleteton{
         display: flex;
         align-items: center;
-        gap: 12px;
-        background: white;
-        padding: 16px !important;
-        border-radius: 8px;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 5px 0;
     }
+    .custom-card-skeleton{
+        padding: 16px;
+        background: var(--color-background);
+        width: 100%;
+        max-width: 300px;
+    }
+    .mobile-sleteton-card {
+        display: none;
+    }
+    .over-view-sleteton{
+        padding: 10px;
+    }
+     @@media (max-width: 770px) {
+        .over-view-sleteton {
+            padding: 5px;
+        }
+        .custom-card-skeleton {
+            display: none;
+        }
+         .mobile-sleteton-card {
+            background: var( --color-background);
+            padding: 5px 0;
+            display: block;
+            width: 100%;
+        }
+        }
 </style>

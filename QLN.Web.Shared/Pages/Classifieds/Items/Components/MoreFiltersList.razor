@@ -1,111 +1,265 @@
+@using QLN.Common.DTO_s
 @using QLN.Web.Shared.Components.MoreFilters
 
-<MoreFilters Selection="@modelSelection" OnApply="ApplyFilters" OnReset="ResetFilters">
+<MoreFilters HasWarrantyCertificate="HasWarrantyCertificate"ConfirmedOptions="ConfirmedOptions" OnApply="ApplyFilters" OnReset="ResetFilters">
+    <div>
+   @foreach (var field in SelectedFields)
+{
+    if (field.Name == "Brands" || field.Name == "Brand") continue;
+
     <div class="filter-section">
-        <label class="section-label">Model</label>
-        @foreach (var model in PopularModels)
+        <label class="section-label">@field.Name</label>
+
+        @if (field.Name == "Model")
         {
-            <label class="checkbox-item">
-                 <MudCheckBox @bind-Value="@modelSelection[model]"
-                     Color="Color.Primary"
-                     UncheckedColor="Color.Default"
-                     Class="mb-1" />
-                @model
-            </label>
+            <div class="model-filter-wrapper">
+                <input placeholder="Search"
+       class="model-search"
+       @bind="ModelSearchTerm"
+       @bind:event="oninput" />
+
+                <div class="model-list-scroll">
+                    <div class="model-subheading">All</div>
+
+                   @foreach (var option in GetFilteredModels(field))
+
+                    {
+                        // Add condition to segment if needed (e.g. POPULAR vs All)
+
+                        <div class="checkbox-item model-item">
+                            <MudCheckBox @bind-Value="SelectedOptions[field.Name][option]"
+                                         Color="Color.Primary"
+                                         UncheckedColor="Color.Default"
+                                         Class="mb-1" />
+                            <span class="option-text">@option</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="option-grid">
+                @foreach (var option in field.Options)
+                {
+                    <div class="checkbox-item">
+                        <MudCheckBox @bind-Value="SelectedOptions[field.Name][option]"
+                                     Color="Color.Primary"
+                                     UncheckedColor="Color.Default"
+                                     Class="mb-1" />
+                        @if (field.Name == "Colour")
+                        {
+                            <span class="color-dot" style="background-color:@option.ToLower();"></span>
+                        }
+                        <span class="option-text">@option</span>
+                    </div>
+                }
+            </div>
         }
     </div>
+}
+<div class="checkbox-item">
+  <MudCheckBox @bind-Value="HasWarrantyCertificate"
+             Color="Color.Primary"
+             UncheckedColor="Color.Default"
+             Class="mb-1" />
+<span class="option-text">Ads with an active warranty</span>
+
+</div>
+
+</div>
 </MoreFilters>
 
+
 @code {
-    private Dictionary<string, bool> modelSelection = new();
+    [Parameter]
+    public List<CategoryField> SelectedFields { get; set; }
+        
+[Parameter]
+    public EventCallback OnFiltersChanged { get; set; }
 
-    private List<string> PopularModels = new() { "iPhone 16 Pro Max", "iPhone 15 Pro Max" };
+    // Dictionary to hold selection state
+   private Dictionary<string, Dictionary<string, bool>> SelectedOptions = new();
 
-    protected override void OnInitialized()
+
+    [Inject] protected SearchStateService SearchState { get; set; }
+    private string ModelSearchTerm = "";
+private bool HasWarrantyCertificate { get; set; }
+
+
+protected override void OnInitialized()
+{
+    HasWarrantyCertificate = SearchState.ItemHasWarrantyCertificate;
+}
+
+private List<string> GetFilteredModels(CategoryField field)
+{
+    if (string.IsNullOrWhiteSpace(ModelSearchTerm))
+        return field.Options;
+
+    // Prioritize matches that start with the search term
+    return field.Options
+        .OrderByDescending(option => option.StartsWith(ModelSearchTerm, StringComparison.OrdinalIgnoreCase))
+        .ThenBy(option => option.IndexOf(ModelSearchTerm, StringComparison.OrdinalIgnoreCase))
+        .ToList();
+}
+private Dictionary<string, Dictionary<string, bool>> ConfirmedOptions = new();
+
+ protected override void OnParametersSet()
+{
+    if (SelectedFields == null)
+        return;
+
+    SelectedOptions.Clear();
+
+    foreach (var field in SelectedFields)
     {
-        foreach (var item in PopularModels)
-            modelSelection[item] = false;
-    }
+        SelectedOptions[field.Name] = new Dictionary<string, bool>();
 
-    private Task ApplyFilters()
-    {
-        Console.WriteLine("Filters applied.");
-        return Task.CompletedTask;
-    }
+        foreach (var option in field.Options)
+        {
+            // If already saved in SearchState, restore the checked state
+            bool isChecked = SearchState.ItemFieldFilters.TryGetValue(field.Name, out var selectedList)
+                             && selectedList.Contains(option);
 
-    private Task ResetFilters()
-    {
-        Console.WriteLine("Filters reset.");
-        return Task.CompletedTask;
+            SelectedOptions[field.Name][option] = isChecked;
+        }
     }
 }
 
+
+  private async Task ApplyFilters()
+{
+    Console.WriteLine("Selected Filters:");
+
+    var selectedFilterMap = new Dictionary<string, List<string>>();
+
+    foreach (var field in SelectedOptions)
+    {
+        var selectedOptions = field.Value
+            .Where(x => x.Value)
+            .Select(x => x.Key)
+            .ToList();
+
+        if (selectedOptions.Any())
+        {
+            selectedFilterMap[field.Key] = selectedOptions;
+            Console.WriteLine($"{field.Key}: {string.Join(", ", selectedOptions)}");
+        }
+    }
+
+    // ✅ Always update ConfirmedOptions from SelectedOptions
+    ConfirmedOptions = SelectedOptions
+        .ToDictionary(
+            kv => kv.Key,
+            kv => kv.Value.ToDictionary(e => e.Key, e => e.Value)
+        );
+
+    SearchState.ItemFieldFilters = selectedFilterMap;
+   SearchState.ItemHasWarrantyCertificate = HasWarrantyCertificate;
+    await OnFiltersChanged.InvokeAsync();
+}
+
+ private async Task ResetFilters()
+{
+    foreach (var field in SelectedOptions.Keys.ToList())
+    {
+        foreach (var option in SelectedOptions[field].Keys.ToList())
+        {
+            SelectedOptions[field][option] = false;
+        }
+    }
+
+            SearchState.ItemFieldFilters.Clear();
+            SearchState.ItemSearchText = null;
+            SearchState.ItemCategory = null;
+            SearchState.ItemBrand = null;
+            SearchState.ItemMinPrice = null;
+            SearchState.ItemMaxPrice = null;
+            SearchState.ItemViewMode ??= "grid";
+            SearchState.ItemSubCategory = null;
+            SearchState.ItemSubSubCategory = null;
+            SearchState.ItemHasWarrantyCertificate = false;
+
+    Console.WriteLine("Filters reset.");
+    await OnFiltersChanged.InvokeAsync();
+}
+
+}
 <style>
+    .model-filter-wrapper {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 10px;
+}
 
-    .section-label {
-        font-weight: 500;
-        font-size: 15px;
-        color: #FF7F38;
-        margin-bottom: 6px;
-        display: block;
-    }
+.model-search {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
 
-    .search-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        background: #f4f4f4;
-        padding: 6px;
-        border-radius: 6px;
-        margin-bottom: 10px;
-    }
+.model-subheading {
+    font-size: 12px;
+    font-weight: 600;
+    color: #999;
+    padding: 4px 0;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
 
-    .search-box {
-        flex: 1;
-        border: none;
-        outline: none;
-        background: transparent;
-    }
+.model-list-scroll {
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
 
-    .filter-group-label {
-        font-weight: 500;
-        margin-top: 8px;
-        margin-bottom: 4px;
-        background: #F6F6F6;
-        padding: 4px 8px;
-        font-size: 15px;
-        border-radius: 4px;
-        color: #454545;
-    }
+.model-item {
+    margin-bottom: 4px;
+}
 
     .filter-section {
-        margin-bottom: 16px;
-    }
+    margin-bottom: 1.5rem;
+}
 
-    .checkbox-item {
-        display: flex;
-        align-items: center;
-        font-size: 15px;
-        fount-weight: 400;
-        color: #242424;
-        padding: 4px 0;
-        gap: 8px;
-    }
+.section-label {
+    font-weight: 500;
+    margin-bottom: 3px;
+    font-size: 14px;
+    color: var(--color-accent);
+    display: block;
+    line-height: 26px;
+    letter-spacing: 0;
+}
 
-    .color-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-    }
+.option-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem 1rem;
+}
 
-    .color-item {
-        border: 1px solid #ddd;
-        padding: 4px;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 13px;
-    }
+.checkbox-item {
+    display: flex;
+    align-items: center;
+}
+.option-text{
+    color: var(--color-text-heading);
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 26px;
+    letter-spacing: 0;
+}
+.color-dot {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    margin-right: 6px;
+    border: 1px solid #ccc;
+}
 
 </style>
