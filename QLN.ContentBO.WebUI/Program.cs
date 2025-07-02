@@ -1,6 +1,9 @@
+using Microsoft.AspNetCore.Components.Authorization;
 using MudBlazor.Services;
+using QLN.ContentBO.WebUI.Handlers;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.MockServices;
+using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +17,18 @@ if (string.IsNullOrWhiteSpace(contentBOAPIURL))
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddMudServices();
+builder.Services.AddAuthentication();
+
+// Add this before registering AuthenticationStateProvider
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<CookieAuthStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<CookieAuthStateProvider>());
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddAuthorizationCore();
+
+builder.Services.AddTransient<JwtTokenHeaderHandler>();
+builder.Services.Configure<NavigationPath>(
+builder.Configuration.GetSection("NavigationPath"));
 
 builder.Services.AddHttpClient<INewsService, NewsService>(client =>
 {

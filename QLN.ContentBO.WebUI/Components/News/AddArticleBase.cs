@@ -37,6 +37,7 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected override async Task OnInitializedAsync()
         {
+            AuthorizedPage();
             Categories = await GetNewsCategories();
             Slots = await GetSlots();
             WriterTags = await GetWriterTags();
