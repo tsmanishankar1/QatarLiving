@@ -13,7 +13,7 @@ namespace QLN.ContentBO.WebUI.Models
         public EventTimeType TimeSlotType { get; set; }
         public TimeOnly? StartTime { get; set; }
         public TimeOnly? EndTime { get; set; }
-        public List<TimeSlot>? TimeSlots { get; set; } = [];
+        public List<TimeSlotModel>? TimeSlots { get; set; } = [];
 
     }
 }
