@@ -33,7 +33,7 @@ builder.Configuration.GetSection("NavigationPath"));
 builder.Services.AddHttpClient<INewsService, NewsService>(client =>
 {
     client.BaseAddress = new Uri(contentBOAPIURL);
-});
+}).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
 var app = builder.Build();
 
