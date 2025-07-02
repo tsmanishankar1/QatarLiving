@@ -91,7 +91,7 @@ namespace QLN.Backend.API.ServiceConfiguration
         }
         public static IServiceCollection CommunityConfiguration(this IServiceCollection services, IConfiguration config)
         {
-            services.AddTransient<V2IContentCommunity, V2ExternalCommunityService>();
+            services.AddTransient<V2IContentLocation, V2ExternalLocationService>();
             return services;
         }
     }

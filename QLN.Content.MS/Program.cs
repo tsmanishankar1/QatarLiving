@@ -47,7 +47,7 @@ builder.Services.AddDaprClient();
 builder.Services.AddScoped<IV2NewsService, V2InternalNewsService>();
 builder.Services.AddScoped<IV2EventService, V2InternalEventService>();
 builder.Services.AddScoped<IFileStorageBlobService, FileStorageBlobService>();
-builder.Services.AddScoped<V2IContentCommunity, V2InternalCommunityService>();
+builder.Services.AddScoped<V2IContentLocation, V2InternalLocationService>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -61,8 +61,8 @@ eventGroup.MapEventEndpoints();
 var newsGroup = app.MapGroup("/api/v2/news");
 newsGroup.MapNewsEndpoints();
 
-var CommunityGroup = app.MapGroup("/api/v2/community");
-CommunityGroup.MapCommunityEndpoints();
+var CommunityGroup = app.MapGroup("/api/v2/location");
+CommunityGroup.MapLocationsEndpoints();
 app.MapControllers();
 app.UseHttpsRedirection();
 app.Run();

@@ -8,15 +8,14 @@ using static QLN.Common.DTO_s.LocationDto;
 
 namespace QLN.Common.Infrastructure.IService.V2IContent
 {
-    public interface V2IContentCommunity
+    public interface V2IContentLocation
     {
-        //Get Category Dropdownlist for Community
-        Task<ForumCategoryListDto> GetAllForumCategoriesAsync(CancellationToken cancellationToken = default);
         //Get All Zones dropdown
         Task<LocationZoneListDto> GetAllZonesAsync(CancellationToken cancellationToken = default);
 
         Task<AddressResponseDto> GetAddressCoordinatesAsync(int? zone, int? street, int? building, string location, CancellationToken cancellationToken = default);
         Task<LocationNameDtoList> GetAllLocationName(CancellationToken cancellationToken = default);
+        Task<LocationListResponseDto> GetAllCategoriesLocationsAsync(CancellationToken cancellationToken = default);
 
 
     }

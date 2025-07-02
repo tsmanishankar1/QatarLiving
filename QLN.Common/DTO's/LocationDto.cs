@@ -33,6 +33,21 @@ namespace QLN.Common.DTO_s
         }
 
 
+        public class LocationEventDto
+        {
+            public string Id { get; set; }
+            public string Name { get; set; }
+            public string Latitude { get; set; }
+            public string Longitude { get; set; }
+
+            public List<string>  Areas { get; set; }
+        }
+
+        public class LocationListResponseDto
+        {
+            public List<LocationEventDto> Locations { get; set; }
+        }
+
 
     }
 }

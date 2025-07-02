@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 {
-    public static class V2CommunityEndpointDependency
+    public static class V2LocationEndpointDependency
     {
-        public static RouteGroupBuilder MapCommunityEndpoints(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapLocationsEndpoints(this RouteGroupBuilder group)
         {
-            group.MapCategoryEndpoints()
-                .MapLocationEndpoints()
+            group.MapLocationEndpoints()
+                .MapLocationCategoryEndpoints()
                 .MapLocationCordinateEndpoints()
                 .MapGetAllLocationName();
             return group;

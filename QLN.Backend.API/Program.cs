@@ -289,8 +289,8 @@ app.MapGroup("/api/addon")
 var newsGroup = app.MapGroup("/api/v2/news");
 newsGroup.MapNewsEndpoints()
      .RequireAuthorization();
-var communityGroup = app.MapGroup("/api/v2/community");
-communityGroup.MapCommunityEndpoints();
+var locationGroup = app.MapGroup("/api/v2/location");
+locationGroup.MapLocationsEndpoints();
 
 app.MapAllBackOfficeEndpoints();
 app.MapLandingPageEndpoints();

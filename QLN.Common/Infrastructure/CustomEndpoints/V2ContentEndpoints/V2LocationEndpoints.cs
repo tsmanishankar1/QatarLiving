@@ -16,38 +16,12 @@ using Google.Type;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 {
-    public static class V2CommunityEndpoints
+    public static class V2LocationEndpoints
     {
-        public static RouteGroupBuilder MapCategoryEndpoints(this RouteGroupBuilder group)
-        {
-            group.MapGet("/getAllForumCategories", static async Task<Results<Ok<ForumCategoryListDto>, ProblemHttpResult>> (
-      V2IContentCommunity service,
-      CancellationToken cancellationToken = default) =>
-            {
-                try
-                {
-                    var categories = await service.GetAllForumCategoriesAsync(cancellationToken);
-                    return TypedResults.Ok(categories);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
-                }
-            })
-            .WithName("GetAllCommunityCategories")
-            .WithTags("Community")
-            .WithSummary("Get All  Community Categories")
-            .WithDescription("Returns all Community categories as list.")
-            .Produces<ForumCategoryListDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-
-            return group;
-        }
         public static RouteGroupBuilder MapLocationEndpoints(this RouteGroupBuilder group)
         {
             group.MapGet("/getAllZones", static async Task<Results<Ok<LocationZoneListDto>, ProblemHttpResult>> (
-                V2IContentCommunity service,
+                V2IContentLocation service,
                 CancellationToken cancellationToken = default) =>
             {
                 try
@@ -76,7 +50,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                [FromQuery] int? street,
                [FromQuery] int? building,
                [FromQuery] string? location,
-               V2IContentCommunity service, // Inject the service to call the method
+               V2IContentLocation service, // Inject the service to call the method
                CancellationToken cancellationToken = default) =>
             {
                 try
@@ -114,7 +88,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
         public static RouteGroupBuilder MapGetAllLocationName(this RouteGroupBuilder group)
         {
             group.MapGet("/getAllLocationName", static async Task<Results<Ok<LocationNameDtoList>, ProblemHttpResult>> (
-      V2IContentCommunity service,
+      V2IContentLocation service,
       CancellationToken cancellationToken = default) =>
             {
                 try
@@ -134,6 +108,32 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .Produces<ForumCategoryListDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+
+            return group;
+        }
+
+        public static RouteGroupBuilder MapLocationCategoryEndpoints(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getAllCategoriesLocations", static async Task<Results<Ok<LocationListResponseDto>, ProblemHttpResult>> (
+                V2IContentLocation service,
+                CancellationToken cancellationToken = default) =>
+            {
+                try
+                {
+                    var result = await service.GetAllCategoriesLocationsAsync(cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("GetAllCategoriesLocations")
+            .WithTags("Location")
+            .WithSummary("Get All Categories Locations")
+            .WithDescription("Returns all location categories from live API.")
+            .Produces<LocationListResponseDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
         }
