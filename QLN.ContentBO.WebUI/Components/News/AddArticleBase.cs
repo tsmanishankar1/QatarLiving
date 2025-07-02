@@ -4,6 +4,7 @@ using Microsoft.JSInterop;
 using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
+using System.Net;
 
 namespace QLN.ContentBO.WebUI.Components.News
 {
@@ -62,6 +63,15 @@ namespace QLN.ContentBO.WebUI.Components.News
             {
                 article.Categories = TempCategoryList;
                 var response = await newsService.CreateArticle(article);
+                if (response != null && response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Article Added");
+                }
+                else if (response.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    Snackbar.Add("You are unauthorized to perform this action");
+                }
+
             }
             catch (Exception ex)
             {
