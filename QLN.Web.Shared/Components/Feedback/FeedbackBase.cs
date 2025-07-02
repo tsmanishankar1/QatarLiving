@@ -7,6 +7,7 @@ using QLN.Web.Shared.Models.FeedbackRequest;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Components.Authorization;
 
 public partial class FeedbackBase : ComponentBase
 {
@@ -17,7 +18,7 @@ public partial class FeedbackBase : ComponentBase
     protected MudForm form;
 
     [Inject] protected FeedbackService FeedbackService { get; set; } = default!;
-    [Inject] protected CookieAuthStateProvider CookieAuthenticationStateProvider { get; set; } = default!;
+    [Inject] protected AuthenticationStateProvider AuthenticationStateProvider { get; set; } = default!;
 
     protected readonly List<string> Categories = new()
     {
@@ -63,7 +64,10 @@ public partial class FeedbackBase : ComponentBase
     private int UserId { get; set; }
     protected override async Task OnInitializedAsync()
     {
-        var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
+        var cookieProvider = AuthenticationStateProvider as CookieAuthStateProvider;
+        var authState = cookieProvider != null
+            ? await cookieProvider.GetAuthenticationStateAsync()
+            : await AuthenticationStateProvider.GetAuthenticationStateAsync();
         if (authState != null)
         {
             var user = authState.User;
