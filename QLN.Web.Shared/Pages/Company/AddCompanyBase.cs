@@ -90,7 +90,7 @@ namespace QLN.Web.Shared.Pages.Company
 
                 if (companyProfile != null)
                 {
-                    var updated = true;
+                    var updated = await CompanyProfileService.CreateCompanyProfileAsync(companyProfile);
                     if (updated)
                     {
                         Snackbar.Add("Company profile created successfully", Severity.Success);
