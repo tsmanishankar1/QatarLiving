@@ -18,7 +18,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 {
     public static class V2CommunityEndpoints
     {
-        public static RouteGroupBuilder MapCreateEventEndpoints(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapCategoryEndpoints(this RouteGroupBuilder group)
         {
             group.MapGet("/getAllForumCategories", static async Task<Results<Ok<ForumCategoryListDto>, ProblemHttpResult>> (
       V2IContentCommunity service,
@@ -34,12 +34,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-  .WithName("GetAllForumCategories")
-  .WithTags("Forum")
-  .WithSummary("Get All Forum Categories")
-  .WithDescription("Returns all forum categories as list.")
-  .Produces<ForumCategoryListDto>(StatusCodes.Status200OK)
-  .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            .WithName("GetAllCommunityCategories")
+            .WithTags("Community")
+            .WithSummary("Get All  Community Categories")
+            .WithDescription("Returns all Community categories as list.")
+            .Produces<ForumCategoryListDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
             return group;
@@ -111,5 +111,32 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
         
     }
 
-      }
+        public static RouteGroupBuilder MapGetAllLocationName(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getAllLocationName", static async Task<Results<Ok<LocationNameDtoList>, ProblemHttpResult>> (
+      V2IContentCommunity service,
+      CancellationToken cancellationToken = default) =>
+            {
+                try
+                {
+                    var categories = await service.GetAllLocationName(cancellationToken);
+                    return TypedResults.Ok(categories);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("GetAllLocationNames")
+            .WithTags("Location")
+            .WithSummary("Get All Location Name")
+            .WithDescription("Returns all Location Name as list.")
+            .Produces<ForumCategoryListDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+            return group;
+        }
+
+    }
 }

@@ -112,5 +112,28 @@ namespace QLN.Backend.API.Service.V2ContentService
                 return null;
             }
         }
+   
+    
+        public async Task <LocationNameDtoList> GetAllLocationName(CancellationToken cancellationToken = default)
+        {
+
+            try
+            {
+                var result = await _daprClient.InvokeMethodAsync<LocationNameDtoList>(
+                    HttpMethod.Get,
+                    InternalAppId,
+                    "api/v2/community/getAllLocationName",
+                    cancellationToken
+                );
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while invoking getAllLocationName from {AppId}", InternalAppId);
+                return null;
+            }
+        }
+
+
     }
 }

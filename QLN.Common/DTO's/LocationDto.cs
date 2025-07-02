@@ -22,5 +22,17 @@ namespace QLN.Common.DTO_s
         {
             public List<string> Coordinates { get; set; }
         }
+
+        public class LocationNameDto
+        {
+            public string Name { get; set; } = string.Empty;
+        }
+        public class LocationNameDtoList
+        {
+            public List<LocationNameDto> Locations { get; set; }
+        }
+
+
+
     }
 }

@@ -11,9 +11,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
     {
         public static RouteGroupBuilder MapCommunityEndpoints(this RouteGroupBuilder group)
         {
-            group.MapCreateEventEndpoints()
+            group.MapCategoryEndpoints()
                 .MapLocationEndpoints()
-                .MapLocationCordinateEndpoints();
+                .MapLocationCordinateEndpoints()
+                .MapGetAllLocationName();
             return group;
         }
     }
