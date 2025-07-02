@@ -291,8 +291,10 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
         protected void OnEditAd(string adId)
         {
-            Navigation.NavigateTo($"/qln/classifieds/editform/{adId}");
+            var subVertical = "items";
+            Navigation.NavigateTo($"/qln/classifieds/editform?subVertical={subVertical}&adId={adId}");
         }
+
         protected void onPreview(string adId)
         {
             Navigation.NavigateTo($"/qln/classifieds/items/details/{adId}");
@@ -310,7 +312,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
         protected void NavigateToPurshaseRefresh()
         {
-            Navigation.NavigateTo("/qln/dashboard/refresh/purchase");
+            Navigation.NavigateTo("/qln/PurchaseRefresh");
         }
     
  

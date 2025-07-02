@@ -94,8 +94,6 @@ else if (Ads != null && Ads.Any())
                         </div>
                     </div>
                 </div>
-                <MudText Typo="Typo.caption">Selected: @string.Join(", ", SelectedAdIds)</MudText>
-
                 <!-- Price (Row 5) -->
                 <MudText Typo="Typo.h6"
                 Style="font-family: 'Public Sans', sans-serif; font-weight: 600; font-size: 20px; line-height: 34px; letter-spacing: 0; color: #242424;">
@@ -281,7 +279,7 @@ else if (Ads != null && Ads.Any())
                    Variant="Variant.Outlined"
                    Disabled="!SelectedAdIds.Any()"
                    OnClick="PublishAllSelected">
-            Unpublish All
+            Unpublish Selected Ad
         </MudButton>
     </div>
 }
