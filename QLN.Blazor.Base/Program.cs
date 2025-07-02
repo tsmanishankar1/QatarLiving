@@ -117,6 +117,8 @@ builder.Services.AddScoped<IAdService, AdMockService>();
 var youtubeApiKey = builder.Configuration["YouTubeAPI:ApiKey"];
 builder.Services.AddScoped(sp => new YouTubeApiService(youtubeApiKey));
 
+builder.Services.AddScoped<QLN.Web.Shared.Services.FeedbackService>();
+
 builder.Services.Configure<NavigationPath>(
     builder.Configuration.GetSection("NavigationPath"));
 

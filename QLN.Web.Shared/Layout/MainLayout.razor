@@ -10,6 +10,7 @@
 @using Microsoft.AspNetCore.Http;
 @using QLN.Web.Shared.Services
 @inject IOptions<NavigationPath> options;
+@using QLN.Web.Shared.Components.Feedback
 
 <MudThemeProvider @ref="@_mudThemeProvider" Theme="@CustomTheme"/>
 <MudDialogProvider />
@@ -162,6 +163,7 @@
 
 <main class="main-content">
     @Body
+    <Feedback />
     <Footer DarkMode="@_isDarkMode" />
 </main>
 
