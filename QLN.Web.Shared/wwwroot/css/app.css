@@ -3156,6 +3156,13 @@ body {
     }
 
     /* CreateForm */
+    .create-form-wrapper {
+        background-color: var(--color-secondary-background);
+        padding: 10px 5px;
+        border-radius: 8px;
+        font-family: 'Public Sans', sans-serif;
+
+    }
 
      .create-max-container {
             max-width: 1170px;
