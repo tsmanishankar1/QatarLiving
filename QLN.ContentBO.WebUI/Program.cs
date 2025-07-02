@@ -1,5 +1,7 @@
+using MudBlazor.Extensions;
 using MudBlazor.Services;
 using QLN.ContentBO.WebUI.Interfaces;
+using MudExtensions.Services;
 using QLN.ContentBO.WebUI.MockServices;
 using QLN.ContentBO.WebUI.Services;
 
@@ -14,6 +16,7 @@ if (string.IsNullOrWhiteSpace(contentBOAPIURL))
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddMudServices();
+builder.Services.AddMudExtensions();
 
 builder.Services.AddHttpClient<INewsService, NewsMockService>(client =>
 {
