@@ -29,6 +29,7 @@ namespace QLN.Web.Shared.Services.Interface
         Task<bool> RemovePrelovedAsync(string adId);
         Task<bool> RemoveDealsAdAsync(string adId);
 
+        Task<bool> RefreshAdAsync(string adId, int subVerticalId);
 
     }
 }

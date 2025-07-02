@@ -1,4 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
+using MudBlazor;
+using QLN.Web.Shared.Models;
+using QLN.Web.Shared.Services.Interface;
 using System.Collections.Generic;
 using static QLN.Web.Shared.Models.ClassifiedsDashboardModel;
 
@@ -12,8 +15,11 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         [Parameter]
         public bool _isPublishedLoading { get; set; }
 
-        [Parameter]
-        public string DashboardType { get; set; }
+        //[Parameter]
+        //public string DashboardType { get; set; }
+        [Parameter] 
+        public VerticalConstants.SubVerticalId DashboardType { get; set; }
+
 
         [Parameter]
         public EventCallback<List<string>> OnPublish { get; set; }
@@ -32,6 +38,9 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
         [Inject]
         protected NavigationManager Navigation { get; set; }
+        [Inject] protected ISnackbar Snackbar { get; set; }
+
+        [Inject] protected IClassifiedDashboardService ClassfiedDashboardService { get; set; }
 
         protected bool isChecked { get; set; }
        
@@ -111,6 +120,15 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             Navigation.NavigateTo("/qln/paytofeature");
         }
 
+        protected async Task OnRefreshAd(string adId)
+        {
+            var success = await ClassfiedDashboardService.RefreshAdAsync(adId, (int)DashboardType);
+
+            if (success)
+                Snackbar.Add("Ad refreshed successfully!", Severity.Success);
+            else
+                Snackbar.Add("Failed to refresh ad.", Severity.Error);
+        }
 
     }
 }

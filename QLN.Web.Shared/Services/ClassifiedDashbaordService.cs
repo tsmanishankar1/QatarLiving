@@ -528,6 +528,22 @@ namespace QLN.Web.Shared.Services
                 return false;
             }
         }
+        public async Task<bool> RefreshAdAsync(string adId, int subVerticalId)
+        {
+            try
+            {
+                var url = $"/api/classified/items/refresh/{adId}?subVertical={subVerticalId}";
+                var request = new HttpRequestMessage(HttpMethod.Delete, url);
 
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("RefreshAd Exception: " + ex.Message);
+                return false;
+            }
+        }
+       
     }
 }

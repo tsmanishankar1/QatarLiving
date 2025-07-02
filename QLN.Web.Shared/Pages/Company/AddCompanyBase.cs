@@ -115,6 +115,13 @@ namespace QLN.Web.Shared.Pages.Company
         {
             if (file != null)
             {
+                var allowedImageTypes = new[] { "image/png", "image/jpg" };
+
+                if (!allowedImageTypes.Contains(file.ContentType))
+                {
+                    Snackbar.Add("Only image files (PNG, JPG) are allowed.", Severity.Warning);
+                    return;
+                }
                 if (file.Size > 10 * 1024 * 1024)
                 {
                     Snackbar.Add("Logo must be less than 10MB", Severity.Warning);
