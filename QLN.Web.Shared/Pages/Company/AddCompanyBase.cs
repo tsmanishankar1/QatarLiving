@@ -200,15 +200,15 @@ namespace QLN.Web.Shared.Pages.Company
                 City = string.Empty,
                 BranchLocations = new List<string> { "" },
 
-                WhatsAppNumber = string.Empty,
-                WhatsAppCountryCode = string.Empty,
+                WhatsAppNumber = null,
+                WhatsAppCountryCode = null,
                 PhoneNumber = string.Empty,
-                PhoneNumberCountryCode = string.Empty,
+                PhoneNumberCountryCode = null,
 
                 Email = string.Empty,
-                WebsiteUrl = string.Empty,
-                FacebookUrl = string.Empty,
-                InstagramUrl = string.Empty,
+                WebsiteUrl = null,
+                FacebookUrl = null,
+                InstagramUrl = null,
 
                 StartDay = string.Empty,
                 EndDay = string.Empty,
@@ -227,8 +227,7 @@ namespace QLN.Web.Shared.Pages.Company
                 CompanySize = 0,
                 NatureOfBusiness = new List<int>(),
 
-                IsActive = false,
-                IsVerified = false,
+               
 
                 CreatedBy = string.Empty,
                 CreatedUtc = DateTime.UtcNow, 
