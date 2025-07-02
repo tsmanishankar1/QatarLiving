@@ -15,13 +15,15 @@ else if (Ads != null && Ads.Any())
         Style="border-radius: 0; border: none; border-bottom: 1px solid #EAECF0; box-shadow: none;">
             <!-- First Row (Image + Checkbox) - full width on mobile -->
             <div class="d-flex align-items-center mb-3 mb-sm-0 mr-sm-4">
-@*                 <MudCheckBox T="bool" @bind-Checked="_isChecked" Class="mr-2 ad-checkbox" />
- *@                
-         <MudCheckBox T="bool"
-                             Checked="SelectedAdIds.Contains(ad.Id)"
-                             Color="Color.Warning"
-                             Class="mr-2 ad-checkbox"
-                             @onchange="(e) => ToggleSelection(ad.Id, (bool)e.Value)" />
+               @*  <MudToggleIconButton T="bool"
+                                     Color="Color.Primary"
+                                     Toggled="@ad.IsSelected"
+                                     ToggledChanged="(value) => OnAdToggled(ad, value)"
+                                     Icon="@Icons.Material.Filled.CheckBoxOutlineBlank"
+                                     ToggledIcon="@Icons.Material.Filled.CheckBox"
+                                     Class="mr-2" />
+ *@
+                <MudCheckBox T="bool" @bind-Checked="_isChecked" Class="mr-2 ad-checkbox" />
 
              @if (ad.ImageUrls != null && ad.ImageUrls.Any() && !string.IsNullOrEmpty(ad.ImageUrls.First().Url))
                 {
@@ -148,7 +150,7 @@ else if (Ads != null && Ads.Any())
                         }
                         else
                         {
-                            <MudButton Variant="Variant.Text"
+                            <MudButton Variant="Variant.Text" OnClick="NavigateToFeaturePage"
                             Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424;">
                                 <img src="qln-images/subscription/Feature.svg" style="margin-right: 8px;" alt="Feature" />
                                 Pay to Feature
