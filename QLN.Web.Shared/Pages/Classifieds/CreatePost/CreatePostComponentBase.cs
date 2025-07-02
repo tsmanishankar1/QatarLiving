@@ -287,7 +287,7 @@ private void ResetForm(string newVertical)
 
 
                     Price = adPostModel.Price,
-                    CertificateBase64 = adPostModel.Certificate,
+                    CertificateUrl = adPostModel.Certificate,
                     CertificateFileName = adPostModel.CertificateFileName,
                     BatteryPercentage = adPostModel.BatteryPercentage,
                     PhoneNumber = $"{adPostModel.PhoneCode}{adPostModel.PhoneNumber}",
@@ -299,7 +299,7 @@ private void ResetForm(string newVertical)
                     Latitude = adPostModel.Latitude ?? 0.0,
                     Longitude = adPostModel.Longitude ?? 0.0,
 
-                    AdImagesBase64 = adPostModel.PhotoUrls
+                    ImageUrls = adPostModel.PhotoUrls
                         .Where(url => !string.IsNullOrEmpty(url))
                         .Take(9)
                         .Select((url, index) => new AdImageDto
