@@ -9,24 +9,28 @@ namespace QLN.Common.DTO_s
 {
 
 
-    public class ArticleSlotUpdateDTO
+    public class ReorderSlotRequestDto
     {
-        public Guid ArticleId { get; set; }
-
+        [Required]
         public int CategoryId { get; set; }
 
+        [Required]
         public int SubCategoryId { get; set; }
 
+        [Required]
+        [Range(1, 13)]
         public int FromSlot { get; set; }
 
+        [Required]
+        [Range(1, 13)]
         public int ToSlot { get; set; }
 
-        public bool Confirm { get; set; }
+        public string? UserId { get; set; }
 
-        public string UserId { get; set; }
-
-        public string AuthorName { get; set; }
+        public string? AuthorName { get; set; }
     }
+
+
 
 
 }
