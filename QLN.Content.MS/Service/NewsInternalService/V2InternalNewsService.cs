@@ -162,9 +162,9 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
                 foreach (var cat in dto.Categories)
                 {
-                    int slotId = cat.SlotId == 0 ? (int)Slot.UnPublished : cat.SlotId;
+                    int slotId = cat.SlotId == 0 ? (int)NewsSlot.UnPublished : cat.SlotId;
 
-                    if (slotId == (int)Slot.Published || slotId == (int)Slot.UnPublished)
+                    if (slotId == (int)NewsSlot.Published || slotId == (int)NewsSlot.UnPublished)
                     {
                         string key = GetStatusSlotKey(cat.CategoryId, cat.SubcategoryId, slotId);
                         await _dapr.SaveStateAsync(storeName, key, articleIdStr, cancellationToken: cancellationToken);
@@ -230,9 +230,9 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 if (lastSlotArticle != null)
                 {
                     var lastArticleCat = lastSlotArticle.Categories.FirstOrDefault(c => c.CategoryId == categoryId && c.SubcategoryId == subCategoryId);
-                    if (lastArticleCat != null) lastArticleCat.SlotId = (int)Slot.UnPublished;
+                    if (lastArticleCat != null) lastArticleCat.SlotId = (int)NewsSlot.UnPublished;
 
-                    string unpublishedKey = GetStatusSlotKey(categoryId, subCategoryId, (int)Slot.UnPublished);
+                    string unpublishedKey = GetStatusSlotKey(categoryId, subCategoryId, (int)NewsSlot.UnPublished);
                     await _dapr.SaveStateAsync(storeName, unpublishedKey, lastSlotArticle.Id.ToString(), cancellationToken: cancellationToken);
 
                     await _dapr.SaveStateAsync(storeName, lastSlotArticle.Id.ToString(), lastSlotArticle, cancellationToken: cancellationToken);
