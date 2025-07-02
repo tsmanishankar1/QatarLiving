@@ -155,7 +155,8 @@ private Dictionary<string, Dictionary<string, bool>> ConfirmedOptions = new();
         );
 
     SearchState.CollectiblesFilters = selectedFilterMap;
-   SearchState.ItemHasWarrantyCertificate = HasWarrantyCertificate;
+    SearchState.ItemHasWarrantyCertificate = HasWarrantyCertificate;
+    SearchState.CollectiblesSetPage(1);
     await OnFiltersChanged.InvokeAsync();
 }
 
@@ -178,8 +179,7 @@ private Dictionary<string, Dictionary<string, bool>> ConfirmedOptions = new();
             SearchState.CollectiblesSubCategory = null;
             SearchState.CollectiblesSubSubCategory = null;
             SearchState.CollectiblesHasAuthenticityCertificate = false;
-
-    Console.WriteLine("Filters reset.");
+    SearchState.CollectiblesSetPage(1);
     await OnFiltersChanged.InvokeAsync();
 }
 
