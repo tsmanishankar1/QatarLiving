@@ -13,8 +13,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
         {
             group.MapLocationEndpoints()
                 .MapLocationCategoryEndpoints()
-                .MapLocationCordinateEndpoints()
-                .MapGetAllLocationName();
+                .MapLocationCordinateEndpoints();
             return group;
         }
     }

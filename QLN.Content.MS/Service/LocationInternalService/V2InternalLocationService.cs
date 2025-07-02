@@ -16,7 +16,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
 
         private static string GetKey(string id) => $"communitycategory-{id}";
 
-       public Task<LocationZoneListDto> GetAllZonesAsync(CancellationToken cancellationToken = default)
+        public Task<LocationZoneListDto> GetAllZonesAsync(CancellationToken cancellationToken = default)
         {
             try
             {
@@ -59,7 +59,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while getting coordinates by details.");
-                return null;  // Return null in case of error
+                return null;  
             }
         }
 
@@ -76,98 +76,15 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 return coordinates;
             }
 
-            return null; // Return null if the response is not successful
+            return null; 
         }
-        public Task<LocationNameDtoList> GetAllLocationName(CancellationToken cancellationToken = default)
-        {
-            var categories = new List<LocationNameDto>
-    {
-        new LocationNameDto { Name = "Souq Waqif" },
-        new LocationNameDto { Name = "mushaireb" },
-        new LocationNameDto { Name = "Mushaireb" },
-        new LocationNameDto { Name = "al najada" },
-        new LocationNameDto { Name = "Al Najada" },
-        new LocationNameDto { Name = "old al ghanim" },
-        new LocationNameDto { Name = "Old Al Ghanim" },
-        new LocationNameDto { Name = "al corniche" },
-        new LocationNameDto { Name = "Al Corniche" },
-        new LocationNameDto { Name = "al bidda" },
-        new LocationNameDto { Name = "Fereej Abdel Aziz" },
-        new LocationNameDto { Name = "fereej abdel aziz" },
-        new LocationNameDto { Name = "فريج عبد العزيز" },
-        new LocationNameDto { Name = "al doha al jadeeda" },
-        new LocationNameDto { Name = "Al Doha Al Jadeeda" },
-        new LocationNameDto { Name = "الدوحة الجديدة" },
-        new LocationNameDto { Name = "Doha15" },
-        new LocationNameDto { Name = "Al Dafna" },
-        new LocationNameDto { Name = "الغانم القديم" },
-        new LocationNameDto { Name = "Old Al Hitmi" },
-        new LocationNameDto { Name = "old al hitmi" },
-        new LocationNameDto { Name = "old salata" },
-        new LocationNameDto { Name = "Old Salata" },
-        new LocationNameDto { Name = "Al Mirqab" },
-        new LocationNameDto { Name = "al mirqab" },
-        new LocationNameDto { Name = "doha" },
-        new LocationNameDto { Name = "doha port" },
-        new LocationNameDto { Name = "wadi al sail" },
-        new LocationNameDto { Name = "Wadi Al Sail" },
-        new LocationNameDto { Name = "Al Rumaila" },
-        new LocationNameDto { Name = "fereej bin mahmoud" },
-        new LocationNameDto { Name = "Fereej Bin Mahmoud" },
-        new LocationNameDto { Name = "فريج بن محمود" },
-        new LocationNameDto { Name = "Al Muntazah" },
-        new LocationNameDto { Name = "al muntazah" },
-        new LocationNameDto { Name = "Rawdat Al Khail" },
-        new LocationNameDto { Name = "rawdat al khail" },
-        new LocationNameDto { Name = "روضة الخيل" },
-        new LocationNameDto { Name = "al mansoura fereej bin dirham" },
-        new LocationNameDto { Name = "Al Mansoura / Fereej Bin Dirham" },
-        new LocationNameDto { Name = "المنصورة / فريج بن درهم" },
-        new LocationNameDto { Name = "Najma" },
-        new LocationNameDto { Name = "najma" },
-        new LocationNameDto { Name = "النجمة" },
-        new LocationNameDto { Name = "Umm Ghwailina" },
-        new LocationNameDto { Name = "umm ghwailina" },
-        new LocationNameDto { Name = "أم غويلينا" },
-        new LocationNameDto { Name = "ras abu abboud" },
-        new LocationNameDto { Name = "Ras Abu Abboud" },
-        new LocationNameDto { Name = "Al Khulaifat" },
-        new LocationNameDto { Name = "al khulaifat" },
-        new LocationNameDto { Name = "al duhail" },
-        new LocationNameDto { Name = "Al Duhail" },
-        new LocationNameDto { Name = "الدحيل" },
-        new LocationNameDto { Name = "umm lekhba" },
-        new LocationNameDto { Name = "Umm Lekhba" },
-        new LocationNameDto { Name = "أم لخبا" },
-        new LocationNameDto { Name = "Madinat Khalifa North / Dahl Al Hamam" },
-        new LocationNameDto { Name = "madinat khalifa north dahl al hamam" },
-        new LocationNameDto { Name = "مدينة خليفة الشمالية / دحل الحمام" },
-        new LocationNameDto { Name = "Al Markhiya" },
-        new LocationNameDto { Name = "al markhiya" },
-        new LocationNameDto { Name = "المرخية" },
-        new LocationNameDto { Name = "Madinat Khalifa South" },
-        new LocationNameDto { Name = "madinat khalifa south" },
-        new LocationNameDto { Name = "مدينة خليفة الجنوبية" },
-        new LocationNameDto { Name = "Fereej Kulaib" },
-        new LocationNameDto { Name = "fereej kulaib" },
-        new LocationNameDto { Name = "فريج كليب" },
-        new LocationNameDto { Name = "Al Messila" },
-        new LocationNameDto { Name = "al messila" },
-        new LocationNameDto { Name = "المسيلة" },
-        new LocationNameDto { Name = "Fereej Bin Omran" },
-        new LocationNameDto { Name = "fereej bin omran" },
-        new LocationNameDto { Name = "فريج بن عمران" }
-    };
-
-            return Task.FromResult(new LocationNameDtoList { Locations = categories });
-        }
-
+    
         public Task<LocationListResponseDto> GetAllCategoriesLocationsAsync(CancellationToken cancellationToken = default)
         {
-         
+
             return Task.FromResult(new LocationListResponseDto
             {
-                Locations = new List<LocationEventDto>() 
+                Locations = new List<LocationEventDto>()
             });
         }
 

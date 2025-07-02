@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -33,21 +34,38 @@ namespace QLN.Common.DTO_s
         }
 
 
-        public class LocationEventDto
+        public class AreaDto
         {
+            [JsonProperty("id")]
             public string Id { get; set; }
+            [JsonProperty("name")]
             public string Name { get; set; }
+            [JsonProperty("latitude")]
             public string Latitude { get; set; }
+            [JsonProperty("longitude")]
             public string Longitude { get; set; }
 
-            public List<string>  Areas { get; set; }
+        }
+
+        public class LocationEventDto
+        {
+            [JsonProperty("id")]
+            public string Id { get; set; }
+            [JsonProperty("name")]
+            public string Name { get; set; }
+            [JsonProperty("latitude")]
+            public string Latitude { get; set; }
+            [JsonProperty("longitude")]
+            public string Longitude { get; set; }
+            [JsonProperty("areas")]
+            public List<AreaDto> Areas { get; set; }
         }
 
         public class LocationListResponseDto
         {
+            [JsonProperty("locations")]
             public List<LocationEventDto> Locations { get; set; }
         }
-
 
     }
 }

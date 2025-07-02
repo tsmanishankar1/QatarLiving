@@ -82,37 +82,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
-        
-    }
 
-        public static RouteGroupBuilder MapGetAllLocationName(this RouteGroupBuilder group)
-        {
-            group.MapGet("/getAllLocationName", static async Task<Results<Ok<LocationNameDtoList>, ProblemHttpResult>> (
-      V2IContentLocation service,
-      CancellationToken cancellationToken = default) =>
-            {
-                try
-                {
-                    var categories = await service.GetAllLocationName(cancellationToken);
-                    return TypedResults.Ok(categories);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
-                }
-            })
-            .WithName("GetAllLocationNames")
-            .WithTags("Location")
-            .WithSummary("Get All Location Name")
-            .WithDescription("Returns all Location Name as list.")
-            .Produces<ForumCategoryListDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-
-            return group;
         }
 
-        public static RouteGroupBuilder MapLocationCategoryEndpoints(this RouteGroupBuilder group)
+      public static RouteGroupBuilder MapLocationCategoryEndpoints(this RouteGroupBuilder group)
         {
             group.MapGet("/getAllCategoriesLocations", static async Task<Results<Ok<LocationListResponseDto>, ProblemHttpResult>> (
                 V2IContentLocation service,

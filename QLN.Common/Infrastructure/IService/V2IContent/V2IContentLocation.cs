@@ -14,7 +14,6 @@ namespace QLN.Common.Infrastructure.IService.V2IContent
         Task<LocationZoneListDto> GetAllZonesAsync(CancellationToken cancellationToken = default);
 
         Task<AddressResponseDto> GetAddressCoordinatesAsync(int? zone, int? street, int? building, string location, CancellationToken cancellationToken = default);
-        Task<LocationNameDtoList> GetAllLocationName(CancellationToken cancellationToken = default);
         Task<LocationListResponseDto> GetAllCategoriesLocationsAsync(CancellationToken cancellationToken = default);
 
 

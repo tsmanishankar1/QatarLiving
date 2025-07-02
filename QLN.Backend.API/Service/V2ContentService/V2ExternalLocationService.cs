@@ -27,7 +27,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             _daprClient = daprClient;
             _httpContextAccessor = httpContextAccessor;
             _logger = logger;
-            _httpClient = httpClientFactory.CreateClient(); 
+            _httpClient = httpClientFactory.CreateClient();
 
         }
 
@@ -99,26 +99,6 @@ namespace QLN.Backend.API.Service.V2ContentService
         }
 
 
-        public async Task<LocationNameDtoList> GetAllLocationName(CancellationToken cancellationToken = default)
-        {
-
-            try
-            {
-                var result = await _daprClient.InvokeMethodAsync<LocationNameDtoList>(
-                    HttpMethod.Get,
-                    InternalAppId,
-                    "api/v2/location/getAllLocationName",
-                    cancellationToken
-                );
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while invoking getAllLocationName from {AppId}", InternalAppId);
-                return null;
-            }
-        }
-
 
         public async Task<LocationListResponseDto> GetAllCategoriesLocationsAsync(CancellationToken cancellationToken = default)
         {
@@ -140,7 +120,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 return new LocationListResponseDto { Locations = new List<LocationEventDto>() };
             }
         }
-   
-    
+
+
     }
 }
