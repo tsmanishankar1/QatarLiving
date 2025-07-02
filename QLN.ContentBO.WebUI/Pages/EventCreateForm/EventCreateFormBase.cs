@@ -50,7 +50,7 @@ namespace QLN.ContentBO.WebUI.Pages
         CurrentEvent.Location = value;
     }
 
-protected TimeSpan? EndTimeSpan
+        protected TimeSpan? EndTimeSpan
         {
             get => CurrentEvent.EventSchedule.EndTime.HasValue
                 ? CurrentEvent.EventSchedule.EndTime.Value.ToTimeSpan()
