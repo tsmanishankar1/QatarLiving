@@ -17,20 +17,21 @@ public class CollectiblesSearchSectionBase : ComponentBase
     [Parameter] public EventCallback<string> OnViewModeChanged { get; set; }
     [Inject] private ILogger<CollectiblesSearchSectionBase> Logger { get; set; }
     [Inject] private NavigationManager Nav { get; set; }
+    
+   [Parameter]
+    public EventCallback<string> SaveSearchAsync { get; set; }
+    [Parameter]
+    public bool IsLoadingSaveSearch { get; set; } = false;
     protected bool _isSearchFocused = false;
 
     [Parameter]
     public bool Loading { get; set; } = false;
-      protected List<ViewToggleButtons.ViewToggleOption> _viewOptions = new()
+    [Parameter]
+    public bool IsSaveSearch { get; set; } = false;
+ protected List<ViewToggleButtons.ViewToggleOption> _viewOptions = new()
     {
         new() { ImageUrl = "/qln-images/list_icon.svg", Label = "List", Value = "list" },
         new() { ImageUrl = "/qln-images/grid_icon.svg", Label = "Grid", Value = "grid" }
-    };
-
-    protected List<BrandItem> _brands = new()
-    {
-        new() { Id="Used", Label="Used" },
-        new() { Id="Brand New", Label="Brand New" },
     };
   protected List<CategoryTreeDto> CategoryTrees => SearchState.CollectiblesCategoryTrees;
  protected CategoryTreeDto SelectedCategory =>
@@ -61,39 +62,83 @@ public class CollectiblesSearchSectionBase : ComponentBase
         return new();
     }
 }
- protected async Task OnCategorySelected(string categoryId)
+protected async Task OnCategorySelected(string categoryId)
 {
-    SearchState.CollectiblesCategory = categoryId;
+    var category = CategoryTrees.FirstOrDefault(c => c.Id.ToString() == categoryId);
+    if (category != null)
+    {
+        SearchState.CollectiblesCategory = category.Id.ToString();
+        SearchState.SelectedCategoryName = category.Name;
+    }
+
     SearchState.CollectiblesSubCategory = null;
     SearchState.CollectiblesSubSubCategory = null;
+    SearchState.SelectedSubCategoryName = null;
+    SearchState.SelectedSubSubCategoryName = null;
+
     await PerformSearch();
 }
+
 protected async Task OnSubCategorySelected(string subId)
 {
-    SearchState.CollectiblesSubCategory = subId;
+    var subCategory = SelectedCategory.Children?.FirstOrDefault(c => c.Id.ToString() == subId);
+    if (subCategory != null)
+    {
+        SearchState.CollectiblesSubCategory = subCategory.Id.ToString();
+        SearchState.SelectedSubCategoryName = subCategory.Name;
+    }
+
     SearchState.CollectiblesSubSubCategory = null;
+    SearchState.SelectedSubSubCategoryName = null;
+
     await PerformSearch();
 }
 
 protected async Task OnSubSubCategorySelected(string subSubId)
 {
-    SearchState.CollectiblesSubSubCategory = subSubId;
+    var subSubCategory = SelectedSubCategory.Children?.FirstOrDefault(c => c.Id.ToString() == subSubId);
+    if (subSubCategory != null)
+    {
+        SearchState.CollectiblesSubSubCategory = subSubCategory.Id.ToString();
+        SearchState.SelectedSubSubCategoryName = subSubCategory.Name;
+    }
+
     await PerformSearch();
 }
 
-        protected Task HandleSaveSearch()
-        {
-            // Implement actual save logic here — call backend or store locally
-            ShowSaveSearchPopup = false;
-            return Task.CompletedTask;
-        }
+    protected Task HandleSecondaryClick()
+{
+    if (IsSaveSearch)
+    {
+        // Nav.NavigateTo("/qln/classifieds/saved-searches");
+        ShowSaveSearchPopup = false;
+    }
+    else
+    {
+        ShowSaveSearchPopup = false;
+    }
 
-        protected Task CloseSaveSearchPopup()
+    return Task.CompletedTask;
+}
+    protected async Task HandlePrimaryClick(string searchName)
+    {
+        if (IsSaveSearch)
         {
             ShowSaveSearchPopup = false;
-            return Task.CompletedTask;
         }
+        else
+        {
+            await HandleSaveSearch(searchName);
+        }
+    }
 
+   protected async Task HandleSaveSearch(string searchName)
+    {
+        if (SaveSearchAsync.HasDelegate)
+        {
+            await SaveSearchAsync.InvokeAsync(searchName);
+        }
+    }
     protected override void OnInitialized()
     {
         Nav.LocationChanged += OnLocationChanged;
@@ -147,9 +192,5 @@ protected async Task OnSubSubCategorySelected(string subSubId)
         SearchState.CollectiblesViewMode = mode;
         OnViewModeChanged.InvokeAsync(mode);
     }
-    public class BrandItem
-{
-    public string Id { get; set; }
-    public string Label { get; set; }
-}
+
 }

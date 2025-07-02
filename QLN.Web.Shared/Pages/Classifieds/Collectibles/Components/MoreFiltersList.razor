@@ -1,11 +1,10 @@
 @using QLN.Common.DTO_s
 @using QLN.Web.Shared.Components.MoreFilters
 
-<MoreFilters HasWarrantyCertificate="HasWarrantyCertificate"ConfirmedOptions="ConfirmedOptions" OnApply="ApplyFilters" OnReset="ResetFilters">
+<MoreFilters  MoreText="true"  HasWarrantyCertificate="HasWarrantyCertificate"ConfirmedOptions="ConfirmedOptions" OnApply="ApplyFilters" OnReset="ResetFilters">
     <div>
    @foreach (var field in SelectedFields)
 {
-    if (field.Name == "Brands" || field.Name == "Brand") continue;
 
     <div class="filter-section">
         <label class="section-label">@field.Name</label>

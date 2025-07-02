@@ -119,11 +119,11 @@ namespace QLN.Web.Shared.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-public async Task<HttpResponseMessage?> PostClassifiedSaveSearchAsync(string vertical, object payload)
+public async Task<HttpResponseMessage?> PostClassifiedSaveSearchAsync(object payload)
 {
     try
     {
-        var endpoint = $"/api/classified/{vertical}/search/saveSearch";
+        var endpoint = $"/api/classified/search/saveSearch";
 
         using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
         {

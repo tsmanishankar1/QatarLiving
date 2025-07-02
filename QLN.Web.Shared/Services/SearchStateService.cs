@@ -6,6 +6,10 @@ public class SearchStateService
     public string ItemCategory { get; set; }
     public string ItemSubCategory { get; set; } 
     public string ItemSubSubCategory { get; set; }  
+    public string SelectedCategoryName { get; set; }
+    public string SelectedSubCategoryName { get; set; }
+    public string SelectedSubSubCategoryName { get; set; }
+
     public string ItemBrand { get; set; }
     public long? ItemMinPrice { get; set; }
     public long? ItemMaxPrice { get; set; }
@@ -62,6 +66,10 @@ public class SearchStateService
     public string PrelovedCategory { get; set; }
     public string PrelovedSubCategory { get; set; } 
     public string PrelovedSubSubCategory { get; set; }  
+    public string PrelovedSelectedCategoryName { get; set; }
+    public string PrelovedSelectedSubCategoryName { get; set; }
+    public string PrelovedSelectedSubSubCategoryName { get; set; }
+
     public string PrelovedBrand { get; set; }
     public long? PrelovedMinPrice { get; set; }
     public long? PrelovedMaxPrice { get; set; }

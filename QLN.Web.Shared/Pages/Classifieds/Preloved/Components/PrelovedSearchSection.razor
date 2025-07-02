@@ -13,7 +13,7 @@
     <div class="preloved-search-row">
 
         <!-- FIRST ROW: Search + Category -->
-        <div class="preloved-first-row">
+        <div class="@($"preloved-first-row {(_isSearchFocused ? "search-focused" : "")}")">
             <!-- Search Input -->
             <div class="preloved-search-bar" @onfocusin="() => _isSearchFocused = true" @onfocusout="() => _isSearchFocused = false">
                 @if (!_isSearchFocused)
@@ -47,7 +47,7 @@
   @if (!_isSearchFocused)
         {
             <!-- Category -->
-            <div class="preloved-short-select">
+                <div class="preloved-brand-select">
                 <CustomSelectCategory TItem="CategoryTreeDto"
                     Items="@CategoryTrees"
                     SelectedId="@SearchState.PrelovedCategory"
@@ -58,39 +58,43 @@
                     BorderRadius="4px"
                     Padding="13px 10px" />
             </div>
-           <CustomSelectCategory TItem="CategoryTreeDto"
-            Items="@SelectedCategory.Children"
-            SelectedId="@SearchState.PrelovedSubCategory"
-            SelectedIdChanged="v => OnSubCategorySelected(v)"
-            GetId="x => x.Id.ToString()"
-            GetLabel="x => x.Name"
-            BorderRadius="4px"
-            IsDisabled="@(!(SelectedCategory?.Children?.Any() ?? false))" 
-            Padding="13px 10px" 
-            Placeholder="Subcategory" />
-
-
-    <CustomSelectCategory TItem="CategoryTreeDto"
-        Items="@SelectedSubCategory.Children"
-        SelectedId="@SearchState.PrelovedSubSubCategory"
-        SelectedIdChanged="v => OnSubSubCategorySelected(v)"
-        GetId="x => x.Id.ToString()"
-        GetLabel="x => x.Name"
-        BorderRadius="4px"
-        Padding="13px 10px" 
-        IsDisabled="@(!(SelectedSubCategory?.Children?.Any() ?? false))"
-        Placeholder="Sub subcategory" />
-
             }
         </div>
 
         @if (!_isSearchFocused)
         {
-            <!-- SECOND ROW: Brand + Price + More + Save Search -->
-            <div class="preloved-second-row">
-                <!-- Brand -->
-                <div class="preloved-brand-select">
-                       <CustomSelectCategory TItem="string"
+          <div class="preloved-second-row">
+               <div class="preloved-brand-select">
+            <CustomSelectCategory TItem="CategoryTreeDto"
+                    Items="@SelectedCategory.Children"
+                    SelectedId="@SearchState.PrelovedSubCategory"
+                    SelectedIdChanged="v => OnSubCategorySelected(v)"
+                    GetId="x => x.Id.ToString()"
+                    GetLabel="x => x.Name"
+                    BorderRadius="4px"
+                    IsDisabled="@(!(SelectedCategory?.Children?.Any() ?? false))" 
+                    Padding="13px 10px" 
+                    Placeholder="Subcategory" />
+        </div>
+         @if (!isBrandFieldAvailable)
+                {
+   <div class="preloved-brand-select">
+            <CustomSelectCategory TItem="CategoryTreeDto"
+                Items="@SelectedSubCategory.Children"
+                SelectedId="@SearchState.PrelovedSubSubCategory"
+                SelectedIdChanged="v => OnSubSubCategorySelected(v)"
+                GetId="x => x.Id.ToString()"
+                GetLabel="x => x.Name"
+                BorderRadius="4px"
+                Padding="13px 10px" 
+                IsDisabled="@(!(SelectedSubCategory?.Children?.Any() ?? false))"
+                Placeholder="Sub subcategory" />
+                </div>
+                }
+                 @if (isBrandFieldAvailable)
+                {
+           <div class="preloved-brand-select">
+            <CustomSelectCategory TItem="string"
                     Items="brandField?.Options"
                     SelectedId="@SearchState.PrelovedBrand"
                     SelectedIdChanged="v => OnFilterChanged(nameof(SearchState.PrelovedBrand), v)"
@@ -101,8 +105,11 @@
                     IsDisabled="@(!isBrandFieldAvailable)"
                     Placeholder="Brand" />
                 </div>
-
-                <!-- Price -->
+                }
+        </div>
+            <!-- SECOND ROW: Brand + Price + More + Save Search -->
+            <div class="preloved-second-row">
+               
                 <div class="preloved-price-short-select">
                    <PriceRangeSelect SelectedMin="SearchState.PrelovedMinPrice"
                         SelectedMax="SearchState.PrelovedMaxPrice"
@@ -114,7 +121,7 @@
                 </div>
 
                 <!-- More -->
-                <div class="preloved-price-short-select">
+                <div class="short-select">
                         <MoreFiltersList SelectedFields="SelectedFields" OnFiltersChanged="PerformSearch" />
                 </div>
 
@@ -133,14 +140,17 @@
     </div>
     @if (ShowSaveSearchPopup)
 {
-    <SaveSearchPopup 
-        ShowTextField="true"
+     <SaveSearchPopup 
         Title="Save this Search"
         Description="Give a name to your search and access it anytime"
-        PrimaryButtonText="Save Search"
-        SecondaryButtonText="Cancel"
-        OnPrimaryClick="HandleSaveSearch"
-        OnSecondaryClick="CloseSaveSearchPopup" />
+        PrimaryButtonText="@(IsSaveSearch ? "Close" : "Save Search")"
+        SecondaryButtonText="@(IsSaveSearch ? "View Saved Searches" : "Cancel")"
+        ShowTextField="IsSaveSearch"
+        Loading="IsLoadingSaveSearch"
+        IsVisible="ShowSaveSearchPopup"
+        OnPrimaryClick="HandlePrimaryClick"
+        OnSecondaryClick="HandleSecondaryClick"
+        />
 }
 
 </div>

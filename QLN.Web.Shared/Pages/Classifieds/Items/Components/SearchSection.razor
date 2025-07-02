@@ -13,7 +13,7 @@
     <div class="item-search-row">
 
         <!-- FIRST ROW: Search + Category -->
-        <div class="item-first-row">
+       <div class="@($"item-first-row {(_isSearchFocused ? "search-focused" : "")}")">
             <!-- Search Input -->
             <div class="item-search-bar" @onfocusin="() => _isSearchFocused = true" @onfocusout="() => _isSearchFocused = false">
                 @if (!_isSearchFocused)
@@ -46,8 +46,7 @@
             </div>
   @if (!_isSearchFocused)
         {
-            <!-- Category -->
-            <div class="short-select">
+            <div class="item-brand-select">
                 <CustomSelectCategory TItem="CategoryTreeDto"
                     Items="@CategoryTrees"
                     SelectedId="@SearchState.ItemCategory"
@@ -58,8 +57,15 @@
                     BorderRadius="4px"
                     Padding="13px 10px" />
             </div>
+            }
+        </div>
+      
 
-        <CustomSelectCategory TItem="CategoryTreeDto"
+        @if (!_isSearchFocused)
+        {
+        <div class="item-second-row">
+         <div class="item-brand-select">
+           <CustomSelectCategory TItem="CategoryTreeDto"
             Items="@SelectedCategory.Children"
             SelectedId="@SearchState.ItemSubCategory"
             SelectedIdChanged="v => OnSubCategorySelected(v)"
@@ -69,28 +75,25 @@
             IsDisabled="@(!(SelectedCategory?.Children?.Any() ?? false))" 
             Padding="13px 10px" 
             Placeholder="Subcategory" />
+          </div>
+           @if (!isBrandFieldAvailable)
+                {
+            <div class="item-brand-select">
+             <CustomSelectCategory TItem="CategoryTreeDto"
+                Items="@SelectedSubCategory.Children"
+                SelectedId="@SearchState.ItemSubSubCategory"
+                SelectedIdChanged="v => OnSubSubCategorySelected(v)"
+                GetId="x => x.Id.ToString()"
+                GetLabel="x => x.Name"
+                BorderRadius="4px"
+                Padding="13px 10px" 
+                IsDisabled="@(!(SelectedSubCategory?.Children?.Any() ?? false))"
+                Placeholder="Sub subcategory" />
+                </div>
+        }
 
-
-    <CustomSelectCategory TItem="CategoryTreeDto"
-        Items="@SelectedSubCategory.Children"
-        SelectedId="@SearchState.ItemSubSubCategory"
-        SelectedIdChanged="v => OnSubSubCategorySelected(v)"
-        GetId="x => x.Id.ToString()"
-        GetLabel="x => x.Name"
-        BorderRadius="4px"
-        Padding="13px 10px" 
-        IsDisabled="@(!(SelectedSubCategory?.Children?.Any() ?? false))"
-        Placeholder="Sub subcategory" />
-
-            }
-        </div>
-      
-
-        @if (!_isSearchFocused)
+         @if (isBrandFieldAvailable)
         {
-            <!-- SECOND ROW: Brand + Price + More + Save Search -->
-            <div class="item-second-row">
-                <!-- Brand -->
                 <div class="item-brand-select">
                     <CustomSelectCategory TItem="string"
                     Items="brandField?.Options"
@@ -104,8 +107,10 @@
                     Placeholder="Brand" />
               
                 </div>
-
-                <!-- Price -->
+                }
+             </div>
+            <!-- SECOND ROW: Brand + Price + More + Save Search -->
+            <div class="item-second-row">
                 <div class="item-price-short-select">
                    <PriceRangeSelect SelectedMin="SearchState.ItemMinPrice"
                         SelectedMax="SearchState.ItemMaxPrice"
@@ -117,7 +122,7 @@
                 </div>
 
                 <!-- More -->
-                <div class="more-short-select">
+                <div class="short-select">
                         <MoreFiltersList SelectedFields="SelectedFields" OnFiltersChanged="PerformSearch"/>
                 </div>
 
@@ -137,13 +142,16 @@
     @if (ShowSaveSearchPopup)
 {
     <SaveSearchPopup 
-        ShowTextField="true"
         Title="Save this Search"
         Description="Give a name to your search and access it anytime"
-        PrimaryButtonText="Save Search"
-        SecondaryButtonText="Cancel"
-        OnPrimaryClick="HandleSaveSearch"
-        OnSecondaryClick="CloseSaveSearchPopup" />
+        PrimaryButtonText="@(IsSaveSearch ? "Close" : "Save Search")"
+        SecondaryButtonText="@(IsSaveSearch ? "View Saved Searches" : "Cancel")"
+        ShowTextField="IsSaveSearch"
+        IsVisible="ShowSaveSearchPopup"
+        Loading="IsLoadingSaveSearch"
+        OnPrimaryClick="HandlePrimaryClick"
+        OnSecondaryClick="HandleSecondaryClick"
+        />
 }
 
 </div>
