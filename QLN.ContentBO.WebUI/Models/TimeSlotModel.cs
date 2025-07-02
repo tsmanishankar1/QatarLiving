@@ -4,9 +4,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace QLN.ContentBO.WebUI.Models
 {
-    public class EventCategoryModel
+    public class TimeSlotModel
     {
-        public int Id { get; set; }
-        public string CategoryName { get; set; }
+        public DayOfWeek? DayOfWeek { get; set; }
+        public string? Time { get; set; }
     }
+
 }

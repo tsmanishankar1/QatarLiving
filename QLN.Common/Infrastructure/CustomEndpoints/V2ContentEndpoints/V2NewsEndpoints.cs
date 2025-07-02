@@ -13,7 +13,7 @@ public static class V2NewsEndpoints
     public static RouteGroupBuilder MapCreateNewsEndpoints(this RouteGroupBuilder group)
     {
         group.MapGet("/getWriterTags", async Task<Results<
-         Ok<Dictionary<string, string>>,
+         Ok<WriterTagsResponse>,
          ProblemHttpResult>>
          (
              IV2NewsService service,

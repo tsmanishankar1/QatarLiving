@@ -25,14 +25,14 @@ namespace QLN.Backend.API.Service.V2ContentService
             _blobStorage = blobStorage;
         }
 
-        public async Task<Dictionary<string, string>> GetWriterTagsAsync(CancellationToken cancellationToken = default)
+        public async Task<WriterTagsResponse> GetWriterTagsAsync(CancellationToken cancellationToken = default)
         {
             try
             {
                 var appId = ConstantValues.V2Content.ContentServiceAppId;
                 var path = "/api/v2/news/getWriterTags";
 
-                return await _dapr.InvokeMethodAsync<Dictionary<string, string>>(
+                return await _dapr.InvokeMethodAsync<WriterTagsResponse>(
                HttpMethod.Get,
                appId,
                path,
