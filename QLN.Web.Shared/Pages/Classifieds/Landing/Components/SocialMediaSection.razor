@@ -20,12 +20,17 @@
                     <h4 class="header-description">@Description</h4>
 
                     <div class="social-icons">
-                        @foreach (var link in SocialLinks)
+                            @foreach (var link in SocialLinks)
                             {
+                                var imageUrl = !string.IsNullOrWhiteSpace(link.ImageUrl) ? link.ImageUrl : link.Title == "Facebook" ? "/qln-images/classifieds/social_Facebook.svg": link.Title == "Instagram"
+                                    ? "/qln-images/classifieds/social_Instagram.svg"
+                                    : link.Title == "Youtube"
+                                    ? "/qln-images/classifieds/social_Youtube.svg"
+                                    : "/qln-images/classifieds/social_Youtube.svg";
                                 <a href="@link.RediectUrl"
                                 target="_blank"
-                                class="social-icon">
-                                    <img src="@link.ImageUrl" alt="@link.Title" />
+                                class="social-icon" style="@(string.IsNullOrWhiteSpace(link.ImageUrl) ? "width: 50px; height: 50px;" : null)">
+                                    <img src="@(string.IsNullOrWhiteSpace(link.ImageUrl) ? imageUrl : link.ImageUrl)" alt="@link.Title" />
                                 </a>
                             }
                     </div>
@@ -86,171 +91,5 @@
     </MudGrid>
 </div>
 
-<style>
-    .store-media-section {
-       padding: 2rem 0;
-       display: flex;
-       align-items: center;
-       justify-content: center;
-       font-family: 'Public Sans', sans-serif;
-    }
-    .media-store-header {
-    background-color: var(--color-background);
-    padding: 2rem 1rem;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    height: 100%;
-    }
 
- 
-    .header-title{
-        font-size: 25px;
-        font-weight: 600;
-        color: var(--color-text-primary);
-        margin-bottom: 1rem;
-    }
-    .header-description{
-        font-size: 16px;
-        font-weight: 400;
-        color: var(--color-text-descripton);
-    }
-.video-scroll-wrapper {
-    display: flex;
-     gap: 20px;
-    justify-content: center;
-}
-
-
-.video-card {
-     width: 225px; height: 348px;
-}
-
-.video-card .video-info {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    display: flex;
-    align-items: center;
-    padding: 8px;
-    background: linear-gradient(to top, rgba(0,0,0,0.6), rgba(0,0,0,0));
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.video-card:hover .video-info {
-    opacity: 1;
-}
-
-.video-card .avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-}
-
-.video-card .info-text {
-    margin-left: 8px;
-    display: flex;
-    flex-direction: column;
-    color: white;
-}
-
-.video-card .info-text .source {
-    font-weight: 600;
-    font-size: 11px;
-    Color:#FFFFFF;
-}
-.no-video-found{
-        display: flex;
-       align-items: center;
-       justify-content: center;
-    text-align: center;
-     Color:black
-}
-.video-card .info-text .time {
-    font-size: 10px;
-   font-weight: 500;
-    Color:#FFFFFF
-}
-
-.play-overlay {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: rgba(0, 0, 0, 0.2);
-    z-index: 10; /* ensure above video */
-}
-
-.play-icon {
-    color: white;
-    background-color: rgba(0, 0, 0, 0.6);
-    border-radius: 50%;
-    padding: 5px;
-    font-size: 30px !important;
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    width: 40px;
-    height: 40px;
-}
-.social-icons {
-    gap: 1rem;
-}
-
-.social-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 50px;
-    height: 50px;
-    border: 1px solid var(--color-accent);
-    border-radius: 50%;
-    text-decoration: none;
-    transition: transform 0.2s ease;
-}
-
-.social-icon img {
-    width: 25px;
-    height: 18px;
-}
-
-.social-icon:hover {
-    transform: scale(1.1);
-    background-color: rgba(255, 165, 0, 0.1);
-}
-
-
-/* Mobile: enable horizontal scroll */
-@@media (max-width: 700px) {
-     .store-media-section {
-       padding: 1rem;
-    }
-     .media-store-header {
-       padding: 1rem;
-    }
-    .video-scroll-wrapper {
-        overflow-x: auto;
-        flex-wrap: nowrap;
-        justify-content: flex-start;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none; /* Firefox */
-    }
-.video-card {
-     width: 168px; height: 299.13px;
-}
-    .video-scroll-wrapper::-webkit-scrollbar {
-        display: none; /* Chrome/Safari */
-    }
-
-    .video-card {
-        flex: 0 0 auto; /* prevent shrinking */
-    }
-    
-}
-
-</style>
 

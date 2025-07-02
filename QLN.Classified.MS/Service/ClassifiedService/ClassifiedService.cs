@@ -130,7 +130,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public Task<bool> SaveSearch(SaveSearchRequestDto dto, Guid userId, CancellationToken cancellationToken = default)
+        public Task<bool> SaveSearch(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
@@ -312,10 +312,10 @@ namespace QLN.Classified.MS.Service
 
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
-            if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
+            if (dto.ImageUrls == null || dto.ImageUrls.Count == 0)
                 throw new ArgumentException("Image URLs must be provided.");
 
-            if (string.IsNullOrWhiteSpace(dto.CertificateBase64))
+            if (string.IsNullOrWhiteSpace(dto.CertificateUrl))
                 throw new ArgumentException("Certificate URL must be provided.");
 
             var adId = dto.Id != Guid.Empty ? dto.Id : throw new ArgumentException("Id must be provided");
@@ -330,49 +330,49 @@ namespace QLN.Classified.MS.Service
                     throw new InvalidOperationException($"Ad with key {key} already exists.");
                 }
 
-                var adItem = new
+                var adItem = new ClassifiedItems
                 {
                     Id = adId,
-                    dto.SubVertical,
-                    dto.Title,
-                    dto.Description,
-                    dto.CategoryId,
-                    dto.Category,
-                    dto.L1CategoryId,
-                    L1Category = dto.l1Category,
-                    dto.L2CategoryId,
+                    SubVertical = dto.SubVertical,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    CategoryId = dto.CategoryId,
+                    Category = dto.Category,
+                    L2CategoryId = dto.L2CategoryId,
                     L2Category = dto.L2Category,
-                    dto.Brand,
-                    dto.Model,
-                    dto.Price,
-                    dto.PriceType,
-                    dto.Condition,
-                    dto.Color,
-                    dto.AcceptsOffers,
-                    dto.MakeType,
-                    dto.Capacity,
-                    dto.Processor,
-                    dto.Coverage,
-                    dto.Ram,
-                    dto.Resolution,
-                    dto.BatteryPercentage,
-                    dto.Size,
-                    dto.SizeValue,
-                    dto.Gender,
-                    dto.CertificateFileName,
-                    CertificateUrl = dto.CertificateBase64,
-                    ImageUrls = dto.AdImagesBase64,
-                    dto.PhoneNumber,
-                    dto.WhatsAppNumber,
-                    dto.Zone,
-                    dto.StreetNumber,
-                    dto.BuildingNumber,
-                    dto.Latitude,
-                    dto.Longitude,
-                    dto.UserId,   
-                    dto.IsFeatured,
-                    dto.IsPromoted,
-                    dto.TearmsAndCondition,
+                    L1CategoryId = dto.L1CategoryId,
+                    L1Category = dto.L1Category,                   
+                    Brand = dto.Brand,
+                    Model = dto.Model,
+                    Price = dto.Price,
+                    PriceType = dto.PriceType,
+                    Condition = dto.Condition,
+                    Color = dto.Color,
+                    AcceptsOffers = dto.AcceptsOffers,
+                    MakeType = dto.MakeType,
+                    Capacity = dto.Capacity,
+                    Processor = dto.Processor,
+                    Coverage = dto.Coverage,
+                    Ram = dto.Ram,
+                    Resolution = dto.Resolution,
+                    BatteryPercentage = dto.BatteryPercentage,
+                    Size = dto.Size,
+                    SizeValue = dto.SizeValue,
+                    Gender = dto.Gender,
+                    CertificateFileName = dto.CertificateFileName,
+                    CertificateUrl = dto.CertificateUrl,
+                    ImageUrls = dto.ImageUrls,
+                    PhoneNumber = dto.PhoneNumber,
+                    WhatsAppNumber = dto.WhatsAppNumber,
+                    Zone = dto.Zone,
+                    StreetNumber = dto.StreetNumber,
+                    BuildingNumber = dto.BuildingNumber,
+                    Latitude = dto.Latitude,
+                    Longitude = dto.Longitude,
+                    UserId = dto.UserId,   
+                    IsFeatured = dto.IsFeatured,
+                    IsPromoted = dto.IsPromoted,
+                    TearmsAndCondition = dto.TearmsAndCondition,
                     CreatedAt = DateTime.UtcNow,
                     ExpiryDate = dto.ExpiryDate,
                     RefreshExpiry = dto.RefreshExpiry,
@@ -507,10 +507,10 @@ namespace QLN.Classified.MS.Service
 
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
-            if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
+            if (dto.ImageUrls == null || dto.ImageUrls.Count == 0)
                 throw new ArgumentException("Image URLs must be provided.");
 
-            if (string.IsNullOrWhiteSpace(dto.CertificateBase64))
+            if (string.IsNullOrWhiteSpace(dto.CertificateUrl))
                 throw new ArgumentException("Certificate URL must be provided.");
 
             var adId = dto.Id != Guid.Empty ? dto.Id : throw new ArgumentException("Id must be provided");
@@ -523,46 +523,46 @@ namespace QLN.Classified.MS.Service
                 {
                     throw new InvalidOperationException($"Ad with key {key} already exists.");
                 }
-                var adItem = new
+                var adItem = new ClassifiedPreloved
                 {
                     Id = adId,
-                    dto.SubVertical,
-                    dto.Title,
-                    dto.Description,
-                    dto.CategoryId,
-                    dto.Category,
-                    dto.L1CategoryId,
-                    L1Category = dto.l1Category,
-                    dto.L2CategoryId,
+                    SubVertical = dto.SubVertical,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    CategoryId = dto.CategoryId,
+                    Category = dto.Category,
+                    L1CategoryId = dto.L1CategoryId,
+                    L1Category = dto.L1Category,
+                    L2CategoryId = dto.L2CategoryId,
                     L2Category = dto.L2Category,
-                    dto.Brand,
-                    dto.Model,
-                    dto.Price,
-                    dto.PriceType,
-                    dto.Condition,
-                    dto.Color,                    
-                    dto.Capacity,
-                    dto.Processor,
-                    dto.Coverage,
-                    dto.Ram,
-                    dto.Resolution,
-                    dto.BatteryPercentage,
-                    dto.Size,
-                    dto.SizeValue,
-                    dto.Gender,
-                    dto.CertificateFileName,
-                    CertificateUrl = dto.CertificateBase64,
-                    ImageUrls = dto.AdImagesBase64,
-                    dto.PhoneNumber,
-                    dto.WhatsAppNumber,
-                    dto.Zone,
-                    dto.StreetNumber,
-                    dto.BuildingNumber,
-                    dto.Latitude,
-                    dto.Longitude,
-                    dto.UserId,
-                    dto.IsFeatured,
-                    dto.IsPromoted,
+                    Brand = dto.Brand,
+                    Model = dto.Model,
+                    Price = dto.Price,
+                    PriceType = dto.PriceType,
+                    Condition = dto.Condition,
+                    Color = dto.Color,
+                    Capacity = dto.Capacity,
+                    Processor = dto.Processor,
+                    Coverage = dto.Coverage,
+                    Ram = dto.Ram,
+                    Resolution = dto.Resolution,
+                    BatteryPercentage = dto.BatteryPercentage,
+                    Size = dto.Size,
+                    SizeValue = dto.SizeValue,
+                    Gender = dto.Gender,
+                    CertificateFileName = dto.CertificateFileName,
+                    CertificateUrl = dto.CertificateUrl,
+                    ImageUrls = dto.ImageUrls,
+                    PhoneNumber = dto.PhoneNumber,
+                    WhatsAppNumber = dto.WhatsAppNumber,
+                    Zone = dto.Zone,
+                    StreetNumber = dto.StreetNumber,
+                    BuildingNumber = dto.BuildingNumber,
+                    Latitude = dto.Latitude,
+                    Longitude = dto.Longitude,
+                    UserId = dto.UserId,
+                    IsFeatured = dto.IsFeatured,
+                    IsPromoted = dto.IsPromoted,
                     CreatedAt = DateTime.UtcNow,
                     ExpiryDate = dto.ExpiryDate,
                     RefreshExpiry = dto.RefreshExpiry,
@@ -614,10 +614,10 @@ namespace QLN.Classified.MS.Service
 
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
-            if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
+            if (dto.ImageUrls == null || dto.ImageUrls.Count == 0)
                 throw new ArgumentException("Image URLs must be provided.");
 
-            if (string.IsNullOrWhiteSpace(dto.CertificateBase64))
+            if (string.IsNullOrWhiteSpace(dto.CertificateUrl))
                 throw new ArgumentException("Certificate URL must be provided.");
 
             var adId = dto.Id != Guid.Empty ? dto.Id : throw new ArgumentException("Id must be provided.");
@@ -629,52 +629,52 @@ namespace QLN.Classified.MS.Service
                 if (existing != null)
                     throw new InvalidOperationException($"Ad with key {key} already exists.");
 
-                var adItem = new
+                var adItem = new ClassifiedCollectibles
                 {
                     Id = adId,
-                    dto.SubVertical,
-                    dto.Title,
-                    dto.Description,
-                    dto.CategoryId,
-                    dto.Category,
-                    dto.L1CategoryId,
-                    L1Category = dto.l1Category,
-                    dto.L2CategoryId,
+                    SubVertical = dto.SubVertical,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    CategoryId = dto.CategoryId,
+                    Category = dto.Category,
+                    L1CategoryId = dto.L1CategoryId,
+                    L1Category = dto.L1Category,
+                    L2CategoryId = dto.L2CategoryId,
                     L2Category = dto.L2Category,
-                    dto.Brand,
-                    dto.Price,
-                    dto.PriceType,
-                    dto.Condition,
-                    dto.CountryOfOrigin,
-                    dto.Language,
-                    dto.HasAuthenticityCertificate,
-                    dto.CertificateFileName,
-                    CertificateUrl = dto.CertificateBase64,
-                    dto.YearOrEra,
-                    dto.Rarity,
-                    dto.Package,
-                    dto.IsGraded,
-                    dto.GradingCompany,
-                    dto.Grades,
-                    dto.Material,
-                    dto.Scale,
-                    dto.SerialNumber,
-                    dto.Signed,
-                    dto.SignedBy,
-                    dto.FramedBy,
-                    ImageUrls = dto.AdImagesBase64,
-                    dto.PhoneNumber,
-                    dto.WhatsAppNumber,
-                    dto.ContactEmail,
-                    dto.Location,
-                    dto.StreetNumber,
-                    dto.BuildingNumber,
-                    dto.HasWarranty,
-                    dto.IsHandmade,
-                    dto.TearmsAndCondition,
-                    dto.UserId,
-                    dto.IsFeatured,
-                    dto.IsPromoted,
+                    Brand = dto.Brand,
+                    Price = dto.Price,
+                    PriceType = dto.PriceType,
+                    Condition = dto.Condition,
+                    CountryOfOrigin = dto.CountryOfOrigin,
+                    Language = dto.Language,
+                    HasAuthenticityCertificate = dto.HasAuthenticityCertificate,
+                    CertificateFileName = dto.CertificateFileName,
+                    CertificateUrl = dto.CertificateUrl,
+                    YearOrEra = dto.YearOrEra,
+                    Rarity = dto.Rarity,
+                    Package = dto.Package,
+                    IsGraded = dto.IsGraded,
+                    GradingCompany = dto.GradingCompany,
+                    Grades = dto.Grades,
+                    Material = dto.Material,
+                    Scale = dto.Scale,
+                    SerialNumber = dto.SerialNumber,
+                    Signed = dto.Signed,
+                    SignedBy = dto.SignedBy,
+                    FramedBy = dto.FramedBy,
+                    ImageUrls = dto.ImageUrls,
+                    PhoneNumber = dto.PhoneNumber,
+                    WhatsAppNumber = dto.WhatsAppNumber,
+                    ContactEmail = dto.ContactEmail,
+                    Location = dto.Location,
+                    StreetNumber = dto.StreetNumber,
+                    BuildingNumber = dto.BuildingNumber,
+                    HasWarranty = dto.HasWarranty,
+                    IsHandmade = dto.IsHandmade,
+                    TearmsAndCondition = dto.TearmsAndCondition,
+                    UserId = dto.UserId,
+                    IsFeatured = dto.IsFeatured,
+                    IsPromoted = dto.IsPromoted,
                     ExpiryDate = dto.ExpiryDate,
                     RefreshExpiry = dto.RefreshExpiry,
                     CreatedAt = DateTime.UtcNow,
@@ -726,7 +726,7 @@ namespace QLN.Classified.MS.Service
 
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
-            if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
+            if (dto.ImageUrls == null || dto.ImageUrls.Count == 0)
                 throw new ArgumentException("Image URLs must be provided.");
 
             if (string.IsNullOrWhiteSpace(dto.FlyerFile))
@@ -742,22 +742,22 @@ namespace QLN.Classified.MS.Service
                 {
                     throw new InvalidOperationException($"Ad with key {key} already exists.");
                 }
-                var adItem = new
+                var adItem = new ClassifiedDeals
                 {
                     Id = adId,
-                    dto.SubVertical,
-                    dto.Title,
-                    dto.FlyerName,
+                    SubVertical = dto.SubVertical,
+                    Title = dto.Title,
+                    FlyerName = dto.FlyerName,
                     FlyerFile = dto.FlyerFile,
-                    ImageUrl = dto.AdImagesBase64,
-                    dto.XMLLink,
-                    dto.ExpiryDate,
-                    dto.PhoneNumber,
-                    dto.WhatsAppNumber,
-                    dto.Location,
-                    dto.UserId,
-                    dto.IsFeatured,
-                    dto.IsPromoted,
+                    ImageUrls = dto.ImageUrls,
+                    XMLLink = dto.XMLLink,
+                    ExpiryDate = dto.ExpiryDate,
+                    PhoneNumber = dto.PhoneNumber,
+                    WhatsAppNumber = dto.WhatsAppNumber,
+                    Location = dto.Location,
+                    UserId = dto.UserId,
+                    IsFeatured = dto.IsFeatured,
+                    IsPromoted = dto.IsPromoted,
                     CreatedAt = DateTime.UtcNow,
                     RefreshExpiry = dto.RefreshExpiry,
                     Status = AdStatus.Draft
@@ -1131,7 +1131,6 @@ namespace QLN.Classified.MS.Service
                             }
                         }
 
-
                         var ad = new ItemAdDto
                         {
                             Id = state.GetProperty("id").GetGuid(),
@@ -1163,15 +1162,14 @@ namespace QLN.Classified.MS.Service
                             ImageUrls = state.TryGetProperty("imageUrls", out var imgs) && imgs.ValueKind == JsonValueKind.Array
                             ? imgs.EnumerateArray().Select(img =>
                             {
-                                var imageInfo = new ImageInfo
+                                return new ImageInfo
                                 {
                                     AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() ?? "" : "",
                                     Url = img.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "",
                                     Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
                                 };
-                                return imageInfo;
                             }).Where(i => !string.IsNullOrEmpty(i.Url)).ToList()
-                            : new(),
+                            : new List<ImageInfo>(),
                             Phone = state.TryGetProperty("phoneNumber", out var phone) ? phone.GetString() ?? "" : "",
                             WhatsAppNumber = state.TryGetProperty("whatsAppNumber", out var whatsapp) ? whatsapp.GetString() ?? "" : "",
                             Zone = state.TryGetProperty("zone", out var zone) ? zone.GetString() ?? "" : "",
@@ -1188,6 +1186,7 @@ namespace QLN.Classified.MS.Service
                             ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
                             RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
                         };
+
 
                         publishedAds.Add(ad);
                     }
@@ -1280,54 +1279,53 @@ namespace QLN.Classified.MS.Service
 
                         var ad = new ItemAdDto
                         {
-                            Id = state.GetProperty("id").GetGuid(),
-                            Title = state.GetProperty("title").GetString(),
+                            Id = state.TryGetProperty("id", out var id) ? id.GetGuid() : Guid.Empty,
+                            Title = title,
                             SubVertical = subVertical,
-                            Description = state.GetProperty("description").GetString(),
-                            Category = state.GetProperty("category").GetString(),
-                            L1Category = state.GetProperty("l1Category").GetString(),
-                            L2Category = state.TryGetProperty("l2Category", out var l2c) ? l2c.GetString() ?? "" : "",
-                            Brand = state.GetProperty("brand").GetString(),
-                            Model = state.GetProperty("model").GetString(),
-                            Price = state.GetProperty("price").GetDecimal(),
-                            PriceType = state.GetProperty("priceType").GetString(),
-                            Condition = state.GetProperty("condition").GetString(),
-                            Color = state.GetProperty("color").GetString(),
-                            AcceptsOffers = state.TryGetProperty("acceptsOffers", out var offers) ? offers.GetString() ?? "" : "",
-                            MakeType = state.TryGetProperty("makeType", out var make) ? make.GetString() ?? "" : "",
-                            Capacity = state.TryGetProperty("capacity", out var capacity) ? capacity.GetString() ?? "" : "",
-                            Processor = state.TryGetProperty("processor", out var processor) ? processor.GetString() ?? "" : "",
-                            Coverage = state.TryGetProperty("coverage", out var coverage) ? coverage.GetString() ?? "" : "",
-                            Ram = state.TryGetProperty("ram", out var ram) ? ram.GetString() ?? "" : "",
-                            Resolution = state.TryGetProperty("resolution", out var res) ? res.GetString() ?? "" : "",
-                            BatteryPercentage = state.TryGetProperty("batteryPercentage", out var battery) ? battery.GetRawText() : "",
-                            Size = state.TryGetProperty("size", out var size) ? size.GetString() ?? "" : "",
-                            SizeValue = state.TryGetProperty("sizeValue", out var sizeVal) ? sizeVal.GetString() ?? "" : "",
-                            Gender = state.TryGetProperty("gender", out var gender) ? gender.GetString() ?? "" : "",
-                            CertificateFileName = state.TryGetProperty("certificateFileName", out var certFileName) ? certFileName.GetString() ?? "" : "",
-                            CertificateUrl = state.GetProperty("certificateUrl").GetString(),
+                            Description = state.TryGetProperty("description", out var desc) ? desc.GetString() : string.Empty,
+                            Category = state.TryGetProperty("category", out var cat) ? cat.GetString() : string.Empty,
+                            L1Category = state.TryGetProperty("l1Category", out var l1Cat) ? l1Cat.GetString() : string.Empty,
+                            L2Category = state.TryGetProperty("l2Category", out var l2Cat) ? l2Cat.GetString() : string.Empty,
+                            Brand = state.TryGetProperty("brand", out var brand) ? brand.GetString() : string.Empty,
+                            Model = state.TryGetProperty("model", out var model) ? model.GetString() : string.Empty,
+                            Price = state.TryGetProperty("price", out var price) ? price.GetDecimal() : 0m,
+                            PriceType = state.TryGetProperty("priceType", out var priceType) ? priceType.GetString() : string.Empty,
+                            Condition = state.TryGetProperty("condition", out var condition) ? condition.GetString() : string.Empty,
+                            Color = state.TryGetProperty("color", out var color) ? color.GetString() : string.Empty,
+                            AcceptsOffers = state.TryGetProperty("acceptsOffers", out var offers) ? offers.GetString() : string.Empty,
+                            MakeType = state.TryGetProperty("makeType", out var make) ? make.GetString() : string.Empty,
+                            Capacity = state.TryGetProperty("capacity", out var capacity) ? capacity.GetString() : string.Empty,
+                            Processor = state.TryGetProperty("processor", out var processor) ? processor.GetString() : string.Empty,
+                            Coverage = state.TryGetProperty("coverage", out var coverage) ? coverage.GetString() : string.Empty,
+                            Ram = state.TryGetProperty("ram", out var ram) ? ram.GetString() : string.Empty,
+                            Resolution = state.TryGetProperty("resolution", out var res) ? res.GetString() : string.Empty,
+                            BatteryPercentage = state.TryGetProperty("batteryPercentage", out var battery) ? battery.GetRawText() : string.Empty,
+                            Size = state.TryGetProperty("size", out var size) ? size.GetString() : string.Empty,
+                            SizeValue = state.TryGetProperty("sizeValue", out var sizeVal) ? sizeVal.GetString() : string.Empty,
+                            Gender = state.TryGetProperty("gender", out var gender) ? gender.GetString() : string.Empty,
+                            CertificateFileName = state.TryGetProperty("certificateFileName", out var certFileName) ? certFileName.GetString() : string.Empty,
+                            CertificateUrl = state.TryGetProperty("certificateUrl", out var certUrl) ? certUrl.GetString() : string.Empty,
                             ImageUrls = state.TryGetProperty("imageUrls", out var imgs) && imgs.ValueKind == JsonValueKind.Array
-                            ? imgs.EnumerateArray().Select(img =>
-                            {
-                                var imageInfo = new ImageInfo
-                                {
-                                    AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() ?? "" : "",
-                                    Url = img.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "",
-                                    Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
-                                };
-                                return imageInfo;
-                            }).Where(i => !string.IsNullOrEmpty(i.Url)).ToList()
-                            : new(),
-                            Phone = state.TryGetProperty("phoneNumber", out var phone) ? phone.GetString() ?? "" : "",
-                            WhatsAppNumber = state.TryGetProperty("whatsAppNumber", out var whatsapp) ? whatsapp.GetString() ?? "" : "",
-                            Zone = state.TryGetProperty("zone", out var zone) ? zone.GetString() ?? "" : "",
-                            StreetName = state.TryGetProperty("streetNumber", out var street) ? street.GetString() ?? "" : "",
-                            BuildingNumber = state.TryGetProperty("buildingNumber", out var building) ? building.GetString() ?? "" : "",
-                            Latitude = state.TryGetProperty("latitude", out var lat) ? lat.GetRawText() : "",
-                            Longitude = state.TryGetProperty("longitude", out var lng) ? lng.GetRawText() : "",
-                            CreatedAt = state.GetProperty("createdAt").GetDateTime(),
-                            IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
-                            IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
+                             ? imgs.EnumerateArray().Select(img =>
+                             {
+                                 return new ImageInfo
+                                 {
+                                     AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() : string.Empty,
+                                     Url = img.TryGetProperty("url", out var u) ? u.GetString() : string.Empty,
+                                     Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
+                                 };
+                             }).Where(i => !string.IsNullOrEmpty(i.Url)).ToList()
+                             : new List<ImageInfo>(),
+                            Phone = state.TryGetProperty("phoneNumber", out var phone) ? phone.GetString() : string.Empty,
+                            WhatsAppNumber = state.TryGetProperty("whatsAppNumber", out var whatsapp) ? whatsapp.GetString() : string.Empty,
+                            Zone = state.TryGetProperty("zone", out var zone) ? zone.GetString() : string.Empty,
+                            StreetName = state.TryGetProperty("streetNumber", out var street) ? street.GetString() : string.Empty,
+                            BuildingNumber = state.TryGetProperty("buildingNumber", out var building) ? building.GetString() : string.Empty,
+                            Latitude = state.TryGetProperty("latitude", out var lat) ? lat.GetRawText() : string.Empty,
+                            Longitude = state.TryGetProperty("longitude", out var lng) ? lng.GetRawText() : string.Empty,
+                            CreatedAt = state.TryGetProperty("createdAt", out var createdAt) ? createdAt.GetDateTime() : DateTime.MinValue,
+                            IsFeatured = state.TryGetProperty("isFeatured", out var featured) ? featured.GetBoolean() : false,
+                            IsPromoted = state.TryGetProperty("isPromoted", out var promoted) ? promoted.GetBoolean() : false,
                             Status = status,
                             UserId = adUserId,
                             RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
@@ -1371,63 +1369,94 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<ClassifiedItems?> GetItemAdById(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedItems> GetItemAdById(Guid adId, CancellationToken cancellationToken = default)
         {
             try
             {
                 var key = $"ad-{adId}";
                 var adItem = await _dapr.GetStateAsync<ClassifiedItems>(UnifiedStore, key);
+
+                if (adItem == null)
+                {
+                    _logger.LogWarning("Ad not found with ID: {AdId}", adId);
+                    return null;
+                }
+
                 return adItem;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while fetching ad details by adId: {AdId}", adId);
-                throw new InvalidOperationException("Failed to fetch published item ad by ID.", ex);
+                _logger.LogError(ex, "Error while fetching classified item details by adId: {AdId}", adId);
+                throw new InvalidOperationException("Failed to fetch classified item ad by ID.", ex);
             }
         }
 
-        public async Task<ClassifiedPreloved?> GetPrelovedAdById(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedPreloved> GetPrelovedAdById(Guid adId, CancellationToken cancellationToken = default)
         {
             try
             {
                 var key = $"ad-{adId}";
-                var adItem = await _dapr.GetStateAsync<ClassifiedPreloved>(UnifiedStore, key);
-                return adItem;
+                var adPreloved = await _dapr.GetStateAsync<ClassifiedPreloved>(UnifiedStore, key);
+
+                if (adPreloved == null)
+                {
+                    _logger.LogWarning("Ad not found with ID: {AdId}", adId);
+                    return null;
+                }
+
+                return adPreloved;
             }
             catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while fetching Preloved ad by Id: {AdId}", adId);
-                throw new InvalidOperationException("Failed to fetch published Preloved ad by ID.", ex);
+            {                
+                _logger.LogError(ex, "Error while fetching classified preloved details by adId: {AdId}", adId);
+                throw new InvalidOperationException("Failed to fetch classified preloved ad by ID.", ex);
             }
         }
 
-        public async Task<ClassifiedDeals?> GetDealsAdById(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedDeals> GetDealsAdById(Guid adId, CancellationToken cancellationToken = default)
         {
             try
             {
                 var key = $"ad-{adId}";
-                var adItem = await _dapr.GetStateAsync<ClassifiedDeals>(UnifiedStore, key);
-                return adItem;
+
+                var adDeals = await _dapr.GetStateAsync<ClassifiedDeals>(UnifiedStore, key);
+                
+                if (adDeals == null)
+                {
+                    _logger.LogWarning("Ad not found with ID: {AdId}", adId);
+                    return null;
+                }
+
+                return adDeals;
             }
             catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while fetching Deals ad by Id: {AdId}", adId);
-                throw new InvalidOperationException("Failed to fetch published Deals ad by ID.", ex);
+            {               
+                _logger.LogError(ex, "Error while fetching classified deals details by adId: {AdId}", adId);
+                throw new InvalidOperationException("Failed to fetch classified deals ad by ID.", ex);
             }
         }
 
-        public async Task<ClassifiedCollectibles?> GetCollectiblesAdById(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedCollectibles> GetCollectiblesAdById(Guid adId, CancellationToken cancellationToken = default)
         {
             try
             {
+               
                 var key = $"ad-{adId}";
-                var adItem = await _dapr.GetStateAsync<ClassifiedCollectibles>(UnifiedStore, key);
-                return adItem;
+               
+                var adCollectibles = await _dapr.GetStateAsync<ClassifiedCollectibles>(UnifiedStore, key);
+
+                if (adCollectibles == null)
+                {
+                    _logger.LogWarning("Ad not found with ID: {AdId}", adId);
+                    return null;
+                }
+
+                return adCollectibles;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while fetching Collectibles ad by Id: {AdId}", adId);
-                throw new InvalidOperationException("Failed to fetch published Collectibles ad by ID.", ex);
+                _logger.LogError(ex, "Error while fetching classified collectibles details by adId: {AdId}", adId);
+                throw new InvalidOperationException("Failed to fetch classified collectibles ad by ID.", ex);
             }
         }
 
@@ -1616,56 +1645,56 @@ namespace QLN.Classified.MS.Service
 
                         var ad = new PrelovedAdDto
                         {
-                            Id = state.GetProperty("id").GetGuid(),
-                            Title = state.GetProperty("title").GetString(),
+                            Id = state.TryGetProperty("id", out var idProp) ? idProp.GetGuid() : Guid.Empty,
+                            Title = title,
                             SubVertical = subVertical,
-                            Description = state.GetProperty("description").GetString(),
-                            Category = state.GetProperty("category").GetString(),
-                            L1Category = state.GetProperty("l1Category").GetString(),
-                            L2Category = state.TryGetProperty("l2Category", out var l2) ? l2.GetString() ?? "" : "",
-                            Brand = state.GetProperty("brand").GetString(),
-                            Model = state.GetProperty("model").GetString(),
-                            Price = state.GetProperty("price").GetDecimal(),
-                            PriceType = state.GetProperty("priceType").GetString(),
-                            Condition = state.GetProperty("condition").GetString(),
-                            Color = state.GetProperty("color").GetString(),
-                            Capacity = state.TryGetProperty("capacity", out var capacity) ? capacity.GetString() ?? "" : "",
-                            Processor = state.TryGetProperty("processor", out var processor) ? processor.GetString() ?? "" : "",
-                            Coverage = state.TryGetProperty("coverage", out var coverage) ? coverage.GetString() ?? "" : "",
-                            Ram = state.TryGetProperty("ram", out var ram) ? ram.GetString() ?? "" : "",
-                            Resolution = state.TryGetProperty("resolution", out var resolution) ? resolution.GetString() ?? "" : "",
-                            BatteryPercentage = state.TryGetProperty("batteryPercentage", out var battery) ? battery.GetRawText() : "",
-                            Size = state.TryGetProperty("size", out var size) ? size.GetString() ?? "" : "",
-                            SizeValue = state.TryGetProperty("sizeValue", out var sizeVal) ? sizeVal.GetString() ?? "" : "",
-                            Gender = state.TryGetProperty("gender", out var gender) ? gender.GetString() ?? "" : "",
-                            CertificateFileName = state.TryGetProperty("certificateFileName", out var certFileName) ? certFileName.GetString() ?? "" : "",
-                            CertificateUrl = state.GetProperty("certificateUrl").GetString(),
-                            ImageUrls = state.TryGetProperty("imageUrls", out var imgs) && imgs.ValueKind == JsonValueKind.Array
-                            ? imgs.EnumerateArray().Select(img =>
-                            {
-                                var imageInfo = new ImageInfo
-                                {
-                                    AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() ?? "" : "",
-                                    Url = img.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "",
-                                    Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
-                                };
-                                return imageInfo;
-                            }).Where(i => !string.IsNullOrWhiteSpace(i.Url)).ToList(): new(),
-                            PhoneNumber = state.TryGetProperty("phoneNumber", out var phone) ? phone.GetString() ?? "" : "",
-                            WhatsAppNumber = state.TryGetProperty("whatsAppNumber", out var whatsapp) ? whatsapp.GetString() ?? "" : "",
-                            Zone = state.TryGetProperty("zone", out var zone) ? zone.GetString() ?? "" : "",
-                            StreetNumber = state.TryGetProperty("streetNumber", out var street) ? street.GetString() ?? "" : "",
-                            BuildingNumber = state.TryGetProperty("buildingNumber", out var building) ? building.GetString() ?? "" : "",
-                            Latitude = state.TryGetProperty("latitude", out var lat) ? lat.GetRawText() : "",
-                            Longitude = state.TryGetProperty("longitude", out var lng) ? lng.GetRawText() : "",
-                            CreatedAt = state.GetProperty("createdAt").GetDateTime(),
-                            IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
-                            IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
+                            Description = state.TryGetProperty("description", out var descProp) ? descProp.GetString() : string.Empty,
+                            Category = state.TryGetProperty("category", out var categoryProp) ? categoryProp.GetString() : string.Empty,
+                            L1Category = state.TryGetProperty("l1Category", out var l1CategoryProp) ? l1CategoryProp.GetString() : string.Empty,
+                            L2Category = state.TryGetProperty("l2Category", out var l2CategoryProp) ? l2CategoryProp.GetString() : string.Empty,
+                            Brand = state.TryGetProperty("brand", out var brandProp) ? brandProp.GetString() : string.Empty,
+                            Model = state.TryGetProperty("model", out var modelProp) ? modelProp.GetString() : string.Empty,
+                            Price = state.TryGetProperty("price", out var priceProp) ? priceProp.GetDecimal() : 0m,
+                            PriceType = state.TryGetProperty("priceType", out var priceTypeProp) ? priceTypeProp.GetString() : string.Empty,
+                            Condition = state.TryGetProperty("condition", out var conditionProp) ? conditionProp.GetString() : string.Empty,
+                            Color = state.TryGetProperty("color", out var colorProp) ? colorProp.GetString() : string.Empty,
+                            Capacity = state.TryGetProperty("capacity", out var capacityProp) ? capacityProp.GetString() : string.Empty,
+                            Processor = state.TryGetProperty("processor", out var processorProp) ? processorProp.GetString() : string.Empty,
+                            Coverage = state.TryGetProperty("coverage", out var coverageProp) ? coverageProp.GetString() : string.Empty,
+                            Ram = state.TryGetProperty("ram", out var ramProp) ? ramProp.GetString() : string.Empty,
+                            Resolution = state.TryGetProperty("resolution", out var resolutionProp) ? resolutionProp.GetString() : string.Empty,
+                            BatteryPercentage = state.TryGetProperty("batteryPercentage", out var batteryProp) ? batteryProp.GetRawText() : string.Empty,
+                            Size = state.TryGetProperty("size", out var sizeProp) ? sizeProp.GetString() : string.Empty,
+                            SizeValue = state.TryGetProperty("sizeValue", out var sizeValueProp) ? sizeValueProp.GetString() : string.Empty,
+                            Gender = state.TryGetProperty("gender", out var genderProp) ? genderProp.GetString() : string.Empty,
+                            CertificateFileName = state.TryGetProperty("certificateFileName", out var certFileNameProp) ? certFileNameProp.GetString() : string.Empty,
+                            CertificateUrl = state.TryGetProperty("certificateUrl", out var certUrlProp) ? certUrlProp.GetString() : string.Empty,
+                            ImageUrls = state.TryGetProperty("imageUrls", out var imgsProp) && imgsProp.ValueKind == JsonValueKind.Array
+                      ? imgsProp.EnumerateArray().Select(img =>
+                      {
+                          return new ImageInfo
+                          {
+                              AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() : string.Empty,
+                              Url = img.TryGetProperty("url", out var u) ? u.GetString() : string.Empty,
+                              Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
+                          };
+                      }).Where(i => !string.IsNullOrEmpty(i.Url)).ToList()
+                      : new List<ImageInfo>(),
+                            PhoneNumber = state.TryGetProperty("phoneNumber", out var phoneProp) ? phoneProp.GetString() : string.Empty,
+                            WhatsAppNumber = state.TryGetProperty("whatsAppNumber", out var whatsappProp) ? whatsappProp.GetString() : string.Empty,
+                            Zone = state.TryGetProperty("zone", out var zoneProp) ? zoneProp.GetString() : string.Empty,
+                            StreetNumber = state.TryGetProperty("streetNumber", out var streetProp) ? streetProp.GetString() : string.Empty,
+                            BuildingNumber = state.TryGetProperty("buildingNumber", out var buildingProp) ? buildingProp.GetString() : string.Empty,
+                            Latitude = state.TryGetProperty("latitude", out var latProp) ? latProp.GetRawText() : string.Empty,
+                            Longitude = state.TryGetProperty("longitude", out var lngProp) ? lngProp.GetRawText() : string.Empty,
+                            CreatedAt = state.TryGetProperty("createdAt", out var createdAtProp) ? createdAtProp.GetDateTime() : DateTime.MinValue,
+                            IsFeatured = state.TryGetProperty("isFeatured", out var featuredProp) ? featuredProp.GetBoolean() : false,
+                            IsPromoted = state.TryGetProperty("isPromoted", out var promotedProp) ? promotedProp.GetBoolean() : false,
                             Status = status,
                             UserId = adUserId,
-                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
-                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
-                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCountProp) ? refreshCountProp.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDateProp) ? expiryDateProp.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDateProp) ? refreshExpiryDateProp.GetDateTime() : DateTime.MinValue
                         };
 
                         published.Add(ad);
@@ -1756,56 +1785,56 @@ namespace QLN.Classified.MS.Service
 
                         var ad = new PrelovedAdDto
                         {
-                            Id = state.GetProperty("id").GetGuid(),
-                            Title = state.GetProperty("title").GetString(),
+                            Id = state.TryGetProperty("id", out var idProp) ? idProp.GetGuid() : Guid.Empty,
+                            Title = title,
                             SubVertical = subVertical,
-                            Description = state.GetProperty("description").GetString(),
-                            Category = state.GetProperty("category").GetString(),
-                            L1Category = state.GetProperty("l1Category").GetString(),
-                            L2Category = state.TryGetProperty("l2Category", out var l2) ? l2.GetString() ?? "" : "",
-                            Brand = state.GetProperty("brand").GetString(),
-                            Model = state.GetProperty("model").GetString(),
-                            Price = state.GetProperty("price").GetDecimal(),
-                            PriceType = state.GetProperty("priceType").GetString(),
-                            Condition = state.GetProperty("condition").GetString(),
-                            Color = state.GetProperty("color").GetString(),
-                            Capacity = state.TryGetProperty("capacity", out var capacity) ? capacity.GetString() ?? "" : "",
-                            Processor = state.TryGetProperty("processor", out var processor) ? processor.GetString() ?? "" : "",
-                            Coverage = state.TryGetProperty("coverage", out var coverage) ? coverage.GetString() ?? "" : "",
-                            Ram = state.TryGetProperty("ram", out var ram) ? ram.GetString() ?? "" : "",
-                            Resolution = state.TryGetProperty("resolution", out var resolution) ? resolution.GetString() ?? "" : "",
-                            BatteryPercentage = state.TryGetProperty("batteryPercentage", out var battery) ? battery.GetRawText() : "",
-                            Size = state.TryGetProperty("size", out var size) ? size.GetString() ?? "" : "",
-                            SizeValue = state.TryGetProperty("sizeValue", out var sizeVal) ? sizeVal.GetString() ?? "" : "",
-                            Gender = state.TryGetProperty("gender", out var gender) ? gender.GetString() ?? "" : "",
-                            CertificateFileName = state.TryGetProperty("certificateFileName", out var certFileName) ? certFileName.GetString() ?? "" : "",
-                            CertificateUrl = state.GetProperty("certificateUrl").GetString(),
-                            ImageUrls = state.TryGetProperty("imageUrls", out var imgs) && imgs.ValueKind == JsonValueKind.Array
-                            ? imgs.EnumerateArray().Select(img =>
+                            Description = state.TryGetProperty("description", out var descProp) ? descProp.GetString() : string.Empty,
+                            Category = state.TryGetProperty("category", out var categoryProp) ? categoryProp.GetString() : string.Empty,
+                            L1Category = state.TryGetProperty("l1Category", out var l1CategoryProp) ? l1CategoryProp.GetString() : string.Empty,
+                            L2Category = state.TryGetProperty("l2Category", out var l2CategoryProp) ? l2CategoryProp.GetString() : string.Empty,
+                            Brand = state.TryGetProperty("brand", out var brandProp) ? brandProp.GetString() : string.Empty,
+                            Model = state.TryGetProperty("model", out var modelProp) ? modelProp.GetString() : string.Empty,
+                            Price = state.TryGetProperty("price", out var priceProp) ? priceProp.GetDecimal() : 0m,
+                            PriceType = state.TryGetProperty("priceType", out var priceTypeProp) ? priceTypeProp.GetString() : string.Empty,
+                            Condition = state.TryGetProperty("condition", out var conditionProp) ? conditionProp.GetString() : string.Empty,
+                            Color = state.TryGetProperty("color", out var colorProp) ? colorProp.GetString() : string.Empty,
+                            Capacity = state.TryGetProperty("capacity", out var capacityProp) ? capacityProp.GetString() : string.Empty,
+                            Processor = state.TryGetProperty("processor", out var processorProp) ? processorProp.GetString() : string.Empty,
+                            Coverage = state.TryGetProperty("coverage", out var coverageProp) ? coverageProp.GetString() : string.Empty,
+                            Ram = state.TryGetProperty("ram", out var ramProp) ? ramProp.GetString() : string.Empty,
+                            Resolution = state.TryGetProperty("resolution", out var resolutionProp) ? resolutionProp.GetString() : string.Empty,
+                            BatteryPercentage = state.TryGetProperty("batteryPercentage", out var batteryProp) ? batteryProp.GetRawText() : string.Empty,
+                            Size = state.TryGetProperty("size", out var sizeProp) ? sizeProp.GetString() : string.Empty,
+                            SizeValue = state.TryGetProperty("sizeValue", out var sizeValueProp) ? sizeValueProp.GetString() : string.Empty,
+                            Gender = state.TryGetProperty("gender", out var genderProp) ? genderProp.GetString() : string.Empty,
+                            CertificateFileName = state.TryGetProperty("certificateFileName", out var certFileNameProp) ? certFileNameProp.GetString() : string.Empty,
+                            CertificateUrl = state.TryGetProperty("certificateUrl", out var certUrlProp) ? certUrlProp.GetString() : string.Empty,
+                            ImageUrls = state.TryGetProperty("imageUrls", out var imgsProp) && imgsProp.ValueKind == JsonValueKind.Array
+                        ? imgsProp.EnumerateArray().Select(img =>
+                        {
+                            return new ImageInfo
                             {
-                                var imageInfo = new ImageInfo
-                                {
-                                    AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() ?? "" : "",
-                                    Url = img.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "",
-                                    Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
-                                };
-                                return imageInfo;
-                            }).Where(i => !string.IsNullOrWhiteSpace(i.Url)).ToList() : new(),
-                            PhoneNumber = state.TryGetProperty("phoneNumber", out var phone) ? phone.GetString() ?? "" : "",
-                            WhatsAppNumber = state.TryGetProperty("whatsAppNumber", out var whatsapp) ? whatsapp.GetString() ?? "" : "",
-                            Zone = state.TryGetProperty("zone", out var zone) ? zone.GetString() ?? "" : "",
-                            StreetNumber = state.TryGetProperty("streetNumber", out var street) ? street.GetString() ?? "" : "",
-                            BuildingNumber = state.TryGetProperty("buildingNumber", out var building) ? building.GetString() ?? "" : "",
-                            Latitude = state.TryGetProperty("latitude", out var lat) ? lat.GetRawText() : "",
-                            Longitude = state.TryGetProperty("longitude", out var lng) ? lng.GetRawText() : "",
-                            CreatedAt = state.GetProperty("createdAt").GetDateTime(),
-                            IsFeatured = state.TryGetProperty("isFeatured", out var featured) && featured.GetBoolean(),
-                            IsPromoted = state.TryGetProperty("isPromoted", out var promoted) && promoted.GetBoolean(),
+                                AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() : string.Empty,
+                                Url = img.TryGetProperty("url", out var u) ? u.GetString() : string.Empty,
+                                Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
+                            };
+                        }).Where(i => !string.IsNullOrEmpty(i.Url)).ToList()
+                        : new List<ImageInfo>(),
+                            PhoneNumber = state.TryGetProperty("phoneNumber", out var phoneProp) ? phoneProp.GetString() : string.Empty,
+                            WhatsAppNumber = state.TryGetProperty("whatsAppNumber", out var whatsappProp) ? whatsappProp.GetString() : string.Empty,
+                            Zone = state.TryGetProperty("zone", out var zoneProp) ? zoneProp.GetString() : string.Empty,
+                            StreetNumber = state.TryGetProperty("streetNumber", out var streetProp) ? streetProp.GetString() : string.Empty,
+                            BuildingNumber = state.TryGetProperty("buildingNumber", out var buildingProp) ? buildingProp.GetString() : string.Empty,
+                            Latitude = state.TryGetProperty("latitude", out var latProp) ? latProp.GetRawText() : string.Empty,
+                            Longitude = state.TryGetProperty("longitude", out var lngProp) ? lngProp.GetRawText() : string.Empty,
+                            CreatedAt = state.TryGetProperty("createdAt", out var createdAtProp) ? createdAtProp.GetDateTime() : DateTime.MinValue,
+                            IsFeatured = state.TryGetProperty("isFeatured", out var featuredProp) ? featuredProp.GetBoolean() : false,
+                            IsPromoted = state.TryGetProperty("isPromoted", out var promotedProp) ? promotedProp.GetBoolean() : false,
                             Status = status,
                             UserId = adUserId,
-                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCount) ? refreshCount.GetString() : "80",
-                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDate) ? expiryDate.GetDateTime() : DateTime.MinValue,
-                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDate) ? refreshExpiryDate.GetDateTime() : DateTime.MinValue
+                            RefreshCount = state.TryGetProperty("refreshCount", out var refreshCountProp) ? refreshCountProp.GetString() : "80",
+                            ExpiryDate = state.TryGetProperty("expiryDate", out var expiryDateProp) ? expiryDateProp.GetDateTime() : DateTime.MinValue,
+                            RefreshExpiry = state.TryGetProperty("refreshExpiry", out var refreshExpiryDateProp) ? refreshExpiryDateProp.GetDateTime() : DateTime.MinValue
                         };
 
                         unpublished.Add(ad);
@@ -3099,6 +3128,282 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("Failed to retrieve filters from the category tree.", ex);
             }
         }
+
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
+            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+
+            var key = $"ad-{dto.Id}"; 
+
+            try
+            {
+                var existingAd = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
+                if (existingAd.ValueKind != JsonValueKind.Object)
+                {
+                    throw new InvalidOperationException($"Ad with key {key} does not exist.");
+                }
+
+                if (!string.Equals(dto.SubVertical, "Items", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("This service only supports updating ads under the 'Items' vertical.");
+                }
+                dto.ImageUrls = existingAd.GetProperty("imageUrls").EnumerateArray().Select(img =>
+                {
+                    return new ImageInfo
+                    {
+                        AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() : "",
+                        Url = img.TryGetProperty("url", out var u) ? u.GetString() : "",
+                        Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
+                    };
+                }).ToList();
+
+                dto.CertificateUrl = existingAd.GetProperty("certificateUrl").GetString();
+             
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, dto);
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, ItemsIndexKey) ?? new();
+                if (!index.Contains(key))
+                {
+                    index.Add(key);
+                }
+
+                await _dapr.SaveStateAsync(UnifiedStore, ItemsIndexKey, index);
+
+                return new AdUpdatedResponseDto
+                {
+                    AdId = dto.Id,
+                    Title = dto.Title ?? existingAd.GetProperty("title").GetString(),
+                    UpdatedAt = DateTime.UtcNow,
+                    Message = "Items Ad updated successfully"
+                };
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Ad not found or conflict occurred during update.");
+                throw new InvalidOperationException("Ad does not exist or conflict occurred.", ex);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation failed during ad update.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during ad update.");
+                throw new InvalidOperationException("An unexpected error occurred while updating the ad. Please try again later.", ex);
+            }
+        }
+
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
+            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+
+            var key = $"ad-{dto.Id}";
+
+            try
+            {
+                var existingAd = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
+
+                if (existingAd.ValueKind != JsonValueKind.Object)
+                {
+                    throw new InvalidOperationException($"Ad with key {key} does not exist.");
+                }
+
+                if (!string.Equals(dto.SubVertical, "Preloved", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("This service only supports updating ads under the 'Preloved' vertical.");
+                }
+
+                dto.ImageUrls = existingAd.GetProperty("imageUrls").EnumerateArray().Select(img =>
+                {
+                    return new ImageInfo
+                    {
+                        AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() : "",
+                        Url = img.TryGetProperty("url", out var u) ? u.GetString() : "",
+                        Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
+                    };
+                }).ToList();
+
+                dto.CertificateUrl = existingAd.GetProperty("certificateUrl").GetString();
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, dto);
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, PrelovedIndexKey) ?? new();
+                if (!index.Contains(key))
+                {
+                    index.Add(key);
+                }
+
+                await _dapr.SaveStateAsync(UnifiedStore, PrelovedIndexKey, index);
+
+                return new AdUpdatedResponseDto
+                {
+                    AdId = dto.Id,
+                    Title = dto.Title ?? existingAd.GetProperty("title").GetString(),
+                    UpdatedAt = DateTime.UtcNow,
+                    Message = "Preloved Ad updated successfully"
+                };
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Ad not found or conflict occurred during update.");
+                throw new InvalidOperationException("Ad does not exist or conflict occurred.", ex);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation failed during ad update.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during ad update.");
+                throw new InvalidOperationException("An unexpected error occurred while updating the ad. Please try again later.", ex);
+            }
+        }
+
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedCollectiblesAd(ClassifiedCollectibles dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
+            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+
+            var key = $"ad-{dto.Id}";
+
+            try
+            {
+                var existingAd = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
+
+                if (existingAd.ValueKind != JsonValueKind.Object)
+                {
+                    throw new InvalidOperationException($"Ad with key {key} does not exist.");
+                }
+
+                if (!string.Equals(dto.SubVertical, "Collectibles", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("This service only supports updating ads under the 'Collectibles' vertical.");
+                }
+
+                dto.ImageUrls = existingAd.GetProperty("imageUrls").EnumerateArray().Select(img =>
+                {
+                    return new ImageInfo
+                    {
+                        AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() : "",
+                        Url = img.TryGetProperty("url", out var u) ? u.GetString() : "",
+                        Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
+                    };
+                }).ToList();
+
+                dto.CertificateUrl = existingAd.GetProperty("certificateUrl").GetString();
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, dto);
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, CollectiblesIndexKey) ?? new();
+                if (!index.Contains(key))
+                {
+                    index.Add(key);
+                }
+
+                await _dapr.SaveStateAsync(UnifiedStore, CollectiblesIndexKey, index);
+
+                return new AdUpdatedResponseDto
+                {
+                    AdId = dto.Id,
+                    Title = dto.Title ?? existingAd.GetProperty("title").GetString(),
+                    UpdatedAt = DateTime.UtcNow,
+                    Message = "Collectibles Ad updated successfully"
+                };
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Ad not found or conflict occurred during update.");
+                throw new InvalidOperationException("Ad does not exist or conflict occurred.", ex);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation failed during ad update.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during ad update.");
+                throw new InvalidOperationException("An unexpected error occurred while updating the ad. Please try again later.", ex);
+            }
+        }
+
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedDealsAd(ClassifiedDeals dto, CancellationToken cancellationToken = default)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
+            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+
+            var key = $"ad-{dto.Id}";
+
+            try
+            {
+                var existingAd = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
+
+                if (existingAd.ValueKind != JsonValueKind.Object)
+                {
+                    throw new InvalidOperationException($"Ad with key {key} does not exist.");
+                }
+
+                if (!string.Equals(dto.SubVertical, "Deals", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("This service only supports updating ads under the 'Deals' vertical.");
+                }
+
+                dto.ImageUrls = existingAd.GetProperty("imageUrls").EnumerateArray().Select(img =>
+                {
+                    return new ImageInfo
+                    {
+                        AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() : "",
+                        Url = img.TryGetProperty("url", out var u) ? u.GetString() : "",
+                        Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
+                    };
+                }).ToList();
+
+                dto.CertificateUrl = existingAd.GetProperty("certificateUrl").GetString();
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, dto);
+
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, DealsIndexKey) ?? new();
+                if (!index.Contains(key))
+                {
+                    index.Add(key);
+                }
+
+                await _dapr.SaveStateAsync(UnifiedStore, DealsIndexKey, index);
+
+                return new AdUpdatedResponseDto
+                {
+                    AdId = dto.Id,
+                    Title = dto.Title ?? existingAd.GetProperty("title").GetString(),
+                    UpdatedAt = DateTime.UtcNow,
+                    Message = "Deals Ad updated successfully"
+                };
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Ad not found or conflict occurred during update.");
+                throw new InvalidOperationException("Ad does not exist or conflict occurred.", ex);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation failed during ad update.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during ad update.");
+                throw new InvalidOperationException("An unexpected error occurred while updating the ad. Please try again later.", ex);
+            }
+        }
+
 
     }
 }

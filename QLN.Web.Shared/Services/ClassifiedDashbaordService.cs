@@ -1,4 +1,7 @@
-﻿using QLN.Web.Shared.Services.Interface;
+﻿using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
+using QLN.Web.Shared.Pages.Classifieds.Dashboards;
+using QLN.Web.Shared.Services.Interface;
 using System.Text;
 using System.Text.Json;
 using static QLN.Web.Shared.Models.ClassifiedsDashboardModel;
@@ -9,10 +12,13 @@ namespace QLN.Web.Shared.Services
     {
         private readonly HttpClient _httpClient;
 
+        private readonly ILogger<ClassfiedDashboardService> _logger;
 
-        public ClassfiedDashboardService(HttpClient httpClient) : base(httpClient)
+        public ClassfiedDashboardService(HttpClient httpClient , ILogger<ClassfiedDashboardService> logger) : base(httpClient)
         {
             _httpClient = httpClient;
+             _logger = logger;
+
         }
         /// <summary>
         /// Gets Classified Items Dashboard data.
@@ -40,7 +46,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("GetItemDashboard Exception: " + ex.Message);
+                _logger.LogError("GetItemDashboard Exception: " + ex.Message);
                 return null;
             }
         }
@@ -50,7 +56,6 @@ namespace QLN.Web.Shared.Services
             try
             {
                 var url = $"api/classified/items/user-ads/published?page={page}&pageSize={pageSize}&sortOption={sortOption}&search={search}";
-                Console.WriteLine($"[API CALL] GET {url}");
 
                 var request = new HttpRequestMessage(HttpMethod.Get, url);
 
@@ -65,7 +70,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("GetPublishedAds Exception: " + ex.Message);
+                _logger.LogError("GetPublishedAds Exception: " + ex.Message);
                 return null;
             }
         }
@@ -88,7 +93,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("GetUnpublishedAds Exception: " + ex.Message);
+                _logger.LogError("GetUnpublishedAds Exception: " + ex.Message);
                 return null;
             }
         }
@@ -118,7 +123,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("GetItemDashboard Exception: " + ex.Message);
+                _logger.LogError("GetItemDashboard Exception: " + ex.Message);
                 return null;
             }
         }
@@ -140,7 +145,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("GetPublishedAds Exception: " + ex.Message);
+                _logger.LogError("GetPublishedAds Exception: " + ex.Message);
                 return null;
             }
         }
@@ -163,7 +168,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("GetUnpublishedAds Exception: " + ex.Message);
+                _logger.LogError("GetUnpublishedAds Exception: " + ex.Message);
                 return null;
             }
         }
@@ -185,7 +190,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("GetPublishedAds Exception: " + ex.Message);
+                _logger.LogError("GetPublishedAds Exception: " + ex.Message);
                 return null;
             }
         }
@@ -208,7 +213,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("GetUnpublishedAds Exception: " + ex.Message);
+                _logger.LogError("GetUnpublishedAds Exception: " + ex.Message);
                 return null;
             }
         }
@@ -230,7 +235,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("GetPublishedAds Exception: " + ex.Message);
+                _logger.LogError("GetPublishedAds Exception: " + ex.Message);
                 return null;
             }
         }
@@ -253,7 +258,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("GetUnpublishedAds Exception: " + ex.Message);
+                _logger.LogError("GetUnpublishedAds Exception: " + ex.Message);
                 return null;
             }
         }
@@ -275,7 +280,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("GetPublishedAds Exception: " + ex.Message);
+                _logger.LogError("GetPublishedAds Exception: " + ex.Message);
                 return null;
             }
         }
@@ -298,7 +303,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("GetUnpublishedAds Exception: " + ex.Message);
+                _logger.LogError("GetUnpublishedAds Exception: " + ex.Message);
                 return null;
             }
         }
@@ -319,10 +324,30 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("PublishAdAsync Exception: " + ex.Message);
+                _logger.LogError("PublishAdAsync Exception: " + ex.Message);
                 return false;
             }
         }
+        public async Task<bool> PublishBulkAdsAsync(List<string> adIds)
+        {
+            try
+            {
+                var url = "api/classified/items/user-ads/unpublish";
+                var request = new HttpRequestMessage(HttpMethod.Post, url);
+
+                var json = JsonSerializer.Serialize(adIds); 
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("PublishBulkAdsAsync Exception: " + ex.Message);
+                return false;
+            }
+        }
+
         public async Task<bool> UnPublishAdAsync(string adId)
         {
             try
@@ -339,7 +364,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("UnPublishAdAsync Exception: " + ex.Message);
+                _logger.LogError("UnPublishAdAsync Exception: " + ex.Message);
                 return false;
             }
         }
@@ -360,7 +385,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("PublishAdAsync Exception: " + ex.Message);
+                _logger.LogError("PublishAdAsync Exception: " + ex.Message);
                 return false;
             }
         }
@@ -380,7 +405,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("UnPublishAdAsync Exception: " + ex.Message);
+                _logger.LogError("UnPublishAdAsync Exception: " + ex.Message);
                 return false;
             }
         }
@@ -401,7 +426,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("PublishAdAsync Exception: " + ex.Message);
+                _logger.LogError("PublishAdAsync Exception: " + ex.Message);
                 return false;
             }
         }
@@ -421,7 +446,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("UnPublishAdAsync Exception: " + ex.Message);
+                _logger.LogError("UnPublishAdAsync Exception: " + ex.Message);
                 return false;
             }
         }
@@ -441,7 +466,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("PublishAdAsync Exception: " + ex.Message);
+                _logger.LogError("PublishAdAsync Exception: " + ex.Message);
                 return false;
             }
         }
@@ -461,7 +486,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("UnPublishAdAsync Exception: " + ex.Message);
+                _logger.LogError("UnPublishAdAsync Exception: " + ex.Message);
                 return false;
             }
         }
@@ -477,7 +502,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("RemoveAdAsync Exception: " + ex.Message);
+                _logger.LogError("RemoveAdAsync Exception: " + ex.Message);
                 return false;
             }
         }
@@ -493,7 +518,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("RemoveAdAsync Exception: " + ex.Message);
+                _logger.LogError("RemoveAdAsync Exception: " + ex.Message);
                 return false;
             }
         }
@@ -509,7 +534,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("RemoveAdAsync Exception: " + ex.Message);
+                _logger.LogError("RemoveAdAsync Exception: " + ex.Message);
                 return false;
             }
         }
@@ -525,7 +550,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("RemoveAdAsync Exception: " + ex.Message);
+                _logger.LogError("RemoveAdAsync Exception: " + ex.Message);
                 return false;
             }
         }
