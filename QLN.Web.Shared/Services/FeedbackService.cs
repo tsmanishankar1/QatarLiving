@@ -2,18 +2,19 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using QLN.Web.Shared.Models.FeedbackRequest;
+using Microsoft.Extensions.Options;
 
 namespace QLN.Web.Shared.Services
 {
     public class FeedbackService
     {
         private readonly HttpClient _httpClient;
+        private readonly string _endpoint;
 
-        private const string FeedbackEndpoint = "https://prod-27.northeurope.logic.azure.com/workflows/405f33f73c804aee99724a05edc4966c/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=iXxQgnbSdVqmUwK4iSXQLf922PFRzne8giklD21M3YE";
-
-        public FeedbackService(HttpClient httpClient)
+        public FeedbackService(HttpClient httpClient, IOptions<FeedbackApiOptions> options)
         {
             _httpClient = httpClient;
+            _endpoint = options.Value.Endpoint;
         }
 
         public async Task<bool> SubmitFeedbackAsync(FeedbackFormModel model, string userId)
@@ -30,7 +31,7 @@ namespace QLN.Web.Shared.Services
 
             try
             {
-                var response = await _httpClient.PostAsJsonAsync(FeedbackEndpoint, payload);
+                var response = await _httpClient.PostAsJsonAsync(_endpoint, payload);
                 return response.IsSuccessStatusCode;
             }
             catch
