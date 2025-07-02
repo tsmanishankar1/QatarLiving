@@ -11,10 +11,9 @@ namespace QLN.ContentBO.WebUI.Services
     {
         private readonly HttpClient _httpClient;
 
-        public NewsService(HttpClient _httpClient, ILogger<NewsService> Logger)
-           : base(_httpClient, Logger)
+        public NewsService(HttpClient httpClient, ILogger<NewsService> Logger) : base(httpClient, Logger)
         {
-
+            _httpClient = httpClient;
         }
 
         public async Task<HttpResponseMessage> CreateArticle(NewsArticleDTO newsArticle)

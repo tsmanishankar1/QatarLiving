@@ -27,6 +27,7 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddAuthorizationCore();
 
 builder.Services.AddTransient<JwtTokenHeaderHandler>();
+
 builder.Services.Configure<NavigationPath>(
 builder.Configuration.GetSection("NavigationPath"));
 
