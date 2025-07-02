@@ -308,15 +308,14 @@ namespace QLN.Web.Shared.Services
             }
         }
 
-        public async Task<bool> PublishAdAsync(string adId)
+        public async Task<bool> PublishAdAsync(List<string> adId)
         {
             try
             {
                 var url = "api/classified/items/user-ads/publish";
                 var request = new HttpRequestMessage(HttpMethod.Post, url);
 
-                var payload = new[] { adId };
-                var json = JsonSerializer.Serialize(payload);
+                var json = JsonSerializer.Serialize(adId);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.SendAsync(request);
@@ -328,35 +327,16 @@ namespace QLN.Web.Shared.Services
                 return false;
             }
         }
-        public async Task<bool> PublishBulkAdsAsync(List<string> adIds)
+       
+
+        public async Task<bool> UnPublishAdAsync(List<string> adId)
         {
             try
             {
                 var url = "api/classified/items/user-ads/unpublish";
                 var request = new HttpRequestMessage(HttpMethod.Post, url);
 
-                var json = JsonSerializer.Serialize(adIds); 
-                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                var response = await _httpClient.SendAsync(request);
-                return response.IsSuccessStatusCode;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("PublishBulkAdsAsync Exception: " + ex.Message);
-                return false;
-            }
-        }
-
-        public async Task<bool> UnPublishAdAsync(string adId)
-        {
-            try
-            {
-                var url = "api/classified/items/user-ads/unpublish";
-                var request = new HttpRequestMessage(HttpMethod.Post, url);
-
-                var payload = new[] { adId };
-                var json = JsonSerializer.Serialize(payload);
+                var json = JsonSerializer.Serialize(adId);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.SendAsync(request);
@@ -369,15 +349,14 @@ namespace QLN.Web.Shared.Services
             }
         }
 
-        public async Task<bool> PublishPreLovedAdAsync(string adId)
+        public async Task<bool> PublishPreLovedAdAsync(List<string> adId)
         {
             try
             {
                 var url = "api/classified/preloved/user-ads/publish";
                 var request = new HttpRequestMessage(HttpMethod.Post, url);
 
-                var payload = new[] { adId };
-                var json = JsonSerializer.Serialize(payload);
+                var json = JsonSerializer.Serialize(adId);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.SendAsync(request);
@@ -389,15 +368,14 @@ namespace QLN.Web.Shared.Services
                 return false;
             }
         }
-        public async Task<bool> UnPublishPreLovedAdAsync(string adId)
+        public async Task<bool> UnPublishPreLovedAdAsync(List<string> adId)
         {
             try
             {
                 var url = "api/classified/preloved/user-ads/unpublish";
                 var request = new HttpRequestMessage(HttpMethod.Post, url);
 
-                var payload = new[] { adId };
-                var json = JsonSerializer.Serialize(payload);
+                var json = JsonSerializer.Serialize(adId);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.SendAsync(request);
@@ -410,15 +388,14 @@ namespace QLN.Web.Shared.Services
             }
         }
 
-        public async Task<bool> PublishDealsAdAsync(string adId)
+        public async Task<bool> PublishDealsAdAsync(List<string> adId)
         {
             try
             {
                 var url = "api/classified/deals/user-ads/publish";
                 var request = new HttpRequestMessage(HttpMethod.Post, url);
 
-                var payload = new[] { adId };
-                var json = JsonSerializer.Serialize(payload);
+                var json = JsonSerializer.Serialize(adId);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.SendAsync(request);
@@ -430,15 +407,14 @@ namespace QLN.Web.Shared.Services
                 return false;
             }
         }
-        public async Task<bool> UnPublishDealsAdAsync(string adId)
+        public async Task<bool> UnPublishDealsAdAsync(List<string> adId)
         {
             try
             {
                 var url = "api/classified/deals/user-ads/unpublish";
                 var request = new HttpRequestMessage(HttpMethod.Post, url);
 
-                var payload = new[] { adId };
-                var json = JsonSerializer.Serialize(payload);
+                var json = JsonSerializer.Serialize(adId);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.SendAsync(request);
@@ -450,15 +426,14 @@ namespace QLN.Web.Shared.Services
                 return false;
             }
         }
-        public async Task<bool> PublishCollectiblesAdAsync(string adId)
+        public async Task<bool> PublishCollectiblesAdAsync(List<string> adId)
         {
             try
             {
                 var url = "api/classified/collectibles/user-ads/publish";
                 var request = new HttpRequestMessage(HttpMethod.Post, url);
 
-                var payload = new[] { adId };
-                var json = JsonSerializer.Serialize(payload);
+                var json = JsonSerializer.Serialize(adId);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.SendAsync(request);
@@ -470,15 +445,14 @@ namespace QLN.Web.Shared.Services
                 return false;
             }
         }
-        public async Task<bool> UnPublishCollectiblesAdAsync(string adId)
+        public async Task<bool> UnPublishCollectiblesAdAsync(List<string> adId)
         {
             try
             {
                 var url = "api/classified/collectibles/user-ads/unpublish";
                 var request = new HttpRequestMessage(HttpMethod.Post, url);
 
-                var payload = new[] { adId };
-                var json = JsonSerializer.Serialize(payload);
+                var json = JsonSerializer.Serialize(adId);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.SendAsync(request);

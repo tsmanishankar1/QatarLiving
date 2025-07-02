@@ -215,7 +215,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
 
 
-        protected async Task OnPublishAd(string adId)
+        protected async Task OnPublishAd(List<string> adId)
         {
             try
             {
@@ -237,31 +237,8 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
                 Snackbar.Add("An error occurred.", Severity.Error);
             }
         }
-        //protected async Task OnPublishSelectedAds(List<string> adIds)
-        //{
-        //    try
-        //    {
-        //        var result = await ClassfiedDashboardService.PublishBulkAdsAsync(adIds);
-        //        if (result)
-        //        {
-        //            Snackbar.Add("Ads published successfully", Severity.Success);
-        //            await LoadUnpublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
-        //            await LoadPublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
-        //        }
-        //        else
-        //        {
-        //            Snackbar.Add("Failed to publish ads.", Severity.Error);
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Console.WriteLine("Error in bulk publish: " + ex.Message);
-        //        Snackbar.Add("An error occurred during bulk publishing.", Severity.Error);
-        //    }
-        //}
-
-
-        protected async Task UnPublishAd(string adId)
+       
+        protected async Task UnPublishAd(List<string> adId)
         {
             try
             {

@@ -15,15 +15,14 @@ else if (Ads != null && Ads.Any())
         Style="border-radius: 0; border: none; border-bottom: 1px solid #EAECF0; box-shadow: none;">
             <!-- First Row (Image + Checkbox) - full width on mobile -->
             <div class="d-flex align-items-center mb-3 mb-sm-0 mr-sm-4">
-               @*  <MudToggleIconButton T="bool"
+                <MudToggleIconButton T="bool"
                                      Color="Color.Primary"
                                      Toggled="@ad.IsSelected"
                                      ToggledChanged="(value) => OnAdToggled(ad, value)"
                                      Icon="@Icons.Material.Filled.CheckBoxOutlineBlank"
                                      ToggledIcon="@Icons.Material.Filled.CheckBox"
                                      Class="mr-2" />
- *@
-                <MudCheckBox T="bool" @bind-Checked="_isChecked" Class="mr-2 ad-checkbox" />
+
 
              @if (ad.ImageUrls != null && ad.ImageUrls.Any() && !string.IsNullOrEmpty(ad.ImageUrls.First().Url))
                 {
@@ -95,6 +94,7 @@ else if (Ads != null && Ads.Any())
                         </div>
                     </div>
                 </div>
+                <MudText Typo="Typo.caption">Selected: @string.Join(", ", SelectedAdIds)</MudText>
 
                 <!-- Price (Row 5) -->
                 <MudText Typo="Typo.h6"
@@ -159,8 +159,8 @@ else if (Ads != null && Ads.Any())
                     }
                     else
                     {
-                        <MudButton @onclick="() => OnPublish.InvokeAsync(ad.Id)"
-                            Variant="Variant.Text"
+                        <MudButton @onclick="() => OnPublish.InvokeAsync(new List<string> { ad.Id })"
+                                   Variant="Variant.Text"
                                    Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424;">
                             <img src="/qln-images/subscription/unpublish.svg" style="margin-right: 8px;" alt="Publish" />
                             UnPublish
@@ -175,7 +175,7 @@ else if (Ads != null && Ads.Any())
                             <MudIconButton Icon="@Icons.Material.Filled.MoreVert" />
                         </ActivatorContent>
                         <ChildContent>
-                            <MudMenuItem @onclick="() => OnPublish.InvokeAsync(ad.Id)" Class="menu-item-style">
+                            <MudMenuItem @onclick="() => OnPublish.InvokeAsync(new List<string> { ad.Id })" Class="menu-item-style">
                                 <img src="/qln-images/subscription/unpublish.svg" class="menu-icon" />
                                 <span>Unpublish</span>
                             </MudMenuItem>
@@ -261,6 +261,29 @@ else if (Ads != null && Ads.Any())
             <MudText Typo="Typo.caption" Class="mt-2 mt-sm-0" Style="color: #5F6C7B;">Listed on @ad.CreatedDate</MudText>
         </MudPaper>
     }
+    <div class="bottom-action-bar d-flex flex-wrap gap-2 mt-4 px-2">
+        <MudButton Class="action-button"
+                   Variant="Variant.Outlined"
+                   Color="Color.Default"
+                   OnClick="SelectAll">
+            Select All
+        </MudButton>
+
+        <MudButton Class="action-button"
+                   Variant="Variant.Outlined"
+                   Color="Color.Default"
+                   Disabled="!SelectedAdIds.Any()"
+                   OnClick="UnselectAll">
+            Unselect All
+        </MudButton>
+
+        <MudButton Class="unpublish-button"
+                   Variant="Variant.Outlined"
+                   Disabled="!SelectedAdIds.Any()"
+                   OnClick="PublishAllSelected">
+            Unpublish All
+        </MudButton>
+    </div>
 }
 else
 {
@@ -268,19 +291,32 @@ else
 }
 
 
-@* <MudPaper Elevation="0" Class="d-flex justify-content-end align-items-center px-4 py-2 mt-2"
-          Style="border: none; border-top: 1px solid #EAECF0; border-radius: 0; box-shadow: none; background-color: #FFF;">
-    <MudButton Variant="Variant.Text" Color="Color.Inherit" OnClick="SelectAll">
-        Select All
-    </MudButton>
-    <MudButton Variant="Variant.Text" Color="Color.Inherit" OnClick="UnselectAll">
-        Unselect All
-    </MudButton>
-    <MudButton Variant="Variant.Filled"
-               Color="Color.Warning"
-               Disabled="!SelectedAdIds.Any()"
-               OnClick="PublishAllSelected">
-        Publish All
-    </MudButton>
-</MudPaper>
- *@
+
+
+<style>
+    .bottom-action-bar {
+        background: transparent;
+        padding-top: 12px;
+        margin-top: 20px;
+        border-top: 0;
+    }
+
+    .action-button {
+        text-transform: none;
+        background-color: #FFFFFF;
+        font-weight: 600;
+        border-radius: 6px;
+        min-width: 120px;
+        border-color: #D0D5DD;
+    }
+
+    .unpublish-button {
+        text-transform: none;
+        font-weight: 600;
+        border-radius: 6px;
+        min-width: 120px;
+        color: #F26D1E;
+        border-color: #FFF5F0;
+    }
+
+</style>
