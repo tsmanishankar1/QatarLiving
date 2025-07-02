@@ -28,10 +28,9 @@
         @foreach (var article in Articles.Take(4))
         {
             <div class="article-entry">
-                <div class="article-content">
-                    <MudLink Class="more-article-title" href="@($"/content/article/details/{article.Slug}?category={selectedMainTab}&subcategory={selectedTab}")">
-                        @article.Title
-                    </MudLink>
+                <MudLink Class="article-content" href="@($"/content/article/details/{article.Slug}?category={selectedMainTab}&subcategory={selectedTab}")" Style="display:flex !important">
+                <div class="more-article-title">
+                        @(article.Title)
                 </div>
                 @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
                 {
@@ -51,7 +50,9 @@
                         No image available
                     </div>
                 }
+                </MudLink>
             </div>
+            
         }
     }
     else
@@ -134,7 +135,7 @@
 
     .article-content {
         flex: 1;
-        padding-right: 12px;
+        
     }
 
     .article-meta {
@@ -153,7 +154,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: normal;
-
+        padding-right: 12px;
         font-size: 16px;
         font-weight: 600;
         color: var(--color-text-heading) !important;
