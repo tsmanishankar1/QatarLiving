@@ -1,8 +1,9 @@
-﻿using System.Text.Json.Serialization;
+﻿using QLN.Common.DTO_s;
+using System.Text.Json.Serialization;
 
 namespace QLN.DataMigration.Models
 {
-    public class Item
+    public class MigrationItem
     {
         [JsonPropertyName("uid")]
         public int Uid { get; set; }
@@ -112,65 +113,46 @@ namespace QLN.DataMigration.Models
         [JsonPropertyName("images")]
         public List<string> Images { get; set; }
 
-
-    }
-
-    public class MigrationItems
-    {
-        [JsonPropertyName("items")]
-        public List<Item> Items { get; set; }
-
-        public static explicit operator MigrationItems(DrupalItems drupalItems)
+        public static explicit operator MigrationItem(DrupalItem item)
         {
-            var items = new List<Item>();
-
-            foreach (var item in drupalItems.Items)
+            return new MigrationItem
             {
-                var newItem = new Item
-                {
-                    Uid = item.Uid,
-                    AuthorUid = item.Author.Uid,
-                    Title = item.Title,
-                    Type = item.Type,
-                    Published = item.Published,
-                    PathRedirects = item.PathRedirects,
-                    OfferId = item.Offer?.Tid,
-                    BuildingNo = item.BuildingNo,
-                    CategoryParentId = item.CategoryParent.Tid,
-                    Category = item.Category.Count > 0 ? [.. item.Category.Select(x => x.Tid)] : new(),
-                    LinkedCategories = item.LinkedCategories.Count > 0 ? [.. item.LinkedCategories.Select(x => x.Tid)] : new(),
-                    Price = item.Price,
-                    Whatsapp = item.Whatsapp,
-                    ClassifiedType = item.ClassifiedType,
-                    Email = item.Email,
-                    ShopUrl = item.ShopUrl,
-                    Phone = item.Phone,
-                    IsDeleted = item.IsDeleted,
-                    BrandNew = item.BrandNew,
-                    Desc = item.Desc,
-                    LocationId = item.Location?.Tid,
-                    Make = item.Make?.Id,
-                    Model = item.Model?.Id,
-                    GeoLocationLat = item.GeoLocation?.Lat,
-                    GeoLocationLng = item.GeoLocation?.Lng,
-                    DRUPAL7NID = item.DRUPAL7NID,
-                    Sold = item.Sold,
-                    StreetNo = item.StreetNo,
-                    ZoneId = item.Zone?.Tid,
-                    ZoneOldTid = item.ZoneOldTid,
-                    Promote = item.Promote,
-                    Feature = item.Feature,
-                    Slug = item.Slug,
-                    CreatedDate = item.CreatedDate,
-                    RefreshedDate = item.RefreshedDate,
-                    Images = item.Images
-                };
-                items.Add(newItem);
-            }
-
-            return new MigrationItems
-            {
-                Items = items
+                Uid = item.Uid,
+                AuthorUid = item.Author.Uid,
+                Title = item.Title,
+                Type = item.Type,
+                Published = item.Published,
+                PathRedirects = item.PathRedirects,
+                OfferId = item.Offer?.Tid,
+                BuildingNo = item.BuildingNo,
+                CategoryParentId = item.CategoryParent.Tid,
+                Category = item.Category.Count > 0 ? [.. item.Category.Select(x => x.Tid)] : new(),
+                LinkedCategories = item.LinkedCategories.Count > 0 ? [.. item.LinkedCategories.Select(x => x.Tid)] : new(),
+                Price = item.Price,
+                Whatsapp = item.Whatsapp,
+                ClassifiedType = item.ClassifiedType,
+                Email = item.Email,
+                ShopUrl = item.ShopUrl,
+                Phone = item.Phone,
+                IsDeleted = item.IsDeleted,
+                BrandNew = item.BrandNew,
+                Desc = item.Desc,
+                LocationId = item.Location?.Tid,
+                Make = item.Make?.Id,
+                Model = item.Model?.Id,
+                GeoLocationLat = item.GeoLocation?.Lat,
+                GeoLocationLng = item.GeoLocation?.Lng,
+                DRUPAL7NID = item.DRUPAL7NID,
+                Sold = item.Sold,
+                StreetNo = item.StreetNo,
+                ZoneId = item.Zone?.Tid,
+                ZoneOldTid = item.ZoneOldTid,
+                Promote = item.Promote,
+                Feature = item.Feature,
+                Slug = item.Slug,
+                CreatedDate = item.CreatedDate,
+                RefreshedDate = item.RefreshedDate,
+                Images = item.Images
             };
         }
     }

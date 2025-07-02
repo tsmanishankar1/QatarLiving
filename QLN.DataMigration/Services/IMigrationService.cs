@@ -1,10 +1,9 @@
-﻿using QLN.DataMigration.Models;
-
+﻿
 namespace QLN.DataMigration.Services
 {
     public interface IMigrationService
     {
-        Task SaveCategoriesAsync(ItemsCategories itemsCategories);
-        Task SaveMigrationItemsAsync(MigrationItems migrationItems);
+        Task<IResult> MigrateCategories(string environment);
+        Task<IResult> MigrateItems(string environment, int categoryId);
     }
 }

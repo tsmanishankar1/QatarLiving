@@ -5,7 +5,7 @@ GET {{QLN.DataMigration_HostAddress}}/migrate_categories?environment=dev
 Accept: application/json
 
 ###
-GET {{QLN.DataMigration_HostAddress}}/migrate_items?environment=dev&category_id=7216&sort_field=price&sort_order=desc&keywords=wardrobes&page_size=30&page=1
+GET {{QLN.DataMigration_HostAddress}}/migrate_items?environment=prod&category_id=7216 // &sort_field=price&sort_order=desc&page_size=30&page=1
 Accept: application/json
 
 ### Migrate Categories

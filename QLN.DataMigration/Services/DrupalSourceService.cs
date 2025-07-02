@@ -6,14 +6,14 @@
     using System.Net.Http.Headers;
     using System.Text.Json;
 
-    public class DrupalSourceServices : IDrupalSourceServices
+    public class DrupalSourceService : IDrupalSourceService
     {
         private readonly HttpClient _httpClient;
-        private readonly ILogger<MigrationService> _logger;
+        private readonly ILogger<DataOutputService> _logger;
 
-        public DrupalSourceServices(
+        public DrupalSourceService(
             HttpClient httpClient, 
-            ILogger<MigrationService> logger
+            ILogger<DataOutputService> logger
             )
         {
             _httpClient = httpClient;
@@ -25,20 +25,32 @@
             int categoryId,
             string sortField,
             string sortOrder,
-            string keywords,
-            int pageSize,
-            int page)
+            string? keywords,
+            int? page,
+            int? pageSize)
         {
             var formData = new List<KeyValuePair<string, string>>
             {
                 new KeyValuePair<string, string>("env", environment),
                 new KeyValuePair<string, string>("category_id", categoryId.ToString()),
                 new KeyValuePair<string, string>("sort_field", sortField),
-                new KeyValuePair<string, string>("sort_order", sortOrder),
-                new KeyValuePair<string, string>("keywords", keywords),
-                new KeyValuePair<string, string>("page_size", pageSize.ToString()),
-                new KeyValuePair<string, string>("page", page.ToString())
+                new KeyValuePair<string, string>("sort_order", sortOrder)
             };
+
+            if(!string.IsNullOrEmpty(keywords))
+            {
+                formData.Add(new KeyValuePair<string, string>("keywords", keywords));
+            }
+            
+            if (page != null)
+            {
+                formData.Add(new KeyValuePair<string, string>("page_size", pageSize.ToString()));
+            }
+
+            if(pageSize != null)
+            {
+                formData.Add(new KeyValuePair<string, string>("page", page.ToString()));
+            }
 
             var content = new FormUrlEncodedContent(formData);
 
