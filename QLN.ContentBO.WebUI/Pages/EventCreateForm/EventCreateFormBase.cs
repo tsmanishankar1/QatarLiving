@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using MudExRichTextEditor;
 using Microsoft.JSInterop;
+using QLN.ContentBO.WebUI.Models;
 using QLN.Common.Infrastructure.DTO_s;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
@@ -12,6 +13,7 @@ namespace QLN.ContentBO.WebUI.Pages
     {
         [Inject]
         public IDialogService DialogService { get; set; }
+        public EventDTO CurrentEvent { get; set; } = new EventDTO();
         [Inject] private IJSRuntime JS { get; set; }
         protected string? uploadedImage;
         protected MudExRichTextEdit Editor;
@@ -30,6 +32,21 @@ namespace QLN.ContentBO.WebUI.Pages
         protected List<DayTimeEntry> DayTimeList = new();
         public double EventLat { get; set; } = 48.8584;
         public double EventLong { get; set; } = 2.2945;
+        protected DateRange _dateRange
+        {
+            get => new(
+                CurrentEvent.EventSchedule.StartDate.ToDateTime(TimeOnly.MinValue),
+                CurrentEvent.EventSchedule.EndDate.ToDateTime(TimeOnly.MinValue)
+            );
+            set
+            {
+                if (value != null)
+            {
+                CurrentEvent.EventSchedule.StartDate = DateOnly.FromDateTime(value.Start ?? DateTime.Today);
+                CurrentEvent.EventSchedule.EndDate = DateOnly.FromDateTime(value.End ?? DateTime.Today);
+            }
+    }
+}
         protected List<string> Categories = new()
         {
             "Sports",
@@ -37,7 +54,7 @@ namespace QLN.ContentBO.WebUI.Pages
             "Education"
         };
         protected ElementReference _popoverDiv;
-        protected DateRange _dateRange = new();
+        
         protected bool _showDatePicker = false;
         protected string EventTitle;
         protected string AccessType = "Free Access";
@@ -123,9 +140,9 @@ namespace QLN.ContentBO.WebUI.Pages
             "Viva Bahriya - The Pearl Island"
         };
 
-        protected void RemoveLocation(string location)
+        protected void RemoveLocation()
         {
-            SelectedLocations.Remove(location);
+            CurrentEvent.Location = string.Empty;
         }
         protected async void CancelDatePicker()
         {
