@@ -9,8 +9,10 @@ namespace QLN.ContentBO.WebUI.Services
 {
     public class NewsService : ServiceBase<NewsService>, INewsService
     {
-        public NewsService(HttpClient httpClientDI, ILogger<NewsService> Logger)
-           : base(httpClientDI, Logger)
+        private readonly HttpClient _httpClient;
+
+        public NewsService(HttpClient _httpClient, ILogger<NewsService> Logger)
+           : base(_httpClient, Logger)
         {
 
         }
@@ -20,7 +22,13 @@ namespace QLN.ContentBO.WebUI.Services
             try
             {
                 var newsArticleJson = new StringContent(JsonSerializer.Serialize(newsArticle), Encoding.UTF8, "application/json");
-                var response = await PostAsync("api/v2/news/createNewsArticle", newsArticleJson);
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/news/createNewsArticle")
+                {
+                    Content = newsArticleJson
+                };
+
+                var response = await _httpClient.SendAsync(request);
+
                 return response;
             }
             catch (Exception ex)
@@ -34,7 +42,10 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var response = await GetAsync($"api/v2/news/getAllNewsArticle");
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/news/getAllNewsArticle");
+
+                var response = await _httpClient.SendAsync(request);
+
                 return response;
             }
             catch (Exception ex)
@@ -48,7 +59,10 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var response = await GetAsync($"api/v2/news/getCategories");
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/news/getCategories");
+
+                var response = await _httpClient.SendAsync(request);
+
                 return response;
             }
             catch (Exception ex)
@@ -62,7 +76,10 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var response = await GetAsync($"api/v2/news/slots");
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/news/slots");
+
+                var response = await _httpClient.SendAsync(request);
+
                 return response;
             }
             catch (Exception ex)
@@ -76,7 +93,10 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var response = await GetAsync($"api/v2/news/getWriterTags");
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/news/getWriterTags");
+
+                var response = await _httpClient.SendAsync(request);
+
                 return response;
             }
             catch (Exception ex)
@@ -91,7 +111,13 @@ namespace QLN.ContentBO.WebUI.Services
             try
             {
                 var newsArticleJson = new StringContent(JsonSerializer.Serialize(newsArticle), Encoding.UTF8, "application/json");
-                var response = await PostAsync("api/v2/news/updateNewsArticle", newsArticleJson);
+                var request = new HttpRequestMessage(HttpMethod.Put, "api/v2/news/updateNewsArticle")
+                {
+                    Content = newsArticleJson
+                };
+
+                var response = await _httpClient.SendAsync(request);
+
                 return response;
             }
             catch (Exception ex)
