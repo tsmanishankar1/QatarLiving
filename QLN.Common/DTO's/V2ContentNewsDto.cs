@@ -32,7 +32,7 @@ namespace QLN.Common.DTO_s
 
         public string Slug { get; set; }
 
-        public string IsActive { get; set; }
+        public bool IsActive { get; set; } = true;
 
         public List<V2ArticleCategory> Categories { get; set; } = [];
 
@@ -67,7 +67,7 @@ namespace QLN.Common.DTO_s
 
         public string Name { get; set; } = string.Empty;
     }
-    public enum NewsSlot
+    public enum Slot
     {
         Slot1 = 1,
         Slot2 = 2,

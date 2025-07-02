@@ -112,8 +112,8 @@ namespace QLN.Content.MS.Service.NewsInternalService
         }
         public async Task<List<V2NewsSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default)
         {
-            var slots = Enum.GetValues(typeof(NewsSlot))
-                .Cast<NewsSlot>()
+            var slots = Enum.GetValues(typeof(Slot))
+                .Cast<Slot>()
                 .Select(s => new V2NewsSlot
                 {
                     Id = (int)s,
@@ -230,10 +230,10 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 if (lastSlotArticle != null)
                 {
                     var lastArticleCat = lastSlotArticle.Categories.FirstOrDefault(c => c.CategoryId == categoryId && c.SubcategoryId == subCategoryId);
-                    if (lastArticleCat != null) lastArticleCat.SlotId = (int)Slot.UnPublished;
+                    if (lastArticleCat != null) lastArticleCat.SlotId = (int)Slot.Published;
 
-                    string unpublishedKey = GetStatusSlotKey(categoryId, subCategoryId, (int)Slot.UnPublished);
-                    await _dapr.SaveStateAsync(storeName, unpublishedKey, lastSlotArticle.Id.ToString(), cancellationToken: cancellationToken);
+                    string publishedKey = GetStatusSlotKey(categoryId, subCategoryId, (int)Slot.Published);
+                    await _dapr.SaveStateAsync(storeName, publishedKey, lastSlotArticle.Id.ToString(), cancellationToken: cancellationToken);
 
                     await _dapr.SaveStateAsync(storeName, lastSlotArticle.Id.ToString(), lastSlotArticle, cancellationToken: cancellationToken);
                 }
@@ -311,6 +311,67 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 _logger.LogError(ex, "Error retrieving all news articles");
                 throw;
             }
+        }
+        public async Task<List<V2NewsArticleDTO>> GetAllNewsFilterArticles(bool? isActive = null, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    V2Content.ContentStoreName,
+                    V2Content.NewsIndexKey,
+                    cancellationToken: cancellationToken) ?? new();
+
+                _logger.LogInformation("Fetched {Count} keys from index", keys.Count);
+
+                var items = await _dapr.GetBulkStateAsync(V2Content.ContentStoreName, keys, null, cancellationToken: cancellationToken);
+
+                var articles = items
+                    .Select(i => JsonSerializer.Deserialize<V2NewsArticleDTO>(i.Value, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    }))
+                    .Where(dto => dto != null)
+                    .ToList();
+
+                _logger.LogInformation("Deserialized {Count} articles", articles.Count);
+
+                // ✅ Apply IsActive filter if provided
+                if (isActive.HasValue)
+                {
+                    articles = articles.Where(a => a.IsActive == isActive.Value).ToList();
+                    _logger.LogInformation("Filtered to {Count} articles with IsActive = {IsActive}", articles.Count, isActive.Value);
+                }
+
+                return articles;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all news articles");
+                throw;
+            }
+        }
+      
+        public async Task<string> DeleteNews(Guid id, CancellationToken cancellationToken = default)
+        {
+            var existing = await _dapr.GetStateAsync<V2NewsArticleDTO>(
+                ConstantValues.V2Content.ContentStoreName,
+                id.ToString(),
+                cancellationToken: cancellationToken);
+
+            if (existing == null)
+                throw new KeyNotFoundException($"News with ID '{id}' not found.");
+
+            existing.IsActive = false;
+            existing.UpdatedAt = DateTime.UtcNow;
+
+            await _dapr.SaveStateAsync(
+                ConstantValues.V2Content.ContentStoreName,
+                id.ToString(),
+                existing,
+                new StateOptions { Consistency = ConsistencyMode.Strong },
+                cancellationToken: cancellationToken);
+
+            return "News Soft Deleted Successfully";
         }
         public async Task<List<V2NewsArticleDTO>> GetArticlesByCategoryIdAsync(int categoryId, CancellationToken cancellationToken)
         {

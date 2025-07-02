@@ -23,18 +23,18 @@ namespace QLN.Common.DTO_s
         public Slot Id { get; set; }
         public string Name { get; set; }
     }
-    public enum Slot
-    {
-        Slot1 = 1,
-        Slot2 = 2,
-        Slot3 = 3,
-        Slot4 = 4,
-        Slot5 = 5,
-        Slot6 = 6,
-        Published = 7,
-        UnPublished = 8,
-        Expired = 9
-    }
+    //public enum Slot
+    //{
+    //    Slot1 = 1,
+    //    Slot2 = 2,
+    //    Slot3 = 3,
+    //    Slot4 = 4,
+    //    Slot5 = 5,
+    //    Slot6 = 6,
+    //    Published = 7,
+    //    UnPublished = 8,
+    //    Expired = 9
+    //}
     public enum V2EventCategory
     {
         Awareness = 1,

@@ -81,8 +81,30 @@ public static class V2NewsEndpoints
         .WithTags("News")
         .WithSummary("Get All Slot Options")
         .WithDescription("Returns a list of all slot enum values and names.")
-        .Produces<List<V2Slot>>(StatusCodes.Status200OK)
+        .Produces<List<V2NewsSlot>>(StatusCodes.Status200OK)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        group.MapGet("/filterbyArticle", async Task<Results<Ok<List<V2NewsArticleDTO>>, ProblemHttpResult>> (
+        [FromQuery] bool? isActive,
+        IV2NewsService service,
+        CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var result = await service.GetAllNewsFilterArticles(isActive, cancellationToken);
+                return TypedResults.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Error fetching articles: " + ex.Message);
+            }
+        })
+    .WithName("GetFilteredNewsArticles")
+    .WithTags("News")
+    .WithSummary("Get filtered news articles")
+    .WithDescription("Returns active or inactive news articles based on the provided isActive flag.")
+    .Produces<List<V2NewsArticleDTO>>(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status500InternalServerError);
 
         group.MapPost("/createNewsArticle", async Task<Results<
           Ok<string>,
@@ -383,6 +405,41 @@ public static class V2NewsEndpoints
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
         .ExcludeFromDescription();
 
+        group.MapDelete("/deleteNews/{id:guid}", async Task<Results<Ok<string>, NotFound<ProblemDetails>, ProblemHttpResult>>
+            (
+                Guid id,
+                IV2NewsService service,
+                CancellationToken cancellationToken
+            ) =>
+        {
+            try
+            {
+                var success = await service.DeleteNews(id, cancellationToken);
+                if (success == null)
+                    throw new KeyNotFoundException($"News with ID '{id}' not found.");
+                return TypedResults.Ok(success);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return TypedResults.NotFound(new ProblemDetails
+                {
+                    Title = "Not Found",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status404NotFound
+                });
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Internal Server Error", ex.Message);
+            }
+        })
+            .WithName("DeleteNews")
+            .WithTags("News")
+            .WithSummary("Delete News")
+            .WithDescription("Soft delete a news and saves it via Dapr state store.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
         return group;
     }
 }
