@@ -44,6 +44,10 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected void AddCategory()
         {
+            if (Category.SlotId == 0) 
+            {
+                Category.SlotId = 15; // By Default UnPublished.
+            }
             TempCategoryList.Add(Category);
             Category = new();
         }
