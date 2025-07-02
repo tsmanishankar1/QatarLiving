@@ -16,6 +16,7 @@ namespace QLN.Common.Infrastructure.DTO_s
         public string Name { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public CommonSearchRequest SearchQuery { get; set; } = new();
+        public string subVertical { get; set; }
     }
     public class SaveSearchRequestByIdDto
     {
@@ -23,9 +24,11 @@ namespace QLN.Common.Infrastructure.DTO_s
         [MinLength(1)]
         [MaxLength]
         public string Name { get; set; } = string.Empty;
-        public Guid? UserId { get; set; }
+        public string UserId { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public CommonSearchRequest SearchQuery { get; set; } = new();
+        public string subVertical { get; set; }
+
     }
 
 

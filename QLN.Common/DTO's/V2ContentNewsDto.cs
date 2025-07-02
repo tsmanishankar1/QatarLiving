@@ -83,4 +83,10 @@ namespace QLN.Common.DTO_s
         UnPublished = 15
     }
 
+    public class WriterTagsResponse
+    {
+        public List<string> Tags { get; set; }
+    }
+
+
 }
