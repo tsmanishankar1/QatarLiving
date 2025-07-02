@@ -11,32 +11,39 @@
                 <MudSelectItem Value="@category">@category</MudSelectItem>
             }
             </MudSelect>
-            <MudTextField Variant="Variant.Outlined" Label="Event Title"  Class="my-2 custom-textfield" @bind-Value="@EventTitle"/>
-            <MudRadioGroup T="string" @bind-Value="AccessType" Class="my-2">
-            <MudRadio T="string" Value="@("Free Access")">Free Access</MudRadio>
-            <MudRadio T="string" Value="@("Open Registrations")">Open Registrations</MudRadio>
-            <MudRadio T="string" Value="@("Fees")">Fees</MudRadio>
+            <MudTextField Variant="Variant.Outlined" Label="Event Title"  Class="my-2 custom-textfield" @bind-Value="@CurrentEvent.EventTitle"/>
+            <MudRadioGroup T="EventType" @bind-Value="CurrentEvent.EventType" Class="my-2">
+                <MudRadio T="EventType" Value="EventType.FreeAcess">Free Access</MudRadio>
+                <MudRadio T="EventType" Value="EventType.OpenRegistrations">Open Registrations</MudRadio>
+                <MudRadio T="EventType" Value="EventType.FeePrice">Fees</MudRadio>
             </MudRadioGroup>
-            <MudTextField  Variant="Variant.Outlined" Label="Price" @bind-Value="@Price" Adornment="Adornment.End" AdornmentText="QAR" Class="@PriceFieldClass" Disabled="@(!IsFeesSelected)"/>
-            <MudTextField  Variant="Variant.Outlined" Label="Redirection Link"  Class="my-2 custom-textfield" @bind-Value="@RedirectionLink"/>
+            <MudTextField T="int?" 
+              Variant="Variant.Outlined" 
+              Label="Price" 
+              @bind-Value="CurrentEvent.Price" 
+              Adornment="Adornment.End" 
+              AdornmentText="QAR" 
+              Class="@PriceFieldClass" 
+              Disabled="@(!IsFeesSelected)" />
+            <MudTextField  Variant="Variant.Outlined" Label="Redirection Link"  Class="my-2 custom-textfield" @bind-Value="@CurrentEvent.RedirectionLink"/>
             <MudPaper Class="location-box" Elevation="0" Style="display: flex; align-items: center; padding: 8px; border: 1px solid #ccc; border-radius: 8px; flex-wrap: wrap; gap: 8px;">
                 <MudChipSet T="string" >
-                @foreach (var value in SelectedLocations)
+               @if (!string.IsNullOrWhiteSpace(Location))
                 {
                     <MudChip T="string" Class="custom-chip">
-                        @value
-                        <MudIconButton Icon="@Icons.Material.Filled.Close" 
-                        Size="Size.Small" 
-                        Edge="Edge.End"
-                        Style="margin-left: 4px; color:#242424"
-                        OnClick="@(() => RemoveLocation(value))" />
+                    @CurrentEvent.Location
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" 
+                       Size="Size.Small" 
+                       Edge="Edge.End"
+                       Style="margin-left: 4px; color:#242424"
+                       OnClick="@RemoveLocation" />
                     </MudChip>
                 }
                 </MudChipSet>
                 <MudSpacer />
                 <MudIcon Icon="@Icons.Material.Filled.LocationOn"  Style="cursor: pointer; color: #FF7F38" @onclick="AddLocation" />
             </MudPaper> 
-            <MudTextField  Variant="Variant.Outlined" Label="Venu" Class="my-2 custom-textfield" @bind-Value="@Venue" />
+            <MudTextField  Variant="Variant.Outlined" Label="Venu" Class="my-2 custom-textfield" @bind-Value="@CurrentEvent.Venue" />
             <div id="map" style="height: 300px; width: 100%;"></div>
 
             @* Date picker *@
@@ -91,9 +98,9 @@
             </div>
             @if (_dateRange?.Start != null && _dateRange?.End != null)
             {
-                <MudRadioGroup T="string" @bind-Value="@TimeType" Class="my-2">
-                <MudRadio T="string" Value="@("General time")">General time</MudRadio>
-                <MudRadio T="string" Value="@("Per day time")">Per day time</MudRadio>
+               <MudRadioGroup T="EventTimeType" @bind-Value="CurrentEvent.EventSchedule.TimeSlotType" Class="my-2">
+                <MudRadio T="EventTimeType" Value="EventTimeType.GeneralTime">General time</MudRadio>
+                <MudRadio T="EventTimeType" Value="EventTimeType.PerDayTime">Per day time</MudRadio>
                 </MudRadioGroup>
             }
             @if (TimeType == "General time")
