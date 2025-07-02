@@ -75,7 +75,10 @@ namespace QLN.ContentBO.WebUI.Components.News
                 {
                     Snackbar.Add("You are unauthorized to perform this action");
                 }
-
+                else if (response.StatusCode == HttpStatusCode.InternalServerError)
+                {
+                    Snackbar.Add("Internal API Error");
+                }
             }
             catch (Exception ex)
             {
