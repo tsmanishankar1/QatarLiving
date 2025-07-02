@@ -24,6 +24,16 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected List<ArticleCategory> TempCategoryList { get; set; } = [];
 
+        protected List<string> writerTags =
+            [
+                    "Qatar Living",
+                    "Everything Qatar",
+                    "FIFA Arab Cup",
+                    "QL Exclusive",
+                    "Advice & Help"
+            ];
+
+
         protected override async Task OnInitializedAsync()
         {
             Categories = await GetNewsCategories();
@@ -142,6 +152,15 @@ namespace QLN.ContentBO.WebUI.Components.News
                 Logger.LogError(ex, "GetWriterTags");
                 return [];
             }
+        }
+
+        protected string? GetSubCategoryName(int CategoryId, int subCategoryId)
+        {
+            return Categories
+                .FirstOrDefault(c => c.Id == CategoryId)?
+                .SubCategories
+                .FirstOrDefault(sc => sc.Id == subCategoryId)?
+                .CategoryName;
         }
     }
 }

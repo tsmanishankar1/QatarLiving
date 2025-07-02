@@ -32,7 +32,7 @@
 
                     <MudItem xs="3">
 
-                        <MudSelect T="int" @bind-Value="Category.SlotId" Class="w-100" Variant="Variant.Filled" Placeholder="Slot" Disabled="@(Category.CategoryId == 0)" For="@(() => Category.SlotId)">
+                        <MudSelect T="int" @bind-Value="Category.SlotId" Class="w-100" Variant="Variant.Filled" Placeholder="Slot" Disabled="@(Category.SubcategoryId == 0)" For="@(() => Category.SlotId)">
                             <MudSelectItem Value="@(0)">Choose</MudSelectItem>
                             @foreach (var item in Slots)
                             {
@@ -53,33 +53,21 @@
 
                     <MudGrid GutterSize="16px" Class="mb-4">
                         <MudItem xs="4">
-                            <MudSelect T="int" @bind-Value="category.CategoryId" Class="w-100" Variant="Variant.Filled" Label="Category" Placeholder="Choose" For="@(() => Category.CategoryId)">
-                                <MudSelectItem Value="@(0)">Choose</MudSelectItem>
-                                @foreach (var item in Categories)
-                                {
-                                    <MudSelectItem Value="@item.Id">@item.CategoryName</MudSelectItem>
-                                }
+                            <MudSelect T="int" Class="w-100" Variant="Variant.Filled" Label="Category">
+                                <MudSelectItem Value="@(0)">@Categories.FirstOrDefault(c => c.Id == category.CategoryId)?.CategoryName</MudSelectItem>
                             </MudSelect>
                         </MudItem>
 
                         <MudItem xs="4">
-                            <MudSelect T="int" @bind-Value="category.SubcategoryId" Class="w-100" Variant="Variant.Filled" Label="Subcategory" Placeholder="Choose" Disabled="@(Category.CategoryId == 0)" For="@(() => Category.SubcategoryId)">
-                                <MudSelectItem Value="@(0)">Choose</MudSelectItem>
-                                @foreach (var item in Categories.Where(x => x.Id == Category.CategoryId))
-                                {
-                                    <MudSelectItem Value="@item.Id">@item.CategoryName</MudSelectItem>
-                                }
+                            <MudSelect T="int" Class="w-100" Variant="Variant.Filled" Label="Subcategory">
+                                <MudSelectItem Value="@(0)">@GetSubCategoryName(category.CategoryId, category.SubcategoryId)</MudSelectItem>
                             </MudSelect>
                         </MudItem>
 
                         <MudItem xs="3">
 
-                            <MudSelect T="int" @bind-Value="Category.SlotId" Class="w-100" Variant="Variant.Filled" Placeholder="Slot" Disabled="@(Category.CategoryId == 0)" For="@(() => Category.SlotId)">
-                                <MudSelectItem Value="@(0)">Choose</MudSelectItem>
-                                @foreach (var item in Slots)
-                                {
-                                    <MudSelectItem Value="@item.Id">@item.Name</MudSelectItem>
-                                }
+                            <MudSelect T="int" Class="w-100" Variant="Variant.Filled" Placeholder="Slot" Disabled="@(category.SubcategoryId == 0)">
+                                <MudSelectItem Value="@(0)">@Slots.FirstOrDefault(s => s.Id == category.SlotId)?.Name</MudSelectItem>
                             </MudSelect>
                         </MudItem>
 
@@ -93,7 +81,7 @@
                 }
 
                 <MudSelect T="string" @bind-Value="article.WriterTag" Label="Writer" Variant="Variant.Filled" Placeholder="Choose" Class="mt-4 w-100" For="@(() => article.WriterTag)">
-                    @foreach (var item in WriterTags)
+                    @foreach (var item in writerTags)
                     {
                         <MudSelectItem Value="@item">@item</MudSelectItem>
                     }
@@ -127,11 +115,11 @@
                             <MudText Typo="Typo.caption" Class="mt-2">Recommended image size: 1600 x 900 pixels</MudText>
                         </MudPaper>
 
-                            @if (!string.IsNullOrEmpty(article.CoverImageUrl))
-                            {
+                        @if (!string.IsNullOrEmpty(article.CoverImageUrl))
+                        {
                             <img src="@article.CoverImageUrl" alt="Cover Image Preview" style="width: 100%; max-height: 200px; object-fit: cover;" />
 
-                            }
+                        }
 
                     </ActivatorContent>
                 </MudFileUpload>
