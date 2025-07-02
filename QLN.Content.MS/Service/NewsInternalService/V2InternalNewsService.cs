@@ -129,8 +129,8 @@ namespace QLN.Content.MS.Service.NewsInternalService
         {
             if (string.IsNullOrWhiteSpace(title)) return string.Empty;
             var slug = title.Trim().ToLower()
-                             .Replace(" ", "-")       
-                             .Replace("--", "-");   
+                             .Replace(" ", "-")
+                             .Replace("--", "-");
             return slug;
         }
         public async Task<string> CreateNewsArticleAsync(string userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default)
@@ -350,7 +350,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 throw;
             }
         }
-      
+
         public async Task<string> DeleteNews(Guid id, CancellationToken cancellationToken = default)
         {
             var existing = await _dapr.GetStateAsync<V2NewsArticleDTO>(
@@ -423,7 +423,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                     throw new InvalidDataException("Id is required for update");
 
                 string key = dto.Id.ToString();
-                var existing = await _dapr.GetStateAsync<V2NewsArticleDTO>(StoreName, key, cancellationToken:cancellationToken);
+                var existing = await _dapr.GetStateAsync<V2NewsArticleDTO>(StoreName, key, cancellationToken: cancellationToken);
                 if (existing == null)
                     throw new KeyNotFoundException("News article not found");
 
