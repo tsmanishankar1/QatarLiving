@@ -58,7 +58,7 @@
 
 
             <MudItem xs="12"  md="9" Class="company-profile-form-section">
-                <EditForm Model="@companyProfile" OnValidSubmit="SaveCompanyProfileAsync">
+                <EditForm EditContext="@editContext"  OnValidSubmit="SaveCompanyProfileAsync">
                     <DataAnnotationsValidator />
                     <MudTextField id="businessName" @bind-Value="companyProfile.BusinessName" Label="Business Name *" Class="form-input no-underline" Immediate="true"
                                   For="@(() => companyProfile.BusinessName)" />
@@ -134,7 +134,7 @@
                                            Class="grid-input no-underline"
                                            Adornment="Adornment.End"
                                            AdornmentIcon="@Icons.Material.Outlined.CalendarToday" /> *@
-                            <MudSelect T="string" Label="Start Day *"
+                            <MudSelect T="string" Label="Start Day"
                                        @bind-Value="companyProfile.StartDay"
                                        Class="select-input no-underline"
                                        Immediate="true">
@@ -144,7 +144,7 @@
                                 }
                             </MudSelect>
 
-                            <MudSelect T="string" Label="End Day *"
+                            <MudSelect T="string" Label="End Day"
                                        @bind-Value="companyProfile.EndDay"
                                        Class="select-input no-underline"
                                        Immediate="true">

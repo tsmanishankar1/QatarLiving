@@ -102,7 +102,6 @@ namespace QLN.Web.Shared.Models
         [Phone(ErrorMessage = "Invalid phone number format")]
         public string PhoneNumber { get; set; }
 
-        [Required(ErrorMessage = "Company Logo is required")]
         public string CompanyLogo { get; set; }
         public int CompanyType { get; set; }
         public int CompanySize { get; set; }
