@@ -18,6 +18,11 @@ public class SearchSectionBase : ComponentBase
     [Parameter]
     [SupplyParameterFromQuery(Name = "categoryId")]
     public string CategoryIdFromQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "categoryIdL1")]
+    public string CategoryIdL1FromQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "categoryIdL2")]
+    public string CategoryIdL2FromQuery { get; set; }
     [Inject] protected ISnackbar Snackbar { get; set; }
 
     [Inject] protected SearchStateService SearchState { get; set; }
@@ -88,19 +93,62 @@ public class SearchSectionBase : ComponentBase
 
     protected override async Task OnParametersSetAsync()
     {
-
-        if (_categoryHandledFromQuery || string.IsNullOrWhiteSpace(CategoryIdFromQuery) || CategoryTrees?.Any() != true)
+        if (_categoryHandledFromQuery || CategoryTrees?.Any() != true)
             return;
 
-        var matched = CategoryTrees.FirstOrDefault(c => c.Id.ToString() == CategoryIdFromQuery);
-        if (matched != null)
+        if (!string.IsNullOrWhiteSpace(CategoryIdFromQuery))
         {
-            SearchState.ItemCategory = matched.Id.ToString();
-            SearchState.ItemSubCategory = null;
-            SearchState.ItemSubSubCategory = null;
+            var matched = CategoryTrees.FirstOrDefault(c => c.Id.ToString() == CategoryIdFromQuery);
+            if (matched != null)
+            {
+                SearchState.ItemCategory = matched.Id.ToString();
+                SearchState.ItemSubCategory = null;
+                SearchState.ItemSubSubCategory = null;
+                _categoryHandledFromQuery = true;
+                await PerformSearch();
+                return;
+            }
+        }
 
-            _categoryHandledFromQuery = true;
-            await PerformSearch();
+        if (!string.IsNullOrWhiteSpace(CategoryIdL1FromQuery))
+        {
+            var category = CategoryTrees
+                .FirstOrDefault(cat => cat.Children.Any(sub => sub.Id.ToString() == CategoryIdL1FromQuery));
+            var subCategory = category?.Children?.FirstOrDefault(c => c.Id.ToString() == CategoryIdL1FromQuery);
+
+            if (category != null && subCategory != null)
+            {
+                SearchState.ItemCategory = category.Id.ToString();
+                SearchState.ItemSubCategory = subCategory.Id.ToString();
+                SearchState.ItemSubSubCategory = null;
+                _categoryHandledFromQuery = true;
+                await PerformSearch();
+                return;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(CategoryIdL2FromQuery))
+        {
+            var category = CategoryTrees
+                .FirstOrDefault(cat => cat.Children
+                    .Any(sub => sub.Children
+                        .Any(subsub => subsub.Id.ToString() == CategoryIdL2FromQuery)));
+
+            var subCategory = category?.Children?
+                .FirstOrDefault(sub => sub.Children
+                    .Any(subsub => subsub.Id.ToString() == CategoryIdL2FromQuery));
+
+            var subSubCategory = subCategory?.Children?
+                .FirstOrDefault(subsub => subsub.Id.ToString() == CategoryIdL2FromQuery);
+
+            if (category != null && subCategory != null && subSubCategory != null)
+            {
+                SearchState.ItemCategory = category.Id.ToString();
+                SearchState.ItemSubCategory = subCategory.Id.ToString();
+                SearchState.ItemSubSubCategory = subSubCategory.Id.ToString();
+                _categoryHandledFromQuery = true;
+                await PerformSearch();
+            }
         }
     }
     [Parameter] public EventCallback<string> OnSearch { get; set; }
