@@ -29,8 +29,10 @@ namespace QLN.Common.DTO_s
         public string WriterTag { get; set; }
 
         public string? CoverImageUrl { get; set; }
+
         public string Slug { get; set; }
-        public List<string> InlineImageUrls { get; set; } = [];
+
+        public string IsActive { get; set; }
 
         public List<V2ArticleCategory> Categories { get; set; } = [];
 
@@ -43,6 +45,7 @@ namespace QLN.Common.DTO_s
         public string UpdatedBy { get; set; }
 
         public DateTime UpdatedAt { get; set; }
+
         public string authorName { get; set; }
 
     }
