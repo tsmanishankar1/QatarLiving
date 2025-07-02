@@ -18,21 +18,10 @@ namespace QLN.Common.DTO_s
         GeneralTime = 1,
         PerDayTime = 2
     }
-    public class V2Slot
+    public enum EventStatus
     {
-        public EventSlot Id { get; set; }
-        public string Name { get; set; }
-    }
-    public enum EventSlot
-    {
-        Slot1 = 1,
-        Slot2 = 2,
-        Slot3 = 3,
-        Slot4 = 4,
-        Slot5 = 5,
-        Slot6 = 6,
-        Published = 7,
-        UnPublished = 8,
-        Expired = 9
+        Published = 1,
+        UnPublished = 2,
+        Expired = 3
     }
 }

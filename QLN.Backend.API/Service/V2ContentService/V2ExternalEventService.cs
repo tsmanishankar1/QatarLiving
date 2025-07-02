@@ -197,6 +197,42 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
+        public async Task<string> CreateCategory(EventsCategory dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "/api/v2/event/createCategory";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
+                request.Content = new StringContent(
+                    JsonSerializer.Serialize(dto),
+                    Encoding.UTF8,
+                    "application/json");
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                if (response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+                    throw new InvalidDataException(errorMessage);
+                }
+                response.EnsureSuccessStatusCode();
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating event category");
+                throw;
+            }
+        }
         public async Task<List<EventsCategory>> GetAllCategories(CancellationToken cancellationToken = default)
         {
             try
@@ -211,6 +247,80 @@ namespace QLN.Backend.API.Service.V2ContentService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving all event categories.");
+                throw;
+            }
+        }
+        public async Task<EventsCategory?> GetEventCategoryById(int id, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/v2/event/getCategoryById/{id}";
+
+                return await _dapr.InvokeMethodAsync<EventsCategory>(
+                    HttpMethod.Get,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url,
+                    cancellationToken);
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving event for Id : {Id}", id);
+                throw;
+            }
+        }
+        public async Task<PagedResponse<V2Events>> GetPagedEventCategories(int? page, int? perPage, string? search, int? sortBy, string? sortOrder, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var url = $"/api/v2/event/getPagination?page={page}&perPage={perPage}&search={search}&sortBy={sortBy}&sortOrder={sortOrder}";
+                return await _dapr.InvokeMethodAsync<PagedResponse<V2Events>>(
+                    HttpMethod.Get,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving paged event categories.");
+                throw;
+            }
+        }
+        public async Task<string> StatusChange(string uid, Guid id, EventStatus status, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/v2/event/statusChangeByUserId?id={id}&eventStatus={status}&updatedBy={uid}";
+                return await _dapr.InvokeMethodAsync<string>(
+                    HttpMethod.Put,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error changing status for event with Id : {Id}", id);
+                throw;
+            }
+        }
+        public async Task<IEnumerable<V2FeaturedEvents>> GetEventSummaries(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "/api/v2/event/getEventStatus";
+                return await _dapr.InvokeMethodAsync<IEnumerable<V2FeaturedEvents>>(
+                    HttpMethod.Get,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url,
+                    cancellationToken
+                ) ?? new List<V2FeaturedEvents>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving event summaries.");
                 throw;
             }
         }

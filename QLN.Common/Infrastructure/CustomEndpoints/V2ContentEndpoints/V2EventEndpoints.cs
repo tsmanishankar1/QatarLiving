@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
+using System.Data;
 using System.Text.Json;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
@@ -271,8 +272,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             return group;
         }
         public static RouteGroupBuilder MapDeleteEventEndpoints(this RouteGroupBuilder group)
-        { 
-            group.MapDelete("/delete/{id:guid}", async Task<Results<Ok<string>,NotFound<ProblemDetails>, ProblemHttpResult>>
+        {
+            group.MapDelete("/delete/{id:guid}", async Task<Results<Ok<string>, NotFound<ProblemDetails>, ProblemHttpResult>>
             (
                 Guid id,
                 IV2EventService service,
@@ -310,6 +311,43 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
 
             return group;
         }
+        public static RouteGroupBuilder MapCreateCategories(this RouteGroupBuilder group)
+        {
+            group.MapPost("/createCategory", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>>
+            (
+                EventsCategory dto,
+                IV2EventService service,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    var result = await service.CreateCategory(dto, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("CreateEventCategory")
+            .WithTags("Event")
+            .WithSummary("Create Event Category")
+            .WithDescription("Creates a new event category.")
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            return group;
+        }
         public static RouteGroupBuilder MapEventCategories(this RouteGroupBuilder group)
         {
             group.MapGet("/getAllCategories", static async Task<Results<Ok<List<EventsCategory>>, ProblemHttpResult>> (
@@ -334,6 +372,247 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             .Produces<List<EventsCategory>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            return group;
+        }
+        public static RouteGroupBuilder MapGetEventCategory(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getCategoryById/{id:int}", async Task<Results<Ok<EventsCategory>, NotFound<ProblemDetails>, ProblemHttpResult>>
+                (
+                int id,
+                IV2EventService service,
+                CancellationToken cancellationToken
+                ) =>
+            {
+                try
+                {
+                    var result = await service.GetEventCategoryById(id, cancellationToken);
+                    if (result == null)
+                        throw new KeyNotFoundException($"Active event with ID '{id}' not found.");
+                    return TypedResults.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+                .WithName("GetEventCategoryById")
+                .WithTags("Event")
+                .WithSummary("Get Event Category By ID")
+                .WithDescription("Retrieves a single event.")
+                .Produces<string>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            return group;
+        }
+        public static RouteGroupBuilder MapGetEventCategories(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getPagination", async Task<Results<Ok<PagedResponse<V2Events>>, NotFound<ProblemDetails>, ProblemHttpResult>>
+            (
+                IV2EventService service,
+                CancellationToken cancellationToken,
+                [FromQuery] int? page,
+                [FromQuery] int? perPage,
+                [FromQuery] string? search = null,
+                [FromQuery] int? sortBy = 1,
+                [FromQuery] string? sortOrder = "asc"
+            ) =>
+            {
+                try
+                {
+                    var result = await service.GetPagedEventCategories(page, perPage, search, sortBy, sortOrder, cancellationToken);
+
+                    if (result == null || !result.Items.Any())
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "No event categories found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .ExcludeFromDescription()
+            .WithName("Get Pagination")
+            .WithTags("Event")
+            .WithSummary("Get Pagination")
+            .WithDescription("Retrieves paginated event categories with optional filters and sorting.")
+            .Produces<PagedResponse<EventsCategory>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+        public static RouteGroupBuilder MapStatusChange(this RouteGroupBuilder group)
+        {
+            group.MapPut("/statusChange", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>>
+            (
+                [FromQuery] Guid id,
+                [FromQuery] EventStatus eventStatus,
+                IV2EventService service,
+                HttpContext httpContext,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+                    if (string.IsNullOrEmpty(uid))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized",
+                            Detail = "User ID is missing or invalid.",
+                            Status = StatusCodes.Status401Unauthorized
+                        });
+                    }
+                    if (id == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Data",
+                            Detail = "Event ID cannot be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.StatusChange(uid, id, eventStatus, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .ExcludeFromDescription()
+            .WithName("ChangeEventStatus")
+            .WithTags("Event")
+            .WithSummary("Change Event Status")
+            .WithDescription("Changes the status of an event.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPut("/statusChangeByUserId", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>>
+            (
+                [FromQuery] string? updatedBy,
+                [FromQuery] Guid id,
+                [FromQuery] EventStatus eventStatus,
+                IV2EventService service,
+                HttpContext httpContext,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(updatedBy))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Data",
+                            Detail = "UpdatedBy is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    if (id == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Data",
+                            Detail = "Event ID cannot be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.StatusChange(updatedBy, id, eventStatus, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Internal Server Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
+            })
+            .ExcludeFromDescription()
+            .WithName("ChangeEventStatusByUserId")
+            .WithTags("Event")
+            .WithSummary("Change Event Status by User ID")
+            .WithDescription("Changes the status of an event using a manually provided user ID.")
+            .Produces<V2Events>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+        public static RouteGroupBuilder MapGetStatusChange(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getEventStatus", async Task<Results<Ok<IEnumerable<V2FeaturedEvents>>, ProblemHttpResult>>
+            (
+                IV2EventService service,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    var summaries = await service.GetEventSummaries(cancellationToken);
+                    return TypedResults.Ok(summaries);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Internal Server Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
+            })
+            .ExcludeFromDescription()
+            .WithName("GetEventStatus")
+            .WithTags("Event")
+            .WithSummary("Get Event Status")
+            .WithDescription("Returns summarized event information including title, category name, creation and expiry dates, and duration.")
+            .Produces<IEnumerable<V2FeaturedEvents>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
     }
