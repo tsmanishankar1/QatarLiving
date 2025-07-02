@@ -81,7 +81,7 @@ public static class V2NewsEndpoints
         .WithTags("News")
         .WithSummary("Get All Slot Options")
         .WithDescription("Returns a list of all slot enum values and names.")
-        .Produces<List<V2Slot>>(StatusCodes.Status200OK)
+        .Produces<List<V2NewsSlot>>(StatusCodes.Status200OK)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         group.MapPost("/createNewsArticle", async Task<Results<
