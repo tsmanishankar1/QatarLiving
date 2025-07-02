@@ -5,7 +5,6 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.Utilities;
-using System.Net;
 using System.Text;
 using System.Text.Json;
 
@@ -45,7 +44,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                     "application/json");
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
-                if (response.StatusCode == HttpStatusCode.BadRequest)
+                if (!response.IsSuccessStatusCode)
                 {
                     var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
@@ -143,7 +142,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                     "application/json");
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
-                if (response.StatusCode == HttpStatusCode.BadRequest)
+                if (!response.IsSuccessStatusCode)
                 {
                     var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
@@ -208,7 +207,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                     Encoding.UTF8,
                     "application/json");
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
-                if (response.StatusCode == HttpStatusCode.BadRequest)
+                if (!response.IsSuccessStatusCode)
                 {
                     var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
                     string errorMessage;
@@ -289,38 +288,41 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<string> StatusChange(string uid, Guid id, EventStatus status, CancellationToken cancellationToken = default)
+        public async Task<List<V2Slot>> GetAllEventSlot(CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = $"/api/v2/event/statusChangeByUserId?id={id}&eventStatus={status}&updatedBy={uid}";
-                return await _dapr.InvokeMethodAsync<string>(
-                    HttpMethod.Put,
-                    ConstantValues.V2Content.ContentServiceAppId,
-                    url,
-                    cancellationToken);
+                var appId = ConstantValues.V2Content.ContentServiceAppId;
+                var path = "/api/v2/event/slots";
+
+                return await _dapr.InvokeMethodAsync<List<V2Slot>>(
+               HttpMethod.Get,
+               appId,
+               path,
+               cancellationToken
+           ) ?? new();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error changing status for event with Id : {Id}", id);
+                _logger.LogError(ex, "Error retrieving writer tags from internal service");
                 throw;
             }
         }
-        public async Task<IEnumerable<V2FeaturedEvents>> GetEventSummaries(CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<V2Events>> GetExpiredEvents(CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = "/api/v2/event/getEventStatus";
-                return await _dapr.InvokeMethodAsync<IEnumerable<V2FeaturedEvents>>(
+                var url = "/api/v2/event/getExpiredEvents";
+                return await _dapr.InvokeMethodAsync<IEnumerable<V2Events>>(
                     HttpMethod.Get,
                     ConstantValues.V2Content.ContentServiceAppId,
                     url,
                     cancellationToken
-                ) ?? new List<V2FeaturedEvents>();
+                ) ?? new List<V2Events>();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving event summaries.");
+                _logger.LogError(ex, "Error retrieving expired events.");
                 throw;
             }
         }

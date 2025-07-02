@@ -24,6 +24,10 @@ namespace QLN.Common.DTO_s
         [Required(ErrorMessage = "Event description is required.")]
         public string EventDescription { get; set; }
         public string CoverImage { get; set; }
+        public bool IsFeatured { get; set; } = false;
+        public V2Slot FeaturedSlot { get; set; } = new();
+        public DateTime? PublishedDate { get; set; }
+        public EventStatus Status { get; set; }
         public string Slug { get; set; }
         public bool IsActive { get; set; } = true;
         public string CreatedBy { get; set; }
@@ -59,16 +63,4 @@ namespace QLN.Common.DTO_s
         public int? Page { get; set; }
         public int? PerPage { get; set; }
     }
-    public class V2FeaturedEvents
-    {
-        public EventStatus? Status { get; set; }
-        public string Title { get; set; }
-        public string Category { get; set; }
-        public DateTime CreationDate { get; set; }
-        public DateOnly ExpiryDate { get; set; }
-        public string? LiveFor { get; set; }
-        public string? UpdatedBy { get; set; }
-        public DateTime? UpdatedAt { get; set; }
-    }
-
 }

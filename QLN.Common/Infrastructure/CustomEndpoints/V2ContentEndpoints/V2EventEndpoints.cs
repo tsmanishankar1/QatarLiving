@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
-using System.Data;
 using System.Text.Json;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
@@ -456,136 +455,34 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
 
             return group;
         }
-        public static RouteGroupBuilder MapStatusChange(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapGetAllEventSlot(this RouteGroupBuilder group)
         {
-            group.MapPut("/statusChange", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>>
-            (
-                [FromQuery] Guid id,
-                [FromQuery] EventStatus eventStatus,
-                IV2EventService service,
-                HttpContext httpContext,
-                CancellationToken cancellationToken
+            group.MapGet("/slots", async Task<Results<Ok<List<V2Slot>>, ProblemHttpResult>> (
+            IV2EventService service,
+            CancellationToken cancellationToken
             ) =>
             {
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
-                    if (string.IsNullOrEmpty(uid))
-                    {
-                        return TypedResults.Problem(new ProblemDetails
-                        {
-                            Title = "Unauthorized",
-                            Detail = "User ID is missing or invalid.",
-                            Status = StatusCodes.Status401Unauthorized
-                        });
-                    }
-                    if (id == Guid.Empty)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Invalid Data",
-                            Detail = "Event ID cannot be empty.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    var result = await service.StatusChange(uid, id, eventStatus, cancellationToken);
+                    var result = await service.GetAllEventSlot(cancellationToken);
                     return TypedResults.Ok(result);
-                }
-                catch (InvalidDataException ex)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Data",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest
-                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                    return TypedResults.Problem($"Unexpected error: {ex.Message}");
                 }
             })
-            .ExcludeFromDescription()
-            .WithName("ChangeEventStatus")
+            .WithName("GetAllEventSlots")
             .WithTags("Event")
-            .WithSummary("Change Event Status")
-            .WithDescription("Changes the status of an event.")
-            .Produces<string>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .WithSummary("Get All Event Slots")
+            .WithDescription("Returns a list of all slot enum values and names.")
+            .Produces<List<V2Slot>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            group.MapPut("/statusChangeByUserId", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>>
-            (
-                [FromQuery] string? updatedBy,
-                [FromQuery] Guid id,
-                [FromQuery] EventStatus eventStatus,
-                IV2EventService service,
-                HttpContext httpContext,
-                CancellationToken cancellationToken
-            ) =>
-            {
-                try
-                {
-                    if (string.IsNullOrWhiteSpace(updatedBy))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Invalid Data",
-                            Detail = "UpdatedBy is required.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    if (id == Guid.Empty)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Invalid Data",
-                            Detail = "Event ID cannot be empty.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    var result = await service.StatusChange(updatedBy, id, eventStatus, cancellationToken);
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidDataException ex)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Data",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(new ProblemDetails
-                    {
-                        Title = "Internal Server Error",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status500InternalServerError
-                    });
-                }
-            })
-            .ExcludeFromDescription()
-            .WithName("ChangeEventStatusByUserId")
-            .WithTags("Event")
-            .WithSummary("Change Event Status by User ID")
-            .WithDescription("Changes the status of an event using a manually provided user ID.")
-            .Produces<V2Events>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
             return group;
         }
-        public static RouteGroupBuilder MapGetStatusChange(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapExpiredEvents(this RouteGroupBuilder group)
         {
-            group.MapGet("/getEventStatus", async Task<Results<Ok<IEnumerable<V2FeaturedEvents>>, ProblemHttpResult>>
+            group.MapGet("/getExpiredEvents", async Task<Results<Ok<IEnumerable<V2Events>>, ProblemHttpResult>>
             (
                 IV2EventService service,
                 CancellationToken cancellationToken
@@ -593,8 +490,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             {
                 try
                 {
-                    var summaries = await service.GetEventSummaries(cancellationToken);
-                    return TypedResults.Ok(summaries);
+                    var expired = await service.GetExpiredEvents(cancellationToken);
+                    return TypedResults.Ok(expired);
                 }
                 catch (Exception ex)
                 {
@@ -606,12 +503,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     });
                 }
             })
-            .ExcludeFromDescription()
-            .WithName("GetEventStatus")
+            .WithName("GetExpiredEvents")
             .WithTags("Event")
-            .WithSummary("Get Event Status")
-            .WithDescription("Returns summarized event information including title, category name, creation and expiry dates, and duration.")
-            .Produces<IEnumerable<V2FeaturedEvents>>(StatusCodes.Status200OK)
+            .WithSummary("Get Expired Events")
+            .WithDescription("Returns events where EndDate is before today.")
+            .Produces<IEnumerable<V2Events>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }

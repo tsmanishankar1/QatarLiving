@@ -1,8 +1,6 @@
 ﻿using Dapr.Client;
-using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
-using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 using QLN.Common.Infrastructure.IService.IContentService;
 using System.Text.Json;
 
@@ -48,6 +46,9 @@ namespace QLN.Content.MS.Service.EventInternalService
                     RedirectionLink = dto.RedirectionLink,
                     EventDescription = dto.EventDescription,
                     CoverImage = dto.CoverImage,
+                    IsFeatured = false,
+                    FeaturedSlot = dto.FeaturedSlot,
+                    Status = dto.Status,
                     IsActive = true,
                     CreatedBy = userId,
                     CreatedAt = DateTime.UtcNow
@@ -76,6 +77,10 @@ namespace QLN.Content.MS.Service.EventInternalService
                         cancellationToken: cancellationToken
                     );
                 }
+                if (dto.IsFeatured && dto.FeaturedSlot.Id >= 1 && dto.FeaturedSlot.Id <= 6)
+                {
+                    await HandleEventSlotShift(dto.FeaturedSlot.Id, entity, cancellationToken);
+                }
 
                 return "Event created successfully.";
             }
@@ -87,6 +92,74 @@ namespace QLN.Content.MS.Service.EventInternalService
             {
                 throw new Exception("Error creating event", ex);
             }
+        }
+        private async Task<string> HandleEventSlotShift(int desiredSlot, V2Events newEvent, CancellationToken cancellationToken)
+        {
+            const int MaxSlot = 6;
+            string storeName = ConstantValues.V2Content.ContentStoreName;
+
+            string desiredSlotKey = $"event-slot-{desiredSlot}";
+            var existingInDesiredSlot = await _dapr.GetStateAsync<V2Events>(storeName, desiredSlotKey, cancellationToken: cancellationToken);
+
+            if (existingInDesiredSlot == null)
+            {
+                newEvent.FeaturedSlot.Id = desiredSlot;
+                newEvent.IsFeatured = true;
+
+                await _dapr.SaveStateAsync(storeName, desiredSlotKey, newEvent, cancellationToken: cancellationToken);
+                await _dapr.SaveStateAsync(storeName, newEvent.Id.ToString(), newEvent, cancellationToken: cancellationToken);
+                return $"Event placed in slot {desiredSlot} successfully.";
+            }
+            int emptySlot = -1;
+            for (int i = desiredSlot + 1; i <= MaxSlot; i++)
+            {
+                string slotKey = $"event-slot-{i}";
+                var articleInSlot = await _dapr.GetStateAsync<V2Events>(storeName, slotKey, cancellationToken: cancellationToken);
+                if (articleInSlot == null)
+                {
+                    emptySlot = i;
+                    break;
+                }
+            }
+            if (emptySlot == -1)
+            {
+                string lastSlotKey = $"event-slot-{MaxSlot}";
+                var lastEvent = await _dapr.GetStateAsync<V2Events>(storeName, lastSlotKey, cancellationToken: cancellationToken);
+
+                if (lastEvent != null)
+                {
+                    lastEvent.IsFeatured = false;
+                    lastEvent.FeaturedSlot = new();
+                    await _dapr.SaveStateAsync(storeName, lastEvent.Id.ToString(), lastEvent, cancellationToken: cancellationToken);
+                    await _dapr.DeleteStateAsync(storeName, lastSlotKey, cancellationToken: cancellationToken);
+                }
+
+                emptySlot = MaxSlot;
+            }
+            for (int current = emptySlot - 1; current >= desiredSlot; current--)
+            {
+                string fromKey = $"event-slot-{current}";
+                string toKey = $"event-slot-{current + 1}";
+
+                var evToMove = await _dapr.GetStateAsync<V2Events>(storeName, fromKey, cancellationToken: cancellationToken);
+                if (evToMove != null)
+                {
+                    evToMove.FeaturedSlot.Id = current + 1;
+                    evToMove.IsFeatured = true;
+
+                    await _dapr.SaveStateAsync(storeName, toKey, evToMove, cancellationToken: cancellationToken);
+                    await _dapr.SaveStateAsync(storeName, evToMove.Id.ToString(), evToMove, cancellationToken: cancellationToken);
+                    await _dapr.DeleteStateAsync(storeName, fromKey, cancellationToken : cancellationToken);
+                }
+            }
+
+            newEvent.FeaturedSlot.Id = desiredSlot;
+            newEvent.IsFeatured = true;
+
+            await _dapr.SaveStateAsync(storeName, desiredSlotKey, newEvent, cancellationToken: cancellationToken);
+            await _dapr.SaveStateAsync(storeName, newEvent.Id.ToString(), newEvent, cancellationToken: cancellationToken);
+
+            return $"Event placed in slot {desiredSlot} after shifting.";
         }
         private void ValidateEventSchedule(EventSchedule schedule)
         {
@@ -200,6 +273,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                 if (existing == null)
                     throw new KeyNotFoundException($"Event with ID {dto.Id} not found.");
                 var slug = GenerateSlug(dto.EventTitle);
+                var shouldUpdatePublishedDate = existing.Status == EventStatus.UnPublished && dto.Status == EventStatus.Published;
                 var updated = new V2Events
                 {
                     Id = dto.Id,
@@ -216,6 +290,10 @@ namespace QLN.Content.MS.Service.EventInternalService
                     RedirectionLink = dto.RedirectionLink,
                     EventDescription = dto.EventDescription,
                     CoverImage = dto.CoverImage,
+                    IsFeatured = dto.IsFeatured,
+                    FeaturedSlot = dto.FeaturedSlot,
+                    Status = dto.Status,
+                    PublishedDate = shouldUpdatePublishedDate ? DateTime.UtcNow : existing.PublishedDate,
                     IsActive = true,
                     CreatedBy = existing.CreatedBy, 
                     CreatedAt = existing.CreatedAt, 
@@ -397,40 +475,24 @@ namespace QLN.Content.MS.Service.EventInternalService
                 throw new Exception("Error fetching paginated event categories", ex);
             }
         }
-        public async Task<string> StatusChange(string uid, Guid id, EventStatus eventStatus, CancellationToken cancellationToken = default)
+        public async Task<List<V2Slot>> GetAllEventSlot(CancellationToken cancellationToken = default)
         {
-            try
-            {
-                var eventEntity = await _dapr.GetStateAsync<V2FeaturedEvents>(
-                    ConstantValues.V2Content.ContentStoreName,
-                    id.ToString(),
-                    cancellationToken: cancellationToken);
+            var slots = Enum.GetValues(typeof(V2EventSlot))
+                .Cast<V2EventSlot>()
+                .Select(s => new V2Slot
+                {
+                    Id = (int)s,
+                    Name = s.ToString()
+                })
+                .ToList();
 
-                if (eventEntity == null)
-                    throw new KeyNotFoundException($"Event with id '{id}' was not found.");
-
-                eventEntity.Status = eventStatus;
-                eventEntity.UpdatedBy = uid;
-                eventEntity.UpdatedAt = DateTime.UtcNow;
-
-                await _dapr.SaveStateAsync(
-                    ConstantValues.V2Content.ContentStoreName,
-                    id.ToString(),
-                    eventEntity,
-                    cancellationToken: cancellationToken
-                );
-
-                return "Status Updated for Event";
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error updating event status for event with ID: {id}", ex);
-            }
+            return await Task.FromResult(slots);
         }
-        public async Task<IEnumerable<V2FeaturedEvents>> GetEventSummaries(CancellationToken cancellationToken)
+        public async Task<IEnumerable<V2Events>> GetExpiredEvents(CancellationToken cancellationToken)
         {
             try
             {
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
                 var keys = await _dapr.GetStateAsync<List<string>>(
                     ConstantValues.V2Content.ContentStoreName,
                     ConstantValues.V2Content.EventIndexKey,
@@ -439,9 +501,8 @@ namespace QLN.Content.MS.Service.EventInternalService
 
                 if (!keys.Any())
                 {
-                    return new List<V2FeaturedEvents>();
+                    return Enumerable.Empty<V2Events>();
                 }
-
                 var items = await _dapr.GetBulkStateAsync(
                     ConstantValues.V2Content.ContentStoreName,
                     keys,
@@ -451,10 +512,9 @@ namespace QLN.Content.MS.Service.EventInternalService
 
                 if (items == null || !items.Any())
                 {
-                    return new List<V2FeaturedEvents>();
+                    return Enumerable.Empty<V2Events>();
                 }
-
-                var events = new List<V2Events>();
+                var allEvents = new List<V2Events>();
                 foreach (var item in items)
                 {
                     try
@@ -466,9 +526,9 @@ namespace QLN.Content.MS.Service.EventInternalService
                                 PropertyNameCaseInsensitive = true
                             });
 
-                            if (eventData != null && eventData.IsActive == true)
+                            if (eventData != null)
                             {
-                                events.Add(eventData);
+                                allEvents.Add(eventData);
                             }
                         }
                     }
@@ -476,71 +536,15 @@ namespace QLN.Content.MS.Service.EventInternalService
                     {
                     }
                 }
+                var expired = allEvents
+                    .Where(e => e.EventSchedule != null && e.EventSchedule.EndDate < today)
+                    .ToList();
 
-                var categories = new List<EventsCategory>();
-                var categoryKeys = await _dapr.GetStateAsync<List<string>>(
-                    ConstantValues.V2Content.ContentStoreName,
-                    ConstantValues.V2Content.EventCategoryIndexKey,
-                    cancellationToken: cancellationToken
-                );
-
-                if (categoryKeys != null && categoryKeys.Any())
-                {
-                    var categoryItems = await _dapr.GetBulkStateAsync(
-                        ConstantValues.V2Content.ContentStoreName,
-                        categoryKeys,
-                        parallelism: null,
-                        cancellationToken: cancellationToken
-                    );
-
-                    categories = categoryItems
-                        .Select(item =>
-                        {
-                            try
-                            {
-                                return JsonSerializer.Deserialize<EventsCategory>(item.Value, new JsonSerializerOptions
-                                {
-                                    PropertyNameCaseInsensitive = true
-                                });
-                            }
-                            catch
-                            {
-                                return null;
-                            }
-                        })
-                        .Where(c => c != null)
-                        .ToList();
-                }
-
-                var categoryLookup = new Dictionary<string, string>();
-                foreach (var category in categories)
-                {
-                    var keyAsString = category.Id.ToString();
-                    if (!categoryLookup.ContainsKey(keyAsString))
-                    {
-                        categoryLookup.Add(keyAsString, category.CategoryName);
-                    }
-                }
-
-                var summaries = events.Select(e =>
-                {
-                    var categoryIdAsString = e.CategoryId.ToString();
-                    var categoryName = categoryLookup.TryGetValue(categoryIdAsString, out var name) ? name : "Unknown";
-
-                    return new V2FeaturedEvents
-                    {
-                        Title = e.EventTitle ?? "Untitled Event",
-                        Category = categoryName,
-                        CreationDate = e.CreatedAt.Date,
-                        ExpiryDate = e.EventSchedule?.EndDate ?? DateOnly.MinValue
-                    };
-                }).ToList();
-
-                return summaries;
+                return expired;
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error occurred while retrieving all events: {ex.Message}", ex);
+                throw new Exception($"Error occurred while retrieving expired events: {ex.Message}", ex);
             }
         }
     }
