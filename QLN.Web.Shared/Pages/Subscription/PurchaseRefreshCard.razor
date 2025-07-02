@@ -1,0 +1,72 @@
+﻿@using QLN.Web.Shared.Models
+@using MudBlazor
+@using QLN.Web.Shared.Components.CustomButton
+
+
+<MudPaper Class="p-4 hover:shadow-lg cursor-pointer transition-all duration-200 relative"
+Style=" height: 162px; border-radius: 8px; padding: 12px 20px; background-color: white"
+OnClick="HandleSelect">
+
+    <!-- Radio Button Top Right -->
+    <div style="position: absolute; top: 12px; right: 12px;">
+        <MudIcon Icon="@(IsSelected ? Icons.Material.Filled.RadioButtonChecked : Icons.Material.Filled.RadioButtonUnchecked)"
+        Style=@($"color:{(IsSelected ? "#F26D1E" : "#E0E0E0")}") />
+    </div>
+
+    <!-- Center Content -->
+    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1" Class="mb-4">
+        <MudText Class="font-semibold text-center"
+        Style="font-family: 'Public Sans', sans-serif; font-size: 15px; line-height: 26px; color: #242424;">
+            @($"{Plan.PlanName}")
+        </MudText>
+
+        <MudText Class="font-semibold text-center"
+        Style="font-family: 'Public Sans', sans-serif; font-size: 25px; line-height: 26px; color: #00426D;">
+            @($"{Plan.Price:N0} QAR") /  <MudText Class="text-center font-medium"
+            Style="font-family: 'Public Sans', sans-serif; font-size: 14px; line-height: 22px; color: #646464;">
+                @Plan.DurationName
+            </MudText>
+        </MudText>
+
+
+    </MudStack>
+
+    <!-- Button at bottom -->
+    <MudBox Class="mt-4" Style="width: 100%; display: flex; justify-content: center; align-items: center">
+        <MudButton Class="font-semibold"
+        Style="@(IsSelected
+        ? "background-color: #E0E0E0; color: white; width: 200px;"
+        : "background-color: #F26D1E; color: white; width: 200px;")"
+        Disabled="@IsSelected"
+        OnClick="HandleSelect">
+            @(IsSelected ? "Selected" : "Select")
+        </MudButton>
+
+    </MudBox>
+
+</MudPaper>
+
+@code {
+    [Parameter] public PayToPublishPlan Plan { get; set; }
+    [Parameter] public bool IsSelected { get; set; }
+    [Parameter] public EventCallback<PayToPublishPlan> OnSelect { get; set; }
+
+    private bool _isDeleteDialogOpen = false;
+
+    private void OpenDeleteDialog()
+    {
+        _isDeleteDialogOpen = true;
+    }
+
+    private void ShowDeleteConfirm()
+    {
+        _isDeleteDialogOpen = true;
+    }
+ 
+    private async Task HandleSelect()
+    {
+
+        await OnSelect.InvokeAsync(Plan);
+    }
+
+}

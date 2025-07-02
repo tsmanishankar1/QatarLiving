@@ -16,6 +16,7 @@ namespace QLN.Common.DTO_s
         public string Category { get; set; }
         public string L1Category { get; set; }
         public string? L2Category { get; set; }
+        public string? CertificateFileName { get; set; }
         public bool HasAuthenticityCertificate { get; set; }
         public string AuthenticityCertificateUrl { get; set; }
         public string? YearOrEra { get; set; }

@@ -14,14 +14,83 @@ public class SearchSectionBase : ComponentBase
     [Parameter]
     [SupplyParameterFromQuery]
     public string category { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "categoryId")]
+    public string CategoryIdFromQuery { get; set; }
+
     [Inject] protected SearchStateService SearchState { get; set; }
     protected bool ShowSaveSearchPopup { get; set; } = false;
     [Parameter]
     public EventCallback<string> OnCategoryChanged { get; set; }
 
     protected List<CategoryTreeDto> CategoryTrees => SearchState.ItemCategoryTrees;
+    protected CategoryTreeDto SelectedCategory =>
+    CategoryTrees.FirstOrDefault(x => x.Id.ToString() == SearchState.ItemCategory)
+    ?? new CategoryTreeDto { Children = new List<CategoryTreeDto>(), Fields = new List<CategoryField>() };
 
-    protected List<CategoryField> CategoryFilters => SearchState.ItemCategoryFilters;
+    protected CategoryTreeDto SelectedSubCategory =>
+        SelectedCategory.Children?.FirstOrDefault(x => x.Id.ToString() == SearchState.ItemSubCategory)
+        ?? new CategoryTreeDto { Children = new List<CategoryTreeDto>(), Fields = new List<CategoryField>() };
+
+    protected CategoryTreeDto SelectedSubSubCategory =>
+        SelectedSubCategory.Children?.FirstOrDefault(x => x.Id.ToString() == SearchState.ItemSubSubCategory)
+        ?? new CategoryTreeDto { Children = new List<CategoryTreeDto>(), Fields = new List<CategoryField>() };
+
+      protected List<CategoryField> SelectedFields
+{
+    get
+    {
+        if (SelectedSubSubCategory?.Fields?.Any() == true)
+            return SelectedSubSubCategory.Fields;
+
+        if (SelectedSubCategory?.Fields?.Any() == true)
+            return SelectedSubCategory.Fields;
+
+        if (SelectedCategory?.Fields?.Any() == true)
+            return SelectedCategory.Fields;
+
+        return new();
+    }
+}
+
+    protected CategoryField? brandField;
+    protected bool isBrandFieldAvailable;
+
+     protected override void OnParametersSet()
+    {
+        if (SelectedFields is not null)
+        {
+            brandField = SelectedFields.FirstOrDefault(f =>
+            f.Name?.Trim().Equals("Brands", StringComparison.OrdinalIgnoreCase) == true &&
+            f.Type?.Trim().ToLower() == "dropdown");
+            isBrandFieldAvailable = brandField?.Options?.Any() == true;
+        }
+        else
+        {
+            brandField = null;
+            isBrandFieldAvailable = false;
+        }
+    }
+    private bool _categoryHandledFromQuery = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_categoryHandledFromQuery || string.IsNullOrWhiteSpace(CategoryIdFromQuery) || CategoryTrees?.Any() != true)
+            return;
+
+        var matched = CategoryTrees.FirstOrDefault(c => c.Id.ToString() == CategoryIdFromQuery);
+        if (matched != null)
+        {
+            SearchState.ItemCategory = matched.Id.ToString();
+            SearchState.ItemSubCategory = null;
+            SearchState.ItemSubSubCategory = null;
+
+            _categoryHandledFromQuery = true;
+            await PerformSearch();
+        }
+    }
+
     protected List<BrandItem> _brands { get; set; } = new();
 
     [Parameter] public EventCallback<string> OnSearch { get; set; }
@@ -71,7 +140,10 @@ public class SearchSectionBase : ComponentBase
             SearchState.ItemMinPrice = null;
             SearchState.ItemMaxPrice = null;
             SearchState.ItemViewMode ??= "grid";
-
+            SearchState.ItemSubCategory = null;
+            SearchState.ItemSubSubCategory = null;
+            SearchState.ItemFieldFilters.Clear();
+            SearchState.ItemHasWarrantyCertificate = false;
             StateHasChanged();
         }
     }
@@ -95,37 +167,32 @@ public class SearchSectionBase : ComponentBase
 
         if (OnSearch.HasDelegate)
         {
-            await OnSearch.InvokeAsync(string.Empty); // pass empty string as the search text
+            await OnSearch.InvokeAsync(string.Empty); 
         }
     }
 
-    protected async Task OnCategorySelected(string value)
-    {
-        SearchState.ItemCategory = value;
+   protected async Task OnCategorySelected(string categoryId)
+{
+    SearchState.ItemCategory = categoryId;
+    SearchState.ItemSubCategory = null;
+    SearchState.ItemSubSubCategory = null;
+    SearchState.ItemBrand = null;
+    await PerformSearch();
+}
+protected async Task OnSubCategorySelected(string subId)
+{
+    SearchState.ItemSubCategory = subId;
+    SearchState.ItemSubSubCategory = null;
+    SearchState.ItemBrand = null;
+    await PerformSearch();
+}
 
-        if (OnCategoryChanged.HasDelegate)
-        {
-            await OnCategoryChanged.InvokeAsync(value);
-        }
-         UpdateBrandOptions();
-        await PerformSearch(); // optional if you want search to also happen
-    }
-    private void UpdateBrandOptions()
-    {
-        var brandField = SearchState.ItemCategoryFilters
-            .FirstOrDefault(f => f.Name.Equals("Brands", StringComparison.OrdinalIgnoreCase));
-
-        if (brandField != null && brandField.Options != null)
-        {
-            _brands = brandField.Options
-                .Select(b => new BrandItem { Id = b.ToLowerInvariant(), Label = b })
-                .ToList();
-        }
-        else
-        {
-            _brands = new(); // Clear if not found
-        }
-    }
+protected async Task OnSubSubCategorySelected(string subSubId)
+{
+    SearchState.ItemSubSubCategory = subSubId;
+    SearchState.ItemBrand = null;
+    await PerformSearch();
+}
 
     protected void SetViewMode(string mode)
     {

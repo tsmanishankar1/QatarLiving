@@ -34,6 +34,7 @@ namespace QLN.Common.DTO_s
         public string? SizeValue { get; set; }
         public string? Gender { get; set; }
         public List<ImageInfo> ImageUrls { get; set; }
+        public string? CertificateFileName { get; set; }
         public string CertificateUrl { get; set; }
         public string Phone { get; set; }
         public string WhatsAppNumber { get; set; }

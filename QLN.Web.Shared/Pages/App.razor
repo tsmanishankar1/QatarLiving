@@ -7,7 +7,7 @@
     <base href="/" />
 
     <link rel="preload" href="/qln-images/qatar-living-logo-sized.png" as="image" type="image/webp">
-
+    <link href="_content/CodeBeam.MudBlazor.Extensions/MudExtensions.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="@Assets["_content/QLN.Web.Shared/bootstrap/bootstrap.min.css"]" as="style" />
     <link rel="stylesheet" href="@Assets["QLN.Blazor.Base.styles.css"]" as="style" type="text/css" />
     <link rel="stylesheet" href="@Assets["_content/QLN.Web.Shared/css/app.css"]" as="style" />
@@ -73,6 +73,7 @@
     @* <script src="js/boot.js"></script> *@
     <script src="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.js" defer></script>
     <script src="@Assets["_content/GoogleAnalytics.Blazor/googleanalytics.blazor.js"]" defer></script>
+    <script src="_content/CodeBeam.MudBlazor.Extensions/MudExtensions.min.js"></script>
     @* 
         Script is MIA, not needed maybe?
         <script src="_content/Extensions.MudBlazor.StaticInput/NavigationObserver.js?v=3.2.0" defer></script> 
@@ -997,7 +998,23 @@
         };
 
     </script>
+    <script>
+        window.preventNonDigitInput = () => {
+    const inputElement = document.getElementById('phone-input');
 
+    if (!inputElement) {
+        console.warn('phone-input not found.');
+        return;
+    }
+
+    inputElement.addEventListener('keypress', function (e) {
+        if (!/[0-9]/.test(e.key)) {
+            e.preventDefault();
+        }
+    });
+};
+
+    </script>
 </body>
 
 </html>

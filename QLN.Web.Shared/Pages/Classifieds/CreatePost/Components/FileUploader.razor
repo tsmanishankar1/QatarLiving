@@ -1,8 +1,9 @@
 @inject IJSRuntime JS
-
+@using System.Linq.Expressions
+@using Microsoft.AspNetCore.Components.Forms
 <div class="file-upload-container">
 
-    <div class="file-upload-wrapper">
+    <div class="file-upload-wrapper @(HasValidationError ? "has-error" : "")">
         <input type="file"
                @ref="fileInput"
                style="display:none"
@@ -23,17 +24,52 @@
 
     <div class="file-note">Supported file formats: PDF, PNG and JPG. Maximum file size: 10MB.</div>
 
-    @if (!string.IsNullOrEmpty(ErrorMessage))
+   @if (!string.IsNullOrEmpty(ErrorMessage))
     {
-        <div class="text-red-600 text-sm mt-1">@ErrorMessage</div>
+        <div class="error-text">@ErrorMessage</div>
+    }
+    else if (HasValidationError)
+    {
+        <div class="error-text">@ValidationMessage</div>
     }
 </div>
 @code {
     private ElementReference fileInput;
     private string FileName = string.Empty;
+    [Parameter] public string Value { get; set; }
+[Parameter] public EventCallback<string> ValueChanged { get; set; }
+
     private string ErrorMessage;
 
     [Parameter] public EventCallback<(string Name, string Base64)> OnFileUploadedWithMeta { get; set; }
+ [Parameter] public Expression<Func<string>> For { get; set; }
+    [CascadingParameter] private EditContext CascadedEditContext { get; set; }
+
+    private FieldIdentifier _fieldIdentifier;
+
+    private bool HasValidationError =>
+        For != null && CascadedEditContext != null &&
+        CascadedEditContext.GetValidationMessages(_fieldIdentifier).Any();
+
+    private string ValidationMessage =>
+        CascadedEditContext?.GetValidationMessages(_fieldIdentifier).FirstOrDefault();
+
+    protected override void OnInitialized()
+    {
+        if (CascadedEditContext == null)
+        {
+            Console.WriteLine("⚠️ EditContext not found.");
+            return;
+        }
+
+        if (For == null)
+        {
+            Console.WriteLine("⚠️ 'For' parameter is required.");
+            return;
+        }
+
+        _fieldIdentifier = FieldIdentifier.Create(For);
+    }
 
     [Parameter] public string LabelText { get; set; } = "Certificate / Warranty*";
 
@@ -53,7 +89,14 @@
 
             if (!string.IsNullOrEmpty(fileData))
             {
-               await OnFileUploadedWithMeta.InvokeAsync((FileName, fileData));
+                        // Update bound model value
+            await ValueChanged.InvokeAsync(fileData); 
+          if (_fieldIdentifier.Model != null && !string.IsNullOrEmpty(_fieldIdentifier.FieldName))
+    {
+        CascadedEditContext?.NotifyFieldChanged(_fieldIdentifier);
+        CascadedEditContext?.Validate();
+    }
+            await OnFileUploadedWithMeta.InvokeAsync((FileName, fileData));
 
             }
         }
@@ -64,66 +107,3 @@
     }
 }
 
-<style>
- .file-upload-container {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 12px;
-}
-
-.upload-label-warn {
-    font-size: 14px;
-    font-weight: 500;
-    margin-bottom: 4px;
-    color: #344054;
-}
-
-.file-upload-wrapper {
-    display: flex;
-    align-items: center;
-    border: 1px solid #D0D5DD;
-    border-radius: 8px;
-    padding: 8px 12px;
-    background-color: white;
-}
-
-.file-input-box {
-    flex-grow: 1;
-    padding-right: 10px;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-
-.placeholder-text {
-    color: #A1A1A1;
-    font-size: 14px;
-}
-
-.file-name {
-    color: #242424;
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.upload-btn {
-    display: flex;
-    align-items: center;
-    background-color: #FF7F2A;
-    color: white;
-    border: none;
-    border-radius: 100px;
-    padding: 6px 16px;
-    font-weight: 500;
-    font-size: 14px;
-    cursor: pointer;
-}
-
-.file-note {
-    font-size: 12px;
-    color: #667085;
-    margin-top: 4px;
-}
-
-</style>

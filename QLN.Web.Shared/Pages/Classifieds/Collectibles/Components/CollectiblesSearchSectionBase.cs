@@ -6,10 +6,11 @@ using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Components.Routing;
 public class CollectiblesSearchSectionBase : ComponentBase
 {
+   
+    public string CategoryIdFromQuery { get; set; }
     [Inject] protected SearchStateService SearchState { get; set; }
     protected bool ShowSaveSearchPopup { get; set; } = false;
 
-    protected List<CategoryTreeDto> CategoryTrees => SearchState.CollectiblesCategoryTrees;
 
     [Parameter] public EventCallback<string> OnSearch { get; set; }
 
@@ -31,6 +32,54 @@ public class CollectiblesSearchSectionBase : ComponentBase
         new() { Id="Used", Label="Used" },
         new() { Id="Brand New", Label="Brand New" },
     };
+  protected List<CategoryTreeDto> CategoryTrees => SearchState.CollectiblesCategoryTrees;
+ protected CategoryTreeDto SelectedCategory =>
+    CategoryTrees.FirstOrDefault(x => x.Id.ToString() == SearchState.CollectiblesCategory)
+    ?? new CategoryTreeDto { Children = new List<CategoryTreeDto>(), Fields = new List<CategoryField>() };
+
+    protected CategoryTreeDto SelectedSubCategory =>
+        SelectedCategory.Children?.FirstOrDefault(x => x.Id.ToString() == SearchState.CollectiblesSubCategory)
+        ?? new CategoryTreeDto { Children = new List<CategoryTreeDto>(), Fields = new List<CategoryField>() };
+
+    protected CategoryTreeDto SelectedSubSubCategory =>
+        SelectedSubCategory.Children?.FirstOrDefault(x => x.Id.ToString() == SearchState.CollectiblesSubSubCategory)
+        ?? new CategoryTreeDto { Children = new List<CategoryTreeDto>(), Fields = new List<CategoryField>() };
+
+      protected List<CategoryField> SelectedFields
+{
+    get
+    {
+        if (SelectedSubSubCategory?.Fields?.Any() == true)
+            return SelectedSubSubCategory.Fields;
+
+        if (SelectedSubCategory?.Fields?.Any() == true)
+            return SelectedSubCategory.Fields;
+
+        if (SelectedCategory?.Fields?.Any() == true)
+            return SelectedCategory.Fields;
+
+        return new();
+    }
+}
+ protected async Task OnCategorySelected(string categoryId)
+{
+    SearchState.CollectiblesCategory = categoryId;
+    SearchState.CollectiblesSubCategory = null;
+    SearchState.CollectiblesSubSubCategory = null;
+    await PerformSearch();
+}
+protected async Task OnSubCategorySelected(string subId)
+{
+    SearchState.CollectiblesSubCategory = subId;
+    SearchState.CollectiblesSubSubCategory = null;
+    await PerformSearch();
+}
+
+protected async Task OnSubSubCategorySelected(string subSubId)
+{
+    SearchState.CollectiblesSubSubCategory = subSubId;
+    await PerformSearch();
+}
 
         protected Task HandleSaveSearch()
         {
@@ -49,21 +98,23 @@ public class CollectiblesSearchSectionBase : ComponentBase
     {
         Nav.LocationChanged += OnLocationChanged;
     }
-
     private void OnLocationChanged(object sender, LocationChangedEventArgs args)
     {
-       var path = new Uri(args.Location).AbsolutePath.ToLowerInvariant();
+        var path = new Uri(args.Location).AbsolutePath.ToLowerInvariant();
 
-    // Keep state if we're still under /qln/classifieds/items or its subpaths
-    if (!path.StartsWith("/qln/classifieds/collectibles"))
+        // Keep state if we're still under /qln/classifieds/items or its subpaths
+        if (!path.StartsWith("/qln/classifieds/collectibles"))
         {
             SearchState.CollectiblesSearchText = null;
             SearchState.CollectiblesCategory = null;
             SearchState.CollectiblesCondition = null;
             SearchState.CollectiblesMinPrice = null;
             SearchState.CollectiblesMaxPrice = null;
+            SearchState.CollectiblesSubCategory = null;
+            SearchState.CollectiblesSubSubCategory = null;
             SearchState.CollectiblesViewMode ??= "grid";
-
+            SearchState.CollectiblesFilters.Clear();
+            SearchState.CollectiblesHasAuthenticityCertificate = false;
             StateHasChanged();
         }
     }

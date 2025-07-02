@@ -12,6 +12,7 @@ namespace QLN.Common.DTO_s
         public Guid Id { get; set; }
         public string Title { get; set; }
         public string SubVertical { get; set; }
+        public string? FlyerName { get; set; }
         public string FlyerFile { get; set; }
         public List<ImageInfo> ImageUrl { get; set; }
         public string XMLLink { get; set; }

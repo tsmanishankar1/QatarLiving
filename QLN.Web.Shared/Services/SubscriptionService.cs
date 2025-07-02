@@ -1,4 +1,5 @@
-﻿using QLN.Web.Shared.Models;
+﻿using Microsoft.Extensions.Logging;
+using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Pages.Subscription;
 using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Headers;
@@ -10,11 +11,14 @@ namespace QLN.Web.Shared.Services
     public class SubscriptionService : ServiceBase<SubscriptionService>, ISubscriptionService
     {
         private readonly HttpClient _httpClient;
+        private readonly ILogger<SubscriptionService> _logger;
 
-      
-        public SubscriptionService(HttpClient httpClient) : base(httpClient)
+
+        public SubscriptionService(HttpClient httpClient, ILogger<SubscriptionService> logger) : base(httpClient)
         {
             _httpClient = httpClient;
+            _logger = logger;
+
         }
 
 
@@ -50,12 +54,12 @@ namespace QLN.Web.Shared.Services
             }
             catch (HttpRequestException ex)
             {
-                Console.WriteLine($"HTTP request error: {ex.Message}");
+                _logger.LogError($"HTTP request error: {ex.Message}");
                 return null;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unexpected error: {ex.Message}");
+                _logger.LogError($"Unexpected error: {ex.Message}");
                 return null;
             }
         }
@@ -98,18 +102,66 @@ namespace QLN.Web.Shared.Services
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"API Error Response: {errorContent}");
-                    Console.WriteLine($"Status Code: {response.StatusCode}");
+                  
                 }
                 return response.IsSuccessStatusCode;
             }
             catch (HttpRequestException ex)
             {
-                Console.WriteLine($"Error in PurchaseSubscription: {ex.Message}");
+                _logger.LogError($"Error in PurchaseSubscription: {ex.Message}");
                 return false;
             }
 
         }
+        public async Task<List<PayToPublishPlan>?> GetPayToPublishPlansAsync(int verticalId, int categoryId)
+        {
+            try
+            {
+                var url = $"api/paytopublish/getpaytopublish?verticalTypeId={verticalId}&categoryId={categoryId}";
+                var response = await _httpClient.GetAsync(url);
+
+                if (!response.IsSuccessStatusCode)
+                    return null;
+
+                var result = await response.Content.ReadFromJsonAsync<List<PayToPublishPlan>>();
+                return result;
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError($"[PayToPublish] HTTP error: {ex.Message}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"[PayToPublish] Unexpected error: {ex.Message}");
+                return null;
+            }
+        }
+        public async Task<List<PayToPublishPlan>?> GetPayToFeatureAsync(int verticalId, int categoryId)
+        {
+            try
+            {
+                var url = $"api/paytofeature/getpaytofeature?verticalTypeId={verticalId}&categoryId={categoryId}";
+                var response = await _httpClient.GetAsync(url);
+
+                if (!response.IsSuccessStatusCode)
+                    return null;
+
+                var result = await response.Content.ReadFromJsonAsync<List<PayToPublishPlan>>();
+                return result;
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError($"[PayToPublish] HTTP error: {ex.Message}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"[PayToPublish] Unexpected error: {ex.Message}");
+                return null;
+            }
+        }
+
     }
 
 }
