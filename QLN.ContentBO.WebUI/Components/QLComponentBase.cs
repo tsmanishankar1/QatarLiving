@@ -26,7 +26,7 @@ namespace QLN.ContentBO.WebUI.Components
 
         protected virtual string SetDestination()
         {
-            var destination = new Uri(NavManager.Uri).ToString();
+            var destination = new Uri(NavManager.Uri).AbsolutePath.Substring(1);
 
             return destination;
         }
