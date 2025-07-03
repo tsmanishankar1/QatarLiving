@@ -271,16 +271,47 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<PagedResponse<V2Events>> GetPagedEventCategories(int? page, int? perPage, string? search, int? sortBy, string? sortOrder, CancellationToken cancellationToken)
+        public async Task<PagedResponse<V2Events>> GetPagedEvents(
+             int? page, int? perPage, string? search, string? sortOrder,
+             DateOnly? fromDate, DateOnly? toDate, string? filterType, string? location,
+     bool? freeOnly, CancellationToken cancellationToken)
         {
             try
             {
-                var url = $"/api/v2/event/getPagination?page={page}&perPage={perPage}&search={search}&sortBy={sortBy}&sortOrder={sortOrder}";
+                var queryParams = new List<string>
+                {
+                    $"page={page ?? 1}",
+                    $"perPage={perPage ?? 10}",
+                    $"search={Uri.EscapeDataString(search ?? "")}",
+                    $"sortOrder={sortOrder?.ToLowerInvariant() ?? "desc"}"
+                };
+
+                if (fromDate.HasValue)
+                    queryParams.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
+
+                if (toDate.HasValue)
+                    queryParams.Add($"toDate={toDate.Value:yyyy-MM-dd}");
+
+                if (!string.IsNullOrWhiteSpace(filterType))
+                    queryParams.Add($"filterType={filterType}");
+
+                if (!string.IsNullOrWhiteSpace(location))
+                    queryParams.Add($"location={Uri.EscapeDataString(location)}");
+
+                if (freeOnly == true)
+                    queryParams.Add("freeOnly=true");
+
+                var url = $"/api/v2/event/getPaginatedEvents?{string.Join("&", queryParams)}";
+
                 return await _dapr.InvokeMethodAsync<PagedResponse<V2Events>>(
                     HttpMethod.Get,
                     ConstantValues.V2Content.ContentServiceAppId,
                     url,
                     cancellationToken);
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return null;
             }
             catch (Exception ex)
             {

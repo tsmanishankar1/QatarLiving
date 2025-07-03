@@ -306,6 +306,10 @@ namespace QLN.Content.MS.Service.EventInternalService
                     dto.Id.ToString(),
                     updated,
                     cancellationToken: cancellationToken);
+                if (updated.IsFeatured && updated.FeaturedSlot?.Id is >= 1 and <= 6)
+                {
+                    await HandleEventSlotShift(updated.FeaturedSlot.Id, updated, cancellationToken);
+                }
 
                 return "Event updated successfully";
             }
@@ -428,65 +432,178 @@ namespace QLN.Content.MS.Service.EventInternalService
                 throw new Exception($"Error retrieving event with ID: {id}", ex);
             }
         }
-        public async Task<PagedResponse<V2Events>> GetPagedEventCategories(int? page, int? perPage, string? search, int? sortBy, string? sortOrder, CancellationToken cancellationToken)
+        public async Task<PagedResponse<V2Events>> GetPagedEvents(
+                    int? page, int? perPage, string? search, string? sortOrder, DateOnly? fromDate, DateOnly? toDate,
+                    string? filterType, string? location, bool? freeOnly, CancellationToken cancellationToken)
         {
             try
             {
-                var categories = await _dapr.GetStateAsync<List<V2Events>>(
+                var allEvents = new List<V2Events>();
+
+                var eventIds = await _dapr.GetStateAsync<List<string>>(
                     ConstantValues.V2Content.ContentStoreName,
-                    "allCategories",
+                    ConstantValues.V2Content.EventIndexKey,
                     cancellationToken: cancellationToken);
 
-                if (categories == null)
-                    categories = new List<V2Events>();
-
-                page ??= 1;
-                perPage ??= 10;
-
-                if (!string.IsNullOrWhiteSpace(search))
+                if (eventIds == null || !eventIds.Any())
                 {
-                    categories = categories.Where(c => c.CategoryId.ToString().Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
+                    return EmptyResponse(page, perPage);
                 }
 
-                categories = sortBy switch
+                var fetchTasks = eventIds.Select(async eventId =>
                 {
-                    1 => string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase)
-                        ? categories.OrderByDescending(c => c.CategoryId).ToList()
-                        : categories.OrderBy(c => c.CategoryId).ToList(),
-                    _ => categories
+                    try
+                    {
+                        var ev = await _dapr.GetStateAsync<V2Events>(
+                            ConstantValues.V2Content.ContentStoreName,
+                            eventId,
+                            cancellationToken: cancellationToken);
+                        return ev;
+                    }
+                    catch
+                    {
+                        return null;
+                    }
+                });
+
+                var fetchedEvents = await Task.WhenAll(fetchTasks);
+                allEvents = fetchedEvents.Where(e => e != null).ToList();
+
+                if (!allEvents.Any())
+                {
+                    return EmptyResponse(page, perPage);
+                }
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    allEvents = allEvents
+                        .Where(e => !string.IsNullOrEmpty(e.EventTitle) &&
+                                    e.EventTitle.Contains(search, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                }
+                if (fromDate.HasValue || toDate.HasValue)
+                {
+                    allEvents = allEvents
+                        .Where(e =>
+                        {
+                            var eventStart = e.EventSchedule.StartDate;
+                            var eventEnd = e.EventSchedule.EndDate;
+
+                            if (fromDate.HasValue && toDate.HasValue)
+                                return eventStart >= fromDate && eventEnd <= toDate;
+
+                            if (fromDate.HasValue)
+                                return eventEnd >= fromDate;
+
+                            if (toDate.HasValue)
+                                return eventStart <= toDate;
+
+                            return true;
+                        })
+                        .ToList();
+                }
+                if (!string.IsNullOrWhiteSpace(filterType))
+                {
+                    var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+                    switch (filterType.ToLowerInvariant())
+                    {
+                        case "featured":
+                            allEvents = allEvents
+                                .Where(e => e.IsFeatured)
+                                .ToList();
+                            break;
+
+                        case "thisweek":
+                            var startOfWeek = today.AddDays(-(int)today.DayOfWeek);
+                            var endOfWeek = startOfWeek.AddDays(6);
+
+                            allEvents = allEvents
+                                .Where(e => e.EventSchedule.StartDate >= startOfWeek &&
+                                            e.EventSchedule.StartDate <= endOfWeek)
+                                .ToList();
+                            break;
+
+                        case "upcoming":
+                            allEvents = allEvents
+                                .Where(e => e.EventSchedule.StartDate >= today)
+                                .ToList();
+                            break;
+                    }
+                }
+                if (!string.IsNullOrWhiteSpace(location))
+                {
+                    allEvents = allEvents
+                        .Where(e => !string.IsNullOrEmpty(e.Location) &&
+                                    e.Location.Contains(location, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                }
+                if (freeOnly == true)
+                {
+                    allEvents = allEvents
+                        .Where(e => e.EventType == V2EventType.FreeAcess || e.EventType == V2EventType.OpenRegistrations)
+                        .ToList();
+                }
+
+                if (!allEvents.Any())
+                    return null;
+                sortOrder = string.IsNullOrWhiteSpace(sortOrder) ? "asc" : sortOrder.ToLowerInvariant();
+                allEvents = sortOrder switch
+                {
+                    "desc" => allEvents.OrderByDescending(e => e.CreatedAt).ToList(),
+                    _ => allEvents.OrderBy(e => e.CreatedAt).ToList(),
                 };
 
-                var totalCount = categories.Count;
-                var paginatedCategories = categories
-                    .Skip((page.Value - 1) * perPage.Value)
-                    .Take(perPage.Value)
+                int currentPage = Math.Max(1, page ?? 1);
+                int itemsPerPage = Math.Max(1, Math.Min(100, perPage ?? 10));
+                int totalCount = allEvents.Count;
+                int totalPages = (int)Math.Ceiling((double)totalCount / itemsPerPage);
+
+                if (currentPage > totalPages && totalPages > 0)
+                    currentPage = totalPages;
+
+                var paginated = allEvents
+                    .Skip((currentPage - 1) * itemsPerPage)
+                    .Take(itemsPerPage)
                     .ToList();
 
                 return new PagedResponse<V2Events>
                 {
+                    Page = currentPage,
+                    PerPage = itemsPerPage,
                     TotalCount = totalCount,
-                    Page = page,
-                    PerPage = perPage,
-                    Items = paginatedCategories
+                    Items = paginated
                 };
             }
             catch (Exception ex)
             {
-                throw new Exception("Error fetching paginated event categories", ex);
+                throw new Exception($"Error occurred while retrieving events: {ex.Message}", ex);
             }
         }
+        private static PagedResponse<V2Events> EmptyResponse(int? page, int? perPage) => new()
+        {
+            Page = page ?? 1,
+            PerPage = perPage ?? 10,
+            TotalCount = 0,
+            Items = []
+        };
         public async Task<List<V2Slot>> GetAllEventSlot(CancellationToken cancellationToken = default)
         {
-            var slots = Enum.GetValues(typeof(V2EventSlot))
-                .Cast<V2EventSlot>()
-                .Select(s => new V2Slot
-                {
-                    Id = (int)s,
-                    Name = s.ToString()
-                })
-                .ToList();
-
-            return await Task.FromResult(slots);
+            try
+            {
+                var slots = Enum.GetValues(typeof(V2EventSlot))
+                  .Cast<V2EventSlot>()
+                  .Select(s => new V2Slot
+                  {
+                      Id = (int)s,
+                      Name = s.ToString()
+                  })
+                  .ToList();
+                return await Task.FromResult(slots);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error occurred while retrieving event slots", ex);
+            }
         }
         public async Task<IEnumerable<V2Events>> GetExpiredEvents(CancellationToken cancellationToken)
         {

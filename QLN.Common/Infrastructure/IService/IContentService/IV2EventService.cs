@@ -12,7 +12,8 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         Task<string> CreateCategory(EventsCategory dto, CancellationToken cancellationToken = default);
         Task<List<EventsCategory>> GetAllCategories(CancellationToken cancellationToken = default);
         Task<EventsCategory?> GetEventCategoryById(int id, CancellationToken cancellationToken = default);
-        Task<PagedResponse<V2Events>> GetPagedEventCategories(int? page, int? perPage, string? search, int? sortBy, string? sortOrder, CancellationToken cancellationToken);
+        Task<PagedResponse<V2Events>> GetPagedEvents(int? page, int? perPage, string? search, string? sortOrder,
+                    DateOnly? fromDate, DateOnly? toDate, string? filterType, string? location, bool? freeOnly, CancellationToken cancellationToken);
         Task<List<V2Slot>> GetAllEventSlot(CancellationToken cancellationToken = default);
         Task<IEnumerable<V2Events>> GetExpiredEvents(CancellationToken cancellationToken = default);
     }

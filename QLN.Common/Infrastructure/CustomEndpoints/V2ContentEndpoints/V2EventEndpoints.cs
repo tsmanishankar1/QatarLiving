@@ -412,44 +412,54 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
-        public static RouteGroupBuilder MapGetEventCategories(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapGetPaginatedEvents(this RouteGroupBuilder group)
         {
-            group.MapGet("/getPagination", async Task<Results<Ok<PagedResponse<V2Events>>, NotFound<ProblemDetails>, ProblemHttpResult>>
+            group.MapGet("/getPaginatedEvents", async Task<Results<Ok<PagedResponse<V2Events>>,
+                BadRequest<ProblemDetails>, NotFound<ProblemDetails>, ProblemHttpResult>>
             (
-                IV2EventService service,
-                CancellationToken cancellationToken,
                 [FromQuery] int? page,
                 [FromQuery] int? perPage,
-                [FromQuery] string? search = null,
-                [FromQuery] int? sortBy = 1,
-                [FromQuery] string? sortOrder = "asc"
+                [FromQuery] string? search,
+                [FromQuery] string? sortOrder,
+                [FromQuery] DateOnly? fromDate,
+                [FromQuery] DateOnly? toDate,
+                [FromQuery] string? filterType,
+                [FromQuery] string? location,
+                [FromQuery] bool? freeOnly,
+                IV2EventService service,
+                CancellationToken cancellationToken
             ) =>
             {
                 try
                 {
-                    var result = await service.GetPagedEventCategories(page, perPage, search, sortBy, sortOrder, cancellationToken);
+                    var result = await service.GetPagedEvents(page, perPage, search, sortOrder, fromDate, toDate, filterType, location, freeOnly, cancellationToken);
 
-                    if (result == null || !result.Items.Any())
+                    if (result == null || result.Items == null || !result.Items.Any())
+                    {
                         return TypedResults.NotFound(new ProblemDetails
                         {
-                            Title = "Not Found",
-                            Detail = "No event categories found.",
+                            Title = "No Events Found",
+                            Detail = "No events match the provided filters.",
                             Status = StatusCodes.Status404NotFound
                         });
-
+                    }
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Server Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
-            .ExcludeFromDescription()
-            .WithName("Get Pagination")
+            .WithName("GetPaginatedEvents")
             .WithTags("Event")
-            .WithSummary("Get Pagination")
-            .WithDescription("Retrieves paginated event categories with optional filters and sorting.")
-            .Produces<PagedResponse<EventsCategory>>(StatusCodes.Status200OK)
+            .WithSummary("Paginated Events List")
+            .WithDescription("Fetches events with support for filtering, sorting, and pagination.")
+            .Produces<PagedResponse<V2Events>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
