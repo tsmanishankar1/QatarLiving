@@ -1,4 +1,3 @@
-using GoogleAnalytics.Blazor;
 using Microsoft.AspNetCore.Components.Authorization;
 using MudBlazor.Services;
 using QLN.Web.Shared.Contracts;
@@ -211,11 +210,6 @@ builder.Services.AddHttpClient<ICompanyProfileService, CompanyProfileService>(cl
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ISimpleMemoryCache, SimpleMemoryCache>(); // add shared Banner Service
 
-builder.Services.AddGBService(options =>
-{
-    options.TrackingId = builder.Configuration["GoogleAnalytics:TrackingId"];
-});
-
 var app = builder.Build();
 
 string[] supportedCultures = ["en-US"];
@@ -229,7 +223,7 @@ app.UseRequestLocalization(localizationOptions);
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    //app.UseResponseCompression();
+    app.UseResponseCompression();
     // app.UseMigrationsEndPoint();
 }
 else
