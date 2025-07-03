@@ -167,6 +167,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(certFileName);                
                 dto.CertificateUrl = certUrl;
+                dto.ExpiryDate = DateTime.UtcNow.AddDays(30);
 
                 for (int i = 0; i < dto.ImageUrls.Count; i++)
                 {
@@ -349,6 +350,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(certFileName);                
                 dto.CertificateUrl = certUrl;
+                dto.ExpiryDate = DateTime.UtcNow.AddDays(30);
 
                 for (int i = 0; i < dto.ImageUrls.Count; i++)
                 {
@@ -470,6 +472,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(certFileName);
                 dto.CertificateUrl = certUrl;
+                dto.ExpiryDate = DateTime.UtcNow.AddDays(30);
 
                 for (int i = 0; i < dto.ImageUrls.Count; i++)
                 {
@@ -584,7 +587,8 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                 var flyerUrl = await _fileStorageBlob.SaveBase64File(dto.FlyerFile, flyerName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(flyerName);
-                dto.FlyerFile = flyerUrl;                
+                dto.FlyerFile = flyerUrl;
+                dto.ExpiryDate = DateTime.UtcNow.AddDays(30);
 
                 for (int i = 0; i < dto.ImageUrls.Count; i++)
                 {
