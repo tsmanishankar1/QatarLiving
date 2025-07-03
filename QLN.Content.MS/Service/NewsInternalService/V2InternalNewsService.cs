@@ -50,10 +50,10 @@ namespace QLN.Content.MS.Service.NewsInternalService
                         SubCategories = [
                             new() { Id = 1, CategoryName = "QatarEconomy" },
                             new() { Id = 2, CategoryName = "MarketUpdates" },
-                            new() { Id = 2, CategoryName = "Real Estate" },
-                            new() { Id = 2, CategoryName = "Entrepreneurship" },
-                            new() { Id = 2, CategoryName = "Finance" },
-                            new() { Id = 2, CategoryName = "Jobs & Careers" }
+                            new() { Id = 3, CategoryName = "Real Estate" },
+                            new() { Id = 4, CategoryName = "Entrepreneurship" },
+                            new() { Id = 5, CategoryName = "Finance" },
+                            new() { Id = 6, CategoryName = "Jobs & Careers" }
                         ]
                     },
 
@@ -64,10 +64,10 @@ namespace QLN.Content.MS.Service.NewsInternalService
                         SubCategories = [
                             new() { Id = 1, CategoryName = "Qatar Sports" },
                             new() { Id = 2, CategoryName = "FootBall" },
-                            new() { Id = 2, CategoryName = "International " },
-                            new() { Id = 2, CategoryName = "MotorSports" },
-                            new() { Id = 2, CategoryName = "Olympics" },
-                            new() { Id = 2, CategoryName = "Athelete Features" }
+                            new() { Id = 3, CategoryName = "International " },
+                            new() { Id = 4, CategoryName = "MotorSports" },
+                            new() { Id = 5, CategoryName = "Olympics" },
+                            new() { Id = 6, CategoryName = "Athelete Features" }
                         ]
                     },
 
@@ -78,10 +78,10 @@ namespace QLN.Content.MS.Service.NewsInternalService
                         SubCategories = [
                             new() { Id = 1, CategoryName = "Food & Dining" },
                             new() { Id = 2, CategoryName = "Travel & Leisure" },
-                            new() { Id = 2, CategoryName = "Arts & Culture" },
-                            new() { Id = 2, CategoryName = "Events" },
-                            new() { Id = 2, CategoryName = "Fashion & Style" },
-                            new() { Id = 2, CategoryName = "Home & Living" }
+                            new() { Id = 3, CategoryName = "Arts & Culture" },
+                            new() { Id = 5, CategoryName = "Events" },
+                            new() { Id = 6, CategoryName = "Fashion & Style" },
+                            new() { Id = 7, CategoryName = "Home & Living" }
                         ]
                     }
            ];
