@@ -38,8 +38,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     cancellationToken: cancellationToken);
 
                 existing ??= new GlobalP2FPaymentDetailsCollection();
-
-                // Optional: remove old entry if exists for same user
                 existing.Details.RemoveAll(x => x.UserId == details.UserId);
 
                 existing.Details.Add(details);
@@ -255,8 +253,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 await StateManager.TryRemoveStateAsync(StateKey, cancellationToken);
                 await StateManager.TryRemoveStateAsync(BackupStateKey, cancellationToken);
                 await StateManager.SaveStateAsync(cancellationToken);
-
-                // Clean up timers
                 await CleanupTimersAsync();
 
                 _logger.LogInformation("[PaymentActor {ActorId}] Deleted data from both state keys and cleaned up timers", Id);

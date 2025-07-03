@@ -10,8 +10,8 @@ namespace QLN.Subscriptions.Actor.ActorClass
     {
         private const string StateKey = "payment-transaction-data";
 
-        private const string StateStoreName = "statestore"; // The configured Dapr state store name
-        private const string GlobalPaymentDetailsKey = "payment-details-collection"; // Index ke
+        private const string StateStoreName = "statestore";
+        private const string GlobalPaymentDetailsKey = "payment-details-collection"; 
         private const string PaymentDetailsStateKey = "payment-details-collection";
         private const string TimerName = "subscription-expiry-timer";
         private const string ReminderName = "subscription-expiry-reminder";
@@ -39,7 +39,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
-                // Update timestamp
+                
                 data.LastUpdated = DateTime.UtcNow;
 
                 await StoreTransactionDataAsync(data, cancellationToken);
@@ -83,8 +83,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             var state = await _daprClient.GetStateAsync<UserPaymentDetailsCollection>(
                 StateStoreName, GlobalPaymentDetailsKey, cancellationToken: cancellationToken);
-
-            // Convert Guid to string before comparison
             var userIdString = Id.GetGuidId().ToString();
 
             return state?.Details.FirstOrDefault(d => d.UserId == userIdString);
@@ -135,13 +133,9 @@ namespace QLN.Subscriptions.Actor.ActorClass
             try
             {
                 _logger.LogInformation("[PaymentActor {ActorId}] DeleteDataAsync called", Id);
-
-                // Delete transaction data and payment details
                 await StateManager.TryRemoveStateAsync(StateKey, cancellationToken);
                 await StateManager.TryRemoveStateAsync(PaymentDetailsStateKey, cancellationToken);
                 await StateManager.SaveStateAsync(cancellationToken);
-
-                // Clean up timers and reminders
                 await CleanupTimersAndRemindersAsync();
 
                 _logger.LogInformation("[PaymentActor {ActorId}] Deleted all data and cleaned up timers", Id);
@@ -159,12 +153,8 @@ namespace QLN.Subscriptions.Actor.ActorClass
             try
             {
                 _logger.LogInformation("[PaymentActor {ActorId}] RemoveTransactionDataAsync called - removing transaction data but keeping payment details", Id);
-
-                // Remove only transaction data, keep payment details
                 await StateManager.TryRemoveStateAsync(StateKey, cancellationToken);
                 await StateManager.SaveStateAsync(cancellationToken);
-
-                // Clean up timers and reminders
                 await CleanupTimersAndRemindersAsync();
 
                 _logger.LogInformation("[PaymentActor {ActorId}] Removed transaction data but preserved payment details", Id);
@@ -195,19 +185,13 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
                 _logger.LogInformation("[PaymentActor {ActorId}] Scheduling expiry check for {NextCheck} IST (in {DueTime})",
                     Id, next115Pm, dueTime);
-
-                // Unregister existing timers/reminders first
                 await CleanupTimersAndRemindersAsync();
-
-                // Register Timer for regular checks
                 await RegisterTimerAsync(
                     TimerName,
                     nameof(CheckSubscriptionExpiryAsync),
                     null,
                     dueTime,
                     TimeSpan.FromDays(1));
-
-                // Register Reminder as backup
                 var reminderData = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(new
                 {
                     ScheduledTime = next115PmUtc,
@@ -266,13 +250,10 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
                     if (published)
                     {
-                        // Set IsExpiry to true and update LastUpdated when scheduler finishes
                         paymentData.IsExpired = true;
                         paymentData.LastUpdated = DateTime.UtcNow;
 
                         await StoreTransactionDataAsync(paymentData, default);
-
-                        // Remove transaction data but keep payment details for historical purposes
                         await RemoveTransactionDataAsync();
 
                         _logger.LogInformation("[PaymentActor {ActorId}] Marked subscription as expired, removed transaction data but kept payment details for user {UserId}",

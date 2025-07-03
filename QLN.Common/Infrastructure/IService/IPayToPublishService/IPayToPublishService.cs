@@ -22,7 +22,6 @@ namespace QLN.Common.Infrastructure.IService.IPayToPublishService
         Task<List<PaymentDto>> GetExpiredPaymentsForUserAsync(string userId, CancellationToken cancellationToken = default);
         Task<List<PaymentDto>> GetPaymentsByUserIdAsync(string userId, CancellationToken cancellationToken = default);
         Task CreateBasicPriceAsync(BasicPriceRequestDto request, CancellationToken cancellationToken = default);
-        //Task<List<BasicPriceResponseDto>> GetBasicPricesByVerticalAndCategoryAsync(int verticalTypeId, int categoryId, CancellationToken cancellationToken = default);
     }
 }
 

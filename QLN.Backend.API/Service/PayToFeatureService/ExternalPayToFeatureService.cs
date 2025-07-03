@@ -51,8 +51,6 @@ namespace QLN.Backend.API.Service.PayToFeatureService
                     await actor.AddPlanIdAsync(plan.Id, cancellationToken);
                 }
             }
-
-            // Store basic prices individually and track their IDs
             if (data.BasicPrices != null)
             {
                 foreach (var basicPrice in data.BasicPrices)
@@ -293,8 +291,6 @@ namespace QLN.Backend.API.Service.PayToFeatureService
                 _logger.LogInformation("No plans found");
                 return plans;
             }
-
-            // Create basic price lookup
             var basicPriceLookup = data.BasicPrices?
             .GroupBy(bp => $"{(int)bp.VerticalTypeId}_{(int)bp.CategoryId}")
             .ToDictionary(g => g.Key, g => g.First()) ??
@@ -320,8 +316,6 @@ namespace QLN.Backend.API.Service.PayToFeatureService
                     VerticalName = GetEnumDisplayName(plan.VerticalTypeId),
                     CategoryId = (int)plan.CategoryId,
                     CategoryName = GetEnumDisplayName(plan.CategoryId),
-                    //BasicPriceId = matchingBasicPrice != null ? (int)matchingBasicPrice.BasicPriceId : (int?)null,
-                   // BasicPriceName = matchingBasicPrice != null ? GetEnumDisplayName(matchingBasicPrice.BasicPriceId) : null
                 });
             }
 
@@ -412,16 +406,12 @@ namespace QLN.Backend.API.Service.PayToFeatureService
                 startDate = existingEndDate.Value;
                 _logger.LogInformation("Existing PayToPublish found for user {UserId}. New subscription starts from {StartDate}", userId, startDate);
             }
-
-            // Fetch PayToPublish plan
             var planActor = GetActorProxy(request.PayToFeatureId);
             var plan = await planActor.GetDataAsync(cancellationToken)
                        ?? throw new InvalidOperationException($"PayToPublish plan not found for ID: {request.PayToFeatureId}");
 
             var duration = plan.Duration;
             var endDate = startDate.Add(duration);
-
-            // Create payment DTO
             var dto = new PayToFeaturePaymentDto
             {
                 Id = id,
@@ -439,14 +429,10 @@ namespace QLN.Backend.API.Service.PayToFeatureService
                 IsExpired = false,
 
             };
-
-            // Save data in PayToPublishPaymentActor
             var actor = GetPaymentActorProxy(dto.Id);
             var result = await actor.FastSetDataAsync(dto, cancellationToken);
             if (!result)
                 throw new InvalidOperationException("PayToPublish payment creation failed.");
-
-            // Store payment details for listing
             var durationEnum = MapTimeSpanToDurationType(duration);
             var details = new UserP2FPaymentDetailsResponseDto
             {
@@ -463,6 +449,8 @@ namespace QLN.Backend.API.Service.PayToFeatureService
                 DurationId = (int)durationEnum,
                 DurationName = durationEnum.ToString(),
                 VerticalTypeId = (int)plan.VerticalTypeId,
+                IsFeatureAd=plan.IsFeaturedAd,
+                IsPromoteAd=plan.IsPromoteAd,
                 VerticalName = GetEnumDisplayName(plan.VerticalTypeId),
                 CategoryId = (int)plan.CategoryId,
                 CategoryName = GetEnumDisplayName(plan.CategoryId),

@@ -42,8 +42,6 @@ namespace QLN.Common.DTO_s
             public Guid NextId { get; set; }
             public DateTime LastUpdated { get; set; }
         }
-
-        // Request DTOs
         public class CreateQuantityRequest
         {
             public string QuantitiesName { get; set; }
@@ -104,12 +102,12 @@ namespace QLN.Common.DTO_s
         }
         public class AddonPaymentWithCurrencyDto
         {
-            // Payment fields
+           
             public Guid Id { get; set; }
             public Guid AddonId { get; set; }
+            public Guid AddId { get; set; }
+                  public int AddUsage { get; set; }
             public int VerticalId { get; set; }
-
-            // Card details
             public string CardNumber { get; set; } = default!;
             public string ExpiryMonth { get; set; } = default!;
             public string ExpiryYear { get; set; } = default!;
@@ -121,8 +119,6 @@ namespace QLN.Common.DTO_s
             public DateTime EndDate { get; set; }
             public DateTime LastUpdated { get; set; }
             public bool IsExpired { get; set; }
-
-            // Embedded UnitCurrency fields
             public Guid UnitCurrencyId { get; set; }
             public Guid QuantityId { get; set; }
             public Guid CurrencyId { get; set; }

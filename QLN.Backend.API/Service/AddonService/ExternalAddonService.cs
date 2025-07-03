@@ -171,8 +171,6 @@ namespace QLN.Backend.API.Service.AddonService
 
             var id = Guid.NewGuid();
             var startDate = DateTime.UtcNow;
-
-            // Fetch unit currency details
             var addonData = await GetOrCreateAddonDataAsync(cancellationToken);
             var unitCurrency = addonData.QuantitiesCurrencies
                 .FirstOrDefault(x => x.Id == request.AddonId)
@@ -184,7 +182,6 @@ namespace QLN.Backend.API.Service.AddonService
 
             var currencyName = addonData.Currencies
                 .FirstOrDefault(c => c.CurrencyId == unitCurrency.CurrencyId)?.CurrencyName ?? "Unknown";
-            // Prepare payment DTO
             var dto = new AddonPaymentDto
             {
                 Id = id,
@@ -201,19 +198,15 @@ namespace QLN.Backend.API.Service.AddonService
                 LastUpdated = DateTime.UtcNow,
                 IsExpired = false
             };
-
-            // Store in Actor
             var actor = GetAddonPaymentActorProxy(dto.Id);
             var result = await actor.FastSetDataAsync(dto, cancellationToken);
 
             if (!result)
                 throw new Exception("Addon payment transaction creation failed.");
-
-            // Log and add to in-memory cache
             _addonPaymentIds.TryAdd(dto.Id, 0);
             _logger.LogInformation("Addon payment transaction created with ID: {TransactionId}", dto.Id);
 
-            // ✅ Store in global state
+          
             var combinedDto = new AddonPaymentWithCurrencyDto
             {
                
