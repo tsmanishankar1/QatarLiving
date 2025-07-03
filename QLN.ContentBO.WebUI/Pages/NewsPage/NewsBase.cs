@@ -32,12 +32,14 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         public List<NewsArticleDTO> ListOfNewsArticles { get; set; }
 
+        protected List<Slot> Slots = [];
+
         protected async override Task OnInitializedAsync()
         {
             Navigation.LocationChanged += HandleLocationChanged;
 
             ListOfNewsArticles = await GetAllArticles();
-
+            Slots = await GetSlots();
             UpdateCategoriesFromQuery();
         }
 
@@ -73,15 +75,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             Navigation.NavigateTo("/manage/news/addarticle");
         }
-
-        protected List<PostItem> _posts = [.. Enumerable.Range(1, 12).Select(i => new PostItem
-        {
-            Number = i,
-            PostTitle = "Family Residence Visa status stuck “Under Review”",
-            CreationDate = new DateTime(2025, 4, 12),
-            Username = "Ismat Zerin",
-            LiveFor = "2 hours"
-        })];
 
         protected void DeletePost(Guid Id)
         {
@@ -124,6 +117,62 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             Live,
             Published,
             Unpublished
+        }
+
+        protected async void Click_MoveItemUp(Guid Id)
+        {
+            try
+            {
+                var articleToUpdate = ListOfNewsArticles.FirstOrDefault(a => a.Id.Equals(Id)) ?? new();
+
+                var apiResponse = await newsService.UpdateArticle(articleToUpdate);
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Slot Updated");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Click_MoveItemUp");
+            }
+        }
+
+
+        protected async void Click_MoveItemDown(Guid Id)
+        {
+            try
+            {
+                var articleToUpdate = ListOfNewsArticles.FirstOrDefault(a => a.Id.Equals(Id)) ?? new();
+
+                var apiResponse = await newsService.UpdateArticle(articleToUpdate);
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Slot Updated");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Click_MoveItemUp");
+            }
+        }
+
+        private async Task<List<Slot>> GetSlots()
+        {
+            try
+            {
+                var apiResponse = await newsService.GetSlots();
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    return await apiResponse.Content.ReadFromJsonAsync<List<Slot>>() ?? [];
+                }
+
+                return [];
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetSlots");
+                return [];
+            }
         }
     }
 }
