@@ -23,9 +23,9 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         Task<V2NewsArticleDTO?> GetArticleBySlugAsync(string slug, CancellationToken cancellationToken);
         //category
         Task<List<V2NewsCategory>> GetAllCategoriesAsync(CancellationToken cancellationToken = default);
-        Task<V2NewsCategory?> GetCategoryByIdAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<V2NewsCategory?> GetCategoryByIdAsync(int id, CancellationToken cancellationToken = default);
         Task AddCategoryAsync(V2NewsCategory category, CancellationToken cancellationToken = default);
-        Task<bool> UpdateSubCategoryAsync(Guid categoryId, V2NewsSubCategory updatedSubCategory, CancellationToken cancellationToken = default);
+        Task<bool> UpdateSubCategoryAsync(int categoryId, V2NewsSubCategory updatedSubCategory, CancellationToken cancellationToken = default);
 
     }
 
