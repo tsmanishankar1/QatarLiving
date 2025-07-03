@@ -104,6 +104,11 @@ namespace QLN.ContentBO.WebUI.Components.News
                 article = new();
             }
         }
+        protected void EditImage()
+        {
+            article.CoverImageUrl = null;
+        }
+
 
         protected async Task HandleFilesChanged(InputFileChangeEventArgs e)
         {

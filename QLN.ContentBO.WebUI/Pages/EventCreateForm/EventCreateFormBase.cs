@@ -169,6 +169,18 @@ namespace QLN.ContentBO.WebUI.Pages
             };
             return DialogService.ShowAsync<MessageBox>(string.Empty, options);
         }
+        protected async Task HandleFilesChanged(InputFileChangeEventArgs e)
+        {
+            var file = e.File;
+            if (file != null)
+            {
+                using var stream = file.OpenReadStream(5 * 1024 * 1024); 
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                var base64 = Convert.ToBase64String(memoryStream.ToArray());
+                CurrentEvent.CoverImage = $"data:{file.ContentType};base64,{base64}";
+            }
+        }
         public void UpdateTimeSlotListFromDayTimeList()
         {
             CurrentEvent.EventSchedule.TimeSlots = DayTimeList
@@ -234,7 +246,7 @@ namespace QLN.ContentBO.WebUI.Pages
         }
         protected void EditImage()
         {
-            uploadedImage = null;
+            CurrentEvent.CoverImage = null;
         }
 
         protected void DeleteImage()
