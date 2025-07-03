@@ -208,30 +208,53 @@ public static class V2NewsEndpoints
          .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
          .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+
         group.MapGet("/getAllNewsArticle", async Task<Results<
-            Ok<List<V2NewsArticleDTO>>,
-            ProblemHttpResult>>
-        (
-            IV2NewsService service,
-            CancellationToken cancellationToken
+    Ok<PagedResponse<V2NewsArticleDTO>>,
+    NotFound<ProblemDetails>,
+    ProblemHttpResult>>
+(
+    [FromQuery] int? page,
+    [FromQuery] int? perPage,
+    [FromQuery] string? search,
+    IV2NewsService service,
+    CancellationToken cancellationToken
 ) =>
         {
             try
             {
-                var articles = await service.GetAllNewsArticlesAsync(cancellationToken);
-                return TypedResults.Ok(articles);
+                var result = await service.GetAllNewsArticlesAsync(page, perPage, search, cancellationToken);
+
+                if (result == null || result.Items == null || !result.Items.Any())
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "No Articles Found",
+                        Detail = "No news articles match the provided search.",
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                return TypedResults.Ok(result);
             }
             catch (Exception ex)
             {
-                return TypedResults.Problem("Error retrieving articles", ex.Message);
+                return TypedResults.Problem(new ProblemDetails
+                {
+                    Title = "Server Error",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError
+                });
             }
         })
-        .WithName("GetAllNewsArticles")
-        .WithTags("News")
-        .WithSummary("Get all news articles")
-        .WithDescription("Returns all news articles stored in the system.")
-        .Produces<List<V2NewsArticleDTO>>(StatusCodes.Status200OK)
-        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+.WithName("GetPaginatedNewsArticles")
+.WithTags("News")
+.WithSummary("Paginated News Articles List (title search)")
+.WithDescription("Fetches news articles with optional title search and pagination.")
+.Produces<PagedResponse<V2NewsArticleDTO>>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
 
         group.MapGet("/byCategory/{categoryId:int}", async Task<Results<Ok<List<V2NewsArticleDTO>>, ProblemHttpResult>> (
             int categoryId,
