@@ -1,30 +1,33 @@
 @inherits FeaturedEventCardBase
 @using QLN.Web.Shared.Components.EmptyCard
 
-<div class="category-event-card-section" @onclick="() => OnClick.InvokeAsync(Item)">
-    <div class="card-contents">
-        <div class="category-event-image-wrapper">
+<MudLink Href="@($"/content/events/details/{Item.Slug}")" Style="text-decoration: none;">
+    <div class="category-event-card-section">
+        <div class="card-contents">
+            <div class="category-event-image-wrapper">
 
-            @if (ShowEmptyCard)
-            {
-                <EmptyCard Title="No image found." Subtitle="Please check back later for updates." />
-            }
-            else
-            {
-                @if (!imageLoaded)
+                @if (ShowEmptyCard)
                 {
-                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="200px" />
+                    <EmptyCard Title="No image found." Subtitle="Please check back later for updates." />
+                }
+                else
+                {
+                    @if (!imageLoaded)
+                    {
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="200px" />
+                    }
+
+                    <img src="@Item.ImageUrl" alt="@Item.Title" class="category-event-image"
+                         style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                         @onerror="OnImageError" key="@Item.ImageUrl" />
                 }
 
-                <img src="@Item.ImageUrl" alt="@Item.Title" class="category-event-image"
-                    style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
-                    @onerror="OnImageError" key="@Item.ImageUrl" />
-            }
-
+            </div>
+            <h4 class="category-event-card-title">@Item.Title</h4>
         </div>
-        <h4 class="category-event-card-title">@Item.Title</h4>
     </div>
-</div>
+</MudLink>
+
 
 
 <style>

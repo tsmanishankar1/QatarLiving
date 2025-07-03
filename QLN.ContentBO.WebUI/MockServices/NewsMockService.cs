@@ -35,9 +35,9 @@ namespace QLN.ContentBO.WebUI.MockServices
                 new() { CategoryId = 1, SubcategoryId = 102, SlotId = 2 }  // News > Middle East
             },
             PublishedDate = DateTime.UtcNow.AddDays(-1),
-            CreatedBy = Guid.NewGuid(),
+            CreatedBy = Guid.NewGuid().ToString(),
             CreatedAt = DateTime.UtcNow.AddDays(-2),
-            UpdatedBy = Guid.NewGuid(),
+            UpdatedBy = Guid.NewGuid().ToString(),
             UpdatedAt = DateTime.UtcNow
         },
 
@@ -57,9 +57,9 @@ namespace QLN.ContentBO.WebUI.MockServices
                 new() { CategoryId = 2, SubcategoryId = 201, SlotId = 101 } // Business > Startups
             },
             PublishedDate = DateTime.UtcNow.AddDays(-3),
-            CreatedBy = Guid.NewGuid(),
+            CreatedBy = Guid.NewGuid().ToString(),
             CreatedAt = DateTime.UtcNow.AddDays(-4),
-            UpdatedBy = Guid.NewGuid(),
+            UpdatedBy = Guid.NewGuid().ToString(),
             UpdatedAt = DateTime.UtcNow.AddDays(-2)
         },
 
@@ -79,9 +79,9 @@ namespace QLN.ContentBO.WebUI.MockServices
                 new() { CategoryId = 3, SubcategoryId = 301, SlotId = 2 } // Sports > Football
             },
             PublishedDate = DateTime.UtcNow.AddDays(-7),
-            CreatedBy = Guid.NewGuid(),
+            CreatedBy = Guid.NewGuid().ToString(),
             CreatedAt = DateTime.UtcNow.AddDays(-10),
-            UpdatedBy = Guid.NewGuid(),
+            UpdatedBy = Guid.NewGuid().ToString(),
             UpdatedAt = DateTime.UtcNow.AddDays(-8)
         },
 
@@ -103,9 +103,9 @@ namespace QLN.ContentBO.WebUI.MockServices
                 new() { CategoryId = 4, SubcategoryId = 401, SlotId = 1 }  // Lifestyle > Innovation
             },
             PublishedDate = DateTime.UtcNow,
-            CreatedBy = Guid.NewGuid(),
+            CreatedBy = Guid.NewGuid().ToString(),
             CreatedAt = DateTime.UtcNow.AddDays(-1),
-            UpdatedBy = Guid.NewGuid(),
+            UpdatedBy = Guid.NewGuid().ToString(),
             UpdatedAt = DateTime.UtcNow
         },
 
@@ -125,9 +125,9 @@ namespace QLN.ContentBO.WebUI.MockServices
                 new() { CategoryId = 4, SubcategoryId = 402, SlotId = 102 } // Lifestyle > Wellness
             },
             PublishedDate = DateTime.UtcNow.AddDays(-5),
-            CreatedBy = Guid.NewGuid(),
+            CreatedBy = Guid.NewGuid().ToString(),
             CreatedAt = DateTime.UtcNow.AddDays(-6),
-            UpdatedBy = Guid.NewGuid(),
+            UpdatedBy = Guid.NewGuid().ToString(),
             UpdatedAt = DateTime.UtcNow.AddDays(-5)
         }
     ];
@@ -249,6 +249,56 @@ namespace QLN.ContentBO.WebUI.MockServices
         }
 
         public Task<HttpResponseMessage> UpdateArticle(NewsArticleDTO newsArticle)
+        {
+            throw new NotImplementedException();
+        }
+
+        Task<HttpResponseMessage> INewsService.GetAllArticles()
+        {
+            throw new NotImplementedException();
+        }
+
+        Task<HttpResponseMessage> INewsService.CreateArticle(NewsArticleDTO newsArticle)
+        {
+            throw new NotImplementedException();
+        }
+
+        Task<HttpResponseMessage> INewsService.UpdateArticle(NewsArticleDTO newsArticle)
+        {
+            throw new NotImplementedException();
+        }
+
+        Task<HttpResponseMessage> INewsService.GetNewsCategories()
+        {
+            throw new NotImplementedException();
+        }
+
+        Task<HttpResponseMessage> INewsService.GetWriterTags()
+        {
+            throw new NotImplementedException();
+        }
+
+        Task<HttpResponseMessage> INewsService.GetSlots()
+        {
+            throw new NotImplementedException();
+        }
+
+        Task<HttpResponseMessage> INewsService.GetArticlesByCategory(int categoryId)
+        {
+            throw new NotImplementedException();
+        }
+
+        Task<HttpResponseMessage> INewsService.GetArticlesBySubCategory(int categoryId, int subCategoryId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<HttpResponseMessage> GetArticleBySlug(string slug)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<HttpResponseMessage> GetArticleById(Guid Id)
         {
             throw new NotImplementedException();
         }

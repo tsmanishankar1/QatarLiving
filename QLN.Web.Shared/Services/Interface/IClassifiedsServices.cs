@@ -27,8 +27,9 @@ namespace QLN.Web.Shared.Services.Interface
         Task<HttpResponseMessage?> GetAllCategoryTreesAsync(string vertical);
 
         Task<HttpResponseMessage?> PostClassifiedItemAsync(string vertical, object payload);
-       
-       /// <summary>
+        Task<HttpResponseMessage?> PostClassifiedSaveSearchAsync(object payload);
+
+        /// <summary>
         /// Gets a classified along with similar items by ID and page size.
         /// </summary>
         /// <param name="classifiedId">The ID of the classified item.</param>
@@ -37,6 +38,18 @@ namespace QLN.Web.Shared.Services.Interface
         Task<HttpResponseMessage?> GetClassifiedWithSimilarAsync(string classifiedId, int similarPageSize);
 
         Task<HttpResponseMessage?> GetCategoryFiltersAsync(string vertical, Guid mainCategoryId);
+        
+        Task<HttpResponseMessage?> GetAllZonesAsync();
+
+        /// <summary>
+        /// Gets the address coordinates by zone, street, building, and location.
+        /// </summary>
+        /// <param name="zone">Zone number</param>
+        /// <param name="street">Street number</param>
+        /// <param name="building">Building number</param>
+        /// <param name="location">Location name</param>
+        /// <returns>HttpResponseMessage with the address result</returns>
+        Task<HttpResponseMessage?> GetAddressByDetailsAsync(int zone, int street, int building, string location);
 
     }
 }

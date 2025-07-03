@@ -41,11 +41,11 @@ namespace QLN.Web.Shared.Pages.Company
 
         protected List<string> AvailableCities = [];
 
-        protected override void OnInitialized()
+        protected override async Task OnInitializedAsync()
         {
             try
             {
-                AuthorizedPage();
+                await AuthorizedPage();
                 breadcrumbItems =
                 [
                     new() { Label = "Classifieds", Url = "qln/classifieds" },
@@ -135,6 +135,13 @@ namespace QLN.Web.Shared.Pages.Company
 
         protected async Task OnLogoFileSelected(IBrowserFile file)
         {
+            var allowedImageTypes = new[] { "image/png", "image/jpg" };
+
+            if (!allowedImageTypes.Contains(file.ContentType))
+            {
+                Snackbar.Add("Only image files (PNG, JPG) are allowed.", Severity.Warning);
+                return;
+            }
             if (file != null)
             {
                 if (file.Size > 10 * 1024 * 1024)

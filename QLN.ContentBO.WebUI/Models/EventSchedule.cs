@@ -6,7 +6,7 @@ namespace QLN.ContentBO.WebUI.Models
 {
     public class EventScheduleModel
     {
-        [Required]
+         [Required(ErrorMessage = "Start date is required.")]
         public DateOnly StartDate { get; set; }
         [Required]
         public DateOnly EndDate { get; set; }

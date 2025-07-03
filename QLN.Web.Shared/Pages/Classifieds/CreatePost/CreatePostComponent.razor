@@ -13,8 +13,8 @@
     <div Class="create-form-container">
         <MudGrid GutterSize="24px">
             <MudItem xs="12" md="5">
-                <CreateFormList TItem="string"  EditContext="editContext"
-                                        adPostModel="adPostModel" CategoryTrees="CategoryTrees" CategoryChanged="HandleCategoryChanged"  />
+                <CreateFormList TItem="string" IsLoadingMap="IsLoadingMap" Zones="Zones" EditContext="editContext"
+                                        adPostModel="adPostModel" CategoryTrees="CategoryTrees" CategoryChanged="HandleCategoryChanged"   OnAddressFieldsChanged="TrySetCoordinatesFromAddressAsync" />
             </MudItem>
 
             <MudItem xs="12" md="7">

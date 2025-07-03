@@ -286,10 +286,12 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         return null;
     }
 
+
+    // Modified CreatePaymentAsync method
     public async Task<Guid> CreatePaymentAsync(
-     PaymentTransactionRequestDto request,
-     Guid userId,
-     CancellationToken cancellationToken = default)
+        PaymentTransactionRequestDto request,
+        string userId,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -352,6 +354,35 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         if (!result)
             throw new Exception("Payment transaction creation failed.");
 
+        // Store payment details for quick retrieval
+        var durationEnum = MapTimeSpanToDurationType(subscriptionData.Duration);
+        var paymentDetails = new UserPaymentDetailsResponseDto
+        {
+            UserId = userId,
+            PaymentTransactionId = dto.Id,
+            TransactionDate = dto.TransactionDate,
+            StartDate = dto.StartDate,
+            EndDate = dto.EndDate,
+            SubscriptionId = subscriptionData.Id,
+            SubscriptionName = subscriptionData.subscriptionName,
+            Price = subscriptionData.price,
+            Currency = subscriptionData.currency,
+            Description = subscriptionData.description,
+            DurationId = (int)durationEnum,
+            DurationName = durationEnum.ToString(),
+            VerticalTypeId = (int)subscriptionData.VerticalTypeId,
+            VerticalName = subscriptionData.VerticalTypeId.ToString(),
+            CategoryId = (int)subscriptionData.CategoryId,
+            CategoryName = subscriptionData.CategoryId.ToString(),
+            AdsBudgetTotal = subscriptionData.adsbudget,
+            PromoteBudgetTotal = subscriptionData.promotebudget,
+            RefreshBudgetTotal = subscriptionData.refreshbudget,
+            CardHolderName = dto.CardHolderName
+        };
+
+        // Store payment details in actor state
+        await actor.StorePaymentDetailsAsync(paymentDetails, cancellationToken);
+
         _paymentTransactionIds.TryAdd(dto.Id, 0);
 
         _logger.LogInformation("Payment transaction created with ID: {TransactionId}, Start Date: {StartDate}, End Date: {EndDate}",
@@ -359,7 +390,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
         if (!existingEndDate.HasValue)
         {
-            await AssignSubscriberRoleAsync(userId);
+           // await AssignSubscriberRoleAsync(userId);
             _logger.LogInformation("Assigned subscriber role immediately for user {UserId} as this is their first subscription", userId);
         }
         else
@@ -369,7 +400,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
         return dto.Id;
     }
-    private async Task AssignSubscriberRoleAsync(Guid userId)
+    private async Task AssignSubscriberRoleAsync(string userId)
     {
         const string subscriberRole = "Subscriber";
 
@@ -597,7 +628,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 message.UserId, message.SubscriptionId, message.PaymentTransactionId);
 
             // Validate the message
-            if (message.UserId == Guid.Empty)
+            if (message.UserId == string.Empty)
             {
                 _logger.LogError("=== SUBSCRIPTION EXPIRY ERROR === Invalid UserId in message");
                 return;
@@ -762,7 +793,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             "PaymentTransactionActor");
     }
     public async Task<List<UserPaymentDetailsResponseDto>> GetUserPaymentDetailsAsync(
-    Guid userId,
+    string userId,
     CancellationToken cancellationToken = default)
     {
         try
@@ -829,13 +860,11 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
                         userPaymentDetails.Add(new UserPaymentDetailsResponseDto
                         {
-                           
+
                             PaymentTransactionId = payment.Id,
                             TransactionDate = payment.TransactionDate,
                             StartDate = payment.StartDate,
                             EndDate = payment.EndDate,
-                           
-                           
                             SubscriptionId = subscriptionData.Id,
                             SubscriptionName = subscriptionData.subscriptionName,
                             Price = subscriptionData.price,
@@ -844,19 +873,17 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                             DurationId = (int)durationEnum,
                             DurationName = durationEnum.ToString(),
 
-                          
+
                             VerticalTypeId = (int)subscriptionData.VerticalTypeId,
                             VerticalName = subscriptionData.VerticalTypeId.ToString(),
                             CategoryId = (int)subscriptionData.CategoryId,
                             CategoryName = subscriptionData.CategoryId.ToString(),
+                            AdsBudgetTotal = subscriptionData.adsbudget,
+                            PromoteBudgetTotal = subscriptionData.promotebudget,
+                            RefreshBudgetTotal = subscriptionData.refreshbudget,
 
-                           
-                            AdsbudBudget = subscriptionData.adsbudget,
-                            PromoteBudget = subscriptionData.promotebudget,
-                            RefreshBudget = subscriptionData.refreshbudget,
 
-                           
-                         
+
                         });
                     }
                     else
@@ -905,7 +932,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
     }
 
     public async Task<YearlySubscriptionResponseDto?> CheckYearlySubscriptionAsync(
-      Guid userId,
+      string userId,
       CancellationToken cancellationToken = default)
     {
         try

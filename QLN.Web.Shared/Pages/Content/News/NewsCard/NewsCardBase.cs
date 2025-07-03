@@ -37,5 +37,6 @@ public class NewsCardBase : ComponentBase
  
     [Parameter]
     public bool IsHorizontal { get; set; } = false;
-    [Parameter] public EventCallback<ContentPost> OnClick { get; set; }
+
+    [Parameter] public string Href { get; set; } = "";
 }

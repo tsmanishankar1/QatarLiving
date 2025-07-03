@@ -1,4 +1,13 @@
 @inherits TopStoryCardBase
+@{
+    var detailUrl = (Item.NodeType?.Contains("post") == true && !string.IsNullOrWhiteSpace(Item.Slug))
+        ? $"/content/daily/article/details/{Item.Slug}"
+        : (Item.NodeType?.Contains("event") == true && !string.IsNullOrWhiteSpace(Item.Slug))
+            ? $"/content/events/details/{Item.Slug}"
+            : "#";
+}
+
+<MudLink Href="@detailUrl" Style="text-decoration: none;">
 <div class="top-story-list-card">
     <div class="top-story-image-wrapper">
         <MudLink OnClick="() => NavigateToDetailPage()"> <img src="@Item.ImageUrl" class="top-story-card-img"
@@ -6,11 +15,11 @@
     </div>
     <div class="top-story-card-body">
         <div class="top-story-category">Top Story</div>
-        <MudLink OnClick="() => NavigateToDetailPage()">
+        
             <h3 class="top-story-title">
                 @Item.Title
             </h3>
-        </MudLink>
+        
         <div class="top-story-author-wrapper">
             <div class="top-story-main-author">
                 <p class="top-story-main-source">@Item.UserName <img src="/qln-images/tick.svg" alt="Verified"
@@ -20,6 +29,7 @@
         </div>
     </div>
 </div>
+</MudLink>
 
 <style>
     .top-story-list-card {

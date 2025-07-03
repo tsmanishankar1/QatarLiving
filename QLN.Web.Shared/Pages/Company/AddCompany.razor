@@ -12,12 +12,12 @@
     </div>
     <MudContainer Class="company-profile-container">
         <MudGrid GutterSize="24px" class="ml-3 mt-4">
-         
+
             <!-- Logo Upload -->
-            <MudItem xs="12"  md="3" Class="company-profile-logo-container">
+            <MudItem xs="12" md="3" Class="company-profile-logo-container">
                 <!-- Contact Information -->
 
-                    <MudText Class="heading-style mt-2 ml-14">Contact Information</MudText>
+                <MudText Class="heading-style mt-2 ml-14">Contact Information</MudText>
 
                 <MudFileUpload T="IBrowserFile" Accept="image/*" FilesChanged="OnLogoFileSelected" MaxFileSize="10485760">
                     <ActivatorContent>
@@ -57,8 +57,8 @@
 
 
 
-            <MudItem xs="12"  md="9" Class="company-profile-form-section">
-                <EditForm Model="@companyProfile" OnValidSubmit="SaveCompanyProfileAsync">
+            <MudItem xs="12" md="9" Class="company-profile-form-section">
+                <EditForm EditContext="@editContext" OnValidSubmit="SaveCompanyProfileAsync">
                     <DataAnnotationsValidator />
                     <MudTextField id="businessName" @bind-Value="companyProfile.BusinessName" Label="Business Name *" Class="form-input no-underline" Immediate="true"
                                   For="@(() => companyProfile.BusinessName)" />
@@ -89,7 +89,6 @@
                     </MudSelect>
                     <ValidationMessage For="@(() => companyProfile.City)" />
 
-                    <ValidationMessage For="@(() => companyProfile.City)" />
 
                     <MudTextField @bind-Value="companyProfile.BranchLocations[0]" Label="Branches" Class="form-input no-underline" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.LocationOn" AdornmentColor="Color.Primary" AdornmentIconStyle="color: #FF7F38;" />
 
@@ -98,12 +97,15 @@
                                   Immediate="true" />
                     <ValidationMessage For="@(() => companyProfile.PhoneNumber)" />
 
-                    <MudTextField @bind-Value="companyProfile.WhatsAppNumber" Label="WhatsApp Number" Class="form-input no-underline" Adornment="Adornment.Start" AdornmentText="@companyProfile.WhatsAppCountryCode" />
-                    <MudTextField @bind-Value="companyProfile.Email" Label="Email *" Class="form-input no-underline" For="@(() => companyProfile.Email)" HelperTextOnError="true" />
+                    <MudTextField @bind-Value="companyProfile.WhatsAppNumber" For="@(() => companyProfile.WhatsAppNumber)" Label="WhatsApp Number" Class="form-input no-underline" Adornment="Adornment.Start"
+                                  AdornmentText="@companyProfile.WhatsAppCountryCode" Immediate="true" />
+                    <ValidationMessage For="@(() => companyProfile.WhatsAppNumber)" />
+
+                    <MudTextField @bind-Value="companyProfile.Email" Label="Email *" Class="form-input no-underline" Immediate="true" For="@(() => companyProfile.Email)" HelperTextOnError="true" />
                     <ValidationMessage For="@(() => companyProfile.Email)" />
 
-                    <MudTextField @bind-Value="companyProfile.WebsiteUrl" Label="Website URL" For="@(() => companyProfile.WebsiteUrl)" Class="form-input no-underline" />
-                    <ValidationMessage For="@(() => companyProfile.WebsiteUrl)" Immediate="true" />
+                    <MudTextField @bind-Value="companyProfile.WebsiteUrl" Label="Website URL" For="@(() => companyProfile.WebsiteUrl)" Immediate="true" Class="form-input no-underline" />
+                    <ValidationMessage For="@(() => companyProfile.WebsiteUrl)" />
 
                     <MudTextField @bind-Value="companyProfile.FacebookUrl" Label="Facebook URL" For="@(() => companyProfile.FacebookUrl)" Class="form-input no-underline" Immediate="true" />
                     <ValidationMessage For="@(() => companyProfile.FacebookUrl)" />
@@ -118,9 +120,9 @@
                     <MudGrid class="grid-flex">
                         <div class="row-flex">
 
-                          @*   <MudTextField Class="grid-input no-underline" Label="Start Day" @bind-Value="companyProfile.StartDay" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.CalendarToday" />
+                            @*   <MudTextField Class="grid-input no-underline" Label="Start Day" @bind-Value="companyProfile.StartDay" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.CalendarToday" />
                             <MudTextField Label="End Day" @bind-Value="companyProfile.EndDay" Class="grid-input no-underline" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.CalendarToday" /> *@
-                          @*   <MudDatePicker Label="Start Day"
+                            @*   <MudDatePicker Label="Start Day"
                                            @bind-Date="companyProfile.StartDay"
                                            Class="grid-input no-underline"
                                            Adornment="Adornment.End"
@@ -131,9 +133,10 @@
                                            Class="grid-input no-underline"
                                            Adornment="Adornment.End"
                                            AdornmentIcon="@Icons.Material.Outlined.CalendarToday" /> *@
-                            <MudSelect T="string" Label="Start Day *"
+                            <MudSelect T="string" Label="Start Day"
                                        @bind-Value="companyProfile.StartDay"
                                        Class="select-input no-underline"
+                                       Style="width: 232px;"
                                        Immediate="true">
                                 @foreach (var day in Enum.GetValues<DaysOfWeek>())
                                 {
@@ -141,9 +144,10 @@
                                 }
                             </MudSelect>
 
-                            <MudSelect T="string" Label="End Day *"
+                            <MudSelect T="string" Label="End Day"
                                        @bind-Value="companyProfile.EndDay"
                                        Class="select-input no-underline"
+                                       Style="width: 232px;"
                                        Immediate="true">
                                 @foreach (var day in Enum.GetValues<DaysOfWeek>())
                                 {
@@ -153,7 +157,7 @@
 
                         </div>
                         <div class="row-flex">
-@* 
+                            @* 
                             <MudTextField Label="Start Hour" @bind-Value="companyProfile.StartHour" Class="grid-input no-underline" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.AccessTime" />
 
                             <MudTextField Label="End Hour" @bind-Value="companyProfile.EndHour" Class="grid-input no-underline" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.AccessTime" /> *@
@@ -213,7 +217,9 @@
                     <!-- License & Visibility -->
                     <MudText Typo="Typo.h6" Class="heading-style">License & Visibility</MudText>
 
-                    <MudTextField T="int" @bind-Value="companyProfile.CrNumber" Label="CR Number" Class="form-input no-underline" />
+                    <MudTextField T="int" @bind-Value="companyProfile.CrNumber" Label="CR Number" Class="form-input no-underline" Immediate="true" />
+                    <ValidationMessage For="@(() => companyProfile.CrNumber)" />
+
                     <MudPaper Class="d-flex align-center mt-2 p-2 doc-input no-underline">
                         <MudText Typo="Typo.body1">
                             CR Document*
@@ -458,10 +464,12 @@
             align-items: center;
             flex-direction: column;
         }
-        .company-profile-form-section{
+
+        .company-profile-form-section {
             justify-content: center;
             display: flex;
         }
+
         .grid-flex {
             display: flex;
             gap: 10px;

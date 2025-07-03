@@ -1,25 +1,45 @@
+let leafletMap;
+let leafletMarker;
+
 window.initMap = (lat, lng) => {
-    const map = L.map('map').setView([lat, lng], 16);
+    const center = [lat, lng];
+
+    if (leafletMap) {
+        leafletMap.setView(center, 16);
+        if (leafletMarker) {
+            leafletMarker.setLatLng(center);
+        } else {
+            leafletMarker = createMarker(center).addTo(leafletMap);
+        }
+        return;
+    }
+
+    leafletMap = L.map('map').setView(center, 16);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
+    }).addTo(leafletMap);
 
+    leafletMarker = createMarker(center).addTo(leafletMap);
+};
+
+function createMarker(center) {
     const customIcon = L.icon({
-        iconUrl: '/qln-images/location_pin.svg', 
-        iconSize: [32, 48],       
-        iconAnchor: [16, 48],      
-        popupAnchor: [0, -40],    
-        shadowUrl: null            
+        iconUrl: '/qln-images/location_pin.svg',
+        iconSize: [32, 48],
+        iconAnchor: [16, 48],
+        popupAnchor: [0, -40]
     });
 
-    const marker = L.marker([lat, lng], {
+    const marker = L.marker(center, {
         icon: customIcon,
         draggable: true
-    }).addTo(map);
+    });
 
     marker.on('dragend', function (e) {
         const newPos = e.target.getLatLng();
         DotNet.invokeMethodAsync('QLN.ContentBO.WebUI', 'UpdateLatLng', newPos.lat, newPos.lng);
     });
-};
+
+    return marker;
+}
