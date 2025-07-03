@@ -9,45 +9,49 @@ namespace QLN.ContentBO.WebUI.Services
 {
     public class EventsService : ServiceBase<EventsService>, IEventsService
     {
-        public EventsService(HttpClient httpClientDI, ILogger<EventsService> Logger)
-           : base(httpClientDI, Logger)
-        {
+         private readonly HttpClient _httpClient;
 
+        public EventsService(HttpClient httpClient, ILogger<EventsService> Logger) : base(httpClient, Logger)
+        {
+            _httpClient = httpClient;
         }
+
 
         public async Task<HttpResponseMessage> CreateEvent(EventDTO events)
         {
             try
-            {
-                var eventsJson = new StringContent(JsonSerializer.Serialize(events), Encoding.UTF8, "application/json");
-                var response = await PostAsync("api/v2/event/create", eventsJson);
-                return response;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "CreateEvents");
-                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
-            }
-        }
-
-        public async Task<HttpResponseMessage> GetAllArticle(int id)
+    {
+        var jsonPayload = JsonSerializer.Serialize(events, new JsonSerializerOptions
         {
-            try
-            {
-                var response = await GetAsync($"api/GetAllArticles");
-                return response;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "GetAllArticle");
-                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
-            }
+            WriteIndented = true // makes it more readable in logs
+        });
+
+        Console.WriteLine("Request Payload:");
+        Console.WriteLine(jsonPayload);
+
+        var eventsJson = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/event/create")
+        {
+            Content = eventsJson
+        };
+
+        var response = await _httpClient.SendAsync(request);
+        return response;
+    }
+    catch (Exception ex)
+    {
+        Logger.LogError(ex, "CreateEvents");
+        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+    }
         }
+    
         public async Task<HttpResponseMessage> GetAllEvents()
         {
             try
             {
-                var response = await GetAsync($"api/v2/event/getAll");
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/event/getAll");
+                var response = await _httpClient.SendAsync(request);
                 return response;
             }
             catch (Exception ex)
@@ -57,6 +61,7 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
+
         public Task<HttpResponseMessage> GetAllArticles()
         {
             throw new NotImplementedException();
@@ -64,27 +69,47 @@ namespace QLN.ContentBO.WebUI.Services
 
         public async Task<HttpResponseMessage> GetEventCategories()
         {
-             try
+            try
             {
-                var response = await GetAsync($"api/v2/event/getAllCategories");
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/event/getAllCategories");
+
+                var response = await _httpClient.SendAsync(request);
+
                 return response;
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "GetEventsCategories");
+                Logger.LogError(ex, "GetEventCategories");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage> GetNewsCategories()
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/news/getCategories");
+
+                var response = await _httpClient.SendAsync(request);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetNewsCategories");
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
         public async Task<HttpResponseMessage> GetEventLocations()
-        { 
-             try
+        {
+            try
             {
-                var response = await GetAsync($"api/v2/event/getAllCategories");
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/location/getAllCategoriesLocations");
+                var response = await _httpClient.SendAsync(request);
                 return response;
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "GetEventsLocations");
+                Logger.LogError(ex, "GetEventLocations");
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }

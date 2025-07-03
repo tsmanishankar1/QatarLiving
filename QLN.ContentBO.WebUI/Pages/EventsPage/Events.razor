@@ -39,12 +39,20 @@
                 <MudTh>Live for</MudTh>
                 <MudTh>Actions</MudTh>
                 </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Number">@context.CategoryId</MudTd>
+                <RowTemplate >
+                    <MudTd DataLabel="Number">
+                    @{
+                        index = index + 1;
+                    }
+                    @(index)
+                    </MudTd>
                     <MudTd DataLabel="Post Title">
                     <MudLink Href="#">@context.EventTitle</MudLink>
-            </MudTd>
-            <MudTd DataLabel="Category">@context.CategoryId</MudTd>
+                    </MudTd>
+                    <MudTd DataLabel="Category">
+                    @Categories.FirstOrDefault(c => c.Id == context.CategoryId)?.CategoryName
+                    </MudTd>
+            @* <MudTd DataLabel="Category">@context.CategoryId</MudTd> *@
             <MudTd DataLabel="Creation Date">@context.CreatedAt.ToString("dd-MM-yyyy")</MudTd>
             <MudTd DataLabel="Expiry Date">@context.EventSchedule.EndDate.ToString("dd-MM-yyyy")</MudTd>
             <MudTd DataLabel="Live for">@context.CreatedAt</MudTd>
@@ -58,7 +66,7 @@
                                     </MudMenuItem>
                                     @* <MudMenuItem OnClick="@(() => DeletePost(context))" Class="mud-error-text">
                                     <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
-                                    </MudMenuItem> *@
+                                    </MudMenuItem>  *@
                                 </MudMenu>
             </MudTd>
         </RowTemplate>

@@ -3,23 +3,23 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using MudExRichTextEditor;
 using Microsoft.JSInterop;
-using MudBlazor.Extensions;
-using MudBlazor.Extensions.Components;
 using QLN.ContentBO.WebUI.Models;
-using QLN.Common.Infrastructure.DTO_s;
 using QLN.ContentBO.WebUI.Interfaces;
+using System.Text.Json;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
+using QLN.ContentBO.WebUI.Components;
+using System.Net;
 namespace QLN.ContentBO.WebUI.Pages
 {
-    public class EventCreateFormBase : ComponentBase
+    public class EventCreateFormBase : QLComponentBase
     {
         [Inject] IEventsService eventsService { get; set; }
         [Inject]
         public IDialogService DialogService { get; set; }
         [Inject] ILogger<EventCreateFormBase> Logger { get; set; }
         protected EditContext _editContext;
-        private List<LocationEventDto> Locations = new();
+        protected List<LocationEventDto> Locations = new();
         public EventDTO CurrentEvent { get; set; } = new EventDTO();
         public bool _isTimeDialogOpen = true;
         protected string? _DateError;
@@ -52,10 +52,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.EventSchedule.StartTime));
             }
         }
-        protected void OnLocationChanged(string value)
-        {
-            CurrentEvent.Location = value;
-        }
+
 
         protected TimeSpan? EndTimeSpan
         {
@@ -95,15 +92,21 @@ namespace QLN.ContentBO.WebUI.Pages
         protected List<DayTimeEntry> DayTimeList = new();
         public double EventLat { get; set; } = 48.8584;
         public double EventLong { get; set; } = 2.2945;
-        protected DateRange _dateRange
+        protected DateRange? _dateRange
         {
-            get => new(
-                CurrentEvent.EventSchedule.StartDate.ToDateTime(TimeOnly.MinValue),
-                CurrentEvent.EventSchedule.EndDate.ToDateTime(TimeOnly.MinValue)
-            );
+            get
+            {
+                if (CurrentEvent?.EventSchedule == null)
+                    return null;
+
+                return new DateRange(
+                    CurrentEvent.EventSchedule.StartDate.ToDateTime(TimeOnly.MinValue),
+                    CurrentEvent.EventSchedule.EndDate.ToDateTime(TimeOnly.MinValue)
+                );
+            }
             set
             {
-                if (value != null)
+                if (value != null && CurrentEvent?.EventSchedule != null)
                 {
                     CurrentEvent.EventSchedule.StartDate = DateOnly.FromDateTime(value.Start ?? DateTime.Today);
                     CurrentEvent.EventSchedule.EndDate = DateOnly.FromDateTime(value.End ?? DateTime.Today);
@@ -131,14 +134,17 @@ namespace QLN.ContentBO.WebUI.Pages
         protected DateRange _confirmedDateRange = new();
         [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
         public void Closed(MudChip<string> chip) => SelectedLocations.Remove(chip.Text);
+        protected string SelectedLocationId;
         protected override async Task OnInitializedAsync()
         {
-            // Categories = await GetEventsCategories();
-            // Locations = await GetEventsLocations();
-            _editContext = new EditContext(CurrentEvent);
             CurrentEvent ??= new EventDTO();
             CurrentEvent.EventSchedule ??= new EventScheduleModel();
-            CurrentEvent.Location = "Qatar";
+            _editContext = new EditContext(CurrentEvent);
+            Categories = await GetEventsCategories();
+            Console.WriteLine("Categories:");
+            Console.WriteLine(JsonSerializer.Serialize(Categories, new JsonSerializerOptions { WriteIndented = true }));
+            var locationsResponse = await GetEventsLocations();
+            Locations = locationsResponse?.Locations ?? [];
         }
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
@@ -326,7 +332,12 @@ namespace QLN.ContentBO.WebUI.Pages
             if (string.IsNullOrWhiteSpace(CurrentEvent.EventDescription))
             {
                 _descriptionerror = "Event description is required.";
-                StateHasChanged(); // Force re-render
+                StateHasChanged();
+                return;
+            }
+            if (CurrentEvent.EventSchedule == null || CurrentEvent.EventSchedule.StartDate == default)
+            {
+                _DateError = "Start date is required.";
                 return;
             }
 
@@ -334,7 +345,26 @@ namespace QLN.ContentBO.WebUI.Pages
             Console.Write("the method is called !!!");
             try
             {
-                // var response = await eventsService.CreateEvent(CurrentEvent);
+                Console.Write("the api response is");
+                Console.WriteLine("CurrentEvent:");
+                Console.WriteLine(JsonSerializer.Serialize(CurrentEvent, new JsonSerializerOptions { WriteIndented = true }));
+                var response = await eventsService.CreateEvent(CurrentEvent);
+                if (response != null && response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Events Added", severity: Severity.Success);
+
+                    var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+                    // await DialogService.ShowAsync<ArticlePublishedDialog>("", options);
+                }
+                else if (response.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    Snackbar.Add("You are unauthorized to perform this action");
+                }
+                else if (response.StatusCode == HttpStatusCode.InternalServerError)
+                {
+                    Snackbar.Add("Internal API Error");
+                }
+                // CurrentEvent = new();
             }
             catch (Exception ex)
             {
@@ -345,11 +375,18 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             try
             {
-                // var apiResponse = await eventsService.GetEventCategories();
-                // if (apiResponse.IsSuccessStatusCode)
-                // {
-                //     return await apiResponse.Content.ReadFromJsonAsync<List<EventCategoryModel>>() ?? [];
-                // }
+                var apiResponse = await eventsService.GetEventCategories();
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    var rawContent = await apiResponse.Content.ReadAsStringAsync();
+                    Console.WriteLine(rawContent); // Log the raw JSON
+
+                    // Then deserialize
+                    var result = JsonSerializer.Deserialize<List<EventCategoryModel>>(
+                                rawContent,
+                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    return result ?? [];
+                }
                 return [];
             }
             catch (Exception ex)
@@ -358,23 +395,43 @@ namespace QLN.ContentBO.WebUI.Pages
                 return [];
             }
         }
-        private async Task<List<LocationEventDto>> GetEventsLocations()
+        private async Task<LocationListResponseDto> GetEventsLocations()
         {
             try
             {
                 var apiResponse = await eventsService.GetEventLocations();
                 if (apiResponse.IsSuccessStatusCode)
                 {
+                    Console.Write("the api response is");
                     var response = await apiResponse.Content.ReadFromJsonAsync<LocationListResponseDto>();
-                    return response?.Locations ?? new List<LocationEventDto>();
+                    return response ?? new LocationListResponseDto();
                 }
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "GetEventsLocations");
             }
-            return new List<LocationEventDto>();
+            return new LocationListResponseDto();
         }
+        protected async Task OnLocationChanged(string locationId)
+{
+            Console.Write("this method is called");
+    SelectedLocationId = locationId;
+
+    var selectedLocation = Locations.FirstOrDefault(l => l.Id == locationId);
+            if (selectedLocation != null)
+            {
+                CurrentEvent.Location = selectedLocation.Name;
+                Console.WriteLine($"Selected location: {selectedLocation.Name}");
+
+                if (double.TryParse(selectedLocation.Latitude, out var lat) &&
+                    double.TryParse(selectedLocation.Longitude, out var lng))
+                {
+                    await JS.InvokeVoidAsync("initMap", lat, lng);
+                }
+                StateHasChanged();
+    }
+}
     };
 }
 

@@ -4,10 +4,11 @@ using MudBlazor;
 using Microsoft.AspNetCore.Components.Routing;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Interfaces;
+using QLN.ContentBO.WebUI.Components;
 
 namespace QLN.ContentBO.WebUI.Pages.EventsPage
 {
-    public class EventsBase : ComponentBase
+    public class EventsBase : QLComponentBase
     {
         [Inject]
         protected NavigationManager Navigation { get; set; }
@@ -16,6 +17,8 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         protected List<EventCategoryModel> Categories = [];
         protected List<EventDTO> events = [];
         protected int activeIndex = 0;
+        protected int index = 0;
+        protected int currentIndex = 1;
         protected string searchText;
         protected string selectedType;
         protected List<string> categories = new List<string> { "All Events", "Featured Events" };
@@ -23,6 +26,10 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         {
             events = await GetEvents();
             Categories = await GetEventsCategories();
+            foreach (var ev in Categories)
+            {
+                Console.WriteLine($"{ev.Id}, StartDate: {ev.CategoryName}");
+            }
             foreach (var ev in events)
             {
                 Console.WriteLine($"Event Title: {ev.EventTitle}, CategoryId: {ev.CategoryId}, StartDate: {ev.EventSchedule.StartDate}");
@@ -111,11 +118,11 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         {
             try
             {
-                // var apiResponse = await eventsService.GetEventCategories();
-                // if (apiResponse.IsSuccessStatusCode)
-                // {
-                //     return await apiResponse.Content.ReadFromJsonAsync<List<EventCategoryModel>>() ?? [];
-                // }
+                var apiResponse = await eventsService.GetEventCategories();
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    return await apiResponse.Content.ReadFromJsonAsync<List<EventCategoryModel>>() ?? [];
+                }
                 return [];
             }
             catch (Exception ex)

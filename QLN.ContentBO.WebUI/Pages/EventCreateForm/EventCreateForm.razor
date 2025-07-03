@@ -2,22 +2,28 @@
 @inherits EventCreateFormBase;
  <EditForm Model="CurrentEvent"  OnValidSubmit="HandleValidSubmit">
      <DataAnnotationsValidator />
-     <ValidationSummary />
 <MudGrid Style="padding-top: 0">
     <!-- Left Form Section -->
     <MudItem xs="12" md="6">
         <MudPaper Class="pa-4 main-content-style" Elevation="0">
             <MudText Class="form-title">Event Form</MudText>
             <MudSelect T="int"
-           Label="Category"
-           Placeholder="Choose"
-           Variant="Variant.Outlined"
-           @bind-Value="CurrentEvent.CategoryId"
-           Class="my-2 custom-textfield"
-           Style="background-color: #FFFFFF;">
-            @foreach (var category in Categories)
+            Label="Category"
+            Placeholder="Choose"
+            Variant="Variant.Outlined"
+            @bind-Value="CurrentEvent.CategoryId"
+            Class="my-2 custom-textfield"
+            Style="background-color: #FFFFFF;">
+            @if (Categories != null && Categories.Any())
             {
-                <MudSelectItem Value="@category.Id">@category.CategoryName</MudSelectItem>
+                @foreach (var category in Categories)
+                {
+                    <MudSelectItem Value="@category.Id">@category.CategoryName</MudSelectItem>
+                }
+            }
+            else
+            {
+                <MudSelectItem Disabled="true" Value="0">Choosee</MudSelectItem>
             }
             </MudSelect>
             <MudTextField Variant="Variant.Outlined" Label="Event Title"  Class="my-2 custom-textfield" @bind-Value="@CurrentEvent.EventTitle" For="@(() => CurrentEvent.EventTitle)" Style=" background-color: #FFFFFF;"/>
@@ -36,7 +42,40 @@
               Class="@PriceFieldClass" 
               Disabled="@(!IsFeesSelected)" />
             <MudTextField  Variant="Variant.Outlined" Label="Redirection Link"  Class="my-2 custom-textfield" @bind-Value="@CurrentEvent.RedirectionLink" For="@(() => CurrentEvent.RedirectionLink)" Style=" background-color: #FFFFFF;"/>
-            <MudPaper Class="location-box" Elevation="0" Style="display: flex; align-items: center; padding: 8px; border: 1px solid #ccc; border-radius: 8px; flex-wrap: wrap; gap: 8px; background-color: #FFFFFF;">
+
+
+       <MudSelect T="string"
+           Label="Location"
+           Placeholder="Choose"
+           Variant="Variant.Outlined"
+           Value="SelectedLocationId"
+           ValueChanged="OnLocationChanged"
+           ValueExpression="@(() => SelectedLocationId)"
+           Class="my-2 custom-textfield"
+           Style="background-color: #FFFFFF;">
+           
+    @if (Locations?.Any() == true)
+    {
+        @foreach (var location in Locations)
+        {
+            <MudSelectItem Value="@location.Id">@location.Name</MudSelectItem>
+        }
+    }
+    else
+    {
+        <MudSelectItem T="string" Disabled="true">Choose</MudSelectItem>
+    }
+</MudSelect>
+           
+
+
+
+
+
+
+
+
+            @* <MudPaper Class="location-box" Elevation="0" Style="display: flex; align-items: center; padding: 8px; border: 1px solid #ccc; border-radius: 8px; flex-wrap: wrap; gap: 8px; background-color: #FFFFFF;">
                 <MudChipSet T="string" >
                @if (!string.IsNullOrWhiteSpace(Location))
                 {
@@ -52,7 +91,7 @@
                 </MudChipSet>
                 <MudSpacer />
                 <MudIcon Icon="@Icons.Material.Filled.LocationOn"  Style="cursor: pointer; color: #FF7F38" @onclick="AddLocation" />
-            </MudPaper> 
+            </MudPaper>  *@
             <MudTextField  Variant="Variant.Outlined" Label="Venu" Class="my-2 custom-textfield" @bind-Value="@CurrentEvent.Venue" Style=" background-color: #FFFFFF;" />
             <div id="map" style="height: 300px; width: 100%;"></div>
 
@@ -115,14 +154,14 @@
 
 
 
-            @if (_dateRange?.Start != null && _dateRange?.End != null)
+            @if (CurrentEvent?.EventSchedule != null && _dateRange?.Start != null && _dateRange?.End != null)
             {
-               <MudRadioGroup T="EventTimeType" @bind-Value="CurrentEvent.EventSchedule.TimeSlotType" Class="my-2">
+                <MudRadioGroup T="EventTimeType" @bind-Value="CurrentEvent.EventSchedule.TimeSlotType" Class="my-2">
                 <MudRadio T="EventTimeType" Value="EventTimeType.GeneralTime">General time</MudRadio>
                 <MudRadio T="EventTimeType" Value="EventTimeType.PerDayTime">Per day time</MudRadio>
                 </MudRadioGroup>
             }
-            @if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.GeneralTime)
+            @if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.GeneralTime)
             {
                 <div style="display: flex; gap: 16px; align-items: center;">
                     <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
@@ -148,7 +187,7 @@
                     </div>
                 </div>
             }
-            else if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.PerDayTime)
+            else if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.PerDayTime)
             {
                 @foreach (var entry in DayTimeList.Take(7))
                 {
