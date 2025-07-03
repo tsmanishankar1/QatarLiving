@@ -13,7 +13,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         [Inject] INewsService newsService { get; set; }
         [Inject] ILogger<NewsBase> Logger { get; set; }
         [Inject] protected NavigationManager Navigation { get; set; }
-
         [Parameter] public int CategoryId { get; set; }
 
         protected int activeIndex = 0;
@@ -39,6 +38,8 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         protected List<NewsSubCategory> SubCategories = [];
 
         protected int SelectedSubcategoryId { get; set; } = 1;
+
+        protected ArticleSlotAssignment articleSlotAssignment { get; set; } = 1;
 
         protected async override Task OnInitializedAsync()
         {
@@ -114,7 +115,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             {
                 var articleToUpdate = ListOfNewsArticles.FirstOrDefault(a => a.Id.Equals(Id)) ?? new();
 
-                var apiResponse = await newsService.UpdateArticle(articleToUpdate);
+                var apiResponse = await newsService.ReOrderNews(articleToUpdate);
                 if (apiResponse.IsSuccessStatusCode)
                 {
                     Snackbar.Add("Slot Updated");
@@ -231,7 +232,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             return Categories.FirstOrDefault(c => c.Id == categoryId)?.CategoryName ?? "Qatar";
         }
-
+        
         protected string? GetSubCategoryName(int CategoryId, int subCategoryId)
         {
             return Categories
