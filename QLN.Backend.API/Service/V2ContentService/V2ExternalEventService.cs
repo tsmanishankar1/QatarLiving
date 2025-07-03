@@ -274,7 +274,7 @@ namespace QLN.Backend.API.Service.V2ContentService
         public async Task<PagedResponse<V2Events>> GetPagedEvents(
              int? page, int? perPage, string? search, string? sortOrder,
              DateOnly? fromDate, DateOnly? toDate, string? filterType, string? location,
-     bool? freeOnly, CancellationToken cancellationToken)
+     bool? freeOnly, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -354,6 +354,42 @@ namespace QLN.Backend.API.Service.V2ContentService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving expired events.");
+                throw;
+            }
+        }
+        public async Task<string> ReorderEventSlotsAsync(EventReorder dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "/api/v2/event/reorderSlotsByUserId";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
+                request.Content = new StringContent(
+                    JsonSerializer.Serialize(dto),
+                    Encoding.UTF8,
+                    "application/json");
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+                    throw new InvalidDataException(errorMessage);
+                }
+                response.EnsureSuccessStatusCode();
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reordering event slots");
                 throw;
             }
         }

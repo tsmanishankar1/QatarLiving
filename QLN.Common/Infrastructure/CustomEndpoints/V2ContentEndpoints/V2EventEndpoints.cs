@@ -427,7 +427,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 [FromQuery] string? location,
                 [FromQuery] bool? freeOnly,
                 IV2EventService service,
-                CancellationToken cancellationToken
+                CancellationToken cancellationToken = default
             ) =>
             {
                 try
@@ -469,7 +469,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
         {
             group.MapGet("/slots", async Task<Results<Ok<List<V2Slot>>, ProblemHttpResult>> (
             IV2EventService service,
-            CancellationToken cancellationToken
+            CancellationToken cancellationToken = default
             ) =>
             {
                 try
@@ -495,7 +495,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             group.MapGet("/getExpiredEvents", async Task<Results<Ok<IEnumerable<V2Events>>, ProblemHttpResult>>
             (
                 IV2EventService service,
-                CancellationToken cancellationToken
+                CancellationToken cancellationToken = default
             ) =>
             {
                 try
@@ -519,6 +519,118 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             .WithDescription("Returns events where EndDate is before today.")
             .Produces<IEnumerable<V2Events>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            return group;
+        }
+        public static RouteGroupBuilder MapReorderEvents(this RouteGroupBuilder group)
+        {
+            group.MapPost("/reorderSlots", async Task<Results<
+            Ok<string>,
+            ForbidHttpResult,
+            BadRequest<ProblemDetails>,
+            NotFound<ProblemDetails>,
+            ProblemHttpResult>>
+            (
+            EventReorder dto,
+            IV2EventService service,
+            HttpContext httpContext,
+            CancellationToken cancellationToken = default
+            ) =>
+            {
+                try
+                {
+                    if (dto.FromSlot < 1 || dto.FromSlot > 6 || dto.ToSlot < 1 || dto.ToSlot > 6)
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Slot values must be between 1 and 6.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    dto.UserId = userData.GetProperty("uid").GetString();
+
+                    var result = await service.ReorderEventSlotsAsync(dto, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("ReorderFeaturedEventSlots")
+            .WithTags("Event")
+            .WithSummary("Reorder Featured Event Slots")
+            .WithDescription("Reorders featured event slots using authenticated user.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            group.MapPost("/reorderSlotsByUserId", async Task<Results<
+            Ok<string>,
+            BadRequest<ProblemDetails>,
+            NotFound<ProblemDetails>,
+            ProblemHttpResult>>
+            (
+            EventReorder dto,
+            IV2EventService service,
+            CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(dto.UserId))
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "UserId must be provided.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+
+                    if (dto.FromSlot < 1 || dto.FromSlot > 6 || dto.ToSlot < 1 || dto.ToSlot > 6)
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Slot values must be between 1 and 6.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+
+                    var result = await service.ReorderEventSlotsAsync(dto, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .ExcludeFromDescription()
+            .WithName("ReorderFeaturedEventSlotsByUserId")
+            .WithTags("Event")
+            .WithSummary("Reorder Featured Event Slots (Manual/UserId)")
+            .WithDescription("Reorders featured event slots using UserId from the payload.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             return group;
         }
     }

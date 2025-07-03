@@ -3,6 +3,7 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IContentService;
 using System.Text.Json;
+using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Content.MS.Service.EventInternalService
 {
@@ -434,7 +435,7 @@ namespace QLN.Content.MS.Service.EventInternalService
         }
         public async Task<PagedResponse<V2Events>> GetPagedEvents(
                     int? page, int? perPage, string? search, string? sortOrder, DateOnly? fromDate, DateOnly? toDate,
-                    string? filterType, string? location, bool? freeOnly, CancellationToken cancellationToken)
+                    string? filterType, string? location, bool? freeOnly, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -663,6 +664,81 @@ namespace QLN.Content.MS.Service.EventInternalService
             {
                 throw new Exception($"Error occurred while retrieving expired events: {ex.Message}", ex);
             }
+        }
+        public async Task<string> ReorderEventSlotsAsync(EventReorder dto, CancellationToken cancellationToken = default)
+        {
+            const int MaxSlot = 6;
+            if (dto.FromSlot < 1 || dto.FromSlot > MaxSlot || dto.ToSlot < 1 || dto.ToSlot > MaxSlot)
+                throw new InvalidDataException("FromSlot and ToSlot must be between 1 and 6.");
+
+            if (dto.FromSlot == dto.ToSlot)
+                return $"No changes needed. Event is already in slot {dto.ToSlot}.";
+
+            string storeName = V2Content.ContentStoreName;
+
+            var fromKey = GetEventSlotKey(dto.FromSlot);
+            var eventToMove = await _dapr.GetStateAsync<V2Events>(storeName, fromKey, cancellationToken: cancellationToken);
+
+            if (eventToMove == null)
+            {
+                return $"No event found in slot {dto.FromSlot}. Nothing to reorder.";
+            }
+            var eventsToShift = new List<V2Events>();
+            var slotsToShift = new List<int>();
+
+            if (dto.FromSlot < dto.ToSlot)
+            {
+                for (int i = dto.FromSlot + 1; i <= dto.ToSlot; i++)
+                {
+                    var key = GetEventSlotKey(i);
+                    var evt = await _dapr.GetStateAsync<V2Events>(storeName, key, cancellationToken: cancellationToken);
+                    if (evt != null)
+                    {
+                        eventsToShift.Add(evt);
+                        slotsToShift.Add(i - 1); 
+                    }
+                    else
+                    {
+                        await _dapr.DeleteStateAsync(storeName, GetEventSlotKey(i - 1), cancellationToken: cancellationToken);
+                    }
+                }
+            }
+            else
+            {
+                for (int i = dto.FromSlot - 1; i >= dto.ToSlot; i--)
+                {
+                    var key = GetEventSlotKey(i);
+                    var evt = await _dapr.GetStateAsync<V2Events>(storeName, key, cancellationToken: cancellationToken);
+                    if (evt != null)
+                    {
+                        eventsToShift.Add(evt);
+                        slotsToShift.Add(i + 1); 
+                    }
+                    else
+                    {
+                        await _dapr.DeleteStateAsync(storeName, GetEventSlotKey(i + 1), cancellationToken: cancellationToken);
+                    }
+                }
+            }
+            for (int i = 0; i < eventsToShift.Count; i++)
+            {
+                var eventToShift = eventsToShift[i];
+                var newSlot = slotsToShift[i];
+                eventToShift.FeaturedSlot.Id = newSlot;
+                var newSlotKey = GetEventSlotKey(newSlot);
+                await _dapr.SaveStateAsync(storeName, newSlotKey, eventToShift, cancellationToken: cancellationToken);
+                await _dapr.SaveStateAsync(storeName, eventToShift.Id.ToString(), eventToShift, cancellationToken: cancellationToken);
+            }
+            eventToMove.FeaturedSlot.Id = dto.ToSlot;
+            var targetKey = GetEventSlotKey(dto.ToSlot);
+            await _dapr.SaveStateAsync(storeName, targetKey, eventToMove, cancellationToken: cancellationToken);
+            await _dapr.SaveStateAsync(storeName, eventToMove.Id.ToString(), eventToMove, cancellationToken: cancellationToken);
+
+            return $"Reordered successfully from slot {dto.FromSlot} to slot {dto.ToSlot}.";
+        }
+        private string GetEventSlotKey(int slotId)
+        {
+            return $"event-slot-{slotId}";
         }
     }
 }

@@ -16,6 +16,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 .MapGetPaginatedEvents()
                 .MapGetAllEventSlot()
                 .MapExpiredEvents()
+                .MapReorderEvents()
                 .MapDeleteEventEndpoints();
             return group;
         }
