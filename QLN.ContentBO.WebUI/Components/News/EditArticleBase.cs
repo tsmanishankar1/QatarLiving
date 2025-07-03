@@ -186,7 +186,7 @@ namespace QLN.ContentBO.WebUI.Components.News
                 var apiResponse = await newsService.GetArticleBySlug(slug);
                 if (apiResponse.IsSuccessStatusCode)
                 {
-                    var result = await apiResponse.Content.ReadFromJsonAsync<NewsArticleDTO>();
+                    var result = await apiResponse.Content.ReadFromJsonAsync<NewsArticleDTO>() ?? new();
 
                     return result;
                 }

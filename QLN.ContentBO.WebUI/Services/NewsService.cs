@@ -164,7 +164,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/getNews/{slug}");
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/get-by-slug/{slug}");
 
                 var response = await _httpClient.SendAsync(request);
 
@@ -181,7 +181,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/getNews/{id}");
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/get-by-id/{id}");
 
                 var response = await _httpClient.SendAsync(request);
 
