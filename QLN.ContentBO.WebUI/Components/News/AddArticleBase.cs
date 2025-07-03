@@ -160,7 +160,9 @@ namespace QLN.ContentBO.WebUI.Components.News
                 var apiResponse = await newsService.GetWriterTags();
                 if (apiResponse.IsSuccessStatusCode)
                 {
-                    return await apiResponse.Content.ReadFromJsonAsync<List<string>>() ?? [];
+                    var tagResponse = await apiResponse.Content.ReadFromJsonAsync<TagResponse>();
+
+                    return tagResponse?.Tags ?? [];
                 }
 
                 return [];
