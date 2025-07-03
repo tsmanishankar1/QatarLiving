@@ -18,11 +18,19 @@ public class SearchSectionBase : ComponentBase
     [Parameter]
     [SupplyParameterFromQuery(Name = "categoryId")]
     public string CategoryIdFromQuery { get; set; }
+    [Inject] protected ISnackbar Snackbar { get; set; }
 
     [Inject] protected SearchStateService SearchState { get; set; }
     protected bool ShowSaveSearchPopup { get; set; } = false;
     [Parameter]
     public EventCallback<string> OnCategoryChanged { get; set; }
+
+   [Parameter]
+    public EventCallback<string> SaveSearchAsync { get; set; }
+    [Parameter]
+    public bool IsLoadingSaveSearch { get; set; } = false;
+    [Parameter]
+    public bool IsSaveSearch { get; set; } = false;
 
     protected List<CategoryTreeDto> CategoryTrees => SearchState.ItemCategoryTrees;
     protected CategoryTreeDto SelectedCategory =>
@@ -44,8 +52,13 @@ public class SearchSectionBase : ComponentBase
         if (SelectedSubSubCategory?.Fields?.Any() == true)
             return SelectedSubSubCategory.Fields;
 
-        if (SelectedSubCategory?.Fields?.Any() == true)
-            return SelectedSubCategory.Fields;
+          if (SelectedSubCategory?.Fields?.Any() == true)
+        {
+            // Exclude "Brands" field from SubCategory
+            return SelectedSubCategory.Fields
+                .Where(f => !f.Name?.Trim().Equals("Brands", StringComparison.OrdinalIgnoreCase) ?? true)
+                .ToList();
+        }
 
         if (SelectedCategory?.Fields?.Any() == true)
             return SelectedCategory.Fields;
@@ -56,26 +69,26 @@ public class SearchSectionBase : ComponentBase
 
     protected CategoryField? brandField;
     protected bool isBrandFieldAvailable;
-
-     protected override void OnParametersSet()
+   protected override void OnParametersSet()
     {
-        if (SelectedFields is not null)
-        {
-            brandField = SelectedFields.FirstOrDefault(f =>
+        // ONLY check brand field from SelectedSubCategory
+        var brandFromSubCategory = SelectedSubCategory.Fields?.FirstOrDefault(f =>
             f.Name?.Trim().Equals("Brands", StringComparison.OrdinalIgnoreCase) == true &&
             f.Type?.Trim().ToLower() == "dropdown");
-            isBrandFieldAvailable = brandField?.Options?.Any() == true;
-        }
-        else
-        {
-            brandField = null;
-            isBrandFieldAvailable = false;
-        }
+
+        var brandFromSubSubCategory = SelectedSubSubCategory.Fields?.FirstOrDefault(f =>
+            f.Name?.Trim().Equals("Brands", StringComparison.OrdinalIgnoreCase) == true &&
+            f.Type?.Trim().ToLower() == "dropdown");
+
+        // Show brand ONLY if it's in subcategory and NOT in sub-subcategory
+        brandField = (brandFromSubCategory != null && brandFromSubSubCategory == null) ? brandFromSubCategory : null;
+        isBrandFieldAvailable = brandField?.Options?.Any() == true;
     }
     private bool _categoryHandledFromQuery = false;
 
     protected override async Task OnParametersSetAsync()
     {
+
         if (_categoryHandledFromQuery || string.IsNullOrWhiteSpace(CategoryIdFromQuery) || CategoryTrees?.Any() != true)
             return;
 
@@ -90,9 +103,6 @@ public class SearchSectionBase : ComponentBase
             await PerformSearch();
         }
     }
-
-    protected List<BrandItem> _brands { get; set; } = new();
-
     [Parameter] public EventCallback<string> OnSearch { get; set; }
 
     [Parameter] public EventCallback<string> OnViewModeChanged { get; set; }
@@ -108,19 +118,6 @@ public class SearchSectionBase : ComponentBase
         new() { ImageUrl = "/qln-images/grid_icon.svg", Label = "Grid", Value = "grid" }
     };
 
-  
-    protected Task HandleSaveSearch()
-    {
-        // Implement actual save logic here — call backend or store locally
-        ShowSaveSearchPopup = false;
-        return Task.CompletedTask;
-    }
-
-        protected Task CloseSaveSearchPopup()
-        {
-            ShowSaveSearchPopup = false;
-            return Task.CompletedTask;
-        }
 
     protected override void OnInitialized()
     {
@@ -171,26 +168,51 @@ public class SearchSectionBase : ComponentBase
         }
     }
 
-   protected async Task OnCategorySelected(string categoryId)
+ protected async Task OnCategorySelected(string categoryId)
 {
-    SearchState.ItemCategory = categoryId;
+    var category = CategoryTrees.FirstOrDefault(c => c.Id.ToString() == categoryId);
+    if (category != null)
+    {
+        SearchState.ItemCategory = category.Id.ToString();
+        SearchState.SelectedCategoryName = category.Name;
+    }
+
     SearchState.ItemSubCategory = null;
     SearchState.ItemSubSubCategory = null;
+    SearchState.SelectedSubCategoryName = null;
+    SearchState.SelectedSubSubCategoryName = null;
     SearchState.ItemBrand = null;
+
     await PerformSearch();
 }
+
 protected async Task OnSubCategorySelected(string subId)
 {
-    SearchState.ItemSubCategory = subId;
+    var subCategory = SelectedCategory.Children?.FirstOrDefault(c => c.Id.ToString() == subId);
+    if (subCategory != null)
+    {
+        SearchState.ItemSubCategory = subCategory.Id.ToString();
+        SearchState.SelectedSubCategoryName = subCategory.Name;
+    }
+
     SearchState.ItemSubSubCategory = null;
+    SearchState.SelectedSubSubCategoryName = null;
     SearchState.ItemBrand = null;
+
     await PerformSearch();
 }
 
 protected async Task OnSubSubCategorySelected(string subSubId)
 {
-    SearchState.ItemSubSubCategory = subSubId;
+    var subSubCategory = SelectedSubCategory.Children?.FirstOrDefault(c => c.Id.ToString() == subSubId);
+    if (subSubCategory != null)
+    {
+        SearchState.ItemSubSubCategory = subSubCategory.Id.ToString();
+        SearchState.SelectedSubSubCategoryName = subSubCategory.Name;
+    }
+
     SearchState.ItemBrand = null;
+
     await PerformSearch();
 }
 
@@ -199,9 +221,37 @@ protected async Task OnSubSubCategorySelected(string subSubId)
         SearchState.ItemViewMode = mode;
         OnViewModeChanged.InvokeAsync(mode);
     }
-    public class BrandItem
+    protected Task HandleSecondaryClick()
 {
-    public string Id { get; set; }
-    public string Label { get; set; }
+    if (IsSaveSearch)
+    {
+        // Nav.NavigateTo("/qln/classifieds/saved-searches");
+        ShowSaveSearchPopup = false;
+    }
+    else
+    {
+        ShowSaveSearchPopup = false;
+    }
+
+    return Task.CompletedTask;
 }
+    protected async Task HandlePrimaryClick(string searchName)
+    {
+        if (IsSaveSearch)
+        {
+            ShowSaveSearchPopup = false;
+        }
+        else
+        {
+            await HandleSaveSearch(searchName);
+        }
+    }
+
+   protected async Task HandleSaveSearch(string searchName)
+    {
+        if (SaveSearchAsync.HasDelegate)
+        {
+            await SaveSearchAsync.InvokeAsync(searchName);
+        }
+    }
 }
