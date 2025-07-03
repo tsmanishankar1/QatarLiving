@@ -1,4 +1,4 @@
-@page "/manage/news/category"
+@page "/manage/news/category/{CategoryId}"
 @inherits NewsBase
 <MudGrid Style="padding-top: 18px">
     <MudItem xs="12" md="12">
@@ -9,7 +9,7 @@
         <MudTabs @bind-ActivePanelIndex="@activeIndex" Rounded="false" Centered="false" Class="custom-tabs" Style="background-color: #FAFAFA;" DisableSlideAnimation="true">
             @foreach (var tab in categories)
             {
-                <MudTabPanel Text="@tab" />
+                <MudTabPanel Text="@tab" OnClick="LoadCategory()" />
             }
         </MudTabs>
 

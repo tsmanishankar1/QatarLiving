@@ -14,6 +14,8 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         [Inject] ILogger<NewsBase> Logger { get; set; }
         [Inject] protected NavigationManager Navigation { get; set; }
 
+        [Parameter] public int CategoryId { get; set; }
+
         protected int activeIndex = 0;
 
         protected string searchText;
@@ -34,11 +36,15 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected List<Slot> Slots = [];
 
+        protected List<NewsCategory> Categories = [];
+
         protected async override Task OnInitializedAsync()
         {
             Navigation.LocationChanged += HandleLocationChanged;
 
+            Categories = await GetNewsCategories();
             ListOfNewsArticles = await GetAllArticles();
+
             Slots = await GetSlots();
             UpdateCategoriesFromQuery();
         }
@@ -137,7 +143,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
 
-
         protected async void Click_MoveItemDown(Guid Id)
         {
             try
@@ -171,6 +176,69 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             catch (Exception ex)
             {
                 Logger.LogError(ex, "GetSlots");
+                return [];
+            }
+        }
+
+
+        protected async Task<List<NewsArticleDTO>> GetNewsByCategories(int categoryId)
+        {
+            try
+            {
+                var apiResponse = await newsService.GetArticlesByCategory(categoryId);
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    return await apiResponse.Content.ReadFromJsonAsync<List<NewsArticleDTO>>() ?? [];
+                }
+
+                return [];
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetNewsByCategories");
+                return [];
+            }
+        }
+
+        protected async Task<List<NewsArticleDTO>> GetNewsBySubCategories(int categoryId, int subCategoryId)
+        {
+            try
+            {
+                var apiResponse = await newsService.GetArticlesBySubCategory(categoryId, subCategoryId);
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    return await apiResponse.Content.ReadFromJsonAsync<List<NewsArticleDTO>>() ?? [];
+                }
+
+                return [];
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetNewsBySubCategories");
+                return [];
+            }
+        }
+
+        protected async void LoadCategory()
+        {
+
+        }
+
+        private async Task<List<NewsCategory>> GetNewsCategories()
+        {
+            try
+            {
+                var apiResponse = await newsService.GetNewsCategories();
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    return await apiResponse.Content.ReadFromJsonAsync<List<NewsCategory>>() ?? [];
+                }
+
+                return [];
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetNewsCategories");
                 return [];
             }
         }
