@@ -5,10 +5,10 @@ using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
 using System.Text.Json;
 using MudBlazor;
+using Microsoft.JSInterop;
 public class ItemsComponentBase : ComponentBase
 {
     [Inject] protected SearchStateService SearchState { get; set; }
-
     [Inject] private IClassifiedsServices _classifiedsService { get; set; } = default!;
     protected List<CategoryTreeDto> CategoryTrees { get; set; } = new();
     protected List<CategoryField> CategoryFilters { get; set; } = new();
@@ -25,6 +25,9 @@ public class ItemsComponentBase : ComponentBase
     protected string? ErrorMessage { get; set; }
 
     protected List<ClassifiedsIndex> SearchResults { get; set; } = new();
+
+    protected int TotalCount { get; set; } = 0;
+
     protected void HandleViewModeChange(string newMode)
     {
         SearchState.ItemViewMode = newMode;
@@ -133,7 +136,7 @@ public class ItemsComponentBase : ComponentBase
                 filters.Add("L2CategoryId", SearchState.ItemSubSubCategory);
             if (!string.IsNullOrWhiteSpace(SearchState.ItemBrand))
                 filters.Add("brand", SearchState.ItemBrand);
-          if (SearchState.ItemHasWarrantyCertificate)
+            if (SearchState.ItemHasWarrantyCertificate)
             {
                 filters["hasWarrantyCertificate"] = SearchState.ItemHasWarrantyCertificate;
             }
@@ -150,11 +153,13 @@ public class ItemsComponentBase : ComponentBase
             {
                 ["text"] = searchText ?? SearchState.ItemSearchText,
                 ["orderBy"] = SearchState.ItemSortBy,
-                ["filters"] = filters,    
+                ["filters"] = filters,
+                ["pageNumber"] = SearchState.ItemCurrentPage,
+                ["pageSize"] = SearchState.ItemPageSize
             };
 
             var payloadJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
-           // Logger.LogInformation("Sending search payload: {Payload}", payloadJson);
+            // Logger.LogInformation("Sending search payload: {Payload}", payloadJson);
 
             var responses = await _classifiedsService.SearchClassifiedsAsync(payload);
             var firstResponse = responses.FirstOrDefault();
@@ -163,6 +168,7 @@ public class ItemsComponentBase : ComponentBase
             {
                 var result = await firstResponse.Content.ReadFromJsonAsync<ClassifiedsSearchResponse>();
                 SearchResults = result?.ClassifiedsItems ?? new();
+                TotalCount = result?.TotalCount ?? 0;
             }
             else
             {
@@ -290,10 +296,12 @@ public class ItemsComponentBase : ComponentBase
 
 
             return new Dictionary<string, object>
-        {
-            ["text"] = safeText,
-            ["orderBy"] = SearchState.ItemSortBy ?? "relevance",
-            ["filters"] = filters
+            {
+                ["text"] = safeText,
+                ["orderBy"] = SearchState.ItemSortBy ?? "relevance",
+                ["filters"] = filters,
+                ["pageNumber"] = SearchState.ItemCurrentPage,
+                ["pageSize"] = SearchState.ItemPageSize
         };
         }
 

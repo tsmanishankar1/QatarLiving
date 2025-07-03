@@ -16,7 +16,7 @@
         <div class="category-banner-wrapper">
             <img src="/qln-images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
         </div>
-        <PrelovedListSection ViewMode="@SearchState.PrelovedViewMode" Items="SearchResults" Loading="IsLoadingSearch" IsSearchPerformed="@SearchState.IsPrelovedSearchActive" OnSearch="OnSearchTriggered" />
+        <PrelovedListSection TotalCount="TotalCount" ViewMode="@SearchState.PrelovedViewMode" Items="SearchResults" Loading="IsLoadingSearch" IsSearchPerformed="@SearchState.IsPrelovedSearchActive" OnSearch="OnSearchTriggered" />
  </div>
 </div>
 

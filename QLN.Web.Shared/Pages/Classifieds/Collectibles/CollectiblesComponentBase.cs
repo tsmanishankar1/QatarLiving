@@ -14,7 +14,7 @@ public class CollectiblesComponentBase : ComponentBase
     [Inject] public ISnackbar Snackbar { get; set; }
 
     protected bool IsLoadingSaveSearch { get; set; } = false;
-
+    protected int TotalCount { get; set; } = 0;
     protected bool IsLoadingSearch { get; set; } = true;
     protected bool IsLoadingCategories { get; set; } = true;
     protected bool IsSaveSearch { get; set; } = false;
@@ -117,7 +117,9 @@ public class CollectiblesComponentBase : ComponentBase
             {
                 ["text"] = searchText ?? SearchState.CollectiblesSearchText,
                 ["orderBy"] = SearchState.CollectiblesSortBy,
-                ["filters"] = filters
+                ["filters"] = filters,
+                ["pageNumber"] = SearchState.CollectiblesCurrentPage,
+                ["pageSize"] = SearchState.CollectiblesPageSize
             };
 
             var payloadJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
@@ -129,6 +131,7 @@ public class CollectiblesComponentBase : ComponentBase
             {
                 var result = await firstResponse.Content.ReadFromJsonAsync<ClassifiedsSearchResponse>();
                 SearchResults = result?.ClassifiedsItems ?? new();
+                TotalCount = result?.TotalCount ?? 0;
             }
             else
             {
@@ -253,7 +256,9 @@ public class CollectiblesComponentBase : ComponentBase
         {
             ["text"] = safeText,
             ["orderBy"] = SearchState.CollectiblesSortBy ?? "relevance",
-            ["filters"] = filters
+            ["filters"] = filters,
+            ["pageNumber"] = SearchState.CollectiblesCurrentPage,
+            ["pageSize"] = SearchState.CollectiblesPageSize
         };
     }
 

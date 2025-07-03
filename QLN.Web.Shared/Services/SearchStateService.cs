@@ -2,10 +2,11 @@ using QLN.Web.Shared.Models;
 using QLN.Common.DTO_s;
 public class SearchStateService
 {
+    //items
     public string ItemSearchText { get; set; }
     public string ItemCategory { get; set; }
-    public string ItemSubCategory { get; set; } 
-    public string ItemSubSubCategory { get; set; }  
+    public string ItemSubCategory { get; set; }
+    public string ItemSubSubCategory { get; set; }
     public string SelectedCategoryName { get; set; }
     public string SelectedSubCategoryName { get; set; }
     public string SelectedSubSubCategoryName { get; set; }
@@ -38,13 +39,29 @@ public class SearchStateService
     !string.IsNullOrWhiteSpace(ItemBrand) ||
     ItemMinPrice.HasValue ||
     ItemMaxPrice.HasValue;
+    public int ItemCurrentPage { get; set; } = 1;
+    public int ItemPageSize { get; set; } = 12;
+    public event Action? OnPaginationChanged;
+
+    public void ItemSetPage(int page)
+    {
+        ItemCurrentPage = page;
+        OnPaginationChanged?.Invoke();
+    }
+
+    public void ItemSetPageSize(int size)
+    {
+        ItemPageSize = size;
+        ItemCurrentPage = 1; // reset to first page on size change
+        OnPaginationChanged?.Invoke();
+    }
 
 
-
+    //Collectibles
     public string CollectiblesSearchText { get; set; }
     public string CollectiblesCategory { get; set; }
-    public string CollectiblesSubCategory { get; set; } 
-    public string CollectiblesSubSubCategory { get; set; }  
+    public string CollectiblesSubCategory { get; set; }
+    public string CollectiblesSubSubCategory { get; set; }
     public string CollectiblesCondition { get; set; }
     public long? CollectiblesMinPrice { get; set; }
     public long? CollectiblesMaxPrice { get; set; }
@@ -60,12 +77,30 @@ public class SearchStateService
     !string.IsNullOrWhiteSpace(CollectiblesCondition) ||
     CollectiblesMinPrice.HasValue ||
     CollectiblesMaxPrice.HasValue;
+    public int CollectiblesCurrentPage { get; set; } = 1;
+    public int CollectiblesPageSize { get; set; } = 12;
+    public event Action? CollectiblesOnPaginationChanged;
+
+    public void CollectiblesSetPage(int page)
+    {
+        CollectiblesCurrentPage = page;
+        CollectiblesOnPaginationChanged?.Invoke();
+    }
+
+    public void CollectiblesSetPageSize(int size)
+    {
+        CollectiblesPageSize = size;
+        CollectiblesCurrentPage = 1; // reset to first page on size change
+        CollectiblesOnPaginationChanged?.Invoke();
+    }
 
 
+
+    //Preloved
     public string PrelovedSearchText { get; set; }
     public string PrelovedCategory { get; set; }
-    public string PrelovedSubCategory { get; set; } 
-    public string PrelovedSubSubCategory { get; set; }  
+    public string PrelovedSubCategory { get; set; }
+    public string PrelovedSubSubCategory { get; set; }
     public string PrelovedSelectedCategoryName { get; set; }
     public string PrelovedSelectedSubCategoryName { get; set; }
     public string PrelovedSelectedSubSubCategoryName { get; set; }
@@ -85,6 +120,24 @@ public class SearchStateService
     !string.IsNullOrWhiteSpace(PrelovedBrand) ||
     PrelovedMinPrice.HasValue ||
     PrelovedMaxPrice.HasValue;
+    
+    public int PrelovedCurrentPage { get; set; } = 1;
+    public int PrelovedPageSize { get; set; } = 12;
+    public event Action? PrelovedOnPaginationChanged;
+
+    public void PrelovedSetPage(int page)
+    {
+        PrelovedCurrentPage = page;
+        PrelovedOnPaginationChanged?.Invoke();
+    }
+
+    public void PrelovedSetPageSize(int size)
+    {
+        PrelovedPageSize = size;
+        PrelovedCurrentPage = 1; // reset to first page on size change
+        PrelovedOnPaginationChanged?.Invoke();
+    }
+
 
 }
 
