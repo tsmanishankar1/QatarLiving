@@ -55,8 +55,8 @@
                         <MudTd DataLabel="Author">@context.authorName</MudTd>
                         <MudTd>
                             <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
-                                <MudMenuItem>
-                                    <MudIcon Icon="@Icons.Material.Outlined.Edit" Class="me-2" /> Edit
+                                <MudMenuItem OnClick="@(() => Navigation.NavigateTo($"/manage/news/editarticle/{context.Slug}"))">
+                                     <MudIcon Icon="@Icons.Material.Outlined.Edit" Class="me-2" /> Edit
                                 </MudMenuItem>
                                 <MudMenuItem>
                                     <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Class="me-2" /> Unpublish

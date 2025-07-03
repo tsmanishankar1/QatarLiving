@@ -9,12 +9,13 @@ using System.Net;
 
 namespace QLN.ContentBO.WebUI.Components.News
 {
-    public class AddArticleBase : QLComponentBase
+    public class EditArticleBase : QLComponentBase
     {
         [Inject] INewsService newsService { get; set; }
         [Inject] ILogger<AddArticleBase> Logger { get; set; }
         [Inject] IJSRuntime JS { get; set; }
         [Inject] IDialogService DialogService { get; set; }
+        [Parameter] public string Slug { get; set; }
 
         protected NewsArticleDTO article { get; set; } = new();
 
@@ -34,11 +35,13 @@ namespace QLN.ContentBO.WebUI.Components.News
             Categories = await GetNewsCategories();
             Slots = await GetSlots();
             WriterTags = await GetWriterTags();
+            article = await GetArticleBySlug(Slug);
+            TempCategoryList = article.Categories;
         }
 
         protected void AddCategory()
         {
-            if (Category.SlotId == 0) 
+            if (Category.SlotId == 0)
             {
                 Category.SlotId = 15; // By Default UnPublished.
             }
@@ -62,7 +65,7 @@ namespace QLN.ContentBO.WebUI.Components.News
                 article.UserId = CurrentUserId.ToString();
                 article.IsActive = true;
                 article.Categories = TempCategoryList;
-                var response = await newsService.CreateArticle(article);
+                var response = await newsService.UpdateArticle(article);
                 if (response != null && response.IsSuccessStatusCode)
                 {
                     Snackbar.Add("Article Added", severity: Severity.Success);
@@ -86,11 +89,6 @@ namespace QLN.ContentBO.WebUI.Components.News
                 article = new();
             }
         }
-        protected void EditImage()
-        {
-            article.CoverImageUrl = null;
-        }
-
 
         protected async Task HandleFilesChanged(InputFileChangeEventArgs e)
         {
@@ -179,6 +177,27 @@ namespace QLN.ContentBO.WebUI.Components.News
                 .SubCategories
                 .FirstOrDefault(sc => sc.Id == subCategoryId)?
                 .CategoryName;
+        }
+
+        private async Task<NewsArticleDTO> GetArticleBySlug(string slug)
+        {
+            try
+            {
+                var apiResponse = await newsService.GetArticleBySlug(slug);
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    var result = await apiResponse.Content.ReadFromJsonAsync<NewsArticleDTO>();
+
+                    return result;
+                }
+
+                return new();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetArticleBySlug");
+                return new();
+            }
         }
     }
 }
