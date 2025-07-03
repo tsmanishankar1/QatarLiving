@@ -5,6 +5,8 @@ using MudBlazor;
 using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
+using System;
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 
 namespace QLN.ContentBO.WebUI.Components.News
@@ -38,7 +40,7 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected void AddCategory()
         {
-            if (Category.SlotId == 0) 
+            if (Category.SlotId == 0)
             {
                 Category.SlotId = 15; // By Default UnPublished.
             }
@@ -62,6 +64,16 @@ namespace QLN.ContentBO.WebUI.Components.News
                 article.UserId = CurrentUserId.ToString();
                 article.IsActive = true;
                 article.Categories = TempCategoryList;
+                if (article.Categories.Count == 0)
+                {
+                    Snackbar.Add("Select atleast one category", severity: Severity.Error);
+                    return;
+                }
+                if (string.IsNullOrEmpty(article.CoverImageUrl))
+                {
+                    Snackbar.Add("Image is required", severity: Severity.Error);
+                    return;
+                }
                 var response = await newsService.CreateArticle(article);
                 if (response != null && response.IsSuccessStatusCode)
                 {

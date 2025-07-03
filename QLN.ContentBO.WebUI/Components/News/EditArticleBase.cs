@@ -5,6 +5,7 @@ using MudBlazor;
 using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 
 namespace QLN.ContentBO.WebUI.Components.News
@@ -65,11 +66,16 @@ namespace QLN.ContentBO.WebUI.Components.News
                 article.UserId = CurrentUserId.ToString();
                 article.IsActive = true;
                 article.Categories = TempCategoryList;
+                if (string.IsNullOrEmpty(article.CoverImageUrl))
+                {
+                    Snackbar.Add("Image is required", severity: Severity.Error);
+                    return;
+                }
                 var response = await newsService.UpdateArticle(article);
                 if (response != null && response.IsSuccessStatusCode)
                 {
                     Snackbar.Add("Article Added", severity: Severity.Success);
-
+                    article = new();
                     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
                     await DialogService.ShowAsync<ArticlePublishedDialog>("", options);
                 }
