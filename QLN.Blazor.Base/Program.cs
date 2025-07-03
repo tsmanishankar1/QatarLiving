@@ -223,7 +223,7 @@ app.UseRequestLocalization(localizationOptions);
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseResponseCompression();
+    // app.UseResponseCompression();
     // app.UseMigrationsEndPoint();
 }
 else
