@@ -1,6 +1,6 @@
 ﻿@page "/qln/PurchaseRefresh"
 
-@inherits PaytoPublishBase
+@inherits PurchaseRefreshBase
 
 @using QLN.Web.Shared.Components.ModalDialog
 @using QLN.Web.Shared.Components.BreadCrumb
@@ -14,7 +14,7 @@
 {
     <div class="popup-overlay">
         <ModalDialog Title="Payment Success!"
-                     Description="Payment was successful"
+                     Description="Your ad is now featured for 30 days, thanks for using Qatar Living Classifieds!"
                      ButtonName="Continue"
                      StatusType="Success"
                      OnClick="CloseSuccessPopup" />
@@ -25,53 +25,72 @@
         <MudContainer MaxWidth="MaxWidth.Large" Class="py-6 px-4" Style="background-color: #F2F4F7;width:100%">
             <Breadcrumb Items="breadcrumbItems" />
 
-
             <MudGrid GutterSize="4">
-              
 
                 <!-- LEFT SECTION -->
                 <MudItem xs="12" md="8">
                     <div style="max-width: 800px; margin: 0 auto;">
 
-                        <MudGrid GutterSize="4" Style="margin-top: 16px;">
-
-                            @if (IsPayPlansLoading)
-                            {
-                                <MudItem xs="12">
-                                    <div style="display: flex; justify-content: center; align-items: center; height: 200px; text-align: center;">
-                                        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+                        <MudGrid GutterSize="4" Class="d-flex justify-content-center ">
+                            <MudItem xs="12" Class="d-flex justify-content-center">
+                                <div style="text-align: center; margin-bottom: 24px;">
+                                    <MudText Typo="Typo.h5" Class="font-semibold mb-1" Style="color:#242424;">
+                                        Buy Refreshes Add-on
+                                    </MudText>
+                                    <MudText Typo="Typo.subtitle1" Class="mb-4" Style="color:#646464;">
+                                        Get more views and sell faster with more refreshes
+                                    </MudText>
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12" >
+                            <MudPaper Class="px-4 py-4" Style="border: 1px solid #F26D1E; border-radius: 8px;">
+                                <div class="d-flex flex-column flex-md-row justify-content-between mb-4 text-center text-md-left">
+                                    <div>
+                                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="color: #12B76A;" />
+                                        <div class="font-weight-bold">Stay on Top:</div>
+                                        <div class="text-muted">Keep your ad at the top of the results<br />to reach potential buyers.</div>
                                     </div>
-                                </MudItem>
-                            }
-                            else if (HasError)
-                            {
+                                    <div>
+                                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="color: #12B76A;" />
+                                        <div class="font-weight-bold">9x More Ad Visits:</div>
+                                        <div class="text-muted">Boost your visibility in and attract<br />more engaged viewers.</div>
+                                    </div>
+                                    <div>
+                                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="color: #12B76A;" />
+                                        <div class="font-weight-bold">Get 15x More Views:</div>
+                                        <div class="text-muted">Reach millions! Over 5,000,000<br />monthly visitors.</div>
+                                    </div>
+                                </div>
 
-                                <EmptyCard Title="No subscription plans available at the moment." Subtitle="Please check back later for updates." />
-
-                            }
-                            else if (_plans != null && _plans.Any())
-                            {
-                                @foreach (var plan in _plans)
-                                {
-                                    <MudItem xs="12" sm="6" md="4" lg="4">
-                                        <div style="height: 100%; display: flex; flex-direction: column;">
-
-                                            <PayToPublishCard Plan="plan"
-                                                              IsSelected="_selectedPlan?.PlanName == plan.PlanName &&
-                                              _selectedPlan?.Price == plan.Price &&
-                                              _selectedPlan?.DurationName == plan.DurationName"
-                                                              OnSelect="() => SelectPlan(plan)" />
+                                <MudPaper Elevation="0" Class="p-3" Style="border: 1px solid #D0D5DD; border-radius: 8px; background-color: #FAFAFA;">
+                                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+                                        <div class="mb-2 mb-md-0">
+                                            <MudText Typo="Typo.subtitle1" Class="font-weight-bold">
+                                                Refreshes
+                                                <MudTooltip Text="Have your Ad appear at the top of the category listings">
+                                                    <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="ml-1" Style="color: #98A2B3;" />
+                                                </MudTooltip>
+                                            </MudText>
+                                            <MudText Typo="Typo.caption" Class="text-muted">
+                                                Have your Ad appear at the top of the category listings
+                                            </MudText>
                                         </div>
 
-                                    </MudItem>
-                                }
-                            }
-                            else
-                            {
-                                <EmptyCard Title="No subscription plans available at the moment." Subtitle="Please check back later for updates." />
-
-                            }
-
+                                        <div class="d-flex align-items-center">
+                                            <MudSelect T="int" @bind-Value="_selectedQuantity" Style="width: 100px;" Dense="true">
+                                                @foreach (var qty in _quantities)
+                                                {
+                                                    <MudSelectItem T="int" Value="qty">@qty</MudSelectItem>
+                                                }
+                                            </MudSelect>
+                                            <MudText Typo="Typo.subtitle1" Class="ml-3" Style="color: #00426D;">
+                                                @_selectedPrice.ToString("0") QAR
+                                            </MudText>
+                                        </div>
+                                    </div>
+                                </MudPaper>
+                            </MudPaper>
+                            </MudItem>
                         </MudGrid>
 
                     </div>
@@ -80,7 +99,7 @@
                 <!-- RIGHT SECTION -->
                 <MudItem xs="12" md="4">
                     <!-- Summary Card -->
-                    <MudPaper Elevation="2" Class="pa-4">
+                    <MudPaper Elevation="0" Class="pa-4">
                         <MudText Class="summary-header mb-4">Summary</MudText>
 
                         @if (_selectedPlan != null)
@@ -206,6 +225,10 @@
                             </MudOverlay>
                         }
                     </MudPaper>
+                    <MudPaper Class="payment-container">
+      
+                      </MudPaper>
+
                 </MudItem>
             </MudGrid>
         </MudContainer>
@@ -295,6 +318,23 @@
         line-height: 18px;
         text-decoration: underline;
         cursor: pointer;
+    }
+
+    .payment-container {
+        width: 320px;
+        height: 500px;
+        background-color: #D9D9D9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        margin-top: 18px;
+    }
+
+    .payment-gif {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
     }
 
     @@media (max-width: 600px) {

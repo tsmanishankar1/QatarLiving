@@ -29,8 +29,10 @@ namespace QLN.Common.DTO_s
         public string WriterTag { get; set; }
 
         public string? CoverImageUrl { get; set; }
+
         public string Slug { get; set; }
-        public List<string> InlineImageUrls { get; set; } = [];
+
+        public bool IsActive { get; set; } = true;
 
         public List<V2ArticleCategory> Categories { get; set; } = [];
 
@@ -43,6 +45,7 @@ namespace QLN.Common.DTO_s
         public string UpdatedBy { get; set; }
 
         public DateTime UpdatedAt { get; set; }
+
         public string authorName { get; set; }
 
     }
@@ -53,6 +56,7 @@ namespace QLN.Common.DTO_s
         public string CategoryName { get; set; }
         public List<V2NewsSubCategory> SubCategories { get; set; }
     }
+
     public class V2NewsSubCategory
     {
         public int Id { get; set; }
@@ -64,7 +68,13 @@ namespace QLN.Common.DTO_s
 
         public string Name { get; set; } = string.Empty;
     }
-    public enum NewsSlot
+
+    public class WriterTagsResponse
+    {
+        public List<string> Tags { get; set; }
+    }
+
+    public enum Slot
     {
         Slot1 = 1,
         Slot2 = 2,
@@ -82,5 +92,6 @@ namespace QLN.Common.DTO_s
         Published = 14,
         UnPublished = 15
     }
+
 
 }

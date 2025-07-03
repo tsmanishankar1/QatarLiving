@@ -1,12 +1,11 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
-using QLN.Web.Shared.Components.BreadCrumb;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
 using System.ComponentModel.DataAnnotations;
 using static QLN.Web.Shared.Models.ClassifiedsDashboardModel;
-using static QLN.Web.Shared.Pages.Subscription.SubscriptionDetails;
+using static QLN.Web.Shared.Models.VerticalConstants;
 
 namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 {
@@ -16,7 +15,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         [Inject] protected ISnackbar Snackbar { get; set; }
         [Inject] protected IClassifiedDashboardService ClassfiedDashboardService { get; set; }
         [Inject] protected ICompanyProfileService CompanyProfileService { get; set; }
-        [Inject] private IHttpContextAccessor HttpContextAccessor { get; set; }
+        [Inject] protected ILogger<PreLovedDashboardBase> Logger { get; set; }
 
         protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
         protected List<StatItem> stats = new();
@@ -82,7 +81,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading company profile: {ex.Message}");
+                Logger.LogError($"Error loading company profile: {ex.Message}");
             }
             finally
             {
@@ -124,7 +123,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error loading subscription details: " + ex.Message);
+                Logger.LogError("Error loading subscription details: " + ex.Message);
                 _errorMessage = "Something went wrong while loading subscription stats.";
                 stats = new();
             }
@@ -149,7 +148,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error loading published ads: " + ex.Message);
+                Logger.LogError("Error loading published ads: " + ex.Message);
                 _errorMessage = "Something went wrong while loading published ads.";
                 publishedAds = new();
             }
@@ -173,7 +172,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error loading unpublished ads: " + ex.Message);
+                Logger.LogError("Error loading unpublished ads: " + ex.Message);
                 _errorMessage = "Something went wrong while loading unpublished ads.";
                 unpublishedAds = new();
             }
@@ -189,8 +188,6 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             if (search != null) searchTerm = search;
             if (sort.HasValue) sortOption = sort.Value;
 
-            Console.WriteLine($"[ReloadAdsAsync] Tab: {_selectedAdsTab}, Search: {searchTerm}, Sort: {sortOption}");
-
             if (_selectedAdsTab == 0)
             {
                 await LoadPublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
@@ -205,14 +202,12 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
         protected async Task HandleSearch(string term)
         {
-            Console.WriteLine($"[HandleSearch] Search term passed: {term}");
             CurrentPage = 1;
             await ReloadAdsAsync(search: term);
         }
 
         protected async Task HandleSort(int option)
         {
-            Console.WriteLine($"Sort option passed: {option}");
             CurrentPage = 1;
             await ReloadAdsAsync(sort: option);
         }
@@ -230,7 +225,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             CurrentPage = 1;
             await ReloadAdsAsync();
         }
-        protected async Task OnPublishAd(string adId)
+        protected async Task OnPublishAd(List<string> adId)
         {
             try
             {
@@ -248,12 +243,12 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error in OnPublishAd: " + ex.Message);
+                Logger.LogError("Error in OnPublishAd: " + ex.Message);
                 Snackbar.Add("An error occurred.", Severity.Error);
             }
         }
 
-        protected async Task UnPublishAd(string adId)
+        protected async Task UnPublishAd(List<string> adId)
         {
             try
             {
@@ -271,7 +266,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error in OnPublishAd: " + ex.Message);
+                Logger.LogError("Error in OnPublishAd: " + ex.Message);
                 Snackbar.Add("An error occurred.", Severity.Error);
             }
         }
@@ -293,23 +288,23 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error in onRemove: " + ex.Message);
+                Logger.LogError("Error in onRemove: " + ex.Message);
                 Snackbar.Add("An error occurred.", Severity.Error);
             }
         }
 
         protected void NavigateToAdPost()
         {
-            Navigation.NavigateTo("/qln/classifieds/createform");
+            Navigation.NavigateTo("/qln/classifieds/createform" ,forceLoad:true);
         }
 
         protected void OnEditAd(string adId)
         {
-            Navigation.NavigateTo($"/qln/classifieds/editform/{adId}");
+            Navigation.NavigateTo($"/qln/classifieds/editform/{adId}", forceLoad: true);
         }
         protected void onPreview(string adId)
         {
-            Navigation.NavigateTo($"/qln/classifieds/items/details/{adId}");
+            Navigation.NavigateTo($"/qln/classifieds/items/details/{adId}", forceLoad: true);
         }
 
   
@@ -319,18 +314,17 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         }
         protected void NavigateToEditProfile(string id)
         {
-            Navigation.NavigateTo($"/qln/dashboard/company/edit/{id}");
+            Navigation.NavigateTo($"/qln/dashboard/company/edit/{id}", forceLoad: true);
         }
         protected void NavigateToCreateProfile()
         {
-            var verticalId = 3;
-            var categoryId = 2;
+            var verticalId = VerticalId.Classifieds;
+            var categoryId = SubVerticalId.Preloved;
 
-
-            Navigation.NavigateTo($"/qln/dashboard/company/create/{verticalId}/{categoryId}");
+            Navigation.NavigateTo($"/qln/dashboard/company/create/{(int)verticalId}/{(int)categoryId}");
         }
 
-   
+
         public static string GetDisplayName<TEnum>(TEnum enumValue) where TEnum : Enum
         {
             var member = typeof(TEnum).GetMember(enumValue.ToString()).FirstOrDefault();

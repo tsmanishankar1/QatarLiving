@@ -1,0 +1,68 @@
+@using MudBlazor
+
+<div class="custom-alert-box">
+    <div class="icon-container">
+        <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Medium" Color="Color.Warning" />
+    </div>
+
+    <div class="text-container">
+        <h3>Login Required</h3>
+        <p>You need to log in to create a post. Please log in or sign up to continue.</p>
+    </div>
+
+    <div class="button-container">
+        <MudButton Color="Color.Warning" Variant="Variant.Filled" OnClick="@OnLoginClicked">
+            Login
+        </MudButton>
+    </div>
+</div>
+
+@code {
+    void OnLoginClicked()
+    {
+        // Navigate to login or show login dialog
+    }
+}
+<style>
+    .custom-alert-box {
+    display: flex;
+    align-items: center;
+    background-color: #fff7ed;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    padding: 16px;
+    max-width: 600px;
+    margin: 16px 0;
+}
+
+.icon-container {
+    background-color: #fef3c7;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.text-container {
+    margin-left: 16px;
+    flex-grow: 1;
+}
+
+.text-container h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #92400e;
+}
+
+.text-container p {
+    margin: 4px 0 0;
+    font-size: 0.95rem;
+    color: #b45309;
+}
+
+.button-container {
+    margin-left: auto;
+}
+</style>

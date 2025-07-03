@@ -7,6 +7,7 @@
 @using QLN.Web.Shared.Components.BreadCrumb
 @using QLN.Web.Shared.Components.PaginationFooter
 @using QLN.Web.Shared.Components.CustomSelect
+@using QLN.Common.DTO_s   
 @inject NavigationManager NavigationManager
 @inherits ItemListSectionBase
 
@@ -14,7 +15,7 @@
 
 <div class="item-list">
      <div class="item-list-header">
-        <h1 class="item-list-header-title">@($"Items in Qatar ({Items.Count} results)")</h1>
+        <h1 class="item-list-header-title">@($"Items in Qatar ({TotalCount} results)")</h1>
         <div class="item-list-header-sort-section">
             <label class="item-list-header-sort-label">Sort by:</label>
             <div class="item-list-header-sort-dropdown">
@@ -34,7 +35,7 @@
     @if (Loading)
     {
         <MudGrid GutterSize="3" >
-            @for (int i = 0; i < 9; i++)
+            @for (int i = 0; i < pageSize; i++)
             {
                 <MudItem xs="12" sm="6" md="4">
                     <FeaturedItemSkeletonCard />
@@ -42,7 +43,7 @@
             }
         </MudGrid>
     }
-   else if (PagedItems == null || !PagedItems.Any())
+   else if (Items == null || !Items.Any())
 {
     <div class="empty-wrapper">
         @if (IsSearchPerformed)
@@ -65,19 +66,27 @@
         @if (ViewMode == "grid")
         {
              <MudGrid GutterSize="3" >
-                @foreach (var item in PagedItems)
+               @foreach (var item in GetPageWithAd(Items, currentPage))
                 {
                     <MudItem xs="12" sm="6" md="4">
-                        <PromotedItemGridCard Item="item" OnClickCard="OnClickCardItem" />
+                        @if (item is ClassifiedsIndex classifiedItem)
+                        {
+                            <PromotedItemGridCard Item="classifiedItem" OnClickCard="OnClickCardItem" />
+                        }
+                        else if (item is string && item.ToString() == "ad")
+                        {
+                            <img src="/qln-images/classifieds/ad_image.svg" alt="Ad Banner" class="grid-ad-image" />
+                        }
                     </MudItem>
                 }
+
             </MudGrid>
         }
         else if (ViewMode == "list")
         {
             <div class="list-view-wrapper">
                 <div class="list-view-left">
-                    @foreach (var item in PagedItems)
+                    @foreach (var item in Items)
                     {
                         <PromotedItemListCard Item="item" OnClickCard="OnClickCardItem"/>
                     }
@@ -89,135 +98,15 @@
             </div>
 
         }
-        <!-- Pagination -->
-        <PaginationFooter TotalItems="@Items.Count" CurrentPage="@currentPage" PageSize="@pageSize"
-            OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
 
     }
-
+   @if (Items?.Any() == true)
+    {
+        <!-- Pagination -->
+        <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
+            OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
+    }
     </div>
 
 </div>
 
-<style>
-    .item-list {
-        padding: 5px 0;
-        font-family: 'Public Sans', sans-serif;
-        
-    }
-    .max-width-List {
-        max-width: 1068px;
-        margin: 0 auto;
-    }
-    .footer-pagination-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        padding: 32px 40px 0;
-    }
-
-    .pagination-center {
-        display: flex;  
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .empty-wrapper {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 300px;
-        padding: 40px 20px;
-    }
-
-    .item-list-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-        margin-bottom: 1rem;
-    }
-
-    .item-list-header-title {
-        margin: 0;
-        font-size: 16px;
-        font-weight: 500;
-        color: #242424;
-    }
-
-    .item-list-header-sort-section {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .item-list-header-sort-label {
-        font-weight: 500;
-        font-size: 13px;
-        color: #242424;
-    }
-
-    .item-list-header-sort-dropdown {
-        min-width: 180px;
-    }
-
-    .item-list-header-sort-section {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .item-list-header-sort-dropdown {
-        min-width: 155px;
-    }
-
-    .list-view-wrapper {
-        display: flex;
-        gap: 20px;
-        align-items: flex-start;
-    }
-
-    .list-view-left {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-    }
-
-    .list-view-right {
-        width: 340px;
-        flex-shrink: 0;
-        position: sticky;
-        top: 16px;
-    }
-
-    .ad-image {
-        width: 100%;
-        height: 384px;
-        object-fit: cover;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-
-    .pagination-container {
-        margin-top: 24px;
-    }
-     @@media (max-width: 1160px) {
-        .item-list {
-          padding: 5px;
-        }
-    }
-     @@media (max-width: 770px) {
-        .item-list {
-          padding: 5px;
-        }
-        .item-list-header-sort-label{
-            display: none;
-        }
-        .item-list-header-title{
-            font-size: 14px;
-        }
-    }
-</style>

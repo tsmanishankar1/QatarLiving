@@ -12,10 +12,16 @@ else if (Ads != null && Ads.Any())
     @foreach (var ad in Ads)
     {
         <MudPaper Class="ad-container d-flex flex-column flex-sm-row mt-4 "
-        Style="border-radius: 0; border: none; border-bottom: 1px solid #EAECF0; box-shadow: none;">
+                  Style="border-radius: 0; border: none; border-bottom: 1px solid #EAECF0; box-shadow: none;">
             <!-- First Row (Image + Checkbox) - full width on mobile -->
             <div class="d-flex align-items-center mb-3 mb-sm-0 mr-sm-4">
-                <MudCheckBox T="bool" @bind-Checked="_isChecked" Class="mr-2 ad-checkbox" />
+                <MudToggleIconButton T="bool"
+                                     Color="Color.Primary"
+                                     Toggled="@ad.IsSelected"
+                                     ToggledChanged="(value) => OnAdToggled(ad, value)"
+                                     Icon="@Icons.Material.Filled.CheckBoxOutlineBlank"
+                                     ToggledIcon="@Icons.Material.Filled.CheckBox"
+                                     Class="mr-2" />
                 @if (ad.ImageUrls != null && ad.ImageUrls.Any() && !string.IsNullOrEmpty(ad.ImageUrls.First().Url))
                 {
                     <div class="position-relative ad-image-wrapper">
@@ -47,13 +53,13 @@ else if (Ads != null && Ads.Any())
             <div style="flex:1">
                 <!-- Category (Row 2) -->
                 <MudText Typo="Typo.body2"
-                Style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 11px; line-height: 12px; letter-spacing: 0; color: #646464; margin-bottom: 4px;">
+                         Style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 11px; line-height: 12px; letter-spacing: 0; color: #646464; margin-bottom: 4px;">
                     @ad.Category
                 </MudText>
 
                 <!-- Title (Row 3) -->
                 <MudText Typo="Typo.h6"
-                Style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 14px; line-height: 20px; letter-spacing: 0; color: #00426D; margin-bottom: 4px;">
+                         Style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 14px; line-height: 20px; letter-spacing: 0; color: #00426D; margin-bottom: 4px;">
                     @ad.Title
                 </MudText>
 
@@ -63,7 +69,7 @@ else if (Ads != null && Ads.Any())
                     <div class="d-flex align-items-center">
                         <MudIcon Icon="@Icons.Material.Outlined.Place" Size="Size.Small" Style="color: #646464;" />
                         <MudText Typo="Typo.caption"
-                        Style="margin-left:4px;font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 14px; line-height: 12px; letter-spacing: 0; color: #646464;">
+                                 Style="margin-left:4px;font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 14px; line-height: 12px; letter-spacing: 0; color: #646464;">
                             @ad.Location
                         </MudText>
                     </div>
@@ -71,16 +77,16 @@ else if (Ads != null && Ads.Any())
                     <!-- Right: Status Chip + Expiry -->
                     <div class="d-flex flex-column align-items-sm-center mt-1 mt-sm-0">
                         <MudChip T="string" Style="@GetStatusStyle(ad.Status)"
-                        Color="Color.Default"
-                        Variant="Variant.Outlined"
-                        Size="Size.Small">
+                                 Color="Color.Default"
+                                 Variant="Variant.Outlined"
+                                 Size="Size.Small">
                             @GetStatusLabel(ad.Status)
                         </MudChip>
                         <div Class="mt-1 px-2 py-1" Style="background-color: #EDFAFF; border-radius: 4px; display: inline-block;">
                             <img src="/qln-images/subscription/expire.svg" alt="Expire Icon" style="width: 14px; height: 14px;" />
 
                             <MudText Typo="Typo.caption"
-                            Style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 11px; color: #0071AF;">
+                                     Style="font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 11px; color: #0071AF;">
                                 Expires: @ad.ExpiryDate.ToString("dd MMM yyyy")
                             </MudText>
                         </div>
@@ -89,74 +95,20 @@ else if (Ads != null && Ads.Any())
 
                 <!-- Price (Row 5) -->
                 <MudText Typo="Typo.h6"
-                Style="font-family: 'Public Sans', sans-serif; font-weight: 600; font-size: 20px; line-height: 34px; letter-spacing: 0; color: #242424;">
+                         Style="font-family: 'Public Sans', sans-serif; font-weight: 600; font-size: 20px; line-height: 34px; letter-spacing: 0; color: #242424;">
                     @ad.Price @ad.PriceType
                 </MudText>
 
                 <!-- Buttons (Row 6) -->
                 <div class="d-flex flex-wrap mt-2" style="gap: 8px;">
-                    @if (DashboardType != "Deals")
-                    {
-                        <MudButton Variant="Variant.Text"
-                        Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424; display: flex; align-items: center;">
-                            <img src="qln-images/subscription/Refresh.svg" alt="Gucci" style="margin-right: 8px;" />
-                            <div>
-                                Refresh
-                                <div style="font-size: 0.7em; color: #5F6C7B;">(Exp: @ad.RefreshExpiry)</div>
-                            </div>
-                        </MudButton>
 
-                        @if (ad.IsPromoted)
-                        {
-                            <MudButton Variant="Variant.Text"
-                            Disabled="true"
-                            Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color:#667085;">
-                                <img src="qln-images/subscription/LightningGrey.svg" style="margin-right: 8px;" alt="Promoted" />
-                                <div>
-                                    Promoted
-                                    <div style="font-size: 0.7em; color: #5F6C7B;">(Exp: @ad.RefreshExpiry)</div>
-                                </div>
-                            </MudButton>
-                        }
-                        else
-                        {
-                            <MudButton Variant="Variant.Text"
-                            Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424;">
-                                <img src="qln-images/subscription/Feature.svg" style="margin-right: 8px;" alt="Promote" />
-                                Pay to Promote
-                            </MudButton>
-                        }
+                    <MudButton @onclick="() => OnPublish.InvokeAsync(new List<string> { ad.Id })"
+                               Variant="Variant.Text"
+                               Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424;">
+                        <img src="/qln-images/subscription/PublishIcon.svg" style="margin-right: 8px;" alt="Publish" />
+                        Publish
+                    </MudButton>
 
-                        @if (ad.IsFeatured)
-                        {
-                            <MudButton Variant="Variant.Text"
-                            Disabled="true"
-                            Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #667085;">
-                                <img src="qln-images/subscription/LightningGrey.svg" style="margin-right: 8px;" alt="Featured" />
-                                <div>
-                                    Featured
-                                    <div style="font-size: 0.7em; color: #5F6C7B;">(Exp: @ad.RefreshExpiry)</div>
-                                </div>
-                            </MudButton>
-                        }
-                        else
-                        {
-                            <MudButton Variant="Variant.Text"
-                            Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424;">
-                                <img src="qln-images/subscription/Feature.svg" style="margin-right: 8px;" alt="Feature" />
-                                Pay to Feature
-                            </MudButton>
-                        }
-                    }
-                    else
-                    {
-                        <MudButton @onclick="() => OnPublish.InvokeAsync(ad.Id)"
-                                   Variant="Variant.Text"
-                                   Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424;">
-                            <img src="/qln-images/subscription/unpublish.svg" style="margin-right: 8px;" alt="Publish" />
-                            Publish
-                        </MudButton>
-                    }
 
                     <MudMenu OffsetY="true"
                              AnchorOrigin="Origin.BottomRight"
@@ -165,8 +117,8 @@ else if (Ads != null && Ads.Any())
                             <MudIconButton Icon="@Icons.Material.Filled.MoreVert" />
                         </ActivatorContent>
                         <ChildContent>
-                            <MudMenuItem @onclick="() => OnPublish.InvokeAsync(ad.Id)" Class="menu-item-style">
-                                <img src="/qln-images/subscription/unpublish.svg" class="menu-icon" />
+                            <MudMenuItem @onclick="() => OnPublish.InvokeAsync(new List<string> { ad.Id })" Class="menu-item-style">
+                                <img src="/qln-images/subscription/PublishIcon.svg" class="menu-icon" />
                                 <span>Publish</span>
                             </MudMenuItem>
                             <MudMenuItem @onclick="() => OnEdit.InvokeAsync(ad.Id)" Class="menu-item-style">
@@ -251,9 +203,61 @@ else if (Ads != null && Ads.Any())
             <MudText Typo="Typo.caption" Class="mt-2 mt-sm-0" Style="color: #5F6C7B;">Listed on @ad.CreatedDate</MudText>
         </MudPaper>
     }
+
+    <div class="bottom-action-bar d-flex flex-wrap gap-2 mt-4 px-2">
+        <MudButton Class="action-button"
+                   Variant="Variant.Outlined"
+                   Color="Color.Default"
+                   OnClick="SelectAll">
+            Select All
+        </MudButton>
+
+        <MudButton Class="action-button"
+                   Variant="Variant.Outlined"
+                   Color="Color.Default"
+                   Disabled="!SelectedAdIds.Any()"
+                   OnClick="UnselectAll">
+            Unselect All
+        </MudButton>
+
+        <MudButton Class="unpublish-button"
+                   Variant="Variant.Outlined"
+                   Disabled="!SelectedAdIds.Any()"
+                   OnClick="PublishAllSelected">
+            Publish
+        </MudButton>
+    </div>
 }
+
 else
 {
     <EmptyCard Title="No Published Ads" Subtitle="You have not published any ads yet." />
 }
 
+<style>
+    .bottom-action-bar {
+        background: transparent;
+        padding-top: 12px;
+        margin-top: 20px;
+        border-top: 0;
+    }
+
+    .action-button {
+        text-transform: none;
+        background-color: #FFFFFF;
+        font-weight: 600;
+        border-radius: 6px;
+        min-width: 120px;
+        border-color: #D0D5DD;
+    }
+
+    .unpublish-button {
+        text-transform: none;
+        font-weight: 600;
+        border-radius: 6px;
+        min-width: 120px;
+        color: #F26D1E;
+        border-color: #FFF5F0;
+    }
+
+</style>

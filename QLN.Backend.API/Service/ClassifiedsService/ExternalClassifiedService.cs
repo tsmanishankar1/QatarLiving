@@ -76,7 +76,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<bool> SaveSearch(SaveSearchRequestDto dto, Guid userId, CancellationToken cancellationToken = default)
+        public async Task<bool> SaveSearch(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -144,9 +144,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
-            if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
+            if (dto.ImageUrls == null || dto.ImageUrls.Count == 0)
                 throw new ArgumentException("At least one ad image is required.");
-            if (string.IsNullOrWhiteSpace(dto.CertificateBase64))
+            if (string.IsNullOrWhiteSpace(dto.CertificateUrl))
                 throw new ArgumentException("Certificate image is required.");
 
             if (!string.Equals(dto.SubVertical, "Items", StringComparison.OrdinalIgnoreCase))
@@ -159,28 +159,29 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var adId = Guid.NewGuid();
                 dto.Id = adId;
 
+                long guidHash = Math.Abs(adId.GetHashCode()); 
+                string tenDigitGuid = guidHash.ToString().Substring(0, 10);  
 
-                var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateBase64);
+
+                var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateUrl);
 
                 // Upload certificate
                 var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
-                    ? dto.CertificateFileName
-                    : $"certificate_{dto.UserId}_{adId}.{certExt}";
+                    ? $"{tenDigitGuid}_{dto.CertificateFileName}"
+                    : $"{tenDigitGuid}_certificate_{dto.UserId}_{adId}.{certExt}";
 
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
-                uploadedBlobKeys.Add(certFileName);
-                dto.CertificateFileName = certFileName;
-                dto.CertificateBase64 = certUrl;
+                uploadedBlobKeys.Add(certFileName);                
+                dto.CertificateUrl = certUrl;
 
-                // Upload images with order
-                for (int i = 0; i < dto.AdImagesBase64.Count; i++)
+                for (int i = 0; i < dto.ImageUrls.Count; i++)
                 {
-                    var image = dto.AdImagesBase64[i];
+                    var image = dto.ImageUrls[i];
                     var (imgExt, base64Image) = Base64ImageHelper.ParseBase64Image(image.Url);
-
-                    var customName = !string.IsNullOrWhiteSpace(image.AdImageFileNames)
-                        ? image.AdImageFileNames
-                        : $"Itemsad_{dto.UserId}_{adId}_{i + 1}.{imgExt}";
+                    var newGuid = new Guid();
+                    long guidHash1 = Math.Abs(newGuid.GetHashCode());
+                    string tenDigitGuid1 = guidHash.ToString().Substring(0, 10);
+                    var customName = $"Itemsad_{dto.UserId}_{tenDigitGuid1}_{i + 1}.{imgExt}";
 
                     var url = await _fileStorageBlob.SaveBase64File(base64Image, customName, "classifieds-images", cancellationToken);
                     uploadedBlobKeys.Add(customName);
@@ -189,7 +190,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     image.Url = url;
                 }
 
-                _log.LogTrace($"Calling internal service with {dto.AdImagesBase64.Count} images");
+                _log.LogTrace($"Calling internal service with {dto.ImageUrls.Count} images");
 
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
@@ -200,12 +201,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 );
                 var classifiedsIndex = new ClassifiedsIndex
                 {
+                    Id = dto.Id.ToString(),
                     SubVertical = dto.SubVertical,
                     Title = dto.Title,
                     Description = dto.Description,
                     CategoryId = dto.CategoryId.ToString(),
                     Category = dto.Category,
-                    L1Category = dto.l1Category,
+                    L1Category = dto.L1Category,
                     L1CategoryId = dto.L1CategoryId.ToString(),
                     L2Category = dto.L2Category,
                     L2CategoryId = dto.L2CategoryId.ToString(),
@@ -217,8 +219,8 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     UserId = dto.UserId.ToString(),
                     CreatedDate = DateTime.UtcNow,
                     ModifiedDate = DateTime.UtcNow,
-                    Images = dto.AdImagesBase64,
-                    WarrantyCertificateUrl = dto.CertificateBase64,
+                    Images = dto.ImageUrls,
+                    WarrantyCertificateUrl = dto.CertificateUrl,
                     Make = dto.MakeType,
                     Model = dto.Model,
                     Brand = dto.Brand,
@@ -241,7 +243,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     VerticalName = ConstantValues.Verticals.Classifieds,
                     ClassifiedsItem = classifiedsIndex
                 };
-                var msg = await _searchService.UploadAsync(indexDocument);
+                await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -269,14 +271,74 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
+        public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, Guid adId, CancellationToken cancellationToken = default)
+        {
+            if (adId == Guid.Empty)
+            {
+                throw new ArgumentException("AdId is required.");
+            }
+
+            try
+            {
+                 await _dapr.InvokeMethodAsync(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    $"/api/classifieds/items/refresh/{adId}?subVertical={subVertical}",
+                    cancellationToken 
+                );
+                var item = await _searchService.GetByIdAsync<ClassifiedsIndex>(ConstantValues.Verticals.Classifieds, adId.ToString());
+                if (item == null)
+                {
+                    throw new InvalidOperationException($"Ad with ID {adId} not found.");
+                }
+
+                item.IsRefreshed = true;
+                item.CreatedDate = DateTime.UtcNow;
+                item.RefreshExpiryDate = DateTime.UtcNow.AddHours(72);
+                var indexDocument = new CommonIndexRequest
+                {
+                    VerticalName = ConstantValues.Verticals.Classifieds,
+                    ClassifiedsItem = item
+                };
+
+                await _searchService.UploadAsync(indexDocument);
+
+                return new AdCreatedResponseDto
+                {
+                    AdId = adId,
+                    Message = "Ad successfully refreshed."
+                };
+            }
+            catch (ArgumentException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("AdId is required and must be valid.", ex);
+            }
+            catch (DaprException daprEx)
+            {
+                _log.LogException(daprEx);
+                throw new InvalidOperationException("Failed to invoke internal service through Dapr.", daprEx);
+            }
+            catch (HttpRequestException httpEx)
+            {
+                _log.LogException(httpEx);
+                throw new InvalidOperationException("Failed to communicate with the internal service.", httpEx);
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to refresh the ad due to an unexpected error.", ex);
+            }
+        }
+
         public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
-            if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
+            if (dto.ImageUrls == null || dto.ImageUrls.Count == 0)
                 throw new ArgumentException("At least one ad image is required.");
-            if (string.IsNullOrWhiteSpace(dto.CertificateBase64))
+            if (string.IsNullOrWhiteSpace(dto.CertificateUrl))
                 throw new ArgumentException("Certificate image is required.");
 
             if (!string.Equals(dto.SubVertical, "Preloved", StringComparison.OrdinalIgnoreCase))
@@ -289,26 +351,29 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var adId = Guid.NewGuid();
                 dto.Id = adId;
 
-                var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateBase64);
+                long guidHash = Math.Abs(adId.GetHashCode());
+                string tenDigitGuid = guidHash.ToString().Substring(0, 10);
+
+                var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateUrl);
 
                 var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
-                    ? dto.CertificateFileName
-                    : $"certificate_{dto.UserId}_{adId}.{certExt}";
+                    ? $"{tenDigitGuid}_{dto.CertificateFileName}"
+                    : $"{tenDigitGuid}_certificate_{dto.UserId}_{adId}.{certExt}";
 
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
-                uploadedBlobKeys.Add(certFileName);
-                dto.CertificateFileName = certUrl;
-                dto.CertificateBase64 = null;
+                uploadedBlobKeys.Add(certFileName);                
+                dto.CertificateUrl = certUrl;
 
-                for (int i = 0; i < dto.AdImagesBase64.Count; i++)
+                for (int i = 0; i < dto.ImageUrls.Count; i++)
                 {
-                    var image = dto.AdImagesBase64[i];
+                    var image = dto.ImageUrls[i];
 
                     var (imgExt, base64Image) = Base64ImageHelper.ParseBase64Image(image.Url);
 
-                    var customName = !string.IsNullOrWhiteSpace(image.AdImageFileNames)
-                        ? image.AdImageFileNames
-                        : $"PrelovedAd_{dto.UserId}_{adId}_{i + 1}.{imgExt}";
+                    var newGuid = new Guid();
+                    long guidHash1 = Math.Abs(newGuid.GetHashCode());
+                    string tenDigitGuid1 = guidHash.ToString().Substring(0, 10);
+                    var customName = $"Itemsad_{dto.UserId}_{tenDigitGuid1}_{i + 1}.{imgExt}";
 
                     var url = await _fileStorageBlob.SaveBase64File(base64Image, customName, "classifieds-images", cancellationToken);
                     uploadedBlobKeys.Add(customName);
@@ -317,7 +382,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     image.Url = url;
                 }
 
-                _log.LogTrace($"Calling internal service with CertificateUrl: {dto.CertificateFileName} and {dto.AdImagesBase64.Count} images");
+                _log.LogTrace($"Calling internal service with CertificateUrl: {dto.CertificateFileName} and {dto.ImageUrls.Count} images");
 
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
@@ -328,12 +393,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 );
                 var prelovedIndex = new ClassifiedsIndex
                 {
+                    Id = dto.Id.ToString(),
                     SubVertical = dto.SubVertical,
                     Title = dto.Title,
                     Description = dto.Description,
                     CategoryId = dto.CategoryId.ToString(),
                     Category = dto.Category,
-                    L1Category = dto.l1Category,
+                    L1Category = dto.L1Category,
                     L1CategoryId = dto.L1CategoryId.ToString(),
                     L2Category = dto.L2Category,
                     L2CategoryId = dto.L2CategoryId.ToString(),
@@ -345,8 +411,8 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     UserId = dto.UserId.ToString(),
                     CreatedDate = DateTime.UtcNow,
                     ModifiedDate = DateTime.UtcNow,
-                    Images = dto.AdImagesBase64,
-                    WarrantyCertificateUrl = dto.CertificateBase64,
+                    Images = dto.ImageUrls,
+                    WarrantyCertificateUrl = dto.CertificateUrl,
                     Status = "Published",
                     Model = dto.Model,
                     Brand = dto.Brand,
@@ -368,7 +434,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     VerticalName = ConstantValues.Verticals.Classifieds,
                     ClassifiedsItem = prelovedIndex
                 };
-                var msg = await _searchService.UploadAsync(indexDocument);
+                await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -401,9 +467,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
             ArgumentNullException.ThrowIfNull(dto);
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
-            if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
+            if (dto.ImageUrls == null || dto.ImageUrls.Count == 0)
                 throw new ArgumentException("At least one ad image is required.");
-            if (string.IsNullOrWhiteSpace(dto.CertificateBase64))
+            if (string.IsNullOrWhiteSpace(dto.CertificateUrl))
                 throw new ArgumentException("Certificate image is required.");
 
             if (!string.Equals(dto.SubVertical, "Collectibles", StringComparison.OrdinalIgnoreCase))
@@ -416,35 +482,37 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var adId = Guid.NewGuid();
                 dto.Id = adId;
 
+                long guidHash = Math.Abs(adId.GetHashCode()); 
+                string tenDigitGuid = guidHash.ToString().Substring(0, 10);
 
-                var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateBase64);
+                var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateUrl);
 
                 var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
-                    ? dto.CertificateFileName
-                    : $"certificate_{dto.UserId}_{adId}.{certExt}";
+                    ? $"{tenDigitGuid}_{dto.CertificateFileName}"
+                    : $"{tenDigitGuid}_certificate_{dto.UserId}_{adId}.{certExt}";
 
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(certFileName);
-                dto.CertificateFileName = certFileName;
-                dto.CertificateBase64 = certUrl;
+                dto.CertificateUrl = certUrl;
 
-                for (int i = 0; i < dto.AdImagesBase64.Count; i++)
+                for (int i = 0; i < dto.ImageUrls.Count; i++)
                 {
-                    var image = dto.AdImagesBase64[i];
+                    var image = dto.ImageUrls[i];
                     var (imgExt, base64Image) = Base64ImageHelper.ParseBase64Image(image.Url);
 
-                    var fileName = !string.IsNullOrWhiteSpace(image.AdImageFileNames)
-                        ? image.AdImageFileNames
-                        : $"collectibles_ad_{dto.UserId}_{adId}_{i + 1}.{imgExt}";
+                    var newGuid = new Guid();
+                    long guidHash1 = Math.Abs(newGuid.GetHashCode());
+                    string tenDigitGuid1 = guidHash.ToString().Substring(0, 10);
+                    var customName = $"Itemsad_{dto.UserId}_{tenDigitGuid1}_{i + 1}.{imgExt}";
 
-                    var blobUrl = await _fileStorageBlob.SaveBase64File(base64Image, fileName, "classifieds-images", cancellationToken);
-                    uploadedBlobKeys.Add(fileName);
+                    var blobUrl = await _fileStorageBlob.SaveBase64File(base64Image, customName, "classifieds-images", cancellationToken);
+                    uploadedBlobKeys.Add(customName);
 
-                    image.AdImageFileNames = fileName;
+                    image.AdImageFileNames = dto.ImageUrls[i].AdImageFileNames;
                     image.Url = blobUrl;
                 }
 
-                _log.LogTrace($"Calling internal collectibles service with {dto.AdImagesBase64.Count} images and cert: {dto.CertificateFileName}");
+                _log.LogTrace($"Calling internal collectibles service with {dto.ImageUrls.Count} images and cert: {dto.CertificateFileName}");
 
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
@@ -455,12 +523,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 );
                 var collectiblesIndex = new ClassifiedsIndex
                 {
+                    Id = dto.Id.ToString(),
                     SubVertical = dto.SubVertical,
                     Title = dto.Title,
                     Description = dto.Description,
                     CategoryId = dto.CategoryId.ToString(),
                     Category = dto.Category,
-                    L1Category = dto.l1Category,
+                    L1Category = dto.L1Category,
                     L1CategoryId = dto.L1CategoryId.ToString(),
                     L2Category = dto.L2Category,
                     L2CategoryId = dto.L2CategoryId.ToString(),
@@ -472,8 +541,8 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     UserId = dto.UserId.ToString(),
                     CreatedDate = DateTime.UtcNow,
                     ModifiedDate = DateTime.UtcNow,
-                    Images = dto.AdImagesBase64,
-                    WarrantyCertificateUrl = dto.CertificateBase64,
+                    Images = dto.ImageUrls,
+                    WarrantyCertificateUrl = dto.CertificateUrl,
                     YearEra = dto.YearOrEra,
                     Rarity = dto.Rarity,
                     Material = dto.Material,
@@ -489,7 +558,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     VerticalName = ConstantValues.Verticals.Classifieds,
                     ClassifiedsItem = collectiblesIndex
                 };
-                var msg = await _searchService.UploadAsync(indexDocument);
+                await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -522,7 +591,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             ArgumentNullException.ThrowIfNull(dto);
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
-            if (dto.AdImagesBase64 == null || dto.AdImagesBase64.Count == 0)
+            if (dto.ImageUrls == null || dto.ImageUrls.Count == 0)
                 throw new ArgumentException("At least one ad image is required.");
             if (string.IsNullOrWhiteSpace(dto.FlyerFile))
                 throw new ArgumentException("FlyerFile image is required.");
@@ -537,35 +606,38 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var adId = Guid.NewGuid();
                 dto.Id = adId;
 
+                long guidHash = Math.Abs(adId.GetHashCode()); 
+                string tenDigitGuid = guidHash.ToString().Substring(0, 10);
+
                 var (flyerExt, flyerBase64) = Base64ImageHelper.ParsePdfFile(dto.FlyerFile);
 
                 var flyerName = !string.IsNullOrWhiteSpace(dto.FlyerName)
-                    ? dto.FlyerName
-                    : $"deals_flyer_{dto.UserId}_{adId}.{flyerExt}";
+                    ? $"{tenDigitGuid}_{dto.FlyerName}"
+                    : $"{tenDigitGuid}_Flyer_{dto.UserId}_{adId}.{flyerExt}";
 
                 var flyerUrl = await _fileStorageBlob.SaveBase64File(dto.FlyerFile, flyerName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(flyerName);
-                dto.FlyerFile = flyerUrl;
-                dto.FlyerName = flyerName;
+                dto.FlyerFile = flyerUrl;                
 
-                for (int i = 0; i < dto.AdImagesBase64.Count; i++)
+                for (int i = 0; i < dto.ImageUrls.Count; i++)
                 {
-                    var image = dto.AdImagesBase64[i];
+                    var image = dto.ImageUrls[i];
 
                     var (imgExt, base64Image) = Base64ImageHelper.ParseBase64Image(image.Url);
 
-                    var fileName = !string.IsNullOrWhiteSpace(image.AdImageFileNames)
-                        ? image.AdImageFileNames
-                        : $"DealsAd_{dto.UserId}_{adId}_{i + 1}.{imgExt}";
+                    var newGuid = new Guid();
+                    long guidHash1 = Math.Abs(newGuid.GetHashCode());
+                    string tenDigitGuid1 = guidHash.ToString().Substring(0, 10);
+                    var customName = $"Itemsad_{dto.UserId}_{tenDigitGuid1}_{i + 1}.{imgExt}";
 
-                    var url = await _fileStorageBlob.SaveBase64File(base64Image, fileName, "classifieds-images", cancellationToken);
-                    uploadedBlobKeys.Add(fileName);
+                    var url = await _fileStorageBlob.SaveBase64File(base64Image, customName, "classifieds-images", cancellationToken);
+                    uploadedBlobKeys.Add(customName);
 
-                    image.AdImageFileNames = fileName;
+                    image.AdImageFileNames = dto.ImageUrls[i].AdImageFileNames;
                     image.Url = url;
                 }
 
-                _log.LogTrace($"Calling internal deals service with flyer: {dto.FlyerName} and {dto.AdImagesBase64.Count} images");
+                _log.LogTrace($"Calling internal deals service with flyer: {dto.FlyerName} and {dto.ImageUrls.Count} images");
 
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
@@ -576,12 +648,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 );
                 var dealsIndex = new ClassifiedsIndex
                 {
+                    Id = dto.Id.ToString(),
                     SubVertical = dto.SubVertical,
                     Title = dto.Title,
                     Description = dto.Description,
                     Location = dto.Location.FirstOrDefault(),
                     CreatedDate = DateTime.UtcNow,
-                    Images = dto.AdImagesBase64,
+                    Images = dto.ImageUrls,
                     FlyerFileUrl = dto.FlyerFile,
                     Status = "Published",
                     FlyerFileName = dto.FlyerName,
@@ -594,7 +667,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     VerticalName = ConstantValues.Verticals.Classifieds,
                     ClassifiedsItem = dealsIndex
                 };
-                var msg = await _searchService.UploadAsync(indexDocument);
+                await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -803,6 +876,94 @@ namespace QLN.Backend.API.Service.ClassifiedService
             {
                 _log.LogException(ex);
                 throw new InvalidOperationException("Failed to delete Classified Deals Ad.", ex);
+            }
+        }
+  
+        public async Task<ClassifiedItems> GetItemAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            if (adId == Guid.Empty)
+                throw new ArgumentException("Ad ID must not be empty.");
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<ClassifiedItems>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID, 
+                    $"api/classifieds/items/ads/{adId}",
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException($"Failed to retrieve ad details for Ad ID: {adId} from classified microservice.", ex);
+            }
+        }
+
+        public async Task<ClassifiedPreloved> GetPrelovedAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            if (adId == Guid.Empty)
+                throw new ArgumentException("Ad ID must not be empty.");
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<ClassifiedPreloved>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID, 
+                    $"api/classifieds/preloved/ad/{adId}",
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to retrieve Preloved ad from classified microservice.", ex);
+            }
+        }
+
+        public async Task<ClassifiedDeals> GetDealsAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            if (adId == Guid.Empty)
+                throw new ArgumentException("Ad ID must not be empty.");
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<ClassifiedDeals>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID, 
+                    $"api/classifieds/deals/ad/{adId}",
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex); 
+                throw new InvalidOperationException("Failed to retrieve Deals ad from classified microservice.", ex);
+            }
+        }
+
+        public async Task<ClassifiedCollectibles> GetCollectiblesAdById(Guid adId, CancellationToken cancellationToken = default)
+        {
+            if (adId == Guid.Empty)
+                throw new ArgumentException("Ad ID must not be empty.");
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<ClassifiedCollectibles>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/collectibles/ad/{adId}",
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to retrieve Collectibles ad from classified microservice.", ex);
             }
         }
 
@@ -1435,6 +1596,576 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedItemsAd(ClassifiedItems dto,CancellationToken cancellationToken = default)
+        {
+            if (dto.Id == null)
+                throw new ArgumentException("Id must be specified.", nameof(dto.Id));
+
+            var uploadedBlobKeys = new List<string>();
+
+            static bool IsBlobUrl(string url) =>
+                Uri.TryCreate(url, UriKind.Absolute, out var u) &&
+                (u.Scheme == Uri.UriSchemeHttp || u.Scheme == Uri.UriSchemeHttps);
+
+            try
+            {
+                var existingAd = await _dapr.InvokeMethodAsync<ClassifiedItems>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/items/ads/{dto.Id}",
+                    cancellationToken);
+
+                if (!string.Equals(dto.CertificateUrl, existingAd.CertificateUrl, StringComparison.Ordinal))
+                {
+                    if (!IsBlobUrl(dto.CertificateUrl))
+                    {
+                        var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateUrl);
+                        var adId = Guid.NewGuid();
+                        long guidHash = Math.Abs(adId.GetHashCode());
+                        string tenDigitGuid = guidHash.ToString().Substring(0, 10);
+                        var certFileName = $"{dto.Id}_{tenDigitGuid}.{certExt}";
+                        var certUrl = await _fileStorageBlob.SaveBase64File(
+                            certBase64, certFileName, "classifieds-images", cancellationToken);
+                        uploadedBlobKeys.Add(certFileName);
+                        dto.CertificateUrl = certUrl;
+                    }
+                }
+                else
+                {
+                    dto.CertificateUrl = existingAd.CertificateUrl;
+                }
+
+                var existingImages = existingAd.ImageUrls ?? new List<ImageInfo>();
+                var newImages = new List<ImageInfo>();
+
+                foreach (var img in dto.ImageUrls)
+                {
+                    if (!IsBlobUrl(img.Url))
+                    {
+                        var (imgExt, base64) = Base64ImageHelper.ParseBase64Image(img.Url);
+                        var adId = Guid.NewGuid();
+                        long guidHash = Math.Abs(adId.GetHashCode());
+                        string tenDigitGuid = guidHash.ToString().Substring(0, 10);
+                        var fileName = $"{dto.Id}_{tenDigitGuid}.{imgExt}";
+                        var url = await _fileStorageBlob.SaveBase64File(
+                            base64, fileName, "classifieds-images", cancellationToken);
+                        uploadedBlobKeys.Add(fileName);
+
+                        newImages.Add(new ImageInfo
+                        {
+                            AdImageFileNames = fileName,
+                            Url = url,
+                            Order = img.Order
+                        });
+                    }
+                    else
+                    {
+                        newImages.Add(img);
+                    }
+                }
+
+                var removedFiles = existingImages
+                    .Select(e => e.AdImageFileNames)
+                    .Except(newImages.Select(n => n.AdImageFileNames));
+                foreach (var fname in removedFiles)
+                {
+                    try
+                    {
+                        await _fileStorageBlob.DeleteFile(
+                            fname, "classifieds-images", cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.LogException(ex);
+                    }
+                }
+
+                dto.ImageUrls = newImages;
+
+                var response = await _dapr.InvokeMethodAsync<ClassifiedItems, AdUpdatedResponseDto>(
+                    HttpMethod.Put,
+                    SERVICE_APP_ID,
+                    "api/classifieds/items/update-by-id",
+                    dto,
+                    cancellationToken);
+                var classifiedsIndex = new ClassifiedsIndex
+                {
+                    Id = dto.Id.ToString(),
+                    SubVertical = dto.SubVertical,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    CategoryId = dto.CategoryId.ToString(),
+                    Category = dto.Category,
+                    L1Category = dto.L1Category,
+                    L1CategoryId = dto.L1CategoryId.ToString(),
+                    L2Category = dto.L2Category,
+                    L2CategoryId = dto.L2CategoryId.ToString(),
+                    Price = (double?)dto.Price,
+                    PriceType = dto.PriceType,
+                    Location = dto.Location.FirstOrDefault(),
+                    PhoneNumber = dto.PhoneNumber,
+                    WhatsappNumber = dto.WhatsAppNumber,
+                    UserId = dto.UserId.ToString(),
+                    CreatedDate = DateTime.UtcNow,
+                    ModifiedDate = DateTime.UtcNow,
+                    Images = dto.ImageUrls,
+                    WarrantyCertificateUrl = dto.CertificateUrl,
+                    Make = dto.MakeType,
+                    Model = dto.Model,
+                    Brand = dto.Brand,
+                    Processor = dto.Processor,
+                    Ram = dto.Ram,
+                    SizeType = dto.Size,
+                    Size = dto.SizeValue,
+                    Status = "Published",
+                    StreetNumber = dto.StreetNumber,
+                    Zone = dto.Zone,
+                    Storage = dto.Capacity,
+                    BuildingNumber = dto.BuildingNumber,
+                    Colour = dto.Color,
+                    BatteryPercentage = dto.BatteryPercentage,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiryDate = dto.RefreshExpiry
+                };
+                var indexDocument = new CommonIndexRequest
+                {
+                    VerticalName = ConstantValues.Verticals.Classifieds,
+                    ClassifiedsItem = classifiedsIndex
+                };
+                await _searchService.UploadAsync(indexDocument);
+                return response;
+            }
+            catch (InvocationException ex)
+            {
+                // Roll back any newly uploaded blobs
+                foreach (var fname in uploadedBlobKeys)
+                {
+                    try
+                    {
+                        await _fileStorageBlob.DeleteFile(
+                            fname, "classifieds-images", cancellationToken);
+                    }
+                    catch (Exception rollbackEx)
+                    {
+                        _log.LogException(rollbackEx);
+                    }
+                }
+
+                _log.LogException(ex);
+                throw new InvalidOperationException(
+                    "Failed to update classified item ad in the classifieds microservice.",
+                    ex);
+            }
+        }
+
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)
+        {
+            if (dto.Id == null)
+            {
+                throw new ArgumentException("Id must be specified.");
+            }
+            try
+            {
+                var uploadedBlobKeys = new List<string>();
+
+                static bool IsBlobUrl(string url) =>
+                    Uri.TryCreate(url, UriKind.Absolute, out var u) &&
+                    (u.Scheme == Uri.UriSchemeHttp || u.Scheme == Uri.UriSchemeHttps);
+
+                    var existingAd = await _dapr.InvokeMethodAsync<ClassifiedItems>(
+                        HttpMethod.Get,
+                        SERVICE_APP_ID,
+                        $"api/classifieds/preloved/ads/{dto.Id}",
+                        cancellationToken);
+
+                    if (!string.Equals(dto.CertificateUrl, existingAd.CertificateUrl, StringComparison.Ordinal))
+                    {
+                        if (!IsBlobUrl(dto.CertificateUrl))
+                        {
+                            var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateUrl);
+                            var adId = Guid.NewGuid();
+                            long guidHash = Math.Abs(adId.GetHashCode());
+                            string tenDigitGuid = guidHash.ToString().Substring(0, 10);
+                            var certFileName = $"{dto.Id}_{tenDigitGuid}.{certExt}";
+                            var certUrl = await _fileStorageBlob.SaveBase64File(
+                                certBase64, certFileName, "classifieds-images", cancellationToken);
+                            uploadedBlobKeys.Add(certFileName);
+                            dto.CertificateUrl = certUrl;
+                        }
+                    }
+                    else
+                    {
+                        dto.CertificateUrl = existingAd.CertificateUrl;
+                    }
+
+                    var existingImages = existingAd.ImageUrls ?? new List<ImageInfo>();
+                    var newImages = new List<ImageInfo>();
+
+                    foreach (var img in dto.ImageUrls)
+                    {
+                        if (!IsBlobUrl(img.Url))
+                        {
+                            var (imgExt, base64) = Base64ImageHelper.ParseBase64Image(img.Url);
+                            var adId = Guid.NewGuid();
+                            long guidHash = Math.Abs(adId.GetHashCode());
+                            string tenDigitGuid = guidHash.ToString().Substring(0, 10);
+                            var fileName = $"{dto.Id}_{tenDigitGuid}.{imgExt}";
+                            var url = await _fileStorageBlob.SaveBase64File(
+                                base64, fileName, "classifieds-images", cancellationToken);
+                            uploadedBlobKeys.Add(fileName);
+
+                            newImages.Add(new ImageInfo
+                            {
+                                AdImageFileNames = fileName,
+                                Url = url,
+                                Order = img.Order
+                            });
+                        }
+                        else
+                        {
+                            newImages.Add(img);
+                        }
+                    }
+
+                    var removedFiles = existingImages
+                        .Select(e => e.AdImageFileNames)
+                        .Except(newImages.Select(n => n.AdImageFileNames));
+                    foreach (var fname in removedFiles)
+                    {
+                        try
+                        {
+                            await _fileStorageBlob.DeleteFile(
+                                fname, "classifieds-images", cancellationToken);
+                        }
+                        catch (Exception ex)
+                        {
+                            _log.LogException(ex);
+                        }
+                    }
+
+                    dto.ImageUrls = newImages;
+
+                    var response = await _dapr.InvokeMethodAsync<ClassifiedPreloved, AdUpdatedResponseDto>(
+                    HttpMethod.Put,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/preloved/update-by-id",
+                    dto,
+                    cancellationToken);
+                var prelovedIndex = new ClassifiedsIndex
+                {
+                    Id = dto.Id.ToString(),
+                    SubVertical = dto.SubVertical,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    CategoryId = dto.CategoryId.ToString(),
+                    Category = dto.Category,
+                    L1Category = dto.L1Category,
+                    L1CategoryId = dto.L1CategoryId.ToString(),
+                    L2Category = dto.L2Category,
+                    L2CategoryId = dto.L2CategoryId.ToString(),
+                    Price = (double?)dto.Price,
+                    PriceType = dto.PriceType,
+                    Location = dto.Location.FirstOrDefault(),
+                    PhoneNumber = dto.PhoneNumber,
+                    WhatsappNumber = dto.WhatsAppNumber,
+                    UserId = dto.UserId.ToString(),
+                    CreatedDate = DateTime.UtcNow,
+                    ModifiedDate = DateTime.UtcNow,
+                    Images = dto.ImageUrls,
+                    WarrantyCertificateUrl = dto.CertificateUrl,
+                    Status = "Published",
+                    Model = dto.Model,
+                    Brand = dto.Brand,
+                    Processor = dto.Processor,
+                    Ram = dto.Ram,
+                    SizeType = dto.Size,
+                    Size = dto.SizeValue,
+                    StreetNumber = dto.StreetNumber,
+                    Zone = dto.Zone,
+                    Storage = dto.Capacity,
+                    BuildingNumber = dto.BuildingNumber,
+                    Colour = dto.Color,
+                    BatteryPercentage = dto.BatteryPercentage,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiryDate = dto.RefreshExpiry
+                };
+                var indexDocument = new CommonIndexRequest
+                {
+                    VerticalName = ConstantValues.Verticals.Classifieds,
+                    ClassifiedsItem = prelovedIndex
+                };
+                await _searchService.UploadAsync(indexDocument);
+                return response;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to update classified preloved ad in the classifieds microservice.", ex);
+            }
+        }
+
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedCollectiblesAd(ClassifiedCollectibles dto, CancellationToken cancellationToken = default)
+        {
+            if (dto.Id == null)
+            {
+                throw new ArgumentException("Id must be specified.");
+            }
+            try
+            {
+                var uploadedBlobKeys = new List<string>();
+
+                static bool IsBlobUrl(string url) =>
+                    Uri.TryCreate(url, UriKind.Absolute, out var u) &&
+                    (u.Scheme == Uri.UriSchemeHttp || u.Scheme == Uri.UriSchemeHttps);
+
+                var existingAd = await _dapr.InvokeMethodAsync<ClassifiedItems>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/collectibles/ads/{dto.Id}",
+                    cancellationToken);
+
+                if (!string.Equals(dto.CertificateUrl, existingAd.CertificateUrl, StringComparison.Ordinal))
+                {
+                    if (!IsBlobUrl(dto.CertificateUrl))
+                    {
+                        var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateUrl);
+                        var adId = Guid.NewGuid();
+                        long guidHash = Math.Abs(adId.GetHashCode());
+                        string tenDigitGuid = guidHash.ToString().Substring(0, 10);
+                        var certFileName = $"{dto.Id}_{tenDigitGuid}.{certExt}";
+                        var certUrl = await _fileStorageBlob.SaveBase64File(
+                            certBase64, certFileName, "classifieds-images", cancellationToken);
+                        uploadedBlobKeys.Add(certFileName);
+                        dto.CertificateUrl = certUrl;
+                    }
+                }
+                else
+                {
+                    dto.CertificateUrl = existingAd.CertificateUrl;
+                }
+
+                var existingImages = existingAd.ImageUrls ?? new List<ImageInfo>();
+                var newImages = new List<ImageInfo>();
+
+                foreach (var img in dto.ImageUrls)
+                {
+                    if (!IsBlobUrl(img.Url))
+                    {
+                        var (imgExt, base64) = Base64ImageHelper.ParseBase64Image(img.Url);
+                        var adId = Guid.NewGuid();
+                        long guidHash = Math.Abs(adId.GetHashCode());
+                        string tenDigitGuid = guidHash.ToString().Substring(0, 10);
+                        var fileName = $"{dto.Id}_{tenDigitGuid}.{imgExt}";
+                        var url = await _fileStorageBlob.SaveBase64File(
+                            base64, fileName, "classifieds-images", cancellationToken);
+                        uploadedBlobKeys.Add(fileName);
+
+                        newImages.Add(new ImageInfo
+                        {
+                            AdImageFileNames = fileName,
+                            Url = url,
+                            Order = img.Order
+                        });
+                    }
+                    else
+                    {
+                        newImages.Add(img);
+                    }
+                }
+
+                var removedFiles = existingImages
+                    .Select(e => e.AdImageFileNames)
+                    .Except(newImages.Select(n => n.AdImageFileNames));
+                foreach (var fname in removedFiles)
+                {
+                    try
+                    {
+                        await _fileStorageBlob.DeleteFile(
+                            fname, "classifieds-images", cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.LogException(ex);
+                    }
+                }
+
+                dto.ImageUrls = newImages;
+                var response = await _dapr.InvokeMethodAsync<ClassifiedCollectibles, AdUpdatedResponseDto>(
+                    HttpMethod.Put,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/collectibles/update-by-id",
+                    dto,
+                    cancellationToken);
+                var collectiblesIndex = new ClassifiedsIndex
+                {
+                    Id = dto.Id.ToString(),
+                    SubVertical = dto.SubVertical,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    CategoryId = dto.CategoryId.ToString(),
+                    Category = dto.Category,
+                    L1Category = dto.L1Category,
+                    L1CategoryId = dto.L1CategoryId.ToString(),
+                    L2Category = dto.L2Category,
+                    L2CategoryId = dto.L2CategoryId.ToString(),
+                    Price = (double?)dto.Price,
+                    PriceType = dto.PriceType,
+                    Location = dto.Location.FirstOrDefault(),
+                    PhoneNumber = dto.PhoneNumber,
+                    WhatsappNumber = dto.WhatsAppNumber,
+                    UserId = dto.UserId.ToString(),
+                    CreatedDate = DateTime.UtcNow,
+                    ModifiedDate = DateTime.UtcNow,
+                    Images = dto.ImageUrls,
+                    WarrantyCertificateUrl = dto.CertificateUrl,
+                    YearEra = dto.YearOrEra,
+                    Rarity = dto.Rarity,
+                    Material = dto.Material,
+                    Status = "Published",
+                    SerialNumber = dto.SerialNumber,
+                    SignedBy = dto.SignedBy,
+                    IsSigned = dto.Signed,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiryDate = dto.RefreshExpiry
+                };
+                var indexDocument = new CommonIndexRequest
+                {
+                    VerticalName = ConstantValues.Verticals.Classifieds,
+                    ClassifiedsItem = collectiblesIndex
+                };
+                await _searchService.UploadAsync(indexDocument);
+                return response;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to update classified collectibles ad in the classifieds microservice.", ex);
+            }
+        }
+
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedDealsAd(ClassifiedDeals dto, CancellationToken cancellationToken = default)
+        {
+            if (dto.Id == null)
+            {
+                throw new ArgumentException("Id must be specified.");
+            }
+            try
+            {
+                var uploadedBlobKeys = new List<string>();
+
+                static bool IsBlobUrl(string url) =>
+                    Uri.TryCreate(url, UriKind.Absolute, out var u) &&
+                    (u.Scheme == Uri.UriSchemeHttp || u.Scheme == Uri.UriSchemeHttps);
+
+                var existingAd = await _dapr.InvokeMethodAsync<ClassifiedItems>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/deals/ads/{dto.Id}",
+                    cancellationToken);
+
+                if (!string.Equals(dto.CertificateUrl, existingAd.CertificateUrl, StringComparison.Ordinal))
+                {
+                    if (!IsBlobUrl(dto.CertificateUrl))
+                    {
+                        var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateUrl);
+                        var adId = Guid.NewGuid();
+                        long guidHash = Math.Abs(adId.GetHashCode());
+                        string tenDigitGuid = guidHash.ToString().Substring(0, 10);
+                        var certFileName = $"{dto.Id}_{tenDigitGuid}.{certExt}";
+                        var certUrl = await _fileStorageBlob.SaveBase64File(
+                            certBase64, certFileName, "classifieds-images", cancellationToken);
+                        uploadedBlobKeys.Add(certFileName);
+                        dto.CertificateUrl = certUrl;
+                    }
+                }
+                else
+                {
+                    dto.CertificateUrl = existingAd.CertificateUrl;
+                }
+
+                var existingImages = existingAd.ImageUrls ?? new List<ImageInfo>();
+                var newImages = new List<ImageInfo>();
+
+                foreach (var img in dto.ImageUrls)
+                {
+                    if (!IsBlobUrl(img.Url))
+                    {
+                        var (imgExt, base64) = Base64ImageHelper.ParseBase64Image(img.Url);
+                        var adId = Guid.NewGuid();
+                        long guidHash = Math.Abs(adId.GetHashCode());
+                        string tenDigitGuid = guidHash.ToString().Substring(0, 10);
+                        var fileName = $"{dto.Id}_{tenDigitGuid}.{imgExt}";
+                        var url = await _fileStorageBlob.SaveBase64File(
+                            base64, fileName, "classifieds-images", cancellationToken);
+                        uploadedBlobKeys.Add(fileName);
+
+                        newImages.Add(new ImageInfo
+                        {
+                            AdImageFileNames = fileName,
+                            Url = url,
+                            Order = img.Order
+                        });
+                    }
+                    else
+                    {
+                        newImages.Add(img);
+                    }
+                }
+
+                var removedFiles = existingImages
+                    .Select(e => e.AdImageFileNames)
+                    .Except(newImages.Select(n => n.AdImageFileNames));
+                foreach (var fname in removedFiles)
+                {
+                    try
+                    {
+                        await _fileStorageBlob.DeleteFile(
+                            fname, "classifieds-images", cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.LogException(ex);
+                    }
+                }
+
+                dto.ImageUrls = newImages;
+                var response = await _dapr.InvokeMethodAsync<ClassifiedDeals, AdUpdatedResponseDto>(
+                    HttpMethod.Put,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/deals/update-by-id",
+                    dto,
+                    cancellationToken);
+
+                var dealsIndex = new ClassifiedsIndex
+                {
+                    Id = dto.Id.ToString(),
+                    SubVertical = dto.SubVertical,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    Location = dto.Location.FirstOrDefault(),
+                    CreatedDate = DateTime.UtcNow,
+                    Images = dto.ImageUrls,
+                    FlyerFileUrl = dto.FlyerFile,
+                    Status = "Published",
+                    FlyerFileName = dto.FlyerName,
+                    FlyerXmlLink = dto.XMLLink,
+                    ExpiryDate = dto.ExpiryDate,
+                    RefreshExpiryDate = dto.RefreshExpiry
+                };
+                var indexDocument = new CommonIndexRequest
+                {
+                    VerticalName = ConstantValues.Verticals.Classifieds,
+                    ClassifiedsItem = dealsIndex
+                };
+                await _searchService.UploadAsync(indexDocument);
+                return response;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to update classified collectibles ad in the classifieds microservice.", ex);
+            }
+        }
 
     }
 }

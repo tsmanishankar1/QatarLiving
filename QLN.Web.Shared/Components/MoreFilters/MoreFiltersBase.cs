@@ -7,13 +7,24 @@ namespace QLN.Web.Shared.Components.MoreFilters
     public class MoreFiltersBase : ComponentBase, IDisposable
     {
         [Parameter] public RenderFragment? ChildContent { get; set; }
-        [Parameter] public EventCallback OnApply { get; set; }
-        [Parameter] public EventCallback OnReset { get; set; }
-        [Parameter] public Dictionary<string, bool> Selection { get; set; } = new();
+        [Parameter]
+        public bool MoreText { get; set; } = false;
 
-        protected Dictionary<string, bool> confirmedSelection = new();
+        [Parameter] public EventCallback OnApply { get; set; }
+            [Parameter] public EventCallback OnReset { get; set; }
+            [Parameter] public Dictionary<string, Dictionary<string, bool>> SelectedOptions { get; set; } = new();
+
+            [Parameter]
+            public Dictionary<string, Dictionary<string, bool>> ConfirmedOptions { get; set; } = new();
+
+            [Parameter]
+         public bool HasWarrantyCertificate { get; set; }
+
         protected bool showFilters = false;
-        protected int SelectedFilterCount => confirmedSelection.Count(x => x.Value);
+     protected int SelectedFilterCount => ConfirmedOptions
+    .SelectMany(field => field.Value.Values)
+    .Count(isSelected => isSelected)
+    + (HasWarrantyCertificate ? 1 : 0);
 
         protected bool IsMobile = false;
         protected int windowWidth;
@@ -24,10 +35,8 @@ namespace QLN.Web.Shared.Components.MoreFilters
         [Inject] protected IJSRuntime JS { get; set; } = default!;
         protected DotNetObjectReference<MoreFiltersBase>? dotNetRef;
 
-        protected override void OnInitialized()
-        {
-            confirmedSelection = new Dictionary<string, bool>(Selection);
-        }
+
+
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
@@ -45,32 +54,47 @@ namespace QLN.Web.Shared.Components.MoreFilters
                 StateHasChanged();
             }
         }
-        protected async void ToggleFilter()
+      protected async void ToggleFilter()
+{
+    bool wasOpen = showFilters;
+    showFilters = !showFilters;
+
+    if (showFilters && !wasOpen)
+    {
+        // Copy ConfirmedOptions to SelectedOptions
+        SelectedOptions = ConfirmedOptions
+            .ToDictionary(
+                kv => kv.Key,
+                kv => kv.Value.ToDictionary(entry => entry.Key, entry => entry.Value)
+            );
+
+        int openingCount = SelectedOptions
+            .SelectMany(field => field.Value.Values)
+            .Count(v => v);
+
+        Console.WriteLine($"📂 [OpenFilters] Selected options on open: {openingCount}");
+    }
+
+    if (_jsInitialized)
+    {
+        await JS.InvokeVoidAsync("toggleBodyScroll", showFilters && IsMobile);
+
+        if (showFilters && !IsMobile && !wasOpen)
         {
-            bool wasOpen = showFilters;
-            showFilters = !showFilters;
-
-            if (_jsInitialized)
+            if (outsideClickHandler == null)
             {
-                await JS.InvokeVoidAsync("toggleBodyScroll", showFilters && IsMobile);
-
-                if (showFilters && !IsMobile && !wasOpen)
-                {
-                    // Only register outside click if opening, and not already registered
-                    if (outsideClickHandler == null)
-                    {
-                        outsideClickHandler = await JS.InvokeAsync<IJSObjectReference>(
-                            "registerOutsideClickHandlerOut", ".filter-panel", dotNetRef);
-                    }
-                }
-                else if (!showFilters)
-                {
-                    await DisposeOutsideClickHandler();
-                }
+                outsideClickHandler = await JS.InvokeAsync<IJSObjectReference>(
+                    "registerOutsideClickHandlerOut", ".filter-panel", dotNetRef);
             }
-
-            StateHasChanged();
         }
+        else if (!showFilters)
+        {
+            await DisposeOutsideClickHandler();
+        }
+    }
+
+    StateHasChanged();
+}
 
 
         private async Task DisposeOutsideClickHandler()
@@ -81,39 +105,67 @@ namespace QLN.Web.Shared.Components.MoreFilters
                 outsideClickHandler = null;
             }
         }
+protected async Task ApplyFilters()
+{
+    ConfirmedOptions = SelectedOptions
+        .ToDictionary(
+            kv => kv.Key,
+            kv => kv.Value.ToDictionary(entry => entry.Key, entry => entry.Value)
+        );
 
-        protected async Task ApplyFilters()
+    int appliedCount = ConfirmedOptions
+        .SelectMany(field => field.Value.Values)
+        .Count(v => v);
+
+    Console.WriteLine($"✅ [ApplyFilters] Applied selected count: {appliedCount}");
+
+    showFilters = false;
+    await JS.InvokeVoidAsync("toggleBodyScroll", false);
+    await DisposeOutsideClickHandler();
+    await OnApply.InvokeAsync();
+}
+
+
+   [JSInvokable]
+public async Task CloseFilters()
+{
+  
+    showFilters = false;
+
+    if (IsMobile)
+    {
+        await JS.InvokeVoidAsync("toggleBodyScroll", false);
+    }
+
+    await DisposeOutsideClickHandler();
+    StateHasChanged();
+}
+    protected async Task ResetFilters()
+{
+    foreach (var group in SelectedOptions)
+    {
+        foreach (var key in group.Value.Keys.ToList())
         {
-            confirmedSelection = new Dictionary<string, bool>(Selection);
-            showFilters = false;
-            await JS.InvokeVoidAsync("toggleBodyScroll", false);
-            await DisposeOutsideClickHandler();
-            await OnApply.InvokeAsync();
+            SelectedOptions[group.Key][key] = false;
         }
+    }
 
-        [JSInvokable]
-        public async Task CloseFilters()
+    foreach (var group in ConfirmedOptions)
+    {
+        foreach (var key in group.Value.Keys.ToList())
         {
-            showFilters = false;
-
-            if (IsMobile)
-            {
-                await JS.InvokeVoidAsync("toggleBodyScroll", false);
-            }
-
-            await DisposeOutsideClickHandler();
-            StateHasChanged();
+            ConfirmedOptions[group.Key][key] = false;
         }
+    }
 
-        protected async Task ResetFilters()
-        {
-            foreach (var key in Selection.Keys.ToList())
-            {
-                Selection[key] = false;
-            }
+    showFilters = false;
 
-            await OnReset.InvokeAsync();
-        }
+
+    await OnReset.InvokeAsync();
+
+    StateHasChanged(); // Important: this makes sure the UI reflects 0 badge
+}
+
 
         [JSInvokable]
         public async Task UpdateWindowWidth(int width)

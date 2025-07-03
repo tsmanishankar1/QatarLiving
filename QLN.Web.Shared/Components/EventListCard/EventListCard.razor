@@ -2,54 +2,60 @@
 @using QLN.Web.Shared.Components.EmptyCard
 @inherits EventListCardBase
 
-<div class="Event-list-card" @onclick="() => OnClick.InvokeAsync(Item)">
-    <div class="image-wrapper">
-        @if (string.IsNullOrWhiteSpace(Item.ImageUrl) || imageFailed)
-        {
-            <EmptyCard Title="No image found." Subtitle="Please check back later for updates." />
-        }
-        else
-        {
-            @if (!imageLoaded)
+
+
+<MudLink Href="@($"/content/events/details/{Item.Slug}")" Style="text-decoration: none;">
+    <div class="Event-list-card">
+        <div class="image-wrapper">
+            @if (string.IsNullOrWhiteSpace(Item.ImageUrl) || imageFailed)
             {
-                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="214px" />
+                <EmptyCard Title="No image found." Subtitle="Please check back later for updates." />
+            }
+            else
+            {
+                @if (!imageLoaded)
+                {
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="214px" />
+                }
+
+                <img src="@Item.ImageUrl" class="card-img" alt="@Item.Title"
+                     style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                     @onerror="OnImageError" key="@Item.ImageUrl" />
             }
 
-            <img src="@Item.ImageUrl" class="card-img" alt="@Item.Title"
-                style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
-                @onerror="OnImageError" key="@Item.ImageUrl" />
-        }
-
-        @if (!string.IsNullOrEmpty(Item.EventStart) && !string.IsNullOrEmpty(Item.EventEnd))
-        {
-            <div class="date">
-                @DateHelper.FormatDate(Item.EventStart) to @DateHelper.FormatDate(Item.EventEnd)
-            </div>
-        }
-    </div>
-
-
-    <div class="card-body">
-        <div class="category">@Item.EventCategory</div>
-
-        <h3 class="title">@Item.Title</h3>
-        <p class="description" style="text-overflow:ellipsis">@HtmlHelper.StripHTML(Item.Description)</p>
-
-        @if (!string.IsNullOrEmpty(Item.EventLocation))
-        {
-            <div class="location">
-                <MudIcon Icon="@Icons.Material.Rounded.LocationOn" Class="location-icon" />
-                <span class="location-text">@Item.EventLocation</span>
-            </div>
-        }
-        <!--
-        <div class="price">
-            <span>@Item.PriceMin.ToString("0") - @Item.PriceMax.ToString("0")</span>
-            <span class="currency">QAR</span>
+            @if (!string.IsNullOrEmpty(Item.EventStart) && !string.IsNullOrEmpty(Item.EventEnd))
+            {
+                <div class="date">
+                    @DateHelper.FormatDate(Item.EventStart) to @DateHelper.FormatDate(Item.EventEnd)
+                </div>
+            }
         </div>
-         -->
+
+
+        <div class="card-body">
+            <div class="category">@Item.EventCategory</div>
+
+            <h3 class="title">@Item.Title</h3>
+            <p class="description" style="text-overflow:ellipsis">@HtmlHelper.StripHTML(Item.Description)</p>
+
+            @if (!string.IsNullOrEmpty(Item.EventLocation))
+            {
+                <div class="location">
+                    <MudIcon Icon="@Icons.Material.Rounded.LocationOn" Class="location-icon" />
+                    <span class="location-text">@Item.EventLocation</span>
+                </div>
+            }
+            <!--
+            <div class="price">
+                <span>@Item.PriceMin.ToString("0") - @Item.PriceMax.ToString("0")</span>
+                <span class="currency">QAR</span>
+            </div>
+             -->
+        </div>
     </div>
-</div>
+    </MudLink>
+
+
 
 <style>
     .Event-list-card {

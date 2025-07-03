@@ -2,9 +2,8 @@
 @using MudBlazor;
 @using QLN.Web.Shared.Components.CustomButton
 
-<div class="popup-overlay">
-    <MudPaper Class="pa-6 mx-auto mt-10"
-              Style="max-width: 500px; border-radius: 12px; position: relative;">
+<div class="save-search-popup-overlay">
+   <div class="save-search-popup-modal @(IsVisible ? "fade-in" : "fade-out")">
         <MudStack Spacing="2" AlignItems="AlignItems.Center">
             <img src="/qln-images/search.svg" alt="Search" style="width: 48px; height: 48px;" />
 
@@ -19,43 +18,56 @@
          Style="font-size: 14px;">
         @Description
         </MudText>
-        @if (ShowTextField)
-        {
-        <MudTextField @bind-Value="SearchName"
-              Variant="Variant.Outlined"
-              Adornment="Adornment.End"
-              MaxLength="30"
-              AdornmentText="@($"{SearchName.Length}/30")"
-               FullWidth="true"
-              Class="mx-8"
-              Style="background-color: var(--color-text-white)" />
-              }
+     @if (!ShowTextField)
+{
+   <div class="input-wrapper mx-8 animated-input @(ShowTextField ? "hide" : "show")">
+        <input type="text"
+               @bind="SearchName"
+               @bind:event="oninput"
+               maxlength="30"
+               placeholder="Title*"
+               class="custom-text-input" />
+        <span class="char-count">@($"{SearchName.Length}/30")</span>
+    </div>
+}
+
 
         <CustomButton 
     BackgroundColor="var(--color-accent)"
     TextColor="var(--color-text-white)"
     Text="@PrimaryButtonText"
-    OnClick="@OnPrimaryClick"
+    OnClick="@(() => OnPrimaryClick.InvokeAsync(SearchName))"
+    Loading="Loading"
+    Disabled="IsPrimaryDisabled"
     Class="mt-4 public-sans fw-bold"
     Style="font-size: 16px; text-transform: none;" />
 
-<MudButton 
-    Variant="Variant.Outlined"
-    FullWidth="true"
-    Class="custom-outline-button public-sans fw-bold"
-    Style="border-radius: 8px; border: 1px solid var(--color-light-gray); font-size: 16px; text-transform: none;"
-    OnClick="@OnSecondaryClick">
-    <span class="custom-outline-text"> @SecondaryButtonText </span>
-</MudButton>
+<button @onclick="OnSecondaryClick"
+        class="custom-outline-button">
+    <span class="custom-outline-text">@SecondaryButtonText</span>
+</button>
+
         </MudStack>
-    </MudPaper>
+    </div>
 </div>
 
 <style>
     .public-sans {
     font-family: 'Public Sans', sans-serif;
 }
-
+.save-search-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.2); 
+    backdrop-filter: blur(3px); 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
 .fw-bold {
     font-weight: 600;
 }
@@ -75,19 +87,137 @@
 .full-width {
         width: 100%;
     }
+    .input-wrapper {
+        position: relative;
+        width: 100%;
+    }
+
+    .custom-text-input {
+        width: 100%;
+        padding: 15px 40px 15px 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 14px;
+        font-family: 'Public Sans', sans-serif;
+        outline: none;
+        transition: border 0.2s ease;
+        box-sizing: border-box;
+    }
+
+    .custom-text-input:focus {
+        border: 1px solid var(--color-accent); /* Blue on focus */
+    }
+
+    .char-count {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 12px;
+        color: #666;
+        pointer-events: none;
+        font-family: 'Public Sans', sans-serif;
+    }
+    .custom-outline-button {
+    width: 100%;
+    border-radius: 4px;
+    border: 1px solid var(--color-light-gray);
+    font-size: 16px;
+    padding: 6px 16px;
+    background-color: white;
+    font-weight: 500;
+    color: var(--color-text-heading);
+    cursor: pointer;
+    text-transform: none;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.normal-outline-button:hover {
+    background-color: #f5f5f5;
+}
+
+.animated-input {
+    opacity: 1;
+    transform: scale(1);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    max-height: 200px;
+    overflow: hidden;
+}
+
+.animated-input.hide {
+    opacity: 0;
+    transform: scale(0.95);
+    pointer-events: none;
+    max-height: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.animated-input.show {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+    max-height: 200px;
+}
+
+.save-search-popup-modal {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    max-width: 400px;
+    width: 100%;
+    position: relative;
+    animation-fill-mode: both;
+}
+
+@@keyframes fadeInScale {
+    0% {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@@keyframes fadeOutScale {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+}
+
+.fade-in {
+    animation: fadeInScale 0.3s ease forwards;
+}
+
+.fade-out {
+    animation: fadeOutScale 0.3s ease forwards;
+    pointer-events: none;
+}
+
+
 </style>
 
 @code {
+    [Parameter] public bool IsVisible { get; set; } = true;
     private string SearchName { get; set; } = string.Empty;
-    [Parameter] public bool ShowTextField { get; set; } = true;
+    private bool IsPrimaryDisabled => string.IsNullOrWhiteSpace(SearchName);
+    [Parameter] public bool ShowTextField { get; set; } = false;
     [Parameter] public string Title { get; set; } = "Save this Search";
     [Parameter] public string Description { get; set; } = "Please select filters to save";
     [Parameter] public string ImageUrl { get; set; } = "/qln-images/search.svg";
-
+    [Parameter] public bool Loading { get; set; } = false;
     [Parameter] public string PrimaryButtonText { get; set; } = "Close";
     [Parameter] public string SecondaryButtonText { get; set; } = "View Saved Searches";
 
-    [Parameter] public EventCallback OnPrimaryClick { get; set; }
+    [Parameter] public EventCallback<string> OnPrimaryClick { get; set; }
+
     [Parameter] public EventCallback OnSecondaryClick { get; set; }
 }
 

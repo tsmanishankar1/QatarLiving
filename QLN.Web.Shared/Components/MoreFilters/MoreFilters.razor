@@ -3,7 +3,7 @@
 
 <div class="more-filters-container">
     <button @onclick="ToggleFilter" class="@($"filter-toggle-button {(showFilters ? "active" : "")}")">
-         @if (!IsMobile)
+        @if (!IsMobile && MoreText)
     {
         <span>More</span>
     }

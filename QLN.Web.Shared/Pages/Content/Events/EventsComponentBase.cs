@@ -29,7 +29,7 @@ namespace QLN.Web.Shared.Pages.Content.Events
 
         protected string SelectedPropertyTypeId;
 
-        protected string SelectedLocationId;
+        protected List<string> SelectedLocationIds { get; set; } = new();
         protected string SelectedDateLabel;
         private string _fromDate;
         private string _toDate;
@@ -75,9 +75,9 @@ namespace QLN.Web.Shared.Pages.Content.Events
             await LoadAllEvents();
         }
 
-        protected async Task HandleLocationChanged(string location)
+        protected async Task HandleLocationChanged(List<string> locations)
         {
-            SelectedLocationId = location;
+            SelectedLocationIds = locations ?? new List<string>();
             //CurrentPage = 1;
             await LoadAllEvents();
             //TotalEvents = totalCount;
@@ -127,7 +127,8 @@ namespace QLN.Web.Shared.Pages.Content.Events
 
                     // Extract all unique areas from locations
                     Areas = data?.Locations?
-                     .SelectMany(loc => loc.Areas.Append(new Area { Id = loc.Id, Name = loc.Name }))
+                     .SelectMany(loc => (loc.Areas ?? Enumerable.Empty<Area>())
+                     .Append(new Area { Id = loc.Id, Name = loc.Name }))
                      .GroupBy(a => a.Id)
                      .Select(g => g.First())
                      .ToList() ?? new List<Area>();
@@ -186,7 +187,7 @@ namespace QLN.Web.Shared.Pages.Content.Events
             {
                 var response = await _eventService.GetAllEventsAsync(
                     category_id: SelectedPropertyTypeId,
-                    location_id: SelectedLocationId,
+                    location_id: SelectedLocationIds?.FirstOrDefault(), // should be a list of strings, but API expects a single string
                     from: _fromDate,
                     to: _toDate,
                     page: currentPage,

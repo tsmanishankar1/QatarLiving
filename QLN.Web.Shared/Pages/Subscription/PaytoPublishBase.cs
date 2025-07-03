@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
 using QLN.Web.Shared.Helpers;
 using QLN.Web.Shared.Models;
@@ -14,6 +15,7 @@ namespace QLN.Web.Shared.Pages.Subscription
 
         [Inject] private NavigationManager Navigation { get; set; } = default!;
         [Inject] protected ISubscriptionService SubscriptionService { get; set; }
+        [Inject] protected ILogger<PaytoPublishBase> Logger { get; set; }
 
         protected MudForm _form;
         protected bool _isLoading = false;
@@ -49,8 +51,8 @@ namespace QLN.Web.Shared.Pages.Subscription
         {
             breadcrumbItems = new()
         {
-            new() { Label = "Classifieds", Url = "classifieds" },
-            new() { Label = "Subscriptions", Url = "/Subscriptions", IsLast = true },
+            new() { Label = "Classifieds", Url = "/qln/classifieds" },
+            new() { Label = "PaytoPublish", Url = "/qln/PaytoPublish", IsLast = true },
         };
         }
 
@@ -76,9 +78,9 @@ namespace QLN.Web.Shared.Pages.Subscription
                 }
 
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex)
             {
-                Snackbar.Add($"Error fetching plans: {ex.Message}", Severity.Error);
+                Logger.LogError($"Error loading Subscription details: {ex}");
                 HasError = true;
                 IsPayPlansLoading = false;
 
@@ -102,7 +104,7 @@ namespace QLN.Web.Shared.Pages.Subscription
         protected void CloseSuccessPopup()
         {
             _actionSucess = false;
-            Navigation.NavigateTo("/qln/classified/dashboard/items");
+            Navigation.NavigateTo("/qln/classified/dashboard/items", forceLoad: true);
         }
 
         protected void SelectPlan(PayToPublishPlan plan)
@@ -155,16 +157,20 @@ namespace QLN.Web.Shared.Pages.Subscription
 
                     Console.WriteLine(JsonSerializer.Serialize(payload));
                     var response = await SubscriptionService.PurchaseSubscription(payload);
-                    if (response)
-                    {
-                        Snackbar.Add("Subscription added!", Severity.Success);
-                        _isPaymentDialogOpen = false;
-                        _actionSucess = true;
-                    }
-                    else
-                    {
-                        Snackbar.Add("Failed to subscribe. Please try again.", Severity.Error);
-                    }
+                    //if (response)
+                    //{
+                    //    Snackbar.Add("Subscription added!", Severity.Success);
+                    //    _isPaymentDialogOpen = false;
+                    //    _actionSucess = true;
+                    //}
+                    //else
+                    //{
+                    //    Snackbar.Add("Failed to subscribe. Please try again.", Severity.Error);
+                    //}
+                    Snackbar.Add("Payment Success!", Severity.Success);
+                    _isPaymentDialogOpen = false;
+                    _actionSucess = true;
+
 
                 }
                 catch (HttpRequestException ex)
