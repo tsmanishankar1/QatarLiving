@@ -234,7 +234,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         }
 
 
-        protected async Task OnPublishAd(string adId)
+        protected async Task OnPublishAd(List<string> adId)
         {
             try
             {
@@ -257,7 +257,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             }
         }
 
-        protected async Task UnPublishAd(string adId)
+        protected async Task UnPublishAd(List<string> adId)
         {
             try
             {
@@ -305,16 +305,16 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
         protected void NavigateToAdPost()
         {
-            Navigation.NavigateTo("/qln/classifieds/createform");
+            Navigation.NavigateTo("/qln/classifieds/createform", forceLoad: true);
         }
 
         protected void OnEditAd(string adId)
         {
-            Navigation.NavigateTo($"/qln/classifieds/editform/{adId}");
+            Navigation.NavigateTo($"/qln/classifieds/editform/{adId}", forceLoad: true);
         }
         protected void onPreview(string adId)
         {
-            Navigation.NavigateTo($"/qln/classifieds/items/details/{adId}");
+            Navigation.NavigateTo($"/qln/classifieds/items/details/{adId}", forceLoad: true);
         }
 
 
@@ -324,7 +324,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         }
         protected void NavigateToEditProfile(string id)
         {
-            Navigation.NavigateTo($"/qln/dashboard/company/edit/{id}");
+            Navigation.NavigateTo($"/qln/dashboard/company/edit/{id}", forceLoad: true);
         }
 
         public static string GetDisplayName<TEnum>(TEnum enumValue) where TEnum : Enum

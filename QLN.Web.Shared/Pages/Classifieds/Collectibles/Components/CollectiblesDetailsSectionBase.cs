@@ -22,7 +22,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Collectibles.Components
 
         [Parameter]
         public List<ClassifiedsIndex> Simler { get; set; } = new();
-
+       [Inject] protected SearchStateService SearchState { get; set; }
         protected string CurrentUrl => Navigation.ToAbsoluteUri(Navigation.Uri).ToString();
         protected int selectedImageIndex = 0;
         protected string categorySegment = "items"; 
@@ -41,14 +41,43 @@ namespace QLN.Web.Shared.Pages.Classifieds.Collectibles.Components
 
         protected override void OnInitialized()
         {
-           breadcrumbItems = new()
+            breadcrumbItems = new()
             {
                 new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem { Label = "Classifieds", Url = "/qln/classifieds" },
-                new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem { Label = "Collectibles", Url = "/qln/classifieds/collectibles" },
-                new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem { Label = Item?.Title ?? "Details", Url = "/qln/classifieds/collectibles/details", IsLast = true }
+                new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem { Label = "Collectibles", Url = "/qln/classifieds/collectibles" }
             };
 
+            // Add selected categories from SearchState if available
+            if (!string.IsNullOrWhiteSpace(SearchState.CollectiblesCategory))
+                breadcrumbItems.Add(new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem
+                {
+                    Label = SearchState.CollectiblesCategory,
+                    Url = "/qln/classifieds/collectibles"
+                });
+
+            if (!string.IsNullOrWhiteSpace(SearchState.CollectiblesSubCategory))
+                breadcrumbItems.Add(new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem
+                {
+                    Label = SearchState.CollectiblesSubCategory,
+                    Url = "/qln/classifieds/collectibles"
+                });
+
+            if (!string.IsNullOrWhiteSpace(SearchState.CollectiblesSubSubCategory))
+                breadcrumbItems.Add(new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem
+                {
+                    Label = SearchState.CollectiblesSubSubCategory,
+                    Url = "/qln/classifieds/collectibles"
+                });
+
+            // Final breadcrumb item: the current item title
+            breadcrumbItems.Add(new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem
+            {
+                Label = Item?.Title ?? "Details",
+                Url = $"/qln/classifieds/collectibles/details/{Item?.Id}",
+                IsLast = true
+            });
         }
+
  
         protected List<MenuItem> ShareMenuItems => new()
         {

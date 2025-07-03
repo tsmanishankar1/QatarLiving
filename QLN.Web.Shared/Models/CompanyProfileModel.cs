@@ -72,6 +72,8 @@ namespace QLN.Web.Shared.Models
         [Required(ErrorMessage = "City is required")]
         public string City { get; set; }
         public List<string> BranchLocations { get; set; }
+
+        [Phone(ErrorMessage = "Invalid Whatsapp number format")]
         public string WhatsAppNumber { get; set; }
         [Required(ErrorMessage = "Email is required")]
         [EmailAddress(ErrorMessage = "Invalid email format")]
@@ -100,7 +102,6 @@ namespace QLN.Web.Shared.Models
         [Phone(ErrorMessage = "Invalid phone number format")]
         public string PhoneNumber { get; set; }
 
-        [Required(ErrorMessage = "Company Logo is required")]
         public string CompanyLogo { get; set; }
         public int CompanyType { get; set; }
         public int CompanySize { get; set; }

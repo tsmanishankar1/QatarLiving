@@ -26,6 +26,7 @@ namespace QLN.Web.Shared.Pages.Company
         protected bool isSaving = false;
 
         protected CompanyProfileModelDto? companyProfile;
+        protected EditContext editContext;
 
         protected string? crFileName;
         protected string? crDocumentBase64;
@@ -42,18 +43,11 @@ namespace QLN.Web.Shared.Pages.Company
                 ];
 
 
-        protected override void OnInitialized()
+        protected override async Task OnInitializedAsync()
         {
             try
             {
-                AuthorizedPage();
-                breadcrumbItems = new()
-                {
-                    new() { Label = "Classifieds", Url = "qln/classifieds" },
-                    new() { Label = "Dashboard", Url = "/qln/classified/dashboard/items" },
-                    new() { Label = "Create Company Profile", Url = $"/qln/dashboard/company/create",IsLast=true },
-
-                };
+              
                 companyProfile = new CompanyProfileModelDto
                 {
                     BranchLocations = new List<string> { "" },
@@ -61,6 +55,16 @@ namespace QLN.Web.Shared.Pages.Company
                     SubVertical = CategoryId,
                     NatureOfBusiness = new List<int>()
                 };
+                editContext = new EditContext(companyProfile);
+                await AuthorizedPage();
+                breadcrumbItems = new()
+                {
+                    new() { Label = "Classifieds", Url = "qln/classifieds" },
+                    new() { Label = "Dashboard", Url = "/qln/classified/dashboard/items" },
+                    new() { Label = "Create Company Profile", Url = $"/qln/dashboard/company/create",IsLast=true },
+
+                };
+
             }
             catch (Exception ex)
             {
@@ -70,11 +74,11 @@ namespace QLN.Web.Shared.Pages.Company
 
         protected async Task SaveCompanyProfileAsync()
         {
-            if (string.IsNullOrEmpty(companyProfile.CompanyLogo))
-            {
-                Snackbar.Add("Company logo is required", Severity.Error);
-                return;
-            }
+            //if (string.IsNullOrEmpty(companyProfile.CompanyLogo))
+            //{
+            //    Snackbar.Add("Company logo is required", Severity.Error);
+            //    return;
+            //}
 
             if (string.IsNullOrEmpty(crDocumentBase64))
             {
@@ -87,11 +91,12 @@ namespace QLN.Web.Shared.Pages.Company
 
                 if (companyProfile != null)
                 {
-                    Console.WriteLine($"Saving Company Profile: {companyProfile}");
                     var updated = await CompanyProfileService.CreateCompanyProfileAsync(companyProfile);
                     if (updated)
                     {
                         Snackbar.Add("Company profile created successfully", Severity.Success);
+                        ClearCrFile();
+                        await ResetCompanyForm();
                     }
                     else
                     {
@@ -115,6 +120,13 @@ namespace QLN.Web.Shared.Pages.Company
         {
             if (file != null)
             {
+                var allowedImageTypes = new[] { "image/png", "image/jpg" };
+
+                if (!allowedImageTypes.Contains(file.ContentType))
+                {
+                    Snackbar.Add("Only image files (PNG, JPG) are allowed.", Severity.Warning);
+                    return;
+                }
                 if (file.Size > 10 * 1024 * 1024)
                 {
                     Snackbar.Add("Logo must be less than 10MB", Severity.Warning);
@@ -177,5 +189,57 @@ namespace QLN.Web.Shared.Pages.Company
 
             companyProfile.City = AvailableCities.FirstOrDefault();
         }
+        private async Task ResetCompanyForm()
+        {
+            
+            companyProfile = new CompanyProfileModelDto
+            {
+                Vertical = VerticalId,
+                SubVertical = CategoryId,
+
+                Country = string.Empty,
+                City = string.Empty,
+                BranchLocations = new List<string> { "" },
+
+                WhatsAppNumber = null,
+                WhatsAppCountryCode = null,
+                PhoneNumber = string.Empty,
+                PhoneNumberCountryCode = null,
+
+                Email = string.Empty,
+                WebsiteUrl = null,
+                FacebookUrl = null,
+                InstagramUrl = null,
+
+                StartDay = string.Empty,
+                EndDay = string.Empty,
+                StartHour = null,
+                EndHour = null,
+
+                UserDesignation = string.Empty,
+                CrDocument = string.Empty,
+                CrNumber = 0,
+
+                BusinessName = string.Empty,
+                BusinessDescription = string.Empty,
+                CompanyLogo = null,
+
+                CompanyType = 0,
+                CompanySize = 0,
+                NatureOfBusiness = new List<int>(),
+
+               
+
+                CreatedBy = string.Empty,
+                CreatedUtc = DateTime.UtcNow, 
+
+                Id = string.Empty
+            };
+            editContext = new EditContext(companyProfile);
+
+            await Task.Yield();
+            StateHasChanged();
+        }
+
     }
 }

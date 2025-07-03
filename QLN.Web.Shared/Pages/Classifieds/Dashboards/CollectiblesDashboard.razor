@@ -1,4 +1,4 @@
-﻿@page "/qln/classified/dashboard/Collectibles"
+﻿@page "/qln/classified/dashboard/Collectables"
 @inherits CollectiblesDashboardBase
 @using MudBlazor
 @using QLN.Web.Shared.Components.BreadCrumb
@@ -8,7 +8,7 @@
 
 <div>
     <MudContainer MaxWidth="MaxWidth.Large" Class="dashboard-container">
-                         <ClassifiedsDashboard SelectedDashboard="DashboardType.Collectibles" />
+        <ClassifiedsDashboard SelectedDashboard="DashboardType.Collectibles" />
 
         <div class="dashboard-header">
             <div class="dashboard-title-container">
@@ -213,7 +213,7 @@
                                        OnEdit="OnEditAd"
                                        OnPreview="onPreview"
                                        OnRemove="onRemove"
-                                       DashboardType="Collectibles" />
+                                       DashboardType="VerticalConstants.SubVerticalId.Collectibles" />
             }
             else if (_selectedAdsTab == 1)
             {
@@ -223,7 +223,7 @@
                                          OnEdit="OnEditAd"
                                          OnPreview="onPreview"
                                          OnRemove="onRemove"
-                                         DashboardType="Collectibles" />
+                                         DashboardType="VerticalConstants.SubVerticalId.Collectibles" />
             }
         </MudPaper>
 
@@ -306,6 +306,7 @@
         gap: 16px;
         background-color: white;
         margin-top: 24px;
+        box-shadow: none !important;
     }
 
     .dashboard-company-container {
@@ -316,6 +317,7 @@
         align-items: center;
         border-radius: 12px;
         background-color: #FAFAFA;
+        box-shadow: none !important;
     }
 
     .dashboard-company-logo {

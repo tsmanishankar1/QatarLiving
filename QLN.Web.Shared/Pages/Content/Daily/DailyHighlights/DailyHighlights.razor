@@ -15,14 +15,22 @@
         @for (int i = 0; i < ListOfItems.Take(3).Count(); i++)
         {
             var item = ListOfItems[i];
+            var detailUrl = item.NodeType.Contains("post") && !string.IsNullOrWhiteSpace(item.Slug)
+            ? $"/content/daily/article/details/{item.Slug}"
+            : $"/content/events/details/{item.Slug}";
+
             bool isLast = i == ListOfItems.Take(3).Count() - 1;
+            <MudLink Href="@detailUrl" Style="text-decoration: none;">
             <div class="news-card @(isLast ? "" : "with-divider")" @onclick="() => NavigateToDetailPage(item)">
+                
                 <img class="daily-news-image" src="@item.ImageUrl" alt="img" />
                 <div class="text-content">
                     <p class="tag">@item.Category</p>
                     <h4 class="headline">@item.Title</h4>
                 </div>
+                
             </div>
+            </MudLink>
         }
 
     </div>

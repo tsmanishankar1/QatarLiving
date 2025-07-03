@@ -453,7 +453,7 @@ body {
         width: 100%;
         height: 400px;
         object-fit: cover;
-        border-radius: 12px;
+        border-radius: 6px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
@@ -585,10 +585,12 @@ body {
         transform: scale(0.95);
     }
 
-   
-        .short-select,
         .save-search {
             width: 100%;
+        }
+        .item-short-select{
+             width: 100%;
+              max-width: 100px;
         }
         .brand-select{
             width: 100%;
@@ -882,9 +884,7 @@ body {
 
 
 /* UploadPhotos */
-
-
-.Upload-container {
+ .Upload-container {
         padding: 20px;
         background-color: var(--color-background);
         border-radius: 6px;
@@ -992,15 +992,15 @@ body {
     }
 
     .delete-icon {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        background-color: var(--color-accent);
-        border-radius: 50%;
-        color: white;
-        width: 28px;
-        height: 28px;
-        z-index: 10;
+       position: absolute !important;
+        top: 8px !important;
+        right: 8px !important;
+        background-color: var(--color-accent) !important;
+        border-radius: 50% !important;
+        color: white !important;
+        width: 28px !important;
+        height: 28px !important;
+        z-index: 10 !important;
     }
 
     .cover-label {
@@ -1072,9 +1072,6 @@ body {
             font-size: 11px;
         }
     }
-
-
-    
 
     /* DealsDetailsComponents */
 
@@ -2482,9 +2479,7 @@ body {
 }
 
 
-.video-card {
-     width: 225px; height: 348px;
-}
+
 
 .video-card .video-info {
     position: absolute;
@@ -2666,6 +2661,18 @@ body {
         width: 100%;
         gap:5px
     }
+      .collectibles-first-row {
+        width: 500px;
+        transition: width 0.3s ease;
+    }
+
+    .collectibles-first-row.search-focused {
+        width: 100%;
+    }
+    .collectibles-second-row {
+            width: 300px;
+    }
+
 
     .collectibles-search-section-bar {
         display: flex;
@@ -2802,9 +2809,16 @@ body {
             flex-direction: row;
             gap: 10px;
         }
+        .collectibles-first-row {
+            width: 100%;
+        }
+        .collectibles-second-row {
+            width: 100%;
+        }
 
         .collectibles-search-section-bar,
         .collectibles-search-input,
+        .collectibles-brand-select,
         .collectibles-price-short-select,
         .collectibles-short-select,
         .collectibles-save-search {
@@ -2835,6 +2849,17 @@ body {
         flex-direction: row;
         width: 100%;
         gap:5px
+    }
+    .item-first-row {
+        width: 500px;
+        transition: width 0.3s ease;
+    }
+
+    .item-first-row.search-focused {
+        width: 100%;
+    }
+    .item-second-row{
+            width: 300px;
     }
 
     .item-search-bar {
@@ -2972,13 +2997,21 @@ body {
             flex-direction: row;
             gap: 10px;
         }
+        .item-first-row {
+            width: 100%;
+        }
+        .item-second-row {
+            width: 100%;
+        }
 
         .item-search-bar,
         .item-search-input,
+        .item-brand-select,
         .item-price-short-select,
         .item-short-select,
         .item-save-search {
             width: 100%;
+            max-width: 100%;
         }
 
         .item-right-actions {
@@ -3005,6 +3038,17 @@ body {
         width: 100%;
         gap:5px
     }
+  .preloved-first-row {
+        width: 500px;
+        transition: width 0.3s ease;
+    }
+
+    .preloved-first-row.search-focused {
+        width: 100%;
+    }
+    .preloved-second-row{
+            width: 300px;
+        }
 
     .preloved-search-bar {
         display: flex;
@@ -3141,9 +3185,16 @@ body {
             flex-direction: row;
             gap: 10px;
         }
+        .preloved-first-row {
+            width: 100%;
+        }
+        .preloved-second-row {
+            width: 100%;
+        }
 
         .preloved-search-bar,
         .preloved-search-input,
+        .preloved-brand-select,
         .preloved-price-short-select,
         .preloved-short-select,
         .preloved-save-search {

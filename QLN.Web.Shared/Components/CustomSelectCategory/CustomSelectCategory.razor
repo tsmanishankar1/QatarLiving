@@ -30,16 +30,16 @@
 
     @if (IsOpen && !IsDisabled && !IsMobile)
     {
-        <div class="select-dropdown animate-dropdown">
+        <div class="category-select-dropdown animate-dropdown">
             @if (!string.IsNullOrEmpty(Placeholder))
             {
-                <div class="dropdown-item disabled">@Placeholder</div>
+                <div class="category-dropdown-item disabled">@Placeholder</div>
             }
 
             @foreach (var item in Items)
             {
-                <div class="dropdown-item-custom" @onclick="() => SelectItem(item)" title="@GetLabel(item)">
-                    <span class="dropdown-text">@GetLabel(item)</span>
+                <div class="category-dropdown-item-custom" @onclick="() => SelectItem(item)" title="@GetLabel(item)">
+                    <span class="category-dropdown-text">@GetLabel(item)</span>
                     @if (SelectedId == GetId(item))
                     {
                         <MudIcon Icon="@Icons.Material.Filled.Check" Class="check-icon" />
@@ -129,10 +129,10 @@
         margin-left: 8px;
     }
 
-    .select-dropdown {
+    .category-select-dropdown {
         position: absolute;
         width: 100%;
-        background: white;
+        background-color: #fff;
         border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         margin-top: 4px;
@@ -140,16 +140,38 @@
         padding: 10px 5px;
         max-height: 200px;
         overflow-y: auto;
+        overflow-x: hidden;
     }
-
-    .dropdown-item-custom {
+    .category-dropdown-text {
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 1; /* show up to 2 lines */
+        -webkit-box-orient: vertical;
+        white-space: normal; /* allow wrapping */
+        word-break: break-word;
+    }
+    .category-dropdown-item{
+        margin: 0;
+        padding: 0 5px;
+        width: 100%;
+        color: #A1A1A1;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .category-dropdown-item-custom {
         padding: 8px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        cursor: pointer;
     }
 
-    .dropdown-item-custom:hover {
+    .category-dropdown-item-custom:hover {
         border-radius: 10px;
         background-color: #FAFAFA;
     }

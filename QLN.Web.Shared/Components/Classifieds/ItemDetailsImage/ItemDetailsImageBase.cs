@@ -50,7 +50,19 @@ private DotNetObjectReference<ItemDetailsImageBase>? _objectReference;
         {
             _objectReference?.Dispose();
         }
+       [JSInvokable]
+        public void UpdateActiveIndex(int index)
+        {
+            CurrentIndex = index;
+            SelectedImageIndex = index;
 
+            if (Item?.Images != null && index >= 0 && index < Item.Images.Count)
+            {
+                currentImageUrl = Item.Images[index].Url;
+            }
+
+            StateHasChanged();
+        }
         protected bool IsFavorited { get; set; } = false;
 
         protected void ToggleFavorite()

@@ -42,7 +42,7 @@
 
     @if (IsOpen && !IsDisabled)
     {
-        <div class="select-dropdown animate-dropdown">
+        <div class="new-select-dropdown animate-dropdown">
             @if (!string.IsNullOrEmpty(Placeholder))
             {
                 <div class="dropdown-item-placeholder disabled">@Placeholder</div>
@@ -239,17 +239,18 @@ private string GetBorderColor()
     }
 
 
-    .select-dropdown {
+    .new-select-dropdown {
         position: absolute;
         width: 100%;
         background: white;
         border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         margin-top: 4px;
-        z-index: 1000;
+        z-index: 10000;
         padding: 10px 5px;
-        max-height: 200px;
+        max-height: 200px; 
         overflow-y: auto;
+        overflow-x: hidden;
     }
 
     .animate-dropdown {
@@ -283,8 +284,11 @@ private string GetBorderColor()
         margin: 0;
         overflow: hidden;
         text-overflow: ellipsis;
-        -webkit-line-clamp: 1;
+        display: -webkit-box;
+        -webkit-line-clamp: 1; /* show up to 2 lines */
         -webkit-box-orient: vertical;
+        white-space: normal; /* allow wrapping */
+        word-break: break-word;
     }
 
     .dropdown-item-custom:hover {

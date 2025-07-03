@@ -23,7 +23,7 @@
                     <MudItem xs="4">
                         <MudSelect T="int" @bind-Value="Category.SubcategoryId" Class="w-100" Variant="Variant.Filled" Label="Subcategory" Placeholder="Choose" Disabled="@(Category.CategoryId == 0)" For="@(() => Category.SubcategoryId)">
                             <MudSelectItem Value="@(0)">Choose</MudSelectItem>
-                            @foreach (var item in Categories.Where(x => x.Id == Category.CategoryId))
+                            @foreach (var item in Categories.Where(c => c.Id == Category.CategoryId)?.FirstOrDefault()?.SubCategories ?? [])
                             {
                                 <MudSelectItem Value="@item.Id">@item.CategoryName</MudSelectItem>
                             }
@@ -53,13 +53,13 @@
 
                     <MudGrid GutterSize="16px" Class="mb-4">
                         <MudItem xs="4">
-                            <MudSelect T="int" Class="w-100" Variant="Variant.Filled" Label="Category">
+                            <MudSelect T="int" Class="w-100" Variant="Variant.Filled" Label="Category" Disabled="true">
                                 <MudSelectItem Value="@(0)">@Categories.FirstOrDefault(c => c.Id == category.CategoryId)?.CategoryName</MudSelectItem>
                             </MudSelect>
                         </MudItem>
 
                         <MudItem xs="4">
-                            <MudSelect T="int" Class="w-100" Variant="Variant.Filled" Label="Subcategory">
+                            <MudSelect T="int" Class="w-100" Variant="Variant.Filled" Label="Subcategory" Disabled="true">
                                 <MudSelectItem Value="@(0)">@GetSubCategoryName(category.CategoryId, category.SubcategoryId)</MudSelectItem>
                             </MudSelect>
                         </MudItem>

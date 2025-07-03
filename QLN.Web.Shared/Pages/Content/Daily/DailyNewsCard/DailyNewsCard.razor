@@ -1,18 +1,31 @@
 @using QLN.Web.Shared.Helpers
 @inherits DailyNewsCardBase
+
+@{
+    var detailUrl = Item.NodeType.Contains("post") && !string.IsNullOrWhiteSpace(Item.Slug)
+        ? $"/content/daily/article/details/{Item.Slug}"
+        : $"/content/events/details/{Item.Slug}";
+}
 @if (!string.IsNullOrEmpty(Item.ImageUrl) || !string.IsNullOrEmpty(Item.Category) || !string.IsNullOrEmpty(Item.Title))
 {
 
+    <MudLink Href="@detailUrl" Style="text-decoration: none;">
         <div class="daily-news-card" @onclick="NavigateToDetailPage">
             <div class="daily-news-card-image-wrapper">
                 <img src="@Item.ImageUrl" alt="img-alt" class="daily-news-card-image" />
             </div>
             <div class="daily-news-card-content">
                 <div class="daily-news-category">@Item.Category</div>
-                <div class="daily-news-title">@Item.Title</div>
+            
+            <div class="daily-news-title">@Item.Title</div>
+
+            
             </div>
-        </div>  
+        </div>
+    </MudLink>
 }
+
+
 
 <style>   
     .daily-news-card {
