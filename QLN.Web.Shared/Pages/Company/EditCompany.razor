@@ -136,7 +136,7 @@
                         <ValidationMessage For="@(() => companyProfile.City)" />
 
 
-                    <MudTextField @bind-Value="companyProfile.BranchLocations[0]" Label="Branches" Class="form-input no-underline" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.LocationOn" />
+                        <MudTextField @bind-Value="companyProfile.BranchLocations[0]" Label="Branches" Class="form-input no-underline" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.LocationOn" AdornmentColor="Color.Primary" AdornmentIconStyle="color: #FF7F38;"  />
 
                         <MudTextField @bind-Value="companyProfile.PhoneNumber" Label="Phone Number" For="@(() => companyProfile.PhoneNumber)" Class="form-input no-underline" Adornment="Adornment.Start" AdornmentText="@companyProfile.PhoneNumberCountryCode" Immediate="true" />
                         <ValidationMessage For="@(() => companyProfile.PhoneNumber)" />
