@@ -1,17 +1,21 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.JSInterop;
+using MudBlazor;
 using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
+using System.Net;
 
 namespace QLN.ContentBO.WebUI.Components.News
 {
-    public class AddArticleBase : ComponentBase
+    public class AddArticleBase : QLComponentBase
     {
         [Inject] INewsService newsService { get; set; }
         [Inject] ILogger<AddArticleBase> Logger { get; set; }
         [Inject] IJSRuntime JS { get; set; }
+        [Inject] IDialogService DialogService { get; set; }
+
         protected NewsArticleDTO article { get; set; } = new();
 
         protected List<NewsCategory> Categories = [];
@@ -26,6 +30,7 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected override async Task OnInitializedAsync()
         {
+            AuthorizedPage();
             Categories = await GetNewsCategories();
             Slots = await GetSlots();
             WriterTags = await GetWriterTags();
@@ -33,13 +38,17 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected void AddCategory()
         {
+            if (Category.SlotId == 0) 
+            {
+                Category.SlotId = 15; // By Default UnPublished.
+            }
             TempCategoryList.Add(Category);
             Category = new();
         }
 
         protected void RemoveCategory(ArticleCategory articleCategory)
         {
-            if(TempCategoryList.Count > 0)
+            if (TempCategoryList.Count > 0)
             {
                 TempCategoryList.Remove(articleCategory);
                 Category = new();
@@ -50,38 +59,58 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             try
             {
+                article.UserId = CurrentUserId.ToString();
+                article.IsActive = true;
                 article.Categories = TempCategoryList;
                 var response = await newsService.CreateArticle(article);
+                if (response != null && response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Article Added", severity: Severity.Success);
+
+                    var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+                    await DialogService.ShowAsync<ArticlePublishedDialog>("", options);
+                }
+                else if (response.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    Snackbar.Add("You are unauthorized to perform this action");
+                }
+                else if (response.StatusCode == HttpStatusCode.InternalServerError)
+                {
+                    Snackbar.Add("Internal API Error");
+                }
+                article = new();
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "HandleValidSubmit");
+                article = new();
+            }
+        }
+        protected void EditImage()
+        {
+            article.CoverImageUrl = null;
+        }
+
+
+        protected async Task HandleFilesChanged(InputFileChangeEventArgs e)
+        {
+            var file = e.File;
+            if (file != null)
+            {
+                using var stream = file.OpenReadStream(5 * 1024 * 1024); // 5MB limit
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                var base64 = Convert.ToBase64String(memoryStream.ToArray());
+                article.CoverImageUrl = $"data:{file.ContentType};base64,{base64}";
             }
         }
 
-        protected void HandleCoverImageChange(InputFileChangeEventArgs e)
+        protected async void Cancel()
         {
-
-        }
-
-        protected void HandleInlineImagesChange(InputFileChangeEventArgs e)
-        {
-
-        }
-
-        protected async Task TriggerCoverUpload()
-        {
-            await JS.InvokeVoidAsync("document.getElementById", "cover-upload").AsTask();
-        }
-
-        protected async Task TriggerInlineImageUpload()
-        {
-            await JS.InvokeVoidAsync("document.getElementById", "inline-upload").AsTask();
-        }
-
-        protected void Cancel()
-        {
-
+            var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+            var dialog = await DialogService.ShowAsync<DiscardArticleDialog>("", options);
+            var result = dialog.Result;
+            article = new();
         }
 
         private async Task<List<NewsCategory>> GetNewsCategories()
@@ -129,7 +158,9 @@ namespace QLN.ContentBO.WebUI.Components.News
                 var apiResponse = await newsService.GetWriterTags();
                 if (apiResponse.IsSuccessStatusCode)
                 {
-                    return await apiResponse.Content.ReadFromJsonAsync<List<string>>() ?? [];
+                    var tagResponse = await apiResponse.Content.ReadFromJsonAsync<TagResponse>();
+
+                    return tagResponse?.Tags ?? [];
                 }
 
                 return [];
@@ -139,6 +170,15 @@ namespace QLN.ContentBO.WebUI.Components.News
                 Logger.LogError(ex, "GetWriterTags");
                 return [];
             }
+        }
+
+        protected string? GetSubCategoryName(int CategoryId, int subCategoryId)
+        {
+            return Categories
+                .FirstOrDefault(c => c.Id == CategoryId)?
+                .SubCategories
+                .FirstOrDefault(sc => sc.Id == subCategoryId)?
+                .CategoryName;
         }
     }
 }

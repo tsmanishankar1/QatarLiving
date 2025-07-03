@@ -26,9 +26,15 @@
                 <ChildContent>
                     @foreach (var dashboard in DashboardOptions)
                     {
-                        <MudMenuItem OnClick="() => SwitchDashboard(dashboard)">
-                            @GetDashboardName(dashboard)
-                        </MudMenuItem>
+                        <div style="display: flex; align-items: center; gap: 2px;margin-left:10px">
+
+                            <img src=@($"/qln-images/classifieds/dashboard/{dashboard.ToString().ToLower().Trim()}.svg")
+                                 alt="@dashboard"
+                                 style="width: 24px; height: 24px; margin-right: 8px;" />
+                            <MudMenuItem OnClick="() => SwitchDashboard(dashboard)">
+                                @GetDashboardName(dashboard)
+                            </MudMenuItem>
+                        </div>
                     }
                 </ChildContent>
             </MudMenu>

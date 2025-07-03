@@ -19,7 +19,9 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         Task<List<V2NewsArticleDTO>> GetAllNewsFilterArticles(bool? isActive = null, CancellationToken cancellationToken = default);
         Task<string> DeleteNews(Guid id, CancellationToken cancellationToken = default);
         Task<string> ReorderSlotsAsync(ReorderSlotRequestDto dto, CancellationToken cancellationToken);
+        Task<V2NewsArticleDTO?> GetArticleByIdAsync(Guid id, CancellationToken cancellationToken);
+        Task<V2NewsArticleDTO?> GetArticleBySlugAsync(string slug, CancellationToken cancellationToken);
 
-     }
+    }
 
 }

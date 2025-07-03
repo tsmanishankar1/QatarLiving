@@ -1,4 +1,3 @@
-using GoogleAnalytics.Blazor;
 using Microsoft.AspNetCore.Components.Authorization;
 using MudBlazor.Services;
 using QLN.Web.Shared.Contracts;
@@ -122,8 +121,12 @@ builder.Services.AddScoped<IAdService, AdMockService>();
 var youtubeApiKey = builder.Configuration["YouTubeAPI:ApiKey"];
 builder.Services.AddScoped(sp => new YouTubeApiService(youtubeApiKey));
 
+builder.Services.AddScoped<QLN.Web.Shared.Services.FeedbackService>();
+
 builder.Services.Configure<NavigationPath>(
     builder.Configuration.GetSection("NavigationPath"));
+    
+builder.Services.Configure<FeedbackApiOptions>(builder.Configuration.GetSection("FeedbackApi"));
 
 // http clients
 builder.Services.AddHttpClient<IQLAnalyticsService, QLAnalyticsService>(client =>
@@ -207,11 +210,6 @@ builder.Services.AddHttpClient<ICompanyProfileService, CompanyProfileService>(cl
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ISimpleMemoryCache, SimpleMemoryCache>(); // add shared Banner Service
 
-builder.Services.AddGBService(options =>
-{
-    options.TrackingId = builder.Configuration["GoogleAnalytics:TrackingId"];
-});
-
 var app = builder.Build();
 
 string[] supportedCultures = ["en-US"];
@@ -225,7 +223,7 @@ app.UseRequestLocalization(localizationOptions);
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    //app.UseResponseCompression();
+    app.UseResponseCompression();
     // app.UseMigrationsEndPoint();
 }
 else

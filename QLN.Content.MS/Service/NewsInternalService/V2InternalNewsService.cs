@@ -50,10 +50,10 @@ namespace QLN.Content.MS.Service.NewsInternalService
                         SubCategories = [
                             new() { Id = 1, CategoryName = "QatarEconomy" },
                             new() { Id = 2, CategoryName = "MarketUpdates" },
-                            new() { Id = 2, CategoryName = "Real Estate" },
-                            new() { Id = 2, CategoryName = "Entrepreneurship" },
-                            new() { Id = 2, CategoryName = "Finance" },
-                            new() { Id = 2, CategoryName = "Jobs & Careers" }
+                            new() { Id = 3, CategoryName = "Real Estate" },
+                            new() { Id = 4, CategoryName = "Entrepreneurship" },
+                            new() { Id = 5, CategoryName = "Finance" },
+                            new() { Id = 6, CategoryName = "Jobs & Careers" }
                         ]
                     },
 
@@ -62,12 +62,13 @@ namespace QLN.Content.MS.Service.NewsInternalService
                         Id = 3,
                         CategoryName = "Sports",
                         SubCategories = [
+                            //update the ID values
                             new() { Id = 1, CategoryName = "Qatar Sports" },
                             new() { Id = 2, CategoryName = "FootBall" },
-                            new() { Id = 2, CategoryName = "International " },
-                            new() { Id = 2, CategoryName = "MotorSports" },
-                            new() { Id = 2, CategoryName = "Olympics" },
-                            new() { Id = 2, CategoryName = "Athelete Features" }
+                            new() { Id = 3, CategoryName = "International " },
+                            new() { Id = 4, CategoryName = "MotorSports" },
+                            new() { Id = 5, CategoryName = "Olympics" },
+                            new() { Id = 6, CategoryName = "Athelete Features" }
                         ]
                     },
 
@@ -78,10 +79,10 @@ namespace QLN.Content.MS.Service.NewsInternalService
                         SubCategories = [
                             new() { Id = 1, CategoryName = "Food & Dining" },
                             new() { Id = 2, CategoryName = "Travel & Leisure" },
-                            new() { Id = 2, CategoryName = "Arts & Culture" },
-                            new() { Id = 2, CategoryName = "Events" },
-                            new() { Id = 2, CategoryName = "Fashion & Style" },
-                            new() { Id = 2, CategoryName = "Home & Living" }
+                            new() { Id = 3, CategoryName = "Arts & Culture" },
+                            new() { Id = 4, CategoryName = "Events" },
+                            new() { Id = 5, CategoryName = "Fashion & Style" },
+                            new() { Id = 6, CategoryName = "Home & Living" }
                         ]
                     }
            ];
@@ -439,8 +440,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 throw;
             }
         }
-
-
         public async Task<string> ReorderSlotsAsync(ReorderSlotRequestDto dto, CancellationToken cancellationToken)
         {
             const int MaxSlot = 13;
@@ -512,6 +511,56 @@ namespace QLN.Content.MS.Service.NewsInternalService
             updatedSlots.Sort();
 
             return $"Reordered successfully. Updated slots: {string.Join(", ", updatedSlots)}";
+        }
+
+
+        public async Task<V2NewsArticleDTO?> GetArticleByIdAsync(Guid id, CancellationToken cancellationToken)
+        {
+            return await _dapr.GetStateAsync<V2NewsArticleDTO>(V2Content.ContentStoreName, id.ToString(), cancellationToken: cancellationToken);
+        }
+
+        public async Task<V2NewsArticleDTO?> GetArticleBySlugAsync(string slug, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    V2Content.ContentStoreName,
+                    V2Content.NewsIndexKey,
+                    cancellationToken: cancellationToken) ?? new();
+
+                _logger.LogInformation("Fetched {Count} keys from index for slug lookup", keys.Count);
+
+                var items = await _dapr.GetBulkStateAsync(
+                    V2Content.ContentStoreName,
+                    keys,
+                    parallelism: null,
+                    cancellationToken: cancellationToken);
+
+                foreach (var item in items)
+                {
+                    if (string.IsNullOrWhiteSpace(item.Value))
+                        continue;
+
+                    var article = JsonSerializer.Deserialize<V2NewsArticleDTO>(item.Value, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (article is not null && string.Equals(article.Slug, slug, StringComparison.OrdinalIgnoreCase))
+                    {
+                        _logger.LogInformation("Article found for slug: {Slug}", slug);
+                        return article;
+                    }
+                }
+
+                _logger.LogWarning("No article found with slug: {Slug}", slug);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving article by slug: {Slug}", slug);
+                throw;
+            }
         }
 
     }
