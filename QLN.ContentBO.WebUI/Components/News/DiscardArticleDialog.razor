@@ -1,0 +1,40 @@
+﻿@using MudBlazor
+
+<MudDialog Style="height: 400px">
+    <DialogContent>
+        <MudPaper Class="p-6 d-flex flex-column align-items-center" Style="border: 2px dotted purple; border-radius: 12px;">
+            <MudAvatar Icon="@Icons.Material.Filled.HelpOutline"
+                       Size="Size.Large"
+                       Color="Color.Warning"
+                       Class="mb-2" />
+
+            <MudText Typo="Typo.h6" Class="mb-1">Discard Article</MudText>
+            <MudText Typo="Typo.body2" Align="Align.Center" Class="mb-4">
+                Are you sure you want to discard this article? Any unsaved changes will be gone.
+            </MudText>
+
+            <MudGrid GutterSize="0">
+                <MudItem xs="6">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" OnClick="Cancel">
+                        Cancel
+                    </MudButton>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning" FullWidth="true" OnClick="Discard">
+                        Discard
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Discard" Color="Color.Warning" Variant="Variant.Filled" Class="w-100">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    void Cancel() => MudDialog.Cancel();
+    void Discard() => MudDialog.Close(DialogResult.Ok(true));
+}

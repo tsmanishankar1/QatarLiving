@@ -466,8 +466,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 throw;
             }
         }
-
-
         public async Task<string> ReorderSlotsAsync(ReorderSlotRequestDto dto, CancellationToken cancellationToken)
         {
             const int MaxSlot = 13;
@@ -539,6 +537,56 @@ namespace QLN.Content.MS.Service.NewsInternalService
             updatedSlots.Sort();
 
             return $"Reordered successfully. Updated slots: {string.Join(", ", updatedSlots)}";
+        }
+
+
+        public async Task<V2NewsArticleDTO?> GetArticleByIdAsync(Guid id, CancellationToken cancellationToken)
+        {
+            return await _dapr.GetStateAsync<V2NewsArticleDTO>(V2Content.ContentStoreName, id.ToString(), cancellationToken: cancellationToken);
+        }
+
+        public async Task<V2NewsArticleDTO?> GetArticleBySlugAsync(string slug, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    V2Content.ContentStoreName,
+                    V2Content.NewsIndexKey,
+                    cancellationToken: cancellationToken) ?? new();
+
+                _logger.LogInformation("Fetched {Count} keys from index for slug lookup", keys.Count);
+
+                var items = await _dapr.GetBulkStateAsync(
+                    V2Content.ContentStoreName,
+                    keys,
+                    parallelism: null,
+                    cancellationToken: cancellationToken);
+
+                foreach (var item in items)
+                {
+                    if (string.IsNullOrWhiteSpace(item.Value))
+                        continue;
+
+                    var article = JsonSerializer.Deserialize<V2NewsArticleDTO>(item.Value, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (article is not null && string.Equals(article.Slug, slug, StringComparison.OrdinalIgnoreCase))
+                    {
+                        _logger.LogInformation("Article found for slug: {Slug}", slug);
+                        return article;
+                    }
+                }
+
+                _logger.LogWarning("No article found with slug: {Slug}", slug);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving article by slug: {Slug}", slug);
+                throw;
+            }
         }
 
     }

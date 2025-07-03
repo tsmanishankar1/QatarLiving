@@ -1,5 +1,11 @@
-﻿@inherits LayoutComponentBase
+﻿@using System.Security.Claims
+@using Microsoft.Extensions.Options
+@using QLN.ContentBO.WebUI.Handlers
+@using QLN.ContentBO.WebUI.Models
+@inherits LayoutComponentBase
 @inject NavigationManager NavManager
+@inject CookieAuthStateProvider CookieAuthenticationStateProvider;
+@inject IOptions<NavigationPath> options;
 
 <PageTitle>Qatar Living Content Back Office</PageTitle>
 <MudThemeProvider Theme="defaultTheme" />
@@ -28,10 +34,10 @@
                     <span class="nav-item default-gray">News</span>
                     </TitleContent>
                     <ChildContent>
-                        <MudNavLink Href="/manage/news/category?type=news" Class="nav-item" Match="NavLinkMatch.Prefix" Icon="fas fa-users" IconColor="Color.Secondary">News</MudNavLink>
-                        <MudNavLink Href="/manage/news/category?type=finance" Class="nav-item" Icon="fas fa-user-shield" IconColor="Color.Info">Finance</MudNavLink>
-                        <MudNavLink Href="/manage/news/category?type=sports" Class="nav-item" Icon="fas fa-user-shield" IconColor="Color.Info">Sports</MudNavLink>
-                        <MudNavLink Href="/manage/news/category?type=lifestyle" Class="nav-item" Icon="fas fa-user-shield" IconColor="Color.Info">LifeStyle</MudNavLink>
+                        <MudNavLink Href="/manage/news/category/1" Class="nav-item" Match="NavLinkMatch.Prefix" Icon="fas fa-users" IconColor="Color.Secondary">News</MudNavLink>
+                            <MudNavLink Href="/manage/news/category/2" Class="nav-item" Match="NavLinkMatch.Prefix" Icon="fas fa-user-shield" IconColor="Color.Info">Business</MudNavLink>
+                            <MudNavLink Href="/manage/news/category/3" Class="nav-item" Match="NavLinkMatch.Prefix" Icon="fas fa-user-shield" IconColor="Color.Info">Sports</MudNavLink>
+                            <MudNavLink Href="/manage/news/category/4" Class="nav-item" Match="NavLinkMatch.Prefix" Icon="fas fa-user-shield" IconColor="Color.Info">LifeStyle</MudNavLink>
                     </ChildContent>
                 </MudNavGroup>
                  <MudNavLink Href="/manage/community" Class="nav-item">
@@ -56,18 +62,21 @@
                     </ChildContent>
                 </MudNavGroup>
                 </MudNavMenu>
-                <MudPaper Class="user-card" Elevation="0">
-                    <MudDivider DividerType="DividerType.Inset" />
+                  @if (IsLoggedIn)
+                {
+                    <MudPaper Class="user-card" Elevation="0">
+                        <MudDivider DividerType="DividerType.Inset" />
                     <MudGrid AlignItems="Center" Justify="Justify.SpaceBetween" Class="pa-3">
                         <MudItem xs="10">
-                            <MudText  Class="user-name-style">Ismat Nesir</MudText>
-                            <MudText Class="user-email-style" >olivia@untitledui.com</MudText>
+                            <MudText  Class="user-name-style">@Name</MudText>
+                                <MudText Class="user-email-style">@Email</MudText>
                         </MudItem>
                         <MudItem xs="2" Class="text-end">
                              <img src="/qln-images/logout.svg" alt="search" class="logout-image-style"/>
                         </MudItem>
                     </MudGrid>
                 </MudPaper>
+                }
             </div>
         </MudPaper>
     </MudDrawer>
@@ -183,6 +192,13 @@
     protected bool _isReportGroupExpanded = false;
     private string searchText;
 
+    private NavigationPath navigationPath;
+    public string Name { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Alias { get; set; } = string.Empty;
+    public bool IsLoggedIn { get; set; } = false;
+    public int CurrentUserId { get; set; }
+
     @* void DrawerToggle()
     {
         _drawerOpen = !_drawerOpen;
@@ -205,13 +221,30 @@
             DefaultBorderRadius = "6px"
         }
     };
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        navigationPath = options.Value;
+
+        var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState != null)
+        {
+            var user = authState.User;
+            if (user.Identity != null && user.Identity.IsAuthenticated)
+            {
+                Name = user.FindFirst(ClaimTypes.Name)?.Value;
+                Email = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value;
+                Alias = user.FindFirst("alias")?.Value;
+                CurrentUserId = int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uid) ? uid : 0;
+                IsLoggedIn = true;
+            }
+        }
+    }
+
     protected void OnNewsGroupExpanded(bool expanded)
     {
         _isNewsGroupExpanded = expanded; 
-        if (expanded)
-        {
-            NavManager.NavigateTo("/manage/news/category?type=news");
-        }
     }
     protected void OnReportsGroupExpanded(bool expanded)
     {

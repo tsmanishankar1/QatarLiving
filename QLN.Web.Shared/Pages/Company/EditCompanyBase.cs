@@ -41,11 +41,11 @@ namespace QLN.Web.Shared.Pages.Company
 
         protected List<string> AvailableCities = [];
 
-        protected override void OnInitialized()
+        protected override async Task OnInitializedAsync()
         {
             try
             {
-                AuthorizedPage();
+                await AuthorizedPage();
                 breadcrumbItems =
                 [
                     new() { Label = "Classifieds", Url = "qln/classifieds" },

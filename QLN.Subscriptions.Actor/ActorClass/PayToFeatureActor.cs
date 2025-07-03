@@ -35,7 +35,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
         public async Task<bool> FastSetDataAsync(PayToFeatureDto data, CancellationToken cancellationToken = default)
         {
-            // Same logic as SetDataAsync for now
             return await SetDataAsync(data, cancellationToken);
         }
 

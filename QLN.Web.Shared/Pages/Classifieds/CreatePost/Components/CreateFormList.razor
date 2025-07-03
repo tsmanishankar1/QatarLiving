@@ -18,7 +18,6 @@
                          GetId="x => x.Id"
                          GetLabel="x => x.Label"
                          Label="Subvertical"
-                         For="@(() => adPostModel.SelectedVertical)"
                          Placeholder="Choose" />
     </div>
 </div>
@@ -188,17 +187,35 @@
         @if (adPostModel.SelectedVertical != "deals")
         {
             <div class="form-group">
-                <CustomInput TItem="string" MaxLength="50"   InputHtmlType="text" For="@(() => adPostModel.Zone)" Placeholder="Zone" @bind-Value="adPostModel.Zone" />
+                <NewCustomSelect TItem="LocationDto.LocationZoneDto"
+                     Items="@Zones"
+                     GetId="x => x.Id.ToString()"
+                     GetLabel="x => x.Name"
+                     Label="Zone"
+                     Placeholder="Choose"
+                     For="@(() => adPostModel.Zone)"
+                     SelectedId="@adPostModel.Zone"
+                     SelectedIdChanged="@(val => OnZoneChanged(val))"  />
             </div>
-            <div class="form-group">
-                <CustomInput TItem="string" MaxLength="50"   InputHtmlType="text" For="@(() => adPostModel.StreetNumber)"Placeholder="Street Number" @bind-Value="adPostModel.StreetNumber" />
-            </div>
-            <div class="form-group">
-                <CustomInput TItem="string" MaxLength="50"   InputHtmlType="text" For="@(() => adPostModel.BuildingNumber)" Placeholder="Building Number" @bind-Value="adPostModel.BuildingNumber" />
-            </div>
+           <div class="form-group">
+            <CustomInput TItem="int?" MaxLength="50" InputHtmlType="number"
+                For="@(() => adPostModel.StreetNumber)"
+                Placeholder="Street Number"
+                Value="adPostModel.StreetNumber"
+                ValueChanged="@(val => OnAddressChanged(val, nameof(adPostModel.StreetNumber)))" />
+        </div>
+
+        <div class="form-group">
+            <CustomInput TItem="int?" MaxLength="50" InputHtmlType="number"
+                For="@(() => adPostModel.BuildingNumber)"
+                Placeholder="Building Number"
+                Value="adPostModel.BuildingNumber"
+                ValueChanged="@(val => OnAddressChanged(val, nameof(adPostModel.BuildingNumber)))" />
+        </div>
+
             <div class="form-group">
                 <div @ref="mapDiv" id="map" style="height: 300px; width: 100%;"></div>
-            </div> 
+            </div>
         }
 
 
