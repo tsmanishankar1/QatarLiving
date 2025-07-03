@@ -811,6 +811,7 @@ namespace QLN.Classified.MS.Service
                         blobNames.Add(certBlobName);
                 }
 
+
                 if (adObject.TryGetProperty("imageUrls", out var imagesProp) && imagesProp.ValueKind == JsonValueKind.Array)
                 {
                     foreach (var img in imagesProp.EnumerateArray())
