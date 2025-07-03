@@ -193,5 +193,44 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+
+        public async Task<HttpResponseMessage> ReOrderNews(ArticleSlotAssignment slotAssignment)
+        {
+            try
+            {
+
+                var articleReOrderJson = new StringContent(JsonSerializer.Serialize(slotAssignment), Encoding.UTF8, "application/json");
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/news/reorderLiveSlots")
+                {
+                    Content = articleReOrderJson
+                };
+
+                var response = await _httpClient.SendAsync(request);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "ReOrderNews");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage> DeleteNews(Guid id)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Delete, $"api/v2/news/deleteNews/{id}");
+
+                var response = await _httpClient.SendAsync(request);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "DeleteNews");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
     }
 }

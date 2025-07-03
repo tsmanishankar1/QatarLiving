@@ -302,5 +302,15 @@ namespace QLN.ContentBO.WebUI.MockServices
         {
             throw new NotImplementedException();
         }
+
+        public Task<HttpResponseMessage> ReOrderNews(ArticleSlotAssignment slotAssignment)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<HttpResponseMessage> DeleteNews(Guid Id)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
